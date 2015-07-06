@@ -318,6 +318,7 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 int multi_thread=1;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 10;
+uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
@@ -2042,7 +2043,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:x:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:x:A:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2115,6 +2116,10 @@ static void get_options (int argc, char **argv)
 #ifdef ETHERNET
       strcpy(rrh_eNB_ip,optarg);
 #endif
+      break;
+
+    case 'A':
+      timing_advance = atoi (optarg);
       break;
 
     case 'C':
@@ -3087,7 +3092,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   // connect the TX/RX buffers
   if (UE_flag==1) {
 #ifdef OAI_USRP
-    openair_daq_vars.timing_advance = 160;
+    openair_daq_vars.timing_advance = timing_advance;
 #else
     openair_daq_vars.timing_advance = 160;
 #endif
