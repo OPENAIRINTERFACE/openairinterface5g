@@ -1019,6 +1019,10 @@ void *UE_thread(void *arg)
 
   openair0_timestamp timestamp;
 
+#ifdef NAS_UE
+  MessageDef *message_p;
+#endif
+
 #ifdef RTAI
   RT_TASK *task = rt_task_init_schmod(nam2num("UE thread"), 0, 0, 0, SCHED_FIFO, 0xF);
 
@@ -1073,6 +1077,11 @@ void *UE_thread(void *arg)
   printf("unlocked sync_mutex, waiting (UE_thread)\n");
 
   printf("starting UE thread\n");
+
+#ifdef NAS_UE
+  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
+#endif
 
   T0 = rt_get_time_ns();
   first_rx = 1;
