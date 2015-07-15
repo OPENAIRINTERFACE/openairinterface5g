@@ -220,8 +220,8 @@ rrc_mac_config_req(
 
 #ifdef Rel10
 
-      if (mac_MainConfig->sr_ProhibitTimer_r9) {
-        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->sr_ProhibitTimer_r9;
+      if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
+        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
       } else {
         UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
       }

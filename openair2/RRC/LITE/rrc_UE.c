@@ -2883,33 +2883,33 @@ static void dump_sib2( SystemInformationBlockType2_t *sib2 )
   } else
     LOG_I( RRC, "lateNonCriticalExtension : not defined\n" );
 
-  if (sib2->ssac_BarringForMMTEL_Voice_r9) {
+  if (sib2->ext1 && sib2->ext1->ssac_BarringForMMTEL_Voice_r9) {
     LOG_I( RRC, "ssac_BarringForMMTEL_Voice_r9->ac_BarringFactor       : %ld\n",
-           sib2->ssac_BarringForMMTEL_Voice_r9->ac_BarringFactor );
+           sib2->ext1->ssac_BarringForMMTEL_Voice_r9->ac_BarringFactor );
     LOG_I( RRC, "ssac_BarringForMMTEL_Voice_r9->ac_BarringTime         : %ld\n",
-           sib2->ssac_BarringForMMTEL_Voice_r9->ac_BarringTime );
+           sib2->ext1->ssac_BarringForMMTEL_Voice_r9->ac_BarringTime );
     LOG_I( RRC, "ssac_BarringForMMTEL_Voice_r9->ac_BarringForSpecialAC : %"PRIu32"\n",
-           BIT_STRING_to_uint32(&sib2->ssac_BarringForMMTEL_Voice_r9->ac_BarringForSpecialAC) );
+           BIT_STRING_to_uint32(&sib2->ext1->ssac_BarringForMMTEL_Voice_r9->ac_BarringForSpecialAC) );
   } else
     LOG_I( RRC, "ssac_BarringForMMTEL_Voice_r9 : not defined\n" );
 
-  if (sib2->ssac_BarringForMMTEL_Video_r9) {
+  if (sib2->ext1 && sib2->ext1->ssac_BarringForMMTEL_Video_r9) {
     LOG_I( RRC, "ssac_BarringForMMTEL_Video_r9->ac_BarringFactor       : %ld\n",
-           sib2->ssac_BarringForMMTEL_Video_r9->ac_BarringFactor );
+           sib2->ext1->ssac_BarringForMMTEL_Video_r9->ac_BarringFactor );
     LOG_I( RRC, "ssac_BarringForMMTEL_Video_r9->ac_BarringTime         : %ld\n",
-           sib2->ssac_BarringForMMTEL_Video_r9->ac_BarringTime );
+           sib2->ext1->ssac_BarringForMMTEL_Video_r9->ac_BarringTime );
     LOG_I( RRC, "ssac_BarringForMMTEL_Video_r9->ac_BarringForSpecialAC : %"PRIu32"\n",
-           BIT_STRING_to_uint32(&sib2->ssac_BarringForMMTEL_Video_r9->ac_BarringForSpecialAC) );
+           BIT_STRING_to_uint32(&sib2->ext1->ssac_BarringForMMTEL_Video_r9->ac_BarringForSpecialAC) );
   } else
     LOG_I( RRC, "ssac_BarringForMMTEL_Video_r9 : not defined\n" );
 
-  if (sib2->ac_BarringForCSFB_r10) {
+  if (sib2->ext2 && sib2->ext2->ac_BarringForCSFB_r10) {
     LOG_I( RRC, "ac_BarringForCSFB_r10->ac_BarringFactor       : %ld\n",
-           sib2->ac_BarringForCSFB_r10->ac_BarringFactor );
+           sib2->ext2->ac_BarringForCSFB_r10->ac_BarringFactor );
     LOG_I( RRC, "ac_BarringForCSFB_r10->ac_BarringTime         : %ld\n",
-           sib2->ac_BarringForCSFB_r10->ac_BarringTime );
+           sib2->ext2->ac_BarringForCSFB_r10->ac_BarringTime );
     LOG_I( RRC, "ac_BarringForCSFB_r10->ac_BarringForSpecialAC : %"PRIu32"\n",
-           BIT_STRING_to_uint32(&sib2->ac_BarringForCSFB_r10->ac_BarringForSpecialAC) );
+           BIT_STRING_to_uint32(&sib2->ext2->ac_BarringForCSFB_r10->ac_BarringForSpecialAC) );
   } else
     LOG_I( RRC, "ac_BarringForCSFB_r10 : not defined\n" );
 
@@ -3143,12 +3143,12 @@ static void dump_sib5( SystemInformationBlockType5_t *sib5 )
       }
     }
 #ifdef Rel10
-    if (ifcfInfo->q_QualMin_r9)
-      LOG_I(RRC,"   Q_QualMin_r9 : %d\n",*ifcfInfo->q_QualMin_r9);
+    if (ifcfInfo->ext1 && ifcfInfo->ext1->q_QualMin_r9)
+      LOG_I(RRC,"   Q_QualMin_r9 : %d\n",*ifcfInfo->ext1->q_QualMin_r9);
     
-    if (ifcfInfo->threshX_Q_r9) {
-      LOG_I(RRC,"   threshX_HighQ_r9 : %d\n",ifcfInfo->threshX_Q_r9->threshX_HighQ_r9);
-      LOG_I(RRC,"   threshX_LowQ_r9: %d\n",ifcfInfo->threshX_Q_r9->threshX_LowQ_r9);
+    if (ifcfInfo->ext1 && ifcfInfo->ext1->threshX_Q_r9) {
+      LOG_I(RRC,"   threshX_HighQ_r9 : %d\n",ifcfInfo->ext1->threshX_Q_r9->threshX_HighQ_r9);
+      LOG_I(RRC,"   threshX_LowQ_r9: %d\n",ifcfInfo->ext1->threshX_Q_r9->threshX_LowQ_r9);
     }
 #endif
   }

@@ -688,9 +688,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   (*sib2)->ac_BarringInfo = NULL;
 #ifdef Rel10
+#if 0
   (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
   (*sib2)->ac_BarringForCSFB_r10 = NULL;
+#endif
+  (*sib2)->ext1 = NULL;
+  (*sib2)->ext2 = NULL;
 #endif
 
 #if defined(ENABLE_ITTI)
@@ -989,10 +993,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   /// (*SIB3)
 #ifdef Rel10
+  (*sib3)->ext1 = NULL;
+#if 0
   (*sib3)->s_IntraSearch_v920=NULL;
   (*sib3)->s_NonIntraSearch_v920=NULL;
   (*sib3)->q_QualMin_r9=NULL;
   (*sib3)->threshServingLowQ_r9=NULL;
+#endif
 #endif
   (*sib3)->cellReselectionInfoCommon.q_Hyst=SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4;
 
