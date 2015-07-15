@@ -96,6 +96,8 @@ Options
 --install-system-files
    Install OpenArInterface required files in Linux system
    (will ask root password)
+--noS1 
+   Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
@@ -190,6 +192,10 @@ function main() {
             INSTALL_SYSTEM_FILES=1
             echo_info "Will copy OpenAirInterface files in Linux directories"
             shift;;
+       --noS1)
+	    NOS1=1
+            echo_info "Will compile without S1 interface"
+            shift;;
         -h | --help)
             print_help
             exit 1;;
@@ -264,43 +270,47 @@ function main() {
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
+  if [ "$NOS1" =  "1" ] ; then
+      lte_build_dir=lte_noS1_build_oai
+      lte_exec=lte-softmodem-nos1
+  else
+      lte_build_dir=lte_build_oai
+      lte_exec=lte-softmodem
+  fi
 
 
   if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
+
     # LTE softmodem compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/lte_build_oai/build
-    mkdir -p $DIR/lte_build_oai/build
-    cmake_file=$DIR/lte_build_oai/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
+    mkdir -p $DIR/$lte_build_dir/build
+    cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
+    if [ "$NOS1" = "1" ] ; then
+	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
+    fi
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo 'set(PACKAGE_NAME "\"lte-softmodem\"")' >>  $cmake_file
+    echo "set(PACKAGE_NAME \"${lte_exec}\")"     >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    cd  $DIR/lte_build_oai/build
+    cd  $DIR/$lte_build_dir/build
     cmake ..
-    echo_info "Compiling LTE softmodem"
+    echo_info "Compiling $lte_exec"
     compilations \
-	  lte_build_oai lte-softmodem \
-	  lte-softmodem $dbin/lte-softmodem.$REL
+	  $lte_build_dir $lte_exec \
+	  $lte_exec $dbin/$lte_exec.$REL
 
-    # LTE softmodem (no S1 interface) compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/lte_noS1_build_oai/build
-    mkdir -p $DIR/lte_noS1_build_oai/build
-    cd  $DIR/lte_noS1_build_oai/build
-    cmake ..
-    echo_info "Compiling LTE softmodem (w/o S1 interface)"
-    compilations \
-	  lte_noS1_build_oai lte-softmodem-nos1 \
-	  lte-softmodem-nos1 $dbin/lte-softmodem-nos1
-    compilations \
-	  lte_noS1_build_oai nasmesh \
-	  CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    compilations \
-	  lte_noS1_build_oai rb_tool \
-	  rb_tool $dbin/rb_tool
-    cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    if [ "$NOS1" = "1" ] ; then
+	compilations \
+	    $lte_build_dir nasmesh \
+	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+	compilations \
+	    $lte_build_dir rb_tool \
+	    rb_tool $dbin/rb_tool
+	cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    fi
   fi
 
   if [ "$UE" = 1 ] ; then
@@ -375,102 +385,101 @@ function main() {
   if [ "$HW" = "EXMIMO" -a "$EPC" = "0" ] ; then
     
     echo_info "Compiling Express MIMO 2 board drivers"
-    mkdir -p $DIR/lte_noS1_build_oai/build
-    cd $DIR/lte_noS1_build_oai/build
+    mkdir -p $DIR/$lte_build_dir/build
+    cd $DIR/$lte_build_dir/build
     cmake ..
     compilations \
-        lte_noS1_build_oai openair_rf \
+        $lte_build_dir openair_rf \
         CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
     compilations \
-	  lte_noS1_build_oai updatefw \
+	  $lte_build_dir updatefw \
 	  updatefw $dbin/updatefw
-    make -C $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/*.oct $dbin
-    echo_success "oarf tools compiled"
+    make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
+    cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
+    if [ -s $dbin/oarf_config_exmimo.oct ] ; then
+	echo_success "oarf tools compiled"
+    else
+	echo_error "oarf tools compilation failed"
+    fi
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
 
   if [ "$oaisim" = "1" ] ; then
     dconf=$OPENAIR_DIR/targets/bin
+      if [ "$NOS1" =  "1" ] ; then
+	  oaisim_build_dir=oaisim_noS1_build_oai
+	  oaisim_exec=oaisim_nos1
+      else
+	  oaisim_build_dir=oaisim_build_oai
+	  oaisim_exec=oaisim
+      fi
     
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/at_commands/build
-    
-    echo_info "Compiling at_nas_ue"
-    mkdir -p $DIR/at_commands/build
-    cd $DIR/at_commands/build
-    cmake ..
-    compilations \
-      at_commands at_nas_ue \
-      at_nas_ue $dbin/at_nas_ue
-
-    echo_info "Compiling oaisim"
-    cmake_file=$DIR/oaisim_build_oai/CMakeLists.txt
-    cp $DIR/oaisim_build_oai/CMakeLists.template $cmake_file
+    echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
+    cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
+    cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_build_oai/build
-    mkdir -p $DIR/oaisim_build_oai/build
-    cd $DIR/oaisim_build_oai/build
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
+    mkdir -p $DIR/$oaisim_build_dir/build
+    cd $DIR/$oaisim_build_dir/build
     cmake ..
     compilations \
-	  oaisim_build_oai oaisim \
-	  oaisim $dbin/oaisim.$REL
+	  $oaisim_build_dir $oaisim_exec \
+	  $oaisim_exec $dbin/$oaisim_exec.$REL
 
-    # ue_ip driver compilation
-    echo_info "Compiling UE specific part (ue_ip driver and usim tools)"
-    compilations \
-	  oaisim_build_oai ue_ip \
-	  CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+    if [ "$NOS1" != "1" ] ; then
 
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
-    mkdir -p $DIR/nas_sim_tools/build
-    cd $DIR/nas_sim_tools/build
-    cmake ..
-    compilations \
-	  nas_sim_tools usim \
-	  usim $dbin/usim
-    compilations \
-	  nas_sim_tools nvram \
-	  nvram $dbin/nvram
+	[ "$CLEAN" = "1" ] && rm -rf $DIR/at_commands/build
+    	echo_info "Compiling at_nas_ue"
+	mkdir -p $DIR/at_commands/build
+	cd $DIR/at_commands/build
+	cmake ..
+	compilations \
+	    at_commands at_nas_ue \
+	    at_nas_ue $dbin/at_nas_ue
 
-    # generate USIM data
-    if [ -f $dbin/nvram ]; then
-      install_nas_tools $dbin $dconf
+	# ue_ip driver compilation
+	echo_info "Compiling UE specific part (ue_ip driver and usim tools)"
+	compilations \
+	    oaisim_build_oai ue_ip \
+	    CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+
+	[ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
+	mkdir -p $DIR/nas_sim_tools/build
+	cd $DIR/nas_sim_tools/build
+	cmake ..
+	compilations \
+	    nas_sim_tools usim \
+	    usim $dbin/usim
+	compilations \
+	    nas_sim_tools nvram \
+	    nvram $dbin/nvram
+
+	# generate USIM data
+	if [ -f $dbin/nvram ]; then
+	    install_nas_tools $dbin $dconf
+	else
+	    echo_warning "not generated UE NAS files: binaries not found"
+	fi
     else
-      echo_warning "not generated UE NAS files: binaries not found"
+
+	compilations \
+	    $oaisim_build_dir rb_tool \
+	    rb_tool $dbin/rb_tool
+
+	# nasmesh driver compilation
+	compilations \
+	    $oaisim_build_dir nasmesh \
+	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+	#oai_nw_drv
+	compilations \
+	    $oaisim_build_dir oai_nw_drv \
+	    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
     fi
-
-    echo_info "Compiling oaisim_nos1"
-    cmake_file=$DIR/oaisim_noS1_build_oai/CMakeLists.txt
-    cp $DIR/oaisim_noS1_build_oai/CMakeLists.template $cmake_file
-    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_noS1_build_oai/build
-    mkdir -p $DIR/oaisim_noS1_build_oai/build
-    cd $DIR/oaisim_noS1_build_oai/build
-    cmake ..
-    compilations \
-      oaisim_noS1_build_oai oaisim_nos1 \
-      oaisim_nos1 $dbin/oaisim_nos1.$REL
-
-    compilations \
-      oaisim_noS1_build_oai rb_tool \
-      rb_tool $dbin/rb_tool
-
-    # nasmesh driver compilation
-    compilations \
-	oaisim_noS1_build_oai nasmesh \
-	CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    #oai_nw_drv
-    compilations \
-	oaisim_noS1_build_oai oai_nw_drv \
-	CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
 
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
