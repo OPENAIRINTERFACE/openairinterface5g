@@ -385,6 +385,7 @@ function main() {
   if [ "$HW" = "EXMIMO" -a "$EPC" = "0" ] ; then
     
     echo_info "Compiling Express MIMO 2 board drivers"
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
     mkdir -p $DIR/$lte_build_dir/build
     cd $DIR/$lte_build_dir/build
     cmake ..
