@@ -77,6 +77,8 @@ struct vcd_module_s {
 const char* eurecomVariablesNames[] = {
   "frame_number_TX_eNB",
   "frame_number_RX_eNB",
+  "runtime_TX_eNB",
+  "runtime_RX_eNB",
   "frame_number_TX_UE",
   "frame_number_RX_UE",
   "slot_number_TX_UE",
@@ -94,6 +96,13 @@ const char* eurecomVariablesNames[] = {
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "tx_ts",
+  "rx_ts",
+  "hw_cnt_rx",
+  "lhw_cnt_rx",
+  "hw_cnt_tx",
+  "lhw_cnt_tx",
+  "pck_rx",
   "dummy_dump",
   "itti_send_msg",
   "itti_poll_msg",
@@ -132,6 +141,15 @@ const char* eurecomFunctionsNames[] = {
   "eNB_thread_rx9",
   "ue_thread_tx",
   "ue_thread_rx",
+
+ /* RRH signals  */ 
+  "eNB_tx",
+  "eNB_rx",
+  "eNB_trx",
+  "eNB_tm",
+  "eNB_rx_sleep",
+  "eNB_tx_sleep",
+  "eNB_proc_sleep",
 
   /* PHY signals  */
   "ue_synch",

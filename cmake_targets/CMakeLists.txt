@@ -362,14 +362,14 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu/")
-  set(option_HW_lib "bladeRF")
-
+  
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
   set(HW_SOURCE ${HW_SOURCE}
-     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-  )
-
+    ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
+    )
+  set(LOWLATENCY True)
+  
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/cprigw_lib.c
@@ -393,7 +393,7 @@ add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
 add_boolean_option(ENABLE_STANDALONE_EPC True "Compile MME, SGW and PGW in a single executable")
 add_boolean_option(EPC_BUILD False "???")
-add_boolean_option(LOWLATENCY  True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
@@ -1567,6 +1567,8 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  #${OPENAIR2_DIR}/RRC/NAS/nas_config.c # enable if you want rrc to mount ip interface
+  #${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${HW_SOURCE}
   ${RTAI_SOURCE}
@@ -1710,6 +1712,36 @@ target_link_libraries (oai_sgw
   pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
   )
 endif(MESSAGE_CHART_GENERATOR)
+
+
+# rrh
+################################
+set(DRIVER2013)
+
+#Note: only on RF type is currently supported for RRH
+add_executable(rrh_gw
+  ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
+  ${OPENAIR_TARGETS}/RT/USER/eNB_transport_IQ.c
+  ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c	
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c 
+  ${HW_SOURCE}
+  )
+# assert and common_lib.h
+target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti ${OPENAIR_TARGETS}/ARCH/COMMON ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ )
+
+target_link_libraries(rrh_gw
+  -Wl,--start-group
+  UTIL LFDS  
+  -Wl,--end-group )
+target_link_libraries (rrh_gw rt pthread m )
+target_link_libraries (rrh_gw ${option_HW_lib} ${LIBBOOST_LIBRARIES} )
+
+#Message("-- default_HW_lib=ETHERNET") # only in case of RRH
+Message("-- option_HW_lib=${option_HW_lib}")
+Message("-- HW_SOURCE=${HW_SOURCE}")
+
+
 
 # USIM process
 #################

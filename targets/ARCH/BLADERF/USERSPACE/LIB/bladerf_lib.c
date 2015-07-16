@@ -132,7 +132,7 @@ int trx_brf_end(openair0_device *device) {
   return 0;
 }
 
-//int openair0_device_brf_init(openair0_device *device, openair0_config_t *openair0_cfg) {
+//int  openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
 int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   int status;
@@ -263,12 +263,24 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   return 0;
 }
 
-void brf_error(int status) {
+int brf_error(int status) {
   
   exit(-1);
+  //return 1; // or status error code
 }
 
 int openair0_stop(int card) {
+
+  return(0);
+
+}
+
+int openair0_print_stats(openair0_device* device) {
+
+  return(0);
+
+}
+int openair0_reset_stats(openair0_device* device) {
 
   return(0);
 

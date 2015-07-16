@@ -38,13 +38,20 @@
 * \warning This code will be removed when a legacy libc API becomes available.
 */
 
+
+void set_latency_target(void);
+
 #ifndef RTAI
 #include <time.h>
 #include <errno.h>
-#include <stdio.h>
+#include <stdint.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <pthread.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
+#include <syscall.h>
+#include <math.h>
 
 #define RTIME long long int
 
@@ -56,6 +63,11 @@ int rt_sleep_ns (RTIME x);
 
 void check_clock(void);
 
+int fill_modeled_runtime_table(uint16_t runtime_phy_rx[29][6],uint16_t runtime_phy_tx[29][6]);
+
+double get_runtime_tx(int tx_subframe, uint16_t runtime_phy_tx[29][6],uint32_t mcs, int N_RB_DL,double cpuf,int nb_tx_antenna);
+
+double get_runtime_rx(int rx_subframe, uint16_t runtime_phy_rx[29][6], uint32_t mcs, int N_RB_DL,double cpuf,int nb_rx_antenna);
 /**
  * see https://www.kernel.org/doc/Documentation/scheduler/sched-deadline.txt  or
  * http://www.blaess.fr/christophe/2014/04/05/utiliser-un-appel-systeme-inconnu-de-la-libc/

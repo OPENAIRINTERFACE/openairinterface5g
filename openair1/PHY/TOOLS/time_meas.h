@@ -43,8 +43,8 @@ double cpu_freq_GHz;
 typedef struct {
 
   long long in;
-  long long diff_now;
   long long diff;
+  long long diff_now;
   long long p_time; /*!< \brief absolute process duration */
   long long diff_square; /*!< \brief process duration square */
   long long max;
@@ -113,38 +113,31 @@ static inline void stop_meas(time_stats_t *ts)
 
   if (opp_enabled) {
     long long out = rdtsc_oai();
-
-      ts->diff_now = (out-ts->in);
-      
-      ts->diff += (out-ts->in);
-      /// process duration is the difference between two clock points
-      ts->p_time = (out-ts->in);
-      ts->diff_square += (out-ts->in)*(out-ts->in);
-
-      if ((out-ts->in) > ts->max)
-        ts->max = out-ts->in;
-
+    
+    ts->diff_now = (out-ts->in);
+    
+    ts->diff_now = (out-ts->in);
+    ts->diff += (out-ts->in);
+    /// process duration is the difference between two clock points
+    ts->p_time = (out-ts->in);
+    ts->diff_square += (out-ts->in)*(out-ts->in);
+    
+    if ((out-ts->in) > ts->max)
+      ts->max = out-ts->in;
+    
   }
 }
 
-static inline void reset_meas(time_stats_t *ts)
-{
+static inline void reset_meas(time_stats_t *ts) {
+
   static int cpu_freq_set=0;
   
-  if (opp_enabled) {
-    ts->trials=0;
-    ts->diff_now=0;
-    ts->diff=0;
-    ts->p_time=0;
-    ts->diff_square=0;
-    ts->max=0;
-
-    if (cpu_freq_set == 0) {
-      cpu_freq_set = 1;
-      get_cpu_freq_GHz();
-      printf("CPU Freq is %f \n", cpu_freq_GHz);
-    } 
-  }
+  ts->trials=0;
+  ts->diff=0;
+  ts->diff_now=0;
+  ts->p_time=0;
+  ts->diff_square=0;
+  ts->max=0;
   
 }
 

@@ -78,4 +78,4 @@ typedef struct {
  * func prototypes 
  */
 
-void brf_error(int status);
+int brf_error(int status);

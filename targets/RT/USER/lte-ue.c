@@ -119,8 +119,8 @@ extern int oai_exit;
 extern int32_t **rxdata;
 extern int32_t **txdata;
 
-extern unsigned int tx_forward_nsamps;
-extern int tx_delay;
+//extern unsigned int tx_forward_nsamps;
+//extern int tx_delay;
 
 extern int rx_input_level_dBm;
 extern uint8_t exit_missed_slots;
@@ -583,9 +583,9 @@ static void *UE_thread_tx(void *arg)
 
   /* This creates a 1ms reservation every 10ms period*/
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime = 1 * 900000;  // each tx thread requires .5ms to finish its job
-  attr.sched_deadline =1 * 1000000; // each tx thread will finish within 1ms
-  attr.sched_period = 1 * 1000000; // each tx thread has a period of 1ms from the starting point
+  attr.sched_runtime  = (0.9 * 100) * 10000;  // each tx thread requires .5ms to finish its job
+  attr.sched_deadline = (1   * 100) * 10000; // each tx thread will finish within 1ms
+  attr.sched_period   = (1   * 100) * 10000; // each tx thread has a period of 1ms from the starting point
 
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
@@ -732,9 +732,9 @@ static void *UE_thread_rx(void *arg)
 
   // This creates a .5ms reservation every 1ms period
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime = 1 * 900000;  // each rx thread requires 1ms to finish its job
-  attr.sched_deadline =1 * 1000000; // each rx thread will finish within 1ms
-  attr.sched_period = 1 * 1000000; // each rx thread has a period of 1ms from the starting point
+  attr.sched_runtime   = (0.9 * 100) * 10000;//900000;  // each rx thread requires 1ms to finish its job
+  attr.sched_deadline  = (1   * 100) * 10000; // each rx thread will finish within 1ms
+  attr.sched_period    = (1   * 100) * 10000; // each rx thread has a period of 1ms from the starting point
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] UE_thread_rx : sched_setattr failed\n");
@@ -938,7 +938,7 @@ void *UE_thread(void *arg)
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
-  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*tx_delay;
+  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*openair0_cfg[0].tx_delay;
   int dummy[2][spp];
   int dummy_dump = 0;
   int tx_enabled = 0;
@@ -972,9 +972,9 @@ void *UE_thread(void *arg)
 
   // This creates a .5 ms  reservation
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime  = 0.25 * 1000000;
-  attr.sched_deadline = 0.25 * 1000000;
-  attr.sched_period   = 0.5 * 1000000;
+  attr.sched_runtime  = (0.25 * 100) * 10000;
+  attr.sched_deadline = (0.25 * 100) * 10000;
+  attr.sched_period   = (0.5 * 100)  * 10000;
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] main eNB thread: sched_setattr failed\n");
@@ -1056,7 +1056,7 @@ void *UE_thread(void *arg)
           txp[i] = (void*)&txdata[i][txpos];
 
         openair0.trx_write_func(&openair0,
-                                (timestamp+spp*tx_delay-tx_forward_nsamps),
+                                (timestamp+spp*openair0_cfg[0].tx_delay-openair0_cfg[0].tx_forward_nsamps),
                                 txp,
 				spp - ((first_rx==1) ? rx_off_diff : 0),
                                 UE->lte_frame_parms.nb_antennas_tx,
@@ -1353,9 +1353,9 @@ void *UE_thread(void *arg)
 
   // This creates a .25 ms  reservation
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime  = 0.1 * 1000000;
-  attr.sched_deadline = 0.25 * 1000000;
-  attr.sched_period   = 0.5 * 1000000;
+  attr.sched_runtime  = (0.1  * 100) * 10000;
+  attr.sched_deadline = (0.25 * 100) * 10000;
+  attr.sched_period   = (0.5  * 100) * 10000;
 
   // pin the UE main thread to CPU0
   // if (pthread_setaffinity_np(pthread_self(), sizeof(mask),&mask) <0) {

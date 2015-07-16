@@ -44,7 +44,9 @@
 #include <complex>
 #include <fstream>
 #include <cmath>
+
 #include "common_lib.h"
+
 
 typedef struct
 {
@@ -121,7 +123,7 @@ static void trx_usrp_end(openair0_device *device)
 	s->tx_stream->send("", 0, s->tx_md);
 	s->tx_md.end_of_burst = false;
 }
-static void trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
+static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
@@ -138,6 +140,8 @@ static void trx_usrp_write(openair0_device *device, openair0_timestamp timestamp
   else
     s->tx_stream->send(buff[0], nsamps, s->tx_md);
   s->tx_md.start_of_burst = false;
+
+  return 0;
 }
 
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
@@ -195,7 +199,7 @@ static bool is_equal(double a, double b)
   return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
-int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg,int dummy) {
+int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
@@ -237,7 +241,17 @@ int openair0_stop(int card) {
   return(0);
 
 }
+int openair0_print_stats(openair0_device* device) {
 
+  return(0);
+
+}
+int openair0_reset_stats(openair0_device* device) {
+
+  return(0);
+
+}
+//int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg)
 {
   uhd::set_thread_priority_safe(1.0);
@@ -376,7 +390,7 @@ int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cf
   device->trx_end_func   = trx_usrp_end;
   device->trx_read_func  = trx_usrp_read;
   device->trx_write_func = trx_usrp_write;
-
+  
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:
   // init tx_forward_nsamps based usrp_time_offset ex

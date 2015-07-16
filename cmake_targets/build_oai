@@ -75,11 +75,13 @@ Options
    Makes the UE specific parts (ue_ip, usim, nvram) 
 --EPC
    Makes the EPC (MME-SPGW, HSS)
+--RRH
+   Makes the RRH
 -r | --3gpp-release
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, None
+   EXMIMO (Default), USRP, BLADERF, ETHERNET, None
    Adds this RF board support (in external packages installation and in compilation)
 --oaisim
    Makes the oaisim simulator. Hardware will be defaulted to "NONE".
@@ -146,6 +148,10 @@ function main() {
        --EPC)
             EPC=1
             echo_info "Will compile EPC"
+            shift;;
+       --RRH)
+            RRH=1
+            echo_info "Will compile RRH"
             shift;;
        -r | --3gpp-release)
             REL=$2
@@ -326,7 +332,7 @@ function main() {
 #    compilations \
 #      at_commands at_nas_ue \
 #      at_nas_ue $dbin/at_nas_ue
-      
+    
     [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
@@ -495,6 +501,32 @@ function main() {
     #compilations \
 	#  oaisim_mme_build_oai oaisim_mme \
 	#  oaisim_mme $dbin/oaisim_mme.$REL
+  fi
+
+  # RRH compilation
+  ##################
+  if [ "$RRH" = "1" ] ; then
+    echo_info "Compiling RRH"
+    if [  $HW == "ETHERNET" ] ; then 
+	echo_info "RF frontend for RRH is not defined. This mode is used for testing (loopback)."
+    elif [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
+	echo_fatal "Hardware not defined ($HW)"
+    fi
+    cmake_file=$DIR/rrh_gw/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+    echo "set(ENABLE_ITTI False )"     					 >>  $cmake_file
+    echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
+    echo 'set(PACKAGE_NAME "\"rrh_gw\"")' >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
+
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build
+    mkdir -p $DIR/rrh_gw/build
+    cd $DIR/rrh_gw/build
+    cmake ..
+    compilations \
+      rrh_gw rrh_gw \
+      rrh_gw $dbin/rrh_gw
   fi
 
   # EPC compilation

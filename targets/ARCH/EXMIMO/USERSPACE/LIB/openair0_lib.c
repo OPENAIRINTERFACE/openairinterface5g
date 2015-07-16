@@ -247,6 +247,7 @@ int openair0_stop_without_reset(int card)
 #define MY_RF_MODE      (RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX)
 #define RF_MODE_BASE    (LNA1ON + RFBBNORM)
 
+//int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg) {
 int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   // Initialize card

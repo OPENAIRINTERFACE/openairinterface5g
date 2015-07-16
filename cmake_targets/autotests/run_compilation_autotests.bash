@@ -34,7 +34,7 @@ mkdir -p $tdir/bin $tdir/log
 
 updated=$(svn st -q $OPENAIR_DIR)
 if [ "$updated" != "" ] ; then
-	echo_warning "some files are not in svn: $updated"
+	echo_warning "some files are not in svn:\n $updated"
 fi
 
 cd $tdir 
@@ -82,6 +82,10 @@ test_compile \
 test_compile \
     test.0120 nasmesh \
     CMakeFiles/nasmesh/nasmesh.ko $tdir/bin/nasmesh.ko 
+
+test_compile \
+    test.0130 rrh_gw \
+    rrh_gw $tdir/bin/rrh_gw
 
 # write the test results into a file
 xUnit_write "$tdir/log/compilation_autotests.xml"
