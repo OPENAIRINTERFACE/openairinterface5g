@@ -666,7 +666,7 @@ int main(int argc, char **argv)
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
       printf("-R Number of HARQ rounds (fixed)\n");
-      printf("-M Turns on calibration mode for abstraction.\n");
+      printf("-A Turns on calibration mode for abstraction.\n");
       printf("-N Determines the number of Channel Realizations in Abstraction mode. Default value is 1. \n");
       printf("-O Set the percenatge of effective rate to testbench the modem performance (typically 30 and 70, range 1-100) \n");
       printf("-I Input filename for TrCH data (binary)\n");
