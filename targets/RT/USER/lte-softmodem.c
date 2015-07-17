@@ -1032,8 +1032,7 @@ static void* eNB_thread_tx( void* param )
   attr.sched_nice = 0;
   attr.sched_priority = 0;
 
-  // This creates a 1ms reservation every 10ms period
-  attr.sched_policy   = SCHED_DEADLINE;
+    attr.sched_policy   = SCHED_DEADLINE;
    //attr.sched_runtime  = 0.9 *  1000000; // each tx thread requires 1ms to finish its job
   attr.sched_runtime  = (uint64_t) (get_runtime_tx(proc->subframe, runtime_phy_tx, target_dl_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx) *  1000000); // each tx thread requires 1ms to finish its job
   attr.sched_deadline = 1   *  1000000; // each tx thread will finish within 1ms
@@ -3302,12 +3301,8 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
 #ifndef EXMIMO
 #ifndef USRP_DEBUG
-<<<<<<< .mine
-  openair0.trx_request_func(&openair0);
-=======
   if (mode!=loop_through_memory)
-    openair0.trx_start_func(&openair0);
->>>>>>> .r7708
+    openair0.trx_request_func(&openair0);
   //  printf("returning from usrp start streaming: %llu\n",get_usrp_time(&openair0));
 #endif
 #endif
