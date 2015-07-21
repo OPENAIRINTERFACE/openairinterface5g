@@ -2961,7 +2961,9 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
   }
 
-
+  openair0.func_type = BBU_FUNC;
+  openair0_cfg[0].log_level = glog_level;
+  
 #ifdef ETHERNET 
   openair0.type=ETH_IF; // not used for the moment
   openair0_dev_init_eth(&openair0, &openair0_cfg[0]);
@@ -2976,10 +2978,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   openair0.type=BLADERF_IF;	
   printf("Setting the HW to BLADERF and initializing openair0 ...\n");   
 #endif 
-  openair0.func_type = BBU_FUNC;
-  openair0_cfg[0].log_level = glog_level;
-
-
+ 
   if ((mode!=loop_through_memory) && 
       (openair0_device_init(&openair0, &openair0_cfg[0]) <0)) {
     printf("Exiting, cannot initialize device\n");
@@ -3307,7 +3306,9 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #ifndef EXMIMO
 #ifndef USRP_DEBUG
   if (mode!=loop_through_memory)
-    openair0.trx_start_func(&openair0);//request_func(&openair0);
+    if (openair0.trx_start_func(&openair0) != 0 ) 
+      LOG_E(HW,"Could not start the device\n");
+
 #endif
 #endif
 

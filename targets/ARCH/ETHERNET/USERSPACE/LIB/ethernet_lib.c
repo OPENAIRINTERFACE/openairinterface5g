@@ -348,6 +348,10 @@ int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,voi
   
 }
 
+int trx_eth_start(openair0_device *device){
+
+  return ethernet_socket_init(device);
+}
 
 int trx_eth_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int antenna_id, int flags) {
   
@@ -394,6 +398,7 @@ int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_c
 
   printf("ETHERNET: Initializing openair0_device for %s ...\n", ((device->func_type == BBU_FUNC) ? "BBU": "RRH"));
   device->Mod_id           = num_devices++;
+  device->trx_start_func   = trx_eth_start;
   device->trx_request_func = trx_eth_request;
   device->trx_reply_func   = trx_eth_reply;
   device->trx_end_func     = trx_eth_end;
@@ -402,9 +407,9 @@ int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_c
   
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
 
-  if (ethernet_socket_init(device)!=0){
+  /*  if (ethernet_socket_init(device)!=0){
     return -1;
-  }
+    }*/ 
   
   return 0;
 }
