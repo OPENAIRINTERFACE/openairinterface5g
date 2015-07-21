@@ -113,6 +113,7 @@ unsigned int		rt_period;
 
 struct itimerspec     timerspec;
 
+char* if_name="eth0";
 
 int main(int argc, char **argv) {
 
@@ -188,6 +189,7 @@ static rrh_module_t new_module (unsigned int id, dev_type_t type) {
   rrh_mod.eth_dev.func_type=RRH_FUNC;
   /* each module is associated with an ethernet device */
   rrh_mod.eth_dev.type=ETH_IF;
+  get_ip_addreess(if_name);
   openair0_cfg.my_ip=&rrh_ip[0];
   openair0_cfg.my_port=rrh_port;
 
@@ -458,7 +460,7 @@ static void get_options(int argc, char *argv[]) {
 
   int 	opt;
 
-  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:w:")) != -1) {
+  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:w:i:")) != -1) {
     
     switch (opt) {
     case 'n':
@@ -471,6 +473,12 @@ static void get_options(int argc, char *argv[]) {
       break;
     case 'g':
       glog_level=atoi(optarg);
+      break;
+    case 'i':  
+      if (optarg) {
+	if_name=strdup(optarg); 
+	printf("RRH interface name is set to %s\n", if_name);	
+      }
       break;
     case 'r':
       //rrh_log_level=atoi(optarg);
@@ -510,6 +518,28 @@ static void get_options(int argc, char *argv[]) {
   
 }
 
+int get_ip_addreess(char* if_name){
+  
+  int fd;
+  struct ifreq ifr;
+  
+  fd = socket(AF_INET, SOCK_DGRAM, 0);
+  
+  /* I want to get an IPv4 IP address */
+  ifr.ifr_addr.sa_family = AF_INET;
+
+  /* I want IP address attached to "eth0" */
+  strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
+
+ ioctl(fd, SIOCGIFADDR, &ifr);
+
+ close(fd);
+
+ /* display result */
+ snprintf(&rrh_ip[0],20,"%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+ printf("Got IP address %s from interface %s\n", rrh_ip,if_name);
+ return 0;
+}
 
 /*!\fn void print_help(void)
 * \brief this function
@@ -527,6 +557,7 @@ static void print_help(void) {
   puts("\t -n create eNB module\n");
   puts("\t -u create UE module\n");
   puts("\t -g define global log level\n");
+  puts("\t -i set the RRH interface (default eth0)\n");
   puts("\t -r define rrh log level\n");
   puts("\t -e define eNB log level\n");
   puts("\t -x enable real time bahaviour\n");

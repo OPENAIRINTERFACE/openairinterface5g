@@ -26,6 +26,16 @@
  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
+/*! \file oaisim.c
+* \brief oaisim top level
+* \author Navid Nikaein 
+* \date 2013-2015
+* \version 1.0
+* \company Eurecom
+* \email: openair_tech@eurecom.fr
+* \note
+* \warning
+*/
 
 #include <string.h>
 #include <math.h>

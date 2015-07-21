@@ -29,8 +29,8 @@
 
 /*! \file oaisim_config.c
 * \brief Configuration of oaisim
-* \author Navid Nikaein & Andre Gomes (One source)
-* \date 2014
+* \author Navid Nikaein 
+* \date 2013-2015
 * \version 1.0
 * \company Eurecom
 * \email: openair_tech@eurecom.fr
