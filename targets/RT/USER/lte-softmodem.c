@@ -1355,7 +1355,7 @@ void init_eNB_proc(void)
     for (i=0; i<NUM_ENB_THREADS; i++) {
       // set the stack size
       pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
-
+      /*
       if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_TX] setting thread stack size failed\n");
 
@@ -1363,7 +1363,7 @@ void init_eNB_proc(void)
 
       if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_RX] setting thread stack size failed\n");
-
+      */
 #ifndef LOWLATENCY
       // set the kernel scheduling policy and priority
       sched_param_eNB_proc_tx[CC_id][i].sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
