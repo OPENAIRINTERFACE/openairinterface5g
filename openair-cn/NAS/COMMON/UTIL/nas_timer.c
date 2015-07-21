@@ -543,7 +543,8 @@ static nas_timer_entry_t *_nas_timer_db_create_entry(
   if (te != NULL) {
     te->itv.tv_sec = sec;
     te->itv.tv_usec = 0;
-    te->tv = te->itv;
+    te->tv.tv_sec  = te->itv.tv_sec;
+    te->tv.tv_usec = te->itv.tv_usec;
     te->cb = cb;
     te->args = args;
   }
