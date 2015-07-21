@@ -215,7 +215,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
     if (chest_t[0] !=NULL) {
       for (i=0; i<(frame_parms->ofdm_symbol_size); i++) {
-        chest_t_abs[0][i] = (float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]);
+        chest_t_abs[0][i] = 10*log10((float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]));
 
         if (chest_t_abs[0][i] > ymax)
           ymax = chest_t_abs[0][i];
@@ -227,8 +227,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     for (arx=1; arx<nb_antennas_rx; arx++) {
       if (chest_t[arx] !=NULL) {
         for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-          chest_t_abs[arx][i] = (float) (chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]);
-
+          chest_t_abs[arx][i] = 10*log10((float) (chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
+ 
           if (chest_t_abs[arx][i] > ymax)
             ymax = chest_t_abs[arx][i];
         }

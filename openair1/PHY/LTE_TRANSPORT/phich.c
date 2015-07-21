@@ -309,7 +309,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 	 pcfich_reg[frame_parms->pcfich_first_reg_idx],
 	 n0,
 	 n1,
-	 ((frame_parms->Nid_cell*n0)/n1)%n0);
+	 ((frame_parms->Nid_cell))%n0);
   //#endif
 
   // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...

@@ -2921,10 +2921,22 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
     for (i=0; i<4; i++) {
 
+      openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+      openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
+      
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->rx_total_gain_eNB_dB :
-                                       PHY_vars_UE_g[0][0]->rx_total_gain_dB) - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
+      if (UE_flag == 0) {
+	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_eNB_dB;
+      }
+      else {
+	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;// - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
+      }
 
       switch(frame_parms[0]->N_RB_DL) {
       case 6:
@@ -2943,13 +2955,6 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
         break;
       }
 
-      openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
-      openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
 
     }
 
@@ -3302,8 +3307,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #ifndef EXMIMO
 #ifndef USRP_DEBUG
   if (mode!=loop_through_memory)
-    openair0.trx_request_func(&openair0);
-  //  printf("returning from usrp start streaming: %llu\n",get_usrp_time(&openair0));
+    openair0.trx_start_func(&openair0);//request_func(&openair0);
 #endif
 #endif
 

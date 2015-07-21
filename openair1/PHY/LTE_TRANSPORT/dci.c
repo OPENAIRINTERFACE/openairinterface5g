@@ -533,7 +533,7 @@ void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,uint16_t *z, uint16_t 
 
   for (i=0; i<Mquad; i++) {
     zptr = &z[i<<2];
-    /*
+    /*    
     printf("deinterleaving ; quad %d  => (%d,%d,%d,%d,%d,%d,%d,%d)\n",i,
      ((int8_t *)zptr)[0],
      ((int8_t *)zptr)[1],
@@ -543,7 +543,7 @@ void pdcch_deinterleaving(LTE_DL_FRAME_PARMS *frame_parms,uint16_t *z, uint16_t 
      ((int8_t *)zptr)[5],
      ((int8_t *)zptr)[6],
      ((int8_t *)zptr)[7]);
-    */    
+    */  
   }
 
 }
@@ -1872,6 +1872,7 @@ int32_t rx_pdcch(LTE_UE_COMMON *lte_ue_common_vars,
   if (n_pdcch_symbols>3)
     n_pdcch_symbols=1;
 
+
 #ifdef DEBUG_DCI_DECODING
   msg("[PDCCH] subframe %d n_pdcch_symbols from PCFICH =%d\n",subframe,n_pdcch_symbols);
 
@@ -2543,7 +2544,9 @@ uint16_t get_nCCE_max(uint8_t Mod_id,uint8_t CC_id)
   return(get_nCCE(3,&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,1)); // 5, 15,21
 }
 
-void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,int do_common,uint8_t subframe,
+void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
+			     int do_common,
+			     uint8_t subframe,
                              DCI_ALLOC_t *dci_alloc,
                              int16_t eNB_id,
                              LTE_DL_FRAME_PARMS *frame_parms,

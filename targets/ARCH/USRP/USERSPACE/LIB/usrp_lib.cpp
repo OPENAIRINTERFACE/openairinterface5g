@@ -227,20 +227,58 @@ int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *open
   
 }
 
-int openair0_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
+int openair0_set_gains(openair0_device* device, 
+		       openair0_config_t *openair0_cfg) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
   s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[0]);
-  s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]);
+  ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(0);
+  // limit to maximum gain
+  if (openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] > gain_range.stop()) {
+    
+    printf("RX Gain 0 too high, reduce by %f dB\n",
+	   openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0] - gain_range.stop());	   
+    exit(-1);
+  }
+  s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+  printf("Setting USRP RX gain to %f\n", openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+
   return(0);
 }
 
 int openair0_stop(int card) {
-
   return(0);
 
 }
+
+rx_gain_calib_table_t calib_table[] = {
+  {3500000000.0,46.0},
+  {2660000000.0,53.0},
+  {2300000000.0,54.0},
+  {1880000000.0,55.0},
+  {816000000.0,62.0},
+  {-1,0}};
+
+void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
+
+  int i=0;
+  // loop through calibration table to find best adjustment factor for RX frequency
+  double min_diff = 6e9,diff;
+ 
+  while (calib_table[i].freq>0) {
+    diff = fabs(openair0_cfg->rx_freq[chain_index] - calib_table[i].freq);
+    printf("cal %d: freq %f, offset %f, diff %f\n",
+	   i,calib_table[i].freq,calib_table[i].offset,diff);
+    if (min_diff > diff) {
+      min_diff = diff;
+      openair0_cfg->rx_gain_offset[chain_index] = calib_table[i].offset;
+    }
+    i++;
+  }
+  
+}
+
 int openair0_print_stats(openair0_device* device) {
 
   return(0);
@@ -252,6 +290,7 @@ int openair0_reset_stats(openair0_device* device) {
 
 }
 //int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
+
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg)
 {
   uhd::set_thread_priority_safe(1.0);
@@ -320,7 +359,19 @@ int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cf
       s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
       printf("Setting rx freq/gain on channel %lu/%lu\n",i,s->usrp->get_rx_num_channels());
       s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
-      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i],i);
+      set_rx_gain_offset(&openair0_cfg[0],i);
+
+      ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
+      // limit to maximum gain
+      if (openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] > gain_range.stop()) {
+	
+        printf("RX Gain %lu too high, lower by %f dB\n",i,openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] - gain_range.stop());
+	exit(-1);
+      }
+      s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],i);
+      printf("RX Gain %lu %f (%f) => %f (max %f)\n",i,
+	     openair0_cfg[0].rx_gain[i],openair0_cfg[0].rx_gain_offset[i],
+	     openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i],gain_range.stop());
     }
   }
   for(i=0;i<s->usrp->get_tx_num_channels();i++) {

@@ -51,12 +51,18 @@ typedef struct openair0_device_t openair0_device;
 #define MAX_CARDS 1
 #endif
 
-#define USRP_GAIN_OFFSET (56.0)  // 86 calibrated for USRP B210 @ 2.6 GHz to get equivalent RS EPRE in OAI to SMBV100 output
+//#define USRP_GAIN_OFFSET (56.0)  // 86 calibrated for USRP B210 @ 2.6 GHz to get equivalent RS EPRE in OAI to SMBV100 output
 
 typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
+typedef struct {
+  //! Frequency for which RX chain was calibrated
+  double freq;
+  //! Offset to be applied to RX gain
+  double offset;
+} rx_gain_calib_table_t;
 
 typedef struct {
   //! Module ID for this configuration
@@ -85,11 +91,14 @@ typedef struct {
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
-  //! mode for rxgain (ExpressMIMO2)
+  //! mode for rxgain (ExpressMIMO2) 
   rx_gain_t rxg_mode[4];
   //! \brief Gain for RX in dB.
   //! index: [0..rx_num_channels]
   double rx_gain[4];
+  //! \brief Gain offset (for calibration) in dB
+  //! index: [0..rx_num_channels]
+  double rx_gain_offset[4];
   //! gain for TX in dB
   double tx_gain[4];
   //! RX bandwidth in Hz

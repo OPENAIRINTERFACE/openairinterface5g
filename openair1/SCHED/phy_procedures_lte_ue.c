@@ -2139,16 +2139,17 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 #endif
       
       //      dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-      if (generate_ue_dlsch_params_from_dci(subframe_rx,
-					    (void *)&dci_alloc_rx[i].dci_pdu,
-					    phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
-					    dci_alloc_rx[i].format,
-					    phy_vars_ue->dlsch_ue[eNB_id],
-					    &phy_vars_ue->lte_frame_parms,
-					    phy_vars_ue->pdsch_config_dedicated,
-					    SI_RNTI,
-					    0,
-					    P_RNTI)==0) {
+      if ((phy_vars_ue->UE_mode[eNB_id] > PRACH) &&
+	  (generate_ue_dlsch_params_from_dci(subframe_rx,
+					     (void *)&dci_alloc_rx[i].dci_pdu,
+					     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,
+					     dci_alloc_rx[i].format,
+					     phy_vars_ue->dlsch_ue[eNB_id],
+					     &phy_vars_ue->lte_frame_parms,
+					     phy_vars_ue->pdsch_config_dedicated,
+					     SI_RNTI,
+					     0,
+					     P_RNTI)==0)) {
 
 #ifdef DIAG_PHY
 	
@@ -3098,10 +3099,11 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
       //      rt_printk("[PDCCH] Frame %d, slot %d, start %llu\n",frame_rx,slot_rx,rt_get_time_ns());
       if (lte_ue_pdcch_procedures(eNB_id,phy_vars_ue,abstraction_flag) == -1) {
 #ifdef DEBUG_PHY_PROC
-        LOG_E(PHY,"[UE  %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,frame_rx,slot_rx);
+	  LOG_E(PHY,"[UE  %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,frame_rx,slot_rx);
 #endif
-        return(-1);
+	  return(-1);
       }
+    
 
       //      rt_printk("[PDCCH] Frame %d, slot %d, stop  %llu\n",frame_rx,slot_rx,rt_get_time_ns());
 #ifdef DEBUG_PHY_PROC

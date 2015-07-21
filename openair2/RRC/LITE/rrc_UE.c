@@ -3026,19 +3026,19 @@ uint64_t arfcn_to_freq(long arfcn) {
   else if (arfcn <6000) // Band 18
     return((uint64_t)860000000 + ((arfcn-5850)*100000));
   else if (arfcn <6150) // Band 19
-    return((uint64_t)875000000 + ((arfcn-5850)*100000));
+    return((uint64_t)875000000 + ((arfcn-6000)*100000));
   else if (arfcn <6450) // Band 20
-    return((uint64_t)791000000 + ((arfcn-5850)*100000));
+    return((uint64_t)791000000 + ((arfcn-6150)*100000));
   else if (arfcn <6600) // Band 21
-    return((uint64_t)1495900000 + ((arfcn-5850)*100000));
+    return((uint64_t)1495900000 + ((arfcn-6450)*100000));
   else if (arfcn <7500) // Band 22
-    return((uint64_t)351000000 + ((arfcn-5850)*100000));
+    return((uint64_t)351000000 + ((arfcn-6600)*100000));
   else if (arfcn <7700) // Band 23
-    return((uint64_t)2180000000 + ((arfcn-5850)*100000));
+    return((uint64_t)2180000000 + ((arfcn-7500)*100000));
   else if (arfcn <8040) // Band 24
-    return((uint64_t)1525000000 + ((arfcn-5850)*100000));
+    return((uint64_t)1525000000 + ((arfcn-7700)*100000));
   else if (arfcn <8690) // Band 25
-    return((uint64_t)1930000000 + ((arfcn-5850)*100000));
+    return((uint64_t)1930000000 + ((arfcn-8040)*100000));
   else if (arfcn <36200) // Band 33
     return((uint64_t)1900000000 + ((arfcn-36000)*100000));
   else if (arfcn <36350) // Band 34
@@ -3068,7 +3068,7 @@ uint64_t arfcn_to_freq(long arfcn) {
 static void dump_sib5( SystemInformationBlockType5_t *sib5 )
 {
   InterFreqCarrierFreqList_t interFreqCarrierFreqList = sib5->interFreqCarrierFreqList;
-  int i;
+  int i,j;
   InterFreqCarrierFreqInfo_t *ifcfInfo;
 
   LOG_I( RRC, "Dumping SIB5 (see TS36.331 V8.21.0)\n" );
@@ -3118,27 +3118,28 @@ static void dump_sib5( SystemInformationBlockType5_t *sib5 )
 	    *ifcfInfo->cellReselectionPriority);
     }
     LOG_I(RRC,"   NeighCellConfig  : ");
-    for (i=0;i<ifcfInfo->neighCellConfig.size;i++) {
-      LOG_T(RRC,"%2x ",ifcfInfo->neighCellConfig.buf[i]);
+    for (j=0;j<ifcfInfo->neighCellConfig.size;j++) {
+      printf("%2x ",ifcfInfo->neighCellConfig.buf[j]);
     }
+    printf("\n");
     if (ifcfInfo->q_OffsetFreq)
-      LOG_I(RRC,"   Q_OffsetFreq : %d",Qoffsettab[*ifcfInfo->q_OffsetFreq]);
+      LOG_I(RRC,"   Q_OffsetFreq : %d\n",Qoffsettab[*ifcfInfo->q_OffsetFreq]);
     if (ifcfInfo->interFreqNeighCellList) {
       
-      for (i=0;i<ifcfInfo->interFreqNeighCellList->list.count;i++) {
+      for (j=0;j<ifcfInfo->interFreqNeighCellList->list.count;j++) {
 	LOG_I(RRC,"   Cell %d\n");
-	LOG_I(RRC,"      PhysCellId : %d",ifcfInfo->interFreqNeighCellList->list.array[i]->physCellId);
-	LOG_I(RRC,"      Q_OffsetRange : %d",ifcfInfo->interFreqNeighCellList->list.array[i]->q_OffsetCell);
+	LOG_I(RRC,"      PhysCellId : %d\n",ifcfInfo->interFreqNeighCellList->list.array[j]->physCellId);
+	LOG_I(RRC,"      Q_OffsetRange : %d\n",ifcfInfo->interFreqNeighCellList->list.array[j]->q_OffsetCell);
 	
       }
     }
     if (ifcfInfo->interFreqBlackCellList) {
       
-      for (i=0;i<ifcfInfo->interFreqBlackCellList->list.count;i++) {
+      for (j=0;j<ifcfInfo->interFreqBlackCellList->list.count;j++) {
 	LOG_I(RRC,"   Cell %d\n");
-	LOG_I(RRC,"      PhysCellId start: %d\n",ifcfInfo->interFreqBlackCellList->list.array[i]->start);
+	LOG_I(RRC,"      PhysCellId start: %d\n",ifcfInfo->interFreqBlackCellList->list.array[j]->start);
 	if (ifcfInfo->interFreqBlackCellList->list.array[i]->range) {
-	  LOG_I(RRC,"      PhysCellId Range : %d\n",ifcfInfo->interFreqBlackCellList->list.array[i]->range);
+	  LOG_I(RRC,"      PhysCellId Range : %d\n",ifcfInfo->interFreqBlackCellList->list.array[j]->range);
 	}
       }
     }
