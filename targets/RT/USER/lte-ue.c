@@ -1192,9 +1192,11 @@ void *UE_thread(void *arg)
             }
           }
         } else {
-          LOG_E( PHY, "[SCHED][UE] UE RX thread busy!!\n" );
-          exit_fun("nothing to add");
-          return &UE_thread_retval;
+          LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rx);
+	  if (instance_cnt_rx > 1) {
+	    exit_fun("instance_cnt_rx > 1");
+	    return &UE_thread_retval;
+	  }
         }
 
        
@@ -1223,12 +1225,14 @@ void *UE_thread(void *arg)
               exit_fun("nothing to add");
               return &UE_thread_retval;
             }
-	  LOG_D(HW,"signalled tx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
+	    LOG_D(HW,"signalled tx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
 
           } else {
-            LOG_E( PHY, "[SCHED][UE] UE TX thread busy!!\n" );
-            exit_fun("nothing to add");
-            return &UE_thread_retval;
+            LOG_E( PHY, "[SCHED][UE] UE TX thread busy (IC %d)!!\n" );
+	    if (instance_cnt_tx>1) {
+	      exit_fun("instance_cnt_tx > 1");
+	      return &UE_thread_retval;
+	    }
           }
         }
 
