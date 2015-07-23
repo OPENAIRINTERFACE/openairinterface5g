@@ -51,7 +51,7 @@
 
 /*! \brief RRH supports two types of modules: eNB and UE
 	 each module is associated a device of type ETH_IF 
-	 and optionally with another device (USRP/BLADERF/EXMIMO) */
+	 and optionally with an RF device (USRP/BLADERF/EXMIMO) */
 typedef struct {
   //! module id
   uint8_t id;
@@ -80,6 +80,6 @@ void create_timer_thread(void);
  **                               FUNCTION PROTOTYPES                        **
  ******************************************************************************/
 void create_UE_trx_threads( rrh_module_t *dev_ue, uint8_t RT_flag, uint8_t NRT_flag);
-void create_eNB_trx_threads( rrh_module_t *dev_enb, uint8_t RT_flag, uint8_t NRT_flag);
+void create_eNB_trx_threads( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag);
 
 #endif

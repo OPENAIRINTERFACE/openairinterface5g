@@ -443,11 +443,16 @@ static void *UE_thread_synch(void *arg)
             openair0_cfg[0].rx_gain[0] -= 0;
 	    break;
 	  }
+#ifndef EXMIMO
+	  openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+	  openair0.trx_set_gains_func(&openair0,&openair0_cfg[0]);
+	  openair0.trx_stop_func(0);	  
+#else
 	  openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
 	  openair0_set_gains(&openair0,&openair0_cfg[0]);
 	  openair0_stop(0);
+#endif
 	  sleep(1);
-
 	  init_frame_parms(&UE->lte_frame_parms,1);
 	}
 	else {
@@ -516,10 +521,15 @@ static void *UE_thread_synch(void *arg)
             openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i]+freq_offset;
 #ifdef OAI_USRP
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-
-	    openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
-
 	    
+	    
+#ifndef EXMIMO
+	    openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+	    
+#else
+	    openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
+	    
+#endif
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;

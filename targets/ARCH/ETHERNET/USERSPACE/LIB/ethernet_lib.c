@@ -52,12 +52,8 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 
-#define DEFAULT_IF  "eth0"
-#define BUF_SIZ      8960 /*Jumbo frame size*/
-#define MAX_INST        4
 
-//int sockfd[MAX_INST];
-int num_devices = 0;
+int num_devices_eth = 0;
 int dest_addr_len[MAX_INST];
 char sendbuf[MAX_INST][BUF_SIZ]; /*TODO*/
 
@@ -69,7 +65,7 @@ int ethernet_socket_init(openair0_device *device) {
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-//  struct sockaddr_in *dest = &dest_addr[Mod_id];
+  // struct sockaddr_in *dest = &dest_addr[Mod_id];
   char str[INET_ADDRSTRLEN];
   const char *dest_ip;
   int dest_port;
@@ -156,7 +152,7 @@ void ethernet_socket_opt (openair0_device *device){
 }
 
 
-int trx_eth_request(openair0_device *device) {
+int trx_eth_set_dev_conf(openair0_device *device) {
 
   int 	       Mod_id = device->Mod_id;
   eth_state_t *eth = (eth_state_t*)device->priv;
@@ -191,7 +187,7 @@ int trx_eth_request(openair0_device *device) {
 
 
 
-int trx_eth_reply(openair0_device *device) {
+int trx_eth_get_dev_conf(openair0_device *device) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
   int 		Mod_id = device->Mod_id;
@@ -218,9 +214,44 @@ int trx_eth_reply(openair0_device *device) {
    device->openair0_cfg.remote_port =ntohs(eth->dest_addr[Mod_id].sin_port);
    device->openair0_cfg.remote_ip=str;
    //ethernet_socket_opt (device);
-   printf("[RRH] write mod_%d %d to %s:%d\n",Mod_id,eth->sockfd[Mod_id],str,ntohs(eth->dest_addr[Mod_id].sin_port));
+   // printf("[RRH] write mod_%d %d to %s:%d\n",Mod_id,eth->sockfd[Mod_id],str,ntohs(eth->dest_addr[Mod_id].sin_port));
 
-   return 1;
+   return 0;
+}
+
+int trx_eth_request(openair0_device *device, void *msg, ssize_t msg_len) {
+
+  int 	       Mod_id = device->Mod_id;
+  eth_state_t *eth = (eth_state_t*)device->priv;
+ 
+ if (sendto(eth->sockfd[Mod_id],msg,msg_len,0,(struct sockaddr *)&eth->dest_addr[Mod_id],dest_addr_len[Mod_id])==-1){
+    perror("ETHERNET: ");
+    exit(0);
+  }
+     
+  return 0;
+}
+
+
+
+int trx_eth_reply(openair0_device *device, void *msg, ssize_t msg_len) {
+
+  eth_state_t   *eth = (eth_state_t*)device->priv;
+  int 		Mod_id = device->Mod_id;
+
+  /* receive from client (lte-softmodem)  */
+  if (recvfrom(eth->sockfd[Mod_id],
+	       msg,
+	       msg_len,
+	       0,
+	       (struct sockaddr *)&eth->dest_addr[Mod_id],
+	       (socklen_t *)&dest_addr_len[Mod_id])==-1){
+    perror("ETHERNET: ");
+    exit(0);
+  }
+		
+ 
+   return 0;
 }
 
 
@@ -240,17 +271,14 @@ int ethernet_write_data(openair0_device *device, openair0_timestamp timestamp, v
   /* we don't want to ovewrite with the header info the previous tx buffer data so we store it*/
   int32_t temp0 = *(int32_t *)buff2;
   openair0_timestamp  temp1 = *(openair0_timestamp *)(buff2 + sizeof(int32_t));
-  //printf("temp0=%d temp=%d\n",temp0,temp1);
-  //char str[INET_ADDRSTRLEN];
   
   n_written = 0;
   
   *(int16_t *)(buff2 + sizeof(int16_t))=1+(antenna_id<<1);
   *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
 	
-  //inet_ntop(AF_INET, &(eth->dest_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN);
-  //printf("[RRH]write mod_%d %d to %s:%d, len %d, buff %p antenna %d\n",
-  //Mod_id,eth->sockfd[Mod_id],str,ntohs(eth->dest_addr[Mod_id].sin_port),(nsamps<<2)+header_size, buff2, antenna_id);
+  /* printf("[RRH]write mod_%d %d , len %d, buff %p antenna %d\n",
+     Mod_id,eth->sockfd[Mod_id],(nsamps<<2)+header_size, buff2, antenna_id);*/
 	
 while(n_written < nsamps) {
     /* Send packet */
@@ -273,7 +301,6 @@ while(n_written < nsamps) {
   /* tx buffer values restored */  
   *(int32_t *)buff2 = temp0;
   *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = temp1;
-  //printf("-----------------temp0=%d temp=%d\n",*(int32_t *)buff2,*(openair0_timestamp *)(buff2 + sizeof(int32_t)));
   return n_written;
 
 }
@@ -284,7 +311,6 @@ int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,voi
   int bytes_received;
   int block_cnt;
   int ret;
-  char str[INET_ADDRSTRLEN];
   uint16_t  header_size=sizeof(int32_t) + sizeof(openair0_timestamp);
 
   
@@ -299,15 +325,13 @@ int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,voi
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-  inet_ntop(AF_INET, &(eth->dest_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN);
-  // send command RX for nsamps samples
-  // printf("requesting %d samples from (%s:%d)\n",nsamps,str,ntohs(eth->dest_addr[Mod_id].sin_port));
-
   bytes_received=0;
   block_cnt=0;
 
+ /* printf("[RRH] read mod_%d %d,len %d, buff %p antenna %d\n",
+     Mod_id,eth->sockfd[Mod_id],(nsamps<<2)+header_size, buff2, antenna_id);*/
+	
   while(bytes_received < (int)((nsamps<<2))) {
-    //printf("requesting %d bytes\n",(nsamps<<2));
     ret=recvfrom(eth->sockfd[Mod_id],
                  buff2+bytes_received,
                  (nsamps<<2)+header_size-bytes_received,
@@ -315,7 +339,6 @@ int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,voi
                  (struct sockaddr *)&eth->dest_addr[Mod_id],
                  (socklen_t *)&dest_addr_len[Mod_id]);
 
-    //printf("bytes_received %d (ret %d)\n",bytes_received+ret,ret);
     if (ret==-1) {
       if (errno == EAGAIN) {
         perror("ETHERNET READ: ");
@@ -349,8 +372,18 @@ int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,voi
 }
 
 int trx_eth_start(openair0_device *device){
-
-  return ethernet_socket_init(device);
+  
+  if (ethernet_socket_init(device)!=0) {
+    return -1;
+  }
+  
+  if (device->func_type == BBU_FUNC ) {
+    return trx_eth_set_dev_conf(device);
+  }
+  else{
+    return trx_eth_get_dev_conf(device);
+  }
+  return(0);
 }
 
 int trx_eth_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int antenna_id, int flags) {
@@ -364,26 +397,45 @@ int trx_eth_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
   
 }
 
-int openair0_stop(int card) {
+int trx_eth_stop(int card) {
+  return(0);
+}
+
+int trx_eth_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
+  return(0);
+}
+
+int trx_eth_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
+  return(0);
+}
+
+
+int trx_eth_get_stats(openair0_device* device) {
 
   return(0);
 
 }
 
-int openair0_print_stats(openair0_device* device) {
+int trx_eth_reset_stats(openair0_device* device) {
 
   return(0);
 
 }
-int openair0_reset_stats(openair0_device* device) {
 
-  return(0);
 
-}
+
 void trx_eth_end(openair0_device *device) {
-  // close all the sockets
 
-  
+  eth_state_t *eth = (eth_state_t*)device->priv;
+  int Mod_id = device->Mod_id;
+  /*destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
+  if ( close(eth->sockfd[Mod_id]) <0 ) {
+    perror("ETHERNET: Failed to close socket");
+    exit(0);
+   }else {
+    printf("[RRH] socket for mod_id %d has been successfully closed.",Mod_id);
+   }
+ 
 }
 
 
@@ -392,24 +444,24 @@ int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_c
   eth_state_t *eth = (eth_state_t*)malloc(sizeof(eth_state_t));
   int card = 0;
   memset(eth, 0, sizeof(eth_state_t));
-  eth->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
+  eth->buffer_size =  (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
   eth->sample_rate = (unsigned int)openair0_cfg[card].sample_rate;
   device->priv = eth; 	
 
   printf("ETHERNET: Initializing openair0_device for %s ...\n", ((device->func_type == BBU_FUNC) ? "BBU": "RRH"));
-  device->Mod_id           = num_devices++;
+  device->Mod_id           = num_devices_eth++;
   device->trx_start_func   = trx_eth_start;
   device->trx_request_func = trx_eth_request;
   device->trx_reply_func   = trx_eth_reply;
-  device->trx_end_func     = trx_eth_end;
-  device->trx_read_func    = trx_eth_read;
   device->trx_write_func   = trx_eth_write;
+  device->trx_read_func    = trx_eth_read;  
+  device->trx_get_stats_func   = trx_eth_get_stats;
+  device->trx_reset_stats_func = trx_eth_reset_stats;
+  device->trx_end_func = trx_eth_end;
+  device->trx_stop_func = trx_eth_stop;
+  device->trx_set_freq_func = trx_eth_set_freq;
+  device->trx_set_gains_func = trx_eth_set_gains;
   
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
-
-  /*  if (ethernet_socket_init(device)!=0){
-    return -1;
-    }*/ 
-  
   return 0;
 }

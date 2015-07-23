@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
 [*] Thu Jul  9 09:53:25 2015
 [*]
-[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile] "/tmp/openair_dump_rrh.vcd"
 [dumpfile_mtime] "Thu Jul  9 09:52:29 2015"
 [dumpfile_size] 170586112
 [savefile] "/home/sud/openair4G/targets/RT/USER/eNB2.gtkw"

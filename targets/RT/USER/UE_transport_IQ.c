@@ -273,7 +273,7 @@ void *rrh_UE_thread(void *arg) {
   
   while (rrh_exit==0) {
     
-    cmd=dev->eth_dev.trx_reply_func(&dev->eth_dev);
+    cmd=dev->eth_dev.trx_start_func(&dev->eth_dev);
     
     /* allocate memory for TX/RX buffers */
     rx_buffer_UE = (int32_t**)malloc16(dev->eth_dev.openair0_cfg.rx_num_channels*sizeof(int32_t*));

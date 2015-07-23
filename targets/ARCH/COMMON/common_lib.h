@@ -40,9 +40,12 @@
 #ifndef COMMON_LIB_H
 #define COMMON_LIB_H
 #include <stdint.h>
+#include <sys/types.h>
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
+
+
 typedef struct openair0_device_t openair0_device;
 /* structrue holds the parameters to configure USRP devices
  */
@@ -78,7 +81,7 @@ typedef struct {
   //! number of samples per RX/TX packet (USRP + Ethernet)
   int samples_per_packet;
   // delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
-  int   	tx_delay;
+  int tx_delay;
   //! adjust the position of the samples after delay when sending   
   unsigned int	tx_forward_nsamps;
   //! number of RX channels (=RX antennas)
@@ -144,10 +147,13 @@ typedef enum {
 
 } dev_type_t;
 
+
 /*!\brief  type */
 typedef enum {
   MIN_FUNC_TYPE = 0,
+ /*!\brief device functions within a  BBU */
   BBU_FUNC,
+ /*!\brief device functions within a RRH */
   RRH_FUNC,
   MAX_FUNC_TYPE
 
@@ -156,12 +162,12 @@ typedef enum {
 struct openair0_device_t {
   /* Module ID of this device */
   int Mod_id;
-
-  /* Type of this device */
-  func_type_t func_type;
   
   /* Type of this device */
   dev_type_t type;
+
+   /* Type of the device's host (BBU/RRH) */
+  func_type_t func_type;
 
   /* RF frontend parameters set by application */
   openair0_config_t openair0_cfg;
@@ -174,14 +180,11 @@ struct openair0_device_t {
   /* Called to start the transceiver. Return 0 if OK, < 0 if error */
   int (*trx_start_func)(openair0_device *device);
 
-  /* Called to initiate transceiver threads */
-  void (*trx_thread_func)(openair0_device *device, unsigned int rt_period, uint8_t RT_flag,uint8_t NRT_flag);
-    
-  /* Called to request connection from the transceiver/RRH. Return 0 if OK, < 0 if error */
-  int (*trx_request_func)(openair0_device *device);
+  /* Called to send a request message between BBU-RRH */
+  int (*trx_request_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
-  /* Called to reply back to connection state to eNB/BBU. Return 0 if OK, < 0 if error */
-  int (*trx_reply_func)(openair0_device *openair0);
+  /* Called to send a reply  message between BBU-RRH */
+  int (*trx_reply_func)(openair0_device *openair0, void *msg, ssize_t msg_len);
 
   /* Write 'nsamps' samples on each channel from buffers. buff[0] is the array for
    * the first channel. timestamp if the time (in samples) at which the first sample
@@ -216,6 +219,23 @@ struct openair0_device_t {
 
   /* Terminate operation of the transceiver -- free all associated resources */
   void (*trx_end_func)(openair0_device *device);
+
+  /* Terminate operation  */
+  int (*trx_stop_func)(int card);
+
+  /* Functions API related to UE*/
+
+  /*! \brief Set RX feaquencies 
+   * \param 
+   * \returns 0 in success 
+   */
+  int (*trx_set_freq_func)(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
+  /*! \brief Set gains
+   * \param 
+   * \returns 0 in success 
+   */
+  int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
+
 };
 
 
@@ -225,31 +245,19 @@ extern "C"
 #endif
 
 /* return 0 if OK */
-
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
-openair0_timestamp get_usrp_time(openair0_device *device);
-
-//EXMIMO
-//int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg);
-//USPRP
-//int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg);
-//BLADERF
-//int openair0_dev_init_bladerf(openair0_device* device, openair0_config_t *openair0_cfg);
+  //int openair0_stop(int card);
 
 //ETHERNET
 int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
+  //int openair0_stop_eth(int card);
+  //int openair0_set_gains_eth(openair0_device* device, openair0_config_t *openair0_cfg);
+  //int openair0_set_frequencies_eth(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
 
-int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
-
+//USPRP
+openair0_timestamp get_usrp_time(openair0_device *device);
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
 
-int openair0_set_gains(openair0_device* device, openair0_config_t *openair0_cfg);
-
-int openair0_print_stats(openair0_device* device);
-
-int openair0_reset_stats(openair0_device* device);
-
-int openair0_stop(int card);
 
 #ifdef __cplusplus
 }

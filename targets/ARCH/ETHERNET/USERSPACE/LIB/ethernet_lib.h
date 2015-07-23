@@ -47,6 +47,9 @@
 #include <net/if.h>
 #include <netinet/ether.h>
 
+#define MAX_INST        4
+#define DEFAULT_IF  "eth0"
+#define BUF_SIZ      8960 /*Jumbo frame size*/
 
 typedef struct {
 
@@ -54,9 +57,8 @@ typedef struct {
   //struct eth_if *dev;
   // An empty ("") or NULL device identifier will result in the first encountered device being opened (using the first discovered backend)
 
-  int sockfd[4];
-  struct sockaddr_in dest_addr[4];
-
+  int sockfd[MAX_INST];
+  struct sockaddr_in dest_addr[MAX_INST];
 
   unsigned int buffer_size;
   unsigned int timeout_ns;
@@ -102,12 +104,12 @@ struct eth_meta_data{
 
 
 typedef struct {
-	/* packet's timestamp */
+  /* packet's timestamp */
   openair0_timestamp timestamp;
   /* variable declared for alignment purposes (sample size=32 bit)  */
-  int16_t 	not_used;
+  int16_t not_used;
   /* antenna port used to resynchronize*/
-  int16_t 	antenna_id;
+  int16_t antenna_id;
 } header_t;
 
 

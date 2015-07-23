@@ -132,7 +132,37 @@ int trx_brf_end(openair0_device *device) {
   return 0;
 }
 
-//int  openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
+
+int trx_brf_get_stats(openair0_device* device) {
+
+  return(0);
+
+}
+
+int trx_brf_reset_stats(openair0_device* device) {
+
+  return(0);
+
+}
+
+int trx_brf_stop(openair0_device* device) {
+
+  return(0);
+
+}
+
+int trx_brf_set_freq(openair0_device* device) {
+
+  return(0);
+
+}
+int trx_brf_set_gains(openair0_device* device) {
+
+  return(0);
+
+}
+
+
 int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   int status;
@@ -141,10 +171,12 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
   // init required params for BRF
-   brf->num_buffers = 128;
-   brf->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
-   brf->num_transfers = 16;
-   brf->timeout_ms = 0; 
+  //brf->dev_model = ;
+   
+  brf->num_buffers = 128;
+  brf->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
+  brf->num_transfers = 16;
+  brf->timeout_ms = 0; 
    brf->sample_rate=(unsigned int)openair0_cfg[card].sample_rate;
    
    printf("\n[BRF] sampling_rate %d, num_buffers %d,  buffer_size %d, num transfer %d, timeout_ms %d\n", 
@@ -258,6 +290,11 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   device->trx_end_func   = trx_brf_end;
   device->trx_read_func  = trx_brf_read;
   device->trx_write_func = trx_brf_write;
+  device->trx_get_stats_func   = trx_brf_get_stats;
+  device->trx_reset_stats_func = trx_brf_reset_stats;
+  device->trx_stop_func        = trx_brf_stop;
+  device->trx_set_freq_func    = trx_brf_set_freq;
+  device->trx_set_gains_func   = trx_brf_set_gains;
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
 
   return 0;
@@ -269,26 +306,7 @@ int brf_error(int status) {
   //return 1; // or status error code
 }
 
-int openair0_stop(int card) {
 
-  return(0);
-
-}
-
-int openair0_print_stats(openair0_device* device) {
-
-  return(0);
-
-}
-int openair0_reset_stats(openair0_device* device) {
-
-  return(0);
-
-}
-int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg,int dummy) {
-  return 0;
-
-}
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg) {
  return 0;
 }

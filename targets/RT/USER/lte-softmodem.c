@@ -2966,6 +2966,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   
 #ifdef ETHERNET 
   openair0.type=ETH_IF; // not used for the moment
+  openair0.func_type = BBU_FUNC;
   openair0_dev_init_eth(&openair0, &openair0_cfg[0]);
 #else 
 #ifdef EXMIMO
@@ -2984,8 +2985,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
     printf("Exiting, cannot initialize device\n");
     exit(-1);
   }
-  else if (mode==loop_through_memory) {
-    
+  else if (mode==loop_through_memory) {    
   }
 #endif 
 
@@ -3304,12 +3304,14 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
 
 #ifndef EXMIMO
+
 #ifndef USRP_DEBUG
   if (mode!=loop_through_memory)
     if (openair0.trx_start_func(&openair0) != 0 ) 
       LOG_E(HW,"Could not start the device\n");
 
 #endif
+
 #endif
 
 

@@ -56,7 +56,7 @@ typedef struct
   // --------------------------------
   uhd::usrp::multi_usrp::sptr usrp;
   //uhd::usrp::multi_usrp::sptr rx_usrp;
-
+  
   //create a send streamer and a receive streamer
   uhd::tx_streamer::sptr tx_stream;
   uhd::rx_streamer::sptr rx_stream;
@@ -123,6 +123,7 @@ static void trx_usrp_end(openair0_device *device)
 	s->tx_stream->send("", 0, s->tx_md);
 	s->tx_md.end_of_burst = false;
 }
+
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -199,7 +200,7 @@ static bool is_equal(double a, double b)
   return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
-int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
+int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
@@ -227,7 +228,7 @@ int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *open
   
 }
 
-int openair0_set_gains(openair0_device* device, 
+int trx_usrp_set_gains(openair0_device* device, 
 		       openair0_config_t *openair0_cfg) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -247,10 +248,10 @@ int openair0_set_gains(openair0_device* device,
   return(0);
 }
 
-int openair0_stop(int card) {
+int trx_usrp_stop(int card) {
   return(0);
-
 }
+
 
 rx_gain_calib_table_t calib_table[] = {
   {3500000000.0,46.0},
@@ -279,17 +280,18 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
   
 }
 
-int openair0_print_stats(openair0_device* device) {
+
+int trx_usrp_get_stats(openair0_device* device) {
 
   return(0);
 
 }
-int openair0_reset_stats(openair0_device* device) {
+int trx_usrp_reset_stats(openair0_device* device) {
 
   return(0);
 
 }
-//int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
+
 
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg)
 {
@@ -438,9 +440,14 @@ int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cf
 
   device->priv = s;
   device->trx_start_func = trx_usrp_start;
-  device->trx_end_func   = trx_usrp_end;
-  device->trx_read_func  = trx_usrp_read;
   device->trx_write_func = trx_usrp_write;
+  device->trx_read_func  = trx_usrp_read;
+  device->trx_get_stats_func = trx_usrp_get_stats;
+  device->trx_reset_stats_func = trx_usrp_reset_stats;
+  device->trx_end_func   = trx_usrp_end;
+  device->trx_stop_func  = trx_usrp_stop;
+  device->trx_set_freq_func = trx_usrp_set_freq;
+  device->trx_set_gains_func   = trx_usrp_set_gains;
   
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:

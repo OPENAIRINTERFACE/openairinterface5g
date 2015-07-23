@@ -47,7 +47,8 @@ extern int32_t			nsamps_UE[4],nsamps_eNB[4];
 extern int32_t			overflow_rx_buffer_eNB[4],overflow_rx_buffer_UE[4];
 extern uint8_t			rrh_exit;
 extern int32_t			**rx_buffer_eNB, **rx_buffer_UE;
+extern unsigned int	        rt_period;
+extern pthread_mutex_t          timer_mutex;
 
-extern unsigned int			rt_period;
 
 #endif 
