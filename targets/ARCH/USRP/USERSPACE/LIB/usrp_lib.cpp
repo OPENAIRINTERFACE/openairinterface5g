@@ -118,10 +118,11 @@ static void trx_usrp_end(openair0_device *device)
 
   s->rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
-	//send a mini EOB packet
-	s->tx_md.end_of_burst = true;
-	s->tx_stream->send("", 0, s->tx_md);
-	s->tx_md.end_of_burst = false;
+  //send a mini EOB packet
+  s->tx_md.end_of_burst = true;
+  s->tx_stream->send("", 0, s->tx_md);
+  s->tx_md.end_of_burst = false;
+  
 }
 
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)

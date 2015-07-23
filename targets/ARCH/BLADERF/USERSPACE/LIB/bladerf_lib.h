@@ -46,7 +46,8 @@ typedef struct {
   unsigned int num_buffers;
   unsigned int buffer_size;
   unsigned int num_transfers;
-  unsigned int timeout_ms;
+  unsigned int rx_timeout_ms;
+  unsigned int tx_timeout_ms;
 
   struct bladerf_metadata meta_rx;
   struct bladerf_metadata meta_tx;
@@ -67,8 +68,12 @@ typedef struct {
   int num_rx_errors;
   int num_tx_errors;
 
-  uint64_t tx_actual_count;
-  uint64_t rx_actual_count;
+  uint64_t tx_current_ts;
+  uint64_t rx_current_ts;
+  uint64_t tx_actual_nsamps;
+  uint64_t rx_actual_nsamps;
+  uint64_t tx_nsamps;
+  uint64_t rx_nsamps;
   uint64_t tx_count;
   uint64_t rx_count;
   openair0_timestamp rx_timestamp;

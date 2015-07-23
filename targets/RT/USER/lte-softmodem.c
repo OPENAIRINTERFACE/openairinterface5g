@@ -1026,24 +1026,30 @@ static void* eNB_thread_tx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
+  uint64_t runtime  = (uint64_t) (get_runtime_tx(proc->subframe, runtime_phy_tx, target_dl_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx) *  1000000); 
+  uint64_t deadline = 1   *  1000000; // each tx thread will finish within 1ms
+  uint64_t period   = 1   * 10000000; // each tx thread has a period of 10ms from the starting point
+  if (runtime > 1000000 ){
+    LOG_W(HW,"estimated runtime %d is larger than 1ms, adjusting\n",runtime);
+    runtime = (0.97 * 100) * 10000; 
+  }
 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
   attr.sched_nice = 0;
   attr.sched_priority = 0;
 
-    attr.sched_policy   = SCHED_DEADLINE;
-   //attr.sched_runtime  = 0.9 *  1000000; // each tx thread requires 1ms to finish its job
-  attr.sched_runtime  = (uint64_t) (get_runtime_tx(proc->subframe, runtime_phy_tx, target_dl_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx) *  1000000); // each tx thread requires 1ms to finish its job
-  attr.sched_deadline = 1   *  1000000; // each tx thread will finish within 1ms
-  attr.sched_period   = 1   * 10000000; // each tx thread has a period of 10ms from the starting point
+  attr.sched_policy   = SCHED_DEADLINE;
+  attr.sched_runtime  = runtime;
+  attr.sched_deadline = deadline;
+  attr.sched_period   = period; 
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
     return &eNB_thread_tx_status[proc->subframe];
   }
 
-  LOG_I( HW, "[SCHED] eNB TX deadline thread %d(Tid %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB TX deadline thread %d(TID %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
 #else
   LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %d\n", proc->subframe, sched_getcpu(),gettid() );
 #endif
@@ -1227,17 +1233,24 @@ static void* eNB_thread_rx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
+  uint64_t runtime  = get_runtime_rx(proc->subframe, runtime_phy_rx, target_ul_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx)  *  1000000; 
+  uint64_t deadline = 1   *  1000000;
+  uint64_t period   = 1   * 10000000; // each rx thread has a period of 10ms from the starting point
+  if (runtime  > 2300000 ) {
+    LOG_W(HW,"estimated rx runtime %d is larger than expected, adjusting\n",runtime);
+    runtime   = 2300000;
+    deadline  = runtime + 100000;
+  }
 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
   attr.sched_nice = 0;
   attr.sched_priority = 0;
 
-  /* This creates a 2ms reservation every 10ms period*/
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime  = (uint64_t)(get_runtime_rx(proc->subframe, runtime_phy_rx, target_ul_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx) *  1000000); // each tx thread requires 1ms to finish its job
-  attr.sched_deadline = 1   *  1000000; // each rx thread will finish within 2ms
-  attr.sched_period   = 1   * 10000000; // each rx thread has a period of 10ms from the starting point
+  attr.sched_runtime  = runtime;
+  attr.sched_deadline = deadline;
+  attr.sched_period   = period; 
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB RX sched_setattr failed\n");
@@ -1354,17 +1367,18 @@ void init_eNB_proc(void)
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     for (i=0; i<NUM_ENB_THREADS; i++) {
       // set the stack size
-      pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
-      /*
-      if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], PTHREAD_STACK_MIN ) != 0)
+     
+
+#ifndef LOWLATENCY 
+      /*  
+       pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
+       if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_TX] setting thread stack size failed\n");
-
+      
       pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
-
-      if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], PTHREAD_STACK_MIN ) != 0)
+      if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_RX] setting thread stack size failed\n");
       */
-#ifndef LOWLATENCY
       // set the kernel scheduling policy and priority
       sched_param_eNB_proc_tx[CC_id][i].sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
       pthread_attr_setschedparam  (&attr_eNB_proc_tx[CC_id][i], &sched_param_eNB_proc_tx[CC_id][i]);
@@ -1562,7 +1576,7 @@ static void* eNB_thread( void* arg )
 
   /* This creates a .2 ms  reservation */
   attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime  = (0.2 * 100) * 10000;
+  attr.sched_runtime  = (0.3 * 100) * 10000;
   attr.sched_deadline = (0.9 * 100) * 10000;
   attr.sched_period   = 1 * 1000000;
 
@@ -1761,7 +1775,7 @@ static void* eNB_thread( void* arg )
       stop_meas( &softmodem_stats_hw );
       clock_gettime( CLOCK_MONOTONIC, &trx_time1 );
 
-      if (frame > 10){ 
+      if (frame > 20){ 
 	if (rxs != spp)
 	  exit_fun( "problem receiving samples" );
       }
@@ -1770,22 +1784,22 @@ static void* eNB_thread( void* arg )
       // Transmit TX buffer based on timestamp from RX
 
 
-if (frame > 50) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-      // prepare tx buffer pointers
-      for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx; i++){
-        txp[i] = (void*)&rxdata[i][tx_pos];
-		//printf("tx_pos %d ts %d, ts_offset %d txp[i] %p, ap %d\n", tx_pos,  timestamp, (timestamp+(tx_delay*spp)-tx_forward_nsamps),txp[i], i);
+      if (frame > 50) {
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	// prepare tx buffer pointers
+	for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx; i++){
+	  txp[i] = (void*)&rxdata[i][tx_pos];
+	  //printf("tx_pos %d ts %d, ts_offset %d txp[i] %p, ap %d\n", tx_pos,  timestamp, (timestamp+(tx_delay*spp)-tx_forward_nsamps),txp[i], i);
 	  // if symb_written < spp ==> error 
 	  openair0.trx_write_func(&openair0,
-                                (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps),
-                                txp,
-                                spp,
-                                i,
-                                1);
+				  (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps),
+				  txp,
+				  spp,
+				  i,
+				  1);
         }
-	}
-
+      }
+      
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, timestamp&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps)&0xffffffff );
 
@@ -2857,8 +2871,8 @@ int main( int argc, char **argv )
     openair0_cfg[card].tx_forward_nsamps = 70;
     openair0_cfg[card].tx_delay = 6;
 #elif OAI_BLADERF
-    openair0_cfg[card].tx_forward_nsamps = 70;
-    openair0_cfg[card].tx_delay = 6;
+    openair0_cfg[card].tx_forward_nsamps = 0;
+    openair0_cfg[card].tx_delay = 8;
 #endif 
 #endif
   } else if (frame_parms[0]->N_RB_DL == 6) {
@@ -3426,6 +3440,8 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   openair0_stop(0);
   printf("closing openair0_lib\n");
   openair0_close();
+#else
+  openair0.trx_end_func(&openair0);
 #endif
 
 #ifdef EMOS

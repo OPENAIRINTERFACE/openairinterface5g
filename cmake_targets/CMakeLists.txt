@@ -377,8 +377,10 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
     )
-  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu/")
-  
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  set(option_HW_lib "bladeRF")
+  #set(LOWLATENCY False)
+
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
   set(HW_SOURCE ${HW_SOURCE}
@@ -1219,7 +1221,7 @@ set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/OctetString.c
 )
 
-if(NAS_UE)
+if(NAS_UE) 
   set(libnas_ue_api_OBJS
     ${NAS_SRC}UE/API/USER/at_command.c
     ${NAS_SRC}UE/API/USER/at_error.c
@@ -1307,6 +1309,8 @@ if(NAS_UE)
     ${libnas_ue_esm_OBJS}
     ${libnas_ue_esm_sap_OBJS}
   )
+  set(NAS_UE_LIB LIB_NAS_UE)
+
   include_directories(${NAS_SRC}UE)
   include_directories(${NAS_SRC}UE/API/USER)
   include_directories(${NAS_SRC}UE/API/USIM)
@@ -1554,17 +1558,19 @@ add_executable(lte-softmodem
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   )
+
 if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} LIB_NAS_UE ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
 else (MESSAGE_CHART_GENERATOR)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} LIB_NAS_UE ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
 endif(MESSAGE_CHART_GENERATOR)
+
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
@@ -1756,8 +1762,6 @@ target_link_libraries (rrh_gw ${option_HW_lib} ${LIBBOOST_LIBRARIES} )
 #Message("-- default_HW_lib=ETHERNET") # only in case of RRH
 Message("-- option_HW_lib=${option_HW_lib}")
 Message("-- HW_SOURCE=${HW_SOURCE}")
-
-
 
 # USIM process
 #################
