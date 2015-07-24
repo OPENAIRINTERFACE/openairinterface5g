@@ -1555,7 +1555,7 @@ static void* eNB_thread( void* arg )
   void *txp[2]; // FIXME hard coded array size; indexed by lte_frame_parms.nb_antennas_tx
 
   int hw_subframe = 0; // 0..NUM_ENB_THREADS-1 => 0..9
-  spp = openair0_cfg[0].samples_per_packet;
+  
   unsigned int rx_pos = 0;
   unsigned int tx_pos = 0; //spp*tx_delay;
 #endif
@@ -1630,6 +1630,9 @@ static void* eNB_thread( void* arg )
   pthread_mutex_unlock(&sync_mutex);
 
   int frame = 0;
+
+  spp = openair0_cfg[0].samples_per_packet;
+  tx_pos=spp*openair0_cfg[0].tx_delay;
 
   while (!oai_exit) {
     start_meas( &softmodem_stats_mt );
@@ -1762,7 +1765,7 @@ static void* eNB_thread( void* arg )
       openair0_timestamp timestamp;
       int i=0;
       // prepare rx buffer pointers
-      for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx; i++){
+      for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx; i++)
         rxp[i] = (void*)&rxdata[i][rx_pos];
 	// check if nsymb_read == spp
 	// map antenna port i to the cc_id. Now use the 1:1 mapping
@@ -1770,8 +1773,8 @@ static void* eNB_thread( void* arg )
 				     &timestamp,
 				     rxp,
 				     spp,
-				     i);
-      }
+				     PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx);
+      
       stop_meas( &softmodem_stats_hw );
       clock_gettime( CLOCK_MONOTONIC, &trx_time1 );
 
@@ -1784,20 +1787,20 @@ static void* eNB_thread( void* arg )
       // Transmit TX buffer based on timestamp from RX
 
 
+    
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+      // prepare tx buffer pointers
+      for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx; i++)
+	txp[i] = (void*)&txdata[i][tx_pos];
+      //printf("tx_pos %d ts %d, ts_offset %d txp[i] %p, ap %d\n", tx_pos,  timestamp, (timestamp+(tx_delay*spp)-tx_forward_nsamps),txp[i], i);
+      // if symb_written < spp ==> error 
       if (frame > 50) {
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-	// prepare tx buffer pointers
-	for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx; i++){
-	  txp[i] = (void*)&rxdata[i][tx_pos];
-	  //printf("tx_pos %d ts %d, ts_offset %d txp[i] %p, ap %d\n", tx_pos,  timestamp, (timestamp+(tx_delay*spp)-tx_forward_nsamps),txp[i], i);
-	  // if symb_written < spp ==> error 
-	  openair0.trx_write_func(&openair0,
-				  (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps),
-				  txp,
-				  spp,
-				  i,
-				  1);
-        }
+	openair0.trx_write_func(&openair0,
+				(timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps),
+				txp,
+				spp,
+				PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx,
+				1);
       }
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, timestamp&0xffffffff );
