@@ -422,6 +422,17 @@ int trx_eth_reset_stats(openair0_device* device) {
 
 }
 
+int openair0_set_gains(openair0_device* device, 
+		       openair0_config_t *openair0_cfg) {
+
+  return(0);
+}
+
+int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
+
+  return(0);
+}
+
 
 
 void trx_eth_end(openair0_device *device) {

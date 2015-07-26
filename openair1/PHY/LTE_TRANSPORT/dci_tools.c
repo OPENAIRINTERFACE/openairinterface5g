@@ -49,35 +49,55 @@
 
 //#define DEBUG_DCI
 
-uint32_t  localRIV2alloc_LUT6[32];
-uint32_t  distRIV2alloc_LUT6[32];
+uint32_t localRIV2alloc_LUT6[32];
+uint32_t distRIV2alloc_even_LUT6[32];
+uint32_t distRIV2alloc_odd_LUT6[32];
 uint16_t RIV2nb_rb_LUT6[32];
 uint16_t RIV2first_rb_LUT6[32];
 uint16_t RIV_max6=0;
 
-uint32_t  localRIV2alloc_LUT25[512];
-uint32_t  distRIV2alloc_LUT25[512];
+uint32_t localRIV2alloc_LUT25[512];
+uint32_t distRIV2alloc_even_LUT25[512];
+uint32_t distRIV2alloc_odd_LUT25[512];
 uint16_t RIV2nb_rb_LUT25[512];
 uint16_t RIV2first_rb_LUT25[512];
 uint16_t RIV_max25=0;
 
 
-uint32_t  localRIV2alloc_LUT50_0[1600];
-uint32_t  distRIV2alloc_LUT50_0[1600];
-uint32_t  localRIV2alloc_LUT50_1[1600];
-uint32_t  distRIV2alloc_LUT50_1[1600];
+uint32_t localRIV2alloc_LUT50_0[1600];
+uint32_t localRIV2alloc_LUT50_1[1600];
+uint32_t distRIV2alloc_gap0_even_LUT50_0[1600];
+uint32_t distRIV2alloc_gap0_odd_LUT50_0[1600];
+uint32_t distRIV2alloc_gap0_even_LUT50_1[1600];
+uint32_t distRIV2alloc_gap0_odd_LUT50_1[1600];
+uint32_t distRIV2alloc_gap1_even_LUT50_0[1600];
+uint32_t distRIV2alloc_gap1_odd_LUT50_0[1600];
+uint32_t distRIV2alloc_gap1_even_LUT50_1[1600];
+uint32_t distRIV2alloc_gap1_odd_LUT50_1[1600];
 uint16_t RIV2nb_rb_LUT50[1600];
 uint16_t RIV2first_rb_LUT50[1600];
 uint16_t RIV_max50=0;
 
-uint32_t  localRIV2alloc_LUT100_0[6000];
-uint32_t  distRIV2alloc_LUT100_0[6000];
-uint32_t  localRIV2alloc_LUT100_1[6000];
-uint32_t  distRIV2alloc_LUT100_1[6000];
-uint32_t  localRIV2alloc_LUT100_2[6000];
-uint32_t  distRIV2alloc_LUT100_2[6000];
-uint32_t  localRIV2alloc_LUT100_3[6000];
-uint32_t  distRIV2alloc_LUT100_3[6000];
+uint32_t localRIV2alloc_LUT100_0[6000];
+uint32_t localRIV2alloc_LUT100_1[6000];
+uint32_t localRIV2alloc_LUT100_2[6000];
+uint32_t localRIV2alloc_LUT100_3[6000];
+uint32_t distRIV2alloc_gap0_even_LUT100_0[6000];
+uint32_t distRIV2alloc_gap0_odd_LUT100_0[6000];
+uint32_t distRIV2alloc_gap0_even_LUT100_1[6000];
+uint32_t distRIV2alloc_gap0_odd_LUT100_1[6000];
+uint32_t distRIV2alloc_gap0_even_LUT100_2[6000];
+uint32_t distRIV2alloc_gap0_odd_LUT100_2[6000];
+uint32_t distRIV2alloc_gap0_even_LUT100_3[6000];
+uint32_t distRIV2alloc_gap0_odd_LUT100_3[6000];
+uint32_t distRIV2alloc_gap1_even_LUT100_0[6000];
+uint32_t distRIV2alloc_gap1_odd_LUT100_0[6000];
+uint32_t distRIV2alloc_gap1_even_LUT100_1[6000];
+uint32_t distRIV2alloc_gap1_odd_LUT100_1[6000];
+uint32_t distRIV2alloc_gap1_even_LUT100_2[6000];
+uint32_t distRIV2alloc_gap1_odd_LUT100_2[6000];
+uint32_t distRIV2alloc_gap1_even_LUT100_3[6000];
+uint32_t distRIV2alloc_gap1_odd_LUT100_3[6000];
 uint16_t RIV2nb_rb_LUT100[6000];
 uint16_t RIV2first_rb_LUT100[6000];
 uint16_t RIV_max100=0;
@@ -385,32 +405,192 @@ uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs)
   return(RIV);
 }
 
-int dist6[6]= {0,2,3,5,1,4};
-int dist50[50]= {};
-int dist100[100]= {};
+// Convert a DCI Format 1C RIV to a Format 1A RIV
+// This extracts the start and length in PRBs from the 1C rballoc and 
+// recomputes the RIV as if it were the 1A rballoc
+
+uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL) {
+
+  int NpDLVRB,N_RB_step,LpCRBsm1,RBpstart;
+
+  switch (N_RB_DL) {
+
+  case 6: // N_RB_step = 2, NDLVRB = 6, NpDLVRB = 3
+    NpDLVRB   = 3;
+    N_RB_step = 2;
+    break;
+  case 25: // N_RB_step = 2, NDLVRB = 24, NpDLVRB = 12
+    NpDLVRB   = 12;
+    N_RB_step = 2;
+    break;
+  case 50: // N_RB_step = 4, NDLVRB = 46, NpDLVRB = 11
+    NpDLVRB   = 11;
+    N_RB_step = 4;
+    break;
+  case 100: // N_RB_step = 4, NDLVRB = 96, NpDLVRB = 24
+    NpDLVRB   = 24;
+    N_RB_step = 4;
+    break;
+  default:
+    NpDLVRB   = 24;
+    N_RB_step = 4;
+    break;
+  }
+
+  // This is the 1C part from 7.1.6.3 in 36.213
+  LpCRBsm1 = rballoc/NpDLVRB;
+  //  printf("LpCRBs = %d\n",LpCRBsm1+1);
+
+  if (LpCRBsm1 <= (NpDLVRB/2)) {
+    RBpstart = rballoc % NpDLVRB;
+  }
+  else {
+    LpCRBsm1 = NpDLVRB-LpCRBsm1;
+    RBpstart = NpDLVRB-(rballoc%NpDLVRB);
+  }
+  //  printf("RBpstart %d\n",RBpstart);
+  return(computeRIV(N_RB_DL,N_RB_step*RBpstart,N_RB_step*(LpCRBsm1+1)));
+   
+}
+
+int get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
+
+  int offset;
+
+  switch (N_RB_DL) {
+    
+  case 6:
+  // N_RB_DL = tildeN_RB_DL = 6
+  // Ngap = 4 , P=1, Nrow = 2, Nnull = 2
+  
+    switch (vrb) {
+    case 0:  // even: 0->0, 1->2, odd: 0->3, 1->5
+    case 1:
+      return ((3*odd_slot) + 2*(vrb&3))%6;
+      break;
+    case 2:  // even: 2->3, 3->5, odd: 2->0, 3->2
+    case 3:
+      return ((3*odd_slot) + 2*(vrb&3) + 5)%6;
+      break;
+    case 4:  // even: 4->1, odd: 4->4
+      return ((3*odd_slot) + 1)%6; 
+    case 5:  // even: 5->4, odd: 5->1
+      return ((3*odd_slot) + 4)%6;
+      break;
+    }
+    break;
+    
+  case 15:
+    if (vrb<12) {
+      if ((vrb&3) < 2)     // even: 0->0, 1->4, 4->1, 5->5, 8->2, 9->6 odd: 0->7, 1->11
+	return(((7*odd_slot) + 4*(vrb&3) + (vrb>>2))%14) + 14*(vrb/14);
+      else if (vrb < 12) // even: 2->7, 3->11, 6->8, 7->12, 10->9, 11->13
+	return (((7*odd_slot) + 4*(vrb&3) + (vrb>>2) +13 )%14) + 14*(vrb/14);
+    }
+    if (vrb==12)
+      return (3+(7*odd_slot)) % 14;
+    if (vrb==13)
+      return (10+(7*odd_slot)) % 14;
+    return 14;
+    break;
+    
+  case 25:
+    return (((12*odd_slot) + 6*(vrb&3) + (vrb>>2))%24) + 24*(vrb/24);
+    break;
+    
+  case 50: // P=3
+    if (Ngap==0) {
+      // Nrow=12,Nnull=2,NVRBDL=46,Ngap1= 27
+      if (vrb>=23)
+	offset=4;
+      else
+	offset=0;
+      if (vrb<44) {
+	if ((vrb&3)>=2)
+	  return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2) + 45)%46;
+	else
+	  return offset+((23*odd_slot) + 12*(vrb&3) + (vrb>>2))%46;
+      }
+      if (vrb==44)  // even: 44->11, odd: 45->34
+	return offset+((23*odd_slot) + 22-12+1);
+      if (vrb==45)  // even: 45->10, odd: 45->33
+	return offset+((23*odd_slot) + 22+12);
+      if (vrb==46)
+	return offset+46+((23*odd_slot) + 23-12+1) % 46;
+      if (vrb==47)
+	return offset+46+((23*odd_slot) + 23+12) % 46;
+      if (vrb==48)
+	return offset+46+((23*odd_slot) + 23-12+1) % 46;
+      if (vrb==49)
+	return offset+46+((23*odd_slot) + 23+12) % 46;
+    }
+    else {
+      // Nrow=6,Nnull=6,NVRBDL=18,Ngap1= 27
+      if (vrb>=9)
+	offset=18;
+      else
+	offset=0;
+      
+      if (vrb<12) {
+	if ((vrb&3)>=2)
+	  return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2) + 17)%18;
+	else
+	  return offset+((9*odd_slot) + 6*(vrb&3) + (vrb>>2))%18;
+      }
+      else {
+	return offset+((9*odd_slot) + 12*(vrb&1)+(vrb>>1) )%18 + 18*(vrb/18);
+      }
+    }
+    break;
+  case 75:
+    // Ngap1 = 32, NVRBRL=64, P=4, Nrow= 16, Nnull=0
+    if (Ngap ==0) {
+      return ((32*odd_slot) + 16*(vrb&3) + (vrb>>2))%64 + (vrb/64); 
+    } else {
+      // Ngap2 = 16, NVRBDL=32, Nrow=8, Nnull=0
+      return ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32); 
+    }
+    break;
+  case 100:
+    // Ngap1 = 48, NVRBDL=96, Nrow=24, Nnull=0
+    if (Ngap ==0) {
+      return ((48*odd_slot) + 24*(vrb&3) + (vrb>>2))%96 + (vrb/96); 
+    } else {
+      // Ngap2 = 16, NVRBDL=32, Nrow=8, Nnull=0
+      return ((16*odd_slot) + 8*(vrb&3) + (vrb>>2))%32 + (vrb/32); 
+    }
+    break;
+  default:
+    LOG_E(PHY,"Unknown N_RB_DL %d\n",N_RB_DL);
+    return 0;
+  }
+  return 0;
+  
+}
+
 
 void generate_RIV_tables()
 {
 
   // 6RBs localized RIV
   uint8_t Lcrbs,RBstart;
-  uint8_t distpos;
   uint16_t RIV;
-  uint32_t alloc0,alloc_dist0;
-  uint32_t alloc1,alloc_dist1;
-  uint32_t alloc2,alloc_dist2;
-  uint32_t alloc3,alloc_dist3;
+  uint32_t alloc0,allocdist0_0_even,allocdist0_0_odd,allocdist0_1_even,allocdist0_1_odd;
+  uint32_t alloc1,allocdist1_0_even,allocdist1_0_odd,allocdist1_1_even,allocdist1_1_odd;
+  uint32_t alloc2,allocdist2_0_even,allocdist2_0_odd,allocdist2_1_even,allocdist2_1_odd;
+  uint32_t alloc3,allocdist3_0_even,allocdist3_0_odd,allocdist3_1_even,allocdist3_1_odd;
+  uint32_t nVRB,nVRB_even_dist,nVRB_odd_dist;
 
   for (RBstart=0; RBstart<6; RBstart++) {
     alloc0 = 0;
-    alloc_dist0 = 0;
-
+    allocdist0_0_even = 0;
+    allocdist0_0_odd  = 0;
     for (Lcrbs=1; Lcrbs<=(6-RBstart); Lcrbs++) {
       //printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
-      alloc0 |= (1<<(RBstart+Lcrbs-1));
-      // This is the RB<->VRB relationship for N_RB_DL=25
-      alloc_dist0 |= (1<<dist6[RBstart+Lcrbs-1]);
-
+      nVRB             = Lcrbs-1+RBstart;
+      alloc0          |= (1<<nVRB);
+      allocdist0_0_even |= (1<<get_prb(6,0,nVRB,0));
+      allocdist0_0_odd  |= (1<<get_prb(6,1,nVRB,0));
       RIV=computeRIV(6,RBstart,Lcrbs);
 
       if (RIV>RIV_max6)
@@ -418,7 +598,8 @@ void generate_RIV_tables()
 
       //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
       localRIV2alloc_LUT6[RIV] = alloc0;
-      distRIV2alloc_LUT6[RIV]  = alloc_dist0;
+      distRIV2alloc_even_LUT6[RIV]  = allocdist0_0_even;
+      distRIV2alloc_odd_LUT6[RIV]  = allocdist0_0_odd;
       RIV2nb_rb_LUT6[RIV]      = Lcrbs;
       RIV2first_rb_LUT6[RIV]   = RBstart;
     }
@@ -427,51 +608,80 @@ void generate_RIV_tables()
 
   for (RBstart=0; RBstart<25; RBstart++) {
     alloc0 = 0;
-    alloc_dist0 = 0;
-
+    allocdist0_0_even = 0;
+    allocdist0_0_odd  = 0;
     for (Lcrbs=1; Lcrbs<=(25-RBstart); Lcrbs++) {
-      //      printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
-      alloc0 |= (1<<(RBstart+Lcrbs-1));
-      // This is the RB<->VRB relationship for N_RB_DL=25
-      distpos = ((RBstart+Lcrbs-1)*6)%23;
+      nVRB = Lcrbs-1+RBstart;
+      printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
+      alloc0     |= (1<<nVRB);
+      allocdist0_0_even |= (1<<get_prb(25,0,nVRB,0));
+      allocdist0_0_odd  |= (1<<get_prb(25,1,nVRB,0));
 
-      if (distpos == 0)
-        distpos = 23;
-
-      alloc_dist0 |= (1<<distpos);
-
+      printf("alloc 0 %x, allocdist0_even %x, allocdist0_odd %x\n",alloc0,allocdist0_0_even,allocdist0_0_odd);
       RIV=computeRIV(25,RBstart,Lcrbs);
 
       if (RIV>RIV_max25)
-        RIV_max25 = RIV;
+        RIV_max25 = RIV;;
 
-      //      printf("RIV %d (%d) : first_rb %d NBRB %d\n",RIV,localRIV2alloc_LUT25[RIV],RBstart,Lcrbs);
-      localRIV2alloc_LUT25[RIV] = alloc0;
-      distRIV2alloc_LUT25[RIV]  = alloc_dist0;
-      RIV2nb_rb_LUT25[RIV]      = Lcrbs;
-      RIV2first_rb_LUT25[RIV]   = RBstart;
+
+      localRIV2alloc_LUT25[RIV]      = alloc0;
+      distRIV2alloc_even_LUT25[RIV]  = allocdist0_0_even;
+      distRIV2alloc_odd_LUT25[RIV]   = allocdist0_0_odd;
+      RIV2nb_rb_LUT25[RIV]           = Lcrbs;
+      RIV2first_rb_LUT25[RIV]        = RBstart;
     }
   }
 
 
   for (RBstart=0; RBstart<50; RBstart++) {
     alloc0 = 0;
-    alloc_dist0 = 0;
     alloc1 = 0;
-    alloc_dist1 = 0;
+    allocdist0_0_even=0;
+    allocdist1_0_even=0;
+    allocdist0_0_odd=0;
+    allocdist1_0_odd=0;
+    allocdist0_1_even=0;
+    allocdist1_1_even=0;
+    allocdist0_1_odd=0;
+    allocdist1_1_odd=0;
 
     for (Lcrbs=1; Lcrbs<=(50-RBstart); Lcrbs++) {
-      //      printf("RBstart %d, len %d --> ",RBstart,Lcrbs);
 
-      if ((RBstart+Lcrbs-1)<32)
-        alloc0 |= (1<<(RBstart+Lcrbs-1));
-      else
-        alloc1 |= (1<<(RBstart+Lcrbs-33));
+      nVRB = Lcrbs-1+RBstart;
 
-      if (dist50[RBstart+Lcrbs-1]<32)
-        alloc_dist0 |= (1<<dist50[RBstart+Lcrbs-1]);
+
+      if (nVRB<32)
+        alloc0 |= (1<<nVRB);
       else
-        alloc_dist1 |= (1<<dist50[RBstart+Lcrbs-33]);
+        alloc1 |= (1<<(nVRB-32));
+
+      // Distributed Gap1, even slot
+      nVRB_even_dist = get_prb(50,0,nVRB,0);
+      if (nVRB_even_dist<32)
+        allocdist0_0_even |= (1<<nVRB_even_dist);
+      else
+        allocdist1_0_even |= (1<<(nVRB_even_dist-32));
+
+      // Distributed Gap1, odd slot
+      nVRB_odd_dist = get_prb(50,1,nVRB,0);
+      if (nVRB_odd_dist<32)
+        allocdist0_0_odd |= (1<<nVRB_odd_dist);
+      else
+        allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
+
+      // Distributed Gap2, even slot
+      nVRB_even_dist = get_prb(50,0,nVRB,1);
+      if (nVRB_even_dist<32)
+        allocdist0_1_even |= (1<<nVRB_even_dist);
+      else
+        allocdist1_1_even |= (1<<(nVRB_even_dist-32));
+
+      // Distributed Gap2, odd slot
+      nVRB_odd_dist = get_prb(50,1,nVRB,1);
+      if (nVRB_odd_dist<32)
+        allocdist0_1_odd |= (1<<nVRB_odd_dist);
+      else
+        allocdist1_1_odd |= (1<<(nVRB_odd_dist-32));
 
       RIV=computeRIV(50,RBstart,Lcrbs);
 
@@ -479,10 +689,16 @@ void generate_RIV_tables()
         RIV_max50 = RIV;
 
       //      printf("RIV %d : first_rb %d NBRB %d\n",RIV,RBstart,Lcrbs);
-      localRIV2alloc_LUT50_0[RIV] = alloc0;
-      localRIV2alloc_LUT50_1[RIV] = alloc1;
-      distRIV2alloc_LUT50_0[RIV]  = alloc_dist0;
-      distRIV2alloc_LUT50_1[RIV]  = alloc_dist1;
+      localRIV2alloc_LUT50_0[RIV]      = alloc0;
+      localRIV2alloc_LUT50_1[RIV]      = alloc1;
+      distRIV2alloc_gap0_even_LUT50_0[RIV]  = allocdist0_0_even;
+      distRIV2alloc_gap0_even_LUT50_1[RIV]  = allocdist1_0_even;
+      distRIV2alloc_gap0_odd_LUT50_0[RIV]   = allocdist0_0_odd;
+      distRIV2alloc_gap0_odd_LUT50_1[RIV]   = allocdist1_0_odd;
+      distRIV2alloc_gap1_even_LUT50_0[RIV]  = allocdist0_1_even;
+      distRIV2alloc_gap1_even_LUT50_1[RIV]  = allocdist1_1_even;
+      distRIV2alloc_gap1_odd_LUT50_0[RIV]   = allocdist0_1_odd;
+      distRIV2alloc_gap1_odd_LUT50_1[RIV]   = allocdist1_1_odd;
       RIV2nb_rb_LUT50[RIV]        = Lcrbs;
       RIV2first_rb_LUT50[RIV]     = RBstart;
     }
@@ -491,33 +707,97 @@ void generate_RIV_tables()
 
   for (RBstart=0; RBstart<100; RBstart++) {
     alloc0 = 0;
-    alloc_dist0 = 0;
     alloc1 = 0;
-    alloc_dist1 = 0;
     alloc2 = 0;
-    alloc_dist2 = 0;
     alloc3 = 0;
-    alloc_dist3 = 0;
+    allocdist0_0_even=0;
+    allocdist1_0_even=0;
+    allocdist2_0_even=0;
+    allocdist3_0_even=0;
+    allocdist0_0_odd=0;
+    allocdist1_0_odd=0;
+    allocdist2_0_odd=0;
+    allocdist3_0_odd=0;
+    allocdist0_1_even=0;
+    allocdist1_1_even=0;
+    allocdist2_1_even=0;
+    allocdist3_1_even=0;
+    allocdist0_1_odd=0;
+    allocdist1_1_odd=0;
+    allocdist2_1_odd=0;
+    allocdist3_1_odd=0;
 
     for (Lcrbs=1; Lcrbs<=(100-RBstart); Lcrbs++) {
 
-      if ((RBstart+Lcrbs-1)<32)
-        alloc0 |= (1<<(RBstart+Lcrbs-1));
-      else if ((RBstart+Lcrbs-1)<64)
-        alloc1 |= (1<<(RBstart+Lcrbs-33));
-      else if ((RBstart+Lcrbs-1)<96)
-        alloc2 |= (1<<(RBstart+Lcrbs-65));
-      else
-        alloc3 |= (1<<(RBstart+Lcrbs-97));
+      nVRB = Lcrbs-1+RBstart;
 
-      if (dist100[RBstart+Lcrbs-1]<32)
-        alloc_dist0 |= (1<<dist100[RBstart+Lcrbs-1]);
-      else if (dist100[RBstart+Lcrbs-1]<64)
-        alloc_dist1 |= (1<<dist100[RBstart+Lcrbs-33]);
-      else if (dist100[RBstart+Lcrbs-1]<64)
-        alloc_dist2 |= (1<<dist100[RBstart+Lcrbs-65]);
+      if (nVRB<32)
+        alloc0 |= (1<<nVRB);
+      else if (nVRB<64)
+        alloc1 |= (1<<(nVRB-33));
+      else if (nVRB<96)
+        alloc2 |= (1<<(nVRB-65));
       else
-        alloc_dist3 |= (1<<dist100[RBstart+Lcrbs-97]);
+        alloc3 |= (1<<(nVRB-97));
+
+      // Distributed Gap1, even slot
+      nVRB_even_dist = get_prb(100,0,nVRB,0);
+
+      if ((RBstart==0) && (Lcrbs<=8))
+	printf("nVRB %d => nVRB_even_dist %d\n",nVRB,nVRB_even_dist);
+
+
+      if (nVRB_even_dist<32)
+        allocdist0_0_even |= (1<<nVRB_even_dist);
+      else if (nVRB_even_dist<64)
+        allocdist1_0_even |= (1<<(nVRB_even_dist-32));
+      else if (nVRB_even_dist<96)
+	allocdist2_0_even |= (1<<(nVRB_even_dist-64));
+      else
+	allocdist3_0_even |= (1<<(nVRB_even_dist-96));
+      if ((RBstart==0) && (Lcrbs<=8))
+	printf("rballoc =>(%08x.%08x.%08x.%08x)\n",
+	       allocdist0_0_even,
+	       allocdist1_0_even,
+	       allocdist2_0_even,
+	       allocdist3_0_even
+	       );
+
+      // Distributed Gap1, odd slot
+      nVRB_odd_dist = get_prb(100,1,nVRB,0);
+      if (nVRB_odd_dist<32)
+        allocdist0_0_odd |= (1<<nVRB_odd_dist);
+      else if (nVRB_odd_dist<64)
+        allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
+      else if (nVRB_odd_dist<96)
+	allocdist2_0_odd |= (1<<(nVRB_odd_dist-65));
+      else
+	allocdist3_0_odd |= (1<<(nVRB_odd_dist-97));
+
+
+      // Distributed Gap2, even slot
+      nVRB_even_dist = get_prb(100,0,nVRB,1);
+      if (nVRB_even_dist<32)
+        allocdist0_1_even |= (1<<nVRB_even_dist);
+      else if (nVRB_even_dist<64)
+        allocdist1_1_even |= (1<<(nVRB_even_dist-32));
+      else if (nVRB_even_dist<96)
+	allocdist2_1_even |= (1<<(nVRB_even_dist-64));
+      else
+	allocdist3_1_even |= (1<<(nVRB_even_dist-96));
+
+
+      // Distributed Gap2, odd slot
+      nVRB_odd_dist = get_prb(100,1,nVRB,1);
+      if (nVRB_odd_dist<32)
+        allocdist0_1_odd |= (1<<nVRB_odd_dist);
+      else if (nVRB_odd_dist<64)
+        allocdist1_1_odd |= (1<<(nVRB_odd_dist-32));
+      else if (nVRB_odd_dist<96)
+	allocdist2_1_odd |= (1<<(nVRB_odd_dist-64));
+      else
+	allocdist3_1_odd |= (1<<(nVRB_odd_dist-96));
+
 
       RIV=computeRIV(100,RBstart,Lcrbs);
 
@@ -526,13 +806,26 @@ void generate_RIV_tables()
 
       //      printf("RIV %d : first_rb %d NBRB %d\n",RIV,RBstart,Lcrbs);
       localRIV2alloc_LUT100_0[RIV] = alloc0;
-      distRIV2alloc_LUT100_0[RIV]  = alloc_dist0;
       localRIV2alloc_LUT100_1[RIV] = alloc1;
-      distRIV2alloc_LUT100_1[RIV]  = alloc_dist1;
       localRIV2alloc_LUT100_2[RIV] = alloc2;
-      distRIV2alloc_LUT100_2[RIV]  = alloc_dist2;
       localRIV2alloc_LUT100_3[RIV] = alloc3;
-      distRIV2alloc_LUT100_3[RIV]  = alloc_dist3;
+      distRIV2alloc_gap0_even_LUT100_0[RIV]  = allocdist0_0_even;
+      distRIV2alloc_gap0_even_LUT100_1[RIV]  = allocdist1_0_even;
+      distRIV2alloc_gap0_even_LUT100_2[RIV]  = allocdist2_0_even;
+      distRIV2alloc_gap0_even_LUT100_3[RIV]  = allocdist3_0_even;
+      distRIV2alloc_gap0_odd_LUT100_0[RIV]   = allocdist0_0_odd;
+      distRIV2alloc_gap0_odd_LUT100_1[RIV]   = allocdist1_0_odd;
+      distRIV2alloc_gap0_odd_LUT100_2[RIV]   = allocdist2_0_odd;
+      distRIV2alloc_gap0_odd_LUT100_3[RIV]   = allocdist3_0_odd;
+      distRIV2alloc_gap1_even_LUT100_0[RIV]  = allocdist0_1_even;
+      distRIV2alloc_gap1_even_LUT100_1[RIV]  = allocdist1_1_even;
+      distRIV2alloc_gap1_even_LUT100_2[RIV]  = allocdist2_1_even;
+      distRIV2alloc_gap1_even_LUT100_3[RIV]  = allocdist3_1_even;
+      distRIV2alloc_gap1_odd_LUT100_0[RIV]   = allocdist0_1_odd;
+      distRIV2alloc_gap1_odd_LUT100_1[RIV]   = allocdist1_1_odd;
+      distRIV2alloc_gap1_odd_LUT100_2[RIV]   = allocdist2_1_odd;
+      distRIV2alloc_gap1_odd_LUT100_3[RIV]   = allocdist3_1_odd;
+
       RIV2nb_rb_LUT100[RIV]      = Lcrbs;
       RIV2first_rb_LUT100[RIV]   = RBstart;
     }
@@ -550,13 +843,10 @@ void generate_RIV_tables()
 
 
 
-uint32_t get_rballoc(uint8_t vrb_type,uint16_t rb_alloc_dci)
+uint32_t get_rballoc(vrb_t vrb_type,uint16_t rb_alloc_dci)
 {
 
-  if (vrb_type == 0)
-    return(localRIV2alloc_LUT25[rb_alloc_dci]);
-  else
-    return(distRIV2alloc_LUT25[rb_alloc_dci]);
+  return(localRIV2alloc_LUT25[rb_alloc_dci]);
 
 }
 
@@ -638,12 +928,9 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      if (vrb_type == 0)
-        dlsch0_harq->rb_alloc[0]                       = localRIV2alloc_LUT6[rballoc];
-      else
-        dlsch0_harq->rb_alloc[0]                       = distRIV2alloc_LUT6[rballoc];
-
-      dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT6[rballoc];//NPRB;
+      dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT6[rballoc];
+      dlsch0_harq->vrb_type       = vrb_type;
+      dlsch0_harq->nb_rb          = RIV2nb_rb_LUT6[rballoc];//NPRB;
       RIV_max = RIV_max6;
 
 
@@ -672,13 +959,10 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      if (vrb_type == 0)
-        dlsch0_harq->rb_alloc[0]                       = localRIV2alloc_LUT25[rballoc];
-      else
-        dlsch0_harq->rb_alloc[0]                       = distRIV2alloc_LUT25[rballoc];
-
-      dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT25[rballoc];//NPRB;
-      RIV_max = RIV_max25;
+      dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT25[rballoc];
+      dlsch0_harq->vrb_type       = vrb_type;
+      dlsch0_harq->nb_rb          = RIV2nb_rb_LUT25[rballoc];//NPRB;
+      RIV_max                     = RIV_max25;
       break;
 
     case 50:
@@ -703,14 +987,9 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      if (vrb_type == 0) {
-        dlsch0_harq->rb_alloc[0]                       = localRIV2alloc_LUT50_0[rballoc];
-        dlsch0_harq->rb_alloc[1]                       = localRIV2alloc_LUT50_1[rballoc];
-      } else {
-        dlsch0_harq->rb_alloc[0]                       = distRIV2alloc_LUT50_0[rballoc];
-        dlsch0_harq->rb_alloc[1]                       = distRIV2alloc_LUT50_1[rballoc];
-      }
-
+      dlsch0_harq->rb_alloc[0]     = localRIV2alloc_LUT50_0[rballoc];
+      dlsch0_harq->rb_alloc[1]     = localRIV2alloc_LUT50_1[rballoc];
+      dlsch0_harq->vrb_type        = vrb_type;
       dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT50[rballoc];//NPRB;
       RIV_max = RIV_max50;
       break;
@@ -736,17 +1015,12 @@ int generate_eNB_dlsch_params_from_dci(uint8_t subframe,
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      if (vrb_type == 0) {
-        dlsch0_harq->rb_alloc[0]                       = localRIV2alloc_LUT100_0[rballoc];
-        dlsch0_harq->rb_alloc[1]                       = localRIV2alloc_LUT100_1[rballoc];
-        dlsch0_harq->rb_alloc[2]                       = localRIV2alloc_LUT100_2[rballoc];
-        dlsch0_harq->rb_alloc[3]                       = localRIV2alloc_LUT100_3[rballoc];
-      } else {
-        dlsch0_harq->rb_alloc[0]                       = distRIV2alloc_LUT100_0[rballoc];
-        dlsch0_harq->rb_alloc[1]                       = distRIV2alloc_LUT100_1[rballoc];
-        dlsch0_harq->rb_alloc[2]                       = distRIV2alloc_LUT100_2[rballoc];
-        dlsch0_harq->rb_alloc[3]                       = distRIV2alloc_LUT100_3[rballoc];
-      }
+      dlsch0_harq->vrb_type         = vrb_type;
+      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT100_0[rballoc];
+      dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT100_1[rballoc];
+      dlsch0_harq->rb_alloc[2]      = localRIV2alloc_LUT100_2[rballoc];
+      dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rballoc];
+
 
       dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT100[rballoc];//NPRB;
       RIV_max = RIV_max100;
@@ -2655,51 +2929,51 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
         (frame_parms->tdd_config>0)) {
       switch (frame_parms->N_RB_DL) {
       case 6:
-        msg("DCI format1A (TDD1-6, 1_5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
-        msg("DAI %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
+        LOG_D(PHY,"DCI format1A (TDD1-6, 1_5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DAI %d\n",((DCI1A_1_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
         break;
 
       case 25:
-        msg("DCI format1A (TDD1-6, 5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %d (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
-        msg("DAI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
+        LOG_D(PHY,"DCI format1A (TDD1-6, 5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %d (NB_RB %d)\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DAI %d\n",((DCI1A_5MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
         break;
 
       case 50:
-        msg("DCI format1A (TDD1-6, 10MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
-        msg("DAI %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
+        LOG_D(PHY,"DCI format1A (TDD1-6, 10MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DAI %d\n",((DCI1A_10MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
         break;
 
       case 100:
-        msg("DCI format1A (TDD1-6, 20MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT100[((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
-        msg("DAI %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
+        LOG_D(PHY,"DCI format1A (TDD1-6, 20MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT100[((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DAI %d\n",((DCI1A_20MHz_TDD_1_6_t *)&dci->dci_pdu[0])->dai);
         break;
 
       default:
@@ -2711,47 +2985,47 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
     } else if (frame_parms->frame_type == FDD) {
       switch (frame_parms->N_RB_DL) {
       case 6:
-        msg("DCI format1A(FDD, 1.5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DCI format1A(FDD, 1.5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_1_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
         break;
 
       case 25:
-        msg("DCI format1A(FDD, 5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DCI format1A(FDD, 5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_5MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
         break;
 
       case 50:
-        msg("DCI format1A(FDD, 10MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DCI format1A(FDD, 10MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_10MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
         break;
 
       case 100:
-        msg("DCI format1A(FDD, 20MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
-        msg("VRB_TYPE %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
-        msg("RB_ALLOC %x (NB_RB %d)\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT100[((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
-        msg("MCS %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
-        msg("HARQ_PID %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
-        msg("NDI %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
-        msg("RV %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rv);
-        msg("TPC %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
+        LOG_D(PHY,"DCI format1A(FDD, 20MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+        LOG_D(PHY,"VRB_TYPE %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->vrb_type);
+        LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT100[((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rballoc]);
+        LOG_D(PHY,"MCS %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->mcs);
+        LOG_D(PHY,"HARQ_PID %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->harq_pid);
+        LOG_D(PHY,"NDI %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->ndi);
+        LOG_D(PHY,"RV %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->rv);
+        LOG_D(PHY,"TPC %d\n",((DCI1A_20MHz_FDD_t *)&dci->dci_pdu[0])->TPC);
         break;
 
       default:
@@ -2763,6 +3037,45 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 
     break;
 
+  case format1C:  // This is DLSCH allocation for control traffic
+    switch (frame_parms->N_RB_DL) {
+    case 6:
+      LOG_D(PHY,"DCI format1C (1.5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+      LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",
+	    ((DCI1C_1_5MHz_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT6[conv_1C_RIV(((DCI1C_1_5MHz_t *)&dci->dci_pdu[0])->rballoc,6)]);
+      LOG_D(PHY,"MCS %d\n",((DCI1C_1_5MHz_t *)&dci->dci_pdu[0])->mcs);
+      break;
+      
+    case 25:
+      LOG_D(PHY,"DCI format1C (5MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+      LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1C_5MHz_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT25[conv_1C_RIV(((DCI1C_5MHz_t *)&dci->dci_pdu[0])->rballoc,25)]);
+      LOG_D(PHY,"MCS %d\n",((DCI1C_5MHz_t *)&dci->dci_pdu[0])->mcs);
+      break;
+      
+    case 50:
+      LOG_D(PHY,"DCI format1C (10MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+      LOG_D(PHY,"Ngap %d\n",((DCI1C_10MHz_t *)&dci->dci_pdu[0])->Ngap);
+      LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1C_10MHz_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[conv_1C_RIV(((DCI1C_10MHz_t *)&dci->dci_pdu[0])->rballoc,50)]);
+      LOG_D(PHY,"MCS %d\n",((DCI1C_10MHz_t *)&dci->dci_pdu[0])->mcs);
+      break;
+      
+    case 100:
+      LOG_D(PHY,"DCI format1C (20MHz), rnti %x (%x)\n",dci->rnti,((uint32_t*)&dci->dci_pdu[0])[0]);
+      LOG_D(PHY,"Ngap %d\n",((DCI1C_20MHz_t *)&dci->dci_pdu[0])->Ngap);
+      LOG_D(PHY,"RB_ALLOC %x (NB_RB %d)\n",((DCI1C_20MHz_t *)&dci->dci_pdu[0])->rballoc,RIV2nb_rb_LUT50[conv_1C_RIV(((DCI1C_20MHz_t *)&dci->dci_pdu[0])->rballoc,100)]);
+      LOG_D(PHY,"MCS %d\n",((DCI1C_20MHz_t *)&dci->dci_pdu[0])->mcs);
+      break;
+      
+      
+    default:
+      LOG_E(PHY,"Invalid N_RB_DL %d\n", frame_parms->N_RB_DL);
+        DevParam (frame_parms->N_RB_DL, 0, 0);
+        break;
+    }
+    
+
+    break;
+    
   case format2:
 
     if ((frame_parms->frame_type == TDD) &&
@@ -3456,7 +3769,8 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
 }
 
 
-int generate_ue_dlsch_params_from_dci(uint8_t subframe,
+int generate_ue_dlsch_params_from_dci(int frame,
+				      uint8_t subframe,
                                       void *dci_pdu,
                                       uint16_t rnti,
                                       DCI_format_t dci_format,
@@ -3478,16 +3792,17 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
   uint8_t rah=0;
   uint8_t TPC=0;
   uint8_t NPRB=0,tbswap=0,tpmi=0;
+  uint8_t Ngap;
   LTE_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
   LTE_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq;
 
 #ifdef DEBUG_DCI
-  msg("dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
+  LOG_D(PHY,"dci_tools.c: Filling ue dlsch params -> rnti %x, dci_format %d\n",rnti,dci_format);
 #endif
 
   switch (dci_format) {
 
-  case format0:   // This is an UL SACH allocation so nothing here, inform MAC
+  case format0:   // This is an ULSCH allocation so nothing here, inform MAC
     LOG_E(PHY,"format0 not possible\n");
     return(-1);
     break;
@@ -3534,10 +3849,16 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
-      if (vrb_type == 0)
-        dlsch0_harq->rb_alloc[0] = localRIV2alloc_LUT6[rballoc];
-      else
-        dlsch0_harq->rb_alloc[0] = distRIV2alloc_LUT6[rballoc];
+      if (vrb_type == LOCALIZED) {
+	dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT6[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT6[rballoc];
+      }
+      else {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_even_LUT6[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_odd_LUT6[rballoc];
+      }
+      dlsch0_harq->vrb_type    = vrb_type;
+
 
       dlsch0_harq->nb_rb = RIV2nb_rb_LUT6[rballoc];//NPRB;
       RIV_max = RIV_max6;
@@ -3584,12 +3905,16 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
-      if (vrb_type == 0)
-        dlsch0_harq->rb_alloc[0] = localRIV2alloc_LUT25[rballoc];
-      else
-        dlsch0_harq->rb_alloc[0] = distRIV2alloc_LUT25[rballoc];
-
-      dlsch0_harq->nb_rb = RIV2nb_rb_LUT25[rballoc];//NPRB;
+      if (vrb_type == LOCALIZED) {
+	dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT25[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT25[rballoc];
+      }
+      else {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_even_LUT25[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_odd_LUT25[rballoc];
+      }
+      dlsch0_harq->vrb_type    = vrb_type;
+      dlsch0_harq->nb_rb = RIV2nb_rb_LUT25[rballoc];
       RIV_max = RIV_max25;
 
       break;
@@ -3633,13 +3958,28 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
-      if (vrb_type == 0) {
-        dlsch0_harq->rb_alloc[0] = localRIV2alloc_LUT50_0[rballoc];
-        dlsch0_harq->rb_alloc[1] = localRIV2alloc_LUT50_1[rballoc];
-      } else {
-        dlsch0_harq->rb_alloc[0] = distRIV2alloc_LUT50_0[rballoc];
-        dlsch0_harq->rb_alloc[1] = distRIV2alloc_LUT50_1[rballoc];
+      if (vrb_type == LOCALIZED) {
+	  dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_even[1] = localRIV2alloc_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_odd[1]  = localRIV2alloc_LUT50_1[rballoc];
+      } else { // DISTRIBUTED
+	if ((rballoc&(1<<10)) == 0) {
+	  rballoc = rballoc&(~(1<<10));
+	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT50_1[rballoc];
+	}
+	else {
+	  rballoc = rballoc&(~(1<<10));
+	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT50_1[rballoc];
+	}
       }
+      dlsch0_harq->vrb_type    = vrb_type;
 
       dlsch0_harq->nb_rb  = RIV2nb_rb_LUT50[rballoc];//NPRB;
       RIV_max = RIV_max50;
@@ -3684,17 +4024,40 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
 	dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
       }
 
-      if (vrb_type == 0) {
-        dlsch0_harq->rb_alloc[0] = localRIV2alloc_LUT100_0[rballoc];
-        dlsch0_harq->rb_alloc[1] = localRIV2alloc_LUT100_1[rballoc];
-        dlsch0_harq->rb_alloc[2] = localRIV2alloc_LUT100_2[rballoc];
-        dlsch0_harq->rb_alloc[3] = localRIV2alloc_LUT100_3[rballoc];
+      if (vrb_type == LOCALIZED) {
+	dlsch0_harq->rb_alloc_even[0] = localRIV2alloc_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_even[1] = localRIV2alloc_LUT50_1[rballoc];
+	dlsch0_harq->rb_alloc_even[2] = localRIV2alloc_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_even[3] = localRIV2alloc_LUT100_3[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = localRIV2alloc_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_odd[1]  = localRIV2alloc_LUT50_1[rballoc];
+	dlsch0_harq->rb_alloc_odd[2]  = localRIV2alloc_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_odd[3]  = localRIV2alloc_LUT100_3[rballoc];
       } else {
-        dlsch0_harq->rb_alloc[0] = distRIV2alloc_LUT100_0[rballoc];
-        dlsch0_harq->rb_alloc[1] = distRIV2alloc_LUT100_1[rballoc];
-        dlsch0_harq->rb_alloc[2] = distRIV2alloc_LUT100_2[rballoc];
-        dlsch0_harq->rb_alloc[3] = distRIV2alloc_LUT100_3[rballoc];
+	if ((rballoc&(1<<10)) == 0) { //Gap 1
+	  rballoc = rballoc&(~(1<<12));
+	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap0_even_LUT100_2[rballoc];
+	  dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap0_even_LUT100_3[rballoc];
+	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap0_odd_LUT100_2[rballoc];
+	  dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap0_odd_LUT100_3[rballoc];
+	}
+	else { //Gap 2
+	  rballoc = rballoc&(~(1<<12));
+	  dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap1_even_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap1_even_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap1_even_LUT100_2[rballoc];
+	  dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap1_even_LUT100_3[rballoc];
+	  dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap1_odd_LUT50_0[rballoc];
+	  dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap1_odd_LUT50_1[rballoc];
+	  dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap1_odd_LUT100_2[rballoc];
+	  dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap1_odd_LUT100_3[rballoc];
+	}
       }
+      dlsch0_harq->vrb_type    = vrb_type;
 
       dlsch0_harq->nb_rb = RIV2nb_rb_LUT100[rballoc];//NPRB;
       RIV_max = RIV_max100;
@@ -3766,8 +4129,142 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
       dlsch0_harq->Qm  = get_Qm(mcs);
     }
     dlsch[0]->rnti = rnti;
+    dlsch[0]->active = 1;
     dlsch0 = dlsch[0];
     //printf("Format 1A: harq_pid %d, nb_rb %d, round %d\n",harq_pid,dlsch0_harq->nb_rb,dlsch0_harq->round);
+    break;
+
+  case format1C:
+
+    harq_pid = 0;
+    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+ 
+    switch (frame_parms->N_RB_DL) {
+    case 6:
+      mcs                           = ((DCI1C_1_5MHz_t *)dci_pdu)->mcs;
+      rballoc                       = conv_1C_RIV(((DCI1C_1_5MHz_t *)dci_pdu)->rballoc,6);
+      dlsch0_harq->nb_rb            = RIV2nb_rb_LUT6[rballoc];
+      dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_even_LUT6[rballoc];
+      dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_odd_LUT6[rballoc];
+      RIV_max                       = RIV_max6;
+
+      break;
+
+    case 25:
+      mcs                           = ((DCI1C_5MHz_t *)dci_pdu)->mcs;
+      rballoc                       = conv_1C_RIV(((DCI1C_5MHz_t *)dci_pdu)->rballoc,25);
+      dlsch0_harq->nb_rb            = RIV2nb_rb_LUT25[rballoc];
+      dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_even_LUT25[rballoc];
+      dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_odd_LUT25[rballoc];
+      RIV_max                       = RIV_max25;
+
+      //      printf("Format1C : %x : mcs %d, rballoc %d=>%d=>%x\n",((uint32_t*)dci_pdu)[0], 
+      //	     mcs,((DCI1C_5MHz_t *)dci_pdu)->rballoc,rballoc,dlsch0_harq->rb_alloc_even[0]);
+      break;
+
+    case 50:
+      mcs                           = ((DCI1C_10MHz_t *)dci_pdu)->mcs;
+      rballoc                       = conv_1C_RIV(((DCI1C_10MHz_t *)dci_pdu)->rballoc,50);
+      Ngap                          = ((DCI1C_10MHz_t *)dci_pdu)->Ngap;
+      dlsch0_harq->nb_rb            = RIV2nb_rb_LUT50[rballoc];
+      if (Ngap == 0) {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT50_1[rballoc];
+	dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT50_1[rballoc];
+      }
+      else {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap1_even_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap1_odd_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap1_even_LUT50_1[rballoc];
+	dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap1_odd_LUT50_1[rballoc];
+      }
+      RIV_max                       = RIV_max50;
+
+      break;
+
+    case 100:
+      mcs                      = ((DCI1C_20MHz_t *)dci_pdu)->mcs;
+      rballoc                  = conv_1C_RIV(((DCI1C_20MHz_t *)dci_pdu)->rballoc,100);
+      Ngap                     = ((DCI1C_20MHz_t *)dci_pdu)->Ngap;
+      dlsch0_harq->nb_rb       = RIV2nb_rb_LUT100[rballoc];
+      if (Ngap==0) {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap0_even_LUT100_0[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap0_odd_LUT100_0[rballoc];
+	dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap0_even_LUT100_1[rballoc];
+	dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap0_odd_LUT100_1[rballoc];
+	dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap0_even_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap0_odd_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap0_even_LUT100_3[rballoc];
+	dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap0_odd_LUT100_3[rballoc];
+      }
+      else {
+	dlsch0_harq->rb_alloc_even[0] = distRIV2alloc_gap1_even_LUT100_0[rballoc];
+	dlsch0_harq->rb_alloc_odd[0]  = distRIV2alloc_gap1_odd_LUT100_0[rballoc];
+	dlsch0_harq->rb_alloc_even[1] = distRIV2alloc_gap1_even_LUT100_1[rballoc];
+	dlsch0_harq->rb_alloc_odd[1]  = distRIV2alloc_gap1_odd_LUT100_1[rballoc];
+	dlsch0_harq->rb_alloc_even[2] = distRIV2alloc_gap1_even_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_odd[2]  = distRIV2alloc_gap1_odd_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc_even[3] = distRIV2alloc_gap1_even_LUT100_3[rballoc];
+	dlsch0_harq->rb_alloc_odd[3]  = distRIV2alloc_gap1_odd_LUT100_3[rballoc];
+      }
+      RIV_max                  = RIV_max100;
+      /*
+      printf("Format1C : %x : mcs %d, rballoc %d=>%d=>(%08x.%08x.%08x.%08x), Ngap %d\n",((uint32_t*)dci_pdu)[0], 
+	     mcs,((DCI1C_20MHz_t *)dci_pdu)->rballoc,rballoc,
+	     dlsch0_harq->rb_alloc_even[0],
+	     dlsch0_harq->rb_alloc_even[1],
+	     dlsch0_harq->rb_alloc_even[2],
+	     dlsch0_harq->rb_alloc_even[3],
+	     Ngap
+	     );
+      */
+      break;     
+    
+    default:
+      LOG_E(PHY,"Format 1C: Unknown N_RB_DL %d\n",frame_parms->N_RB_DL);
+      return(-1);
+      break;
+    }
+    if (rballoc>RIV_max) {
+      LOG_E(PHY,"Format 1C: rb_alloc > RIV_max\n");
+      return(-1);
+    }
+
+    dlsch0_harq->round     = 0;
+    dlsch0_harq->first_tx  = 1;
+    dlsch0_harq->vrb_type  = DISTRIBUTED;
+    dlsch[0]->current_harq_pid = harq_pid;
+
+    if (rnti==si_rnti) { // rule from Section 5.3.1 of 36.321
+      if (((frame&1) == 0) && (subframe == 5)) 
+	dlsch0_harq->rvidx = (((3*((frame>>1)&3))+1)>>1)&3;  // SIB1
+      else 
+	dlsch0_harq->rvidx = (((3*(subframe&3))+1)>>1)&3;  // other SIBs
+    }
+    else if ((rnti==p_rnti) || (rnti==ra_rnti)) { // Section 7.1.7.3
+      dlsch0_harq->rvidx = 0;
+    }
+
+
+    dlsch0_harq->Nl = 1;
+    dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
+    dlsch0_harq->dl_power_off = 1; //no power offset
+
+    LOG_D(PHY,"UE (%x/%d): Subframe %d Format1C DCI: harq_status %d, round %d\n",
+	  dlsch[0]->rnti,
+	  harq_pid,
+	  subframe,
+	  dlsch0_harq->status,
+	  dlsch0_harq->round);
+
+    dlsch0_harq->mcs = mcs;
+
+    dlsch0_harq->TBS = TBStable1C[mcs];
+    dlsch0_harq->Qm  = 2;
+    dlsch[0]->rnti = rnti;
+    dlsch[0]->active = 1;
+    dlsch0 = dlsch[0];
     break;
 
   case format1:
@@ -3870,7 +4367,11 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     dlsch[0]->current_harq_pid = harq_pid;
     dlsch[0]->harq_ack[subframe].harq_id = harq_pid;
 
-    conv_rballoc(rah,rballoc,frame_parms->N_RB_DL,dlsch0_harq->rb_alloc);
+    conv_rballoc(rah,rballoc,frame_parms->N_RB_DL,dlsch0_harq->rb_alloc_even);
+    dlsch0_harq->rb_alloc_odd[0]= dlsch0_harq->rb_alloc_even[0];
+    dlsch0_harq->rb_alloc_odd[1]= dlsch0_harq->rb_alloc_even[1];
+    dlsch0_harq->rb_alloc_odd[2]= dlsch0_harq->rb_alloc_even[2];
+    dlsch0_harq->rb_alloc_odd[3]= dlsch0_harq->rb_alloc_even[3];
 
     dlsch0_harq->nb_rb = conv_nprb(rah,
                                    rballoc,
@@ -4178,8 +4679,21 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     conv_rballoc(rah,
                  rballoc,
                  frame_parms->N_RB_DL,
-                 dlsch0_harq->rb_alloc);
-    dlsch1_harq->rb_alloc[0]                         = dlsch0_harq->rb_alloc[0];
+                 dlsch0_harq->rb_alloc_even);
+
+    dlsch0_harq->rb_alloc_odd[0]= dlsch0_harq->rb_alloc_even[0];
+    dlsch0_harq->rb_alloc_odd[1]= dlsch0_harq->rb_alloc_even[1];
+    dlsch0_harq->rb_alloc_odd[2]= dlsch0_harq->rb_alloc_even[2];
+    dlsch0_harq->rb_alloc_odd[3]= dlsch0_harq->rb_alloc_even[3];
+
+    dlsch1_harq->rb_alloc_even[0]                    = dlsch0_harq->rb_alloc_even[0];
+    dlsch1_harq->rb_alloc_even[1]                    = dlsch0_harq->rb_alloc_even[1];
+    dlsch1_harq->rb_alloc_even[2]                    = dlsch0_harq->rb_alloc_even[2];
+    dlsch1_harq->rb_alloc_even[3]                    = dlsch0_harq->rb_alloc_even[3];
+    dlsch1_harq->rb_alloc_odd[0]                     = dlsch0_harq->rb_alloc_odd[0];
+    dlsch1_harq->rb_alloc_odd[1]                     = dlsch0_harq->rb_alloc_odd[1];
+    dlsch1_harq->rb_alloc_odd[2]                     = dlsch0_harq->rb_alloc_odd[2];
+    dlsch1_harq->rb_alloc_odd[3]                     = dlsch0_harq->rb_alloc_odd[3];
 
     dlsch0_harq->nb_rb                               = conv_nprb(rah,
 								 rballoc,
@@ -4579,7 +5093,19 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     dlsch0->harq_ack[subframe].harq_id = harq_pid;
     dlsch1->harq_ack[subframe].harq_id = harq_pid;
 
-    conv_rballoc(rah,rballoc,frame_parms->N_RB_DL,dlsch0_harq->rb_alloc);
+    conv_rballoc(rah,rballoc,frame_parms->N_RB_DL,dlsch0_harq->rb_alloc_even);
+    dlsch0_harq->rb_alloc_odd[0]                     = dlsch0_harq->rb_alloc_even[0];
+    dlsch0_harq->rb_alloc_odd[1]                     = dlsch0_harq->rb_alloc_even[1];
+    dlsch0_harq->rb_alloc_odd[2]                     = dlsch0_harq->rb_alloc_even[2];
+    dlsch0_harq->rb_alloc_odd[3]                     = dlsch0_harq->rb_alloc_even[3];
+    dlsch1_harq->rb_alloc_even[0]                    = dlsch0_harq->rb_alloc_even[0];
+    dlsch1_harq->rb_alloc_even[1]                    = dlsch0_harq->rb_alloc_even[1];
+    dlsch1_harq->rb_alloc_even[2]                    = dlsch0_harq->rb_alloc_even[2];
+    dlsch1_harq->rb_alloc_even[3]                    = dlsch0_harq->rb_alloc_even[3];
+    dlsch1_harq->rb_alloc_odd[0]                     = dlsch0_harq->rb_alloc_odd[0];
+    dlsch1_harq->rb_alloc_odd[1]                     = dlsch0_harq->rb_alloc_odd[1];
+    dlsch1_harq->rb_alloc_odd[2]                     = dlsch0_harq->rb_alloc_odd[2];
+    dlsch1_harq->rb_alloc_odd[3]                     = dlsch0_harq->rb_alloc_odd[3];
 
     dlsch0_harq->nb_rb = conv_nprb(rah,
                                    rballoc,
@@ -4831,9 +5357,18 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
     conv_rballoc(((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
                  ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc,frame_parms->N_RB_DL,
-                 dlsch0_harq->rb_alloc);
-    //dlsch1_harq->rb_alloc[0]                         = dlsch0_harq->rb_alloc[0];
-
+                 dlsch0_harq->rb_alloc_even);
+    
+    dlsch0_harq->rb_alloc_odd[0]                         = dlsch0_harq->rb_alloc_even[0];
+    dlsch0_harq->rb_alloc_odd[1]                         = dlsch0_harq->rb_alloc_even[1];
+    dlsch0_harq->rb_alloc_odd[2]                         = dlsch0_harq->rb_alloc_even[2];
+    dlsch0_harq->rb_alloc_odd[3]                         = dlsch0_harq->rb_alloc_even[3];
+    /*
+    dlsch1_harq->rb_alloc_even[0]                         = dlsch0_harq->rb_alloc_even[0];
+    dlsch1_harq->rb_alloc_even[1]                         = dlsch0_harq->rb_alloc_even[1];
+    dlsch1_harq->rb_alloc_even[2]                         = dlsch0_harq->rb_alloc_even[2];
+    dlsch1_harq->rb_alloc_even[3]                         = dlsch0_harq->rb_alloc_even[3];
+    */
     dlsch0_harq->nb_rb                               = conv_nprb(((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rah,
         ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->rballoc,
         frame_parms->N_RB_DL);
@@ -7390,15 +7925,6 @@ main()
   uint32_t rballoc;
 
   generate_RIV_tables();
-
-  for (i=0; i<512; i++) {
-    msg("RIV %d: nb_rb %d, alloc %x, alloc_dist %x\n",
-        i,
-        RIV2nb_rb_LUT25[i],
-        localRIV2alloc_LUT25[i],
-        distRIV2alloc_LUT25[i]);
-
-  }
 
   rah = 0;
   rballoc = 0x1fff;

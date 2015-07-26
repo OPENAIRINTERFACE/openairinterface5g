@@ -124,6 +124,8 @@ typedef struct {
   MIMO_mode_t mimo_mode;
   /// Current RB allocation
   uint32_t rb_alloc[4];
+  /// distributed/localized flag
+  vrb_t vrb_type;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
   /// Current subband RI allocation
@@ -549,8 +551,12 @@ typedef struct {
   uint16_t nb_rb;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
-  /// Current RB allocation
-  uint32_t rb_alloc[4];
+  /// Current RB allocation (even slots)
+  uint32_t rb_alloc_even[4];
+  /// Current RB allocation (odd slots)
+  uint32_t rb_alloc_odd[4];
+  /// distributed/localized flag
+  vrb_t vrb_type;
   /// downlink power offset field
   uint8_t dl_power_off;
 } LTE_DL_UE_HARQ_t;

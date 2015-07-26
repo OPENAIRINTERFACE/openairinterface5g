@@ -1631,8 +1631,10 @@ static void* eNB_thread( void* arg )
 
   int frame = 0;
 
+#ifndef EXMIMO
   spp = openair0_cfg[0].samples_per_packet;
   tx_pos=spp*openair0_cfg[0].tx_delay;
+#endif
 
   while (!oai_exit) {
     start_meas( &softmodem_stats_mt );

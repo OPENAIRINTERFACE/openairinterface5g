@@ -63,6 +63,9 @@
 #  include <smmintrin.h>
 #endif
 
+#ifdef __AVX2__
+#  include <immintrin.h>
+#endif
 
 // ------------------------------------------------
 // compatibility functions if SSE3 or SSE4 is not available

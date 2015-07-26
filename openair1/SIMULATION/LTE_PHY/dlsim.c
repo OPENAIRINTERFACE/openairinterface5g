@@ -3043,6 +3043,7 @@ PMI_FEEDBACK:
 
                     if ((dci_alloc_rx[i].rnti == n_rnti) &&
                         (generate_ue_dlsch_params_from_dci(0,
+							   0,
                                                            dci_alloc_rx[i].dci_pdu,
                                                            dci_alloc_rx[i].rnti,
                                                            dci_alloc_rx[i].format,
@@ -3055,7 +3056,7 @@ PMI_FEEDBACK:
                       //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->nb_rb,
-                                                      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc,
+                                                      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc_even,
                                                       get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->Nl,
                                                       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
@@ -3099,6 +3100,7 @@ PMI_FEEDBACK:
                   case 1:
                   case 2:
                     generate_ue_dlsch_params_from_dci(0,
+						      0,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format1 : format1A,
@@ -3113,6 +3115,7 @@ PMI_FEEDBACK:
                   case 3:
                     //        printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->first_tx);
                     generate_ue_dlsch_params_from_dci(0,
+						      0,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2A : format1A,
@@ -3127,6 +3130,7 @@ PMI_FEEDBACK:
 
                   case 4:
                     generate_ue_dlsch_params_from_dci(0,
+						      0,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2 : format1A,
@@ -3141,6 +3145,7 @@ PMI_FEEDBACK:
                   case 5:
                   case 6:
                     generate_ue_dlsch_params_from_dci(0,
+						      0,
                                                       &DLSCH_alloc_pdu2_1E[0],
                                                       C_RNTI,
                                                       format1E_2A_M10PRB,
@@ -3389,7 +3394,7 @@ PMI_FEEDBACK:
               dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
               dlsch0_eNB_harq = PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
               dlsch0_eNB_harq->mimo_mode    = LARGE_CDD;
-              dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc[0];
+              dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
               dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
               dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
               dlsch0_eNB_harq->rvidx        = dlsch0_ue_harq->rvidx;

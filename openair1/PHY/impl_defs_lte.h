@@ -68,6 +68,8 @@ typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
 
+typedef enum {LOCALIZED=0,DISTRIBUTED=1} vrb_t;
+
 /// Enumeration for parameter PHICH-Duration \ref PHICH_CONFIG_COMMON::phich_duration.
 typedef enum {
   normal=0,

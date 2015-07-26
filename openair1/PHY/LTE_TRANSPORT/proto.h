@@ -852,6 +852,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
     @param subframe Subframe number
+    @param vrb_type Flag to indicate distributed VRB type
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
@@ -1232,7 +1233,7 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
    @param vrb_type VRB type (0=localized,1=distributed)
    @param rb_alloc_dci rballoc field from DCI
 */
-uint32_t get_rballoc(uint8_t vrb_type,uint16_t rb_alloc_dci);
+uint32_t get_rballoc(vrb_t vrb_type,uint16_t rb_alloc_dci);
 
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
    @returns Transmission mode (1-7)
@@ -1341,7 +1342,8 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 uint8_t subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
-int generate_ue_dlsch_params_from_dci(uint8_t subframe,
+int generate_ue_dlsch_params_from_dci(int frame,
+				      uint8_t subframe,
                                       void *dci_pdu,
                                       rnti_t rnti,
                                       DCI_format_t dci_format,

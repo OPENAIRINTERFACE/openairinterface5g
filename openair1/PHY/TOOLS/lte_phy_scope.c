@@ -493,7 +493,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
     coded_bits_per_codeword = get_G(frame_parms,
                                     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-                                    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc,
+                                    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
                                     get_Qm(mcs),
                                     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
                                     num_pdcch_symbols,

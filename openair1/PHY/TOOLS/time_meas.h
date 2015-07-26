@@ -130,8 +130,6 @@ static inline void stop_meas(time_stats_t *ts)
 
 static inline void reset_meas(time_stats_t *ts) {
 
-  static int cpu_freq_set=0;
-  
   ts->trials=0;
   ts->diff=0;
   ts->diff_now=0;

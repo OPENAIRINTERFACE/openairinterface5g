@@ -175,9 +175,9 @@ static const eutra_band_t eutra_bands[] = {
   {12,  698    * MHz,  716    * MHz,  728    * MHz,  746    * MHz, FDD},
   {13,  777    * MHz,  787    * MHz,  746    * MHz,  756    * MHz, FDD},
   {14,  788    * MHz,  798    * MHz,  758    * MHz,  768    * MHz, FDD},
-
   {17,  704    * MHz,  716    * MHz,  734    * MHz,  746    * MHz, FDD},
   {20,  832    * MHz,  862    * MHz,  791    * MHz,  821    * MHz, FDD},
+  {22, 3510    * MHz, 3590    * MHz, 3410    * MHz, 3490    * MHz, FDD},
   {33, 1900    * MHz, 1920    * MHz, 1900    * MHz, 1920    * MHz, TDD},
   {34, 2010    * MHz, 2025    * MHz, 2010    * MHz, 2025    * MHz, TDD},
   {35, 1850    * MHz, 1910    * MHz, 1850    * MHz, 1910    * MHz, TDD},

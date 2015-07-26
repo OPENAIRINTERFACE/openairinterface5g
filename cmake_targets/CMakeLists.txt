@@ -134,7 +134,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
   endif()
   if (CPUINFO MATCHES "sse4_2")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2 -mavx2")
   endif()
   if (CPUINFO MATCHES "sse4_1")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
@@ -386,7 +386,7 @@ elseif (${RF_BOARD} STREQUAL "ETHERNET")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
     )
-  set(LOWLATENCY True)
+  set(LOWLATENCY False)
   
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
