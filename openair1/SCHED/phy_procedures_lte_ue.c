@@ -59,7 +59,7 @@ extern int card;
 #endif
 #endif
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC
 #define UE_TX_POWER (-10)
 
 //#ifdef OPENAIR2
@@ -2748,7 +2748,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
       // SI_DLSCH
       if (phy_vars_ue->dlsch_ue_SI[eNB_id]->active == 1) {
 #ifdef DEBUG_PHY_PROC
-        LOG_I(PHY,"SI is active in subframe %d\n",subframe_prev);
+        LOG_D(PHY,"SI is active in subframe %d\n",subframe_prev);
 #endif
 
         // process symbols 10,11,12 (13) of last SF and trigger DLSCH decoding
@@ -2846,7 +2846,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
           if (ret == (1+phy_vars_ue->dlsch_ue_SI[eNB_id]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_SI_errors[eNB_id]++;
-	    //#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
             LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI in error (TBS %d, mcs %d, rvidx %d, rballoc %X.%X.%X.%X\n",
 		  phy_vars_ue->Mod_id,
 		  frame_rx,
@@ -2858,9 +2858,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[1],
 		  phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[2],
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[3]);
-	    //#endif
-
-	      dump_dlsch_SI(phy_vars_ue,eNB_id,subframe_prev);
+#endif
+ 
+	    //	      dump_dlsch_SI(phy_vars_ue,eNB_id,subframe_prev);
             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
             stop_meas(&phy_vars_ue->phy_proc_rx);
 	    return(-1);
