@@ -2798,13 +2798,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
                     frame_rx,subframe_prev);
 
-	    //#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
             LOG_I(PHY,"Decoding DLSCH_SI : rb_alloc %x : nb_rb %d G %d TBS %d, num_pdcch_sym %d\n",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[0],
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->nb_rb,
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->G,
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS,
                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols);
-	    //#endif
+#endif
 
 
             dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
