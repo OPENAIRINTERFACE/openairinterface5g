@@ -217,8 +217,9 @@ int decode_attach_request(attach_request_msg *attach_request, uint8_t *buffer, u
     case ATTACH_REQUEST_SUPPORTED_CODECS_IEI:
       if ((decoded_result =
              decode_supported_codec_list(&attach_request->supportedcodecs,
-                                         ATTACH_REQUEST_SUPPORTED_CODECS_IEI, buffer + decoded, len
-                                         - decoded)) <= 0) {
+                                         ATTACH_REQUEST_SUPPORTED_CODECS_IEI, 
+					 buffer + decoded, 
+					 len   - decoded)) <= 0) {
         //         return decoded_result;
         LOG_FUNC_RETURN(decoded_result);
       }
@@ -270,12 +271,26 @@ int decode_attach_request(attach_request_msg *attach_request, uint8_t *buffer, u
       attach_request->presencemask |= ATTACH_REQUEST_VOICE_DOMAIN_PREFERENCE_AND_UE_USAGE_SETTING_PRESENT;
       break;
 
-
+    case ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_IEI: 
+      if ((decoded_result =
+	   decode_ms_network_feature_support(&attach_request->msnetworkfeaturesupport,
+					     ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_IEI,
+					     buffer + decoded, len - decoded)) <= 0) {
+        //         return decoded_result;
+	LOG_FUNC_RETURN(decoded_result);
+      }
+      
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_request->presencemask |= ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_PRESENT;
+      break;
     default:
+     
       errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;
       {
         //                     return TLV_DECODE_UNEXPECTED_IEI;
-        LOG_FUNC_RETURN(TLV_DECODE_UNEXPECTED_IEI);
+        LOG_TRACE(INFO,"EMM: Can't decode the message with iei %d\n",ieiDecoded);
+	LOG_FUNC_RETURN(TLV_DECODE_UNEXPECTED_IEI);
       }
     }
   }
@@ -469,6 +484,19 @@ int encode_attach_request(attach_request_msg *attach_request, uint8_t *buffer, u
       encoded += encode_result;
   }
 
+  if ((attach_request->presencemask & ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_PRESENT)
+      == ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_PRESENT) {
+    if ((encode_result =
+	 encode_ms_network_feature_support(&attach_request->msnetworkfeaturesupport,
+					   ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_IEI, 
+					   buffer + encoded, 
+					   len -  encoded)) < 0)
+      // Return in case of error
+      return encode_result;
+    else
+      encoded += encode_result;
+  }
+  
   return encoded;
 }
 

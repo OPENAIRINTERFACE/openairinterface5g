@@ -42,6 +42,7 @@
 #include "TrackingAreaIdentity.h"
 #include "DrxParameter.h"
 #include "MsNetworkCapability.h"
+#include "MsNetworkFeatureSupport.h"
 #include "LocationAreaIdentification.h"
 #include "TmsiStatus.h"
 #include "MobileStationClassmark2.h"
@@ -74,6 +75,7 @@
     TRACKING_AREA_IDENTITY_MAXIMUM_LENGTH + \
     DRX_PARAMETER_MAXIMUM_LENGTH + \
     MS_NETWORK_CAPABILITY_MAXIMUM_LENGTH + \
+    MS_NETWORK_FEATURE_SUPPORT_MAXIMUM_LENGTH +	  \
     LOCATION_AREA_IDENTIFICATION_MAXIMUM_LENGTH + \
     TMSI_STATUS_MAXIMUM_LENGTH + \
     MOBILE_STATION_CLASSMARK_2_MAXIMUM_LENGTH + \
@@ -98,12 +100,14 @@
 # define ATTACH_REQUEST_ADDITIONAL_UPDATE_TYPE_PRESENT                        (1<<10)
 # define ATTACH_REQUEST_OLD_GUTI_TYPE_PRESENT                                 (1<<11)
 # define ATTACH_REQUEST_VOICE_DOMAIN_PREFERENCE_AND_UE_USAGE_SETTING_PRESENT  (1<<12)
+# define ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_PRESENT                    (1<<13)
 
 typedef enum attach_request_iei_tag {
   ATTACH_REQUEST_OLD_PTMSI_SIGNATURE_IEI                          = 0x19, /* 0x19 = 25  */
   ATTACH_REQUEST_ADDITIONAL_GUTI_IEI                              = 0x50, /* 0x50 = 80  */
   ATTACH_REQUEST_LAST_VISITED_REGISTERED_TAI_IEI                  = 0x52, /* 0x52 = 82  */
   ATTACH_REQUEST_DRX_PARAMETER_IEI                                = 0x5C, /* 0x5C = 92  */
+  ATTACH_REQUEST_MS_NETWORK_FEATURE_SUPPORT_IEI                   = 0xC0, /* 0xC- = 192-  */
   ATTACH_REQUEST_MS_NETWORK_CAPABILITY_IEI                        = 0x31, /* 0x31 = 49  */
   ATTACH_REQUEST_OLD_LOCATION_AREA_IDENTIFICATION_IEI             = 0x13, /* 0x13 = 19  */
   ATTACH_REQUEST_TMSI_STATUS_IEI                                  = 0x90, /* 0x90 = 144 */
@@ -147,6 +151,7 @@ typedef struct attach_request_msg_tag {
   AdditionalUpdateType                    additionalupdatetype;
   GutiType                                oldgutitype;
   VoiceDomainPreferenceAndUeUsageSetting  voicedomainpreferenceandueusagesetting;
+  MsNetworkFeatureSupport                 msnetworkfeaturesupport;
 } attach_request_msg;
 
 int decode_attach_request(attach_request_msg *attachrequest, uint8_t *buffer, uint32_t len);

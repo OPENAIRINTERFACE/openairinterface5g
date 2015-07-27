@@ -132,7 +132,7 @@ void tlv_decode_perror(void);
         if(iEI != bUFFER)                                               \
         {                                                               \
                 printf("IEI is different than the one expected."        \
-                "(Got: 0x%x, expecting: 0x%x\n", bUFFER, iEI);          \
+                "(Got: 0x%x, expecting: 0x%x)\n", bUFFER, iEI);          \
                 errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;           \
                 LOG_FUNC_RETURN(TLV_DECODE_UNEXPECTED_IEI);             \
         }
