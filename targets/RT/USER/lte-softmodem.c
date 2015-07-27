@@ -797,6 +797,7 @@ static void wait_system_ready (char *message, volatile int *start_flag)
 
     while ((!oai_exit) && (*start_flag == 0)) {
       LOG_N(EMU, message, indicator[i]);
+      fflush(stdout);
       i = (i + 1) % (sizeof(indicator) / sizeof(indicator[0]));
       usleep(200000);
     }
