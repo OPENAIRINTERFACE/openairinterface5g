@@ -82,7 +82,7 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "timer.h"
 #   endif
 #endif
@@ -3488,7 +3488,7 @@ int phy_procedures_RN_UE_RX(uint8_t slot_rx, uint8_t next_slot, relaying_type_t 
 
 
 #if defined(ENABLE_ITTI)
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 extern PHY_MEASUREMENTS PHY_measurements;
 
 void phy_UE_lte_measurement_thresholds_test_and_report(instance_t instanceP, ral_threshold_phy_t* threshold_phy_pP, uint16_t valP)
@@ -3626,7 +3626,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstr
   unsigned int  Mod_id;
   int           result;
 #endif
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
   int           CC_id =0;
 #endif
   int           frame_rx = phy_vars_ue->frame_rx;
@@ -3673,7 +3673,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstr
         LOG_I(PHY, "[UE %d] Received %s\n", Mod_id, msg_name);
 
         /* TODO process the message */
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
         {
           MessageDef *message_p;
 
@@ -3692,7 +3692,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstr
 #   endif
         break;
 
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 
       case TIMER_HAS_EXPIRED:
         // check if it is a measurement timer

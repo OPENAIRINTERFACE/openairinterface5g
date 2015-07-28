@@ -26,14 +26,14 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_STATUS_REPORT_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_STATUS_REPORT_C 1
 //-----------------------------------------------------------------------------
 #include <string.h>
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
 # include "intertask_interface.h"
 #endif
 #include "assertions.h"
@@ -42,16 +42,13 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-//#define TRACE_RLC_AM_STATUS_CREATION 1
-
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
 //-----------------------------------------------------------------------------
 void
 rlc_am_itti_display_status_ind_infos(
   const protocol_ctxt_t* const            ctxt_pP,
   const rlc_am_entity_t *const            rlc_pP,
   const rlc_am_control_pdu_info_t *const  pdu_info_pP)
-//-----------------------------------------------------------------------------
 {
   char                 message_string[1000];
   size_t               message_string_size = 0;
@@ -91,7 +88,6 @@ uint16_t rlc_am_read_bit_field(
   unsigned int* bit_pos_pP,
   const signed int bits_to_readP)
 {
-  //-----------------------------------------------------------------------------
   uint16_t        value     = 0;
   unsigned int bits_read = 0;
   signed int bits_to_read = bits_to_readP;
@@ -130,7 +126,6 @@ rlc_am_write8_bit_field(
   const signed int bits_to_writeP,
   const uint8_t valueP)
 {
-  //-----------------------------------------------------------------------------
   unsigned int available_bits;
   signed int bits_to_write= bits_to_writeP;
 
@@ -166,7 +161,6 @@ rlc_am_write16_bit_field(
   signed int bits_to_writeP,
   const uint16_t valueP)
 {
-  //-----------------------------------------------------------------------------
   assert(bits_to_writeP <= 16);
 
   if (bits_to_writeP > 8) {
@@ -182,7 +176,6 @@ rlc_am_get_control_pdu_infos(
   rlc_am_pdu_sn_10_t* const        header_pP,
   sdu_size_t * const               total_size_pP,
   rlc_am_control_pdu_info_t* const pdu_info_pP)
-//-----------------------------------------------------------------------------
 {
   memset(pdu_info_pP, 0, sizeof (rlc_am_control_pdu_info_t));
 
@@ -250,7 +243,6 @@ void
 rlc_am_display_control_pdu_infos(
   const rlc_am_control_pdu_info_t* const pdu_info_pP
 )
-//-----------------------------------------------------------------------------
 {
   int num_nack;
 
@@ -280,7 +272,6 @@ rlc_am_receive_process_control_pdu(
   mem_block_t* const tb_pP,
   uint8_t** first_byte_ppP,
   sdu_size_t * const tb_size_in_bytes_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_am_pdu_sn_10_t *rlc_am_pdu_sn_10_p = (rlc_am_pdu_sn_10_t*)*first_byte_ppP;
   sdu_size_t          initial_pdu_size   = *tb_size_in_bytes_pP;
@@ -396,7 +387,6 @@ rlc_am_write_status_pdu(
   rlc_am_entity_t *const           rlc_pP,
   rlc_am_pdu_sn_10_t* const        rlc_am_pdu_sn_10_pP,
   rlc_am_control_pdu_info_t* const pdu_info_pP)
-//-----------------------------------------------------------------------------
 {
   unsigned int bit_pos       = 4; // range from 0 (MSB/left) to 7 (LSB/right)
   uint8_t*        byte_pos_p    = &rlc_am_pdu_sn_10_pP->b1;
@@ -430,7 +420,7 @@ rlc_am_write_status_pdu(
     num_bytes += 1;
   }
 
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WROTE STATUS PDU %d BYTES\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         num_bytes);
@@ -443,7 +433,6 @@ rlc_am_send_status_pdu(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   // When STATUS reporting has been triggered, the receiving side of an AM RLC entity shall:
   // - if t-StatusProhibit is not running:
@@ -481,7 +470,7 @@ rlc_am_send_status_pdu(
   memset(&control_pdu_info, 0, sizeof(rlc_am_control_pdu_info_t));
   // header size
   nb_bits_to_transmit = nb_bits_to_transmit - 15;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] nb_bits_to_transmit %d (15 already allocated for header)\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         nb_bits_to_transmit);
@@ -498,7 +487,7 @@ rlc_am_send_status_pdu(
 
       pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
       sn_cursor             = pdu_info_cursor_p->sn;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d FIND VR(R) <= SN sn_cursor %04d -> %04d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             __LINE__,
@@ -513,7 +502,7 @@ rlc_am_send_status_pdu(
       pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
       all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
       sn_cursor             = pdu_info_cursor_p->sn;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d LOOPING sn_cursor %04d previous sn_cursor %04d \n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             __LINE__,
@@ -532,7 +521,7 @@ rlc_am_send_status_pdu(
             pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
             all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
             sn_cursor             = pdu_info_cursor_p->sn;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
             LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d NOW sn_cursor %04d \n",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                   __LINE__,
@@ -541,7 +530,7 @@ rlc_am_send_status_pdu(
           } else {
             if (all_segments_received) {
               control_pdu_info.ack_sn = (sn_cursor + 1) & RLC_AM_SN_MASK;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
               LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d \n",
                     PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                     __LINE__,
@@ -549,7 +538,7 @@ rlc_am_send_status_pdu(
 #endif
             } else {
               control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
               LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d (CASE PREVIOUS SN)\n",
                     PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                     __LINE__,
@@ -575,7 +564,7 @@ rlc_am_send_status_pdu(
           control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 0;
           control_pdu_info.num_nack += 1;
           nb_bits_to_transmit = nb_bits_to_transmit - 12;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
           LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 __LINE__,
@@ -583,7 +572,7 @@ rlc_am_send_status_pdu(
 #endif
         } else {
           control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
           LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %04d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 __LINE__,
@@ -599,7 +588,7 @@ rlc_am_send_status_pdu(
       // -------------------------------------------------------------------------------
       if (all_segments_received == 0) {
         waited_so = 0;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] if (all_segments_received == 0) \n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -614,7 +603,7 @@ rlc_am_send_status_pdu(
               control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
               control_pdu_info.num_nack += 1;
               nb_bits_to_transmit = nb_bits_to_transmit - 42;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
               LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d (CASE SO %d > WAITED SO %d)\n",
                     PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                     __LINE__,
@@ -628,7 +617,7 @@ rlc_am_send_status_pdu(
               if (pdu_info_cursor_p->lsf == 1) { // last segment flag
                 //waited_so = 0x7FF;
                 waited_so = 0x7FFF;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
                 LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO 0x7FFF)\n",
                       PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                       __LINE__, sn_cursor);
@@ -636,7 +625,7 @@ rlc_am_send_status_pdu(
                 //break;
               } else {
                 waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
                 LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @1\n",
                       PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                       __LINE__,
@@ -656,7 +645,7 @@ rlc_am_send_status_pdu(
               waited_so = 0x7FFF;
             }
 
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
             LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @2\n",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                   __LINE__,
@@ -690,7 +679,7 @@ rlc_am_send_status_pdu(
             control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
             control_pdu_info.num_nack += 1;
             nb_bits_to_transmit = nb_bits_to_transmit - 42;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
             LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d\n",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                   __LINE__,
@@ -715,7 +704,7 @@ rlc_am_send_status_pdu(
     control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
   } else {
     control_pdu_info.ack_sn = rlc_pP->vr_r;
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK %04d  = VR(R)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           __LINE__,
@@ -732,7 +721,7 @@ end_push_nack:
   //msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] nb_bits_to_transmit %d\n",
   //     rlc_pP->module_id, rlc_pP->rb_id, ctxt_pP->frame,nb_bits_to_transmit);
 
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK %04d NUM NACK %d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         __LINE__,
@@ -742,7 +731,7 @@ end_push_nack:
   // encode the control pdu
   pdu_size = rlc_pP->nb_bytes_requested_by_mac - ((nb_bits_to_transmit - 7 )>> 3);
 
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d forecast pdu_size %d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         __LINE__,
@@ -758,7 +747,7 @@ end_push_nack:
   ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   //assert((((struct mac_tb_req*)(tb_p->data))->tb_size) < 3000);
 
-#ifdef TRACE_RLC_AM_STATUS_CREATION
+#if TRACE_RLC_AM_STATUS_CREATION
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] SEND STATUS PDU SIZE %d, rlc_pP->nb_bytes_requested_by_mac %d, nb_bits_to_transmit>>3 %d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         pdu_size,

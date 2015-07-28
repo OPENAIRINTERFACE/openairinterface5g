@@ -545,7 +545,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, confi
 # SPECIFIC OPTIONS
 ##########################
 add_boolean_option(SPECTRA False "???")
-add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS True "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
+add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS False "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
 
 
 
@@ -646,7 +646,8 @@ include_directories(${OPENAIR_DIR}/common/utils/collection/hashtable)
 if (MESSAGE_CHART_GENERATOR)
   add_library(MSC  
     ${OPENAIR_DIR}/common/utils/msc/msc.c
-  )
+  )  
+  set(MSC_LIB MSC)
 endif()
 include_directories(${OPENAIR_DIR}/common/utils/msc)
 
@@ -1560,17 +1561,11 @@ add_executable(lte-softmodem
   ${XFORMS_SOURCE_SOFTMODEM}
   )
 
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
-else (MESSAGE_CHART_GENERATOR)
-target_link_libraries (lte-softmodem
-  -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
-  -Wl,--end-group )
-endif(MESSAGE_CHART_GENERATOR)
+
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} )
@@ -1598,17 +1593,11 @@ add_executable(lte-softmodem-nos1
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
   )
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
-else (MESSAGE_CHART_GENERATOR)
-target_link_libraries (lte-softmodem-nos1
-  -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${RAL_LIB}  ${ITTI_LIB} ${MIH_LIB}
-  -Wl,--end-group )
-endif(MESSAGE_CHART_GENERATOR)
+
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
@@ -1625,21 +1614,13 @@ add_executable(mme_gw
   ${OPENAIRCN_DIR}/SCTP/sctp_primitives_server.c
   ${OPENAIRCN_DIR}/NAS/MME/nas_mme_task.c
   )
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (mme_gw
   -Wl,--start-group
-   LIB_NAS_MME S1AP_LIB S1AP_EPC GTPV1U GTPV2C SCTP_SERVER UDP_SERVER SECU_CN SECU_OSA S6A SGW MME_APP LFDS MSC ${ITTI_LIB} CN_UTILS HASHTABLE
+   LIB_NAS_MME S1AP_LIB S1AP_EPC GTPV1U GTPV2C SCTP_SERVER UDP_SERVER SECU_CN SECU_OSA S6A SGW MME_APP LFDS ${MSC_LIB} ${ITTI_LIB} CN_UTILS HASHTABLE
   -Wl,--end-group
   pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
   )
-else (MESSAGE_CHART_GENERATOR)
-target_link_libraries (mme_gw
-  -Wl,--start-group
-   LIB_NAS_MME S1AP_LIB S1AP_EPC GTPV1U GTPV2C SCTP_SERVER UDP_SERVER SECU_CN SECU_OSA S6A SGW MME_APP LFDS ${ITTI_LIB} CN_UTILS HASHTABLE
-  -Wl,--end-group
-  pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-  )
-endif(MESSAGE_CHART_GENERATOR)
+
 
 # Default parameters
 # Does not work on simple install (fqdn in /etc/hosts 127.0.1.1)
@@ -1720,21 +1701,13 @@ add_executable(oai_sgw
   ${OPENAIRCN_DIR}/OAI_SGW/oai_sgw_log.c
   ${OPENAIRCN_DIR}/OAI_SGW/oai_sgw.c
   )
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (oai_sgw
   -Wl,--start-group
-  GTPV1U SECU_CN SECU_OSA S6A SGW CN_UTILS LFDS MSC ${ITTI_LIB}
+  GTPV1U SECU_CN SECU_OSA S6A SGW CN_UTILS LFDS ${MSC_LIB} ${ITTI_LIB}
   -Wl,--end-group
   pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
   )
-else (MESSAGE_CHART_GENERATOR)
-target_link_libraries (oai_sgw
-  -Wl,--start-group
-  GTPV1U SECU_CN SECU_OSA S6A SGW CN_UTILS LFDS ${ITTI_LIB}
-  -Wl,--end-group
-  pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-  )
-endif(MESSAGE_CHART_GENERATOR)
+
 
 
 # rrh
@@ -1814,18 +1787,14 @@ add_executable(oaisim
   ${HW_SOURCE}
   ${XFORMS_SOURCE}
 )
+
+
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (oaisim
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
-else(MESSAGE_CHART_GENERATOR)
-target_link_libraries (oaisim
-  -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
-  -Wl,--end-group )
-endif(MESSAGE_CHART_GENERATOR)
+
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_HW_lib}
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
@@ -1856,17 +1825,11 @@ add_executable(oaisim_nos1
   ${XFORMS_SOURCE}
 )
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
-if (MESSAGE_CHART_GENERATOR)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB    SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS MSC L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB    SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
-else(MESSAGE_CHART_GENERATOR)
-target_link_libraries (oaisim_nos1
-  -Wl,--start-group
-  RRC_LIB    SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
-  -Wl,--end-group )
-endif(MESSAGE_CHART_GENERATOR)
+
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})

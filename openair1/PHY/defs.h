@@ -51,7 +51,7 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "collection/hashtable/hashtable.h"
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
@@ -145,7 +145,7 @@ typedef struct UE_SCAN_INFO_s {
   int32_t freq_offset_Hz[3][10];
 } UE_SCAN_INFO_t;
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 typedef struct ral_threshold_phy_s {
   SLIST_ENTRY(ral_threshold_phy_s) ral_thresholds;
   ral_threshold_t                  threshold;
@@ -368,7 +368,7 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t localization_stats;
 #endif
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
@@ -644,7 +644,7 @@ typedef struct {
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];

@@ -93,7 +93,7 @@
 #   include "intertask_interface.h"
 #endif
 
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
 #   include "rrc_eNB_ral.h"
 #endif
 
@@ -2947,7 +2947,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                      ue_context_pP->ue_context.kenb, &kRRCint);
 
 #endif
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
   {
     MessageDef                         *message_ral_p = NULL;
     rrc_ral_connection_reconfiguration_ind_t connection_reconfiguration_ind;
@@ -4353,12 +4353,11 @@ rrc_enb_task(
       openair_rrc_lite_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
       break;
 
-#   ifdef ENABLE_RAL
+#   if ENABLE_RAL
 
     case RRC_RAL_CONFIGURE_THRESHOLD_REQ:
       rrc_enb_ral_handle_configure_threshold_request(instance, msg_p);
       break;
-#   endif
 
       //SPECTRA: Add the RRC connection reconfiguration with Second cell configuration
     case RRC_RAL_CONNECTION_RECONFIGURATION_REQ:
@@ -4372,13 +4371,11 @@ rrc_enb_task(
                                     msg_p->ittiMsgHeader.lte_time.slot);
       LOG_I(RRC, "[eNB %d] Send RRC_RAL_CONNECTION_RECONFIGURATION_REQ to UE %s\n", instance, msg_name_p);
       //Method RRC connection reconfiguration command with Second cell configuration
-#   ifdef ENABLE_RAL
       //rrc_eNB_generate_RRCConnectionReconfiguration_SCell(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, 36126);
-#   else
       //rrc_eNB_generate_defaultRRCConnectionReconfiguration(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0,
       //                                                     eNB_rrc_inst[instance].HO_flag);
-#   endif
       break;
+#   endif
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);

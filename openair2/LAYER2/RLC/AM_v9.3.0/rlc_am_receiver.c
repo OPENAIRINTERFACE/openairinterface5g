@@ -26,9 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_RECEIVER_C
-//#include "rtos_header.h"
+#define RLC_AM_MODULE 1
+#define RLC_AM_RECEIVER_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "assertions.h"
@@ -39,9 +38,6 @@
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-#define TRACE_RLC_AM_RX
-//#define DEBUG_RLC_AM_DISPLAY_TB_DATA
-//#define RLC_AM_GENERATE_ERRORS
 //-----------------------------------------------------------------------------
 signed int
 rlc_am_get_data_pdu_infos(
@@ -50,7 +46,6 @@ rlc_am_get_data_pdu_infos(
   rlc_am_pdu_sn_10_t* header_pP,
   int16_t total_sizeP,
   rlc_am_pdu_info_t* pdu_info_pP)
-//-----------------------------------------------------------------------------
 {
   memset(pdu_info_pP, 0, sizeof (rlc_am_pdu_info_t));
 
@@ -142,7 +137,6 @@ rlc_am_display_data_pdu_infos(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const rlc_pP,
   rlc_am_pdu_info_t* pdu_info_pP)
-//-----------------------------------------------------------------------------
 {
   int num_li;
 
@@ -183,7 +177,6 @@ rlc_am_rx_update_vr_ms(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const rlc_pP,
   mem_block_t* tb_pP)
-//-----------------------------------------------------------------------------
 {
   //rlc_am_pdu_info_t* pdu_info_p        = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
   rlc_am_pdu_info_t* pdu_info_cursor_p = NULL;
@@ -196,7 +189,7 @@ rlc_am_rx_update_vr_ms(
       pdu_info_cursor_p = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
 
       if (((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received == 0) {
-#ifdef TRACE_RLC_AM_RX
+#if TRACE_RLC_AM_RX
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               rlc_pP->vr_ms, pdu_info_cursor_p->sn);
@@ -208,7 +201,7 @@ rlc_am_rx_update_vr_ms(
       cursor_p = cursor_p->next;
     } while (cursor_p != NULL);
 
-#ifdef TRACE_RLC_AM_RX
+#if TRACE_RLC_AM_RX
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[UPDATE VR(MS)] UPDATED VR(MS) %04d -> %04d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->vr_ms,
@@ -224,7 +217,6 @@ rlc_am_rx_update_vr_r(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const rlc_pP,
   mem_block_t* tb_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_am_pdu_info_t* pdu_info_cursor_p = NULL;
   mem_block_t*       cursor_p;
@@ -240,7 +232,7 @@ rlc_am_rx_update_vr_r(
         return;
       }
 
-#ifdef TRACE_RLC_AM_RX
+#if TRACE_RLC_AM_RX
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[UPDATE VR(R)] UPDATED VR(R) %04d -> %04d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             rlc_pP->vr_r,
@@ -267,7 +259,6 @@ rlc_am_receive_routing (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const rlc_pP,
   struct mac_data_ind data_indP)
-//-----------------------------------------------------------------------------
 {
   mem_block_t           *tb_p             = NULL;
   uint8_t               *first_byte_p     = NULL;
@@ -309,7 +300,6 @@ rlc_am_receive_process_data_pdu (
   mem_block_t* tb_pP,
   uint8_t* first_byte_pP,
   uint16_t tb_size_in_bytesP)
-//-----------------------------------------------------------------------------
 {
   // 5.1.3.2 Receive operations
   // 5.1.3.2.1 General
@@ -367,7 +357,7 @@ rlc_am_receive_process_data_pdu (
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  PDU DISCARDED, STATUS REQUESTED:\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         rlc_pP->status_requested = 1;
-#if defined(RLC_STOP_ON_LOST_PDU)
+#if RLC_STOP_ON_LOST_PDU
         AssertFatal( 0 == 1,
                      PROTOCOL_RLC_AM_CTXT_FMT" LOST PDU DETECTED\n",
                      PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -405,7 +395,7 @@ rlc_am_receive_process_data_pdu (
         //             - set VR(X) to VR(H).
 
 
-#ifdef TRACE_RLC_AM_RX
+#if TRACE_RLC_AM_RX
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[PROCESS RX PDU]  RX LIST AFTER INSERTION:\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         rlc_am_rx_list_display(rlc_pP, "rlc_am_receive_process_data_pdu AFTER INSERTION ");

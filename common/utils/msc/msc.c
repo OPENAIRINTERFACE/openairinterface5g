@@ -362,7 +362,7 @@ void msc_flush_messages(void)
   int               rv;
   msc_queue_item_t *item_p = NULL;
 
-  while ((rv = lfds611_queue_dequeue( g_msc_message_queue_p, &item_p )) == 1) {
+  while ((rv = lfds611_queue_dequeue( g_msc_message_queue_p, (void**)&item_p )) == 1) {
 	if (NULL != item_p->message_str) {
 	  fputs(item_p->message_str, g_msc_fd);
 	  // TODO BIN DATA

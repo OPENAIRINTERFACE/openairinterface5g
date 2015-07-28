@@ -37,6 +37,7 @@
 #define INTERTASK_INTERFACE_TYPES_H_
 
 #include "itti_types.h"
+#include "platform_types.h"
 
 /* Defines to handle bit fields on unsigned long values */
 #define UL_BIT_MASK(lENGTH)             ((1UL << (lENGTH)) - 1UL)

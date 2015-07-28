@@ -75,7 +75,7 @@
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #endif
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
 #include "rrc_UE_ral.h"
 #endif
 
@@ -189,7 +189,7 @@ static int rrc_set_state (module_id_t ue_mod_idP, Rrc_State_t state)
 //-----------------------------------------------------------------------------
 static int rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_t subState )
 {
-#if (defined(ENABLE_ITTI) && (defined(ENABLE_USE_MME) || defined(ENABLE_RAL)))
+#if (defined(ENABLE_ITTI) && (defined(ENABLE_USE_MME) || ENABLE_RAL))
 
   switch (UE_rrc_inst[ue_mod_idP].RrcState) {
   case RRC_STATE_INACTIVE:
@@ -1061,7 +1061,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 #endif
                            );
 
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
     // first msg that includes srb config
     UE_rrc_inst[ctxt_pP->module_id].num_srb=radioResourceConfigDedicated->srb_ToAddModList->list.count;
 #endif
@@ -1613,7 +1613,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         free (rrcConnectionReconfiguration_r8->dedicatedInfoNASList);
       }
 
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
       {
         MessageDef                                 *message_ral_p = NULL;
         rrc_ral_connection_reestablishment_ind_t    connection_reestablishment_ind;
@@ -1975,7 +1975,7 @@ rrc_ue_decode_dcch(
           LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED during HO (eNB %d)\n",
                 ctxt_pP->module_id, target_eNB_index);
 #if defined(ENABLE_ITTI)
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
           {
             MessageDef                                 *message_ral_p = NULL;
             rrc_ral_connection_reconfiguration_ho_ind_t connection_reconfiguration_ho_ind;
@@ -2032,7 +2032,7 @@ rrc_ue_decode_dcch(
                 ctxt_pP->module_id,
                 eNB_indexP);
 #if defined(ENABLE_ITTI)
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
           {
             MessageDef                                 *message_ral_p = NULL;
             rrc_ral_connection_reconfiguration_ind_t    connection_reconfiguration_ind;
@@ -2097,7 +2097,7 @@ rrc_ue_decode_dcch(
         }
 
         itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
         msg_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_CONNECTION_RELEASE_IND);
         RRC_RAL_CONNECTION_RELEASE_IND(msg_p).ue_id = ctxt_pP->module_id;
         itti_send_msg_to_task(TASK_RAL_UE, ctxt_pP->instance, msg_p);
@@ -3243,7 +3243,7 @@ static int decode_SI( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_in
 	if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_IDLE) {
 	  LOG_I( RRC, "[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n", ctxt_pP->module_id );
 	  UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State = RRC_SI_RECEIVED;
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
 	  {
 	    MessageDef                            *message_ral_p = NULL;
 	    rrc_ral_system_information_ind_t       ral_si_ind;
@@ -4171,7 +4171,7 @@ void *rrc_ue_task( void *args_p )
 
 # endif
 
-# if defined(ENABLE_RAL)
+# if ENABLE_RAL
 
     case RRC_RAL_SCAN_REQ:
       LOG_D(RRC, "[UE %d] Received %s: state %d\n", ue_mod_id, msg_name);

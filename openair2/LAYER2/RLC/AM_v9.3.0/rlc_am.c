@@ -26,13 +26,13 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_C 1
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
 # include "intertask_interface.h"
 #endif
 #include "assertions.h"
@@ -48,9 +48,7 @@
 #include "UTIL/LOG/log.h"
 #include "UL-AM-RLC.h"
 #include "DL-AM-RLC.h"
-//#define TRACE_RLC_AM_TX_STATUS
-//#define TRACE_RLC_AM_TX
-//#define TRACE_RLC_AM_BO
+
 
 //-----------------------------------------------------------------------------
 uint32_t
@@ -58,14 +56,13 @@ rlc_am_get_buffer_occupancy_in_bytes (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   uint32_t max_li_overhead;
   uint32_t header_overhead;
 
   // priority of control trafic
   if (rlc_pP->status_requested) {
     if (rlc_pP->t_status_prohibit.running == 0) {
-#ifdef TRACE_RLC_AM_BO
+#if TRACE_RLC_AM_BO
 
       if (((15  +  rlc_pP->num_nack_sn*(10+1)  +  rlc_pP->num_nack_so*(15+15+1) + 7) >> 3) > 0) {
         LOG_D(RLC, PROTOCOL_CTXT_FMT RB_AM_FMT" BO : CONTROL PDU %d bytes \n",
@@ -92,7 +89,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
   }
 
 
-#ifdef TRACE_RLC_AM_BO
+#if TRACE_RLC_AM_BO
 
   if ((rlc_pP->status_buffer_occupancy + rlc_pP->retransmission_buffer_occupancy + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead) > 0) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" BO : STATUS  BUFFER %d bytes \n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), rlc_pP->status_buffer_occupancy);
@@ -114,9 +111,8 @@ rlc_am_release (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
-
+  // empty
 }
 //-----------------------------------------------------------------------------
 void
@@ -127,7 +123,6 @@ config_req_rlc_am (
   const rb_id_t                rb_idP
 )
 {
-  //-----------------------------------------------------------------------------
   rlc_union_t       *rlc_union_p = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;
   hash_key_t       key           = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
@@ -174,7 +169,6 @@ void config_req_rlc_am_asn1 (
   const struct RLC_Config__am  * const config_am_pP,
   const rb_id_t                        rb_idP)
 {
-  //-----------------------------------------------------------------------------
   rlc_union_t     *rlc_union_p   = NULL;
   rlc_am_entity_t *l_rlc_p         = NULL;
   hash_key_t       key           = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
@@ -279,7 +273,6 @@ void rlc_am_stat_req (
   unsigned int* stat_timer_reordering_timed_out,
   unsigned int* stat_timer_poll_retransmit_timed_out,
   unsigned int* stat_timer_status_prohibit_timed_out)
-//-----------------------------------------------------------------------------
 {
   *stat_tx_pdcp_sdu                     = rlc_pP->stat_tx_pdcp_sdu;
   *stat_tx_pdcp_bytes                   = rlc_pP->stat_tx_pdcp_bytes;
@@ -317,7 +310,6 @@ rlc_am_get_pdus (
   rlc_am_entity_t * const      rlc_pP
 )
 {
-  //-----------------------------------------------------------------------------
   int display_flag = 0;
   // 5.1.3.1 Transmit operations
   // 5.1.3.1.1
@@ -368,7 +360,7 @@ rlc_am_get_pdus (
         if (pdu != NULL {
             if ( ((rlc_am_tx_control_pdu_management_t*)(pdu->data))->size <= rlc_pP->nb_bytes_requested_by_mac) {
                 pdu = list_remove_head(&rlc_pP->control_pdu_list);
-    #ifdef TRACE_RLC_AM_TX
+    #if TRACE_RLC_AM_TX
                 msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] SEND CONTROL PDU\n", ((rlc_am_entity_t *) rlc_pP)->module_id,((rlc_am_entity_t *) rlc_pP)->rb_id, ctxt_pP->frame);
     #endif
                 list_add_tail_eurecom (pdu, &rlc_pP->pdus_to_mac_layer);
@@ -470,7 +462,7 @@ rlc_am_get_pdus (
 
         /* ONLY ONE TB PER TTI
                             if ((tx_data_pdu_management->retx_count >= 0) && (rlc_pP->nb_bytes_requested_by_mac < RLC_AM_MIN_SEGMENT_SIZE_REQUEST)) {
-        #ifdef TRACE_RLC_AM_TX
+        #if TRACE_RLC_AM_TX
                               msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] BREAK LOOP ON RETRANSMISSION BECAUSE ONLY %d BYTES ALLOWED TO TRANSMIT BY MAC\n",ctxt_pP->frame,  ((rlc_am_entity_t *) rlc_pP)->module_id,((rlc_am_entity_t *) rlc_pP)->rb_id, rlc_pP->nb_bytes_requested_by_mac);
         #endif
                               break;
@@ -529,8 +521,6 @@ rlc_am_rx (
   struct mac_data_ind          data_indP
 )
 {
-  //-----------------------------------------------------------------------------
-
   rlc_am_entity_t *rlc = (rlc_am_entity_t *) arg_pP;
 
   switch (rlc->protocol_state) {
@@ -557,7 +547,6 @@ rlc_am_mac_status_indication (
   const uint16_t               tb_sizeP,
   struct mac_status_ind        tx_statusP)
 {
-  //-----------------------------------------------------------------------------
   struct mac_status_resp  status_resp;
   uint16_t  sdu_size = 0;
   uint16_t  sdu_remaining_size = 0;
@@ -628,7 +617,7 @@ rlc_am_mac_status_indication (
 		  }
 	  }
   }
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
   MSC_LOG_RX_MESSAGE(
     (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
     (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_MAC_ENB:MSC_MAC_UE,
@@ -650,7 +639,7 @@ rlc_am_mac_status_indication (
     status_resp.head_sdu_remaining_size_to_send);
 #endif
 
-#ifdef TRACE_RLC_AM_TX_STATUS
+#if TRACE_RLC_AM_TX_STATUS
 
   if (tb_sizeP > 0) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT" MAC_STATUS_INDICATION (DATA) %d bytes -> %d bytes\n",
@@ -677,11 +666,10 @@ rlc_am_mac_data_request (
   void * const                 rlc_pP
 )
 {
-  //-----------------------------------------------------------------------------
   struct mac_data_req data_req;
   rlc_am_entity_t *l_rlc_p = (rlc_am_entity_t *) rlc_pP;
   unsigned int nb_bytes_requested_by_mac = ((rlc_am_entity_t *) rlc_pP)->nb_bytes_requested_by_mac;
-#if defined(TRACE_RLC_AM_PDU) || defined(MESSAGE_CHART_GENERATOR)
+#if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
   rlc_am_pdu_info_t   pdu_info;
   rlc_am_pdu_sn_10_t *rlc_am_pdu_sn_10_p;
   mem_block_t        *tb_p;
@@ -689,7 +677,7 @@ rlc_am_mac_data_request (
   int                 num_nack;
   char                message_string[9000];
   size_t              message_string_size = 0;
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
   MessageDef         *msg_p;
 #   endif
   int                 octet_index, index;
@@ -710,7 +698,7 @@ rlc_am_mac_data_request (
   data_req.buffer_occupancy_in_bytes   = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, l_rlc_p);
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 
-#if defined(TRACE_RLC_AM_PDU) || defined(MESSAGE_CHART_GENERATOR)
+#if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
 
   if (data_req.data.nb_elements > 0) {
 
@@ -723,7 +711,7 @@ rlc_am_mac_data_request (
 
       if ((((struct mac_tb_req *) (tb_p->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
         if (rlc_am_get_data_pdu_infos(ctxt_pP,l_rlc_p,rlc_am_pdu_sn_10_p, tb_size_in_bytes, &pdu_info) >= 0) {
-#ifdef MESSAGE_CHART_GENERATOR
+#if MESSAGE_CHART_GENERATOR
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size],
                                          MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA SN %u size %u RF %u P %u FI %u",
@@ -756,7 +744,7 @@ rlc_am_mac_data_request (
             message_string);
 
 #endif
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
           message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
@@ -835,7 +823,7 @@ rlc_am_mac_data_request (
       } else {
         if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, &tb_size_in_bytes, &l_rlc_p->control_pdu_info) >= 0) {
           tb_size_in_bytes   = ((struct mac_tb_req *) (tb_p->data))->tb_size; //tb_size_in_bytes modified by rlc_am_get_control_pdu_infos!
-#ifdef MESSAGE_CHART_GENERATOR
+#if MESSAGE_CHART_GENERATOR
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size],
                                          MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS ACK_SN %u",
@@ -864,7 +852,7 @@ rlc_am_mac_data_request (
             message_string);
 
 #endif
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
           message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
@@ -911,12 +899,11 @@ rlc_am_mac_data_indication (
   struct mac_data_ind          data_indP
 )
 {
-  //-----------------------------------------------------------------------------
   rlc_am_entity_t*           l_rlc_p = (rlc_am_entity_t*) rlc_pP;
   /*rlc_am_control_pdu_info_t control_pdu_info;
   int                       num_li;
   int16_t                     tb_size;*/
-#if defined(TRACE_RLC_AM_PDU) || defined(MESSAGE_CHART_GENERATOR)
+#if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
   rlc_am_pdu_info_t   pdu_info;
   rlc_am_pdu_sn_10_t *rlc_am_pdu_sn_10_p;
   mem_block_t        *tb_p;
@@ -924,13 +911,13 @@ rlc_am_mac_data_indication (
   int                 num_nack;
   char                message_string[7000];
   size_t              message_string_size = 0;
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
   MessageDef         *msg_p;
 #   endif
   int                 octet_index, index;
 #endif
 
-#if defined(TRACE_RLC_AM_PDU) || defined(MESSAGE_CHART_GENERATOR)
+#if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
 
   if (data_indP.data.nb_elements > 0) {
 
@@ -943,7 +930,7 @@ rlc_am_mac_data_indication (
 
       if ((((struct mac_tb_ind *) (tb_p->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
         if (rlc_am_get_data_pdu_infos(ctxt_pP,l_rlc_p,rlc_am_pdu_sn_10_p, tb_size_in_bytes, &pdu_info) >= 0) {
-#ifdef MESSAGE_CHART_GENERATOR
+#if MESSAGE_CHART_GENERATOR
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size],
                                          MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" DATA SN %u size %u RF %u P %u FI %u",
@@ -977,7 +964,7 @@ rlc_am_mac_data_indication (
 
 #endif
 
-#   if defined(ENABLE_ITTI) && defined(TRACE_RLC_AM_PDU)
+#   if ENABLE_ITTI && TRACE_RLC_AM_PDU
           message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
           message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", tb_size_in_bytes);
           message_string_size += sprintf(&message_string[message_string_size], "Header size : %u\n", pdu_info.header_size);
@@ -1054,7 +1041,7 @@ rlc_am_mac_data_indication (
         }
       } else {
         if (rlc_am_get_control_pdu_infos(rlc_am_pdu_sn_10_p, &tb_size_in_bytes, &l_rlc_p->control_pdu_info) >= 0) {
-#ifdef MESSAGE_CHART_GENERATOR
+#if MESSAGE_CHART_GENERATOR
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size],
                                          MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" STATUS size ACK_SN %u",
@@ -1084,7 +1071,7 @@ rlc_am_mac_data_indication (
 
 #endif
 
-#   if defined(ENABLE_ITTI) && defined(TRACE_RLC_AM_PDU)
+#   if ENABLE_ITTI && TRACE_RLC_AM_PDU
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
           message_string_size += sprintf(&message_string[message_string_size], "PDU size    : %u\n", ((struct mac_tb_ind *) (tb_p->data))->size);
@@ -1131,16 +1118,15 @@ rlc_am_data_req (
   void * const                rlc_pP,
   mem_block_t * const         sdu_pP)
 {
-  //-----------------------------------------------------------------------------
   rlc_am_entity_t     *l_rlc_p = (rlc_am_entity_t *) rlc_pP;
   uint32_t             mui;
   uint16_t             data_offset;
   uint16_t             data_size;
   uint8_t              conf;
-#if defined(TRACE_RLC_AM_PDU)
+#if TRACE_RLC_AM_PDU
   char                 message_string[7000];
   size_t               message_string_size = 0;
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
   MessageDef          *msg_p;
 #endif
   int                  octet_index, index;
@@ -1173,7 +1159,7 @@ rlc_am_data_req (
       mui);
 
 
-#if defined(TRACE_RLC_AM_PDU)
+#if TRACE_RLC_AM_PDU
     message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
     message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", data_size);
     message_string_size += sprintf(&message_string[message_string_size], "MUI         : %u\n", mui);
@@ -1211,7 +1197,7 @@ rlc_am_data_req (
 
     message_string_size += sprintf(&message_string[message_string_size], " |\n");
 
-#   if defined(ENABLE_ITTI)
+#   if ENABLE_ITTI
     msg_p = itti_alloc_new_message_sized (ctxt_pP->enb_flag > 0 ? TASK_RLC_ENB:TASK_RLC_UE , RLC_AM_SDU_REQ, message_string_size + sizeof (IttiMsgText));
     msg_p->ittiMsg.rlc_am_sdu_req.size = message_string_size;
     memcpy(&msg_p->ittiMsg.rlc_am_sdu_req.text, message_string, message_string_size);
@@ -1257,7 +1243,7 @@ rlc_am_data_req (
           conf,
           mui);
   } else {
-#ifdef MESSAGE_CHART_GENERATOR
+#if MESSAGE_CHART_GENERATOR
     mui         = ((struct rlc_am_data_req*) (sdu_pP->data))->mui;
     data_offset = ((struct rlc_am_data_req*) (sdu_pP->data))->data_offset;
     data_size   = ((struct rlc_am_data_req*) (sdu_pP->data))->data_size;
@@ -1283,7 +1269,7 @@ rlc_am_data_req (
     l_rlc_p->stat_tx_pdcp_sdu_discarded   += 1;
     l_rlc_p->stat_tx_pdcp_bytes_discarded += ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
     free_mem_block (sdu_pP);
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+#if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_REQ size %d Bytes, SDU DROPPED, INPUT BUFFER OVERFLOW NB SDU %d current_sdu_index=%d next_sdu_index=%d \n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p),
                 data_size,

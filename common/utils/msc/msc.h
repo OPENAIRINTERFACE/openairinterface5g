@@ -84,6 +84,7 @@ typedef enum {
 #if defined(MESSAGE_CHART_GENERATOR)
 int msc_init(const msc_env_t envP, const int max_threadsP);
 void msc_start_use(void);
+void msc_flush_messages(void);
 void msc_end(void);
 void msc_log_declare_proto(const msc_proto_t  protoP);
 void msc_log_event(const msc_proto_t  protoP,char *format, ...);

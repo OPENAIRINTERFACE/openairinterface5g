@@ -82,13 +82,13 @@ test_compile \
     test.0108 oaisim \
     oaisim  $tdir/bin/oaisim.r10.itti rel10.itti
 
-test_compile \
-    test.0114 oaisim \
-    oaisim  $tdir/bin/oaisim.r8.itti.ral rel8.itti.ral
+#test_compile \  LG: RAL REMOVED
+#    test.0114 oaisim \
+#    oaisim  $tdir/bin/oaisim.r8.itti.ral rel8.itti.ral
 
-test_compile \
-    test.0115 oaisim \
-    oaisim  $tdir/bin/oaisim.r10.itti.ral rel10.itti.ral 
+#test_compile \  LG: RAL REMOVED
+#    test.0115 oaisim \
+#    oaisim  $tdir/bin/oaisim.r10.itti.ral rel10.itti.ral 
 
 test_compile \
     test.0120 nasmesh \

@@ -26,20 +26,18 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_SEGMENT_HOLES_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_SEGMENT_HOLES_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
-#define TRACE_RLC_AM_HOLE
 
 //-----------------------------------------------------------------------------
 void rlc_am_clear_holes (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->pdu_retrans_buffer[snP].num_holes         = 0;
 }
@@ -49,7 +47,6 @@ void rlc_am_shift_down_holes (
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP,
   const int indexP)
-//-----------------------------------------------------------------------------
 {
   int i;
 
@@ -66,7 +63,6 @@ void rlc_am_shift_up_holes (
   rlc_am_entity_t *const        rlc_pP,
   const rlc_sn_t                snP,
   const int                     indexP)
-//-----------------------------------------------------------------------------
 {
   // shift include indexP
   int i;
@@ -86,10 +82,9 @@ void rlc_am_remove_hole (
   const rlc_sn_t                snP,
   const sdu_size_t              so_startP,
   const sdu_size_t              so_stopP)
-//-----------------------------------------------------------------------------
 {
   int i;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
   LOG_D(RLC,
         PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] REMOVE HOLE SN %04d  so_startP %05d so_stopP %05d rlc_pP->pdu_retrans_buffer[snP].nack_so_start %05d rlc_pP->pdu_retrans_buffer[snP].nack_so_stop %05d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -104,7 +99,7 @@ void rlc_am_remove_hole (
   if (rlc_pP->pdu_retrans_buffer[snP].num_holes == 0) {
     assert(so_startP == rlc_pP->pdu_retrans_buffer[snP].nack_so_start);
     assert(so_stopP  <= rlc_pP->pdu_retrans_buffer[snP].nack_so_stop);
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] REMOVE HOLE SN %04d  MODIFIED nack_so_start %05d->%05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
@@ -135,7 +130,7 @@ void rlc_am_remove_hole (
             rlc_pP->pdu_retrans_buffer[snP].nack_so_stop  = rlc_pP->pdu_retrans_buffer[snP].hole_so_stop[rlc_pP->pdu_retrans_buffer[snP].num_holes - 1];
           }
 
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
           LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 snP,
@@ -169,7 +164,7 @@ void rlc_am_remove_hole (
     }
   }
 
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] REMOVE HOLE SN %04d  NOW nack_so_start %05d nack_so_stop %05d num holes %d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         snP,
@@ -186,12 +181,11 @@ void rlc_am_get_next_hole (
   const rlc_sn_t                snP,
   sdu_size_t* const             so_startP,
   sdu_size_t* const             so_stopP)
-//-----------------------------------------------------------------------------
 {
   if (rlc_pP->pdu_retrans_buffer[snP].num_holes == 0) {
     *so_startP = rlc_pP->pdu_retrans_buffer[snP].nack_so_start;
     *so_stopP  = rlc_pP->pdu_retrans_buffer[snP].nack_so_stop;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == 0)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
@@ -201,7 +195,7 @@ void rlc_am_get_next_hole (
   } else {
     *so_startP = rlc_pP->pdu_retrans_buffer[snP].hole_so_start[0];
     *so_stopP  = rlc_pP->pdu_retrans_buffer[snP].hole_so_stop[0];
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] rlc_am_get_next_hole(SN %04d) %05d->%05d (NUM HOLES == %d)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
@@ -218,7 +212,6 @@ void rlc_am_add_hole (
   const rlc_sn_t                snP,
   const sdu_size_t              so_startP,
   sdu_size_t              so_stopP)
-//-----------------------------------------------------------------------------
 {
   int i, hole_index;
 
@@ -232,7 +225,7 @@ void rlc_am_add_hole (
     rlc_pP->pdu_retrans_buffer[snP].num_holes         = 0;
     rlc_pP->pdu_retrans_buffer[snP].nack_so_start = so_startP;
     rlc_pP->pdu_retrans_buffer[snP].nack_so_stop  = so_stopP;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] SN %04d GLOBAL NACK 0->%05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
@@ -255,7 +248,7 @@ void rlc_am_add_hole (
 
     rlc_pP->pdu_retrans_buffer[snP].nack_so_start = so_startP;
     rlc_pP->pdu_retrans_buffer[snP].nack_so_stop  = so_stopP;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] FIRST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           snP,
@@ -290,7 +283,7 @@ void rlc_am_add_hole (
       }
 
       rlc_pP->pdu_retrans_buffer[snP].num_holes += 1;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] INSERT %d th HOLE SN %04d GLOBAL NACK %05d->%05d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
             rlc_pP->pdu_retrans_buffer[snP].num_holes,
@@ -314,7 +307,7 @@ void rlc_am_add_hole (
     rlc_pP->pdu_retrans_buffer[snP].num_holes += 1;
     // update nack "window" vars nack_so_start, nack_so_stop
     rlc_pP->pdu_retrans_buffer[snP].nack_so_stop = so_stopP;
-#ifdef TRACE_RLC_AM_HOLE
+#if TRACE_RLC_AM_HOLE
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[HOLE] INSERT THE %d th LAST HOLE SN %04d GLOBAL NACK %05d->%05d\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->pdu_retrans_buffer[snP].num_holes,

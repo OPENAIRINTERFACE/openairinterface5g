@@ -64,7 +64,7 @@
 
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "timer.h"
 #   endif
 #endif
@@ -1239,7 +1239,7 @@ int QPSK2[4]= {AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),(
 
 
 #if defined(ENABLE_ITTI)
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 extern PHY_MEASUREMENTS PHY_measurements;
 
 void phy_eNB_lte_measurement_thresholds_test_and_report(instance_t instanceP, ral_threshold_phy_t* threshold_phy_pP, uint16_t valP)
@@ -4408,7 +4408,7 @@ void phy_procedures_eNB_lte(unsigned char subframe,PHY_VARS_eNB **phy_vars_eNB,u
       Mod_id = instance;
 
       switch (ITTI_MSG_ID(msg_p)) {
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 
       case TIMER_HAS_EXPIRED:
         // check if it is a measurement timer

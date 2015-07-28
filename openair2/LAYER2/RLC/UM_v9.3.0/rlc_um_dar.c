@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_DAR_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_DAR_C 1
 #include "platform_types.h"
 #include "assertions.h"
 //-----------------------------------------------------------------------------
@@ -41,8 +41,6 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define TRACE_RLC_UM_DAR 1
-//#define TRACE_RLC_UM_RX  1
 //-----------------------------------------------------------------------------
 signed int rlc_um_get_pdu_infos(
   const protocol_ctxt_t* const ctxt_pP,
@@ -51,7 +49,6 @@ signed int rlc_um_get_pdu_infos(
   const sdu_size_t             total_sizeP,
   rlc_um_pdu_info_t    * const pdu_info_pP,
   const uint8_t                sn_lengthP)
-//-----------------------------------------------------------------------------
 {
   sdu_size_t         sum_li = 0;
   memset(pdu_info_pP, 0, sizeof (rlc_um_pdu_info_t));
@@ -135,7 +132,6 @@ signed int rlc_um_get_pdu_infos(
 //-----------------------------------------------------------------------------
 int rlc_um_read_length_indicators(unsigned char**data_ppP, rlc_um_e_li_t* e_liP, unsigned int* li_array_pP, unsigned int *num_li_pP, sdu_size_t *data_size_pP)
 {
-  //-----------------------------------------------------------------------------
   int          continue_loop = 1;
   unsigned int e1  = 0;
   unsigned int li1 = 0;
@@ -184,7 +180,6 @@ rlc_um_try_reassembly(
   rlc_sn_t                     start_snP,
   rlc_sn_t                     end_snP)
 {
-  //-----------------------------------------------------------------------------
   mem_block_t        *pdu_mem_p              = NULL;
   struct mac_tb_ind  *tb_ind_p               = NULL;
   rlc_um_e_li_t      *e_li_p                 = NULL;
@@ -209,7 +204,7 @@ rlc_um_try_reassembly(
     start_snP = start_snP + rlc_pP->rx_sn_modulo;
   }
 
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
   LOG_D(RLC,  PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY FROM PDU SN=%03d+1  TO  PDU SN=%03d   SN Length = %d bits (%s:%u)\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
         rlc_pP->last_reassemblied_sn,
@@ -235,7 +230,7 @@ rlc_um_try_reassembly(
     if ((pdu_mem_p = rlc_pP->dar_buffer[sn])) {
 
       if ((rlc_pP->last_reassemblied_sn+1)%rlc_pP->rx_sn_modulo != sn) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_W(RLC,
               PROTOCOL_RLC_UM_CTXT_FMT" FINDING a HOLE in RLC UM SN: CLEARING OUTPUT SDU BECAUSE NEW SN (%03d) TO REASSEMBLY NOT CONTIGUOUS WITH LAST REASSEMBLIED SN (%03d) (%s:%u)\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -251,7 +246,7 @@ rlc_um_try_reassembly(
       tb_ind_p = (struct mac_tb_ind *)(pdu_mem_p->data);
 
       if (rlc_pP->rx_sn_length == 10) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY 10 PDU SN=%03d\n (%s:%u)",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
               sn,
@@ -264,7 +259,7 @@ rlc_um_try_reassembly(
         size   = tb_ind_p->size - 2;
         data_p = &tb_ind_p->data_ptr[2];
       } else {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY 5 PDU SN=%03d Byte 0=%02X (%s:%u)\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
               sn,
@@ -277,7 +272,7 @@ rlc_um_try_reassembly(
         e_li_p = (rlc_um_e_li_t*)((rlc_um_pdu_sn_5_t*)(tb_ind_p->data_ptr))->data;
         size   = tb_ind_p->size - 1;
         data_p = &tb_ind_p->data_ptr[1];
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" e=%01X fi=%01X\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
               e,
@@ -290,7 +285,7 @@ rlc_um_try_reassembly(
       if (e == RLC_E_FIXED_PART_DATA_FIELD_FOLLOW) {
         switch (fi) {
         case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU NO E_LI FI=11 (00) (%s:%u)\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 __FILE__,
@@ -306,7 +301,7 @@ rlc_um_try_reassembly(
           break;
 
         case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU NO E_LI FI=10 (01) (%s:%u)\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 __FILE__,
@@ -320,7 +315,7 @@ rlc_um_try_reassembly(
           break;
 
         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU NO E_LI FI=01 (10) (%s:%u)\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 __FILE__,
@@ -341,7 +336,7 @@ rlc_um_try_reassembly(
           break;
 
         case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU NO E_LI FI=00 (11) (%s:%u)\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 __FILE__,
@@ -352,7 +347,7 @@ rlc_um_try_reassembly(
             // one whole segment of SDU in PDU
             rlc_um_reassembly (ctxt_pP, rlc_pP, data_p, size);
           } else {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_W(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU NO E_LI FI=00 (11) MISSING SN DETECTED (%s:%u)\n",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                   __FILE__,
@@ -363,7 +358,7 @@ rlc_um_try_reassembly(
             rlc_pP->reassembly_missing_sn_detected = 1; // not necessary but for readability of the code
             rlc_pP->stat_rx_data_pdu_dropped += 1;
             rlc_pP->stat_rx_data_bytes_dropped += tb_ind_p->size;
-#if defined(RLC_STOP_ON_LOST_PDU)
+#if RLC_STOP_ON_LOST_PDU
             AssertFatal( rlc_pP->reassembly_missing_sn_detected == 1,
                          PROTOCOL_RLC_UM_CTXT_FMT" MISSING PDU DETECTED (%s:%u)\n",
                          PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -384,7 +379,7 @@ rlc_um_try_reassembly(
         if (rlc_um_read_length_indicators(&data_p, e_li_p, li_array, &num_li, &size ) >= 0) {
           switch (fi) {
           case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU FI=11 (00) Li=",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
@@ -414,7 +409,7 @@ rlc_um_try_reassembly(
             break;
 
           case RLC_FI_1ST_BYTE_DATA_IS_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU FI=10 (01) Li=",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
@@ -443,7 +438,7 @@ rlc_um_try_reassembly(
             break;
 
           case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU FI=01 (10) Li=",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
@@ -480,7 +475,7 @@ rlc_um_try_reassembly(
             break;
 
           case RLC_FI_1ST_BYTE_DATA_IS_NOT_1ST_BYTE_SDU_LAST_BYTE_DATA_IS_NOT_LAST_BYTE_SDU:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRY REASSEMBLY PDU FI=00 (11) Li=",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
@@ -492,7 +487,7 @@ rlc_um_try_reassembly(
 #endif
 
             if (rlc_pP->reassembly_missing_sn_detected) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
               LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" DISCARD FIRST LI %d (%s:%u)",
                     PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                     li_array[0],
@@ -529,7 +524,7 @@ rlc_um_try_reassembly(
             break;
 
           default:
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
             LOG_W(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Missing SN detected (%s:%u)\n",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                   __FILE__,
@@ -539,7 +534,7 @@ rlc_um_try_reassembly(
             rlc_pP->stat_rx_data_bytes_dropped += tb_ind_p->size;
 
             rlc_pP->reassembly_missing_sn_detected = 1;
-#if defined(RLC_STOP_ON_LOST_PDU)
+#if RLC_STOP_ON_LOST_PDU
             AssertFatal( rlc_pP->reassembly_missing_sn_detected == 1,
                          PROTOCOL_RLC_UM_CTXT_FMT" MISSING PDU DETECTED (%s:%u)\n",
                          PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -550,7 +545,7 @@ rlc_um_try_reassembly(
         }
       }
 
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" REMOVE PDU FROM DAR BUFFER  SN=%03d (%s:%u)\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             sn,
@@ -561,7 +556,7 @@ rlc_um_try_reassembly(
       rlc_pP->dar_buffer[sn] = NULL;
     } else {
       rlc_pP->last_reassemblied_missing_sn = sn;
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Missing SN %04d detected, clearing RX SDU (%s:%u)\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             sn,
@@ -570,7 +565,7 @@ rlc_um_try_reassembly(
 #endif
       rlc_pP->reassembly_missing_sn_detected = 1;
       rlc_um_clear_rx_sdu(ctxt_pP, rlc_pP);
-#if defined(RLC_STOP_ON_LOST_PDU)
+#if RLC_STOP_ON_LOST_PDU
       AssertFatal( rlc_pP->reassembly_missing_sn_detected == 1,
                    PROTOCOL_RLC_UM_CTXT_FMT" MISSING PDU DETECTED (%s:%u)\n",
                    PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -586,7 +581,7 @@ rlc_um_try_reassembly(
     }
   }
 
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TRIED REASSEMBLY VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d (%s:%u)\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
         rlc_pP->vr_ur,
@@ -603,9 +598,8 @@ void
 rlc_um_stop_and_reset_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t *            rlc_pP)
-//-----------------------------------------------------------------------------
 {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [T-REORDERING] STOPPED AND RESET\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
 #endif
@@ -619,7 +613,6 @@ void
 rlc_um_start_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t *            rlc_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_reordering.timed_out       = 0;
 
@@ -627,7 +620,7 @@ rlc_um_start_timer_reordering(
   rlc_pP->t_reordering.running         = 1;
     rlc_pP->t_reordering.ms_time_out      = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP) + rlc_pP->t_reordering.ms_duration;
     rlc_pP->t_reordering.ms_start        = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [T-REORDERING] STARTED (TIME-OUT = FRAME %05u)\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
         rlc_pP->t_reordering.ms_time_out);
@@ -643,7 +636,6 @@ rlc_um_init_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t * const rlc_pP,
   const uint32_t  ms_durationP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_reordering.running         = 0;
   rlc_pP->t_reordering.ms_time_out     = 0;
@@ -656,7 +648,6 @@ void rlc_um_check_timer_dar_time_out(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t * const rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   signed int     in_window;
   rlc_usn_t      old_vr_ur;
 
@@ -692,7 +683,7 @@ void rlc_um_check_timer_dar_time_out(
       //      -start t-Reordering;
       //      -set VR(UX) to VR(UH).
       rlc_pP->stat_timer_reordering_timed_out += 1;
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"*****************************************************\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"*    T I M E  -  O U T                              *\n",
@@ -720,7 +711,7 @@ void rlc_um_check_timer_dar_time_out(
           rlc_pP->vr_ur = (rlc_pP->vr_ur+1)%rlc_pP->rx_sn_modulo;
         }
 
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_D(RLC, " %d", rlc_pP->vr_ur);
         LOG_D(RLC, "\n");
 #endif
@@ -731,13 +722,13 @@ void rlc_um_check_timer_dar_time_out(
         if (in_window == 2) {
           rlc_um_start_timer_reordering(ctxt_pP, rlc_pP);
           rlc_pP->vr_ux = rlc_pP->vr_uh;
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" restarting t-Reordering set VR(UX) to %d (VR(UH)>VR(UR))\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 rlc_pP->vr_ux);
 #endif
         } else {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" STOP t-Reordering VR(UX) = %03d\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
                 rlc_pP->vr_ux);
@@ -759,9 +750,8 @@ rlc_um_remove_pdu_from_dar_buffer(
   rlc_um_entity_t * const rlc_pP,
   rlc_usn_t snP)
 {
-  //-----------------------------------------------------------------------------
   mem_block_t * pdu_p     = rlc_pP->dar_buffer[snP];
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" REMOVE PDU FROM DAR BUFFER  SN=%03d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
         snP);
@@ -773,7 +763,6 @@ rlc_um_remove_pdu_from_dar_buffer(
 mem_block_t*
 rlc_um_get_pdu_from_dar_buffer(const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP, rlc_usn_t snP)
 {
-  //-----------------------------------------------------------------------------
   return rlc_pP->dar_buffer[snP];
 }
 //-----------------------------------------------------------------------------
@@ -784,8 +773,7 @@ rlc_um_store_pdu_in_dar_buffer(
   mem_block_t *pdu_pP,
   rlc_usn_t snP)
 {
-  //-----------------------------------------------------------------------------
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" STORE PDU IN DAR BUFFER  SN=%03d  VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
         snP,
@@ -810,10 +798,8 @@ rlc_um_in_window(
   rlc_sn_t snP,
   rlc_sn_t higher_boundP)
 {
-  //-----------------------------------------------------------------------------
-
   rlc_sn_t modulus = (rlc_sn_t)rlc_pP->vr_uh - rlc_pP->rx_um_window_size;
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
   rlc_sn_t     lower_bound  = lower_boundP;
   rlc_sn_t     higher_bound = higher_boundP;
   rlc_sn_t     sn           = snP;
@@ -823,7 +809,7 @@ rlc_um_in_window(
   snP           = (snP           - modulus) % rlc_pP->rx_sn_modulo;
 
   if ( lower_boundP > snP) {
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d not in WINDOW[%03d:%03d] (SN<LOWER BOUND)\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn,
@@ -834,7 +820,7 @@ rlc_um_in_window(
   }
 
   if ( higher_boundP < snP) {
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d not in WINDOW[%03d:%03d] (SN>HIGHER BOUND) <=> %d not in WINDOW[%03d:%03d]\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn,
@@ -849,7 +835,7 @@ rlc_um_in_window(
 
   if ( lower_boundP == snP) {
     if ( higher_boundP == snP) {
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND=LOWER BOUND)\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             sn,
@@ -859,7 +845,7 @@ rlc_um_in_window(
       return 3;
     }
 
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d  in WINDOW[%03d:%03d] (SN=LOWER BOUND)\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn,
@@ -870,7 +856,7 @@ rlc_um_in_window(
   }
 
   if ( higher_boundP == snP) {
-#ifdef TRACE_RLC_UM_RX
+#if TRACE_RLC_UM_RX
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d  in WINDOW[%03d:%03d] (SN=HIGHER BOUND)\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn,
@@ -890,13 +876,12 @@ rlc_um_in_reordering_window(
   rlc_um_entity_t * const rlc_pP,
   const rlc_sn_t snP)
 {
-  //-----------------------------------------------------------------------------
   rlc_sn_t   modulus = (signed int)rlc_pP->vr_uh - rlc_pP->rx_um_window_size;
   rlc_sn_t   sn_mod = (snP - modulus) % rlc_pP->rx_sn_modulo;
 
   if ( 0 <= sn_mod) {
     if (sn_mod < rlc_pP->rx_um_window_size) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d IN REORDERING WINDOW[%03d:%03d[ SN %d IN [%03d:%03d[ VR(UR)=%03d VR(UH)=%03d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             sn_mod,
@@ -912,7 +897,7 @@ rlc_um_in_reordering_window(
     }
   }
 
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
 
   if (modulus < 0) {
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" %d NOT IN REORDERING WINDOW[%03d:%03d[ SN %d NOT IN [%03d:%03d[ VR(UR)=%03d VR(UH)=%03d\n",
@@ -950,7 +935,6 @@ rlc_um_receive_process_dar (
   rlc_um_pdu_sn_10_t * const   pdu_pP,
   const sdu_size_t             tb_sizeP)
 {
-  //-----------------------------------------------------------------------------
   // 36.322v9.3.0 section 5.1.2.2.1:
   // The receiving UM RLC entity shall maintain a reordering window according to state variable VR(UH) as follows:
   //      -a SN falls within the reordering window if (VR(UH) – UM_Window_Size) <= SN < VR(UH);
@@ -988,7 +972,7 @@ rlc_um_receive_process_dar (
 
   in_window = rlc_um_in_window(ctxt_pP, rlc_pP, rlc_pP->vr_uh - rlc_pP->rx_um_window_size, sn, rlc_pP->vr_ur);
 
-#if defined(TRACE_RLC_PAYLOAD)
+#if TRACE_RLC_PAYLOAD
   rlc_util_print_hex_octets(RLC, &pdu_pP->b1, tb_sizeP);
 #endif
 
@@ -999,7 +983,7 @@ rlc_um_receive_process_dar (
   // rlc_um_in_window() returns  2 if higher_bound == sn
   // rlc_um_in_window() returns  3 if higher_bound == sn == lower_bound
   if ((in_window == 1) || (in_window == 0)) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RX PDU  VR(UH) – UM_Window_Size) <= SN %d < VR(UR) -> GARBAGE\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn);
@@ -1017,7 +1001,7 @@ rlc_um_receive_process_dar (
     in_window = rlc_um_in_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur, sn, rlc_pP->vr_uh);
 
     if (in_window == 0) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RX PDU  VR(UR) < SN %d < VR(UH) and RECEIVED BEFORE-> GARBAGE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             sn);
@@ -1035,7 +1019,7 @@ rlc_um_receive_process_dar (
     // 2 lines to avoid memory leaks
     rlc_pP->stat_rx_data_pdus_duplicate  += 1;
     rlc_pP->stat_rx_data_bytes_duplicate += tb_sizeP;
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RX PDU SN %03d REMOVE OLD PDU BEFORE STORING NEW PDU\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn);
@@ -1057,7 +1041,7 @@ rlc_um_receive_process_dar (
   //      -if VR(UR) falls outside of the reordering window:
   //          -set VR(UR) to (VR(UH) – UM_Window_Size);
   if (rlc_um_in_reordering_window(ctxt_pP, rlc_pP, sn) < 0) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RX PDU  SN %d OUTSIDE REORDERING WINDOW VR(UH)=%d UM_Window_Size=%d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
           sn,
@@ -1078,7 +1062,7 @@ rlc_um_receive_process_dar (
 
 
     if (rlc_um_in_reordering_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur) < 0) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" VR(UR) %d OUTSIDE REORDERING WINDOW SET TO VR(UH) – UM_Window_Size = %d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             rlc_pP->vr_ur,
@@ -1114,7 +1098,7 @@ rlc_um_receive_process_dar (
       in_window = rlc_um_in_reordering_window(ctxt_pP, rlc_pP, rlc_pP->vr_ux);
 
       if (in_window < 0) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
         LOG_D(RLC,
               PROTOCOL_RLC_UM_CTXT_FMT" STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d -or- VR(UX) <= VR(UR)\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -1130,7 +1114,7 @@ rlc_um_receive_process_dar (
     in_window = rlc_um_in_window(ctxt_pP, rlc_pP, rlc_pP->vr_ur,  rlc_pP->vr_ux,  rlc_pP->vr_uh);
 
     if ((in_window == -2) || (in_window == 1)) {
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC,
             PROTOCOL_RLC_UM_CTXT_FMT" STOP and RESET t-Reordering because VR(UX) falls outside of the reordering window and VR(UX)=%d is not equal to VR(UH)=%d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
@@ -1152,7 +1136,7 @@ rlc_um_receive_process_dar (
     if (in_window == 2) {
       rlc_um_start_timer_reordering(ctxt_pP, rlc_pP);
       rlc_pP->vr_ux = rlc_pP->vr_uh;
-#if defined (TRACE_RLC_UM_DAR)
+#if TRACE_RLC_UM_DAR
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RESTART t-Reordering set VR(UX) to VR(UH) =%d\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             rlc_pP->vr_ux);

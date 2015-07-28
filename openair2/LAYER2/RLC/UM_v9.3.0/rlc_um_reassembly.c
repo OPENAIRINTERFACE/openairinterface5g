@@ -26,14 +26,15 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_REASSEMBLY_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_REASSEMBLY_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#ifdef USER_MODE
+#if USER_MODE
 #include <string.h>
 #endif
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
+# include "platform_types.h"
 # include "intertask_interface.h"
 #endif
 #include "assertions.h"
@@ -45,13 +46,10 @@
 #include "UTIL/LOG/log.h"
 #include "msc.h"
 
-//#define TRACE_RLC_UM_DISPLAY_ASCII_DATA 1
-
 //-----------------------------------------------------------------------------
 inline void
 rlc_um_clear_rx_sdu (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t* rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   rlc_pP->output_sdu_size_to_write = 0;
 }
 
@@ -59,7 +57,6 @@ rlc_um_clear_rx_sdu (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t* rlc_
 void
 rlc_um_reassembly (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP, uint8_t * src_pP, int32_t lengthP)
 {
-  //-----------------------------------------------------------------------------
   sdu_size_t      sdu_max_size;
 
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[REASSEMBLY] reassembly()  %d bytes %d bytes already reassemblied\n",
@@ -88,14 +85,14 @@ rlc_um_reassembly (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
     if ((rlc_pP->output_sdu_size_to_write + lengthP) <= sdu_max_size) {
       memcpy (&rlc_pP->output_sdu_in_construction->data[rlc_pP->output_sdu_size_to_write], src_pP, lengthP);
       rlc_pP->output_sdu_size_to_write += lengthP;
-#ifdef TRACE_RLC_UM_DISPLAY_ASCII_DATA
+#if TRACE_RLC_UM_DISPLAY_ASCII_DATA
       rlc_pP->output_sdu_in_construction->data[rlc_pP->output_sdu_size_to_write] = 0;
       LOG_T(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[REASSEMBLY] DATA :",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
       rlc_util_print_hex_octets(RLC, (unsigned char*)rlc_pP->output_sdu_in_construction->data, rlc_pP->output_sdu_size_to_write);
 #endif
     } else {
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+#if STOP_ON_IP_TRAFFIC_OVERLOAD
       AssertFatal(0, PROTOCOL_RLC_UM_CTXT_FMT" RLC_UM_DATA_IND, SDU TOO BIG, DROPPED\n",
                   PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -108,7 +105,7 @@ rlc_um_reassembly (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
   } else {
     LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[REASSEMBLY]ERROR  OUTPUT SDU IS NULL\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+#if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_UM_CTXT_FMT" RLC_UM_DATA_IND, SDU DROPPED, OUT OF MEMORY\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -119,8 +116,6 @@ rlc_um_reassembly (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 void
 rlc_um_send_sdu (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 {
-  //-----------------------------------------------------------------------------
-
   if ((rlc_pP->output_sdu_in_construction)) {
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" SEND_SDU to upper layers %d bytes sdu %p\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -142,8 +137,8 @@ rlc_um_send_sdu (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         rlc_pP->output_sdu_size_to_write
       );
 
-#ifdef TEST_RLC_UM
-#ifdef TRACE_RLC_UM_DISPLAY_ASCII_DATA
+#if TEST_RLC_UM
+#if TRACE_RLC_UM_DISPLAY_ASCII_DATA
       rlc_pP->output_sdu_in_construction->data[rlc_pP->output_sdu_size_to_write] = 0;
       LOG_T(RLC, PROTOCOL_RLC_UM_CTXT_FMT"[SEND_SDU] DATA :",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));

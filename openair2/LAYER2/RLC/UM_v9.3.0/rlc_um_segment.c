@@ -26,13 +26,13 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_SEGMENT_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_SEGMENT_C 1
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
-#ifdef USER_MODE
+#if USER_MODE
 #include <assert.h>
 #endif
 #include "assertions.h"
@@ -43,12 +43,10 @@
 #include "MAC_INTERFACE/extern.h"
 #include "UTIL/LOG/log.h"
 
-//#define TRACE_RLC_UM_SEGMENT 1
 //-----------------------------------------------------------------------------
 void
 rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   list_t              pdus;
   signed int          pdu_remaining_size;
   signed int          test_pdu_remaining_size;
@@ -78,7 +76,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
   unsigned int       max_li_overhead;
 
   if (nb_bytes_to_transmit < 3) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" NO SEGMENTATION nb_bytes to transmit = %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           nb_bytes_to_transmit);
@@ -94,7 +92,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 
   while ((list_get_head(&rlc_pP->input_sdus)) && (nb_bytes_to_transmit > 0)) {
 
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" nb_bytes_to_transmit %d BO %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           nb_bytes_to_transmit,
@@ -111,14 +109,14 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 
       if  (nb_bytes_to_transmit >= (rlc_pP->buffer_occupancy + rlc_pP->tx_header_min_length_in_bytes + max_li_overhead)) {
         data_pdu_size = rlc_pP->buffer_occupancy + rlc_pP->tx_header_min_length_in_bytes + max_li_overhead;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               data_pdu_size);
 #endif
       } else {
         data_pdu_size = nb_bytes_to_transmit;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" alloc PDU size %d bytes to contain all bytes requested by MAC@1\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               data_pdu_size);
@@ -126,7 +124,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
       }
 
       if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -134,7 +132,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         return;
       }
 
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" get new PDU %d bytes\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
             data_pdu_size);
@@ -193,7 +191,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         test_remaining_num_li_to_substract = 1;
         test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" sdu_mngt_p->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
@@ -221,7 +219,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
     //----------------------------------------
     // Do the real filling of the pdu_p
     //----------------------------------------
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" data shift %d Bytes num_li %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           ((test_num_li*3) +1) >> 1,
@@ -248,14 +246,14 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
       sdu_mngt_p = ((struct rlc_um_tx_sdu_management *) (sdu_in_buffer->data));
 
       if (sdu_mngt_p->sdu_segmented_size == 0) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" GET NEW SDU %p AVAILABLE SIZE %d Bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p,
               sdu_mngt_p->sdu_remaining_size);
 #endif
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" GET AGAIN SDU %p REMAINING AVAILABLE SIZE %d Bytes / %d Bytes \n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p,
@@ -267,7 +265,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
       data_sdu_p = (char *) &(sdu_in_buffer->data[sizeof (struct rlc_um_tx_sdu_management) + sdu_mngt_p->sdu_segmented_size]);
 
       if (sdu_mngt_p->sdu_remaining_size > pdu_remaining_size) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling all remaining PDU with %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
@@ -291,7 +289,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if (sdu_mngt_p->sdu_remaining_size == pdu_remaining_size) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Exactly Filling remaining PDU with %d remaining bytes of SDU\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
@@ -311,7 +309,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if ((sdu_mngt_p->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size);
@@ -333,7 +331,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
           //e_li_p->li1 = sdu_mngt_p->sdu_remaining_size;
           e_li_p->b1 = e_li_p->b1 | (sdu_mngt_p->sdu_remaining_size >> 4);
           e_li_p->b2 = sdu_mngt_p->sdu_remaining_size << 4;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" set e_li_p->b1=%02X set e_li_p->b2=%02X fill_num_li=%d test_num_li=%d\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 e_li_p->b1,
@@ -350,7 +348,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
           //e_li_p->li2 = sdu_mngt_p->sdu_remaining_size;
           e_li_p->b2 = e_li_p->b2 | (sdu_mngt_p->sdu_remaining_size >> 8);
           e_li_p->b3 = sdu_mngt_p->sdu_remaining_size & 0xFF;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" set e_li_p->b2=%02X set e_li_p->b3=%02X fill_num_li=%d test_num_li=%d\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 e_li_p->b2,
@@ -371,14 +369,14 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
         sdu_mngt_p    = NULL;
 
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#ifdef USER_MODE
-#ifndef EXMIMO
+#if USER_MODE
+#if !EXMIMO
         assert(1!=1);
 #endif
 #endif
@@ -422,7 +420,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
     pdu_tb_req_p->data_ptr        = (unsigned char*)pdu_p;
     pdu_tb_req_p->tb_size = data_pdu_size - pdu_remaining_size;
     list_add_tail_eurecom (pdu_mem_p, &rlc_pP->pdus_to_mac_layer);
-#if defined(TRACE_RLC_PAYLOAD)
+#if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, pdu_mem_p->data, data_pdu_size);
 #endif
     AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT10: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
@@ -439,7 +437,6 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 void
 rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   list_t              pdus;
   signed int          pdu_remaining_size      = 0;
   signed int          test_pdu_remaining_size = 0;
@@ -469,7 +466,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
   unsigned int       max_li_overhead                     = 0;
 
   if (nb_bytes_to_transmit < 2) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" NO SEGMENTATION5 nb_bytes to transmit = %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           nb_bytes_to_transmit);
@@ -483,7 +480,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
   RLC_UM_MUTEX_LOCK(&rlc_pP->lock_input_sdus, ctxt_pP, rlc_pP);
 
   while ((list_get_head(&rlc_pP->input_sdus)) && (nb_bytes_to_transmit > 0)) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"nb_bytes_to_transmit %d BO %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           nb_bytes_to_transmit,
@@ -500,14 +497,14 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 
       if  (nb_bytes_to_transmit >= (rlc_pP->buffer_occupancy + rlc_pP->tx_header_min_length_in_bytes + max_li_overhead)) {
         data_pdu_size = rlc_pP->buffer_occupancy + rlc_pP->tx_header_min_length_in_bytes + max_li_overhead;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" alloc PDU size %d bytes to contain not all bytes requested by MAC but all BO of RLC@1\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               data_pdu_size);
 #endif
       } else {
         data_pdu_size = nb_bytes_to_transmit;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" alloc PDU size %d bytes to contain all bytes requested by MAC@1\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               data_pdu_size);
@@ -515,7 +512,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
       }
 
       if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req)))) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -523,7 +520,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         return;
       }
 
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" get new PDU %d bytes\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
             data_pdu_size);
@@ -583,7 +580,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         test_remaining_num_li_to_substract = 1;
         test_li_length_in_bytes = test_li_length_in_bytes ^ 3;
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" sdu_mngt_p->sdu_remaining_size=%d test_pdu_remaining_size=%d test_li_length_in_bytes=%d\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
@@ -612,7 +609,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
     //----------------------------------------
     // Do the real filling of the pdu_p
     //----------------------------------------
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" data shift %d Bytes num_li %d\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
           ((test_num_li*3) +1) >> 1,
@@ -639,14 +636,14 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
       sdu_mngt_p = ((struct rlc_um_tx_sdu_management *) (sdu_in_buffer->data));
 
       if (sdu_mngt_p->sdu_segmented_size == 0) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" GET NEW SDU %p AVAILABLE SIZE %d Bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p,
               sdu_mngt_p->sdu_remaining_size);
 #endif
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" GET AGAIN SDU %p REMAINING AVAILABLE SIZE %d Bytes / %d Bytes \n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p,
@@ -658,7 +655,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
       data_sdu_p = (char*) &(sdu_in_buffer->data[sizeof (struct rlc_um_tx_sdu_management) + sdu_mngt_p->sdu_segmented_size]);
 
       if (sdu_mngt_p->sdu_remaining_size > pdu_remaining_size) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling all remaining PDU with %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
@@ -681,7 +678,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if (sdu_mngt_p->sdu_remaining_size == pdu_remaining_size) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Exactly Filling remaining PDU with %d remaining bytes of SDU\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
@@ -699,7 +696,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if ((sdu_mngt_p->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size);
@@ -721,7 +718,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
           //e_li_p->li1 = sdu_mngt_p->sdu_remaining_size;
           e_li_p->b1 = e_li_p->b1 | (sdu_mngt_p->sdu_remaining_size >> 4);
           e_li_p->b2 = sdu_mngt_p->sdu_remaining_size << 4;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" set e_li_p->b1=%02X set e_li_p->b2=%02X fill_num_li=%d test_num_li=%d\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 e_li_p->b1,
@@ -738,7 +735,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
           //e_li_p->li2 = sdu_mngt_p->sdu_remaining_size;
           e_li_p->b2 = e_li_p->b2 | (sdu_mngt_p->sdu_remaining_size >> 8);
           e_li_p->b3 = sdu_mngt_p->sdu_remaining_size & 0xFF;
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
           LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" set e_li_p->b2=%02X set e_li_p->b3=%02X fill_num_li=%d test_num_li=%d\n",
                 PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
                 e_li_p->b2,
@@ -759,13 +756,13 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         sdu_mngt_p    = NULL;
 
       } else {
-#if defined(TRACE_RLC_UM_SEGMENT)
+#if TRACE_RLC_UM_SEGMENT
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
 #endif
-#ifdef USER_MODE
+#if USER_MODE
         assert(1!=1);
 #endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
@@ -806,7 +803,7 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
     pdu_tb_req_p->data_ptr        = (unsigned char*)pdu_p;
     pdu_tb_req_p->tb_size         = data_pdu_size - pdu_remaining_size;
     list_add_tail_eurecom (pdu_mem_p, &rlc_pP->pdus_to_mac_layer);
-#if defined(TRACE_RLC_PAYLOAD)
+#if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, (unsigned char*)pdu_mem_p->data, data_pdu_size);
 #endif
     AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT5: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);

@@ -115,7 +115,7 @@
 # include "commonDef.h"
 #endif
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 # include "collection/hashtable/obj_hashtable.h"
 #endif
 
@@ -140,7 +140,7 @@ typedef struct uid_linear_allocator_s {
  * @{
  */
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 typedef struct rrc_ral_threshold_key_s {
   ral_link_param_type_t   link_param_type;
   ral_threshold_t         threshold;
@@ -414,7 +414,7 @@ typedef struct eNB_RRC_INST_s {
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   uint8_t                           HO_flag;
   uint8_t                            Nb_ue;
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   obj_hash_table_t                  *ral_meas_thresholds;
 #endif
   hash_table_t                      *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
@@ -509,7 +509,7 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   obj_hash_table_t               *ral_meas_thresholds;
   ral_transaction_id_t            scan_transaction_id;
 #endif

@@ -35,7 +35,7 @@
  */
 
 #include "hashtable.h"
-
+#include "asn1_constants.h"
 
 #ifndef GTPV1U_ENB_DEFS_H_
 #define GTPV1U_ENB_DEFS_H_

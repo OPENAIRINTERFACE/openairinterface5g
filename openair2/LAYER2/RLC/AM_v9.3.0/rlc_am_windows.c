@@ -26,14 +26,13 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_WINDOWS_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_WINDOWS_C 1
 //-----------------------------------------------------------------------------
-#ifdef USER_MODE
+#if USER_MODE
 #include <assert.h>
 #endif
 //-----------------------------------------------------------------------------
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
@@ -43,7 +42,6 @@ signed int rlc_am_in_tx_window(
   const protocol_ctxt_t* const  ctxt_pP,
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -67,7 +65,6 @@ rlc_am_in_rx_window(
   const protocol_ctxt_t* const  ctxt_pP,
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -91,7 +88,6 @@ rlc_am_sn_gte_vr_h(
   const protocol_ctxt_t* const  ctxt_pP,
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -114,7 +110,6 @@ signed int rlc_am_sn_gte_vr_x(
   const protocol_ctxt_t* const  ctxt_pP,
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -138,7 +133,6 @@ rlc_am_sn_gt_vr_ms(
   const protocol_ctxt_t* const  ctxt_pP,
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -163,7 +157,6 @@ rlc_am_tx_sn1_gt_sn2(
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t sn1P,
   const rlc_sn_t sn2P)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;
@@ -188,7 +181,6 @@ rlc_am_rx_sn1_gt_sn2(
   const rlc_am_entity_t* const rlc_pP,
   const rlc_sn_t sn1P,
   const rlc_sn_t sn2P)
-//-----------------------------------------------------------------------------
 {
   rlc_usn_t shifted_sn;
   rlc_usn_t upper_bound;

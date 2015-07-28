@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_TM_MODULE
-#define RLC_TM_INIT_C
+#define RLC_TM_MODULE 1
+#define RLC_TM_INIT_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_tm.h"
 #include "LAYER2/MAC/extern.h"
@@ -39,7 +39,6 @@ void config_req_rlc_tm (
   const rb_id_t     rb_idP
 )
 {
-  //-----------------------------------------------------------------------------
   rlc_union_t     *rlc_union_p  = NULL;
   rlc_tm_entity_t *rlc_p        = NULL;
   hash_key_t       key          = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
@@ -71,7 +70,6 @@ void rlc_tm_init (
   rlc_tm_entity_t * const rlcP
 )
 {
-  //-----------------------------------------------------------------------------
   int saved_allocation = rlcP->allocation;
   memset (rlcP, 0, sizeof (struct rlc_tm_entity));
   rlcP->allocation = saved_allocation;
@@ -103,7 +101,6 @@ rlc_tm_reset_state_variables (
   struct rlc_tm_entity * const rlcP
 )
 {
-  //-----------------------------------------------------------------------------
   rlcP->output_sdu_size_to_write = 0;
   rlcP->buffer_occupancy = 0;
   rlcP->nb_sdu = 0;
@@ -116,7 +113,6 @@ rlc_tm_cleanup (
   rlc_tm_entity_t * const rlcP
 )
 {
-  //-----------------------------------------------------------------------------
   int             index;
   // TX SIDE
   list_free (&rlcP->pdus_to_mac_layer);
@@ -146,7 +142,6 @@ void rlc_tm_configure(
   rlc_tm_entity_t * const rlcP,
   const boolean_t is_uplink_downlinkP)
 {
-  //-----------------------------------------------------------------------------
   rlcP->is_uplink_downlink = is_uplink_downlinkP;
   rlc_tm_reset_state_variables (ctxt_pP, rlcP);
 }
@@ -157,7 +152,6 @@ void rlc_tm_set_debug_infos(
   rlc_tm_entity_t * const rlcP,
   const srb_flag_t  srb_flagP,
   const rb_id_t     rb_idP)
-//-----------------------------------------------------------------------------
 {
   rlcP->rb_id     = rb_idP;
 
