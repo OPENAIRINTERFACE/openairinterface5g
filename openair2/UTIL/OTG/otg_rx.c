@@ -460,7 +460,7 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
     } else {
       LOG_W(OTG,"RX: Not an OTG pkt, forward to upper layer (flag %x, size %d, pdcp_size %d) FIX ME \n",
             otg_hdr_info_rx->flag, otg_hdr_info_rx->size, size);
-      return(0); //to be fixed on the real case to one
+      return(1); //to be fixed on the real case to one
     }
 
   }
