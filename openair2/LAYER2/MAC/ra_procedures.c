@@ -107,6 +107,7 @@ int8_t get_DELTA_PREAMBLE(module_id_t module_idP,int CC_id)
 
 }
 
+
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void get_prach_resources(module_id_t module_idP,
                          int CC_id,
@@ -121,6 +122,11 @@ void get_prach_resources(module_id_t module_idP,
   RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
   uint8_t noGroupB = 0;
   uint8_t f_id = 0,num_prach=0;
+  int numberOfRA_Preambles = (1+rach_ConfigCommon->preambleInfo.numberOfRA_Preambles)<<2;  
+  int messageSizeGroupA;
+  int sizeOfRA_PreamblesGroupA;
+  int messagePowerOffsetGroupB;
+  int PLThreshold;
 
   if (CC_id>0) {
     LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
@@ -147,8 +153,53 @@ void get_prach_resources(module_id_t module_idP,
   if (!rach_ConfigCommon->preambleInfo.preamblesGroupAConfig) {
     noGroupB = 1;
   } else {
-    if (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA ==
-        rach_ConfigCommon->preambleInfo.numberOfRA_Preambles) {
+    sizeOfRA_PreamblesGroupA = (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA+1)<<2;
+    switch (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messageSizeGroupA) {
+    case 0:
+      messageSizeGroupA = 56;
+      break;
+    case 1:
+      messageSizeGroupA = 144;
+      break;
+    case 2:
+      messageSizeGroupA = 208;
+      break;
+    case 3:
+      messageSizeGroupA = 256;
+      break;
+    }
+
+    switch (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB) {
+    case 0:
+      messagePowerOffsetGroupB = -9999;
+      break;
+    case 1:
+      messagePowerOffsetGroupB = 0;
+      break;
+    case 2:
+      messagePowerOffsetGroupB = 5;
+      break;
+    case 3:
+      messagePowerOffsetGroupB = 8;
+      break;
+    case 4:
+      messagePowerOffsetGroupB = 10;
+      break;
+    case 5:
+      messagePowerOffsetGroupB = 12;
+      break;
+    case 6:
+      messagePowerOffsetGroupB = 15;
+      break;
+    case 7:
+      messagePowerOffsetGroupB = 18;
+      break;
+    }
+
+    PLThreshold = 0 - get_DELTA_PREAMBLE(module_idP,CC_id) - get_Po_NOMINAL_PUSCH(module_idP,CC_id) - messagePowerOffsetGroupB;
+    // Note Pcmax is set to 0 here, we have to fix this
+
+    if (sizeOfRA_PreamblesGroupA == numberOfRA_Preambles) {
       noGroupB = 1;
     }
   }
@@ -156,20 +207,18 @@ void get_prach_resources(module_id_t module_idP,
   if (first_Msg3 == 1) {
     if (noGroupB == 1) {
       // use Group A procedure
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())&0x3f;
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%numberOfRA_Preambles;
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 1;
-    } else if ((Msg3_size < rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messageSizeGroupA) ||
-               (mac_xface->get_PL(module_idP,0,eNB_index) > UE_mac_inst[module_idP].RA_maxPL)) {
+    } else if ((Msg3_size <messageSizeGroupA) ||
+               (mac_xface->get_PL(module_idP,0,eNB_index) > PLThreshold)) {
       // use Group A procedure
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA;
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%sizeOfRA_PreamblesGroupA;
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 1;
     } else { // use Group B
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  =
-        rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA +
-        (taus())%(rach_ConfigCommon->preambleInfo.numberOfRA_Preambles -
-                  rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA);
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = sizeOfRA_PreamblesGroupA +
+        (taus())%(numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 0;
     }
