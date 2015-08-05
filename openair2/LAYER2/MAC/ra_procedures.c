@@ -122,7 +122,7 @@ void get_prach_resources(module_id_t module_idP,
   RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
   uint8_t noGroupB = 0;
   uint8_t f_id = 0,num_prach=0;
-  int numberOfRA_Preambles = (1+rach_ConfigCommon->preambleInfo.numberOfRA_Preambles)<<2;  
+  int numberOfRA_Preambles;
   int messageSizeGroupA;
   int sizeOfRA_PreamblesGroupA;
   int messagePowerOffsetGroupB;
@@ -141,6 +141,8 @@ void get_prach_resources(module_id_t module_idP,
     mac_xface->macphy_exit("MAC FATAL  radioResourceConfigCommon is NULL");
     return; // not reached
   }
+
+  numberOfRA_Preambles = (1+rach_ConfigCommon->preambleInfo.numberOfRA_Preambles)<<2;  
 
   if (rach_ConfigDedicated) {   // This is for network controlled Mobility, later
     if (rach_ConfigDedicated->ra_PRACH_MaskIndex != 0) {
