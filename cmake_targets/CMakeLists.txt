@@ -186,7 +186,10 @@ add_boolean_option(MSG_PRINT  False "print debug messages")
 add_boolean_option(DISABLE_XER_PRINT False "print XER Format")
 add_boolean_option(XER_PRINT False "print XER Format")
 add_boolean_option(RRC_MSG_PRINT False "print RRC messages")
-add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages")
+add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages to /tmp/pdcp.log")
+add_boolean_option(DEBUG_PDCP_PAYLOAD False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(TRACE_RLC_PAYLOAD False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
 add_boolean_option(TEST_OMG False "???")
 add_boolean_option(DEBUG_OMG False "???")
 add_boolean_option(XFORMS False "This adds the possibility to see the signal oscilloscope")
@@ -2085,3 +2088,37 @@ ADD_CUSTOM_TARGET(oarf
    DEPENDS ${OCT_FILES}
 )
  
+#CMAKE INSTALL and CPACK
+
+#INSTALL(PROGRAMS lte-softmodem ${OPENAIR_DIR}/targets DESTINATION bin)
+#INSTALL(PROGRAMS oaisim ${OPENAIR_DIR}/targets DESTINATION bin)
+
+
+#SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAirInterface")
+#SET(CPACK_PACKAGE_VENDOR "Eurecom")
+#SET(CPACK_PACKAGE_DESCRIPTION_FILE "${OPENAIR_DIR}/README.txt")
+#SET(CPACK_RESOURCE_FILE_LICENSE "${OPENAIR_DIR}/COPYING")
+#SET(CPACK_PACKAGE_VERSION_MAJOR "1")
+#SET(CPACK_PACKAGE_VERSION_MINOR "1")
+#SET(CPACK_PACKAGE_VERSION_PATCH "1")
+
+#SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+#SET(CPACK_STRIP_FILES "${OPENAIR_TARGETS}/bin")
+#SET(CPACK_SOURCE_STRIP_FILES "")
+
+##debian specific 
+#SET(CPACK_DEBIAN_PACKAGE_NAME "OAI") 
+#SET(CPACK_DEBIAN_PACKAGE_VERSION "${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+##dpkg --print-architecture (do not use i686
+#SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+
+#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
+#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libpthread.so.0  libm.so.6 libconfig.so.9 librt.so.1 libcrypt.so.1 libcrypto.so.1.0.0  libnettle.so.4 libsctp.so.1 libc.so.6")
+#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "EURECOM-OSA")
+
+#SET(CPACK_PACKAGE_EXECUTABLES "lte-softmodem" "mme_gw.Rel10" "openair-hss")
+
+#SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "OpenAirInterface")
+#SET(CPACK_DEBIAN_PACKAGE_Section "Beta-Release")
+
+#INCLUDE(CPack)
