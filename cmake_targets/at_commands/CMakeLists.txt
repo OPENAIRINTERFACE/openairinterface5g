@@ -526,6 +526,7 @@ set(ies_SRC
     ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark2.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark3.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkCapability.c
+    ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkFeatureSupport.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasKeySetIdentifier.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasMessageContainer.c
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasRequestType.c
@@ -605,6 +606,7 @@ set(ies_HDR
     ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark2.h
     ${OPENAIR_NAS_DIR}/COMMON/IES/MobileStationClassmark3.h
     ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkCapability.h
+    ${OPENAIR_NAS_DIR}/COMMON/IES/MsNetworkFeatureSupport.h
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasKeySetIdentifier.h
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasMessageContainer.h
     ${OPENAIR_NAS_DIR}/COMMON/IES/NasRequestType.h

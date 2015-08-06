@@ -291,7 +291,10 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   /* The list of served gummei can contain at most 8 elements.
    * LTE related gummei is the first element in the list, i.e with an id of 0.
    */
-  DevAssert(s1SetupResponse_p->servedGUMMEIs.list.count == 1);
+  S1AP_DEBUG("servedGUMMEIs.list.count %d\n",s1SetupResponse_p->servedGUMMEIs.list.count); 
+  DevAssert(s1SetupResponse_p->servedGUMMEIs.list.count > 0);
+  DevAssert(s1SetupResponse_p->servedGUMMEIs.list.count <= 8);
+
 
   for (i = 0; i < s1SetupResponse_p->servedGUMMEIs.list.count; i++) {
     struct S1ap_ServedGUMMEIsItem *gummei_item_p;
@@ -305,12 +308,13 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
     STAILQ_INIT(&new_gummei_p->served_plmns);
     STAILQ_INIT(&new_gummei_p->served_group_ids);
     STAILQ_INIT(&new_gummei_p->mme_codes);
-
+    
+    S1AP_DEBUG("servedPLMNs.list.count %d\n",gummei_item_p->servedPLMNs.list.count);
     for (j = 0; j < gummei_item_p->servedPLMNs.list.count; j++) {
       S1ap_PLMNidentity_t *plmn_identity_p;
       struct plmn_identity_s *new_plmn_identity_p;
-
-      plmn_identity_p = gummei_item_p->servedPLMNs.list.array[i];
+      
+      plmn_identity_p = gummei_item_p->servedPLMNs.list.array[j];
       new_plmn_identity_p = calloc(1, sizeof(struct plmn_identity_s));
       TBCD_TO_MCC_MNC(plmn_identity_p, new_plmn_identity_p->mcc,
                       new_plmn_identity_p->mnc, new_plmn_identity_p->mnc_digit_length);
@@ -322,7 +326,7 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
       S1ap_MME_Group_ID_t           *mme_group_id_p;
       struct served_group_id_s *new_group_id_p;
 
-      mme_group_id_p = gummei_item_p->servedGroupIDs.list.array[i];
+      mme_group_id_p = gummei_item_p->servedGroupIDs.list.array[j];
       new_group_id_p = calloc(1, sizeof(struct served_group_id_s));
       OCTET_STRING_TO_INT16(mme_group_id_p, new_group_id_p->mme_group_id);
       STAILQ_INSERT_TAIL(&new_gummei_p->served_group_ids, new_group_id_p, next);
@@ -333,7 +337,7 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
       S1ap_MME_Code_t        *mme_code_p;
       struct mme_code_s *new_mme_code_p;
 
-      mme_code_p = gummei_item_p->servedMMECs.list.array[i];
+      mme_code_p = gummei_item_p->servedMMECs.list.array[j];
       new_mme_code_p = calloc(1, sizeof(struct mme_code_s));
 
       OCTET_STRING_TO_INT8(mme_code_p, new_mme_code_p->mme_code);
