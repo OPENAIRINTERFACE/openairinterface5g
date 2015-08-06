@@ -325,7 +325,9 @@ ue_send_sdu(
 
   if (opt_enabled) {
     trace_pdu(1, sdu, sdu_len, module_idP, 3, UE_mac_inst[module_idP].crnti,
-              UE_mac_inst[module_idP].subframe, 0, 0);
+              UE_mac_inst[module_idP].subframe, 0, 0); 
+    LOG_D(OPT,"[UE %d][DLSCH] Frame %d trace pdu for rnti %x  with size %d\n",
+          module_idP, frameP, UE_mac_inst[module_idP].crnti, sdu_len);
   }
 
   payload_ptr = parse_header(sdu,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_len);
@@ -508,6 +510,19 @@ void ue_decode_si(module_id_t module_idP,int CC_id,frame_t frameP, uint8_t eNB_i
                    0);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].rx_si);
+  if (opt_enabled == 1) {
+    trace_pdu(0,
+	      (uint8_t *)pdu,
+	      len,
+	      module_idP,
+	      4,
+	      0xffff,
+	      UE_mac_inst[module_idP].subframe,
+	      0,
+	      0);
+    LOG_D(OPT,"[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+	    module_idP, frameP, CC_id, 0xffff, len);
+  }
 }
 
 #ifdef Rel10
@@ -1446,21 +1461,18 @@ void ue_get_sdu(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_t subf
   for (j=0; j<(buflen-sdu_length_total-payload_offset); j++) {
     ulsch_buffer[payload_offset+sdu_length_total+j] = (char)(taus()&0xff);
   }
-
-
-  if (opt_enabled) {
-    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, subframe, 0, 0);
-    LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n",
-          module_idP, frameP, UE_mac_inst[module_idP].crnti, buflen);
-  }
-
-
   LOG_D(MAC,"[UE %d][SR] Gave SDU to PHY, clearing any scheduling request\n",
         module_idP,payload_offset, sdu_length_total);
   UE_mac_inst[module_idP].scheduling_info.SR_pending=0;
   UE_mac_inst[module_idP].scheduling_info.SR_COUNTER=0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GET_SDU, VCD_FUNCTION_OUT);
   stop_meas(&UE_mac_inst[module_idP].tx_ulsch_sdu);
+  
+  if (opt_enabled) {
+    trace_pdu(0, ulsch_buffer, buflen, module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
+    LOG_D(OPT,"[UE %d][ULSCH] Frame %d trace pdu for rnti %x  with size %d\n",
+          module_idP, UE_mac_inst[module_idP].subframe, UE_mac_inst[module_idP].crnti, buflen);
+  }
 }
 
 //------------------------------------------------------------------------------
