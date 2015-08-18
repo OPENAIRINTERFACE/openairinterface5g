@@ -2203,7 +2203,9 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                              phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->rb_alloc,
                              get_Qm(phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->mcs),
                              1,
-                             num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
+                             num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,
+			     subframe,
+			     (phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id])),
                        0,
                        subframe<<1);
 
@@ -2211,13 +2213,14 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
       start_meas(&phy_vars_eNB->dlsch_modulation_stats);
       //      for (sect_id=0;sect_id<number_of_cards;sect_id++)
-      re_allocated = dlsch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+      re_allocated = dlsch_modulation(&phy_vars_eNB,
+                                      phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
                                       AMP,
                                       subframe,
-                                      &phy_vars_eNB->lte_frame_parms,
                                       num_pdcch_symbols,
                                       phy_vars_eNB->dlsch_eNB_SI,
-                                      (LTE_eNB_DLSCH_t *)NULL);
+                                      (LTE_eNB_DLSCH_t *)NULL,
+				      (int32_t **)NULL);
       stop_meas(&phy_vars_eNB->dlsch_modulation_stats);
     }
 
@@ -2338,17 +2341,22 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->rb_alloc,
                                get_Qm(phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->mcs),
                                1,
-                               num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
+                               num_pdcch_symbols,
+			       phy_vars_eNB->proc[sched_subframe].frame_tx,
+			       subframe,
+			       (phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7)),
                          0,
                          subframe<<1);
         //  for (sect_id=0;sect_id<number_of_cards;sect_id++)
-        re_allocated = dlsch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+        re_allocated = dlsch_modulation(phy_vars_eNB,
+					phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
                                         AMP,
                                         subframe,
-                                        &phy_vars_eNB->lte_frame_parms,
                                         num_pdcch_symbols,
                                         phy_vars_eNB->dlsch_eNB_ra,
-                                        (LTE_eNB_DLSCH_t *)NULL);
+                                        (LTE_eNB_DLSCH_t *)NULL,
+					(int32_t **)NULL);
+
       }
 
 #ifdef PHY_ABSTRACTION
@@ -2394,7 +2402,10 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                   phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rb_alloc,
                   get_Qm(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs),
                   phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->Nl,
-                  num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
+                  num_pdcch_symbols,
+		  phy_vars_eNB->proc[sched_subframe].frame_tx,
+		  subframe,
+	          (phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id])),
             phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->nb_rb,
             phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs,
             pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->pmi_alloc),
@@ -2413,7 +2424,10 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         		phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rb_alloc,
         		get_Qm(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs),
         		phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->Nl,
-        		num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
+        		num_pdcch_symbols,
+			phy_vars_eNB->proc[sched_subframe].frame_tx,
+			subframe,
+			(phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7)),
         phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->nb_rb,
         phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs,
         pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->pmi_alloc),
@@ -2495,7 +2509,10 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rb_alloc,
                                get_Qm(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs),
                                phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->Nl,
-                               num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe),
+                               num_pdcch_symbols,
+                               phy_vars_eNB->proc[sched_subframe].frame_tx,
+                               subframe,
+			       phy_vars_eNB->transmission_mode[(uint8_t)UE_id]),
                          0,
                          subframe<<1);
         stop_meas(&phy_vars_eNB->dlsch_scrambling_stats);
@@ -2510,13 +2527,14 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         //      if (UE_id == 1)
         //      LOG_I(PHY,"[MYEMOS] MCS_i %d\n", phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->mcs);
 
-        re_allocated = dlsch_modulation(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
+        re_allocated = dlsch_modulation(phy_vars_eNB,
+                                        phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
                                         AMP,
                                         subframe,
-                                        &phy_vars_eNB->lte_frame_parms,
                                         num_pdcch_symbols,
                                         phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0],
-                                        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][1]);
+                                        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][1],
+					(int32_t **)NULL);
 
         stop_meas(&phy_vars_eNB->dlsch_modulation_stats);
       }

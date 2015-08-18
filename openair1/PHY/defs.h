@@ -220,6 +220,7 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc[NUM_ENB_THREADS];
   uint8_t              local_flag;
   uint32_t             rx_total_gain_eNB_dB;
+  uint8_t 	       nb_antennas_tx_phy;
   LTE_DL_FRAME_PARMS   lte_frame_parms;
   PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables
   LTE_eNB_COMMON       lte_eNB_common_vars;
@@ -240,6 +241,9 @@ typedef struct PHY_VARS_eNB_s {
 
   /// cell-specific reference symbols
   uint32_t         lte_gold_table[20][2][14];
+
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][2][21];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
@@ -505,8 +509,11 @@ typedef struct {
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
+  /// UE-specific reference symbols (p=5), TM 7
+  uint32_t lte_gold_uespec_port5_table[20][2][21];
+
   /// ue-specific reference symbols
-  uint32_t         lte_gold_uespec_table[2][20][2][21];
+  uint32_t lte_gold_uespec_table[2][20][2][21];
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];

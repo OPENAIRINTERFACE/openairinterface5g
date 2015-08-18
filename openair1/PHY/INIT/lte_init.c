@@ -923,14 +923,17 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
   pdsch->llr128_2ndstream = (int16_t**)malloc16_clear( sizeof(int16_t*) );
   // FIXME! no further allocation for (int16_t*)pdsch->llr128 !!! expect SIGSEGV
 
-  pdsch->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->rxdataF_comp0       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->rho                 = (int32_t**)malloc16_clear( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-  pdsch->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_rho2_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_mag0          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-  pdsch->dl_ch_magb0         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_ext            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_uespec_pilots  = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rxdataF_comp0          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->rho                    = (int32_t**)malloc16_clear( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+  pdsch->dl_ch_estimates_ext    = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_bf_ch_estimates     = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_bf_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_rho_ext          = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_rho2_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_mag0             = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+  pdsch->dl_ch_magb0            = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 
   // the allocated memory size is fixed:
   AssertFatal( frame_parms->nb_antennas_rx <= 2, "nb_antennas_rx > 2" );
@@ -941,13 +944,16 @@ void phy_init_lte_ue__PDSCH( LTE_UE_PDSCH* const pdsch, const LTE_DL_FRAME_PARMS
     for (int j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
       const int idx = (j<<1)+i;
       const size_t num = 7*2*frame_parms->N_RB_DL*12;
-      pdsch->rxdataF_ext[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->rxdataF_comp0[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_estimates_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_rho2_ext[idx]       = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_mag0[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
-      pdsch->dl_ch_magb0[idx]         = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->rxdataF_ext[idx]             = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->rxdataF_uespec_pilots[idx]   = (int32_t*)malloc16_clear( sizeof(int32_t) * frame_parms->N_RB_DL*12);
+      pdsch->rxdataF_comp0[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_estimates_ext[idx]     = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_bf_ch_estimates[idx]      = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_bf_ch_estimates_ext[idx]  = (int32_t*)malloc16_clear( sizeof(int32_t)*frame_parms->symbols_per_tti*(frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+      pdsch->dl_ch_rho_ext[idx]           = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_rho2_ext[idx]          = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_mag0[idx]              = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
+      pdsch->dl_ch_magb0[idx]             = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
     }
   }
 }
@@ -1268,10 +1274,10 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
     if (abstraction_flag==0) {
 
       // TX vars
-      eNB_common_vars->txdata[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-      eNB_common_vars->txdataF[eNB_id] = (mod_sym_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(mod_sym_t*) );
+      eNB_common_vars->txdata[eNB_id]  = (int32_t**)malloc16(phy_vars_eNB->nb_antennas_tx_phy*sizeof(int32_t*) );
+      eNB_common_vars->txdataF[eNB_id] = (mod_sym_t **)malloc16(phy_vars_eNB->nb_antennas_tx_phy*sizeof(mod_sym_t*) );
 
-      for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+      for (i=0; i<phy_vars_eNB->nb_antennas_tx_phy; i++) {
 #ifdef USER_MODE
         eNB_common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
         eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t) );

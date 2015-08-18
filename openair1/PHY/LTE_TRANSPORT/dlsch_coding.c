@@ -259,6 +259,7 @@ int dlsch_encoding(unsigned char *a,
   unsigned char mod_order;
   unsigned int Kr=0,Kr_bytes,r,r_offset=0;
   unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  uint8_t transmission_mode_7to9=0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
@@ -266,7 +267,13 @@ int dlsch_encoding(unsigned char *a,
   // printf("Encoder: A: %d\n",A);
   mod_order = get_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe);
+  if(dlsch->harq_processes[harq_pid]->mimo_mode == TM7)
+    transmission_mode_7to9 = 7;
+  else if(dlsch->harq_processes[harq_pid]->mimo_mode == TM8)
+    transmission_mode_7to9 = 8;
+  else if(dlsch->harq_processes[harq_pid]->mimo_mode == TM9_10)
+    transmission_mode_7to9 = 9;
+  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,transmission_mode_7to9);
 
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet

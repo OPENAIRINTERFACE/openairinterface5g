@@ -304,7 +304,7 @@ void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int sched_subframe,uint8_t *a,int a
               phy_vars_eNB->lte_frame_parms.N_RB_DL,
               phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->rb_alloc,
               get_Qm(phy_vars_eNB->dlsch_eNB_MCH->harq_processes[0]->mcs),1,
-              2,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
+              2,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,0);
 
     generate_mbsfn_pilot(phy_vars_eNB,
                          phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
@@ -319,8 +319,7 @@ void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int sched_subframe,uint8_t *a,int a
                        subframe,
                        &phy_vars_eNB->dlsch_rate_matching_stats,
                        &phy_vars_eNB->dlsch_turbo_encoding_stats,
-                       &phy_vars_eNB->dlsch_interleaving_stats
-                      )<0)
+                       &phy_vars_eNB->dlsch_interleaving_stats)<0)
       mac_xface->macphy_exit("problem in dlsch_encoding");
 
     dlsch_scrambling(&phy_vars_eNB->lte_frame_parms,1,phy_vars_eNB->dlsch_eNB_MCH,G,0,subframe<<1);

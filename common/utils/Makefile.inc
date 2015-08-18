@@ -5,7 +5,7 @@ linux := $(shell if [ `uname` = "Linux" ] ; then echo "1" ; else echo "0" ; fi)
 
 
 CFLAGS += -std=gnu99 
-#CFLAGS += -Wall -g -ggdb -Wstrict-prototypes -fno-strict-aliasing 
+CFLAGS += -Wall -g -ggdb -Wstrict-prototypes -fno-strict-aliasing 
 
 # Need to force this option because default kernel module builder is wrong
 CFLAGS += $(call cc-option,-mpreferred-stack-boundary=4)

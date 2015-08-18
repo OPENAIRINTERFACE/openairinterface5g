@@ -138,7 +138,9 @@ void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t
                                   get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
                                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
                                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  phy_vars_ue->frame_rx,subframe);
+                                  phy_vars_ue->frame_rx,
+				  subframe,
+				  phy_vars_ue->transmission_mode[eNB_id]);
 
   write_output("rxsigF0.m","rxsF0", phy_vars_ue->lte_ue_common_vars.rxdataF[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", phy_vars_ue->lte_ue_pdsch_vars[0]->rxdataF_ext[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -167,7 +169,9 @@ void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe)
                                   get_Qm(phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs),
                                   1,
                                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  phy_vars_ue->frame_rx,subframe);
+                                  phy_vars_ue->frame_rx,
+				  subframe,
+			          phy_vars_ue->transmission_mode[eNB_id]);
   LOG_D(PHY,"[UE %d] Dumping dlsch_SI : nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
         phy_vars_ue->Mod_id,
         phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->nb_rb,
@@ -221,7 +225,9 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe)
                                   get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),
                                   1,
                                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-                                  phy_vars_ue->frame_rx,subframe);
+                                  phy_vars_ue->frame_rx,
+				  subframe,
+				  phy_vars_ue->transmission_mode[eNB_id]);
   LOG_D(PHY,"[UE %d] Dumping dlsch_ra : nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
         phy_vars_ue->Mod_id,
         phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->nb_rb,
@@ -2625,7 +2631,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                 get_Qm(phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
                 phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
                 phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-                frame_rx,subframe_prev);
+                frame_rx,
+		subframe_prev,
+	        phy_vars_ue->transmission_mode[eNB_id]);
             start_meas(&phy_vars_ue->dlsch_unscrambling_stats);
             dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,
                                0,
@@ -2782,7 +2790,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                     phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc,
                     get_Qm(phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->mcs),1,
                     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-                    frame_rx,subframe_prev);
+                    frame_rx,
+		    subframe_prev,
+		    phy_vars_ue->transmission_mode[eNB_id]);
 
 #ifdef DEBUG_PHY_PROC
             LOG_D(PHY,"Decoding DLSCH_SI : rb_alloc %x : nb_rb %d G %d TBS %d, num_pdcch_sym %d\n",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc[0],
@@ -2926,7 +2936,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
               get_Qm(phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->mcs),1,
               phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
               frame_rx,
-              subframe_prev);
+              subframe_prev,
+	      phy_vars_ue->transmission_mode[eNB_id]);
 
 #ifdef DEBUG_PHY_PROC
           LOG_D(PHY,"[UE] decoding RA (subframe %d): G %d,rnti %x\n" ,subframe_prev,
@@ -3301,7 +3312,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
               get_Qm(phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->mcs),
               1,
               2,
-              (subframe_rx==9?-1:0)+frame_rx,subframe_rx);
+              (subframe_rx==9?-1:0)+frame_rx,
+	      subframe_rx,
+	      phy_vars_ue->transmission_mode[eNB_id]);
 
           dlsch_unscrambling(&phy_vars_ue->lte_frame_parms,1,phy_vars_ue->dlsch_ue_MCH[0],
                              phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->G,

@@ -587,8 +587,9 @@ typedef enum {
   DUALSTREAM_UNIFORM_PRECODING1=9,
   DUALSTREAM_UNIFORM_PRECODINGj=10,
   DUALSTREAM_PUSCH_PRECODING=11,
-  TM8=12,
-  TM9_10=13
+  TM7=12,
+  TM8=13,
+  TM9_10=14
 } MIMO_mode_t;
 
 typedef struct {
@@ -784,6 +785,10 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_ext;
+  /// \brief Received frequency-domain ue specific pilots.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..12*N_RB_DL[
+  int32_t **rxdataF_uespec_pilots;
   /// \brief Received frequency-domain signal after extraction and channel compensation.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
@@ -797,6 +802,14 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
+  /// \brief Downlink beamforming channel estimates in frequency domain.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_bf_ch_estimates;
+  /// \brief Downlink beamforming channel estimates.
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
+  int32_t **dl_bf_ch_estimates_ext;
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[

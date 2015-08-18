@@ -52,12 +52,13 @@ unsigned int lte_gold_generic(unsigned int *x1, unsigned int *x2, unsigned char 
 
 void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14],uint16_t Nid_cell);
 
+void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
+
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL UE-specific reference signals for antenna ports 7..14.
 @param frame_parms LTE DL Frame parameters
 @param lte_gold_uespec_table pointer to table where sequences are stored
 @param Nid_cell Cell Id (to compute sequences for local and adjacent cells)
 @param n_idDMRS Scrambling identity for TM10*/
-void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
 
 void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_table[10][3][42],uint16_t Nid_MBSFN);
 
@@ -84,6 +85,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 @param output Output vector for OFDM symbol (Frequency Domain)
 @param amp Q15 amplitude
 @param Ns Slot number (0..19)
+@param lprime symbol (0,1)
 @param p antenna index
 @param SS_flag Flag to indicate special subframe
 */
@@ -92,6 +94,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    mod_sym_t *output,
                    short amp,
                    uint8_t Ns,
+		   uint8_t lprime,
                    uint8_t p,
                    int SS_flag );
 
@@ -122,6 +125,12 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
                         unsigned char Ns,
                         unsigned char l,
                         unsigned char p);
+
+int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
+                      mod_sym_t *output,
+                      unsigned char Ns,
+                      unsigned char p,
+                      int SS_flag);
 
 int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
                     int *output,

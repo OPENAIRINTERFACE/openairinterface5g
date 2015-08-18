@@ -640,7 +640,8 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint16_t pbch_pss_sss_adjust,
-                   short **llr32p)
+                   short **llr32p,
+		   uint8_t beamforming_mode)
 {
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -661,11 +662,16 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
+    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
       len = (nb_rb*8);// - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10);// - (5*pbch_pss_sss_adjust/6);
-  } else {
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8);
+  }
+  else {
     len = (nb_rb*12);// - pbch_pss_sss_adjust;
   }
 
