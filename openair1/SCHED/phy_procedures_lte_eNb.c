@@ -585,7 +585,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
     switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
     case 6:
       if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_FDD_t;
+        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_1_5MHz_FDD_t;
         ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->type              = 1;
         ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
         ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
@@ -667,7 +667,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
 
     case 100:
       if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_10MHz_FDD_t;
+        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_20MHz_FDD_t;
         ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->type              = 1;
         ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
         ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);

@@ -2908,8 +2908,8 @@ uint16_t dci_decoding_procedure(PHY_VARS_UE *phy_vars_ue,
     if (frame_type == TDD) {
       format1A_size_bits  = sizeof_DCI1A_10MHz_TDD_1_6_t;
       format1A_size_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
-      format1C_size_bits  = sizeof_DCI1C_5MHz_t;
-      format1C_size_bytes = sizeof(DCI1C_5MHz_t);
+      format1C_size_bits  = sizeof_DCI1C_10MHz_t;
+      format1C_size_bytes = sizeof(DCI1C_10MHz_t);
       format0_size_bits  = sizeof_DCI0_10MHz_TDD_1_6_t;
       format0_size_bytes = sizeof(DCI0_10MHz_TDD_1_6_t);
       format1_size_bits  = sizeof_DCI1_10MHz_TDD_t;
