@@ -457,7 +457,9 @@ int itti_send_msg_to_task(task_id_t destination_task_id, instance_t instance, Me
       new->message_priority = priority;
 
       /* Enqueue message in destination task queue */
-      lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new);
+      if (lfds611_queue_enqueue(itti_desc.tasks[destination_task_id].message_queue, new) == 0) {
+        AssertFatal(0, "Error: lfds611_queue_enqueue returns 0, queue is full, exiting\n");
+      }
 
 #if defined(OAI_EMU) || defined(RTAI)
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ITTI_ENQUEUE_MESSAGE, VCD_FUNCTION_OUT);
