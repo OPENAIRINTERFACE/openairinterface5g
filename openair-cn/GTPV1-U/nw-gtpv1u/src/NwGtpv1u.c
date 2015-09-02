@@ -630,10 +630,15 @@ nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
 
   bufLen = sizeof(NwGtpv1uIeTv1T)+ ((NwGtpv1uMsgT*)hMsg)->msgLen;
 
+#warning CROUX DIRTY +16, TO BE FIXED!!!
+  /* the +16 is there because by analyzing memory allocation with some external
+   * tool, I saw that there were 6 bytes accessed after bufLen in nwGtpv1uCreateAndSendMsg
+   * the value "16" has been chosen arbitrarily, just bigger than 6
+   */
   ((NwGtpv1uMsgT*)hMsg)->msgBuf = itti_malloc(
                                     TASK_GTPV1_U,
                                     TASK_UDP,
-                                    bufLen);
+                                    bufLen + 16 /* CROUX - dirty +16, to be fixed! */);
   ((NwGtpv1uMsgT*)hMsg)->msgBufLen    = bufLen;
   NW_ASSERT(NW_GTPV1U_OK == rc);
 
