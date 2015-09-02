@@ -101,7 +101,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             dlsch->harq_processes[i]->c[r] = NULL;
           }
           if (dlsch->harq_processes[i]->d[r]) {
-            free16(dlsch->harq_processes[i]->d[r],(96+12+(3*6144)));
+            free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
         }
@@ -173,7 +173,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
           for (r=0; r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 3+ 768);
-            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16((96+12+(3*6144)));
+            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16((96+12+3+(3*6144)));
             if (dlsch->harq_processes[i]->c[r]) {
               bzero(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+ 768);
             } else {
@@ -181,7 +181,7 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
               exit_flag=2;
             }
             if (dlsch->harq_processes[i]->d[r]) {
-              bzero(dlsch->harq_processes[i]->d[r],(96+12+(3*6144)));
+              bzero(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
             } else {
               msg("Can't get d\n");
               exit_flag=2;
