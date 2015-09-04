@@ -750,8 +750,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
           LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (nCCE %d, rnti %x,mode %s)\n",
                 module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,nCCE[CC_id],rnti,mode_string[eNB_UE_stats->mode]);
 
-#undef EXMIMO_IOT
-
 #ifndef EXMIMO_IOT
 
         if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0) || ((frameP%10)==0))
