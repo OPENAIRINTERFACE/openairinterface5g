@@ -167,7 +167,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
-  float I_pucch[10240],Q_pucch[10240];
+  float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240];
   float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
   float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
   float *chest_f_abs;
@@ -331,11 +331,14 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     for (ind=0; ind<10240; ind++) {
       I_pucch[ind] = pucch1ab_comp[2*ind];
       Q_pucch[ind] = pucch1ab_comp[2*ind+1];
-      ind++;
+      A_pucch[ind] = 10*log10(pucch1_comp[ind]);
+      B_pucch[ind] = ind;
     }
     fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,ind,"","","");
+    //fl_set_xyplot_data(form->pucch_comp,B_pucch,A_pucch,ind,"","","");
     fl_set_xyplot_xbounds(form->pucch_comp,-200,200);
     fl_set_xyplot_ybounds(form->pucch_comp,-200,200);
+    //fl_set_xyplot_ybounds(form->pucch_comp,0,50);
   }
 
 
