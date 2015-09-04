@@ -46,7 +46,13 @@
 #include <cmath>
 
 #include "common_lib.h"
-
+#ifdef __SSE4_1__
+#  include <smmintrin.h>
+#endif
+ 
+#ifdef __AVX2__
+#  include <immintrin.h>
+#endif
 
 typedef struct
 {
@@ -149,18 +155,52 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
 
-  usrp_state_t *s = (usrp_state_t*)device->priv;
+   usrp_state_t *s = (usrp_state_t*)device->priv;
+   int samples_received=0,i,j;
+   int nsamps2;  // aligned to upper 32 or 16 byte boundary
+#if defined(__x86_64) || defined(__i386__)
+#ifdef __AVX2__
+   __m256i buff_tmp[2][nsamps>>3];
+   nsamps2 = (nsamps+7)>>3;
+#else
+   __m128i buff_tmp[2][nsamps>>2];
+   nsamps2 = (nsamps+3)>>2;
+#endif
+#elif defined(__arm__)
+   int16x8_t buff_tmp[2][nsamps>>2];
+   nsamps2 = (nsamps+3)>>2;
+#endif
 
-  int samples_received=0,i;
+
   
   if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
     std::vector<void *> buff_ptrs;
-    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
+    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
     samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
   } else {
     // receive a single channel (e.g. from connector RF A)
-    samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
+    samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
+  }
+  
+  // bring RX data into 12 LSBs for softmodem RX
+  for (int i=0;i<cc;i++) {
+    for (int j=0; j<nsamps2; j++) {
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+
+      ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+
+#else
+      ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+
+#endif
+#elif defined(__arm__)
+
+      ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+
+#endif
+    }
   }
 
   if (samples_received < nsamps) {

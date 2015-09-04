@@ -157,7 +157,7 @@ void assign_rbs_required (module_id_t Mod_id,
   LTE_eNB_UE_stats *eNB_UE_stats[MAX_NUM_CCs];
   int              UE_id,n,i,j,CC_id,pCCid,tmp;
   UE_list_t        *UE_list = &eNB_mac_inst[Mod_id].UE_list;
-  UE_TEMPLATE           *UE_template;
+  //  UE_TEMPLATE           *UE_template;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
 
   // clear rb allocations across all CC_ids
@@ -250,12 +250,14 @@ void assign_rbs_required (module_id_t Mod_id,
 int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uint8_t ul_flag )
 {
 
-  uint8_t round,round_max=0,harq_pid;
+  uint8_t round,round_max=0,UE_id;
   int CC_id;
+  UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,ul_flag);
 
+    UE_id = find_UE_id(Mod_id,rnti);
+    round    = UE_list->UE_sched_ctrl[UE_id].round[CC_id];
     if (round > round_max) {
       round_max = round;
     }
@@ -303,7 +305,7 @@ void sort_UEs (module_id_t Mod_idP,
   int               UE_id1,UE_id2;
   int               pCC_id1,pCC_id2;
   int               cqi1,cqi2,round1,round2;
-  int               i=0,ii=0,j=0;
+  int               i=0,ii=0;//,j=0;
   rnti_t            rnti1,rnti2;
 
   UE_list_t *UE_list = &eNB_mac_inst[Mod_idP].UE_list;
@@ -362,32 +364,39 @@ void sort_UEs (module_id_t Mod_idP,
 void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                                     frame_t       frameP,
                                     sub_frame_t   subframeP,
-                                    uint8_t       dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-                                    uint16_t      pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
                                     int           N_RBG[MAX_NUM_CCs],
-                                    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
                                     int           *mbsfn_flag)
 {
 
-  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],harq_pid=0,harq_pid1=0,harq_pid2=0,round=0,round1=0,round2=0,total_ue_count;
+  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],harq_pid=0,round=0,total_ue_count;
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
-  int                     UE_id, UE_id2, i;
+  int                     UE_id, i; 
   uint16_t                ii,j;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-  uint16_t                i1,i2,i3,r1=0;
   uint16_t                average_rbs_per_user[MAX_NUM_CCs] = {0};
-  rnti_t             rnti,rnti1,rnti2;
-  LTE_eNB_UE_stats  *eNB_UE_stats1 = NULL;
-  LTE_eNB_UE_stats  *eNB_UE_stats2 = NULL;
+  rnti_t             rnti;
   int                min_rb_unit[MAX_NUM_CCs];
-
+  uint16_t r1=0;
   uint8_t CC_id;
   UE_list_t *UE_list = &eNB_mac_inst[Mod_id].UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs] = {0};
-  int rrc_status           = RRC_IDLE;
+
   int transmission_mode = 0;
+  UE_sched_ctrl *ue_sched_ctl;
+  //  int rrc_status           = RRC_IDLE;
+
+#ifdef TM5
+  int harq_pid1=0,harq_pid2=0;
+  int round1=0,round2=0;
+  int UE_id2;
+  uint16_t                i1,i2,i3;
+  rnti_t             rnti1,rnti2;
+  LTE_eNB_UE_stats  *eNB_UE_stats1 = NULL;
+  LTE_eNB_UE_stats  *eNB_UE_stats2 = NULL;
+  UE_sched_ctrl *ue_sched_ctl1,*ue_sched_ctl2;
+#endif
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -402,22 +411,22 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
     for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
       UE_id = i;
       // Initialize scheduling information for all active UEs
+      
 
-      dlsch_scheduler_pre_processor_reset(
+
+      dlsch_scheduler_pre_processor_reset(Mod_id,
         UE_id,
         CC_id,
+        frameP,
+        subframeP,
         N_RBG[CC_id],
-        dl_pow_off,
         nb_rbs_required,
-        pre_nb_available_rbs,
         nb_rbs_required_remaining,
-        rballoc_sub_UE,
         rballoc_sub,
         MIMO_mode_indicator);
 
     }
   }
-
 
 
   // Store the DLSCH buffer for each logical channel
@@ -446,14 +455,21 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
     UE_id = i;
 
+    // if there is no available harq_process, skip the UE
+    if (UE_list->UE_sched_ctrl[UE_id].harq_pid[CC_id]<0)
+      continue;
+
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];
+      ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+      harq_pid = ue_sched_ctl->harq_pid[CC_id];
+      round    = ue_sched_ctl->round[CC_id];
 
       average_rbs_per_user[CC_id]=0;
 
       frame_parms[CC_id] = mac_xface->get_lte_frame_parms(Mod_id,CC_id);
 
-      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
+      //      mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
 
       if(round>0) {
         nb_rbs_required[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
@@ -524,7 +540,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                 nb_rbs_required_remaining[CC_id][i],
                 nb_rbs_required_remaining_1[CC_id][i],
                 nb_rbs_required[CC_id][i],
-                pre_nb_available_rbs[CC_id][i],
+                UE_list->UE_sched_ctrl[i].pre_nb_available_rbs[CC_id],
                 N_RBG[CC_id],
                 min_rb_unit[CC_id]);
 
@@ -537,6 +553,9 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
         for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
           CC_id = UE_list->ordered_CCids[ii][UE_id];
+	  ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+	  harq_pid = ue_sched_ctl->harq_pid[CC_id];
+	  round    = ue_sched_ctl->round[CC_id];
 
           rnti = UE_RNTI(Mod_id,UE_id);
 
@@ -545,8 +564,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
             continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
-          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
-          rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
+	  //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
+          //rrc_status = mac_eNB_get_rrc_status(Mod_id,rnti);
           /* 1st allocate for the retx */
 
           // retransmission in data channels
@@ -560,11 +579,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                                                   transmission_mode,
                                                   min_rb_unit[CC_id],
                                                   frame_parms[CC_id]->N_RB_DL,
-                                                  dl_pow_off,
                                                   nb_rbs_required,
-                                                  pre_nb_available_rbs,
                                                   nb_rbs_required_remaining,
-                                                  rballoc_sub_UE,
                                                   rballoc_sub,
                                                   MIMO_mode_indicator);
 
@@ -573,50 +589,52 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           // data chanel TM5: to be revisted
           if ((round == 0 )  &&
               (transmission_mode == 5)  &&
-              (dl_pow_off[CC_id][UE_id] != 1)) {
+              (ue_sched_ctl->dl_pow_off[CC_id] != 1)) {
 
             for(j=0; j<N_RBG[CC_id]; j+=2) {
 
-              if( (((j == (N_RBG[CC_id]-1))&& (rballoc_sub[CC_id][j] == 0) && (rballoc_sub_UE[CC_id][UE_id][j] == 0))  ||
-                   ((j < (N_RBG[CC_id]-1)) && (rballoc_sub[CC_id][j+1] == 0) && (rballoc_sub_UE[CC_id][UE_id][j+1] == 0)) ) &&
+              if( (((j == (N_RBG[CC_id]-1))&& (rballoc_sub[CC_id][j] == 0) && (ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 0))  ||
+                   ((j < (N_RBG[CC_id]-1)) && (rballoc_sub[CC_id][j+1] == 0) && (ue_sched_ctl->rballoc_sub_UE[CC_id][j+1] == 0)) ) &&
                   (nb_rbs_required_remaining[CC_id][UE_id]>0)) {
 
                 for (ii = UE_list->next[i+1]; ii >=0; ii=UE_list->next[ii]) {
 
                   UE_id2 = ii;
                   rnti2 = UE_RNTI(Mod_id,UE_id2);
-
+		  ue_sched_ctl2 = &UE_list->UE_sched_ctrl[UE_id2];
+		  harq_pid2 = ue_sched_ctl2->harq_pid[CC_id];
+		  round2    = ue_sched_ctl2->round[CC_id];
                   if(rnti2 == NOT_A_RNTI)
                     continue;
 
                   eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti2);
-                  mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
+                  //mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
 
                   if ((mac_eNB_get_rrc_status(Mod_id,rnti2) >= RRC_RECONFIGURED) &&
                       (round2==0) &&
                       (mac_xface->get_transmission_mode(Mod_id,CC_id,rnti2)==5) &&
-                      (dl_pow_off[CC_id][UE_id2] != 1)) {
+                      (ue_sched_ctl->dl_pow_off[CC_id] != 1)) {
 
-                    if( (((j == (N_RBG[CC_id]-1)) && (rballoc_sub_UE[CC_id][UE_id2][j] == 0)) ||
-                         ((j < (N_RBG[CC_id]-1)) && (rballoc_sub_UE[CC_id][UE_id2][j+1] == 0))  ) &&
+                    if( (((j == (N_RBG[CC_id]-1)) && (ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 0)) ||
+                         ((j < (N_RBG[CC_id]-1)) && (ue_sched_ctl->rballoc_sub_UE[CC_id][j+1] == 0))  ) &&
                         (nb_rbs_required_remaining[CC_id][UE_id2]>0)) {
 
                       if((((eNB_UE_stats2->DL_pmi_single^eNB_UE_stats1->DL_pmi_single)<<(14-j))&0xc000)== 0x4000) { //MU-MIMO only for 25 RBs configuration
 
                         rballoc_sub[CC_id][j] = 1;
-                        rballoc_sub_UE[CC_id][UE_id][j] = 1;
-                        rballoc_sub_UE[CC_id][UE_id2][j] = 1;
+                        ue_sched_ctl->rballoc_sub_UE[CC_id][j] = 1;
+                        ue_sched_ctl2->rballoc_sub_UE[CC_id][j] = 1;
                         MIMO_mode_indicator[CC_id][j] = 0;
 
                         if (j< N_RBG[CC_id]-1) {
                           rballoc_sub[CC_id][j+1] = 1;
-                          rballoc_sub_UE[CC_id][UE_id][j+1] = 1;
-                          rballoc_sub_UE[CC_id][UE_id2][j+1] = 1;
+                          ue_sched_ctl->rballoc_sub_UE[CC_id][j+1] = 1;
+                          ue_sched_ctl2->rballoc_sub_UE[CC_id][j+1] = 1;
                           MIMO_mode_indicator[CC_id][j+1] = 0;
                         }
 
-                        dl_pow_off[CC_id][UE_id] = 0;
-                        dl_pow_off[CC_id][UE_id2] = 0;
+                        ue_sched_ctl->dl_pow_off[CC_id] = 0;
+                        ue_sched_ctl2->dl_pow_off[CC_id] = 0;
 
 
                         if ((j == N_RBG[CC_id]-1) &&
@@ -624,15 +642,15 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
                              (PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms.N_RB_DL == 50))) {
 			  
                           nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit[CC_id]+1;
-                          pre_nb_available_rbs[CC_id][UE_id] = pre_nb_available_rbs[CC_id][UE_id] + min_rb_unit[CC_id]-1;
+                          ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit[CC_id]-1;
                           nb_rbs_required_remaining[CC_id][UE_id2] = nb_rbs_required_remaining[CC_id][UE_id2] - min_rb_unit[CC_id]+1;
-                          pre_nb_available_rbs[CC_id][UE_id2] = pre_nb_available_rbs[CC_id][UE_id2] + min_rb_unit[CC_id]-1;
+                          ue_sched_ctl2->pre_nb_available_rbs[CC_id] = ue_sched_ctl2->pre_nb_available_rbs[CC_id] + min_rb_unit[CC_id]-1;
                         } else {
                           
 			  nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - 4;
-                          pre_nb_available_rbs[CC_id][UE_id] = pre_nb_available_rbs[CC_id][UE_id] + 4;
+                          ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + 4;
                           nb_rbs_required_remaining[CC_id][UE_id2] = nb_rbs_required_remaining[CC_id][UE_id2] - 4;
-                          pre_nb_available_rbs[CC_id][UE_id2] = pre_nb_available_rbs[CC_id][UE_id2] + 4;
+                          ue_sched_ctl2->pre_nb_available_rbs[CC_id] = ue_sched_ctl2->pre_nb_available_rbs[CC_id] + 4;
                         }
 
                         break;
@@ -688,48 +706,60 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
   for(i=UE_list->head; i>=0; i=UE_list->next[i]) {
     UE_id = i;
+    ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
     for (ii=0; ii<UE_num_active_CC(UE_list,UE_id); ii++) {
       CC_id = UE_list->ordered_CCids[ii][UE_id];
       //PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].dl_pow_off = dl_pow_off[UE_id];
 
-      if (pre_nb_available_rbs[CC_id][UE_id] > 0 ) {
+      if (ue_sched_ctl->pre_nb_available_rbs[CC_id] > 0 ) {
         LOG_D(MAC,"******************DL Scheduling Information for UE%d ************************\n",UE_id);
-        LOG_D(MAC,"dl power offset UE%d = %d \n",UE_id,dl_pow_off[CC_id][UE_id]);
+        LOG_D(MAC,"dl power offset UE%d = %d \n",UE_id,ue_sched_ctl->dl_pow_off[CC_id]);
         LOG_D(MAC,"***********RB Alloc for every subband for UE%d ***********\n",UE_id);
 
         for(j=0; j<N_RBG[CC_id]; j++) {
           //PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].rballoc_sub[i] = rballoc_sub_UE[CC_id][UE_id][i];
-          LOG_D(MAC,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,j,rballoc_sub_UE[CC_id][UE_id][j]);
+          LOG_D(MAC,"RB Alloc for UE%d and Subband%d = %d\n",UE_id,j,ue_sched_ctl->rballoc_sub_UE[CC_id][j]);
         }
 
         //PHY_vars_eNB_g[Mod_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = pre_nb_available_rbs[CC_id][UE_id];
-        LOG_D(MAC,"Total RBs allocated for UE%d = %d\n",UE_id,pre_nb_available_rbs[CC_id][UE_id]);
+        LOG_D(MAC,"Total RBs allocated for UE%d = %d\n",UE_id,ue_sched_ctl->pre_nb_available_rbs[CC_id]);
       }
     }
   }
 }
 
 
-void dlsch_scheduler_pre_processor_reset (int UE_id,
+void dlsch_scheduler_pre_processor_reset (int module_idP,
+    int UE_id,
     uint8_t  CC_id,
+    int frameP,
+    int subframeP,					  
     int N_RBG,
-    uint8_t dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
 {
   int i;
+  UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
+  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
+  rnti_t rnti = UE_RNTI(module_idP,UE_id);
+
+  // initialize harq_pid and round
+  mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
+				    frameP,subframeP,
+				    &ue_sched_ctl->harq_pid[CC_id],
+				    &ue_sched_ctl->round[CC_id],
+				    0);
+
   nb_rbs_required[CC_id][UE_id]=0;
-  pre_nb_available_rbs[CC_id][UE_id] = 0;
-  dl_pow_off[CC_id][UE_id] = 2;
+  ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
+  ue_sched_ctl->dl_pow_off[CC_id] = 2;
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
   for (i=0; i<N_RBG; i++) {
-    rballoc_sub_UE[CC_id][UE_id][i] = 0;
+    ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
     rballoc_sub[CC_id][i] = 0;
     MIMO_mode_indicator[CC_id][i] = 2;
   }
@@ -743,46 +773,45 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     int           transmission_mode,
     int           min_rb_unit,
     uint8_t       N_RB_DL,
-    uint8_t       dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t      pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
 {
 
   int i;
+  UE_list_t *UE_list=&eNB_mac_inst[Mod_id].UE_list;
+  UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   for(i=0; i<N_RBG; i++) {
 
     if((rballoc_sub[CC_id][i] == 0)           &&
-        (rballoc_sub_UE[CC_id][UE_id][i] == 0) &&
+        (ue_sched_ctl->rballoc_sub_UE[CC_id][i] == 0) &&
         (nb_rbs_required_remaining[CC_id][UE_id]>0)   &&
-        (pre_nb_available_rbs[CC_id][UE_id] < nb_rbs_required[CC_id][UE_id])) {
+        (ue_sched_ctl->pre_nb_available_rbs[CC_id] < nb_rbs_required[CC_id][UE_id])) {
 
       // if this UE is not scheduled for TM5
-      if (dl_pow_off[CC_id][UE_id] != 0 )  {
+      if (ue_sched_ctl->dl_pow_off[CC_id] != 0 )  {
 
 	if ((i == N_RBG-1) && ((N_RB_DL == 25) || (N_RB_DL == 50))) {
 	  rballoc_sub[CC_id][i] = 1;
-	  rballoc_sub_UE[CC_id][UE_id][i] = 1;
+	  ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
 	  MIMO_mode_indicator[CC_id][i] = 1;
 	  if (transmission_mode == 5 ) {
-	    dl_pow_off[CC_id][UE_id] = 1;
+	    ue_sched_ctl->dl_pow_off[CC_id] = 1;
 	  }   
 	  nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit+1;
-          pre_nb_available_rbs[CC_id][UE_id] = pre_nb_available_rbs[CC_id][UE_id] + min_rb_unit - 1;
+          ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit - 1;
         } else {
 	  if (nb_rbs_required_remaining[CC_id][UE_id] >=  min_rb_unit){
 	    rballoc_sub[CC_id][i] = 1;
-	    rballoc_sub_UE[CC_id][UE_id][i] = 1;
+	    ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 1;
 	    MIMO_mode_indicator[CC_id][i] = 1;
 	    if (transmission_mode == 5 ) {
-	      dl_pow_off[CC_id][UE_id] = 1;
+	      ue_sched_ctl->dl_pow_off[CC_id] = 1;
 	    }
 	    nb_rbs_required_remaining[CC_id][UE_id] = nb_rbs_required_remaining[CC_id][UE_id] - min_rb_unit;
-	    pre_nb_available_rbs[CC_id][UE_id] = pre_nb_available_rbs[CC_id][UE_id] + min_rb_unit;
+	    ue_sched_ctl->pre_nb_available_rbs[CC_id] = ue_sched_ctl->pre_nb_available_rbs[CC_id] + min_rb_unit;
 	  }
 	}
       } // dl_pow_off[CC_id][UE_id] ! = 0
@@ -887,9 +916,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       }
     }
   }
-
-  LOG_D(MAC,"[eNB %d] Frame %d subframe %d: total ue to be scheduled %d/%d\n",
-        module_idP, frameP, subframeP,total_ue_count, max_num_ue_to_be_scheduled);
+  if (total_ue_count > 0)
+    LOG_D(MAC,"[eNB %d] Frame %d subframe %d: total ue to be scheduled %d/%d\n",
+	  module_idP, frameP, subframeP,total_ue_count, max_num_ue_to_be_scheduled);
 
   //LOG_D(MAC,"step3\n");
 

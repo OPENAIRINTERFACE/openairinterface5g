@@ -178,14 +178,13 @@ void mac_top_cleanup(void);
 
 void mac_UE_out_of_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_index);
 
-void dlsch_scheduler_pre_processor_reset (int UE_id,
+void dlsch_scheduler_pre_processor_reset (int module_idP,int UE_id,
     uint8_t  CC_id,
+    int frameP,
+    int subframeP,
     int N_RBG,
-    uint8_t dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t  nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
@@ -194,20 +193,14 @@ void dlsch_scheduler_pre_processor_reset (int UE_id,
 @param Mod_id Instance ID of eNB
 @param frame Index of frame
 @param subframe Index of current subframe
-@param dl_pow_off Pointer to store resulting power offset for DCI
-@param pre_nb_available_rbs Pointer to store number of remaining rbs after scheduling
 @param N_RBS Number of resource block groups
-@param rb_alloc_sub Table of resource block groups allocated to each UE
  */
 
 
 void dlsch_scheduler_pre_processor (module_id_t module_idP,
                                     frame_t frameP,
                                     sub_frame_t subframe,
-                                    uint8_t dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-                                    uint16_t pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
                                     int N_RBG[MAX_NUM_CCs],
-                                    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
                                     int *mbsfn_flag);
 
 
@@ -218,11 +211,8 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     int           transmission_mode,
     int           min_rb_unit,
     uint8_t       N_RB_DL,
-    uint8_t       dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t      pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 

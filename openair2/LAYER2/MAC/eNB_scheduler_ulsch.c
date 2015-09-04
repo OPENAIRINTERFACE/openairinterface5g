@@ -126,30 +126,37 @@ void rx_sdu(
       break;
 
     case CRNTI:
-      LOG_W(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received CRNTI %2.2x%2.2x\n",
-            enb_mod_idP, CC_idP, rx_ces[i], payload_ptr[0], payload_ptr[1]);
+      LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): Received CRNTI %2.2x%2.2x\n",
+            enb_mod_idP, CC_idP, rx_ces[i], i,num_ce, payload_ptr[0], payload_ptr[1]);
+      UE_id = find_UE_id(enb_mod_idP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
+      LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], (((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
+
       payload_ptr+=2;
-      /* FIXME we don't process this CE yet */
+      /* we don't process this CE yet */
       if (msg3_flagP != NULL) {
-        LOG_W(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : CRNTI in Msg3 not handled\n");
-        *msg3_flagP = 0;
+	*msg3_flagP = 0;
       }
       break;
 
     case TRUNCATED_BSR:
     case SHORT_BSR: {
+      uint8_t lcgid;
+      lcgid = (payload_ptr[0] >> 6);
+
+      LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received short BSR LCGID = %u bsr = %d\n",
+	    enb_mod_idP, CC_idP, rx_ces[i], lcgid, payload_ptr[0] & 0x3f);
+
       if (UE_id  != -1) {
-        uint8_t lcgid;
-        lcgid = (payload_ptr[0] >> 6);
-        LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received short BSR LCGID = %u bsr = %d\n",
-              enb_mod_idP, CC_idP, rx_ces[i], lcgid, payload_ptr[0] & 0x3f);
+
         UE_list->UE_template[CC_idP][UE_id].bsr_info[lcgid] = (payload_ptr[0] & 0x3f);
 
         if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0 ) {
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid]=frameP;
         }
       }
+      else {
 
+      }
       payload_ptr += 1;//sizeof(SHORT_BSR); // fixme
     }
     break;
@@ -743,7 +750,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
           LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (nCCE %d, rnti %x,mode %s)\n",
                 module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,nCCE[CC_id],rnti,mode_string[eNB_UE_stats->mode]);
 
-
+#undef EXMIMO_IOT
 
 #ifndef EXMIMO_IOT
 

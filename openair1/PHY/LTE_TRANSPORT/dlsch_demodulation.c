@@ -231,7 +231,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                          subframe,
                                          phy_vars_ue->high_speed_flag,
                                          frame_parms);
-      else
+      
         nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
                                          lte_ue_common_vars->dl_ch_estimates[eNB_id],
                                          lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,

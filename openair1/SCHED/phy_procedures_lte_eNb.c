@@ -227,12 +227,11 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
-  //  uint8_t subframe_m4;
   uint8_t ulsch_subframe,ulsch_frame;
   uint8_t i;
   int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
-  //  int frame    = PHY_vars_eNB_g[Mod_id][CC_id]->proc[sched_subframe].frame_tx;
-  //  int subframe = PHY_vars_eNB_g[Mod_id][CC_id]->proc[sched_subframe].subframe_tx;
+  int sf1=(10*frame)+subframe,sf2,sfdiff,sfdiff_max=7;
+  int first_proc_found=0;
 
   if (UE_id==-1) {
     LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
@@ -242,42 +241,45 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
   if (ul_flag == 0)  {// this is a DL request
     DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][0];
-    /*
-    #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[eNB %d] get_ue_active_harq_pid: Frame %d subframe %d, current harq_id %d\n",
-    Mod_id,frame,subframe,DLSCH_ptr->harq_ids[subframe]);
-    #endif
-    */
-    // switch on TDD or FDD configuration here later
-    *harq_pid = DLSCH_ptr->harq_ids[subframe];
 
-    if ((*harq_pid<DLSCH_ptr->Mdlharq) &&
-        ((DLSCH_ptr->harq_processes[*harq_pid]->round > 0))) {
+    // set to no available process first
+    *harq_pid = -1;
 
-      *round = DLSCH_ptr->harq_processes[*harq_pid]->round;
-      LOG_D(PHY,"round %d\n",*round);
+    for (i=0; i<DLSCH_ptr->Mdlharq; i++) {
+      if (DLSCH_ptr->harq_processes[i]!=NULL) {
+	if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
+	  // store first inactive process
+	  if (first_proc_found == 0) {
+	    first_proc_found = 1;
+	    *harq_pid = i;
+	    *round = 0;
+	    LOG_D(PHY,"process %d is first free process\n",i);
+	  }
+	  else {
+	    LOG_D(PHY,"process %d is free\n",i);
+	  }
+	} else {
+	  sf2 = (DLSCH_ptr->harq_processes[i]->frame*10) + DLSCH_ptr->harq_processes[i]->subframe;
+	  if (sf2<=sf1)
+	    sfdiff = sf1-sf2;
+	  else // this happens when wrapping around 1024 frame barrier
+	    sfdiff = 10240 + sf1-sf2;
+	  LOG_D(PHY,"process %d is active, round %d (waiting %d)\n",i,DLSCH_ptr->harq_processes[i]->round,sfdiff);
 
-      //    else if ((subframe_m4==5) || (subframe_m4==6)) {
-      //      *harq_pid = 0;//DLSCH_ptr->harq_ids[subframe_m4];//Ankit
-      //     *round    = DLSCH_ptr->harq_processes[*harq_pid]->round;
-      //    }
-    } else {
-      // get first free harq_pid (i.e. round 0)
-      for (i=0; i<DLSCH_ptr->Mdlharq; i++) {
-        if (DLSCH_ptr->harq_processes[i]!=NULL) {
-          if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
-            *harq_pid = i;//0;//i; //(Ankit)
-            *round = 0;
-            return(0);
-          } else {
-            LOG_D(PHY,"process %d is active\n",i);
-          }
-        } else {
-          LOG_E(PHY,"[eNB %d] DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
-          return(-1);
-        }
+	  if (sfdiff>sfdiff_max) { // this is an active process that is waiting longer than the others (and longer than 7 ms)
+	    sfdiff_max = sfdiff; 
+	    *harq_pid = i;
+	    *round = DLSCH_ptr->harq_processes[i]->round;
+	    first_proc_found = 1;
+	  }
+	}
+      } else { // a process is not defined
+	LOG_E(PHY,"[eNB %d] DLSCH process %d for rnti %x (UE_id %d) not allocated\n",Mod_id,i,rnti,UE_id);
+	return(-1);
       }
     }
+    LOG_D(PHY,"get_ue_active_harq_pid DL => Frame %d, Subframe %d : harq_pid %d\n",
+	  frame,subframe,*harq_pid);
   } else { // This is a UL request
 
     ULSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->ulsch_eNB[(uint32_t)UE_id];
@@ -1388,7 +1390,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #ifdef Rel10
   MCH_PDU *mch_pduP;
   MCH_PDU  mch_pdu;
-  uint8_t sync_area=255;
+  //  uint8_t sync_area=255;
 #endif
 #if defined(SMBV) && !defined(EXMIMO)
   // counts number of allocations in subframe
@@ -1848,7 +1850,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %"PRIu8"] SI generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
 #endif
-      generate_eNB_dlsch_params_from_dci(subframe,
+      generate_eNB_dlsch_params_from_dci(frame,
+					 subframe,
                                          &DCI_pdu->dci_alloc[i].dci_pdu[0],
                                          DCI_pdu->dci_alloc[i].rnti,
                                          DCI_pdu->dci_alloc[i].format,
@@ -1888,7 +1891,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %"PRIu8"] RA generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
 #endif
-      generate_eNB_dlsch_params_from_dci(subframe,
+      generate_eNB_dlsch_params_from_dci(frame,
+					 subframe,
                                          &DCI_pdu->dci_alloc[i].dci_pdu[0],
                                          DCI_pdu->dci_alloc[i].rnti,
                                          DCI_pdu->dci_alloc[i].format,
@@ -1949,7 +1953,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         }
 
 #endif
-        generate_eNB_dlsch_params_from_dci(subframe,
+        generate_eNB_dlsch_params_from_dci(frame,
+					   subframe,
                                            &DCI_pdu->dci_alloc[i].dci_pdu[0],
                                            DCI_pdu->dci_alloc[i].rnti,
                                            DCI_pdu->dci_alloc[i].format,
@@ -2673,13 +2678,20 @@ void process_HARQ_feedback(uint8_t UE_id,
     dl_harq_pid[0] = dlsch->harq_ids[subframe_m4];
     M=1;
 
-    if (pusch_flag == 1)
+    if (pusch_flag == 1) {
       dlsch_ACK[0] = phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[harq_pid]->o_ACK[0];
-    else
+      if (dlsch->subframe_tx[subframe_m4]==1)
+      LOG_D(PHY,"[eNB %d] Frame %d: Received ACK/NAK %d on PUSCH for subframe %d\n",phy_vars_eNB->Mod_id,
+	    frame,dlsch_ACK[0],subframe_m4);
+    }
+    else {
       dlsch_ACK[0] = pucch_payload[0];
+      LOG_I(PHY,"[eNB %d] Frame %d: Received ACK/NAK %d on PUCCH for subframe %d\n",phy_vars_eNB->Mod_id,
+	    frame,dlsch_ACK[0],subframe_m4);
+      if (dlsch_ACK[0]==0)
+	AssertFatal(0,"Exiting on NAK on PUCCH\n");
+    }
 
-    LOG_D(PHY,"[eNB %d] Frame %d: Received ACK/NAK %d for subframe %d\n",phy_vars_eNB->Mod_id,
-          frame,dlsch_ACK[0],subframe_m4);
 
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
     MSC_LOG_RX_MESSAGE(
@@ -3191,7 +3203,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 {
   //RX processing
   UNUSED(r_type);
-  uint32_t l, ret=0,i,j,k,aa;
+  uint32_t l, ret=0,i,j,k;
   uint32_t sect_id=0;
   uint32_t harq_pid, harq_idx, round;
   uint8_t SR_payload = 0,*pucch_payload=NULL,pucch_payload0[2]= {0,0},pucch_payload1[2]= {0,0};
@@ -3220,12 +3232,13 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,frame, subframe);
 #endif
 
+  /*
 #ifdef OAI_USRP
   for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++)
     rescale(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
 	    phy_vars_eNB->lte_frame_parms.samples_per_tti);
 #endif
-
+  */
   if (abstraction_flag == 0) {
     remove_7_5_kHz(phy_vars_eNB,subframe<<1);
     remove_7_5_kHz(phy_vars_eNB,(subframe<<1)+1);
@@ -3949,6 +3962,8 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         } else if (phy_vars_eNB->lte_frame_parms.frame_type==FDD) { // FDD
           // if SR was detected, use the n1_pucch from SR, else use n1_pucch0
           n1_pucch0 = (SR_payload==1) ? phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex:n1_pucch0;
+
+	  LOG_D(PHY,"Demodulating PUCCH for ACK/NAK: n1_pucch0 %d (%d), SR_payload %d\n",n1_pucch0,phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,SR_payload);
 
           if (abstraction_flag == 0)
             metric0 = rx_pucch(phy_vars_eNB,

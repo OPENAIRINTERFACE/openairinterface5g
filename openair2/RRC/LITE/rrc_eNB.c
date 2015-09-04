@@ -540,6 +540,23 @@ rrc_eNB_get_next_transaction_identifier(
 
 
 //-----------------------------------------------------------------------------
+// return 1 if there is already an UE with ue_identityP, 0 otherwise
+static int
+rrc_eNB_ue_context_random_exist(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint64_t               ue_identityP
+)
+//-----------------------------------------------------------------------------
+{
+  struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+    if (ue_context_p->ue_context.random_ue_identity == ue_identityP)
+      return 1;
+  }
+  return 0;
+}
+
+//-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
 static struct rrc_eNB_ue_context_s*
 rrc_eNB_get_next_free_ue_context(
@@ -3610,10 +3627,23 @@ rrc_eNB_decode_ccch(
       } else {
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
+          AssertFatal(rrcConnectionRequest->ue_Identity.present == InitialUE_Identity_PR_randomValue,
+                      "unsupported InitialUE-Identity in RRCConnectionRequest");
+          AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
+                      "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
+                      rrcConnectionRequest->ue_Identity.choice.randomValue.size);
           memcpy(((uint8_t*) & random_value) + 3,
                  rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
                  rrcConnectionRequest->ue_Identity.choice.randomValue.size);
-          ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+          /* if there is already a registered UE (with another RNTI) with this random_value,
+           * the current one must be removed from MAC/PHY (zombie UE)
+           */
+          if (rrc_eNB_ue_context_random_exist(ctxt_pP, random_value)) {
+            AssertFatal(0 == 1, "TODO: remove UE fro MAC/PHY (how?)");
+            ue_context_p = NULL;
+          } else {
+            ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+          }
         }
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" UE context: %X\n",

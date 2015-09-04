@@ -676,9 +676,6 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
   int frame_tx = phy_vars_ue->frame_tx;
   int Mod_id = phy_vars_ue->Mod_id;
   int CC_id = phy_vars_ue->CC_id;
-#ifndef OPENAIR2
-  int i;
-#endif
   int tx_amp;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
@@ -798,6 +795,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
               frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[slot_tx],
               phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
               phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
+#endif
 
         if (ack_status > 0) {
           LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d Generating ACK (%d,%d) for %d bits on PUSCH\n",
@@ -808,7 +806,8 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
                 phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
         }
 
-#endif
+
+
 
 
         //#ifdef DEBUG_PHY_PROC
@@ -2411,7 +2410,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
   int eNB_id_i = 1;
   uint8_t dual_stream_UE = 0;
 #endif
-  int i;
 #ifndef OPENAIR2
   uint8_t *rar;
 #endif

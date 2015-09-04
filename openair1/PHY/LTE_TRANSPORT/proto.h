@@ -1354,7 +1354,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti);
 
-int32_t generate_eNB_dlsch_params_from_dci(uint8_t subframe,
+int32_t generate_eNB_dlsch_params_from_dci(int frame,
+    uint8_t subframe,
     void *dci_pdu,
     rnti_t rnti,
     DCI_format_t dci_format,

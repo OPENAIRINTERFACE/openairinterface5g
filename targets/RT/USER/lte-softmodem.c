@@ -953,7 +953,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 #elif OAI_BLADRF
 	((short*)dummy_tx_b)[2*i];
 #else
-          ((short*)dummy_tx_b)[2*i]<<5;
+          ((short*)dummy_tx_b)[2*i]<<4;
 #endif
 	  ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
 #ifdef EXMIMO
@@ -961,7 +961,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 #elif OAI_BLADRF
 	  ((short*)dummy_tx_b)[2*i+1];
 #else
-	  ((short*)dummy_tx_b)[2*i+1]<<5;
+	  ((short*)dummy_tx_b)[2*i+1]<<4;
 #endif
      }
      // if S-subframe switch to RX in second subframe
@@ -2875,7 +2875,7 @@ int main( int argc, char **argv )
     openair0_cfg[card].samples_per_packet = 1024;
 #ifdef OAI_USRP
     openair0_cfg[card].tx_forward_nsamps = 70;
-    openair0_cfg[card].tx_delay = 6;
+    openair0_cfg[card].tx_delay = 5;
 #elif OAI_BLADERF
     openair0_cfg[card].tx_forward_nsamps = 0;
     openair0_cfg[card].tx_delay = 8;
@@ -3577,7 +3577,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       free(phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i]);
-      rxdata[i] = (int32_t*)(16 + malloc16(16+openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+      rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
       phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
       memset(rxdata[i], 0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
       printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->lte_eNB_common_vars.rxdata[0][i],rxdata[i],N_TA_offset);
@@ -3586,7 +3586,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
       free(phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i]);
-      txdata[i] = (int32_t*)(16 + malloc16(16 + openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+      txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
       phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i] = txdata[i];
       memset(txdata[i],0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
       printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->lte_eNB_common_vars.txdata[0][i]);

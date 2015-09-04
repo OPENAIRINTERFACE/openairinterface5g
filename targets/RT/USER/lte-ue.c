@@ -734,6 +734,7 @@ static void *UE_thread_tx(void *arg)
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 
+/*
 #ifdef OAI_USRP
 void rescale(int16_t *input,int length)
 {
@@ -753,6 +754,7 @@ void rescale(int16_t *input,int length)
   }
 }
 #endif
+*/
 
 static void *UE_thread_rx(void *arg)
 {
@@ -840,6 +842,7 @@ static void *UE_thread_rx(void *arg)
     for (i=0; i<2; i++) {
       if ((subframe_select( &UE->lte_frame_parms, UE->slot_rx>>1 ) == SF_DL) ||
           (UE->lte_frame_parms.frame_type == FDD)) {
+	/*
 #ifdef OAI_USRP
 	// this does the adjustments of RX signal amplitude to bring into least 12 significant bits
 	int slot_length = UE->lte_frame_parms.samples_per_tti>>1;
@@ -874,11 +877,13 @@ static void *UE_thread_rx(void *arg)
 	    }
 	}
 #endif
+	*/
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
       if ((subframe_select( &UE->lte_frame_parms, UE->slot_rx>>1 ) == SF_S) &&
           ((UE->slot_rx&1) == 0)) {
+	/*
 #ifdef OAI_USRP
 	// this does the adjustments of RX signal amplitude to bring into least 12 significant bits
 	int slot_length = UE->lte_frame_parms.samples_per_tti>>1;
@@ -912,6 +917,7 @@ static void *UE_thread_rx(void *arg)
 	  }
 	}
 #endif
+	*/
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
@@ -997,7 +1003,11 @@ void *UE_thread(void *arg)
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
   int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*openair0_cfg[0].tx_delay;
-  int dummy[2][spp];
+#ifdef __AVX2__
+  int dummy[2][spp] __attribute__((aligned(32)));
+#else
+  int dummy[2][spp] __attribute__((aligned(16)));
+#endif
   int dummy_dump = 0;
   int tx_enabled = 0;
   int start_rx_stream = 0;
@@ -1084,8 +1094,8 @@ void *UE_thread(void *arg)
 
       for (int i=0; i<UE->lte_frame_parms.nb_antennas_rx; i++)
         rxp[i] = (dummy_dump==0) ? (void*)&rxdata[i][rxpos] : (void*)dummy[i];
-      
-      /*      if (dummy_dump == 0)
+      /*
+      if (dummy_dump == 0)
       	printf("writing %d samples to %d (first_rx %d)\n",spp - ((first_rx==1) ? rx_off_diff : 0),rxpos,first_rx);
       */
       if (UE->mode != loop_through_memory) {

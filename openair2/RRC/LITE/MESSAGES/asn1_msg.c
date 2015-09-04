@@ -1643,7 +1643,7 @@ do_RRCConnectionSetup(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = ue_context_pP->local_uid;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
 
   if (frame_parms->frame_type == 0) { // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)

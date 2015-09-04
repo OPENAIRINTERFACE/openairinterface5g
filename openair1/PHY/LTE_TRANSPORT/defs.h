@@ -114,6 +114,10 @@ typedef struct {
   uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
+  /// Frame where current HARQ round was sent
+  uint32_t frame;
+  /// Subframe where current HARQ round was sent
+  uint32_t subframe;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// MCS format for this DLSCH

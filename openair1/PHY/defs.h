@@ -65,7 +65,11 @@
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
+#ifdef __AVX2__
+#define malloc16(x) memalign(32,x)
+#else
 #define malloc16(x) memalign(16,x)
+#endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
 #define bigmalloc16 malloc16
@@ -76,7 +80,11 @@
 //! If no more memory is available, this function will terminate the program with an assertion error.
 static inline void* malloc16_clear( size_t size )
 {
+#ifdef __AVX2__
+  void* ptr = memalign(32, size);
+#else
   void* ptr = memalign(16, size);
+#endif
   DevAssert(ptr);
   memset( ptr, 0, size );
   return ptr;
@@ -367,6 +375,11 @@ typedef struct PHY_VARS_eNB_s {
   /// time state for localization
   time_stats_t localization_stats;
 #endif
+
+  int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
+  int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][10*1024];
 
 #if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;

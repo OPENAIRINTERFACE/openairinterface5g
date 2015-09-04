@@ -77,10 +77,10 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   FD_lte_phy_scope_enb *fdui = fl_malloc( sizeof *fdui );
 
   // Define form
-  fdui->lte_phy_scope_enb = fl_bgn_form( FL_NO_BOX, 800, 600 );
+  fdui->lte_phy_scope_enb = fl_bgn_form( FL_NO_BOX, 800, 800 );
 
   // This the whole UI box
-  obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 600, "" );
+  obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 800, "" );
   fl_set_object_color( obj, FL_BLACK, FL_BLACK );
 
   // Received signal
@@ -118,6 +118,14 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_xyplot_symbolsize( fdui->pusch_comp,2);
   fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
 
+  // I/Q PUCCH comp
+  fdui->pucch_comp = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 540, 240, 200, "PUCCH I/Q of MF Output" );
+  fl_set_object_boxtype( fdui->pucch_comp, FL_EMBOSSED_BOX );
+  fl_set_object_color( fdui->pucch_comp, FL_BLACK, FL_YELLOW );
+  fl_set_object_lcolor( fdui->pucch_comp, FL_WHITE ); // Label color
+  fl_set_xyplot_symbolsize( fdui->pucch_comp,2);
+  //  fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
+
   // Throughput on PUSCH
   fdui->pusch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 480, 500, 100, "PUSCH Throughput [frame]/[kbit/s]" );
   fl_set_object_boxtype( fdui->pusch_tput, FL_EMBOSSED_BOX );
@@ -154,9 +162,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_f;
   int16_t *pusch_llr;
   int16_t *pusch_comp;
+  int32_t *pucch1_comp;
+  int16_t *pucch1ab_comp;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
+  float I_pucch[10240],Q_pucch[10240];
   float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
   float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
   float *chest_f_abs;
@@ -186,6 +197,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_f = (int16_t**) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
   pusch_llr = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->llr;
   pusch_comp = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
+  pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
+  pucch1ab_comp = (int16_t*) phy_vars_enb->pucch1ab_stats[UE_id];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -312,6 +325,19 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
     fl_set_xyplot_data(form->pusch_comp,I,Q,ind,"","","");
   }
+
+  // PUSCH I/Q of MF Output
+  if (pucch1ab_comp!=NULL) {
+    for (ind=0; ind<10240; ind++) {
+      I_pucch[ind] = pucch1ab_comp[2*ind];
+      Q_pucch[ind] = pucch1ab_comp[2*ind+1];
+      ind++;
+    }
+    fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,ind,"","","");
+    fl_set_xyplot_xbounds(form->pucch_comp,-200,200);
+    fl_set_xyplot_ybounds(form->pucch_comp,-200,200);
+  }
+
 
   // PUSCH Throughput
   memmove( tput_time_enb[UE_id], &tput_time_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
