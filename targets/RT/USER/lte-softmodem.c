@@ -218,7 +218,7 @@ openair0_device openair0;
 //extern unsigned int bigphys_top;
 //extern unsigned int mem_base;
 
-int                             card = 0;
+//int                             card = 0;
 
 
 #if defined(ENABLE_ITTI)
@@ -1551,6 +1551,7 @@ static void* eNB_thread( void* arg )
   slot = 1;
   int spp;
   int tx_launched = 0;
+  int card=0;
 
   void *rxp[2]; // FIXME hard coded array size; indexed by lte_frame_parms.nb_antennas_rx
   void *txp[2]; // FIXME hard coded array size; indexed by lte_frame_parms.nb_antennas_tx
@@ -1901,6 +1902,7 @@ static void* eNB_thread( void* arg )
           if (PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx == 0) {
             if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_tx) != 0) {
               LOG_E(PHY,"[eNB] ERROR pthread_cond_signal for eNB TX thread %d\n",sf);
+	      exit_fun("nothing to add");
             }
           } else {
             LOG_W(PHY,"[eNB] Frame %d, eNB TX thread %d busy!!\n",PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_tx,sf);
@@ -2604,6 +2606,9 @@ int main( int argc, char **argv )
 #endif
 #ifdef PDCP_USE_NETLINK
   netlink_init();
+#if defined(PDCP_USE_NETLINK_QUEUES)
+  pdcp_netlink_init();
+#endif
 #endif
 
 #if !defined(ENABLE_ITTI)
@@ -2839,76 +2844,79 @@ int main( int argc, char **argv )
 
   dump_frame_parms(frame_parms[0]);
 
-  if(frame_parms[0]->N_RB_DL == 100) {
-    sample_rate = 30.72e6;
-    bw          = 10.0e6;
+  for (card=0; card<MAX_CARDS; card++) {
+
+    if(frame_parms[0]->N_RB_DL == 100) {
+      sample_rate = 30.72e6;
+      bw          = 10.0e6;
 #ifndef EXMIMO
-    openair0_cfg[card].sample_rate=30.72e6;
-    openair0_cfg[card].samples_per_packet = 2048;
-    openair0_cfg[card].samples_per_frame = 307200; 
-    openair0_cfg[card].tx_bw = 10e6;
-    openair0_cfg[card].rx_bw = 10e6;
-    // from usrp_time_offset
-    openair0_cfg[card].tx_forward_nsamps = 175;
-    openair0_cfg[card].tx_delay = 8;
+      openair0_cfg[card].sample_rate=30.72e6;
+      openair0_cfg[card].samples_per_packet = 2048;
+      openair0_cfg[card].samples_per_frame = 307200; 
+      openair0_cfg[card].tx_bw = 10e6;
+      openair0_cfg[card].rx_bw = 10e6;
+      // from usrp_time_offset
+      openair0_cfg[card].tx_forward_nsamps = 175;
+      openair0_cfg[card].tx_delay = 8;
 #endif
-  } else if(frame_parms[0]->N_RB_DL == 50) {
-    sample_rate = 15.36e6;
-    bw          = 5.0e6;
+    } else if(frame_parms[0]->N_RB_DL == 50) {
+      sample_rate = 15.36e6;
+      bw          = 5.0e6;
 #ifndef EXMIMO
-    openair0_cfg[card].sample_rate=15.36e6;
-    openair0_cfg[card].samples_per_packet = 2048;
-    openair0_cfg[card].samples_per_frame = 153600;
-    openair0_cfg[card].tx_bw = 5e6;
-    openair0_cfg[card].rx_bw = 5e6;
-    openair0_cfg[card].tx_forward_nsamps = 95;
-    openair0_cfg[card].tx_delay = 5;
+      openair0_cfg[card].sample_rate=15.36e6;
+      openair0_cfg[card].samples_per_packet = 2048;
+      openair0_cfg[card].samples_per_frame = 153600;
+      openair0_cfg[card].tx_bw = 5e6;
+      openair0_cfg[card].rx_bw = 5e6;
+      openair0_cfg[card].tx_forward_nsamps = 95;
+      openair0_cfg[card].tx_delay = 5;
 #endif
-  } else if (frame_parms[0]->N_RB_DL == 25) {
-    sample_rate = 7.68e6;
-    bw          = 2.5e6;
+    } else if (frame_parms[0]->N_RB_DL == 25) {
+      sample_rate = 7.68e6;
+      bw          = 2.5e6;
 #ifndef EXMIMO
-    openair0_cfg[card].sample_rate=7.68e6;
-    openair0_cfg[card].samples_per_frame = 76800;
-    openair0_cfg[card].tx_bw = 2.5e6;
-    openair0_cfg[card].rx_bw = 2.5e6;
-    openair0_cfg[card].samples_per_packet = 1024;
+      openair0_cfg[card].sample_rate=7.68e6;
+      openair0_cfg[card].samples_per_frame = 76800;
+      openair0_cfg[card].tx_bw = 2.5e6;
+      openair0_cfg[card].rx_bw = 2.5e6;
+      openair0_cfg[card].samples_per_packet = 1024;
 #ifdef OAI_USRP
     openair0_cfg[card].tx_forward_nsamps = 70;
     openair0_cfg[card].tx_delay = 5;
 #elif OAI_BLADERF
-    openair0_cfg[card].tx_forward_nsamps = 0;
-    openair0_cfg[card].tx_delay = 8;
+      openair0_cfg[card].tx_forward_nsamps = 0;
+      openair0_cfg[card].tx_delay = 8;
 #endif 
 #endif
-  } else if (frame_parms[0]->N_RB_DL == 6) {
-    sample_rate = 1.92e6;
-    bw          = 0.96e6;
+    } else if (frame_parms[0]->N_RB_DL == 6) {
+      sample_rate = 1.92e6;
+      bw          = 0.96e6;
 #ifndef EXMIMO
-    openair0_cfg[card].sample_rate=1.92e6;
-    openair0_cfg[card].samples_per_packet = 256;
-    openair0_cfg[card].samples_per_frame = 19200;
-    openair0_cfg[card].tx_bw = 1.5e6;
-    openair0_cfg[card].rx_bw = 1.5e6;
-    openair0_cfg[card].tx_forward_nsamps = 40;
-    openair0_cfg[card].tx_delay = 8;
+      openair0_cfg[card].sample_rate=1.92e6;
+      openair0_cfg[card].samples_per_packet = 256;
+      openair0_cfg[card].samples_per_frame = 19200;
+      openair0_cfg[card].tx_bw = 1.5e6;
+      openair0_cfg[card].rx_bw = 1.5e6;
+      openair0_cfg[card].tx_forward_nsamps = 40;
+      openair0_cfg[card].tx_delay = 8;
 #endif
-  }
-
+    }
+    
 #ifdef ETHERNET
 
-//calib needed
-  openair0_cfg[card].tx_delay = 0;
-  openair0_cfg[card].tx_forward_nsamps = 0;
+    //calib needed
+    openair0_cfg[card].tx_delay = 0;
+    openair0_cfg[card].tx_forward_nsamps = 0;
+    
+    if (frame_parms[0]->N_RB_DL == 6) 
+      openair0_cfg[card].samples_per_packet = 256;
+    else 
+      openair0_cfg[card].samples_per_packet = 1024;
 
-  if (frame_parms[0]->N_RB_DL == 6) openair0_cfg[0].samples_per_packet = 256;
-  else openair0_cfg[0].samples_per_packet = 1024;
-
-  printf("HW: samples_per_packet %d\n",openair0_cfg[0].samples_per_packet);
+    printf("HW: samples_per_packet %d\n",openair0_cfg[card].samples_per_packet);
 #endif
 
 
-  for (card=0; card<MAX_CARDS; card++) {
 #ifndef EXMIMO
     openair0_cfg[card].samples_per_packet = openair0_cfg[0].samples_per_packet;
 #endif
