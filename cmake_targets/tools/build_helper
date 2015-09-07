@@ -114,6 +114,7 @@ compilations() {
     rm -f $3
     make -j4 $2
   } > $dlog/$2.$REL.txt 2>&1
+  echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
