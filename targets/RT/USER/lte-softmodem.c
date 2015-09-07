@@ -2432,7 +2432,7 @@ static void get_options (int argc, char **argv)
 
 int main( int argc, char **argv )
 {
-  int i,aa,card;
+  int i,aa,card=0;
 #if defined (XFORMS) || defined (EMOS) || defined (EXMIMO)
   void *status;
 #endif
