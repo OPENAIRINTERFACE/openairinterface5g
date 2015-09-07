@@ -2020,7 +2020,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
       if (harq_pid==255) {
         LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Bad harq_pid for ULSCH allocation\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx);
-        mac_exit_wrapper("Invalid harq_pid (255) detected");
+        //mac_exit_wrapper("Invalid harq_pid (255) detected");
         return; // not reached
       }
 
@@ -2277,7 +2277,10 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       LOG_T(PHY,"%x.",dlsch_input_buffer[i]);
       LOG_T(PHY,"\n");
     */
-    UE_id = add_ue(crnti,phy_vars_eNB);
+    if (crnti!=0) 
+      UE_id = add_ue(crnti,phy_vars_eNB);
+    else 
+      UE_id = -1;
 
     if (UE_id==-1) {
       LOG_W(PHY,"[eNB] Max user count reached.\n");
@@ -2686,10 +2689,12 @@ void process_HARQ_feedback(uint8_t UE_id,
     }
     else {
       dlsch_ACK[0] = pucch_payload[0];
-      LOG_I(PHY,"[eNB %d] Frame %d: Received ACK/NAK %d on PUCCH for subframe %d\n",phy_vars_eNB->Mod_id,
+      LOG_D(PHY,"[eNB %d] Frame %d: Received ACK/NAK %d on PUCCH for subframe %d\n",phy_vars_eNB->Mod_id,
 	    frame,dlsch_ACK[0],subframe_m4);
+      /*
       if (dlsch_ACK[0]==0)
 	AssertFatal(0,"Exiting on NAK on PUCCH\n");
+      */
     }
 
 
