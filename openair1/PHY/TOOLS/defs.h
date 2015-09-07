@@ -64,7 +64,6 @@ struct complex32 {
   int32_t i;
 };
 
-#ifndef EXPRESSMIMO_TARGET
 /*!\fn void multadd_real_vector_complex_scalar(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N)
 This function performs componentwise multiplication and accumulation of a complex scalar and a real vector.
 @param x Vector input (Q1.15)
@@ -480,20 +479,6 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 */
 
-#else // EXPRESSMIMO_TARGET
-
-#define fft(x,y,twiddle,rev,log2size,scale,input_fmt) \
-(((twiddle)==0) ? \
- (fft(1<<(log2size),((unsigned long*)(x)),((unsigned long*)(y)))) : \
- (ifft(1<<(log2size),((unsigned long*)(x)),((unsigned long*)(y)))))
-
-#define mult_cpx_vector(x1,x2,y,N,os)  component_wise_product(N,(unsigned long *)(x1),(unsigned long *)(x2),(unsigned long *)(y))
-
-#define mult_cpx_vector2(x1,x2,y,N,os)  component_wise_product(N,(unsigned long *)(x1),(unsigned long *)(x2),(unsigned long *)(y))
-
-#define add_vector16(x,y,z,N) component_wise_addition(N,(unsigned long*)(x),(unsigned long*)(y),(unsigned long*)(z))
-
-#endif // EXPRESSMIMO_TARGET
 
 int8_t dB_fixed(uint32_t x);
 

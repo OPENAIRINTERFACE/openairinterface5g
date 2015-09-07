@@ -888,10 +888,8 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms)
   ccodelte_init();
   ccodelte_init_inv();
 
-#ifndef EXPRESSMIMO_TARGET
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
-#endif //EXPRESSMIMO_TARGET
 
   init_td8();
   init_td16();

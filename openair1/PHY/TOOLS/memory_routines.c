@@ -26,7 +26,6 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#ifndef EXPRESSMIMO_TARGET
 #include "PHY/sse_intrin.h"
 
 void Zero_Buffer(void *buf,unsigned int length)
@@ -62,12 +61,6 @@ void mmxcopy(void *dest,void *src,int size)
 
   _mm_empty();
 }
-
-#else //EXPRESSMIMO_TARGET
-
-
-
-#endif //EXPRESSMIMO_TARGET
 
 void Zero_Buffer_nommx(void *buf,unsigned int length)
 {
