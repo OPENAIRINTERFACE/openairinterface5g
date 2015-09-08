@@ -44,6 +44,7 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
+#include "intertask_interface_init.h"
 
 #include "OCG_vars.h"
 #include "UTIL/LOG/log_extern.h"
@@ -157,7 +158,7 @@ int main(int argc, char **argv)
   int32_t stat;
   double stat_no_sig,stat_sig;
   uint8_t N0=40;
-  uint8_t pucch1_thres=13;
+  uint8_t pucch1_thres=10;
 
   uint16_t n1_pucch = 0;
   uint16_t n2_pucch = 0;
@@ -362,6 +363,7 @@ int main(int argc, char **argv)
   }
 
   logInit();
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
   g_log->log_component[PHY].level = LOG_DEBUG;
   g_log->log_component[PHY].flag = LOG_HIGH;
 
@@ -573,11 +575,11 @@ int main(int argc, char **argv)
         sig=1;
       } else {
         if (trial<(n_frames>>1)) {
-          //    printf("no sig =>");
+	  //printf("no sig =>");
           sig= 0;
         } else {
           sig=1;
-          //    printf("sig =>");
+	  //printf("sig =>");
           pucch_tx++;
         }
       }
