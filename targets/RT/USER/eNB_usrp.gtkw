@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Wed Sep 17 09:53:22 2014
+[*] Wed Sep  9 13:51:16 2015
 [*]
-[dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Wed Sep 17 09:52:33 2014"
-[dumpfile_size] 53042998
-[savefile] "$OPENAIR_TARGETS/RT/USER/eNB.gtkw"
-[timestart] 13048857000
-[size] 1005 600
-[pos] -1 -1
-*-20.000000 13050255265 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/homes/kaltenbe/openair_dump_eNB_usrp_note4.gtk"
+[dumpfile_mtime] "Wed Sep  9 13:39:25 2015"
+[dumpfile_size] 323681028
+[savefile] "/homes/kaltenbe/Devel/openair/openair4G/trunk/targets/RT/USER/eNB.gtkw"
+[timestart] 63022760000
+[size] 1855 1056
+[pos] -851 -429
+*-22.793451 63031840000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 224
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 143
+[sst_vpaned_height] 294
 @24
 variables.hw_frame[63:0]
 variables.hw_subframe[63:0]
@@ -25,13 +25,9 @@ variables.txcnt[63:0]
 variables.rxcnt[63:0]
 variables.trx_ts[63:0]
 variables.trx_tst[63:0]
-@25
 variables.frame_number_TX_eNB[63:0]
 variables.frame_number_RX_eNB[63:0]
 @28
-functions.phy_procedures_eNb_tx
-functions.phy_procedures_eNb_rx
-functions.phy_enb_prach_rx
 functions.eNB_thread_rx0
 functions.eNB_thread_tx0
 functions.eNB_thread_rx1
@@ -52,5 +48,18 @@ functions.eNB_thread_rx8
 functions.eNB_thread_tx8
 functions.eNB_thread_rx9
 functions.eNB_thread_tx9
+functions.phy_procedures_eNb_tx
+functions.phy_procedures_eNb_rx
+functions.phy_enb_prach_rx
+functions.phy_eNB_dlsch_encoding
+functions.phy_eNB_dlsch_modulation
+functions.phy_eNB_dlsch_scrambling
+functions.phy_enb_pdcch_tx
+functions.phy_enb_ulsch_decoding
+functions.phy_enb_rs_tx
+functions.rrc_mac_config_req
+functions.rlc_data_req
+@29
+functions.udp_enb_task
 [pattern_trace] 1
 [pattern_trace] 0

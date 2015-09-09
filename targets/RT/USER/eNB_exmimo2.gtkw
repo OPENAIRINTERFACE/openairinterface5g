@@ -1,38 +1,31 @@
 [*]
-[*] GTKWave Analyzer v3.3.62 (w)1999-2014 BSI
-[*] Thu May 28 09:51:04 2015
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Wed Sep  9 13:46:33 2015
 [*]
-[dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Fri May 22 17:35:07 2015"
-[dumpfile_size] 352707646
-[savefile] "/home/geyser/openair4G/targets/RT/USER/eNB_exmimo2.gtkw"
-[timestart] 48949410000
-[size] 1920 1014
-[pos] -40 -40
-*-21.787668 54509118463 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/homes/kaltenbe/openair_dump_eNB_exmimo2_sequans.vcd"
+[dumpfile_mtime] "Mon Sep  7 15:31:31 2015"
+[dumpfile_size] 894802540
+[savefile] "/homes/kaltenbe/Devel/openair/openair4G/trunk/targets/RT/USER/eNB_exmimo2.gtkw"
+[timestart] 362571890000
+[size] 1855 1056
+[pos] -176 -45
+*-21.066544 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 257
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 241
-@24
-variables.hw_frame[63:0]
-variables.hw_subframe[63:0]
-@28
-functions.rt_sleep
-@22
+[sst_vpaned_height] 262
+@420
 variables.daq_mbox[63:0]
 variables.diff2[63:0]
-@25
-variables.missed_slot_enb[63:0]
+@28
+functions.rt_sleep
 @24
-variables.txcnt[63:0]
-variables.rxcnt[63:0]
+variables.missed_slot_enb[63:0]
+variables.hw_subframe[63:0]
+variables.hw_frame[63:0]
 variables.frame_number_TX_eNB[63:0]
 variables.frame_number_RX_eNB[63:0]
 @28
-functions.phy_procedures_eNb_tx
-functions.phy_procedures_eNb_rx
-functions.phy_enb_prach_rx
 functions.eNB_thread_rx0
 functions.eNB_thread_tx0
 functions.eNB_thread_rx1
@@ -53,13 +46,17 @@ functions.eNB_thread_rx8
 functions.eNB_thread_tx8
 functions.eNB_thread_rx9
 functions.eNB_thread_tx9
+functions.phy_procedures_eNb_tx
+functions.phy_procedures_eNb_rx
+functions.phy_enb_prach_rx
 functions.phy_eNB_dlsch_encoding
 functions.phy_eNB_dlsch_modulation
-functions.phy_enb_pdcch_tx
 functions.phy_eNB_dlsch_scrambling
+functions.phy_enb_pdcch_tx
+@29
 functions.phy_enb_ulsch_decoding
+@28
 functions.phy_enb_rs_tx
-functions.phy_enb_sfgen
 functions.rrc_mac_config_req
 functions.rlc_data_req
 functions.udp_enb_task
