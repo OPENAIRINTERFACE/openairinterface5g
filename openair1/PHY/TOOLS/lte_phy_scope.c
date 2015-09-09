@@ -118,8 +118,16 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_xyplot_symbolsize( fdui->pusch_comp,2);
   fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
 
-  // I/Q PUCCH comp
-  fdui->pucch_comp = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 540, 240, 200, "PUCCH I/Q of MF Output" );
+  // I/Q PUCCH comp (format 1)
+  fdui->pucch_comp1 = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 480, 240, 100, "PUCCH I/Q of MF Output" );
+  fl_set_object_boxtype( fdui->pucch_comp1, FL_EMBOSSED_BOX );
+  fl_set_object_color( fdui->pucch_comp1, FL_BLACK, FL_YELLOW );
+  fl_set_object_lcolor( fdui->pucch_comp1, FL_WHITE ); // Label color
+  fl_set_xyplot_symbolsize( fdui->pucch_comp1,2);
+  //  fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
+
+  // I/Q PUCCH comp (fromat 1a/b)
+  fdui->pucch_comp = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 600, 240, 100, "PUCCH I/Q of MF Output" );
   fl_set_object_boxtype( fdui->pucch_comp, FL_EMBOSSED_BOX );
   fl_set_object_color( fdui->pucch_comp, FL_BLACK, FL_YELLOW );
   fl_set_object_lcolor( fdui->pucch_comp, FL_WHITE ); // Label color
@@ -133,7 +141,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_object_lcolor( fdui->pusch_tput, FL_WHITE ); // Label color
 
   // Generic eNB Button
-  fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 540, 480, 240, 40, "" );
+  fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 20, 600, 240, 40, "" );
   fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
   fl_set_button(fdui->button_0,0);
   otg_enabled = 0;
@@ -334,11 +342,11 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
       A_pucch[ind] = 10*log10(pucch1_comp[ind]);
       B_pucch[ind] = ind;
     }
-    fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,ind,"","","");
-    //fl_set_xyplot_data(form->pucch_comp,B_pucch,A_pucch,ind,"","","");
+    fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
+    fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
     fl_set_xyplot_xbounds(form->pucch_comp,-200,200);
-    fl_set_xyplot_ybounds(form->pucch_comp,-200,200);
-    //fl_set_xyplot_ybounds(form->pucch_comp,0,50);
+    fl_set_xyplot_ybounds(form->pucch_comp,-100,100);
+    fl_set_xyplot_ybounds(form->pucch_comp1,10,40);
   }
 
 

@@ -248,8 +248,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
   //  printf("nb_rb = %d, eNB_id %d\n",nb_rb,eNB_id);
   if (nb_rb==0) {
-    //LOG_W(PHY,"dlsch_demodulation.c: nb_rb=0\n");
-    return(0);
+    LOG_D(PHY,"dlsch_demodulation.c: nb_rb=0\n");
+    return(-1);
   }
 
   /*
