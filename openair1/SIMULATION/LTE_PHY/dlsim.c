@@ -172,7 +172,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_tx_phy, unsigned char N_
 
   phy_init_lte_ue(PHY_vars_UE,1,0);
   phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-  
 
   generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
   generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
@@ -746,6 +745,7 @@ int main(int argc, char **argv)
   if (transmission_mode==7){
     lte_gold_ue_spec_port5(PHY_vars_eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
     lte_gold_ue_spec_port5(PHY_vars_UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
+ 
     beamforming_weights = (int32_t **)malloc(12*N_RB_DL*sizeof(int32_t*));
     for(re=0;re<12*N_RB_DL;re++){
       beamforming_weights[re]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
@@ -3064,10 +3064,12 @@ PMI_FEEDBACK:
             pilot2 = 6;
             pilot3 = 9;
           }
+          
 
           start_meas(&PHY_vars_UE->phy_proc_rx);
 
           // Inner receiver scheduling for 3 slots
+        
           for (Ns=(2*subframe); Ns<((2*subframe)+3); Ns++) {
             for (l=0; l<pilot2; l++) {
               if (n_frames==1)
@@ -3085,14 +3087,15 @@ PMI_FEEDBACK:
               no_prefix  if 1 prefix is removed by HW
 
               */
-
-              start_meas(&PHY_vars_UE->ofdm_demod_stats);
-              slot_fep(PHY_vars_UE,
-                       l,
-                       Ns%20,
-                       0,
-                       0);
-              stop_meas(&PHY_vars_UE->ofdm_demod_stats);
+              if(Ns==(2*subframe) || Ns==(2*subframe+1)) {
+                start_meas(&PHY_vars_UE->ofdm_demod_stats);
+                slot_fep(PHY_vars_UE,
+                         l,
+                         Ns%20,
+                         0,
+                         0);
+                stop_meas(&PHY_vars_UE->ofdm_demod_stats);
+              }
               //write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (PHY_vars_UE->perfect_ce==1) {
@@ -3120,6 +3123,11 @@ PMI_FEEDBACK:
                       for (i=0; i<frame_parms->N_RB_DL*12; i++) {
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+                        if (transmission_mode == 7){
+                          ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(short)(AMP);
+                          ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=0/2;
+
+                        }
                       }
                     }
                   }

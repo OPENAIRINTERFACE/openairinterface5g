@@ -1756,6 +1756,8 @@ int is_pmch_subframe(frame_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_parm
 
 uint8_t is_not_pilot(uint8_t pilots, uint8_t re, uint8_t nushift, uint8_t use2ndpilots);
 
+uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp, uint8_t beamforming_mode);
+
 uint32_t dlsch_decoding_abstraction(double *dlsch_MIPB,
                                     LTE_DL_FRAME_PARMS *lte_frame_parms,
                                     LTE_UE_DLSCH_t *dlsch,

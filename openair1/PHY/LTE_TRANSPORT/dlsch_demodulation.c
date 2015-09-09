@@ -246,15 +246,16 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   } else if (beamforming_mode==7) { //else n_tx>1
     nb_rb = dlsch_extract_rbs_TM7(lte_ue_common_vars->rxdataF,
-                                  lte_ue_common_vars->dl_ch_estimates[eNB_id],
+                                  lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates,
                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
-                                  lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                                  lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
 				  dlsch0_harq->rb_alloc,
                                   symbol,
                                   subframe,
                                   phy_vars_ue->high_speed_flag,
                                   frame_parms);
     
+  printf("dlsch extract: symbol %d, dl_bf_estimates_ext[0][300] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][300]);
 
   } else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation:beamforming mode not supported yet.\n");
@@ -275,11 +276,19 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   nb_rb);
   */
   if (first_symbol_flag==1) {
-    dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                        frame_parms,
-                        avg,
-                        symbol,
-                        nb_rb);
+    if (beamforming_mode==0)
+       dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                           frame_parms,
+                           avg,
+                           symbol,
+                           nb_rb);
+    else
+       dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
+                           frame_parms,
+                           avg,
+                           symbol,
+                           nb_rb);
+       
 #ifdef DEBUG_PHY
     LOG_D(PHY,"[DLSCH] avg[0] %d\n",avg[0]);
 #endif
@@ -329,6 +338,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   aarx = frame_parms->nb_antennas_rx;
 
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {// SISO or ALAMOUTI
+    printf("dlsch compensation: symbol %d, dl_estimates_ext[0][300] %d \n",symbol, *(short*)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][300]);
+    printf("dlsch compensation: symbol %d, dl_estimates_ext[0][2400] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][2400]);
 
     dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -546,9 +557,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                       1);
     }
   } else if (dlsch0_harq->mimo_mode==TM7) { //TM7
+    printf("dlsch compensation: symbol %d, dl_bf_estimates_ext[0][300] %d \n",symbol, *(short*)&lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][300]);
+    printf("dlsch compensation: symbol %d, dl_bf_estimates_ext[0][2400] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][2400]);
 
     dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
-                               lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                               lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_magb0,
                                lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
@@ -558,6 +571,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                first_symbol_flag,
                                get_Qm(dlsch0_harq->mcs),
                                nb_rb,
+                               //9,
                                lte_ue_pdsch_vars[eNB_id]->log2_maxh,
                                phy_measurements); // log2_maxh+I0_shift
   }
@@ -4209,9 +4223,9 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 }
 
 unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
-                                     int **dl_ch_estimates,
+                                     int **dl_bf_ch_estimates,
                                      int **rxdataF_ext,
-                                     int **dl_ch_estimates_ext,
+                                     int **dl_bf_ch_estimates_ext,
                                      unsigned int *rb_alloc,
                                      unsigned char symbol,
                                      unsigned char subframe,
@@ -4240,7 +4254,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
       uespec_pilots = 1;
   }
 
-  if (frame_parms->frame_type == TDD) {  // TDD
+  if (frame_parms->frame_type == TDD) {// TDD
     sss_symb = nsymb-1;
     pss_symb = 2;
   } else {
@@ -4257,15 +4271,17 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     if (high_speed_flag == 1)
-      dl_ch0     = &dl_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+      //dl_ch0     = &dl_bf_ch_estimates[aarx][5+(symbol*(frame_parms->ofdm_symbol_size))];
+      dl_ch0     = &dl_bf_ch_estimates[aarx][symbol*(frame_parms->ofdm_symbol_size)];
     else
-      dl_ch0     = &dl_ch_estimates[aarx][5];
+      //dl_ch0     = &dl_bf_ch_estimates[aarx][5];
+      dl_ch0     = &dl_bf_ch_estimates[aarx][0];
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
+    dl_ch0_ext = &dl_bf_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
 
     rxF_ext    = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     rxF        = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
-    printf("symbol:%d, (symbol-1)/3:%d\n",symbol,(symbol-1)/3);
+    //printf("symbol:%d, (symbol-1)/3:%d\n",symbol,(symbol-1)/3);
     //rxF_uespec = &rxdataF_uespec_pilots[aarx][(symbol-1)/3*frame_parms->N_RB_DL*(3+frame_parms->Ncp)];
     //printf("symbol, rxF_uespec offset:%d\n",symbol,(symbol-1)/3*frame_parms->N_RB_DL*(3+frame_parms->Ncp));
 
@@ -4291,7 +4307,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
         if (rb_alloc_ind==1) {
           //*pmi_ext = (pmi>>((rb>>2)<<1))&3;
-          memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+          //memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 
           /*
               printf("rb %d\n",rb);
@@ -4300,11 +4316,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               printf("\n");
           */
           if (pilots==0 && uespec_pilots==0) {
+            memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+
             for (i=0; i<12; i++) {
               rxF_ext[i]=rxF[i];
-              /*
-              printf("%d : (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),
-              ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);*/
             }
 
             dl_ch0_ext+=12;
@@ -4316,9 +4331,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               if ((i!=(frame_parms->nushift+poffset)) &&
                   (i!=((frame_parms->nushift+poffset+6)%12))) {
                 rxF_ext[j]=rxF[i];
-                //            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                 dl_ch0_ext[j++]=dl_ch0[i];
-
               }
             }
 
@@ -4432,7 +4445,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
 
         if (rb_alloc_ind==1) {
-           // printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
+          //printf("rb %d/symbol %d pilots %d, uespec_pilots %d, (skip_half %d)\n",rb,l,pilots,uespec_pilots,skip_half);
 
           if (pilots==0 && uespec_pilots==0) {
             // printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
@@ -4493,8 +4506,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                 if ((i!=(frame_parms->nushift+poffset)) &&
                     (i!=((frame_parms->nushift+poffset+6)%12))) {
                   rxF_ext[j]=rxF[i];
-                  //            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+                  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i];
+                  //printf("symbol %d, extract rb %d => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
 
                 }
               }
@@ -4558,6 +4572,8 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++] = dl_ch0[i];  
+                    //printf("symbol %d, extract rb %d, re %d => (%d,%d)\n",symbol,rb,i,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+                    //printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
                   }
                 } else{
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
@@ -4676,13 +4692,13 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){                
                 dl_ch0_ext[j]=dl_ch0[i];  
 	        rxF_ext[j++] = rxF[i];
-                //printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+                //printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+                //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
               }
             } else {
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){
                 dl_ch0_ext[j]=dl_ch0[i];  
 	        rxF_ext[j++] = rxF[i];
-               // printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
               }
             }
 	  }
@@ -4694,7 +4710,8 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){                
                 dl_ch0_ext[j]=dl_ch0[i];
                 rxF_ext[j++]=rxF[(1+i-6)];
-                // printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+                // printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+                // printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
               }
             } else {
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){
@@ -4814,6 +4831,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
             } else {
               memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
+              //printf("symbol %d, extract rb %d, => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
 
               for (i=0; i<12; i++)
                 rxF_ext[i]=rxF[i];
@@ -4854,6 +4872,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   rxF_ext[j]=rxF[i];
                   //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i];
+                  //printf("symbol %d, extract rb %d => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
                 }
               }
 
@@ -4914,6 +4933,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];  
+                    // printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
                   }
                 } else{
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
@@ -4971,6 +4991,17 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
   sprintf(fname,"dlsch%d_ch_r%d_ext00.m",eNB_id,round);
   sprintf(vname,"dl%d_ch_r%d_ext00",eNB_id,round);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
+
+  if (phy_vars_ue->transmission_mode[eNB_id]==7){
+    sprintf(fname,"dlsch%d_bf_ch_r%d.m",eNB_id,round);
+    sprintf(vname,"dl%d_bf_ch_r%d",eNB_id,round);
+    write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0],512*nsymb,1,1);
+    //write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0],512,1,1);
+
+    sprintf(fname,"dlsch%d_bf_ch_r%d_ext00.m",eNB_id,round);
+    sprintf(vname,"dl%d_bf_ch_r%d_ext00",eNB_id,round);
+    write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0],12*N_RB_DL*nsymb,1,1);
+  }
 
   if (phy_vars_ue->lte_frame_parms.nb_antennas_rx == 2) {
     sprintf(fname,"dlsch%d_ch_r%d_ext01.m",eNB_id,round);

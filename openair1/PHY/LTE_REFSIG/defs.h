@@ -54,6 +54,8 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
 
 void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
 
+void lte_gold_ue_spec_port5(uint32_t lte_gold_uespec_port5_table[20][38],uint16_t Nid_cell, uint16_t n_rnti);
+
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL UE-specific reference signals for antenna ports 7..14.
 @param frame_parms LTE DL Frame parameters
 @param lte_gold_uespec_table pointer to table where sequences are stored
@@ -96,7 +98,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    uint8_t Ns,
 		   uint8_t lprime,
                    uint8_t p,
-                   int SS_flag );
+                   int SS_flag);
 
 /*! \brief This function generates the MBSFN reference signal sequence (36-211, Sec 6.10.1.2)
 @param phy_vars_eNB Pointer to eNB variables
@@ -130,7 +132,9 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
                       mod_sym_t *output,
                       unsigned char Ns,
                       unsigned char p,
-                      int SS_flag);
+                      int lprime,
+                      int SS_flag,
+                      uint16_t nRB_PDSCH);
 
 int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
                     int *output,

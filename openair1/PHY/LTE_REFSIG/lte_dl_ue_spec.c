@@ -59,12 +59,12 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    uint8_t Ns,
 		   uint8_t lprime,
                    uint8_t p,
-                   int SS_flag )
+                   int SS_flag)
 {
 
-  mod_sym_t qpsk[4],nqpsk[4];
+ /* mod_sym_t qpsk[4],nqpsk[4];
   int16_t k=0,a;
-  int mprime,mprime_dword,mprime_qpsk_symb;
+  int mprime,ind,ind_dword,ind_qpsk_symb;
   unsigned nushift,kprime;
   //  LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB[UE_id][0];
 
@@ -103,12 +103,13 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
       k = kprime+phy_vars_eNB->lte_frame_parms.first_carrier_offset;
       printf("lte_dl_ue_spec:k=%d\n",k);
  
-      for (mprime=0;mprime<3*phy_vars_eNB->lte_frame_parms.N_RB_DL-1;mprime++) {
-        mprime_dword     = mprime>>4;
-        mprime_qpsk_symb = mprime&0xf;
+      for (mprime=0;mprime<3*nRB_PDSCH-1;mprime++) {
+        ind = 3*lprime*nRB_PDSCH+mprime;
+        ind_dword = ind>>4;
+        ind_qpsk_symb = ind&0xf;
 
-        //output[k] = qpsk[(phy_vars_eNB->lte_gold_uespec_port5_table[0][Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
-        output[k] = 0xffffffff;
+        output[k] = qpsk[(phy_vars_UE->lte_gold_uespec_port5_table[Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
+        //output[k] = 0xffffffff;
 
         k += 4;
         if (k >= phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) {
@@ -125,19 +126,21 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
     LOG_E(PHY,"Illegal p %d UE specific pilots\n",p);
   }
 
-  return(0);
+  return(0);*/
 }
 
 
 int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
-      mod_sym_t *output,
-      unsigned char Ns,
-      unsigned char p, 
-      int SS_flag)
+                      mod_sym_t *output,
+                      unsigned char Ns,
+                      unsigned char p, 
+                      int lprime,
+                      int SS_flag,
+                      uint16_t nRB_PDSCH)
 {
   mod_sym_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
   int16_t a;
-  int w,lprime,mprime,ind,l,ind_dword,ind_qpsk_symb,nPRB;
+  int w,mprime,ind,l,ind_dword,ind_qpsk_symb,nPRB;
   short pamp;
 
   // Compute the correct pilot amplitude, sqrt_rho_b = Q3.13
@@ -169,7 +172,7 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
 
         output_p = output;
 
-        for (lprime=0; lprime<2; lprime++) {
+        //for (lprime=0; lprime<2; lprime++) {
 
           ind = 3*lprime*phy_vars_ue->lte_frame_parms.N_RB_DL;
           l = lprime + ((Ns&1)<<1);
@@ -288,25 +291,29 @@ int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
             output_p++;
             ind++;
           }
-        }
+       // }
       } else {
         LOG_E(PHY,"Special subframe not supported for UE specific pilots yet\n");
       }
     }
   } else if (p==5) {
     if (SS_flag==0) {
-        if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL) {
-        
-        for (lprime=0;lprime<2;lprime++) {
-            ind = 3*lprime*phy_vars_ue->lte_frame_parms.N_RB_DL;    
-            
-            for (mprime=0;mprime<3*phy_vars_ue->lte_frame_parms.N_RB_DL-1;mprime++) {
-                ind_dword     = ind>>4;
-                ind_qpsk_symb = ind&0xf;
-                *output_p = qpsk_p[(phy_vars_ue->lte_gold_uespec_port5_table[Ns][lprime][ind_dword]>>(2*ind_qpsk_symb))&3];
-                *output_p++;
-            }
+      output_p = output;
+
+      if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL) {
+        //for (lprime=0;lprime<4;lprime++) {
+        for (mprime=0;mprime<3*nRB_PDSCH;mprime++) {
+
+          ind = 3*lprime*nRB_PDSCH+mprime;
+          ind_dword = ind>>4;
+          ind_qpsk_symb = ind&0xf;
+
+          *output_p = qpsk[(phy_vars_ue->lte_gold_uespec_port5_table[Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
+          //printf("lprime=%d,ind=%d,Ns=%d,output_p=(%d,%d)\n",lprime,ind,Ns,((short *)&output_p[0])[0],((short *)&output_p[0])[1]);
+          *output_p++;
+      
         }
+       // }
       }
     }
   } else {
@@ -343,44 +350,44 @@ main()
   lte_gold(Nid_cell,Ncp);
 
   lte_dl_ue_spec(output00,
-                   ONE_OVER_SQRT2_Q15,
-                   50,
-                   Nid_cell,
-                   Ncp,
-                   0,
-                   0,
-                   0,
-                   0);
+                 ONE_OVER_SQRT2_Q15,
+                 50,
+                 Nid_cell,
+                 Ncp,
+                 0,
+                 0,
+                 0,
+                 0);
 
   lte_dl_ue_spec(output10,
-                   ONE_OVER_SQRT2_Q15,
-                   50,
-                   Nid_cell,
-                   Ncp,
-                   0,
-                   1,
-                   0,
-                   0);
+                 ONE_OVER_SQRT2_Q15,
+                 50,
+                 Nid_cell,
+                 Ncp,
+                 0,
+                 1,
+                 0,
+                 0);
 
   lte_dl_ue_spec(output01,
-                   ONE_OVER_SQRT2_Q15,
-                   50,
-                   Nid_cell,
-                   Ncp,
-                   0,
-                   0,
-                   1,
-                   0);
+                 ONE_OVER_SQRT2_Q15,
+                 50,
+                 Nid_cell,
+                 Ncp,
+                 0,
+                 0,
+                 1,
+                 0);
 
   lte_dl_ue_spec(output11,
-                   ONE_OVER_SQRT2_Q15,
-                   50,
-                   Nid_cell,
-                   Ncp,
-                   0,
-                   1,
-                   1,
-                   0);
+                 ONE_OVER_SQRT2_Q15,
+                 50,
+                 Nid_cell,
+                 Ncp,
+                 0,
+                 1,
+                 1,
+                 0);
 
 
   write_output("dl_ue_spec00.m","dl_cs00",output00,1024,1,1);

@@ -243,7 +243,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t         lte_gold_table[20][2][14];
 
   /// UE-specific reference symbols (p=5), TM 7
-  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][2][21];
+  uint32_t         lte_gold_uespec_port5_table[NUMBER_OF_UE_MAX][20][38];
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
@@ -510,7 +510,7 @@ typedef struct {
   uint32_t lte_gold_table[7][20][2][14];
 
   /// UE-specific reference symbols (p=5), TM 7
-  uint32_t lte_gold_uespec_port5_table[20][2][21];
+  uint32_t lte_gold_uespec_port5_table[20][38];
 
   /// ue-specific reference symbols
   uint32_t lte_gold_uespec_table[2][20][2][21];

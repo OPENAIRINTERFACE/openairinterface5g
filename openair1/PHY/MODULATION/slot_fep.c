@@ -64,6 +64,11 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned int frame_length_samples = frame_parms->samples_per_tti * 10;
   unsigned int rx_offset;
 
+  /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
+  unsigned char harq_pid = dlsch_ue[0]->current_harq_pid; 
+  LTE_DL_UE_HARQ_t *dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
+  int uespec_pilot[9][1200];*/
+
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[256];  // This is for misalignment issues for 6 and 15 PRBs
 
@@ -241,15 +246,18 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
       }
     }
-  // printf("slot_fep:transmission_mode[%d] = %d\n", eNB_id, phy_vars_ue->transmission_mode[eNB_id]);
-  if(phy_vars_ue->transmission_mode[eNB_id] == 7)
-    if(frame_parms->Ncp==0 && (symbol==3) || (symbol==6) || (symbol==9) || (symbol==12))
-      lte_dl_bf_channel_estimation(phy_vars_ue,eNB_id,0,Ns,5,symbol);
-    else if(frame_parms->Ncp==1 && (symbol==4) || (symbol==7) || (symbol==10))
-      msg("slot_fep(slot_fep.c):channel estimation not supported yet for TM7 extented CP.\n");
- else if(phy_vars_ue->transmission_mode[eNB_id] > 7)
-   msg("slot_fep(slot_fep.c):transmission mode not supported yet.\n");
 
+    if(phy_vars_ue->transmission_mode[eNB_id] == 7) {
+
+      if(frame_parms->Ncp==0 && ((symbol==3) || (symbol==6) || (symbol==9) || (symbol==12)))
+        lte_dl_bf_channel_estimation(phy_vars_ue,eNB_id,0,Ns,5,symbol);
+
+      else if(frame_parms->Ncp==1 && ((symbol==4) || (symbol==7) || (symbol==10)))
+        msg("slot_fep(slot_fep.c):channel estimation not supported yet for TM7 extented CP.\n");
+
+    } else if(phy_vars_ue->transmission_mode[eNB_id] > 7) {
+        msg("slot_fep(slot_fep.c):transmission mode not supported yet.\n");
+    } 
   }
 
 #ifdef DEBUG_FEP

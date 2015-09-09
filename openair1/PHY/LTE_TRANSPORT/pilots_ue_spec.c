@@ -48,7 +48,7 @@ void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
 		     uint8_t beamforming_mode)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  /*LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
 
   uint32_t tti,tti_offset,slot_offset,Nsymb,samples_per_symbol;
   uint8_t second_pilot,aa;
@@ -123,7 +123,7 @@ void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
   default:
     msg("[generate_ue_spec_pilots(in uespec_pilots.c)]ERROR:beamforming mode %d is not supported\n",beamforming_mode);
     
- }
+ }*/
 }
 
 /*int generate_ue_spec_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
