@@ -255,8 +255,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                   phy_vars_ue->high_speed_flag,
                                   frame_parms);
     
-  printf("dlsch extract: symbol %d, dl_bf_estimates_ext[0][300] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][300]);
-
   } else if(beamforming_mode>7) {
     LOG_W(PHY,"dlsch_demodulation:beamforming mode not supported yet.\n");
   }
@@ -4278,7 +4276,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
     rxF_ext    = &rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)];
     rxF        = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
     //printf("symbol:%d, (symbol-1)/3:%d\n",symbol,(symbol-1)/3);
-    //rxF_uespec = &rxdataF_uespec_pilots[aarx][(symbol-1)/3*frame_parms->N_RB_DL*(3+frame_parms->Ncp)];
     //printf("symbol, rxF_uespec offset:%d\n",symbol,(symbol-1)/3*frame_parms->N_RB_DL*(3+frame_parms->Ncp));
 
     if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
@@ -4662,7 +4659,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             if (i!=((frame_parms->nushift+poffset)%6)) {
               dl_ch0_ext[j]=dl_ch0[i];
               rxF_ext[j++]=rxF[i];
-             // printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
             }
           }
 
