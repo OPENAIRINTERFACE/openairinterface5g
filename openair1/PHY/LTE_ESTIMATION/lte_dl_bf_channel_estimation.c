@@ -46,7 +46,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   unsigned char aarx,l,lprime,nsymb,skip_half=0,sss_symb,pss_symb=0,rb_alloc_ind,harq_pid,uespec_pilots=0;
   int beamforming_mode, ch_offset;
   uint8_t subframe;
-  int8_t uespec_nushift, uespec_poffset=0, pil_offset;
+  int8_t uespec_nushift, uespec_poffset=0, pil_offset=0;
   uint8_t pilot0,pilot1,pilot2,pilot3;
 
   short ch[2], *pil, *rxF, *dl_bf_ch, *dl_bf_ch_prev;
@@ -81,7 +81,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   subframe = Ns>>1;
  
 
-  if (beamforming_mode==7) {
+ // if (beamforming_mode==7) {
     //generate ue specific pilots
     lprime = symbol/3-1;
     lte_dl_ue_spec_rx(phy_vars_ue,uespec_pilot,Ns,5,lprime,0,dlsch0_harq->nb_rb);
@@ -161,11 +161,12 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       f2r = filt16_2r1;
       break;
     }
-  }
+ // beamforming mode extension
+ /* }
   else if (beamforming_mode==0)
     msg("lte_dl_bf_channel_estimation:No beamforming is performed.\n");
   else
-    msg("lte_dl_bf_channel_estimation:Beamforming mode not supported yet.\n");
+    msg("lte_dl_bf_channel_estimation:Beamforming mode not supported yet.\n");*/
   
 
   l=symbol;
@@ -183,20 +184,22 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     rxF  = (short *)&rxdataF[aarx][pil_offset + frame_parms->first_carrier_offset + symbol*frame_parms->ofdm_symbol_size];
-    pil  = (short*)uespec_pilot;
+    pil  = (short *)uespec_pilot;
     dl_bf_ch = (short *)&dl_bf_ch_estimates[aarx][ch_offset];
 
     memset(dl_bf_ch,0,4*(frame_parms->ofdm_symbol_size));
     //memset(dl_bf_ch,0,2*(frame_parms->ofdm_symbol_size));
 
-    if (phy_vars_ue->high_speed_flag==0) // multiply previous channel estimate by ch_est_alpha
-      if (frame_parms->Ncp==0)
+    if (phy_vars_ue->high_speed_flag==0) {
+    // multiply previous channel estimate by ch_est_alpha
+      if (frame_parms->Ncp==0){
         multadd_complex_vector_real_scalar(dl_bf_ch-(frame_parms->ofdm_symbol_size<<1),
                                            phy_vars_ue->ch_est_alpha,dl_bf_ch-(frame_parms->ofdm_symbol_size<<1),
                                            1,frame_parms->ofdm_symbol_size);
-      else
+      } else {
         msg("lte_dl_bf_channel_estimation: beamforming channel estimation not supported for TM7 Extended CP.\n"); // phy_vars_ue->ch_est_beta should be defined equaling 1/3
-
+      }
+    }
     //estimation and interpolation
 
     if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
@@ -215,7 +218,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
         // For second half of RBs skip DC carrier
         if (rb==(frame_parms->N_RB_DL>>1)) {
-          rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))];
+          rxF       = (short *)&rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))];
         }
 
         if (rb_alloc_ind==1) {

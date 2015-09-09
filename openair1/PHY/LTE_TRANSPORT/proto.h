@@ -921,6 +921,27 @@ uint16_t dlsch_extract_rbs_dual(int32_t **rxdataF,
                                 uint32_t high_speed_flag,
                                 LTE_DL_FRAME_PARMS *frame_parms);
 
+/** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
+    int32_t **dl_bf_ch_estimates,
+    int32_t **rxdataF_ext,
+    int32_t **dl_bf_ch_estimates_ext,
+    uint32_t *rb_alloc,
+    uint8_t symbol,
+    uint8_t subframe,
+    uint32_t high_speed_flag,
+    LTE_DL_FRAME_PARMS *frame_parms)
+    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
+    for the current allocation and for single antenna eNB transmission.
+    @param rxdataF Raw FFT output of received signal
+    @param dl_bf_ch_estimates Beamforming channel estimates of current slot
+    @param rxdataF_ext FFT output for RBs in this allocation
+    @param dl_bf_ch_estimates_ext Beamforming channel estimates for RBs in this allocation
+    @param rb_alloc RB allocation vector
+    @param symbol Symbol to extract
+    @param subframe Subframe number
+    @param high_speed_flag
+    @param frame_parms Pointer to frame descriptor
+*/
 uint16_t dlsch_extract_rbs_TM7(int32_t **rxdataF,
                                int32_t **dl_bf_ch_estimates,
                                int32_t **rxdataF_ext,

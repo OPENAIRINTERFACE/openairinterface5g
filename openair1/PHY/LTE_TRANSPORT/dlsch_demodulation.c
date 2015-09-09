@@ -338,8 +338,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   aarx = frame_parms->nb_antennas_rx;
 
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {// SISO or ALAMOUTI
-    printf("dlsch compensation: symbol %d, dl_estimates_ext[0][300] %d \n",symbol, *(short*)&lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][300]);
-    printf("dlsch compensation: symbol %d, dl_estimates_ext[0][2400] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[0][2400]);
 
     dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -557,8 +555,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                       1);
     }
   } else if (dlsch0_harq->mimo_mode==TM7) { //TM7
-    printf("dlsch compensation: symbol %d, dl_bf_estimates_ext[0][300] %d \n",symbol, *(short*)&lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][300]);
-    printf("dlsch compensation: symbol %d, dl_bf_estimates_ext[0][2400] %d \n",symbol, lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext[0][2400]);
 
     dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates_ext,
@@ -4236,9 +4232,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
   unsigned short rb,nb_rb=0;
   unsigned char rb_alloc_ind;
   unsigned char i,aarx,l,nsymb,skip_half=0,sss_symb,pss_symb=0;
-  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext,*rxF_uespec;
+  int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  unsigned char symbol_mod,pilots=0,uespec_pilots=0,j=0,k=0,poffset=0,uespec_poffset=0;
+  unsigned char symbol_mod,pilots=0,uespec_pilots=0,j=0,poffset=0,uespec_poffset=0;
   int8_t uespec_nushift = frame_parms->Nid_cell%3;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -4340,7 +4336,7 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
           } else if (pilots==0 && uespec_pilots==1) {
             j=0;
-            k=0;
+
 
 	    for (i=0; i<12; i++){
               if (frame_parms->Ncp==0){
@@ -4519,7 +4515,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
           } else if(pilots==0 && uespec_pilots==1){
             //printf("Extracting with uespec pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
             j=0;
-            k=0;
 
             if (skip_half==1) {
               if (frame_parms->Ncp==0){
@@ -4685,7 +4680,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
           rxF_ext+=10;
         } else if(pilots==0 && uespec_pilots==1) {
           j=0;
-          k=0;
 
 	  for (i=0; i<6; i++) {
             if (frame_parms->Ncp==0){
@@ -4881,7 +4875,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             }
           } else if(pilots==0 && uespec_pilots==1) {
             j=0;
-            k=0;
 
             if (skip_half==1) {
               if (frame_parms->Ncp==0){

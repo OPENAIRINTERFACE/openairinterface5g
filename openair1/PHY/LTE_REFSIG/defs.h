@@ -91,14 +91,14 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 @param p antenna index
 @param SS_flag Flag to indicate special subframe
 */
-int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
+/*int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    uint8_t UE_id,
                    mod_sym_t *output,
                    short amp,
                    uint8_t Ns,
 		   uint8_t lprime,
                    uint8_t p,
-                   int SS_flag);
+                   int SS_flag);*/
 
 /*! \brief This function generates the MBSFN reference signal sequence (36-211, Sec 6.10.1.2)
 @param phy_vars_eNB Pointer to eNB variables
@@ -128,6 +128,16 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
                         unsigned char l,
                         unsigned char p);
 
+/*!\brief This function generates the ue-specific reference signal
+ * sequence (36-211, Sec 6.10.3.1) for beamforming channel estimation upon reception
+@param phy_vars_ue Pointer to UE variables
+@param output Output vector for OFDM symbol (Frequency Domain)
+@param Ns Slot number (0..19)
+@param p antenna port intex
+@param lprime symbol (0,1)
+@param SS_flag Flag to indicate special subframe
+@param nRB_PDSCH number of allocated PDSCH RBs
+*/
 int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
                       mod_sym_t *output,
                       unsigned char Ns,

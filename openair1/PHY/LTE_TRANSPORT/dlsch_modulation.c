@@ -916,15 +916,12 @@ break;
               ((int16_t*)&tmp_sample1)[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
               *jj = *jj + 1;
 
-              //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
               //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
               for (aa=0; aa<nb_antennas_tx_phy; aa++) {
                 ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((uint16_t*)&beamforming_weights[re][aa])[0])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((uint16_t*)&beamforming_weights[re][aa])[1])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((uint16_t*)&beamforming_weights[re][aa])[1])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*((uint16_t*)&beamforming_weights[re][aa])[0])>>15);
-               /* ((int16_t*)&txdataF[aa][tti_offset])[0] = ((int16_t*)&tmp_sample1)[0];
-                ((int16_t*)&txdataF[aa][tti_offset])[1] = ((int16_t*)&tmp_sample1)[1]; */
               }
 
               //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
@@ -1028,7 +1025,6 @@ break;
             ind_qpsk_symb = ind&0xf;
 
             tmp_sample1 = qpsk[(phy_vars_eNB->lte_gold_uespec_port5_table[0][Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
-            //printf("lprime=%d,nb_rb=%d,mprime2=%d,ind=%d,Ns=%d,tmp_sample1=(%d,%d)\n",lprime,dlsch0_harq->nb_rb,mprime2,ind,Ns,((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
 
             ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((uint16_t*)&beamforming_weights[re][aa])[0])>>15);
             ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((uint16_t*)&beamforming_weights[re][aa])[1])>>15);
@@ -1037,12 +1033,12 @@ break;
 
             // ((int16_t*)&txdataF[aa][tti_offset])[0] = 0xffff;
             // ((int16_t*)&txdataF[aa][tti_offset])[1] = 0xffff;
+            //printf("lprime=%d,nb_rb=%d,mprime2=%d,ind=%d,Ns=%d\n",lprime,dlsch0_harq->nb_rb,mprime2,ind,Ns);
+            //printf("tmp_sample1=(%d,%d)\n",((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
+            //printf("beamforing_weights[%d][%d]=(%d,%d)\n",re,aa,((int16_t*)&beamforming_weights[re][aa])[0],((int16_t*)&beamforming_weights[re][aa])[1]);
+            //printf("txdataF[%d][%d]= (%d,%d)\n ",aa,tti_offset,((int16_t*)&txdataF[aa][tti_offset])[0],((int16_t*)&txdataF[aa][tti_offset])[1]);
 
-            //printf("tmp_sample1=%d+i%d\n",((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
-            //printf("beamforing_weights[%d][%d]=%d+i%d\n",re,aa,((int16_t*)&beamforming_weights[re][aa])[0],((int16_t*)&beamforming_weights[re][aa])[1]);
-            //printf("txdataF[%d][%d]= %d+i%d\n ",aa,tti_offset,((int16_t*)&txdataF[aa][tti_offset])[0],((int16_t*)&txdataF[aa][tti_offset])[1]);
-
-            mprime2 = mprime2++;
+            mprime2++;
           }
 
         }
@@ -1284,7 +1280,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   uint16_t l,rb,re_offset;
   uint32_t rb_alloc_ind;
   uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
-  uint8_t pilots=0,ue_spec_rs=0;
+  uint8_t pilots=0;
   uint8_t skip_dc,skip_half;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
   uint8_t mod_order1 = 0;
@@ -1293,7 +1289,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];
   int16_t *qam_table_s0,*qam_table_s1;
   MIMO_mode_t mimo_mode = dlsch0_harq->mimo_mode;
-  uint8_t beamforming_mode = 0;
   int32_t **beamforming_weights_RB = beamforming_weights;
   uint8_t mprime=0,Ns;
   int8_t  lprime=-1;
@@ -1377,7 +1372,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     }
 
     if(mimo_mode==TM7){ //36.211 V8.6.0 2009-03
-      beamforming_mode = 7;
       mprime = 0;
       if (frame_parms->Ncp==0) { // normal prefix
         if (l==12)
@@ -1400,10 +1394,6 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
         else
           lprime=-1;
       }
-    }else if(mimo_mode==TM8){
-      beamforming_mode = 8;
-    }else if(mimo_mode==TM9_10){
-      beamforming_mode = 9;
     }
   
     Ns = 2*subframe_offset+(l>=(nsymb>>1));
