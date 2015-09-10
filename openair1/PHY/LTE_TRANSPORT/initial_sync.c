@@ -283,9 +283,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   int i;
   int ret=-1;
   int aarx,rx_power=0;
-#ifdef OAI_USRP
+  /*#ifdef OAI_USRP
   __m128i *rxdata128;
-#endif
+  #endif*/
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
@@ -294,14 +294,14 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
   //  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
-#ifdef OAI_USRP
+  /*#ifdef OAI_USRP
   for (aarx = 0; aarx<frame_parms->nb_antennas_rx;aarx++) {
     rxdata128 = (__m128i*)phy_vars_ue->lte_ue_common_vars.rxdata[aarx];
     for (i=0; i<(frame_parms->samples_per_tti*10)>>2; i++) {
       rxdata128[i] = _mm_srai_epi16(rxdata128[i],4);
     } 
   }
-#endif
+  #endif*/
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata,
                            frame_parms,
                            (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
