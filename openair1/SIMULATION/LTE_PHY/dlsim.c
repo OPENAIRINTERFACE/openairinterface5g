@@ -1159,6 +1159,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format1,
@@ -1298,6 +1299,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1464,6 +1466,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format2A,
@@ -1603,6 +1606,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1770,6 +1774,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format2,
@@ -1909,6 +1914,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1937,6 +1943,7 @@ int main(int argc, char **argv)
         dci_alloc[num_dci].nCCE       = 4*k;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
+					   subframe,
                                            &DLSCH_alloc_pdu2_1E[k],
                                            n_rnti+k,
                                            format1E_2A_M10PRB,
@@ -3043,7 +3050,7 @@ PMI_FEEDBACK:
 
                     if ((dci_alloc_rx[i].rnti == n_rnti) &&
                         (generate_ue_dlsch_params_from_dci(0,
-							   0,
+							   subframe,
                                                            dci_alloc_rx[i].dci_pdu,
                                                            dci_alloc_rx[i].rnti,
                                                            dci_alloc_rx[i].format,
@@ -3100,7 +3107,7 @@ PMI_FEEDBACK:
                   case 1:
                   case 2:
                     generate_ue_dlsch_params_from_dci(0,
-						      0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format1 : format1A,
@@ -3115,7 +3122,7 @@ PMI_FEEDBACK:
                   case 3:
                     //        printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->first_tx);
                     generate_ue_dlsch_params_from_dci(0,
-						      0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2A : format1A,
@@ -3130,7 +3137,7 @@ PMI_FEEDBACK:
 
                   case 4:
                     generate_ue_dlsch_params_from_dci(0,
-						      0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2 : format1A,
@@ -3145,7 +3152,7 @@ PMI_FEEDBACK:
                   case 5:
                   case 6:
                     generate_ue_dlsch_params_from_dci(0,
-						      0,
+						      subframe,
                                                       &DLSCH_alloc_pdu2_1E[0],
                                                       C_RNTI,
                                                       format1E_2A_M10PRB,
