@@ -48,8 +48,14 @@ git remote add origin git@gitlab.eurecom.fr:oai/openairinterface5g.git
 git push -u origin --all
 git push --tags
 
-Steps to synchronize (to be carried out periodically)
-git svn fetch --authors-file=./authors.txt (Make sure that there are no new authors since the last migration, else this will result in errors)
+Steps to synchronize on calisson (to be carried out periodically)
+cd ~rohit/GitMigration/GitRepoNew/oaiRepoData1/svn2git
+git config -l
+git config --global user.name "Replace_With_Your_Name"
+git config --global user.email "Replace_With_Your_Email_address"
+./check_diff_author.sh #There should be no difference in author list file
+git remote set-url origin 	https://kaltenbe@gitlab.eurecom.fr/oai/openairinterface5g.git 
+git svn fetch #--authors-file=./authors.txt (Make sure that there are no new authors since the last migration, else this will result in errors)
 git svn rebase
 git push -u origin --all
 git push --tags
