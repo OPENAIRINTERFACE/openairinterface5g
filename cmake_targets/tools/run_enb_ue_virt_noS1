@@ -57,9 +57,11 @@ function help()
   echo_error " "
   echo_error "Options:"
   echo_error "Mandatory arguments to long options are mandatory for short options too."
+  echo_error "  -a, --abstraction                       enable phy abstraction mode"
   echo_error "  -c, -C, --config-file  eNB_config_file  eNB config file, (see $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF)"
   echo_error "                                          Default eNB config file if not set is $1"
   echo_error "  -g, --gdb                               Run with GDB."
+  echo_error "  -l, --log-level                         set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error). Note that the log configuration is eNB config file is ignored for oaisim."
   echo_error "  -h, --help                              Print this help."
   echo_error "  -K, --itti-dump-file   filename         ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
   echo_error "  -m, --mscgen           directory        Generate mscgen output files in a directory"
@@ -84,17 +86,24 @@ function main()
   local    DEFAULT_CONFIG_FILE_ENB=$OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf
   local    CONFIG_FILE_ENB=$DEFAULT_CONFIG_FILE_ENB
   local    MSC_DIR="/tmp"
-  
+  local abstraction_flag=0
+
   until [ -z "$1" ]
     do
     case "$1" in
-      -c | -C | --config-file)
+	-a | --abstraction )
+	abstraction_flag=1
+	echo "enabling abstraction mode"
+	exe_arguments="$exe_arguments -a"
+        shift;
+	;;      
+	-c | -C | --config-file)
         CONFIG_FILE_ENB=$2
         # may be relative path 
         if [ -f $(dirname $(readlink -f $0))/$CONFIG_FILE ]; then
           CONFIG_FILE_ENB=$(dirname $(readlink -f $0))/$CONFIG_FILE
           echo "setting config file to: $CONFIG_FILE"
-          CONFIG_FILE_ACCESS_OK=1
+          config_FILE_ACCESS_OK=1
         else
           # may be absolute path 
           if [ -f $CONFIG_FILE_ENB ]; then
@@ -110,6 +119,11 @@ function main()
         echo "setting GDB flag to: $GDB"
         shift;
         ;;
+      -l | --log-level)
+	echo "setting the log level to $2"
+	exe_arguments="$exe_arguments -l $2"
+        shift 2;
+	;;          
       -h | --help)
         help $DEFAULT_CONFIG_FILE_ENB
         shift;
@@ -139,7 +153,8 @@ function main()
           exit -1
         fi
         ;;      
-
+#      -u | --num-ue )
+	    
       -V | --vcd)
         "setting gtk-wave output"
         exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
@@ -184,8 +199,11 @@ function main()
   # ue1 -> enb
   $OPENAIR_DIR/targets/bin/rb_tool -a -c0 -i1 -z0 -s 10.0.2.2 -t 10.0.2.1 -r 1
 
-
-  exe_arguments="$exe_arguments -s15 -AAWGN -b1 -u1"
+  if [ abstraction_flag -eq 0 ] ; then 
+      exe_arguments="$exe_arguments -s15 -AAWGN -b1 -u1"
+  else 
+      exe_arguments="$exe_arguments -b1 -u1" 
+  fi 
     
   cd  $OPENAIR_DIR/targets/bin
    

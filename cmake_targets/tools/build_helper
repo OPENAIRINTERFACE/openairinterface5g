@@ -31,7 +31,7 @@
 # author Laurent Thomas
 #
 #######################################
-SUDO=sudo
+SUDO='sudo -E'
 
 ###############################
 ## echo and  family
