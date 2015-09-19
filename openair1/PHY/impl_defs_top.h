@@ -43,9 +43,17 @@
 
 /** @defgroup _ref_implementation_ OpenAirInterface LTE Implementation
  * @{
+
+ * @defgroup _PHY_RF_INTERFACE_ Generic PHY - RF Interface
+ * @ingroup _ref_implementation_
+ * @{
+ * This module is responsible for defining the generic interface between PHY and RF Target
+ * @}
+ 
  * @defgroup _openair1_ openair1 Reference Implementation 
  * @ingroup _ref_implementation_
  * @{
+
 
  * @defgroup _physical_layer_ref_implementation_ Physical Layer Reference Implementation
  * @ingroup _openair1_

@@ -45,10 +45,10 @@
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
-
+ 
+/* structrue holds the parameters to configure USRP devices*/
 typedef struct openair0_device_t openair0_device;
-/* structrue holds the parameters to configure USRP devices
- */
+
 
 #ifndef EXMIMO
 #define MAX_CARDS 1
@@ -60,6 +60,10 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
+/** @addtogroup _PHY_RF_INTERFACE_
+ * @{
+ */
+ 
 typedef struct {
   //! Frequency for which RX chain was calibrated
   double freq;
@@ -177,19 +181,33 @@ struct openair0_device_t {
 
   /* Functions API, which are called by the application*/
 
-  /* Called to start the transceiver. Return 0 if OK, < 0 if error */
+  /*! \brief Called to start the transceiver. Return 0 if OK, < 0 if error
+      @param device pointer to the device structure specific to the RF hardware target
+  */
   int (*trx_start_func)(openair0_device *device);
 
-  /* Called to send a request message between BBU-RRH */
+  /*! \brief Called to send a request message between BBU-RRH
+      @param device pointer to the device structure specific to the RF hardware target
+      @param msg pointer to the message structure passed between BBU-RRH
+      @param msg_len length of the message  
+  */  
   int (*trx_request_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
-  /* Called to send a reply  message between BBU-RRH */
+  /*! \brief Called to send a reply  message between BBU-RRH
+      @param device pointer to the device structure specific to the RF hardware target
+      @param msg pointer to the message structure passed between BBU-RRH
+      @param msg_len length of the message  
+  */  
   int (*trx_reply_func)(openair0_device *openair0, void *msg, ssize_t msg_len);
 
-  /* Write 'nsamps' samples on each channel from buffers. buff[0] is the array for
-   * the first channel. timestamp if the time (in samples) at which the first sample
-   * MUST be sent
-   * use flags = 1 to send as timestamp specfied*/
+  /*! \brief Called to send samples to the RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at whicch the first sample MUST be sent 
+      @param buff Buffer which holds the samples
+      @param nsamps number of samples to be sent
+      @param antenna_id index of the antenna if the device has multiple anteannas
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+  */   
   int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
 
   /*! \brief Receive samples from hardware.
@@ -217,7 +235,7 @@ struct openair0_device_t {
    */
   int (*trx_reset_stats_func)(openair0_device *device);
 
-  /* Terminate operation of the transceiver -- free all associated resources */
+  /*! \brief Terminate operation of the transceiver -- free all associated resources */
   void (*trx_end_func)(openair0_device *device);
 
   /* Terminate operation  */
@@ -230,6 +248,7 @@ struct openair0_device_t {
    * \returns 0 in success 
    */
   int (*trx_set_freq_func)(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
+  
   /*! \brief Set gains
    * \param 
    * \returns 0 in success 
@@ -244,20 +263,25 @@ extern "C"
 {
 #endif
 
-/* return 0 if OK */
+/*! \brief Initialize Openair RF target. It returns 0 if OK */
 int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
   //int openair0_stop(int card);
 
 //ETHERNET
+/*! \brief Initialize Openair ETHERNET target. It returns 0 if OK */
 int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
   //int openair0_stop_eth(int card);
   //int openair0_set_gains_eth(openair0_device* device, openair0_config_t *openair0_cfg);
   //int openair0_set_frequencies_eth(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
 
 //USPRP
+/*! \brief Get the current timestamp of USRP */
 openair0_timestamp get_usrp_time(openair0_device *device);
+
+/*! \brief Set the RX frequency of USRP RF TARGET */
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
 
+/*@}*/
 
 #ifdef __cplusplus
 }
