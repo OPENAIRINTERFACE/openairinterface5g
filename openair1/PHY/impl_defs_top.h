@@ -89,7 +89,7 @@
  * @}
 
  * @defgroup _PHY_PROCEDURES_ Physical Layer Procedures
- * @ingroup _openair1_
+ * @ingroup _physical_layer_ref_implementation_
  * @{
  * This module is responsible for defining and processing the PHY procedures (TX/RX) related to transport and physical channels.
  * @}
