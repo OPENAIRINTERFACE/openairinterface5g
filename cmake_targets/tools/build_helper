@@ -112,7 +112,7 @@ compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   {
     rm -f $3
-    make -j4 $2
+    make -j`nproc` $2
   } > $dlog/$2.$REL.txt 2>&1
   echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
   if [ -s $3 ] ; then
@@ -180,7 +180,7 @@ install_nettle_from_source() {
     cd nettle-2.5/
     ./configure --disable-openssl --enable-shared --prefix=/usr 
     echo "Compiling nettle"
-    make -j4
+    make -j`nproc`
     make check 
     $SUDO make install 
     rm -rf /tmp/nettle-2.5.tar.gz /tmp/nettle-2.5
@@ -195,7 +195,7 @@ install_gnutls_from_source(){
     cd gnutls-3.1.23/
     ./configure --prefix=/usr
     echo "Compiling gnutls"
-    make -j4
+    make -j`nproc`
     $SUDO make install 
     rm -rf /tmp/gnutls-3.1.23.tar.xz /tmp/gnutls-3.1.23
 }
@@ -212,7 +212,7 @@ install_1.1.5_freediameter_from_source() {
     cd build
     cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../ 
     echo "Compiling freeDiameter"
-    make -j4
+    make -j`nproc`
     #make test 
     $SUDO make install 
     rm -rf /tmp/1.1.5.tar.gz /tmp/freeDiameter-1.1.5
@@ -230,7 +230,7 @@ install_freediameter_from_source() {
   cd build
   cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../ 
   echo "Compiling freeDiameter"
-  make -j4
+  make -j`nproc`
   #make test 
   $SUDO make install 
   rm -rf /tmp/1.2.0.tar.gz /tmp/freeDiameter-1.2.0
@@ -247,7 +247,7 @@ install_latest_freediameter_from_source() {
   cd build
   cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../ 
   echo "Compiling freeDiameter"
-  make -j4
+  make -j`nproc`
   #make test 
   $SUDO make install 
   rm -rf /tmp/freeDiameter
