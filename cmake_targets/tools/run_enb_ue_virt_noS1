@@ -199,7 +199,7 @@ function main()
   # ue1 -> enb
   $OPENAIR_DIR/targets/bin/rb_tool -a -c0 -i1 -z0 -s 10.0.2.2 -t 10.0.2.1 -r 1
 
-  if [ abstraction_flag -eq 0 ] ; then 
+  if [ "$abstraction_flag" -eq "0" ] ; then 
       exe_arguments="$exe_arguments -s15 -AAWGN -b1 -u1"
   else 
       exe_arguments="$exe_arguments -b1 -u1" 
@@ -211,7 +211,7 @@ function main()
   if [ $run_mscgen -eq 1 ]; then 
     $SUDO rm -f /tmp/openair.msc.*
   fi
-   
+  
   if [ $run_gdb -eq 0 ]; then 
     exec $SUDO $OPENAIR_DIR/targets/bin/oaisim_nos1.Rel10 $exe_arguments | tee /tmp/enb_ue_nos1.log.txt
   else
