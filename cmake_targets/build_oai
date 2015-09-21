@@ -46,6 +46,7 @@ VCD_TIMING="False"
 REL="Rel10"
 HW="EXMIMO"
 EPC=0
+VERBOSE_COMPILE=0
 
 function print_help() {
   echo_info '
@@ -100,6 +101,8 @@ Options
    (will ask root password)
 --noS1 
    Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
+--verbose-compile
+   Shows detailed compilation instructions in makefile
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
@@ -201,6 +204,10 @@ function main() {
        --noS1)
 	    NOS1=1
             echo_info "Will compile without S1 interface"
+            shift;;
+       --verbose-compile)
+	    VERBOSE_COMPILE=1
+            echo_info "Will compile with verbose instructions"
             shift;;
         -h | --help)
             print_help

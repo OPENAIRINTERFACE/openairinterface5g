@@ -476,6 +476,9 @@ add_boolean_option(PHY_EMUL                False "not clear: must remain False f
 add_boolean_option(PUCCH                   True "????")
 add_boolean_option(RANDOM_BF               False "????")
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
+add_boolean_option(DEBUG_PHY               True "Enable PHY layer debugging options")
+add_boolean_option(DEBUG_PHY_PROC          True "Enable debugging of PHY layer procedures")
+add_boolean_option(DEBUG_DLSCH             True "Enable debugging of DLSCH physical layer channel")
 
 ##########################
 # 802.21 options

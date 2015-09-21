@@ -49,7 +49,7 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
-#define DEBUG_PHY_PROC
+//#define DEBUG_PHY_PROC (Already defined in cmake)
 //#define DEBUG_ULSCH
 
 //#ifdef OPENAIR2
@@ -2192,6 +2192,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_DLSCH
+   //FIXME: The code below is commented as next_slot is not defined which results in failed compilation
+   /*
     LOG_D(PHY,"[eNB %"PRIu8"][SI] Frame %d, slot %d: Calling generate_dlsch (SI) with input size = %"PRIu16", num_pdcch_symbols %"PRIu8"\n",
           phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx, next_slot, input_buffer_length,num_pdcch_symbols); // FIXME this code is broken (next_slot?)
 
@@ -2199,6 +2201,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       LOG_T(PHY,"%x.",i,DLSCH_pdu[i]);// FIXME this code is broken (number of arguments)
 
     LOG_T(PHY,"\n");
+    */
 #endif
 #endif
 
