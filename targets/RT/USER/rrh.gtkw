@@ -1,25 +1,29 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Jul  9 09:53:25 2015
+[*] Thu Sep 17 14:23:43 2015
 [*]
 [dumpfile] "/tmp/openair_dump_rrh.vcd"
-[dumpfile_mtime] "Thu Jul  9 09:52:29 2015"
-[dumpfile_size] 170586112
-[savefile] "/home/sud/openair4G/targets/RT/USER/eNB2.gtkw"
-[timestart] 16177999000
-[size] 1535 876
+[dumpfile_mtime] "Thu Sep 17 14:21:43 2015"
+[dumpfile_size] 636509125
+[savefile] "/home/guepe/openair4G/targets/RT/USER/rrh.gtkw"
+[timestart] 17746655400
+[size] 1855 1056
 [pos] -1 -1
-*-17.749426 16178576148 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.826077 17746846200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 224
 [signals_width] 230
 [sst_expanded] 1
-[sst_vpaned_height] 230
+[sst_vpaned_height] 287
+@24
+[color] 1
+variables.hw_frame_rx[63:0]
+[color] 1
+variables.hw_subframe_rx[63:0]
 @28
 [color] 1
 functions.eNB_rx
 functions.eNB_rx_sleep
-[color] 7
-functions.trx_write
+functions.trx_write_rf
 @c00024
 variables.rxcnt[63:0]
 @28
@@ -89,23 +93,27 @@ variables.rxcnt[63:0]
 (63)variables.rxcnt[63:0]
 @1401200
 -group_end
+@24
+variables.pck_rx[63:0]
+variables.hw_frame[63:0]
+variables.hw_subframe[63:0]
 @28
 [color] 1
 functions.eNB_tx
 functions.eNB_tx_sleep
+functions.trx_read_rf
+[color] 7
+functions.trx_write
 [color] 7
 functions.trx_read
 @24
 variables.txcnt[63:0]
 variables.rx_ts[63:0]
 variables.tx_ts[63:0]
-variables.pck_rx[63:0]
 variables.hw_cnt_rx[63:0]
 variables.lhw_cnt_rx[63:0]
-variables.hw_frame[63:0]
-@28
-functions.eNB_tm
-@29
-functions.eNB_trx
+@25
+[color] 3
+variables.cnt[63:0]
 [pattern_trace] 1
 [pattern_trace] 0

@@ -92,6 +92,8 @@ const char* eurecomVariablesNames[] = {
   "diff2",
   "hw_subframe",
   "hw_frame",
+  "hw_subframe_rx",
+  "hw_frame_rx",
   "txcnt",
   "rxcnt",
   "trx_ts",
@@ -103,6 +105,8 @@ const char* eurecomVariablesNames[] = {
   "hw_cnt_tx",
   "lhw_cnt_tx",
   "pck_rx",
+  "pck_tx",
+  "cnt",
   "dummy_dump",
   "itti_send_msg",
   "itti_poll_msg",
@@ -150,6 +154,8 @@ const char* eurecomFunctionsNames[] = {
   "eNB_rx_sleep",
   "eNB_tx_sleep",
   "eNB_proc_sleep",
+  "trx_read_rf",
+  "trx_write_rf",
 
   /* PHY signals  */
   "ue_synch",

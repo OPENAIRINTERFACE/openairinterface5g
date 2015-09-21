@@ -134,7 +134,13 @@ typedef struct {
 
 
 
-/*!\brief device type */
+/*!\brief interface types that apply to modules (RRH_BBU/RRH_UE) created in RRH (rrh_gw.c)
+          and are defined with respect to the RF device that is present in RRH
+          -RRH_BBU modules have two devices, one is by default ETHERNET (will have ETH_IF) and the other one is a
+	  RF device (EXMIMO,USRP,BLADERF) or no device (NONE_IF).
+          -RRH_UE modules have two devices one is by default ETHERNET (will have ETH_IF) 
+	  and the other one by default not present so it will have NONE_IF
+ */
 typedef enum {
   MIN_DEV_TYPE = 0,
   /*!\brief device is ETH */
@@ -152,10 +158,10 @@ typedef enum {
 } dev_type_t;
 
 
-/*!\brief  type */
+/*!\brief  openair0 device host type */
 typedef enum {
   MIN_FUNC_TYPE = 0,
- /*!\brief device functions within a  BBU */
+ /*!\brief device functions within a BBU */
   BBU_FUNC,
  /*!\brief device functions within a RRH */
   RRH_FUNC,
@@ -264,23 +270,20 @@ extern "C"
 #endif
 
 /*! \brief Initialize Openair RF target. It returns 0 if OK */
-int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
-  //int openair0_stop(int card);
-
-//ETHERNET
-/*! \brief Initialize Openair ETHERNET target. It returns 0 if OK */
-int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
-  //int openair0_stop_eth(int card);
-  //int openair0_set_gains_eth(openair0_device* device, openair0_config_t *openair0_cfg);
-  //int openair0_set_frequencies_eth(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
-
-//USPRP
+  int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
+  
+  //USRP
 /*! \brief Get the current timestamp of USRP */
-openair0_timestamp get_usrp_time(openair0_device *device);
-
+  openair0_timestamp get_usrp_time(openair0_device *device);
 /*! \brief Set the RX frequency of USRP RF TARGET */
-int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
-
+  int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
+  
+//extern
+/*! \brief Initialize Openair ETHERNET target. It returns 0 if OK */
+  int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
+  int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg);
+  int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg);
+  int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg);
 /*@}*/
 
 #ifdef __cplusplus

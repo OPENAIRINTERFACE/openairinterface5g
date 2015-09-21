@@ -60,17 +60,17 @@
 #include "log_extern.h"
 #include "vcd_signal_dumper.h"
 
-//#undef LOWLATENCY
+/*****************************************************************************************
+ *                                                                        ----------     *
+ *     -------    RRH_BBU_IF    -------    RRH_RF_IF     -------USRP      - COTS_UE-     *
+ *     - BBU - ---------------  - RRH -  -------------   -------BLADERF   ----------     *
+ *     -------                  -------                  -------EXMIMO                   *
+ *                                                                        ---------      *
+ *                                                       -------ETH_IF    - EMU_UE-      *
+ *                                                                        ---------      *                              
+ *****************************************************************************************/
 
-/******************************************************************************
- **                               FUNCTION PROTOTYPES                        **
- ******************************************************************************/
-static void debug_init(void);
-static void get_options(int argc, char *argv[]);
-static void print_help(void);
-static void get_RFinterfaces(void);
-static rrh_module_t new_module(unsigned int id);
-int get_ip_address(char* if_name);
+
 
 char rrh_ip[20] = "192.168.12.242"; // there is code to detect the my ip address
 int  rrh_port = 50000; // has to be an option
@@ -98,25 +98,51 @@ uint8_t         measurements_flag=0;
 
 /* Default operation as RRH:
    - there are neither eNB nor UE modules
-   - no RF device is asscociated with RRH */
+   - no RF hardware is specified (NONE_IF)
+   - default ethernet interface is local */
 uint8_t 	    num_eNB_mod=0;
 uint8_t 	    num_UE_mod=0;
 uint8_t 	    num_EXMIMO_mod=0;
 uint8_t 	    num_USRP_mod=0;
 uint8_t             hardware_target=NONE_IF;
+char*               if_name="lo";
 
 rrh_module_t 	        *enb_array;
 rrh_module_t            *ue_array;
 
-pthread_mutex_t         timer_mutex;
 openair0_vtimestamp 	hw_counter=0;
-unsigned int		rt_period=0;
-struct itimerspec       timerspec;
 
-char* if_name="lo";
+
+
+
+static void debug_init(void);
+static void get_options(int argc, char *argv[]);
+static void print_help(void);
+
+/*!\fn static rrh_module_t new_module(unsigned int id);
+* \brief creation of a eNB/UE module
+* \param[in] module id
+* \return module
+* \note
+* @ingroup  _oai
+*/
+static rrh_module_t new_module(unsigned int id);
+
+/*!\fn static int get_ip_address(char* if_name)
+ * \brief retrieves IP address from the specified network interface
+ * \param[in] name of network interface
+ * \return 0 
+ * \note
+ * @ingroup  _oai
+ */
+static int get_ip_address(char* if_name);
+
+
+
+
 
 int main(int argc, char **argv) {
-
+  
   unsigned int i;
   
   /* parse input arguments */
@@ -125,58 +151,16 @@ int main(int argc, char **argv) {
   debug_init();
   /* */
   set_latency_target();
-  /*make a graceful exit when ctrl-c is pressed */
+  /* make a graceful exit when ctrl-c is pressed */
   signal(SIGSEGV, signal_handler);
   signal(SIGINT, signal_handler);
-  /*probe RF front end devices interfaced to RRH */
-  // get_RFinterfaces();
   
-
-#ifdef ETHERNET 
- int 			error_code_timer;
-  pthread_t 		main_timer_proc_thread;
-
-  LOG_I(RRH,"Creating timer thread with rt period  %d ns.\n",rt_period);
- 
-  /* setup the timer to generate an interrupt:
-     -for the first time in (sample_per_packet/sample_rate) ns
-     -and then every (sample_per_packet/sample_rate) ns */
-  timerspec.it_value.tv_sec =     rt_period/1000000000;
-  timerspec.it_value.tv_nsec =    rt_period%1000000000;
-  timerspec.it_interval.tv_sec =  rt_period/1000000000;
-  timerspec.it_interval.tv_nsec = rt_period%1000000000;
-  
-
-  //#ifndef LOWLATENCY
-  pthread_attr_t 	attr_timer;
-  struct sched_param 	sched_param_timer;
-  
-  pthread_attr_init(&attr_timer);
-  sched_param_timer.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  pthread_attr_setschedparam(&attr_timer,&sched_param_timer);
-  pthread_attr_setschedpolicy(&attr_timer,SCHED_FIFO);
-   
-  pthread_mutex_init(&timer_mutex,NULL);
-
-  error_code_timer = pthread_create(&main_timer_proc_thread, &attr_timer, timer_proc, (void *)&timerspec);
-  LOG_I(RRH,"[SCHED] FIFO scheduling applied to timer thread \n");		
-  /*#else 
-  error_code_timer = pthread_create(&main_timer_proc_thread, NULL, timer_proc, (void *)&timerspec);
-  LOG_I(RRH,"[SCHED] deadline scheduling applied to timer thread \n");		
-  #endif*/	
-  
-  if (error_code_timer) {
-    LOG_E(RRH,"Error while creating timer proc thread\n");
-    exit(-1);
-  }
-#endif
-
   /* create modules based on input arguments */
   if (eNB_flag==1){    
     enb_array=(rrh_module_t*)malloc(num_eNB_mod*sizeof(rrh_module_t));	
     for(i=0;i<num_eNB_mod;i++){  
       enb_array[i]=new_module(i);//enb_array[i]=new_module(i, get_RF_interfaces(&hardware_target));	
-      create_eNB_trx_threads(&enb_array[i],RT_flag,NRT_flag);
+      config_BBU_mod(&enb_array[i],RT_flag,NRT_flag);
       LOG_I(RRH,"[eNB %d] module(s) created (out of %u) \n",i,num_eNB_mod);		
     }
   }
@@ -184,7 +168,7 @@ int main(int argc, char **argv) {
     ue_array=(rrh_module_t*)malloc(num_UE_mod*sizeof(rrh_module_t));	
     for(i=0;i<num_UE_mod;i++){
       ue_array[i]=new_module(i);
-      create_UE_trx_threads(&ue_array[i],RT_flag,NRT_flag);			
+      config_UE_mod(&ue_array[i],RT_flag,NRT_flag);			
       LOG_I(RRH,"[UE %d] module(s) created (out of %u)\n",i, num_UE_mod);
     }
   }
@@ -194,22 +178,10 @@ int main(int argc, char **argv) {
   while (rrh_exit==0)
     sleep(1);
 
-  //close sockets 
-  
   return EXIT_SUCCESS;
 }
 
 
-
-
-/*!\fn openair0_device new_module (unsigned int id, dev_type_t type)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
 static rrh_module_t new_module (unsigned int id) {
 
   rrh_module_t 	  	rrh_mod;
@@ -221,7 +193,9 @@ static rrh_module_t new_module (unsigned int id) {
 
   /* each module is associated with an ethernet device */
   rrh_mod.eth_dev.type=ETH_IF;
+  /* ethernet device is functioning within RRH */
   rrh_mod.eth_dev.func_type=RRH_FUNC; 
+  /* specify IP address */
   get_ip_address(if_name);
   openair0_cfg.my_ip=&rrh_ip[0];
   openair0_cfg.my_port=rrh_port;
@@ -231,8 +205,8 @@ static rrh_module_t new_module (unsigned int id) {
     LOG_E(RRH,"Exiting, cannot initialize ethernet interface.\n");
     exit(-1);
   }
- 
-  /* specify associated RF device */
+
+  /* allocate space and specify associated RF device */
   openair0_device *oai_dv = (openair0_device *)malloc(sizeof(openair0_device));
   memset(oai_dv,0, sizeof(openair0_device));
 
@@ -257,121 +231,8 @@ static rrh_module_t new_module (unsigned int id) {
   return rrh_mod;
 }
 
-
-
-
-/*! \fn void *timer_proc(void *arg)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-void *timer_proc(void *arg) {
-
-  timer_t             timerid;    
-  struct itimerspec   *timer= (struct itimerspec *)arg ; // the timer data structure
-  struct itimerspec   *old_value;
-
-  /* 
-#ifdef LOWLATENCY
-  struct sched_attr attr;
-  unsigned int flags = 0;
-  
-  attr.size = sizeof(attr);
-  attr.sched_flags = 0;
-  attr.sched_nice = 0;
-  attr.sched_priority = 0;
-  
-  attr.sched_policy   = SCHED_DEADLINE;
-  attr.sched_runtime  =  (0.1  *  100) * 10000; // 
-  attr.sched_deadline =  rt_period-30000;//(0.1  *  100) * 10000; // 
-  attr.sched_period   =  rt_period;//(0.1  *  100) * 10000; // each TX/RX thread has, as a function of RT PERIOD ?? 
-  
-  if (sched_setattr(0, &attr, flags) < 0 ) {
-    perror("[SCHED] timer thread: sched_setattr failed\n");
-    exit(-1);
-  }
-#endif  
-  */
- if (timer_create (CLOCK_REALTIME, NULL, &timerid) == -1) {
-    fprintf (stderr, "couldn't create a timer\n");
-    perror (NULL);
-    exit (EXIT_FAILURE);
-  }
-  
-  signal(SIGALRM, timer_signal_handler);
-  LOG_I(RRH,"Timer has started!\n");
-  timer_settime (timerid, 0, timer, old_value);
-
-  while (!rrh_exit) {
-    sleep(1);
-  }
-  
-  timer_delete(timerid);
-  
-  return (0);
-}
-
-
-/*! \fn void timer_signal_handler(int sig)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-void timer_signal_handler(int sig) {
-  
-  if (sig == SIGALRM) {
-    pthread_mutex_lock(&timer_mutex);
-    hw_counter ++;
-    pthread_mutex_unlock(&timer_mutex);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, hw_counter);
-  }
-}
-
-
-/*! \fn void signal_handler(int sig)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-void signal_handler(int sig) {
-  
-  void *array[10];
-  size_t size;
-  
-  if (sig==SIGSEGV) {
-    // get void*'s for all entries on the stack
-    size = backtrace(array, 10);
-    
-    // print out all the frames to stderr
-    fprintf(stderr, "Error: signal %d:\n", sig);
-    backtrace_symbols_fd(array, size, 2);
-    exit(-1);
-  } else {
-    printf("trying to exit gracefully...\n");
-    rrh_exit = 1;
-  }
-}
-
-
-/*! \fn void debug_init(void)
- * \brief this function
- * \param[in]
- * \param[out]
- * \return
- * \note
- * @ingroup  _oai
- */
 static void debug_init(void) {
-	
+  
   // log initialization
   logInit();
   set_glog(glog_level,  glog_verbosity);
@@ -384,17 +245,10 @@ static void debug_init(void) {
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_rrh.vcd");
     
-}
+  }
 }
 
-/*!\fn void get_options(int argc, char *argv[])
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
+
 static void get_options(int argc, char *argv[]) {
 
   int 	opt;
@@ -457,45 +311,35 @@ static void get_options(int argc, char *argv[]) {
 
 }
 
-/*!\fn void print_help(void)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-int get_ip_address(char* if_name) {
+static int get_ip_address(char* if_name) {
   
   int fd;
   struct ifreq ifr;
+  
   
   fd = socket(AF_INET, SOCK_DGRAM, 0);
   
   /* I want to get an IPv4 IP address */
   ifr.ifr_addr.sa_family = AF_INET;
-
-  /* I want IP address attached to "eth0" */
+  
+  /* I want IP address attached to "if_name" */
   strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
+  
+  if ( ioctl(fd, SIOCGIFADDR, &ifr)<0 ) {
+    perror("IOCTL:");
+    exit(-1);
+  } 
+  
+  close(fd);
+  
+  /* display result */
+  snprintf(&rrh_ip[0],20,"%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+  LOG_I(RRH,"Got IP address %s from interface %s\n", rrh_ip,if_name);
 
- ioctl(fd, SIOCGIFADDR, &ifr);
-
- close(fd);
-
- /* display result */
- snprintf(&rrh_ip[0],20,"%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
- printf("Got IP address %s from interface %s\n", rrh_ip,if_name);
- return 0;
+  return 0;
 }
 
-/*!\fn void print_help(void)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
+
 static void print_help(void) {
 
   puts("Usage: \n");
@@ -504,7 +348,7 @@ static void print_help(void) {
   puts("\t -n create eNB module\n");
   puts("\t -u create UE module\n");
   puts("\t -g define global log level\n");
-  puts("\t -i set the RRH interface (default eth0)\n");
+  puts("\t -i set the RRH interface (default lo)\n");
   puts("\t -r define rrh log level\n");
   puts("\t -e define eNB log level\n");
   puts("\t -x enable real time bahaviour\n");
@@ -516,16 +360,85 @@ static void print_help(void) {
 
 }
 
-/*! \fn void exit_fun(const char* s)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-void exit_fun(const char* s)
-{
+
+void *timer_proc(void *arg) {
+
+  timer_t             timerid;    
+  struct itimerspec   *timer= (struct itimerspec *)arg ; // the timer data structure
+  struct itimerspec   *old_value;
+
+  
+#ifdef LOWLATENCY
+  struct sched_attr attr;
+  unsigned int flags = 0;
+  
+  attr.size = sizeof(attr);
+  attr.sched_flags = 0;
+  attr.sched_nice = 0;
+  attr.sched_priority = 0;
+  
+  attr.sched_policy   = SCHED_DEADLINE;
+  attr.sched_runtime  =  (0.1  *  100) * 10000; // 
+  attr.sched_deadline =  rt_period-30000;//(0.1  *  100) * 10000; 
+  attr.sched_period   =  rt_period;//(0.1  *  100) * 10000; // each TX/RX thread has, as a function of RT PERIOD ?? 
+  
+  if (sched_setattr(0, &attr, flags) < 0 ) {
+    perror("[SCHED] timer thread: sched_setattr failed\n");
+    exit(-1);
+  }
+#endif  
+  
+ if (timer_create (CLOCK_REALTIME, NULL, &timerid) == -1) {
+    fprintf (stderr, "couldn't create a timer\n");
+    perror (NULL);
+    exit (EXIT_FAILURE);
+  }
+  
+  signal(SIGALRM, timer_signal_handler);
+  LOG_I(RRH,"Timer has started!\n");
+  timer_settime (timerid, 0, timer, old_value);
+
+  while (!rrh_exit) {
+    sleep(1);
+  }
+  
+  timer_delete(timerid);
+  
+  return (0);
+}
+
+
+void timer_signal_handler(int sig) {
+  
+  if (sig == SIGALRM) {
+    pthread_mutex_lock(&timer_mutex);
+    hw_counter ++;
+    pthread_mutex_unlock(&timer_mutex);
+     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_CNT, hw_counter);//USED ELSEWHERE
+  }
+}
+
+
+void signal_handler(int sig) {
+  
+  void *array[10];
+  size_t size;
+  
+  if (sig==SIGSEGV) {
+    // get void*'s for all entries on the stack
+    size = backtrace(array, 10);
+    
+    // print out all the frames to stderr
+    fprintf(stderr, "Error: signal %d:\n", sig);
+    backtrace_symbols_fd(array, size, 2);
+    exit(-1);
+  } else {
+    printf("trying to exit gracefully...\n");
+    rrh_exit = 1;
+  }
+}
+
+void exit_fun(const char* s) {
   if (s != NULL) {
     printf("%s %s() Exiting RRH: %s\n",__FILE__, __FUNCTION__, s);
   }
@@ -534,66 +447,3 @@ void exit_fun(const char* s)
 }
 
 
-/*! \fn static void get_RFinterfaces(void)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-static void get_RFinterfaces(void) {
-
-  EXMIMO_flag=1;
-  USRP_flag=1;
-  num_EXMIMO_mod=1;
-  num_USRP_mod=1;
-
-}
-
-
-/*!\fn void create_timer_thread(void)
-* \brief this function
-* \param[in]
-* \param[out]
-* \return
-* \note
-* @ingroup  _oai
-*/
-void create_timer_thread() {
-  
-  int 			error_code_timer;
-  pthread_t 		main_timer_proc_thread;
-
-  LOG_I(RRH,"Creating timer thread with rt period  %d ns.\n",rt_period);
- 
-  /* setup the timer to generate an interrupt:
-     -for the first time in (sample_per_packet/sample_rate) ns
-     -and then every (sample_per_packet/sample_rate) ns */
-  timerspec.it_value.tv_sec =     rt_period/1000000000;
-  timerspec.it_value.tv_nsec =    rt_period%1000000000;
-  timerspec.it_interval.tv_sec =  rt_period/1000000000;
-  timerspec.it_interval.tv_nsec = rt_period%1000000000;
-  
-  pthread_mutex_init(&timer_mutex,NULL);
-  
-#ifndef LOWLATENCY
-  pthread_attr_t 	attr_timer;
-  struct sched_param 	sched_param_timer;
-  
-  pthread_attr_init(&attr_timer);
-  sched_param_timer.sched_priority = sched_get_priority_max(SCHED_FIFO-1);
-  pthread_attr_setschedparam(&attr_timer,&sched_param_timer);
-  pthread_attr_setschedpolicy(&attr_timer,SCHED_FIFO-1);
-  error_code_timer = pthread_create(&main_timer_proc_thread, &attr_timer, timer_proc, (void *)&timerspec);
-  LOG_I(RRH,"[SCHED] FIFO scheduling applied to timer thread \n");		
-#else 
-  error_code_timer = pthread_create(&main_timer_proc_thread, NULL, timer_proc, (void *)&timerspec);
-  LOG_I(RRH,"[SCHED] deadline scheduling applied to timer thread \n");		
-#endif	
-  
-  if (error_code_timer) {
-    LOG_E(RRH,"Error while creating timer proc thread\n");
-    exit(-1);
-  }
-}

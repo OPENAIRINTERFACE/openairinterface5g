@@ -392,7 +392,7 @@ elseif (${RF_BOARD} STREQUAL "ETHERNET")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
     )
-  set(LOWLATENCY False)
+  set(LOWLATENCY True)
   
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
@@ -1558,6 +1558,7 @@ add_executable(lte-softmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIRCN_DIR}/NAS/UE/nas_ue_task.c
   ${GTPU_need_ITTI}
@@ -1591,6 +1592,7 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   #${OPENAIR2_DIR}/RRC/NAS/nas_config.c # enable if you want rrc to mount ip interface
   #${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -1725,7 +1727,8 @@ add_executable(rrh_gw
   ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
   ${OPENAIR_TARGETS}/RT/USER/eNB_transport_IQ.c
   ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c	
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c		
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c 
   ${HW_SOURCE}
   )

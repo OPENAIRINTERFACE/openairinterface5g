@@ -48,7 +48,7 @@
 #include <netinet/ether.h>
 
 #define MAX_INST        4
-#define DEFAULT_IF  "eth0"
+#define DEFAULT_IF  "lo"
 #define BUF_SIZ      8960 /*Jumbo frame size*/
 
 typedef struct {
@@ -103,21 +103,51 @@ struct eth_meta_data{
 };
 
 
+
+/*!\brief packet header */
 typedef struct {
-  /* packet's timestamp */
+  /*!\brief packet's timestamp */ 
   openair0_timestamp timestamp;
-  /* variable declared for alignment purposes (sample size=32 bit)  */
+  /*!\brief variable declared for alignment purposes (sample size=32 bit)  */
   int16_t not_used;
-  /* antenna port used to resynchronize*/
+  /*!\brief antenna port used to resynchronize */
   int16_t antenna_id;
 } header_t;
 
+/*!\brief different options for ethernet tuning in socket and driver level */
+typedef enum {
+  MIN_OPT = 0,  
+  /*!\brief socket send buffer size in bytes */
+  SND_BUF_SIZE,
+  /*!\brief socket receive buffer size in bytes */
+  RCV_BUF_SIZE,
+  /*!\brief receiving timeout */
+  RCV_TIMEOUT,
+  /*!\brief sending timeout */
+  SND_TIMEOUT,
+  /*!\brief maximun transmission unit size in bytes */
+  MTU_SIZE,
+  /*!\brief TX queue length */
+  TX_Q_LEN,
+  /*!\brief RX/TX  ring parameters of ethernet device */
+  RING_PAR,
+  /*!\brief interruptions coalesence mechanism of ethernet device */
+  COALESCE_PAR,
+  /*!\brief pause parameters of ethernet device */
+  PAUSE_PAR,
+  MAX_OPT
+} eth_opt_t;
 
 
-int ethernet_socket_init(openair0_device *device);
 
-int ethernet_write_data(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id);
-
-int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,void **buff, int nsamps,int antenna_id);
-
-void ethernet_socket_opt (openair0_device *device);
+/*! \fn int ethernet_tune (openair0_device *device, eth_opt_t option)
+* \brief this function allows you to configure certain ethernet parameters in socket or device level
+* \param[in] openair0 device which bears the socket
+* \param[in] name of parameter to configure
+* \return 0 on success, otherwise -1
+* \note
+* @ingroup  _oai
+*/
+int ethernet_tune (openair0_device *device, eth_opt_t option);
+int ethernet_write_data(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc) ;
+int ethernet_read_data(openair0_device *device,openair0_timestamp *timestamp,void **buff, int nsamps,int cc);

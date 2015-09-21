@@ -45,41 +45,68 @@
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
 
-#define DEFAULT_PERIOD_NS 200000
+#define DEFAULT_PERIOD_NS 200000 /* default value is calculated for 25 PRB */
 #define RRH_UE_PORT 51000
 #define RRH_UE_DEST_IP "127.0.0.1"
 
 /*! \brief RRH supports two types of modules: eNB and UE
-	 each module is associated a device of type ETH_IF 
-	 and optionally with an RF device (USRP/BLADERF/EXMIMO) */
+	   each module is associated with an ethernet device (device of ETH_IF) 
+	   and optionally with a RF device (device type can be USRP_IF/BLADERF_IF/EXMIMO_IF/NONE_IF)
+           UE modules will always have RF device type NONE_IF */
 typedef struct {
-  //! module id
+/*! \brief module id */
   uint8_t id;
-  //! loopback flag
-  uint8_t loopback;
-  //! measurement flag
-  uint8_t measurements;
-  //! module's ethernet device
-  openair0_device eth_dev;
-  //! pointer to RF module's device (pointer->since its optional)
-  openair0_device *devs;
-  
+/*! \brief! loopback flag */
+uint8_t loopback;
+/*! \brief measurement flag */
+uint8_t measurements;
+/*! \brief module's ethernet device */
+openair0_device eth_dev;
+/*! \brief pointer to RF module's device (pointer->since it's optional) */
+openair0_device *devs;
 }rrh_module_t;
 
-
-/******************************************************************************
- **                               FUNCTION PROTOTYPES                        **
- ******************************************************************************/
-void signal_handler(int sig);
+/*! \fn void timer_signal_handler(int sig)
+ * \brief this function
+ * \param[in] signal type
+ * \return none
+ * \note
+ * @ingroup  _oai
+*/
 void timer_signal_handler(int);
+
+/*! \fn void *timer_proc(void *arg)
+ * \brief this function
+ * \param[in]
+ * \param[out]
+ * \return
+ * \note
+ * @ingroup  _oai
+ */
 void *timer_proc(void *);
-void create_timer_thread(void);
+
+/*! \fn void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag,uint8_t NRT_flag)
+ * \brief receive and apply configuration to modules' optional device
+ * \param[in]  *mod_enb pointer to module 
+ * \param[in]   RT_flag real time flag 
+ * \return none
+ * \note
+ * @ingroup  _oai
+ */
+void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag);
+
+/*! \fn void  config_UE_mod( rrh_module_t *dev_ue, uint8_t RT_flag,uint8_t NRT_flag)
+ * \brief this function
+ * \param[in] *mod_ue pointer to module 
+ * \param[in]
+ * \return none
+ * \note
+ * @ingroup  _oai
+ */
+void config_UE_mod( rrh_module_t *dev_ue, uint8_t RT_flag, uint8_t NRT_flag);
 
 
-/******************************************************************************
- **                               FUNCTION PROTOTYPES                        **
- ******************************************************************************/
-void create_UE_trx_threads( rrh_module_t *dev_ue, uint8_t RT_flag, uint8_t NRT_flag);
-void create_eNB_trx_threads( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag);
+
+void signal_handler(int sig);
 
 #endif

@@ -185,7 +185,7 @@ int trx_brf_set_gains(openair0_device* device) {
 
 }
 
-int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
+int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   int status;
   int card=0;
