@@ -846,9 +846,11 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
 /*------------------------------------------------------------------------------*/
 int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
 {
-  uint16_t               ue_initial_id;
-  uint32_t               eNB_ue_s1ap_id;
-  MessageDef            *message_gtpv1u_p = NULL;
+  uint16_t                        ue_initial_id;
+  uint32_t                        eNB_ue_s1ap_id;
+  MessageDef                     *message_gtpv1u_p = NULL;
+  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
@@ -880,8 +882,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
     {
       int i;
 
-      message_gtpv1u_p = itti_alloc_new_message(TASK_S1AP, GTPV1U_ENB_CREATE_TUNNEL_REQ);
-      memset(&message_gtpv1u_p->ittiMsg.Gtpv1uCreateTunnelReq, 0 , sizeof(gtpv1u_enb_create_tunnel_req_t));
+      memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
       ue_context_p->ue_context.nb_of_e_rabs = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs;
 
       for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++) {
@@ -889,18 +890,25 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
         ue_context_p->ue_context.e_rab[i].param = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i];
 
 
-        GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).eps_bearer_id[i]       = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
-        GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_S1u_teid[i]        = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
+        create_tunnel_req.eps_bearer_id[i]       = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
+        create_tunnel_req.sgw_S1u_teid[i]        = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
 
-        memcpy(&GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_addr[i],
+        memcpy(&create_tunnel_req.sgw_addr[i],
                &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
                sizeof(transport_layer_addr_t));
       }
 
-      GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).rnti       = ue_context_p->ue_context.rnti; // warning put zero above
-      GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).num_tunnels    = i;
+      create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
+      create_tunnel_req.num_tunnels    = i;
 
-      itti_send_msg_to_task(TASK_GTPV1_U, instance, message_gtpv1u_p);
+      gtpv1u_create_s1u_tunnel(
+        instance,
+        &create_tunnel_req,
+        &create_tunnel_resp);
+
+      rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+          &ctxt,
+          &create_tunnel_resp);
     }
 
     /* TODO parameters yet to process ... */

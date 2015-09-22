@@ -27,8 +27,6 @@
 
 *******************************************************************************/
 
-MESSAGE_DEF(GTPV1U_ENB_CREATE_TUNNEL_REQ,   MESSAGE_PRIORITY_MAX, gtpv1u_enb_create_tunnel_req_t,  Gtpv1uCreateTunnelReq)
-MESSAGE_DEF(GTPV1U_ENB_CREATE_TUNNEL_RESP,  MESSAGE_PRIORITY_MAX, gtpv1u_enb_create_tunnel_resp_t, Gtpv1uCreateTunnelResp)
 MESSAGE_DEF(GTPV1U_ENB_UPDATE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_enb_update_tunnel_req_t,  Gtpv1uUpdateTunnelReq)
 MESSAGE_DEF(GTPV1U_ENB_UPDATE_TUNNEL_RESP,  MESSAGE_PRIORITY_MED, gtpv1u_enb_update_tunnel_resp_t, Gtpv1uUpdateTunnelResp)
 MESSAGE_DEF(GTPV1U_ENB_DELETE_TUNNEL_REQ,   MESSAGE_PRIORITY_MED, gtpv1u_enb_delete_tunnel_req_t,  Gtpv1uDeleteTunnelReq)

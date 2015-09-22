@@ -50,34 +50,32 @@
 int
 rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
   const protocol_ctxt_t* const ctxt_pP,
-  MessageDef* msg_pP,
-  const char* msg_name_pP
+  const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP
 )
 {
   rnti_t                         rnti;
-  int                    i;
+  int                            i;
   struct rrc_eNB_ue_context_s*   ue_context_p = NULL;
 
-  if (msg_pP) {
-    LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" RX %s num tunnels %u \n",
+  if (create_tunnel_resp_pP) {
+    LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" RX CREATE_TUNNEL_RESP num tunnels %u \n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-          msg_name_pP,
-          GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).num_tunnels);
+          create_tunnel_resp_pP->num_tunnels);
 
-    rnti = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).rnti;
+    rnti = create_tunnel_resp_pP->rnti;
     ue_context_p = rrc_eNB_get_ue_context(
                      &eNB_rrc_inst[ctxt_pP->module_id],
                      ctxt_pP->rnti);
 
-    for (i = 0; i < GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).num_tunnels; i++) {
+    for (i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
       LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel %u bearer index %u id %u\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-            GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_S1u_teid[i],
+            create_tunnel_resp_pP->enb_S1u_teid[i],
             i,
-            GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).eps_bearer_id[i]);
-      ue_context_p->ue_context.enb_gtp_teid[i]  = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_S1u_teid[i];
-      ue_context_p->ue_context.enb_gtp_addrs[i] = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).enb_addr;
-      ue_context_p->ue_context.enb_gtp_ebi[i]   = GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).eps_bearer_id[i];
+            create_tunnel_resp_pP->eps_bearer_id[i]);
+      ue_context_p->ue_context.enb_gtp_teid[i]  = create_tunnel_resp_pP->enb_S1u_teid[i];
+      ue_context_p->ue_context.enb_gtp_addrs[i] = create_tunnel_resp_pP->enb_addr;
+      ue_context_p->ue_context.enb_gtp_ebi[i]   = create_tunnel_resp_pP->eps_bearer_id[i];
     }
 	MSC_LOG_RX_MESSAGE(
 			  MSC_RRC_ENB,
@@ -85,7 +83,7 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 			  NULL,0,
 			  MSC_AS_TIME_FMT" CREATE_TUNNEL_RESP RNTI %"PRIx16" ntuns %u ebid %u enb-s1u teid %u",
 			  0,0,rnti,
-			  GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_pP).num_tunnels,
+			  create_tunnel_resp_pP->num_tunnels,
 			  ue_context_p->ue_context.enb_gtp_ebi[0],
 			  ue_context_p->ue_context.enb_gtp_teid[0]);
     return 0;

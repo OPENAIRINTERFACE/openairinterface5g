@@ -142,10 +142,11 @@ gtpv1u_new_data_req(
   uint32_t buf_offsetP
 );
 
-static int
+int
 gtpv1u_create_s1u_tunnel(
   const instance_t instanceP,
-  const gtpv1u_enb_create_tunnel_req_t * const create_tunnel_req_pP);
+  const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
+        gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
 
 static int
 gtpv1u_delete_s1u_tunnel(
@@ -658,10 +659,12 @@ gtpv1u_new_data_req(
 }
 
 //-----------------------------------------------------------------------------
-static int
+int
 gtpv1u_create_s1u_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_enb_create_tunnel_req_t * const create_tunnel_req_pP)
+  const instance_t                              instanceP,
+  const gtpv1u_enb_create_tunnel_req_t * const  create_tunnel_req_pP,
+        gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP
+  )
 {
   /* Create a new nw-gtpv1-u stack req using API */
   NwGtpv1uUlpApiT          stack_req;
@@ -689,10 +692,9 @@ gtpv1u_create_s1u_tunnel(
 		  create_tunnel_req_pP->num_tunnels, create_tunnel_req_pP->eps_bearer_id[0],
 		  create_tunnel_req_pP->sgw_S1u_teid[0]);
 
-  message_p = itti_alloc_new_message(TASK_GTPV1_U, GTPV1U_ENB_CREATE_TUNNEL_RESP);
-  GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).rnti        = create_tunnel_req_pP->rnti;
-  GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).status      = 0;
-  GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).num_tunnels = 0;
+  create_tunnel_resp_pP->rnti        = create_tunnel_req_pP->rnti;
+  create_tunnel_resp_pP->status      = 0;
+  create_tunnel_resp_pP->num_tunnels = 0;
 
   for (i = 0; i < create_tunnel_req_pP->num_tunnels; i++) {
     ip_offset               = 0;
@@ -729,10 +731,10 @@ gtpv1u_create_s1u_tunnel(
 
       gtpv1u_ue_data_p->ue_id       = create_tunnel_req_pP->rnti;
       gtpv1u_ue_data_p->instance_id = 0; // TO DO
-      memcpy(&GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).enb_addr.buffer,
+      memcpy(&create_tunnel_resp_pP->enb_addr.buffer,
              &gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up,
              sizeof (in_addr_t));
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).enb_addr.length = sizeof (in_addr_t);
+      create_tunnel_resp_pP->enb_addr.length = sizeof (in_addr_t);
 
       addrs_length_in_bytes = create_tunnel_req_pP->sgw_addr[i].length / 8;
       AssertFatal((addrs_length_in_bytes == 4) ||
@@ -755,18 +757,19 @@ gtpv1u_create_s1u_tunnel(
                16);
       }
 
-      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].state    = BEARER_IN_CONFIG;
-      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB = s1u_teid;
-      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_sgw = create_tunnel_req_pP->sgw_S1u_teid[i];
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).enb_S1u_teid[i] = s1u_teid;
+      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].state                  = BEARER_IN_CONFIG;
+      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB               = s1u_teid;
+      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_eNB_stack_session = stack_req.apiInfo.createTunnelEndPointInfo.hStackSession;
+      gtpv1u_ue_data_p->bearers[eps_bearer_id - GTPV1U_BEARER_OFFSET].teid_sgw               = create_tunnel_req_pP->sgw_S1u_teid[i];
+      create_tunnel_resp_pP->enb_S1u_teid[i] = s1u_teid;
 
     } else {
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).enb_S1u_teid[i] = 0;
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).status         = 0xFF;
+      create_tunnel_resp_pP->enb_S1u_teid[i] = 0;
+      create_tunnel_resp_pP->status         = 0xFF;
     }
 
-    GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).eps_bearer_id[i] = eps_bearer_id;
-    GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).num_tunnels      += 1;
+    create_tunnel_resp_pP->eps_bearer_id[i] = eps_bearer_id;
+    create_tunnel_resp_pP->num_tunnels      += 1;
 
     //-----------------------
     // GTPV1U->PDCP mapping
@@ -781,8 +784,8 @@ gtpv1u_create_s1u_tunnel(
       hash_rc = hashtable_insert(gtpv1u_data_g.teid_mapping, s1u_teid, gtpv1u_teid_data_p);
       AssertFatal(hash_rc == HASH_TABLE_OK, "Error inserting teid mapping in GTPV1U hashtable");
     } else {
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).enb_S1u_teid[i] = 0;
-      GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).status         = 0xFF;
+      create_tunnel_resp_pP->enb_S1u_teid[i] = 0;
+      create_tunnel_resp_pP->status         = 0xFF;
     }
   }
   MSC_LOG_TX_MESSAGE(
@@ -790,13 +793,13 @@ gtpv1u_create_s1u_tunnel(
 		  MSC_RRC_ENB,
 		  NULL,0,
 		  "0 GTPV1U_ENB_CREATE_TUNNEL_RESP rnti %x teid %x",
-		  GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).rnti,
+		  create_tunnel_resp_pP->rnti,
 		  s1u_teid);
 
   LOG_D(GTPU, "Tx GTPV1U_ENB_CREATE_TUNNEL_RESP ue rnti %x status %d\n",
         create_tunnel_req_pP->rnti,
-        GTPV1U_ENB_CREATE_TUNNEL_RESP(message_p).status);
-  return itti_send_msg_to_task(TASK_RRC_ENB, instanceP, message_p);
+        create_tunnel_resp_pP->status);
+  return 0;
 }
 
 
@@ -835,9 +838,7 @@ static int gtpv1u_delete_s1u_tunnel(
         LOG_D(GTPU, "gtpv1u_delete_s1u_tunnel erab %u  %u\n",
               req_pP->eps_bearer_id[erab_index],
               teid_eNB);
-        stack_req.apiInfo.createTunnelEndPointInfo.teid          = teid_eNB;
-        stack_req.apiInfo.createTunnelEndPointInfo.hUlpSession   = 0;
-        stack_req.apiInfo.createTunnelEndPointInfo.hStackSession = 0;
+        stack_req.apiInfo.destroyTunnelEndPointInfo.hStackSessionHandle   = gtpv1u_ue_data_p->bearers[req_pP->eps_bearer_id[erab_index] - GTPV1U_BEARER_OFFSET].teid_eNB_stack_session;
 
         rc = nwGtpv1uProcessUlpReq(gtpv1u_data_g.gtpv1u_stack, &stack_req);
         LOG_D(GTPU, ".\n");
@@ -1016,10 +1017,6 @@ void *gtpv1u_eNB_task(void *args)
     msg_name_p = ITTI_MSG_NAME(received_message_p);
 
     switch (ITTI_MSG_ID(received_message_p)) {
-    case GTPV1U_ENB_CREATE_TUNNEL_REQ: {
-      gtpv1u_create_s1u_tunnel(instance, &received_message_p->ittiMsg.Gtpv1uCreateTunnelReq);
-    }
-    break;
 
     case GTPV1U_ENB_DELETE_TUNNEL_REQ: {
       gtpv1u_delete_s1u_tunnel(instance, &received_message_p->ittiMsg.Gtpv1uDeleteTunnelReq);
