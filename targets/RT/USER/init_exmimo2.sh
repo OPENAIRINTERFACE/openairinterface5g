@@ -24,7 +24,7 @@ load_module() {
   sudo insmod $1
 }
 
-load_module $OPENAIR_TARGETS/bin/openair_rf.ko
+load_module $OPENAIR_TARGETS/ARCH/EXMIMO/DRIVER/eurecom/openair_rf.ko
 sleep 1
 
 if [ ! -e /dev/openair0 ]; then 
@@ -36,17 +36,17 @@ DEVICE=`echo $PCI | awk -F\" '{print $(NF-1)}' | awk '{print $2}'`
 DEVICE_SWID=${DEVICE:2:2}
 if [ $DEVICE_SWID == '08' ]; then
  echo "Using firmware version 8"
- $OPENAIR_TARGETS/bin/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2
+ $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2
 else 
  if [ $DEVICE_SWID == '09' ]; then
   echo "Using firmware version 9"
-  $OPENAIR_TARGETS/bin/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2_v9
+  $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2_v9
  else
   if [ $DEVICE_SWID == '0a' ]; then
    echo "Using firware version 10"
    #$OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw -s 0x43fffff0 -b -f $OPENAIR0_DIR/express-mimo/software/sdr/exmimo2/sdr_expressmimo2
    #$OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2_v10_spectra
-   $OPENAIR_TARGETS/bin/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2_v10
+   $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw -s 0x43fffff0 -b -f $OPENAIR_TARGETS/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/sdr_expressmimo2_v10
   else
    echo 'No corresponding firmware found'
    return
