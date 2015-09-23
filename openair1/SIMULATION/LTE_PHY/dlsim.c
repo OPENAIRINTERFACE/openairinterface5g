@@ -374,7 +374,7 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:q:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -539,14 +539,9 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
-      if (transmission_mode>1 && transmission_mode<7) {
+      if (transmission_mode>1 && transmission_mode<7){
         n_tx = 2;
         n_tx_phy = n_tx;
-      }
-      if (transmission_mode>=7){
-        n_tx = 1;
-        n_tx_phy = 1;
-        n_rx = 1;
       }
 
       break;
@@ -554,13 +549,19 @@ int main(int argc, char **argv)
     case 'y':
       n_tx=atoi(optarg);
 
-      if (transmission_mode<7){
-         n_tx_phy = n_tx; 
+      if ((n_tx==0) || ((n_tx>2))) {
+        msg("Unsupported number of tx antennas ports %d\n",n_tx);
+        exit(-1);
+      }
 
-         if ((n_tx==0) || ((n_tx>2))) {
-           msg("Unsupported number of tx antennas %d\n",n_tx);
-           exit(-1);
-         }
+      break;
+
+    case 'q':
+      n_tx_phy=atoi(optarg);
+      
+      if (transmission_mode<7 && n_tx_phy!=n_tx) {
+        msg("For transmission mode below TM7, physical antenna number should be the same as antenna port number.\n");
+	exit(-1);
       }
 
       break;
@@ -668,7 +669,8 @@ int main(int argc, char **argv)
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6,7 for the moment)\n");
-      printf("-y Number of TX antennas used in eNB\n");
+      printf("-y Number of TX antennas ports used in eNB\n");
+      printf("-q Number of physical TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
       printf("-R Number of HARQ rounds (fixed)\n");
