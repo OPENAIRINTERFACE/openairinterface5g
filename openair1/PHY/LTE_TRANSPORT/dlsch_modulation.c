@@ -1026,7 +1026,6 @@ break;
           mprime2++;
 
           for (aa=0; aa<nb_antennas_tx_phy; aa++) {
-          //for (aa=0; aa<1; aa++) {
            
             ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
             ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
