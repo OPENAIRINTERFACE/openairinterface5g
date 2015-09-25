@@ -42,9 +42,6 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                               unsigned char l,
                               unsigned char symbol)
 {
-
-
-
   int pilot[2][200] __attribute__((aligned(16)));
   unsigned char nu,aarx;
   unsigned short k;

@@ -229,7 +229,6 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                 ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
                 ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
                 multadd_real_vector_complex_scalar(fl,ch,dl_bf_ch,16);
-                //printf("rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",pil_offset,rxF[0],rxF[1],pil[0],pil[1],ch[0],ch[1]);
                 
                 ch[0] = (short)(((int)pil[0]*rxF[8] - (int)pil[1]*rxF[9])>>15);
                 ch[1] = (short)(((int)pil[0]*rxF[9] + (int)pil[1]*rxF[8])>>15);
@@ -378,13 +377,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                   ch[0] = (short)(((int)pil[0]*rxF[8] - (int)pil[1]*rxF[9])>>15);
                   ch[1] = (short)(((int)pil[0]*rxF[9] + (int)pil[1]*rxF[8])>>15);
                   multadd_real_vector_complex_scalar(fm,ch,dl_bf_ch,16);
-                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[0],rxF[1],pil[0],pil[1],ch[0],ch[1]);
+                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[8],rxF[9],pil[0],pil[1],ch[0],ch[1]);
                   pil+=2;
 
                   ch[0] = (short)(((int)pil[0]*rxF[16] - (int)pil[1]*rxF[17])>>15);
                   ch[1] = (short)(((int)pil[0]*rxF[17] + (int)pil[1]*rxF[16])>>15);
                   multadd_real_vector_complex_scalar(fr,ch,dl_bf_ch,16);
-                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[0],rxF[1],pil[0],pil[1],ch[0],ch[1]);
+                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[16],rxF[17],pil[0],pil[1],ch[0],ch[1]);
                   pil+=2;
 
                }  
@@ -604,19 +603,19 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                   ch[0] = (short)(((int)pil[0]*rxF[0] - (int)pil[1]*rxF[1])>>15);
                   ch[1] = (short)(((int)pil[0]*rxF[1] + (int)pil[1]*rxF[0])>>15);
                   multadd_real_vector_complex_scalar(fl,ch,dl_bf_ch,16);
-                  // printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[0],rxF[1],pil[0],pil[1],ch[0],ch[1]);
+                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[0],rxF[1],pil[0],pil[1],ch[0],ch[1]);
                   pil+=2;
                   
                   ch[0] = (short)(((int)pil[0]*rxF[8] - (int)pil[1]*rxF[9])>>15);
                   ch[1] = (short)(((int)pil[0]*rxF[9] + (int)pil[1]*rxF[8])>>15);
                   multadd_real_vector_complex_scalar(fm,ch,dl_bf_ch,16);
-                  // printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[8],rxF[9],pil[0],pil[1],ch[0],ch[1]);
+                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[8],rxF[9],pil[0],pil[1],ch[0],ch[1]);
                   pil+=2;
 
                   ch[0] = (short)(((int)pil[0]*rxF[16] - (int)pil[1]*rxF[17])>>15);
                   ch[1] = (short)(((int)pil[0]*rxF[17] + (int)pil[1]*rxF[16])>>15);
                   multadd_real_vector_complex_scalar(fr,ch,dl_bf_ch,16);
-                  // printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[16],rxF[17],pil[0],pil[1],ch[0],ch[1]);
+                  //printf("symbol=%d,rxF[%d]=(%d,%d),pil=(%d,%d),ch=(%d,%d)\n",symbol,pil_offset,rxF[16],rxF[17],pil[0],pil[1],ch[0],ch[1]);
                   pil+=2;
 
                 }
@@ -641,13 +640,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     if (phy_vars_ue->perfect_ce == 0) {
 
       dl_bf_ch = (short *)&dl_bf_ch_estimates[aarx][ch_offset];
-      printf("dlsch_bf_ch_est.c:symbol %d, dl_bf_ch (%d,%d)\n",symbol,dl_bf_ch[0],dl_bf_ch[1]);
+      //printf("dlsch_bf_ch_est.c:symbol %d, dl_bf_ch (%d,%d)\n",symbol,dl_bf_ch[0],dl_bf_ch[1]);
 
       if (phy_vars_ue->high_speed_flag == 0) {
         multadd_complex_vector_real_scalar(dl_bf_ch,
                                            32767-phy_vars_ue->ch_est_alpha,
                                            dl_bf_ch-(frame_parms->ofdm_symbol_size<<1),0,frame_parms->ofdm_symbol_size);
-        printf("dlsch_bf_ch_est.c:symbol %d,dl_bf_ch (%d,%d)\n",symbol,*(dl_bf_ch-512*2),*(dl_bf_ch-512*2+1));
+        //printf("dlsch_bf_ch_est.c:symbol %d,dl_bf_ch (%d,%d)\n",symbol,*(dl_bf_ch-512*2),*(dl_bf_ch-512*2+1));
       } else { // high_speed_flag == 1
         if (beamforming_mode==7) {
           if (frame_parms->Ncp==0) {

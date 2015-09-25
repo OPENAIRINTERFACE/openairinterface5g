@@ -1018,18 +1018,20 @@ break;
           //precoding UE spec RS
           //printf("precoding UE spec RS\n");
 
+          ind = 3*lprime*dlsch0_harq->nb_rb+mprime2;
+          ind_dword = ind>>4;
+          ind_qpsk_symb = ind&0xf;
+
+          tmp_sample1 = qpsk[(phy_vars_eNB->lte_gold_uespec_port5_table[0][Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
+          mprime2++;
+
           for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+          //for (aa=0; aa<1; aa++) {
            
-            ind = 3*lprime*dlsch0_harq->nb_rb+mprime2;
-            ind_dword = ind>>4;
-            ind_qpsk_symb = ind&0xf;
-
-            tmp_sample1 = qpsk[(phy_vars_eNB->lte_gold_uespec_port5_table[0][Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
-
-            ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((uint16_t*)&beamforming_weights[re][aa])[0])>>15);
-            ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((uint16_t*)&beamforming_weights[re][aa])[1])>>15);
-            ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((uint16_t*)&beamforming_weights[re][aa])[1])>>15);
-            ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*((uint16_t*)&beamforming_weights[re][aa])[0])>>15);
+            ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
+            ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
+            ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
+            ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
 
             // ((int16_t*)&txdataF[aa][tti_offset])[0] = 0xffff;
             // ((int16_t*)&txdataF[aa][tti_offset])[1] = 0xffff;
@@ -1037,8 +1039,6 @@ break;
             //printf("tmp_sample1=(%d,%d)\n",((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
             //printf("beamforing_weights[%d][%d]=(%d,%d)\n",re,aa,((int16_t*)&beamforming_weights[re][aa])[0],((int16_t*)&beamforming_weights[re][aa])[1]);
             //printf("txdataF[%d][%d]= (%d,%d)\n ",aa,tti_offset,((int16_t*)&txdataF[aa][tti_offset])[0],((int16_t*)&txdataF[aa][tti_offset])[1]);
-
-            mprime2++;
           }
 
         }

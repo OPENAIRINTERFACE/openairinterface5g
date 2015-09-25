@@ -564,6 +564,11 @@ int main(int argc, char **argv)
 	exit(-1);
       }
 
+      if (transmission_mode==7 && (n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64)) {
+        msg("For TM7, physical antenna number should be an exponent of 2, maximum 64 antennas supported.\n");
+	exit(-1);
+      }
+
       break;
 
     case 'z':
@@ -753,7 +758,7 @@ int main(int argc, char **argv)
       beamforming_weights[re]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
       for(aa=0;aa<n_tx_phy;aa++)
 	//beamforming_weights[re][aa] = 0x00008000;
-	beamforming_weights[re][aa] = 0x00007fff;
+	beamforming_weights[re][aa] = 0x0000cfff>>(n_tx_phy>>1);
     }
   }
 
@@ -2924,12 +2929,12 @@ PMI_FEEDBACK:
               } else {
                 for (aarx=0; aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx; aarx++) {
                   if (aa==0) {
-                    r_re[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-                    r_im[aarx][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+                    r_re[aarx][i] = (double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)];
+                    r_im[aarx][i] = (double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1];
                     //printf("r[%d][%d]=> %f, %f\n",aarx,i,r_re[aarx][i],r_im[aarx][i]);
                   } else {
-                    r_re[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-                    r_im[aarx][i] += ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+                    r_re[aarx][i] += (double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)];
+                    r_im[aarx][i] += (double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1];
                   }
 
                 }
@@ -3022,10 +3027,10 @@ PMI_FEEDBACK:
               // printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
               /*((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] =
                 (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
+                ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
                 (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));*/
-              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) (r_re[aa][i]);
-              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) (r_im[aa][i] + (iqim*r_re[aa][i])); 
+              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) r_re[aa][i];
+              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) r_im[aa][i]; 
               //printf("rxdata[%d][%d]=> %d, %d\n",aa,subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti+i,r_re[aa][i],r_im[aa][i]);
             }
           }
