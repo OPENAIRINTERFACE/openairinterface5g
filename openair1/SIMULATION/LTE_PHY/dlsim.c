@@ -752,7 +752,8 @@ int main(int argc, char **argv)
     for(re=0;re<12*N_RB_DL;re++){
       beamforming_weights[re]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
       for(aa=0;aa<n_tx_phy;aa++)
-	beamforming_weights[re][aa] = 0x00008000;
+	//beamforming_weights[re][aa] = 0x00008000;
+	beamforming_weights[re][aa] = 0x00007fff;
     }
   }
 
@@ -3115,6 +3116,13 @@ PMI_FEEDBACK:
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
                           ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+
+                          if (transmission_mode == 7){
+                            ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                                eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+                            ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                                eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+                          }
                         }
                       }
                     }
