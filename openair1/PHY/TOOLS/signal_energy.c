@@ -67,6 +67,9 @@ int32_t subcarrier_energy(int32_t *input,uint32_t length, int32_t *subcarrier_en
     subcarrier_energy[i] = subcarrier_pwr*rx_power_correction;
   }
 
+  _mm_empty();
+  _m_empty();
+
   return i;
 }
 #endif
@@ -111,6 +114,9 @@ int32_t signal_energy(int32_t *input,uint32_t length)
   temp2/=(length*length);
   //  temp2<<=(2*shift_DC);
   temp -= temp2;
+
+  _mm_empty();
+  _m_empty();
 
   return((temp>0)?temp:1);
 }
