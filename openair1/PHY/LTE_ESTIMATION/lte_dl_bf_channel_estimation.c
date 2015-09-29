@@ -308,8 +308,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
             skip_half=2;
         }
 
-        if ((frame_parms->frame_type == TDD) &&
-            (subframe==6)) { //TDD Subframe 6
+        if ((frame_parms->frame_type == TDD) && ((subframe==1)||(subframe==6))) { //TDD Subframe 1 and 6
           if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
             rb_alloc_ind = 0;
           }
@@ -432,7 +431,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         }
       }
 
-      if ((frame_parms->frame_type == TDD) && (subframe==6)) {
+      if ((frame_parms->frame_type == TDD) && ((subframe==1)||(subframe==6))) {
         //PSS
         if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
           rb_alloc_ind = 0;
@@ -540,8 +539,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
             skip_half=2;
         }
 
-        if ((frame_parms->frame_type == TDD) &&
-            (subframe==6)) { //TDD Subframe 6
+        if ((frame_parms->frame_type == TDD) && ((subframe==1)||(subframe==6))) { //TDD Subframe 1 and 6
           if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
             rb_alloc_ind = 0;
           }
