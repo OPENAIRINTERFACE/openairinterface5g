@@ -718,6 +718,7 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param nb_rb number of RBs for this allocation
    @param pbch_pss_sss_adjust  Adjustment factor in RE for PBCH/PSS/SSS allocations
    @param llr128p pointer to pointer to symbol in dlsch_llr
+   @param beamforming_mode beamforming mode
 */
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -728,7 +729,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr128p);
+                     int16_t **llr128p,
+                     uint8_t beamforming_mode);
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -741,6 +743,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param first_symbol_flag
    @param nb_rb number of RBs for this allocation
    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
+   @param beamforming_mode beamforming mode
 */
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
@@ -751,7 +754,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     short **llr_save);
+                     short **llr_save,
+                     uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     int32_t **rxdataF_comp,

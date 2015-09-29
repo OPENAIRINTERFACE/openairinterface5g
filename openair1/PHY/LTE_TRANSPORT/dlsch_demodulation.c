@@ -739,7 +739,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                       lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc,4,subframe,symbol),
-                      lte_ue_pdsch_vars[eNB_id]->llr128);
+                      lte_ue_pdsch_vars[eNB_id]->llr128,
+                      beamforming_mode);
     } else if (i_mod == 2) {
       dlsch_16qam_qpsk_llr(frame_parms,
                            lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
@@ -785,7 +786,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                       lte_ue_pdsch_vars[eNB_id]->dl_ch_magb0,
                       symbol,first_symbol_flag,nb_rb,
                       adjust_G2(frame_parms,dlsch0_harq->rb_alloc,6,subframe,symbol),
-                      lte_ue_pdsch_vars[eNB_id]->llr128);
+                      lte_ue_pdsch_vars[eNB_id]->llr128,
+                      beamforming_mode);
     } else if (i_mod == 2) {
       dlsch_64qam_qpsk_llr(frame_parms,
                            lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,

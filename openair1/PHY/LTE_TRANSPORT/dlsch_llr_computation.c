@@ -1,4 +1,5 @@
-/*******************************************************************************
+/*
+*****************************************************************************
     OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
@@ -663,16 +664,15 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
-      len = (nb_rb*8);// - (2*pbch_pss_sss_adjust/3);
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
-      len = (nb_rb*10);// - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
   } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
-      len = (nb_rb*9);
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
   } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
-      len = (nb_rb*8);
-  }
-  else {
-    len = (nb_rb*12);// - pbch_pss_sss_adjust;
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
+  } else {
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
   //    printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
@@ -702,7 +702,8 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      unsigned short nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr32p)
+                     int16_t **llr32p,
+                     uint8_t beamforming_mode)
 {
 
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -724,12 +725,16 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
-      len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
-      len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
   } else {
-    len = nb_rb*12 - pbch_pss_sss_adjust;
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
   // update output pointer according to number of REs in this symbol (<<2 because 4 bits per RE)
@@ -778,7 +783,8 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      unsigned short nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     short **llr_save)
+                     short **llr_save,
+                     uint8_t beamforming_mode)
 {
 
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -799,12 +805,16 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0)
-      len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
-      len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==0) && (symbol==3 || symbol==6 || symbol==9 || symbol==12)){
+      len = (nb_rb*9) - (3*pbch_pss_sss_adjust/4);
+  } else if((beamforming_mode==7) && (frame_parms->Ncp==1) && (symbol==4 || symbol==7 || symbol==10)){
+      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
   } else {
-    len = nb_rb*12 - pbch_pss_sss_adjust;
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
   llr2 = llr;
