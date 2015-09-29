@@ -81,7 +81,6 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   subframe = Ns>>1;
  
 
- // if (beamforming_mode==7) {
     //generate ue specific pilots
     lprime = symbol/3-1;
     lte_dl_ue_spec_rx(phy_vars_ue,uespec_pilot,Ns,5,lprime,0,dlsch0_harq->nb_rb);

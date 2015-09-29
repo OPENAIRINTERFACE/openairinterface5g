@@ -3364,7 +3364,7 @@ PMI_FEEDBACK:
                  if (transmission_mode==7) {
                     if (PHY_vars_UE->lte_frame_parms.Ncp==0) {
                       if ((Ns==(2*subframe) && ((l==3) || (l==6))) ||
-                           Ns==(1+(2*subframe)) && ((l==3) || (l==6))) {
+                           Ns==(1+(2*subframe)) && ((l==2) || (l==5))) {
                         lte_dl_bf_channel_estimation(PHY_vars_UE,eNB_id,0,Ns,5,l+7*(Ns%2==1)); 
                       }
                     } else {
