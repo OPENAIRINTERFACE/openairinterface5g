@@ -564,7 +564,7 @@ int main(int argc, char **argv)
 	exit(-1);
       }
 
-      if (transmission_mode==7 && (n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64)) {
+      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64)) {
         msg("For TM7, physical antenna number should be an exponent of 2, maximum 64 antennas supported.\n");
 	exit(-1);
       }
@@ -3360,6 +3360,18 @@ PMI_FEEDBACK:
               }
 
               if (dlsch_active == 1) {
+                
+                 if (transmission_mode==7) {
+                    if (PHY_vars_UE->lte_frame_parms.Ncp==0) {
+                      if ((Ns==(2*subframe) && ((l==3) || (l==6))) ||
+                           Ns==(1+(2*subframe)) && ((l==3) || (l==6))) {
+                        lte_dl_bf_channel_estimation(PHY_vars_UE,eNB_id,0,Ns,5,l+7*(Ns%2==1)); 
+                      }
+                    } else {
+                      msg("Beamforming channel estimation not supported yet for TM7 extented CP.\n");
+                    }
+                 }
+
                 if ((Ns==(1+(2*subframe))) && (l==0)) {// process PDSCH symbols 1,2,3,4,5,(6 Normal Prefix)
 
                   if ((transmission_mode == 5) &&

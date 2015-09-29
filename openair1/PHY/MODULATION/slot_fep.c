@@ -247,17 +247,6 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
       }
     }
 
-    if(phy_vars_ue->transmission_mode[eNB_id] == 7) {
-
-      if(frame_parms->Ncp==0 && ((symbol==3) || (symbol==6) || (symbol==9) || (symbol==12)))
-        lte_dl_bf_channel_estimation(phy_vars_ue,eNB_id,0,Ns,5,symbol);
-
-      else if(frame_parms->Ncp==1 && ((symbol==4) || (symbol==7) || (symbol==10)))
-        msg("slot_fep(slot_fep.c):channel estimation not supported yet for TM7 extented CP.\n");
-
-    } else if(phy_vars_ue->transmission_mode[eNB_id] > 7) {
-        msg("slot_fep(slot_fep.c):transmission mode not supported yet.\n");
-    } 
   }
 
 #ifdef DEBUG_FEP
