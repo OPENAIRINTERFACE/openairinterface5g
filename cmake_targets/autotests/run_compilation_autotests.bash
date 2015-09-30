@@ -7,6 +7,8 @@ else
    exit 1
 fi
 
+tdir=$OPENAIR_DIR/cmake_targets/autotests
+
 results_file=$tdir/log/compilation_autotests.xml
 
 # include the jUnit-like logging functions
@@ -39,7 +41,6 @@ test_compile() {
     fi
 }
 
-tdir=$OPENAIR_DIR/cmake_targets/autotests
 mkdir -p $tdir/bin $tdir/log
 
 updated=$(svn st -q $OPENAIR_DIR)
