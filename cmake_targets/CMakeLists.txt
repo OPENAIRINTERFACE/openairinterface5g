@@ -296,7 +296,7 @@ set(S1AP_ASN_FILES
   ${S1AP_ASN_DIR}/S1AP-PDU.asn
   )
 set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
-
+#message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
 execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES})
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
@@ -351,6 +351,58 @@ add_library(S1AP_EPC
   ${S1AP_DIR}/s1ap_mme_retransmission.c
   ${S1AP_DIR}/s1ap_mme_ta.c
   )
+
+#X2AP
+# Same limitation as described in RRC/S1AP: unknown generated file list
+# so we generate it at cmake time
+##############
+add_list1_option(X2AP_VERSION R11 "X2AP Asn.1 grammar version" R10 R11)
+set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
+if (${X2AP_VERSION} STREQUAL "R11")
+  set (ASN1RELDIR R11.2)
+elseif (${X2AP_VERSION} STREQUAL "R10")
+  set (ASN1RELDIR R.UNKNOWN)
+endif(${X2AP_VERSION} STREQUAL "R11")
+set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
+set(X2AP_ASN_FILES
+  ${X2AP_ASN_DIR}/X2AP-CommonDataTypes.asn
+  ${X2AP_ASN_DIR}/X2AP-Constants.asn
+  ${X2AP_ASN_DIR}/X2AP-IEs.asn
+  ${X2AP_ASN_DIR}/X2AP-PDU.asn
+  ${X2AP_ASN_DIR}/X2AP-Containers.asn
+  )
+
+set(X2AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
+#message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
+execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES})
+file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
+
+set(X2AP_OAI_generated
+  ${X2AP_C_DIR}/x2ap_decoder.c
+  ${X2AP_C_DIR}/x2ap_encoder.c
+  ${X2AP_C_DIR}/x2ap_xer_print.c
+  ${X2AP_C_DIR}/x2ap_ies_defs.h
+  )
+file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
+set(x2ap_h ${x2ap_h} )
+
+#message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
+add_custom_command (
+  OUTPUT ${X2AP_OAI_generated}
+  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+  COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
+  DEPENDS ${X2AP_ASN_FILES}
+  )
+
+add_library(X2AP_LIB
+  ${X2AP_OAI_generated}
+  ${X2AP_source}
+  ${X2AP_DIR}/x2ap_common.c
+  )
+
+include_directories ("${X2AP_C_DIR}")
+include_directories ("${X2AP_DIR}")
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
@@ -614,8 +666,8 @@ include_directories("${OPENAIRCN_DIR}/NAS/COMMON/IES")
 include_directories("${OPENAIRCN_DIR}/NAS/COMMON/UTIL")
 include_directories("${OPENAIRCN_DIR}/SECU")
 include_directories("${OPENAIRCN_DIR}/SCTP")
-include_directories("${OPENAIR2_DIR}/X2AP")
 include_directories("${OPENAIRCN_DIR}/S1AP")
+include_directories("${OPENAIR2_DIR}/X2AP")
 include_directories("${OPENAIRCN_DIR}/UDP")
 include_directories("${OPENAIRCN_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
@@ -1781,6 +1833,7 @@ Message("-- HW_SOURCE=${HW_SOURCE}")
 add_executable(oaisim
   ${rrc_h}
   ${s1ap_h}
+  ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1804,7 +1857,7 @@ add_executable(oaisim
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
@@ -1820,6 +1873,7 @@ target_link_libraries (oaisim forms)
 add_executable(oaisim_nos1
   ${rrc_h}
   ${s1ap_h}
+  ${x2ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
@@ -1839,7 +1893,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB    SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
