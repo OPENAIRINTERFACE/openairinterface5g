@@ -1,11 +1,101 @@
 #!/bin/bash
 
-if [ -s $OPENAIR_DIR/cmake_targets/tools/build_helper ] ; then
-   source $OPENAIR_DIR/cmake_targets/tools/build_helper
+if [ -s $OPENAIR_DIR/cmake_targets/tools/test_helper ] ; then
+   source $OPENAIR_DIR/cmake_targets/tools/test_helper
 else
    echo "Error: no file in the file tree: is OPENAIR_DIR variable set?"
    exit 1
 fi
+
+
+SUDO="sudo -E "
+tdir=$OPENAIR_DIR/cmake_targets/autotests
+mkdir -p $tdir/bin $tdir/log
+results_file="$tdir/log/execution_autotests.xml"
+
+updated=$(svn st -q $OPENAIR_DIR)
+if [ "$updated" != "" ] ; then
+	echo "some files are not in svn:\n $updated"
+fi
+
+cd $tdir 
+
+
+#\param $1 -> name of test case
+#\param $2 -> name of compilation program
+#\param $3 -> arguments for compilation program
+#\param $4 -> name of pre-executable to install kernel modules, etc
+#\param $5 -> arguments of pre-executable
+#\param $6 -> name of executable
+#\param $7 -> arguments for running the program
+#\param $8 -> search expression
+#\param $9 -> number of runs
+
+test_compile_and_run() {
+    xUnit_start
+    test_case_name=$1
+    log_dir=$tdir/log
+    log_file=$tdir/log/test.$1.txt
+    compile_prog=$2
+    compile_args=$3
+    pre_exec_file=$4
+    pre_exec_args=$5
+    exec_args=$7
+    search_expr=$8
+    nruns=$9
+    build_dir=$tdir/$1/build
+    exec_file=$build_dir/$6
+    
+    #Temporary log file where execution log is stored.
+    temp_exec_log=$log_dir/temp_log.txt
+    
+    echo "Compiling test case $test_case_name. Log file = $log_file"
+
+    rm -fr $build_dir
+    mkdir -p $build_dir
+
+#    echo "log_dir = $log_dir"
+#    echo "log_file = $log_file"
+#    echo "exec_file = $exec_file"
+#    echo "args = $args"
+#    echo "search_expr = $search_expr"
+#    echo "pre_exec_file = $pre_exec_file"
+    
+    echo "<COMPILATION LOG>" > $log_file
+    cd $build_dir
+    {
+        cmake ..
+        #rm -fv $exec_file
+        make -j`nproc` $compile_prog
+    }>> $log_file 2>&1
+    echo "</COMPILATION LOG>" >> $log_file 2>&1
+
+    for (( run_index=1; run_index <= $nruns; run_index++ ))
+     do
+
+     echo "Executing test case $test_case_name, Run Index = $run_index, Log file = $log_file"
+
+     echo "-----------------------------------------------------------------------------" >> $log_file  2>&1
+     echo "<EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
+ 
+
+     source $pre_exec_file $pre_exec_args >> $log_file  2>&1
+     $exec_file $exec_args > $temp_exec_log  2>&1
+     cat $temp_exec_log >> $log_file  2>&1
+     echo "</EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
+
+     search_result=`grep "$search_expr" $temp_exec_log`
+
+     if [ -z "$search_result" ]; then
+        xUnit_fail "execution" "$test_case_name" "FAIL" "$run_index"
+     else
+	xUnit_success "execution" "$test_case_name" "PASS" "$run_index"
+     fi
+
+# End of for loop
+    done
+
+}
 
 dbin=$OPENAIR_DIR/cmake_targets/autotests/bin
 dlog=$OPENAIR_DIR/cmake_targets/autotests/log
@@ -14,6 +104,9 @@ run_test() {
 case=case$1; shift
 cmd=$1; shift
 expected=$3; shift
+echo "expected = $expected"
+exit
+
 $cmd > $dlog/$case.txt 2>&1
 if [ $expected = "true" ] ; then	 
   if $* $dlog/$case.txt; then
@@ -30,7 +123,29 @@ else
 fi
 }
 
-run_test 0200 "$dbin/oaisim.r8 -a -A AWGN -n 100" false grep -q '(Segmentation.fault)|(Exiting)|(FATAL)'
+#$1 -> name of test case
+#$2 -> name of compilation program
+#$3 -> arguments for compilation program
+#$4 -> name of pre-executable to install kernel modules, etc
+#$5 -> arguments of pre-executable
+#$6 -> name of executable
+#$7 -> arguments for running the program
+#$8 -> search expression
+#$9 -> number of runs
 
-run_test 0201 "$dbin/oaisim.r8 -a -A AWGN -n 100" false fgrep -q '[E]'
+test_compile_and_run 0200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -n1000" "RRC_CONN" 3
+
+test_compile_and_run 0201 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a -n1000" "RRC_CONN" 3
+
+#test_compile_and_run 0200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O /home/calisson/rohit/oai_snav/taets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a " "RRC_CONN" 3
+
+#run_test 0200 "$dbin/oaisim.r8 -a -A AWGN -n 100" false grep -q '(Segmentation.fault)|(Exiting)|(FATAL)'
+
+#run_test 0201 "$dbin/oaisim.r8 -a -A AWGN -n 100" false fgrep -q '[E]'
+
+# write the test results into a file
+
+xUnit_write "$results_file"
+
+echo "Test Results are written to $results_file"
 

@@ -7,25 +7,35 @@ else
    exit 1
 fi
 
+results_file=$tdir/log/compilation_autotests.xml
+
 # include the jUnit-like logging functions
 source $OPENAIR_DIR/cmake_targets/tools/test_helper
 
 test_compile() {
     xUnit_start
+    test_name=$1
+    compile_prog=$2
+    exec_prog=$3
+    build_dir=$tdir/$1/build
+    log_file=$tdir/log/$1.txt
+    target=$5
+    echo "Compiling test case $test_name. Log file = $log_file"
+    rm -fr $build_dir
     mkdir -p $tdir/$1/build
-    cd $tdir/$1/build
+    cd $build_dir
     {
         cmake ..
-        rm -f $3
-        make -j4 $2
-    } > $tdir/log/$1.txt 2>&1
-    if [ -s $3 ] ; then
-        cp $3 $tdir/bin/`basename $3`.$5.$1
-        echo_success "$1 $3 $5 compiled"
-        xUnit_success "compilation" $1
+        rm -f $exec_prog
+        make -j`nproc` $compile_prog
+    } > $log_file 2>&1
+    if [ -s $exec_prog ] ; then
+        cp $exec_prog $tdir/bin/`basename $exec_prog`.$target.$test_name
+        echo_success "$test_name $exec_prog $target compiled"
+        xUnit_success "compilation" $test_name "PASS" 1
     else
-        echo_error "$1 $3 $5 compilation failed"
-        xUnit_fail "compilation" $1
+        echo_error "$test_name $exec_prog $target compilation failed"
+        xUnit_fail "compilation" $test_name "FAIL" 1
     fi
 }
 
@@ -99,4 +109,6 @@ test_compile \
     rrh_gw $tdir/bin/rrh_gw
 
 # write the test results into a file
-xUnit_write "$tdir/log/compilation_autotests.xml"
+xUnit_write "$results_file"
+
+echo "Test Results are written to $results_file"
