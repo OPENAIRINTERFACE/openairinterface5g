@@ -8,10 +8,8 @@ set(DEBUG_PHY False)
 set(MU_RECIEVER Flase)
 set(RANDOM_BF False)
 set(PBS_SIM False)
-set(PERFECT_CE True)
-
-set(MESSAGE_CHART_GENERATOR         False)
-set(MESSAGE_CHART_GENERATOR_RLC_MAC False)
-set(MESSAGE_CHART_GENERATOR_PHY     False)
+set(PERFECT_CE False)
+set(NAS_UE False)
+set(MESSAGE_CHART_GENERATOR False)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)
