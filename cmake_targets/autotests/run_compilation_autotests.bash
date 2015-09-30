@@ -128,6 +128,10 @@ test_compile \
     test_secu_knas  $tdir/bin/test_secu_knas test_secu_knas.Rel10
 
 test_compile \
+    test.0104 test_secu_knas_encrypt_eea1 \
+    test_secu_knas_encrypt_eea1  $tdir/bin/test_secu_knas_encrypt_eea1 test_secu_knas_encrypt_eea1.Rel10
+
+test_compile \
     test.0104 test_kdf \
     test_kdf  $tdir/bin/test_kdf test_kdf.Rel10
 
