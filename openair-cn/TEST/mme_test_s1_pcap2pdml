@@ -49,7 +49,7 @@ for packet in packets:
             packet.removeChild(proto)
         elif urlnode.nodeValue == 'eth':
             packet.removeChild(proto)
-    if found_s1ap == False:
+    if found_sctp == False:
         # hopefully it seems to work (remove iterated packet)
         packet.parentNode.removeChild(packet)
 
