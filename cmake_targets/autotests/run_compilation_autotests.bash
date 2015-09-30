@@ -30,7 +30,7 @@ test_compile() {
         cmake ..
         rm -f $exec_prog
         make -j`nproc` $compile_prog
-    } > $log_file 2>&1
+    } >> $log_file 2>&1
     if [ -s $exec_prog ] ; then
         cp $exec_prog $tdir/bin/`basename $exec_prog`.$target.$test_name
         echo_success "$test_name $exec_prog $target compiled"
@@ -100,6 +100,44 @@ test_compile \
 test_compile \
     test.0104 mbmssim \
     mbmssim  $tdir/bin/mbmssim mbmssim.Rel8
+
+simlist=" secu_knas_encrypt_eea2 secu_knas kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
+
+test_compile \
+    test.0104 test_secu_knas_encrypt_eia1 \
+    test_secu_knas_encrypt_eia1  $tdir/bin/test_secu_knas_encrypt_eia1 test_secu_knas_encrypt_eia1.Rel10
+
+test_compile \
+    test.0104 test_secu_kenb \
+    test_secu_kenb  $tdir/bin/test_secu_kenb test_secu_kenb.Rel10
+
+test_compile \
+    test.0104 test_aes128_ctr_encrypt \
+    test_aes128_ctr_encrypt  $tdir/bin/test_aes128_ctr_encrypt test_aes128_ctr_encrypt.Rel10
+
+test_compile \
+    test.0104 test_aes128_ctr_decrypt \
+    test_aes128_ctr_decrypt  $tdir/bin/test_aes128_ctr_decrypt test_aes128_ctr_decrypt.Rel10
+
+test_compile \
+    test.0104 test_secu_knas_encrypt_eea2 \
+    test_secu_knas_encrypt_eea2  $tdir/bin/test_secu_knas_encrypt_eea2 test_secu_knas_encrypt_eea2.Rel10
+
+test_compile \
+    test.0104 test_secu_knas \
+    test_secu_knas  $tdir/bin/test_secu_knas test_secu_knas.Rel10
+
+test_compile \
+    test.0104 test_kdf \
+    test_kdf  $tdir/bin/test_kdf test_kdf.Rel10
+
+test_compile \
+    test.0104 test_aes128_cmac_encrypt \
+    test_aes128_cmac_encrypt  $tdir/bin/test_aes128_cmac_encrypt test_aes128_cmac_encrypt.Rel10
+
+test_compile \
+    test.0104 test_secu_knas_encrypt_eia2 \
+    test_secu_knas_encrypt_eia2  $tdir/bin/test_secu_knas_encrypt_eia2 test_secu_knas_encrypt_eia2.Rel10
 
 test_compile \
     test.0106 oaisim \
