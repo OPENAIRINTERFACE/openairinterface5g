@@ -82,6 +82,26 @@ test_compile \
     ulsim  $tdir/bin/ulsim ulsim.Rel8
 
 test_compile \
+    test.0104 pucchsim \
+    pucchsim  $tdir/bin/pucchsim pucchsim.Rel8
+
+test_compile \
+    test.0104 prachsim \
+    prachsim  $tdir/bin/prachsim prachsim.Rel8
+
+test_compile \
+    test.0104 pdcchsim \
+    pdcchsim  $tdir/bin/pdcchsim pdcchsim.Rel8
+
+test_compile \
+    test.0104 pbchsim \
+    pbchsim  $tdir/bin/pbchim pbchsim.Rel8
+
+test_compile \
+    test.0104 mbmssim \
+    mbmssim  $tdir/bin/mbmssim mbmssim.Rel8
+
+test_compile \
     test.0106 oaisim \
     oaisim  $tdir/bin/oaisim.r8.itti Rel8.itti
 
