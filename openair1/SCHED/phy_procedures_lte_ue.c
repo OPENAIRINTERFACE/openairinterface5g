@@ -649,7 +649,9 @@ PRACH_RESOURCES_t prach_resources_local;
 void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type)
 {
 
-  //  int i_d;
+#ifndef OPENAIR2
+  int i;
+#endif
   uint16_t first_rb, nb_rb;
   uint8_t harq_pid;
   unsigned int input_buffer_length;
