@@ -84,7 +84,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     //generate ue specific pilots
     lprime = symbol/3-1;
     lte_dl_ue_spec_rx(phy_vars_ue,uespec_pilot,Ns,5,lprime,0,dlsch0_harq->nb_rb);
-    write_output("uespec_pilot_rx.m","uespec_pilot",uespec_pilot,300,1,1);
+    //write_output("uespec_pilot_rx.m","uespec_pilot",uespec_pilot,300,1,1);
 
     if (frame_parms->Ncp==0){
       if (symbol==3 || symbol==6 || symbol==9 || symbol==12)
