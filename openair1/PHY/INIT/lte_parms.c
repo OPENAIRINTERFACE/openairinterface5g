@@ -27,6 +27,7 @@
 
  *******************************************************************************/
 #include "defs.h"
+#include "log.h"
 
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 {
