@@ -9,8 +9,8 @@ from datetime import date
 import os, errno
 import argparse
 import tempfile
+from lxml import etree
 from xml.dom.minidom import parse, parseString
-#from xml.etree.ElementTree import ElementTree
 
 #####################
 # program arguments
@@ -26,8 +26,6 @@ orig_pcap_file_name = args.pcap_file.strip()
 orig_pdml_string = subprocess.check_output(["tshark", '-T', 'pdml', '-r', orig_pcap_file_name])
 
 orig_dom = parseString(orig_pdml_string)
-#orig_etree = ElementTree()
-#orig_etree.parse(orig_pcap_pdml_file.name)
 
 #####################
 # filtering unwanted packets
@@ -67,10 +65,28 @@ for line in lines:
         cleaned_pdml_string += line + '\r\n'
 #print "'%s'" %  cleaned_pdml_string 
 #####################
-# write xml string to pdml file
+# write pdml string to pdml file
 #####################
 out_pdml_file_name = os.path.dirname(orig_pcap_file_name) + os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.pdml'
 out_file = open(out_pdml_file_name, "w")
 out_file.write(cleaned_pdml_string)
 out_file.close()
 
+############################################################
+# DECEIVING HTML BONUS: DO NOT SEEM TO WORK CORRECTLY IN FIREFOX
+# DID NOT INVESTIGATE
+#####################
+# write xml string to html file
+#####################
+xsl_root = etree.fromstring(open('/usr/share/wireshark/pdml2html.xsl').read())
+transform = etree.XSLT(xsl_root)
+xml_root = etree.fromstring(cleaned_pdml_string)
+trans_root = transform(xml_root)
+filtered_html_string = etree.tostring(trans_root)
+#####################
+# write html string to html file
+#####################
+out_html_file_name = os.path.dirname(orig_pcap_file_name) + os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.html'
+out_file = open(out_html_file_name, "w")
+out_file.write(filtered_html_string)
+out_file.close()
