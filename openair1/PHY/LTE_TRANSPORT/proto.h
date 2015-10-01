@@ -1046,6 +1046,12 @@ void dlsch_channel_level_TM56(int32_t **dl_ch_estimates_ext,
                               uint8_t symbol_mod,
                               uint16_t nb_rb);
 
+void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         int32_t *avg,
+                         uint8_t pilots_flag,
+                         uint16_t nb_rb);
+
 void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          LTE_UE_DLSCH_t **dlsch_ue,
