@@ -663,7 +663,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
+    if (frame_parms->mode1_flag==0)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -725,7 +725,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
+    if (frame_parms->mode1_flag==0)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
@@ -805,7 +805,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    if (frame_parms->mode1_flag==0 && beamforming_mode!=7)
+    if (frame_parms->mode1_flag==0)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
     else
       len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
