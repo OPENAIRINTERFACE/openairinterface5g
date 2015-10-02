@@ -38,17 +38,16 @@
 #include <string.h>
 #include <libconfig.h>
 #include <inttypes.h>
+#include <getopt.h>
 
 #include "assertions.h"
 #include "enb_config.h"
+#include "s1ap_eNB.h"
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-# endif
 #endif
-#include "sctp_default_values.h"
+
+#define EPC_TEST_SCENARIO_MAX_ENB                       2
 
 #define ENB_CONFIG_STRING_ACTIVE_ENBS                   "Active_eNBs"
 
@@ -80,11 +79,11 @@
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
 
-
-
 Enb_properties_array_t g_enb_properties;
 
+//------------------------------------------------------------------------------
 static void enb_config_display(void)
+//------------------------------------------------------------------------------
 {
   int i,j;
 
@@ -114,7 +113,9 @@ static void enb_config_display(void)
 #else
 #define libconfig_int int
 #endif
+//------------------------------------------------------------------------------
 const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
+//------------------------------------------------------------------------------
 {
   config_t          cfg;
   config_setting_t *setting                       = NULL;
@@ -148,7 +149,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char*             ipv6                          = NULL;
   char*             active                        = NULL;
   char*             preference                    = NULL;
-  const char*       active_enb[MAX_ENB];
+  const char*       active_enb[EPC_TEST_SCENARIO_MAX_ENB];
   char*             enb_interface_name_for_S1U    = NULL;
   char*             enb_ipv4_address_for_S1U      = NULL;
   libconfig_int     enb_port_for_S1U              = 0;
@@ -158,8 +159,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char             *cidr                          = NULL;
   char             *astring                       = NULL;
 
-  memset((char*) (g_enb_properties.properties), 0 , MAX_ENB * sizeof(Enb_properties_t *));
-  memset((char*)active_enb,     0 , MAX_ENB * sizeof(char*));
+  memset((char*)active_enb,     0 , EPC_TEST_SCENARIO_MAX_ENB * sizeof(char*));
 
   config_init(&cfg);
 
@@ -284,9 +284,6 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
             if (strcmp(active, "yes") == 0) {
               g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].active = 1;
-#if defined(ENABLE_USE_MME)
-              EPC_MODE_ENABLED = 1;
-#endif
             } // else { (calloc)
 
             if (strcmp(preference, "ipv4") == 0) {
@@ -299,22 +296,6 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
             }
           }
 
-          // SCTP SETTING
-          g_enb_properties.properties[enb_properties_index]->sctp_out_streams = SCTP_OUT_STREAMS;
-          g_enb_properties.properties[enb_properties_index]->sctp_in_streams  = SCTP_IN_STREAMS;
-# if defined(ENABLE_USE_MME)
-          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SCTP_CONFIG);
-
-          if (subsetting != NULL) {
-            if ( (config_setting_lookup_int( subsetting, ENB_CONFIG_STRING_SCTP_INSTREAMS, &my_int) )) {
-              g_enb_properties.properties[enb_properties_index]->sctp_in_streams = (uint16_t)my_int;
-            }
-
-            if ( (config_setting_lookup_int( subsetting, ENB_CONFIG_STRING_SCTP_OUTSTREAMS, &my_int) )) {
-              g_enb_properties.properties[enb_properties_index]->sctp_out_streams = (uint16_t)my_int;
-            }
-          }
-#endif
 
           // NETWORK_INTERFACES
           subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
@@ -371,15 +352,19 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
 }
 
+//------------------------------------------------------------------------------
 const Enb_properties_array_t *enb_config_get(void)
+//------------------------------------------------------------------------------
 {
   return &g_enb_properties;
 }
 
 
+//------------------------------------------------------------------------------
 static void usage (
     int argc,
     char *argv[])
+//------------------------------------------------------------------------------
 {
   fprintf (stdout, "Please report any bug to: openair4g-devel@lists.eurecom.fr\n\n");
   fprintf (stdout, "Usage: %s [options]\n\n", argv[0]);
@@ -394,10 +379,12 @@ static void usage (
 }
 
 
+//------------------------------------------------------------------------------
 int
 config_parse_opt_line (
   int argc,
   char *argv[])
+//------------------------------------------------------------------------------
 {
   int                           option;
   char                         *enb_config_file_name = NULL;
@@ -433,7 +420,7 @@ config_parse_opt_line (
         if (optarg) {
           enb_config_file_name = strdup(optarg);
           printf("eNB config file name is %s\n", enb_config_file_name);
-          g_enb_properties = enb_config_init(conf_config_file_name);
+          enb_config_init(enb_config_file_name);
         }
         break;
 
@@ -446,7 +433,7 @@ config_parse_opt_line (
       case LONG_OPTION_HELP:
       case 'h':                  /* Fall through */
       default:
-        usage ();
+        usage (argc, argv);
         exit (0);
     }
   }
@@ -457,12 +444,8 @@ config_parse_opt_line (
 int main( int argc, char **argv )
 //------------------------------------------------------------------------------
 {
-  memset((char*) (g_enb_properties.properties), 0 , MAX_ENB * sizeof(Enb_properties_t *));
+  memset((char*) &g_enb_properties, 0 , sizeof(g_enb_properties));
   config_parse_opt_line (argc, argv); //Command-line options
-
-  /* Read eNB configuration file */
-  g_enb_properties = enb_config_init(conf_config_file_name);
-
 
   return 0;
 }
