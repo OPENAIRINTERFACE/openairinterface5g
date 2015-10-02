@@ -194,7 +194,7 @@ CFLAGS += -DHARD_RT
 endif
 
 ifeq ($(EMOS),1)
-CFLAGS += -D_FILE_OFFSET_BITS=64 -DEMOS #-DEMOS_CHANNEL
+CFLAGS += -D_FILE_OFFSET_BITS=64 #-DEMOS -DEMOS_CHANNEL
 LDFLAGS += -lgps
 endif
 
@@ -317,10 +317,12 @@ synctest_UE: synctest
 	cp synctest synctest_UE
 
 drivers:
-	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
-	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
-	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make 
+#	cd $(OPENAIR2_DIR) && make clean && make nasmesh_netlink.ko
+#	cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && make clean && make
+	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom && make clean && make
+	cp $(OPENAIR_TARGETS)/ARCH/EXMIMO/DRIVER/eurecom/openair_rf.ko $(OPENAIR_TARGETS)/bin/.
 	cd $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT && make clean && make 
+	cp $(OPENAIR_TARGETS)/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw $(OPENAIR_TARGETS)/bin/.
 
 run: condtest
 	rtai-load condtest --verbose

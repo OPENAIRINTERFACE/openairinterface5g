@@ -253,7 +253,8 @@ int main(int argc, char **argv)
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
 
-  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=2,n_tx_phy=1;
+  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
+  uint16_t n_tx_phy=1;
   uint16_t Nid_cell=0;
   int32_t **beamforming_weights;
 
@@ -564,8 +565,9 @@ int main(int argc, char **argv)
 	exit(-1);
       }
 
-      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64)) {
-        msg("For TM7, physical antenna number should be an exponent of 2, maximum 64 antennas supported.\n");
+      //if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
+      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
+        msg("For TM7, physical antenna number should be an exponent of 4, maximum 64 antennas supported.\n");
 	exit(-1);
       }
 
@@ -723,8 +725,10 @@ int main(int argc, char **argv)
 
   NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
 
-  if ((transmission_mode > 1) && (n_tx_phy == 1))
-    printf("n_tx_phy must be >1 for transmission_mode %d\n",transmission_mode);
+  if ((transmission_mode>1&&transmission_mode<7) && (n_tx_phy == 1)){
+    msg("n_tx_phy must be >1 for transmission_mode %d\n",transmission_mode);
+    exit(-1);
+  }
 
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
@@ -756,10 +760,19 @@ int main(int argc, char **argv)
     beamforming_weights = (int32_t **)malloc(12*N_RB_DL*sizeof(int32_t*));
     for(re=0;re<12*N_RB_DL;re++){
       beamforming_weights[re]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
-      for(aa=0;aa<n_tx_phy;aa++)
-	//beamforming_weights[re][aa] = 0x00008000;
-	beamforming_weights[re][aa] = 0x0000cfff>>(n_tx_phy>>1);
+      for(aa=0;aa<n_tx_phy;aa++){
+        //tmp
+        if (n_tx_phy==1)
+	  beamforming_weights[re][aa] = 0x00007fff;
+        else if (n_tx_phy==4)
+	  beamforming_weights[re][aa] = 0x00007fff>>1;
+        else if (n_tx_phy==16)
+	  beamforming_weights[re][aa] = 0x00007fff>>2;
+        else if (n_tx_phy==64)
+	  beamforming_weights[re][aa] = 0x00007fff>>3;
+      }
     }
+    printf("***n_tx_phy=%d,n_tx_phy>>2=%d,beamforming_weights=%d\n",n_tx_phy,n_tx_phy>>2,beamforming_weights[0][0]);
   }
 
   eNB_id_i = PHY_vars_UE->n_connected_eNB;
@@ -799,9 +812,9 @@ int main(int argc, char **argv)
          SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8);
 
   if(transmission_mode==5)
-    sprintf(bler_fname,"bler_tx%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,channel_model,n_rx,mcs1,mcs_i,dual_stream_UE,i_mod);
+    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%d_ntx%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1,mcs_i,dual_stream_UE,i_mod);
   else
-    sprintf(bler_fname,"bler_tx%d_chan%d_nrx%d_mcs%d.csv",transmission_mode,channel_model,n_rx,mcs1);
+    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%d_ntx%d_nrx%d_mcs%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1);
 
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
@@ -2167,7 +2180,7 @@ int main(int argc, char **argv)
         ret = PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations+1;
 
         while ((round < num_rounds) && (ret > PHY_vars_UE->dlsch_ue[0][0]->max_turbo_iterations)) {
-              printf("Trial %d, round %d\n",trials,round);
+              //printf("Trial %d, round %d\n",trials,round);
           round_trials[round]++;
 
           if(transmission_mode>=5&&transmission_mode<7)
@@ -2185,8 +2198,9 @@ int main(int argc, char **argv)
 
 PMI_FEEDBACK:
 
-          printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
-          for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
+          //printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
+          //for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
+          for (aa=0; aa<PHY_vars_eNB->nb_antennas_tx_phy; aa++) {
             memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
           }
 
@@ -3025,10 +3039,10 @@ PMI_FEEDBACK:
           for (i=0; i<2*frame_parms->samples_per_tti; i++) {
             for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
               // printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
-              /*((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] =
-                (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-                ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
-                (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));*/
+              //((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] =
+              // (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              // ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
+              //  (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
               ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) r_re[aa][i];
               ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) r_im[aa][i]; 
               //printf("rxdata[%d][%d]=> %d, %d\n",aa,subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti+i,r_re[aa][i],r_im[aa][i]);
@@ -3081,7 +3095,7 @@ PMI_FEEDBACK:
           for (Ns=(2*subframe); Ns<((2*subframe)+3); Ns++) {
             for (l=0; l<pilot2; l++) {
               if (n_frames==1)
-              //  printf("Ns %d, l %d, l2 %d\n",Ns, l, l+(Ns%2)*pilot2);
+                printf("Ns %d, l %d, l2 %d\n",Ns, l, l+(Ns%2)*pilot2);
 
               /*
               This function implements the OFDM front end processor (FEP).
@@ -3139,9 +3153,13 @@ PMI_FEEDBACK:
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
                         if (transmission_mode == 7){
-                          ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(short)(AMP);
-                          ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=0/2;
-
+                          if (PHY_vars_UE->high_speed_flag==0){
+                            ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(short)(AMP);
+                            ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=0/2;
+                          } else {
+                            ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(short)(AMP);
+                            ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=0/2;
+                          }
                         }
                       }
                     }
@@ -3365,7 +3383,8 @@ PMI_FEEDBACK:
                     if (PHY_vars_UE->lte_frame_parms.Ncp==0) {
                       if ((Ns==(2*subframe) && ((l==3) || (l==6))) ||
                            Ns==(1+(2*subframe)) && ((l==2) || (l==5))) {
-                        lte_dl_bf_channel_estimation(PHY_vars_UE,eNB_id,0,Ns,5,l+7*(Ns%2==1)); 
+                         if (perfect_ce==0)
+                           lte_dl_bf_channel_estimation(PHY_vars_UE,eNB_id,0,Ns,5,l+7*(Ns%2==1)); 
                       }
                     } else {
                       msg("Beamforming channel estimation not supported yet for TM7 extented CP.\n");
@@ -4297,10 +4316,14 @@ PMI_FEEDBACK:
     free(r_im[i]);
   }
 
+  for(i=0;i<12*N_RB_DL;i++)
+    free(beamforming_weights[i]);
+
   free(s_re);
   free(s_im);
   free(r_re);
   free(r_im);
+  free(beamforming_weights);
 
   //  lte_sync_time_free();
 
