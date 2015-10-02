@@ -1961,6 +1961,21 @@ target_link_libraries (test_s1c_mme
   )
 
 
+add_executable(test_epc_generate_scenario
+  ${OPENAIRCN_DIR}/TEST/EPC_TEST/generate_scenario.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config.h
+  ${OPENAIR2_DIR}/COMMON/commonDef.h
+  ${OPENAIR2_DIR}/COMMON/messages_def.h
+  ${OPENAIR2_DIR}/COMMON/messages_types.h
+  ${OPENAIRCN_DIR}/S1AP/s1ap_eNB_defs.h
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  )
+target_link_libraries (test_epc_generate_scenario
+  -Wl,--start-group SECU_CN S1AP_LIB UTIL S1AP_ENB LIB_NAS_UE LFDS ${ITTI_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
+  )
+
+
+
 # to be added
 #../targets/TEST/PDCP/test_pdcp.c
 #../targets/TEST/PDCP/with_rlc/test_pdcp_rlc.c
