@@ -43,7 +43,7 @@ test_compile_and_run() {
     pre_exec_file=$4
     pre_exec_args=$5
     exec_args=$7
-    search_expr=$8
+    search_expr_array=("${!8}")
     search_expr_negative=$9
     nruns=${10}
     build_dir=$tdir/$1/build
@@ -91,19 +91,36 @@ test_compile_and_run() {
 
      { $exec_file $exec_args ;} > $temp_exec_log  2>&1
 
-
-
      cat $temp_exec_log >> $log_file  2>&1
      echo "</EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
+    
+     result=1
+     for search_expr in "${search_expr_array[@]}"
+     do
+     
+       search_result=`grep -E "$search_expr" $temp_exec_log`
 
-     search_result=`grep -E "$search_expr" $temp_exec_log`
+       #echo "search_expr  =   $search_expr"
+       #echo "search_result = $search_result"
+
+       if [ -z "$search_result" ]; then
+          let "result = result & 0"
+       else
+          let "result = result & 1"
+       fi
+     done
+
+     #echo "result = $result"
+
      test_case_result=""
-     if [ -z "$search_result" ]; then
+     if [ "$result" -eq "0" ]; then
         test_case_result="FAIL"
-     else
+     fi
+
+     if [ "$result" -eq "1" ]; then
         test_case_result="PASS"
      fi
-    
+
      #If we find a negative search result then there is crash of program and test case is failed even if above condition is true
 
      search_result=`grep -iE "$search_expr_negative" $temp_exec_log`
@@ -159,36 +176,57 @@ fi
 #$5 -> arguments of pre-executable
 #$6 -> name of executable
 #$7 -> arguments for running the program
-#$8 -> search expression which needs to be found
+#$8 -> search expression ARRAY which needs to be found
 #$9 -> search expression which should NOT be found (for ex. segmentation fault) 
 #$10 -> number of runs
 
 #oaisim tests
-test_compile_and_run 0200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -n1000" "RRC_CONN" "segmentation fault|assertion" 3
+search_array=("Received RRCConnectionReconfigurationComplete from UE 0")
+test_compile_and_run 010200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0201 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a -n1000" "RRC_CONN" "segmentation fault|assertion" 3
+search_array=("Received RRCConnectionReconfigurationComplete from UE 0")
+test_compile_and_run 010201 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
+
+search_array=("Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2")
+test_compile_and_run 010202 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u3 -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
+
+search_array=("Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2")
+test_compile_and_run 010203 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u3 -a -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
 #PHY unitary simulations for secuirity tests
+search_array=("finished with 0 errors")
+test_compile_and_run 010300 "test_aes128_cmac_encrypt" "" "" "" "test_aes128_cmac_encrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0300 "test_aes128_cmac_encrypt" "" "" "" "test_aes128_cmac_encrypt" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+search_array=("finished with 0 errors")
+test_compile_and_run 010301 "test_aes128_ctr_decrypt" "" "" "" "test_aes128_ctr_decrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0301 "test_aes128_ctr_decrypt" "" "" "" "test_aes128_ctr_decrypt" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+search_array=("finished with 0 errors")
+test_compile_and_run 010302 "test_aes128_ctr_encrypt" "" "" "" "test_aes128_ctr_encrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0302 "test_aes128_ctr_encrypt" "" "" "" "test_aes128_ctr_encrypt" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+search_array=("finished with 0 errors")
+test_compile_and_run 010303 "test_secu_kenb" "" "" "" "test_secu_kenb" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0303 "test_secu_kenb" "" "" "" "test_secu_kenb" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+search_array=("finished with 0 errors")
+test_compile_and_run 010304 "test_secu_knas" "" "" "" "test_secu_knas" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0304 "test_secu_knas" "" "" "" "test_secu_knas" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+search_array=("finished with 0 errors")
+test_compile_and_run 010305 "test_secu_knas_encrypt_eea1" "" "" "" "test_secu_knas_encrypt_eea1" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
 
-test_compile_and_run 0305 "test_secu_knas_encrypt_eea1" "" "" "" "test_secu_knas_encrypt_eea1" " --verbose" "finished with 0 errors" "segmentation fault|assertion"  3
+search_array=("finished with 0 errors")
+test_compile_and_run 010306 "test_secu_knas_encrypt_eea2" "" "" "" "test_secu_knas_encrypt_eea2" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
 
-test_compile_and_run 0306 "test_secu_knas_encrypt_eea2" "" "" "" "test_secu_knas_encrypt_eea2" " --verbose" "finished with 0 errors" "segmentation fault|assertion"  3
+search_array=("finished with 0 errors")
+test_compile_and_run 010307 "test_secu_knas_encrypt_eia1" "" "" "" "test_secu_knas_encrypt_eia1" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
 
-test_compile_and_run 0307 "test_secu_knas_encrypt_eia1" "" "" "" "test_secu_knas_encrypt_eia1" " --verbose" "finished with 0 errors" "segmentation fault|assertion"  3
+search_array=("finished with 0 errors")
+test_compile_and_run 010308 "test_secu_knas_encrypt_eia2" "" "" "" "test_secu_knas_encrypt_eia2" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fataln"  3
 
-test_compile_and_run 0308 "test_secu_knas_encrypt_eia2" "" "" "" "test_secu_knas_encrypt_eia2" " --verbose" "finished with 0 errors" "segmentation fault|assertion"  3
+search_array=("finished with 0 errors")
+test_compile_and_run 010309 "test_kdf" "" "" "" "test_kdf" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
 
-test_compile_and_run 0309 "test_kdf" "" "" "" "test_kdf" " --verbose" "finished with 0 errors" "segmentation fault|assertion" 3
+#TODO: Add test cases for 10,20 MHz
+#TODO: Test and compile seperately for Rel8/Rel10
+
 
 #test_compile_and_run 0200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O /home/calisson/rohit/oai_snav/taets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a " "RRC_CONN" 3
 
