@@ -16,7 +16,7 @@ source $OPENAIR_DIR/cmake_targets/tools/test_helper
 
 test_compile() {
     xUnit_start
-    test_name=$1
+    test_name=$1.$2
     compile_prog=$2
     exec_prog=$3
     build_dir=$tdir/$1/build
@@ -100,8 +100,6 @@ test_compile \
 test_compile \
     test.0104 mbmssim \
     mbmssim  $tdir/bin/mbmssim mbmssim.Rel8
-
-simlist=" secu_knas_encrypt_eea2 secu_knas kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
 
 test_compile \
     test.0104 test_secu_knas_encrypt_eia1 \
