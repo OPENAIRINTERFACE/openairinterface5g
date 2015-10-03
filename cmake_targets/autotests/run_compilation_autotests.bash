@@ -58,17 +58,17 @@ test_compile \
     010102 oaisim_nos1 \
     oaisim_nos1  $tdir/bin/oaisim.r8.nas rel8.nos1.nas
 
-cp $tdir/0103/CMakeLists.txt.Rel8  $tdir/0103/CMakeLists.txt 
+cp $tdir/010103/CMakeLists.txt.Rel8  $tdir/010103/CMakeLists.txt 
 test_compile \
     010103 lte-softmodem \
     lte-softmodem  $tdir/bin/lte-softmodem.r8.rf Rel8.EXMIMO
 
-cp $tdir/0103/CMakeLists.txt.Rel10  $tdir/0103/CMakeLists.txt   
+cp $tdir/010103/CMakeLists.txt.Rel10  $tdir/010103/CMakeLists.txt   
 test_compile \
     010103 lte-softmodem \
     lte-softmodem  $tdir/bin/lte-softmodem.r10.rf Rel10.EXMIMO
 
-cp $tdir/0103/CMakeLists.txt.USRP  $tdir/0103/CMakeLists.txt   
+cp $tdir/010103/CMakeLists.txt.USRP  $tdir/010103/CMakeLists.txt   
 test_compile \
     010103 lte-softmodem \
     lte-softmodem  $tdir/bin/lte-softmodem.r10.rf Rel10.USRP
