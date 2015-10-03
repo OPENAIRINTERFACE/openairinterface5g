@@ -20,7 +20,7 @@ test_compile() {
     compile_prog=$2
     exec_prog=$3
     build_dir=$tdir/$1/build
-    log_file=$tdir/log/$1.txt
+    log_file=$tdir/log/test.$1.txt
     target=$5
     echo "Compiling test case $test_name. Log file = $log_file"
     rm -fr $build_dir
