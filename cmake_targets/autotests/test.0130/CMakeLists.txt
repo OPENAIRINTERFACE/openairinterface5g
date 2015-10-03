@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-set(ENABLE_VCD_FIFO False )
-set(ENABLE_ITTI False )
-set(RF_BOARD "ETHERNET")
-set(PACKAGE_NAME "\"rrh_gw\"")
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)
