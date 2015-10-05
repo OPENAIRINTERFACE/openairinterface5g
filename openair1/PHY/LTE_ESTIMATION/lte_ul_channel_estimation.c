@@ -106,9 +106,13 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
             *temp_out_fft_1_ptr = (int32_t*)0,*out_fft_ptr_1 = (int32_t*)0,
              *temp_in_ifft_ptr = (int32_t*)0;
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF128,*ul_ref128,*ul_ch128;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
-
+#elif defined(__arm__)
+  int16x8_t *rxdataF128,*ul_ref128,*ul_ch128;
+  int32x4_t mmtmp0,mmtmp1,mmtmp_re,mmtmp_im;
+#endif
   Msc_RS = N_rb_alloc*12;
 
   cyclic_shift = (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift +
@@ -156,11 +160,18 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
     for (aa=0; aa<nb_antennas_rx; aa++) {
       //           msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
 
+#if defined(__x86_64__) || defined(__i386__)
       rxdataF128 = (__m128i *)&rxdataF_ext[aa][symbol_offset];
       ul_ch128   = (__m128i *)&ul_ch_estimates[aa][symbol_offset];
       ul_ref128  = (__m128i *)ul_ref_sigs_rx[u][v][Msc_RS_idx];
+#elif defined(__arm__)
+      rxdataF128 = (int16x8_t *)&rxdataF_ext[aa][symbol_offset];
+      ul_ch128   = (int16x8_t *)&ul_ch_estimates[aa][symbol_offset];
+      ul_ref128  = (int16x8_t *)ul_ref_sigs_rx[u][v][Msc_RS_idx];
+#endif
 
       for (i=0; i<Msc_RS/12; i++) {
+#if defined(__x86_64__) || defined(__i386__)
         // multiply by conjugated channel
         mmtmpU0 = _mm_madd_epi16(ul_ref128[0],rxdataF128[0]);
         // mmtmpU0 contains real part of 4 consecutive outputs (32-bit)
@@ -204,7 +215,50 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
         mmtmpU3 = _mm_unpackhi_epi32(mmtmpU0,mmtmpU1);
 
         ul_ch128[2] = _mm_packs_epi32(mmtmpU2,mmtmpU3);
+#elif defined(__arm__)
+      mmtmp0 = vmull_s16(((int16x4_t*)ul_ref128)[0],((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(((int16x4_t*)ul_ref128)[1],((int16x4_t*)rxdataF128)[1]);
+      mmtmp_re = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
+      mmtmp0 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[0],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[1],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[1]);
+      mmtmp_im = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
 
+      ul_ch128[0] = vcombine_s16(vmovn_s32(mmtmp_re),vmovn_s32(mmtmp_im));
+      ul_ch128++;
+      ul_ref128++;
+      rxdataF128++;
+      mmtmp0 = vmull_s16(((int16x4_t*)ul_ref128)[0],((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(((int16x4_t*)ul_ref128)[1],((int16x4_t*)rxdataF128)[1]);
+      mmtmp_re = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
+      mmtmp0 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[0],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[1],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[1]);
+      mmtmp_im = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
+
+      ul_ch128[0] = vcombine_s16(vmovn_s32(mmtmp_re),vmovn_s32(mmtmp_im));
+      ul_ch128++;
+      ul_ref128++;
+      rxdataF128++;
+
+      mmtmp0 = vmull_s16(((int16x4_t*)ul_ref128)[0],((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(((int16x4_t*)ul_ref128)[1],((int16x4_t*)rxdataF128)[1]);
+      mmtmp_re = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
+      mmtmp0 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[0],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[0]);
+      mmtmp1 = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)ul_ref128)[1],*(int16x4_t*)conjugate)), ((int16x4_t*)rxdataF128)[1]);
+      mmtmp_im = vcombine_s32(vpadd_s32(vget_low_s32(mmtmp0),vget_high_s32(mmtmp0)),
+                              vpadd_s32(vget_low_s32(mmtmp1),vget_high_s32(mmtmp1)));
+
+      ul_ch128[0] = vcombine_s16(vmovn_s32(mmtmp_re),vmovn_s32(mmtmp_im));
+      ul_ch128++;
+      ul_ref128++;
+      rxdataF128++;
+
+
+#endif
         ul_ch128+=3;
         ul_ref128+=3;
         rxdataF128+=3;
@@ -538,17 +592,17 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
             //          msg("sym: %d, current_phase1: %d, ru: %d + j%d, current_phase2: %d, ru: %d + j%d\n",k,current_phase1,ru1[2*current_phase1],ru1[2*current_phase1+1],current_phase2,ru2[2*current_phase2],ru2[2*current_phase2+1]);
 
             // rotate channel estimates by estimated phase
-            rotate_cpx_vector_norep((int16_t*) ul_ch1,
-                                    &ru1[2*current_phase1],
-                                    (int16_t*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
-                                    Msc_RS,
-                                    15);
+            rotate_cpx_vector((int16_t*) ul_ch1,
+                              &ru1[2*current_phase1],
+                              (int16_t*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],
+                              Msc_RS,
+                              15);
 
-            rotate_cpx_vector_norep((int16_t*) ul_ch2,
-                                    &ru2[2*current_phase2],
-                                    (int16_t*) &tmp_estimates[0],
-                                    Msc_RS,
-                                    15);
+            rotate_cpx_vector((int16_t*) ul_ch2,
+                              &ru2[2*current_phase2],
+                              (int16_t*) &tmp_estimates[0],
+                              Msc_RS,
+                              15);
 
             // Combine the two rotated estimates
             multadd_complex_vector_real_scalar((int16_t*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],SCALE,(int16_t*) &ul_ch_estimates[aa][frame_parms->N_RB_UL*12*k],1,Msc_RS);
@@ -664,11 +718,11 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
       //write_output("eNb_rxF.m","rxF",&eNb_common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
       //write_output("eNb_srs.m","srs_eNb",eNb_common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
-      mult_cpx_vector_norep((int16_t*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
-                            (int16_t*) eNb_srs_vars->srs,
-                            (int16_t*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
-                            frame_parms->ofdm_symbol_size,
-                            15);
+      mult_cpx_conj_vector((int16_t*) &eNb_common_vars->rxdataF[eNb_id][aa][2*frame_parms->ofdm_symbol_size*symbol],
+                      (int16_t*) eNb_srs_vars->srs,
+                      (int16_t*) eNb_srs_vars->srs_ch_estimates[eNb_id][aa],
+                      frame_parms->ofdm_symbol_size,
+                      15);
 
       //msg("SRS channel estimation cmult out\n");
 #ifdef USER_MODE
@@ -695,6 +749,7 @@ int16_t lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
                                       uint16_t nb_rb)
 {
 
+#if defined(__x86_64__) || defined(__i386__)
   int k, rb;
   int a_idx = 64;
   uint8_t conj_flag = 0;
@@ -830,4 +885,7 @@ int16_t lte_ul_freq_offset_estimation(LTE_DL_FRAME_PARMS *frame_parms,
     phase_idx = -phase_idx;
 
   return(phase_idx);
+#elif defined(__arm__)
+  return(0);
+#endif
 }

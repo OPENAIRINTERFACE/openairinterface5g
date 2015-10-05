@@ -43,25 +43,25 @@
 */
 
 typedef struct {
-  NwU8T                 groupedIeType;
-  NwU16T                mandatoryIeCount;
+  uint8_t                 groupedIeType;
+  uint16_t                mandatoryIeCount;
   NwGtpv2cStackHandleT  hStack;
 
   struct {
-    NwU8T ieMinLength;
-    NwU8T iePresence;
+    uint8_t ieMinLength;
+    uint8_t iePresence;
   } ieParseInfo[NW_GTPV2C_IE_TYPE_MAXIMUM][NW_GTPV2C_IE_INSTANCE_MAXIMUM];
 
 } NwGtpv2cGroupedIeParseInfoT;
 
 typedef struct {
-  NwU16T                msgType;
-  NwU16T                mandatoryIeCount;
+  uint16_t                msgType;
+  uint16_t                mandatoryIeCount;
   NwGtpv2cStackHandleT  hStack;
 
   struct {
-    NwU8T ieMinLength;
-    NwU8T iePresence;
+    uint8_t ieMinLength;
+    uint8_t iePresence;
     NwGtpv2cGroupedIeParseInfoT* pGroupedIeInfo;
   } ieParseInfo[NW_GTPV2C_IE_TYPE_MAXIMUM][NW_GTPV2C_IE_INSTANCE_MAXIMUM];
 
@@ -72,7 +72,7 @@ extern "C" {
 #endif
 
 NwGtpv2cMsgIeParseInfoT*
-nwGtpv2cMsgIeParseInfoNew(NwGtpv2cStackHandleT hStack, NwU8T msgType);
+nwGtpv2cMsgIeParseInfoNew(NwGtpv2cStackHandleT hStack, uint8_t msgType);
 
 NwRcT
 nwGtpv2cMsgIeParseInfoDelete(NwGtpv2cMsgIeParseInfoT* thiz);

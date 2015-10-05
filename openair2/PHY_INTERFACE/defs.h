@@ -27,22 +27,18 @@
 
 *******************************************************************************/
 
-/*! \file defs.h
+/*! \file PHY_INTERFACE/defs.h
 * \brief mac phy interface primitives
 * \author Raymond Knopp and Navid Nikaein
 * \date 2011
 * \version 0.5
 * \mail navid.nikaein@eurecom.fr or openair_tech@eurecom.fr
-* @ingroup _mac
-
 */
 
 #ifndef __MAC_PHY_PRIMITIVES_H__
 #    define __MAC_PHY_PRIMITIVES_H__
 
-
 #include "LAYER2/MAC/defs.h"
-
 
 
 #define MAX_NUMBER_OF_MAC_INSTANCES 16
@@ -59,6 +55,10 @@ do {                                                                            
     mac_xface->macphy_exit(temp);                                                           \
 } while(0)
 
+/** @defgroup _phy_if MAC-PHY interface
+ * @ingroup _oai2
+ * @{
+ */
 /*! \brief MACPHY Interface */
 typedef struct {
   /// Pointer function that initializes L2
@@ -298,17 +298,23 @@ typedef struct {
   /// Function for UE/PHY to compute PHR
   int8_t (*get_PHR)(module_id_t Mod_id, uint8_t CC_id,uint8_t eNB_index);
 
+  /// Function for UE to process the timing advance command
   void (*process_timing_advance)(module_id_t Mod_id,uint8_t CC_id, int16_t timing_advance);
-
+  
+  /// Function for MAC to get the UE stats from the PHY   
   LTE_eNB_UE_stats* (*get_eNB_UE_stats)(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 
+  /// get the frame parameters from the PHY
   LTE_DL_FRAME_PARMS* (*get_lte_frame_parms)(module_id_t Mod_id, uint8_t CC_id);
-
+  
+  /// get the Multiuser mimo mode
   MU_MIMO_mode* (*get_mu_mimo_mode) (module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
 
+  /// get the delta TF for Uplink Power Control Calculation
   int16_t (*get_hundred_times_delta_TF) (module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid);
-
-  int16_t (*get_target_ul_rx_power) (module_id_t module_idP, uint8_t CC_id);
+  /// get target uplink received power 
+  int16_t (*get_target_pusch_rx_power) (module_id_t module_idP, uint8_t CC_id);
+  int16_t (*get_target_pucch_rx_power) (module_id_t module_idP, uint8_t CC_id);
 
   unsigned char is_cluster_head;
   unsigned char is_primary_cluster_head;
@@ -318,10 +324,13 @@ typedef struct {
   /// PHY Frame Configuration
   LTE_DL_FRAME_PARMS *lte_frame_parms;
 
-  //ICIC algos
-  uint8_t (*get_SB_size)(uint8_t n_rb_dl);
+  uint8_t (*get_prach_prb_offset)(LTE_DL_FRAME_PARMS *frame_parms, uint8_t tdd_mapindex, uint16_t Nf); 
 
-  //end ALU's algo
+  int (*is_prach_subframe)(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t subframe);
+
+  /// ICIC algos
+  uint8_t (*get_SB_size)(uint8_t n_rb_dl);
+  ///end ALU's algo
 
 } MAC_xface;
 
@@ -329,3 +338,4 @@ typedef struct {
 #endif
 
 
+/** @} */

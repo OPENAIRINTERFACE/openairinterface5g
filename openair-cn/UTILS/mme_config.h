@@ -62,7 +62,7 @@
 #define MME_CONFIG_STRING_GUMMEI_CONFIG                  "GUMMEI"
 #define MME_CONFIG_STRING_MME_CODE                       "MME_CODE"
 #define MME_CONFIG_STRING_MME_GID                        "MME_GID"
-#define MME_CONFIG_STRING_PLMN                           "PLMN"
+#define MME_CONFIG_STRING_TAI_LIST                       "TAI_LIST"
 #define MME_CONFIG_STRING_MCC                            "MCC"
 #define MME_CONFIG_STRING_MNC                            "MNC"
 #define MME_CONFIG_STRING_TAC                            "TAC"

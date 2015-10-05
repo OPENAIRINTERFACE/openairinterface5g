@@ -298,10 +298,14 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   ulsch_harq = ulsch->harq_processes[harq_pid];
 
   if (harq_pid==255) {
-    LOG_E(PHY, "ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n");
-    return(-1);
+    LOG_E(PHY, "FATAL ERROR: illegal harq_pid, returning\n");
+    return -1;
   }
 
+  if (ulsch_harq->Nsymb_pusch == 0) {
+      LOG_E(PHY, "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
+      return 1+ulsch->max_turbo_iterations;
+  }
   if (llr8_flag == 0)
     tc = phy_threegpplte_turbo_decoder16;
   else

@@ -55,7 +55,6 @@
 #include "log.h"
 #include "timer.h"
 #include "sgw_lite_defs.h"
-#include "sgi.h"
 #include "mme_app_extern.h"
 #include "nas_defs.h"
 
@@ -65,18 +64,20 @@
 #include "s6a_defs.h"
 
 #include "oai_epc.h"
+#include "msc.h"
 
 int main(int argc, char *argv[])
 {
-  /* Parse the command line for options and set the mme_config accordingly. */
-  CHECK_INIT_RETURN(config_parse_opt_line(argc, argv, &mme_config) < 0);
 
-  /* Calling each layer init function */
-  CHECK_INIT_RETURN(log_init(&mme_config, oai_epc_log_specific));
   CHECK_INIT_RETURN(itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX,
                               tasks_info, messages_info, messages_definition_xml,
                               mme_config.itti_config.log_file));
+  /* Parse the command line for options and set the mme_config accordingly. */
+  CHECK_INIT_RETURN(config_parse_opt_line(argc, argv, &mme_config) < 0);
+  MSC_INIT(MSC_MME_GW, THREAD_MAX+TASK_MAX);
 
+  /* Calling each layer init function */
+  CHECK_INIT_RETURN(log_init(&mme_config, oai_epc_log_specific));
   CHECK_INIT_RETURN(nas_init(&mme_config));
   CHECK_INIT_RETURN(sctp_init(&mme_config));
   CHECK_INIT_RETURN(udp_init(&mme_config));
@@ -85,9 +86,6 @@ int main(int argc, char *argv[])
   CHECK_INIT_RETURN(mme_app_init(&mme_config));
   CHECK_INIT_RETURN(s6a_init(&mme_config));
   CHECK_INIT_RETURN(sgw_lite_init(mme_config.config_file));
-#if ! defined(ENABLE_USE_GTPU_IN_KERNEL)
-  CHECK_INIT_RETURN(sgi_init(&spgw_config.pgw_config));
-#endif
   /* Handle signals here */
   itti_wait_tasks_end();
 

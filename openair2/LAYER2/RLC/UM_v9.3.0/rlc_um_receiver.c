@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_RECEIVER_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_RECEIVER_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc.h"
@@ -39,15 +39,12 @@
 #include "MAC_INTERFACE/extern.h"
 #include "UTIL/LOG/log.h"
 
-//#define TRACE_RLC_UM_RX               1
-
 //-----------------------------------------------------------------------------
 void
 rlc_um_display_rx_window(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t * const rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   unsigned long sn = 0;
   unsigned long end_sn = 0;
@@ -139,7 +136,6 @@ rlc_um_receive (
   rlc_um_entity_t * const rlc_pP,
   struct mac_data_ind data_indP)
 {
-  //-----------------------------------------------------------------------------
 
   mem_block_t        *tb_p             = NULL;
   uint8_t               *first_byte_p     = NULL;

@@ -67,8 +67,15 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 
   if ((mode == normal_txrx) || (mode == no_L2_connect)) {
     len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
+     len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE\n",
+		    10*log10(phy_vars_ue->PHY_measurements.rsrp[0])-phy_vars_ue->rx_total_gain_dB,
+		    10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB, 
+		    10*log10(phy_vars_ue->PHY_measurements.rsrq[0]),
+		    phy_vars_ue->PHY_measurements.n0_power_tot_dBm);
+
+    /*
     len += sprintf(&buffer[len],
-                   "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm/RE (%d dB, %d dB)\neNB1 RSSI %d dBm/RE (%d dB, %d dB)\neNB2 RSSI %d dBm/RE (%d dB, %d dB)\nN0 %d dBm/RE, %f dBm/%dPRB (%d dB, %d dB)\n",
+                   "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm/RE (%d dB, %d dB)\neNB1 RSSI %d dBm/RE (%d dB, %d dB)neNB2 RSSI %d dBm/RE (%d dB, %d dB)\nN0 %d dBm/RE, %f dBm/%dPRB (%d dB, %d dB)\n",
                    phy_vars_ue->frame_rx,
                    phy_vars_ue->PHY_measurements.rx_rssi_dBm[0],
                    phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
@@ -84,18 +91,32 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
                    phy_vars_ue->lte_frame_parms.N_RB_DL,
                    phy_vars_ue->PHY_measurements.n0_power_dB[0],
                    phy_vars_ue->PHY_measurements.n0_power_dB[1]);
+    */
+
 #ifdef EXMIMO
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, openair0_cfg[0].rxg_mode[0],(int)openair0_cfg[0].rx_gain[0]);
 #endif
 #ifdef OAI_USRP
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
-
-    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d)\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset);
+#if defined(EXMIMO) || defined(OAI_USRP)
+    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d), estimated carrier frequency %f Hz\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset,openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset);
+#endif
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
     len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
-    len += sprintf(&buffer[len], "[UE PROC] UE tx power = %d\n", PHY_vars_UE_g[0][0]->tx_power_dBm);
-
+    if (phy_vars_ue->UE_mode[0]==PUSCH) {
+      len += sprintf(&buffer[len], "[UE PROC] Po_PUSCH = %d dBm (PL %d dB, Po_NOMINAL_PUSCH %d dBm, PHR %d dB)\n", 
+		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->Po_PUSCH,
+		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0),
+		     mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id,0),
+		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->PHR);
+      len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n", 
+		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0)+
+		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
+		     phy_vars_ue->dlsch_ue[0][0]->g_pucch,
+		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
+		     phy_vars_ue->dlsch_ue[0][0]->g_pucch);
+    }
     //for (eNB=0;eNB<NUMBER_OF_eNB_MAX;eNB++) {
     for (eNB=0; eNB<1; eNB++) {
       len += sprintf(&buffer[len], "[UE PROC] RX spatial power eNB%d: [%d %d; %d %d] dB\n",
@@ -455,10 +476,8 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
       RRC_status = mac_UE_get_rrc_status(phy_vars_ue->Mod_id, 0);
       len += sprintf(&buffer[len],"[UE PROC] RRC status = %d\n",RRC_status);
 #endif
-      len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f, RSRQ[0] %.2f\n",
-                     10*log10(phy_vars_ue->PHY_measurements.rsrp[0])-phy_vars_ue->rx_total_gain_dB,
-                     10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB, 10*log10(phy_vars_ue->PHY_measurements.rsrq[0]));
 
+ 
       len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d (mode1_flag %d)\n",phy_vars_ue->transmission_mode[eNB],phy_vars_ue->lte_frame_parms.mode1_flag);
       len += sprintf(&buffer[len], "[UE PROC] PBCH err conseq %d, PBCH error total %d, PBCH FER %d\n",
                      phy_vars_ue->lte_ue_pbch_vars[eNB]->pdu_errors_conseq,
@@ -608,13 +627,18 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 
     if (phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0) {
 #endif
-      len += sprintf(&buffer[len],"[eNB PROC] UE %d (%x) Power: (%d,%d) dB, RSSI: (%d,%d) dBm, Sector %d\n",
+      len += sprintf(&buffer[len],"[eNB PROC] UE %d (%x) Power: (%d,%d) dB, Po_PUSCH: (%d,%d) dBm, Po_PUCCH (%d/%d) dBm, Po_PUCCH1 (%d,%d) dBm,  PUCCH1 Thres %d dBm \n",
                      UE_id,
                      phy_vars_eNB->eNB_UE_stats[UE_id].crnti,
                      dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[0]),
                      dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[1]),
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[0],
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm, //-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
                      phy_vars_eNB->eNB_UE_stats[UE_id].sector);
 
       for(i=0; i<8; i++)

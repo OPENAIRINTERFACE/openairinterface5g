@@ -20,30 +20,30 @@ set(OPENAIR_TARGETS $ENV{OPENAIR_DIR}/targets)
 
 # Add .h files for dependancies
 set(usim_SRC
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/tools/usim_data.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/api/usim/usim_api.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/api/usim/aka_functions.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/memory.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/nas_log.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/OctetString.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/TLVEncoder.c
+    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/usim_data.c
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/usim_api.c
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/aka_functions.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/OctetString.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/TLVEncoder.c
 )
 set(usim_HDR
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/tools/network.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/api/usim/usim_api.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/api/usim/aka_functions.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/memory.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/nas_log.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/OctetString.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/TLVEncoder.h
+    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/network.h
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/usim_api.h
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/aka_functions.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/OctetString.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/TLVEncoder.h
 )
 include_directories(
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/include
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/api/usim
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/emm/
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/esm/
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/ies/
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/EMM/
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/ESM/
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/IES/
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL
 )
 ADD_EXECUTABLE(usim  ${usim_SRC} ${usim_HDR})
 
@@ -51,15 +51,15 @@ ADD_EXECUTABLE(usim  ${usim_SRC} ${usim_HDR})
 
 
 set(nvram_SRC
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/tools/ue_data.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/memory.c
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/nas_log.c
+    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/ue_data.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.c
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.c
 )
 
 set(nvram_HDR
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/emm/emmData.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/util/memory.h
-    ${OPENAIR_DIR}/openair-cn/NAS/EURECOM-NAS/src/include/userDef.h
+    ${OPENAIR_DIR}/openair-cn/NAS/UE/EMM/emmData.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.h
+    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/userDef.h
 )
 
 ADD_EXECUTABLE(nvram  ${nvram_SRC} ${nvram_HDR})

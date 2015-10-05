@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 {
   NwGtpv1uRcT rc;
   char                         *logLevelStr;
-  NwU32T                        logLevel;
-  NwU32T                        num_of_connections;
+  uint32_t                        logLevel;
+  uint32_t                        num_of_connections;
 
   NwGtpv1uStackHandleT          hGtpv1uStack = 0;
   NwMiniUlpEntityT              ulpObj;

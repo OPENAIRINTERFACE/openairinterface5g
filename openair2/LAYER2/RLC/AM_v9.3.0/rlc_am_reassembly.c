@@ -26,11 +26,11 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_REASSEMBLY_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_REASSEMBLY_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
 # include "intertask_interface.h"
 #endif
 #include "assertions.h"
@@ -41,13 +41,11 @@
 #include "UTIL/LOG/log.h"
 #include "msc.h"
 
-//#define TRACE_RLC_AM_RX_DECODE
 //-----------------------------------------------------------------------------
 inline void
 rlc_am_clear_rx_sdu (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->output_sdu_size_to_write = 0;
 }
@@ -58,7 +56,6 @@ rlc_am_reassembly (
   rlc_am_entity_t * const rlc_pP,
   uint8_t * src_pP,
   const int32_t lengthP)
-//-----------------------------------------------------------------------------
 {
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PAYLOAD] reassembly()  %d bytes\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -79,7 +76,7 @@ rlc_am_reassembly (
     } else {
       LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PAYLOAD] ERROR  SDU SIZE OVERFLOW SDU GARBAGED\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+#if STOP_ON_IP_TRAFFIC_OVERLOAD
       AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_IND, SDU SIZE OVERFLOW SDU GARBAGED\n",
                   PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -89,7 +86,7 @@ rlc_am_reassembly (
   } else {
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PAYLOAD] ERROR  OUTPUT SDU IS NULL\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+#if STOP_ON_IP_TRAFFIC_OVERLOAD
     AssertFatal(0, PROTOCOL_RLC_AM_CTXT_FMT" RLC_AM_DATA_IND, SDU DROPPED, OUT OF MEMORY\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 #endif
@@ -100,12 +97,11 @@ void
 rlc_am_send_sdu (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
-//-----------------------------------------------------------------------------
 {
-#   if defined(TRACE_RLC_UM_PDU)
+#   if TRACE_RLC_UM_PDU
   char                 message_string[7000];
   size_t               message_string_size = 0;
-#if defined(ENABLE_ITTI)
+#if ENABLE_ITTI
   MessageDef          *msg_p;
 #endif
   int                  octet_index, index;
@@ -120,13 +116,13 @@ rlc_am_send_sdu (
     if (rlc_pP->output_sdu_size_to_write > 0) {
       rlc_pP->stat_rx_pdcp_sdu   += 1;
       rlc_pP->stat_rx_pdcp_bytes += rlc_pP->output_sdu_size_to_write;
-#ifdef TEST_RLC_AM
+#if TEST_RLC_AM
       rlc_am_v9_3_0_test_data_ind (rlc_pP->module_id,
                                    rlc_pP->rb_id,
                                    rlc_pP->output_sdu_size_to_write,
                                    rlc_pP->output_sdu_in_construction);
 #else
-#   if defined(TRACE_RLC_AM_PDU)
+#   if TRACE_RLC_AM_PDU
       message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", rlc_pP->rb_id);
       message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", rlc_pP->output_sdu_size_to_write);
 
@@ -166,7 +162,7 @@ rlc_am_send_sdu (
 
 
 
-#      if defined(ENABLE_ITTI)
+#      if ENABLE_ITTI
       msg_p = itti_alloc_new_message_sized (ctxt_pP->enb_flag > 0 ? TASK_RLC_ENB:TASK_RLC_UE ,
                                             RLC_AM_SDU_IND,
                                             message_string_size + sizeof (IttiMsgText));
@@ -179,7 +175,7 @@ rlc_am_send_sdu (
       LOG_T(RLC, "%s", message_string);
 #      endif
 #   endif
-#if !defined(ENABLE_ITTI)
+#if !ENABLE_ITTI
       RLC_AM_MUTEX_UNLOCK(&rlc_pP->lock_input_sdus);
 #endif
       MSC_LOG_TX_MESSAGE(
@@ -199,7 +195,7 @@ rlc_am_send_sdu (
                     rlc_pP->rb_id,
                     rlc_pP->output_sdu_size_to_write,
                     rlc_pP->output_sdu_in_construction);
-#if !defined(ENABLE_ITTI)
+#if !ENABLE_ITTI
       RLC_AM_MUTEX_LOCK(&rlc_pP->lock_input_sdus, ctxt_pP, rlc_pP);
 #endif
 #endif
@@ -225,14 +221,13 @@ rlc_am_reassemble_pdu(
   rlc_am_entity_t * const      rlc_pP,
   mem_block_t * const          tb_pP)
 {
-  //-----------------------------------------------------------------------------
   int i,j;
 
   rlc_am_pdu_info_t* pdu_info        = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[REASSEMBLY PDU] TRY REASSEMBLY PDU SN=%03d\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
         pdu_info->sn);
-#ifdef TRACE_RLC_AM_RX_DECODE
+#if TRACE_RLC_AM_RX_DECODE
   rlc_am_display_data_pdu_infos(ctxt_pP, rlc_pP, pdu_info);
 #endif
 
@@ -279,7 +274,7 @@ rlc_am_reassemble_pdu(
       //}
 
       break;
-#ifdef USER_MODE
+#if USER_MODE
 
     default:
       assert(0 != 0);
@@ -394,14 +389,14 @@ rlc_am_reassemble_pdu(
         // data is already ok, done by last loop above
         rlc_am_reassembly (ctxt_pP, rlc_pP, &pdu_info->payload[j], pdu_info->hidden_size);
       } else {
-#ifdef USER_MODE
+#if USER_MODE
         //assert (5!=5);
 #endif
       }
 
       //rlc_pP->reassembly_missing_sn_detected = 0;
       break;
-#ifdef USER_MODE
+#if USER_MODE
 
     default:
       assert(1 != 1);

@@ -35,8 +35,8 @@
 * \bug
 * \warning
 */
-/** @defgroup _rlc_impl_ RLC Layer Reference Implementation
-* @ingroup _ref_implementation_
+/** @defgroup _rlc_impl_ RLC 
+* @ingroup _oai2
 * @{
 */
 #ifndef __RLC_H__
@@ -540,7 +540,8 @@ public_rlc(void rlc_data_conf(
                         const protocol_ctxt_t* const ctxtP,
                         const  srb_flag_t    srb_flagP,
                         const  rb_id_t       rb_idP,
-                        unsigned int* stat_tx_pdcp_sdu,
+                        unsigned int* stat_rlc_mode,
+			unsigned int* stat_tx_pdcp_sdu,
                         unsigned int* stat_tx_pdcp_bytes,
                         unsigned int* stat_tx_pdcp_sdu_discarded,
                         unsigned int* stat_tx_pdcp_bytes_discarded,
@@ -572,6 +573,7 @@ public_rlc(void rlc_data_conf(
 * \param[in]  ctxtP                Running context.
 * \param[in]  srb_flagP            Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 * \param[in]  rb_idP                       .
+* \param[out] stat_rlc_mode                        RLC mode 
 * \param[out] stat_tx_pdcp_sdu                     Number of SDUs coming from upper layers.
 * \param[out] stat_tx_pdcp_bytes                   Number of bytes coming from upper layers.
 * \param[out] stat_tx_pdcp_sdu_discarded           Number of discarded SDUs coming from upper layers.
@@ -605,7 +607,8 @@ public_rlc(rlc_op_status_t rlc_stat_req     (
              const protocol_ctxt_t* const ctxtP,
              const srb_flag_t    srb_flagP,
              const rb_id_t       rb_idP,
-             unsigned int* const stat_tx_pdcp_sdu,
+             unsigned int* const stat_rlc_mode,
+	     unsigned int* const stat_tx_pdcp_sdu,
              unsigned int* const stat_tx_pdcp_bytes,
              unsigned int* const stat_tx_pdcp_sdu_discarded,
              unsigned int* const stat_tx_pdcp_bytes_discarded,

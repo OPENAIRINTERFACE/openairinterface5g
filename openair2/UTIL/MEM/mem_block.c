@@ -44,6 +44,20 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 
+/* all function calls are protected by a mutex
+ * to ensure that many threads calling them at
+ * the same time don't mess up.
+ * We might be more clever in the future, it's a
+ * bit overkill.
+ * Commenting this define removes the protection,
+ * so be careful with it.
+ */
+#define MEMBLOCK_BIG_LOCK
+
+#ifdef MEMBLOCK_BIG_LOCK
+static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 //-----------------------------------------------------------------------------
 //#define DEBUG_MEM_MNGT_FREE
 //#define DEBUG_MEM_MNGT_ALLOC_SIZE
@@ -71,6 +85,10 @@ pool_buffer_init (void)
                                      MEM_MNGT_MB10_NB_BLOCKS, MEM_MNGT_MB11_NB_BLOCKS,
                                      MEM_MNGT_MB12_NB_BLOCKS, MEM_MNGT_MBCOPY_NB_BLOCKS
                                    };
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
 
   memset (memory, 0, sizeof (mem_pool));
   mb_index = 0;
@@ -148,6 +166,10 @@ pool_buffer_init (void)
     mb_index += pool_sizes[pool_index];
   }
 
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
   return 0;
 }
 
@@ -169,6 +191,10 @@ free_mem_block (mem_block_t * leP)
     return;
   }
 
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
+
 #ifdef DEBUG_MEM_MNGT_FREE
   msg ("[MEM_MNGT][FREE] free_mem_block() %p pool: %d\n", leP, leP->pool_id);
 #endif
@@ -185,6 +211,10 @@ free_mem_block (mem_block_t * leP)
   } else {
     msg ("[MEM_MNGT][FREE] ERROR free_mem_block() unknown pool_id : %d\n", leP->pool_id);
   }
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -202,6 +232,11 @@ get_free_mem_block (uint32_t sizeP)
     mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block size requested out of bounds");
     return NULL;
   }
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
+
   size = sizeP >> 6;
   pool_selected = 0;
 
@@ -220,6 +255,11 @@ get_free_mem_block (uint32_t sizeP)
 #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
       msg ("[MEM_MNGT][INFO] ALLOC MEM_BLOCK SIZE %d bytes pool %d (%p)\n", sizeP, pool_selected,le);
 #endif
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
       return le;
     }
 
@@ -234,6 +274,11 @@ get_free_mem_block (uint32_t sizeP)
 
   display_mem_load();
   mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block failed");
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
   return NULL;
 };
 
@@ -243,6 +288,10 @@ get_free_copy_mem_block (void)
 {
   //-----------------------------------------------------------------------------
   mem_block_t      *le;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
 
   if ((le = list_remove_head (&mem_block_var.mem_lists[MEM_MNGT_POOL_ID_COPY]))) {
 #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
@@ -267,6 +316,10 @@ copy_mem_block (mem_block_t * leP, mem_block_t * destP)
 {
   //-----------------------------------------------------------------------------
 
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
+
   if ((destP != NULL) && (leP != NULL) && (destP->pool_id == MEM_MNGT_POOL_ID_COPY)) {
     destP->data = leP->data;
   } else {
@@ -281,6 +334,9 @@ void
 display_mem_load (void)
 {
   //-----------------------------------------------------------------------------
+#ifdef MEMBLOCK_BIG_LOCK
+  /* this function does not need to be protected, do nothing */
+#endif
 
   mem_pool       *memory = (mem_pool *) &mem_block_var;
 
@@ -321,6 +377,10 @@ check_mem_area (void)
   //-----------------------------------------------------------------------------
   int             index, mb_index;
   mem_pool       *memory = (mem_pool *) &mem_block_var;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
 
   for (index = 0; index < MEM_MNGT_MB0_NB_BLOCKS; index++) {
     if ((memory->mem_blocks[index].data != (unsigned char*)&(memory->mem_pool0[index][0])) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID0)) {
@@ -451,6 +511,10 @@ check_free_mem_block (mem_block_t * leP)
 {
   //-----------------------------------------------------------------------------
   ptrdiff_t             block_index;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  /* this function does not SEEM TO need to be protected, do nothing (for the moment) */
+#endif
 
   if ((leP >= mem_block_var.mem_blocks) && (leP <= &mem_block_var.mem_blocks[MEM_MNGT_NB_ELEMENTS-1])) {
     // the pointer is inside the memory region

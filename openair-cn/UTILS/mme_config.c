@@ -41,6 +41,7 @@
 
 #include <arpa/inet.h> /* To provide inet_addr */
 
+#include "intertask_interface.h"
 #include "assertions.h"
 #include "msc.h"
 #include "mme_config.h"
@@ -202,9 +203,7 @@ static int config_parse_file(mme_config_t *mme_config_p)
   char             *mme_interface_name_for_S11       = NULL;
   char             *mme_ip_address_for_S11           = NULL;
   char             *sgw_ip_address_for_S11           = NULL;
-#if defined (ENABLE_USE_GTPU_IN_KERNEL)
   char                system_cmd[256];
-#endif
 
   config_init(&cfg);
 
@@ -369,7 +368,7 @@ static int config_parse_file(mme_config_t *mme_config_p)
         }
       }
 
-      subsetting = config_setting_get_member (setting, MME_CONFIG_STRING_PLMN);
+      subsetting = config_setting_get_member (setting, MME_CONFIG_STRING_TAI_LIST);
 
       if (subsetting != NULL) {
         num     = config_setting_length(subsetting);
@@ -654,10 +653,6 @@ static void usage(void)
   fprintf(stdout, "Usage: oaisim_mme [options]\n\n");
   fprintf(stdout, "Available options:\n");
   fprintf(stdout, "-h      Print this help and return\n");
-  fprintf(stdout, "-i<interface name>\n");
-  fprintf(stdout, "        Set the network card to use for IPv4 forwarding\n");
-  fprintf(stdout, "-m\n");
-  fprintf(stdout, "        Use mscgen dump trace tool\n");
   fprintf(stdout, "-c<path>\n");
   fprintf(stdout, "        Set the configuration file for mme\n");
   fprintf(stdout, "        See template in UTILS/CONF\n");
@@ -678,7 +673,7 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config_p)
   mme_config_init(mme_config_p);
 
   /* Parsing command line */
-  while ((c = getopt (argc, argv, "O:c:hi:K:mv:V")) != -1) {
+  while ((c = getopt (argc, argv, "O:c:hi:K:v:V")) != -1) {
     switch (c) {
     case 'O':
     case 'c': {
@@ -693,21 +688,6 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config_p)
     }
     break;
 
-    case 'm': {
-      fprintf(stdout, "Logging Message chart(mscgen)\n");
-      MSC_INIT(MSC_EPC);
-    }
-    break;
-
-    /*case 'i': {
-        int interface_len = 0;
-
-        // Copying provided interface name to use for ipv4 forwarding
-        interface_len = strlen(optarg);
-        mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up = calloc(interface_len + 1, sizeof(char));
-        memcpy(mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up, optarg, interface_len);
-        mme_config_p->ipv4.sgw_interface_name_for_S1u_S12_S4_up[interface_len] = '\0';
-    } break;*/
     case 'v': {
       mme_config_p->verbosity_level = atoi(optarg);
     }

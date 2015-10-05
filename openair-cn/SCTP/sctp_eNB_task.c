@@ -55,6 +55,7 @@
 #include "sctp_default_values.h"
 #include "sctp_common.h"
 #include "sctp_eNB_itti_messaging.h"
+#include "msc.h"
 
 /* Used to format an uint32_t containing an ipv4 address */
 #define IPV4_ADDR    "%u.%u.%u.%u"
@@ -124,7 +125,7 @@ sctp_handle_new_association_req(
   const task_id_t requestor,
   const sctp_new_association_req_t * const sctp_new_association_req_p)
 {
-  int                           sd;
+  int                           sd       = 0;
   int32_t                       assoc_id = 0;
 
   struct sctp_event_subscribe   events;
@@ -133,8 +134,10 @@ sctp_handle_new_association_req(
   enum sctp_connection_type_e   connection_type = SCTP_TYPE_CLIENT;
 
   struct ifreq                  ifr;
-  struct ifaddrs               *ifaddr, *ifa;
-  int                           family, s;
+  struct ifaddrs               *ifaddr = NULL;
+  struct ifaddrs               *ifa    = NULL;
+  int                           family = 0;
+  int                           s = 0;
   struct in_addr                in;
   struct in6_addr               in6;
   /* Prepare a new SCTP association as requested by upper layer and try to connect
@@ -143,6 +146,7 @@ sctp_handle_new_association_req(
   DevAssert(sctp_new_association_req_p != NULL);
 
   /* Create new socket with IPv6 affinity */
+#warning "SCTP may Force IPv4 only, here"
 #ifdef NO_VIRTUAL_MACHINE
 
   // in init chunk appears a list of host addresses, IPv4 and IPv4 in an arbitrary (unsorted) order
@@ -161,8 +165,10 @@ sctp_handle_new_association_req(
   /* Add the socket to list of fd monitored by ITTI */
   itti_subscribe_event_fd(TASK_SCTP, sd);
 
-  if (sctp_set_init_opt(sd, SCTP_IN_STREAMS, SCTP_OUT_STREAMS,
-                        SCTP_MAX_ATTEMPTS, SCTP_TIMEOUT) != 0) {
+  if (sctp_set_init_opt(sd,
+		  sctp_new_association_req_p->in_streams,
+		  sctp_new_association_req_p->out_streams,
+		  SCTP_MAX_ATTEMPTS, SCTP_TIMEOUT) != 0) {
     SCTP_ERROR("Setsockopt IPPROTO_SCTP_INITMSG failed: %s\n",
                strerror(errno));
     itti_unsubscribe_event_fd(TASK_SCTP, sd);
@@ -805,6 +811,7 @@ void *sctp_eNB_task(void *arg)
   STAILQ_INIT(&sctp_cnx_list);
 
   itti_mark_task_ready(TASK_SCTP);
+  MSC_START_USE();
 
   while (1) {
     itti_receive_msg(TASK_SCTP, &received_msg);

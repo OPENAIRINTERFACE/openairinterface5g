@@ -58,8 +58,8 @@
 #define RRH_UE_PORT 51000
 #define RRH_UE_DEST_IP "127.0.0.1"
 
-#define FRAME_MAX_SIZE 307200
-#define DEFAULT_PERIOD_NS 133333
+#define FRAME_MAX_SIZE 307200//76800
+#define DEFAULT_PERIOD_NS 133333//200000
 
 #define START_CMD 1
 #define PRINTF_PERIOD 3750
@@ -1030,9 +1030,10 @@ void *rrh_eNB_thread(void *arg)
     rrh_eNB_desc.clientaddr = clientaddr;
     rrh_eNB_desc.clientaddrlen = clientaddrlen;
 
-    cmd = cmd&1;
+    //cmd = cmd&1;
+    cmd = cmd|1;//in order to make cmd evalution dummy (the first message from lte to rrh has changed, see: @ethernet_lib.c trx_start_func has been substituted by trx_request_func )
     inet_ntop(AF_INET, &(((struct sockaddr_in*)&clientaddr)->sin_addr), str, INET_ADDRSTRLEN);
-
+    
     if (cmd==START_CMD) {
 
       pthread_attr_init(&attr_eNB_rx);

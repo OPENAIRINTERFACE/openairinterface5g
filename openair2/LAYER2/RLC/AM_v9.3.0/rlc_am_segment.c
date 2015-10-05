@@ -26,14 +26,13 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_SEGMENT_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_SEGMENT_C 1
 //-----------------------------------------------------------------------------
-#ifdef USER_MODE
+#if USER_MODE
 #include <assert.h>
 #endif
 //-----------------------------------------------------------------------------
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "msc.h"
@@ -48,7 +47,6 @@ void rlc_am_pdu_polling (
   rlc_am_entity_t *const rlc_pP,
   rlc_am_pdu_sn_10_t *const pdu_pP,
   const int16_t payload_sizeP)
-//-----------------------------------------------------------------------------
 {
   // 5.2.2 Polling
   // An AM RLC entity can poll its peer AM RLC entity in order to trigger STATUS reporting at the peer AM RLC entity.
@@ -127,7 +125,6 @@ void rlc_am_segment_10 (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   list_t              pdus;
   sdu_size_t          pdu_remaining_size      = 0;
   sdu_size_t          test_pdu_remaining_size = 0;
@@ -465,7 +462,7 @@ void rlc_am_segment_10 (
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-#ifdef USER_MODE
+#if USER_MODE
         assert(1!=1);
 #endif
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);

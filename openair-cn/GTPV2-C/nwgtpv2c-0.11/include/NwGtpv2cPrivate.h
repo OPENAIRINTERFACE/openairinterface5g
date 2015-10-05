@@ -90,16 +90,16 @@ extern "C" {
  */
 
 typedef struct NwGtpv2cStack {
-  NwU32T                        id;
+  uint32_t                        id;
   NwGtpv2cUlpEntityT            ulp;
   NwGtpv2cUdpEntityT            udp;
   NwGtpv2cMemMgrEntityT         memMgr;
   NwGtpv2cTimerMgrEntityT       tmrMgr;
   NwGtpv2cLogMgrEntityT         logMgr;
 
-  NwU32T                        seqNum;
-  NwU32T                        logLevel;
-  NwU32T                        restartCounter;
+  uint32_t                        seqNum;
+  uint32_t                        logLevel;
+  uint32_t                        restartCounter;
 
   NwGtpv2cMsgIeParseInfoT       *pGtpv2cMsgIeParseInfo[NW_GTP_MSG_END];
   struct NwGtpv2cTimeoutInfo    *activeTimerInfo;
@@ -123,12 +123,12 @@ typedef struct NwGtpv2cStack {
 typedef struct NwGtpv2cTimeoutInfo {
   NwGtpv2cStackHandleT          hStack;
   struct timeval                tvTimeout;
-  NwU32T                        tmrType;
+  uint32_t                        tmrType;
   void*                         timeoutArg;
   NwRcT                         (*timeoutCallbackFunc)(void*);
   NwGtpv2cTimerHandleT          hTimer;
   RB_ENTRY (NwGtpv2cTimeoutInfo)       activeTimerListRbtNode;            /**< RB Tree Data Structure Node        */
-  NwU32T                        timerMinHeapIndex;
+  uint32_t                        timerMinHeapIndex;
   struct NwGtpv2cTimeoutInfo *next;
 } NwGtpv2cTimeoutInfoT;
 
@@ -143,23 +143,23 @@ typedef struct NwGtpv2cTimeoutInfo {
  * NwGtpv2cMsgT holds gtpv2c messages to/from the peer.
  */
 typedef struct NwGtpv2cMsgS {
-  NwU8T                         version;
-  NwU8T                         teidPresent;
-  NwU8T                         msgType;
-  NwU16T                        msgLen;
-  NwU32T                        teid;
-  NwU32T                        seqNum;
-  NwU8T*                        pMsgStart;
+  uint8_t                         version;
+  uint8_t                         teidPresent;
+  uint8_t                         msgType;
+  uint16_t                        msgLen;
+  uint32_t                        teid;
+  uint32_t                        seqNum;
+  uint8_t*                        pMsgStart;
 
 #define NW_GTPV2C_MAX_GROUPED_IE_DEPTH                                  (2)
   struct {
     NwGtpv2cIeTlvT *pIe[NW_GTPV2C_MAX_GROUPED_IE_DEPTH];
-    NwU8T         top;
+    uint8_t         top;
   } groupedIeEncodeStack;
 
   NwBoolT                       isIeValid[NW_GTPV2C_IE_TYPE_MAXIMUM][NW_GTPV2C_IE_INSTANCE_MAXIMUM];
-  NwU8T                         *pIe[NW_GTPV2C_IE_TYPE_MAXIMUM][NW_GTPV2C_IE_INSTANCE_MAXIMUM];
-  NwU8T                         msgBuf[NW_GTPV2C_MAX_MSG_LEN];
+  uint8_t                         *pIe[NW_GTPV2C_IE_TYPE_MAXIMUM][NW_GTPV2C_IE_INSTANCE_MAXIMUM];
+  uint8_t                         msgBuf[NW_GTPV2C_MAX_MSG_LEN];
   NwGtpv2cStackHandleT          hStack;
   struct NwGtpv2cMsgS*          next;
 } NwGtpv2cMsgT;
@@ -169,11 +169,11 @@ typedef struct NwGtpv2cMsgS {
  */
 
 typedef struct NwGtpv2cTrxn {
-  NwU32T                        seqNum;
-  NwU32T                        peerIp;
-  NwU32T                        peerPort;
-  NwU8T                         t3Timer;
-  NwU8T                         maxRetries;
+  uint32_t                        seqNum;
+  uint32_t                        peerIp;
+  uint32_t                        peerPort;
+  uint8_t                         t3Timer;
+  uint8_t                         maxRetries;
   NwGtpv2cMsgT*                 pMsg;
   NwGtpv2cStackT*               pStack;
   NwGtpv2cTimerHandleT          hRspTmr;                                /**< Handle to reponse timer            */
@@ -189,11 +189,11 @@ typedef struct NwGtpv2cTrxn {
  */
 
 typedef struct NwGtpv2cPathS {
-  NwU32T                        hUlpPath;                               /**< Handle to ULP path contect         */
-  NwU32T                        ipv4Address;
-  NwU32T                        restartCounter;
-  NwU16T                        t3ResponseTimout;
-  NwU16T                        n3RequestCount;
+  uint32_t                        hUlpPath;                               /**< Handle to ULP path contect         */
+  uint32_t                        ipv4Address;
+  uint32_t                        restartCounter;
+  uint16_t                        t3ResponseTimout;
+  uint16_t                        n3RequestCount;
   NwGtpv2cTimerHandleT          hKeepAliveTmr;                          /**< Handle to path keep alive echo timer */
   RB_ENTRY (NwGtpv2cPathS)      pathMapRbtNode;
 } NwGtpv2cPathT;
@@ -210,9 +210,9 @@ RB_PROTOTYPE(NwGtpv2cActiveTimerList, NwGtpv2cTimeoutInfo, activeTimerListRbtNod
 
 NwRcT
 nwGtpv2cStartTimer(NwGtpv2cStackT* thiz,
-                   NwU32T timeoutSec,
-                   NwU32T timeoutUsec,
-                   NwU32T tmrType,
+                   uint32_t timeoutSec,
+                   uint32_t timeoutUsec,
+                   uint32_t tmrType,
                    NwRcT (*timeoutCallbackFunc)(void*),
                    void*  timeoutCallbackArg,
                    NwGtpv2cTimerHandleT *phTimer);

@@ -48,14 +48,18 @@
 #include "gain_control.h"
 #endif
 
+#if defined(OAI_USRP) || defined(EXMIMO)
+#include "common_lib.h"
+extern openair0_config_t openair0_cfg[];
+#endif
 #define DEBUG_INITIAL_SYNCH
 
-int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
+int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode) 
 {
 
-  uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  char phich_resource[6];
+uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
+LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+char phich_resource[6];
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",phy_vars_ue->Mod_id,
@@ -65,25 +69,46 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   for (l=0; l<frame_parms->symbols_per_tti/2; l++) {
 
     slot_fep(phy_vars_ue,
-             l,
-             1,
-             phy_vars_ue->rx_offset,
-             0);
-  }
+	     l,
+	     0,
+	     phy_vars_ue->rx_offset,
+	     0,
+	     1);
+  }  
+  for (l=0; l<frame_parms->symbols_per_tti/2; l++) {
 
+    slot_fep(phy_vars_ue,
+	     l,
+	     1,
+	     phy_vars_ue->rx_offset,
+	     0,
+	     1);
+  }  
   slot_fep(phy_vars_ue,
-           0,
-           2,
-           phy_vars_ue->rx_offset,
-           0);
+	   0,
+	   2,
+	   phy_vars_ue->rx_offset,
+	   0,
+	   1);
 
   lte_ue_measurements(phy_vars_ue,
-                      phy_vars_ue->rx_offset,
-                      0,
-                      0);
-
+		      phy_vars_ue->rx_offset,
+		      0,
+		      0);
+  
+  
+  if (phy_vars_ue->lte_frame_parms.frame_type == TDD) {
+    ue_rrc_measurements(phy_vars_ue,
+			1,
+			0);
+  }
+  else {
+    ue_rrc_measurements(phy_vars_ue,
+			0,
+			0);
+  }
 #ifdef DEBUG_INITIAL_SYNCH
-  LOG_I(PHY,"[UE %d][initial sync] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
+  LOG_I(PHY,"[UE %d] RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
         phy_vars_ue->Mod_id,
         phy_vars_ue->PHY_measurements.rx_rssi_dBm[0] - ((phy_vars_ue->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0),
         phy_vars_ue->PHY_measurements.rx_power_dB[0][0],
@@ -94,7 +119,7 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
         phy_vars_ue->PHY_measurements.rx_power_avg[0],
         phy_vars_ue->rx_total_gain_dB);
 
-  LOG_I(PHY,"[UE %d][initial sync] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
+  LOG_I(PHY,"[UE %d] N0 %d dBm digital (%d, %d) dB, linear (%d, %d), avg noise power %d dB (%d lin)\n",
         phy_vars_ue->Mod_id,
         phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
         phy_vars_ue->PHY_measurements.n0_power_dB[0],
@@ -242,6 +267,10 @@ int pbch_detection(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
 }
 
+char phich_string[13][4] = {"","1/6","","1/2","","","one","","","","","","two"};
+char duplex_string[2][4] = {"FDD","TDD"};
+char prefix_string[2][9] = {"NORMAL","EXTENDED"};
+
 int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 {
 
@@ -251,20 +280,33 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   uint8_t flip_fdd_ncp,flip_fdd_ecp,flip_tdd_ncp,flip_tdd_ecp;
   //  uint16_t Nid_cell_fdd_ncp=0,Nid_cell_fdd_ecp=0,Nid_cell_tdd_ncp=0,Nid_cell_tdd_ecp=0;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  //  uint8_t i;
+  int i;
   int ret=-1;
   int aarx,rx_power=0;
-
+  /*#ifdef OAI_USRP
+  __m128i *rxdata128;
+  #endif*/
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=FDD;
   init_frame_parms(frame_parms,1);
 
+  //  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+
+  /*#ifdef OAI_USRP
+  for (aarx = 0; aarx<frame_parms->nb_antennas_rx;aarx++) {
+    rxdata128 = (__m128i*)phy_vars_ue->lte_ue_common_vars.rxdata[aarx];
+    for (i=0; i<(frame_parms->samples_per_tti*10)>>2; i++) {
+      rxdata128[i] = _mm_srai_epi16(rxdata128[i],4);
+    } 
+  }
+  #endif*/
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata,
                            frame_parms,
                            (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
 
+  //  write_output("rxdata1.m","rxd1",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   if (sync_pos >= frame_parms->nb_prefix_samples)
     sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;
   else
@@ -322,6 +364,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
     init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
     lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
     ret = pbch_detection(phy_vars_ue,mode);
+    //   write_output("rxdata2.m","rxd2",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -368,7 +411,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
       init_frame_parms(&phy_vars_ue->lte_frame_parms,1);
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
       ret = pbch_detection(phy_vars_ue,mode);
-
+      //     write_output("rxdata3.m","rxd3",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
             frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
@@ -415,7 +458,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
       lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
       ret = pbch_detection(phy_vars_ue,mode);
-
+      //      write_output("rxdata4.m","rxd4",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
@@ -462,6 +505,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
         lte_gold(frame_parms,phy_vars_ue->lte_gold_table[0],frame_parms->Nid_cell);
         ret = pbch_detection(phy_vars_ue,mode);
 
+	//	write_output("rxdata5.m","rxd5",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
 #ifdef DEBUG_INITIAL_SYNCH
         LOG_I(PHY,"TDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
               frame_parms->Nid_cell,metric_tdd_ecp,phase_tdd_ecp,flip_tdd_ecp,ret);
@@ -480,26 +524,56 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"[PHY][UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->Mod_id, phy_vars_ue->rx_offset);
+    LOG_I(PHY,"[UE%d] In synch, rx_offset %d samples\n",phy_vars_ue->Mod_id, phy_vars_ue->rx_offset);
 #endif
+
+    if (phy_vars_ue->UE_scan_carrier == 0) {
 #ifdef OPENAIR2
-    LOG_I(PHY,"[PHY][UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
-    //mac_resynch();
-    mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+      LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
+      //mac_resynch();
+      mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
 #endif //OPENAIR2
-
-    generate_pcfich_reg_mapping(frame_parms);
-    generate_phich_reg_mapping(frame_parms);
-    //    init_prach625(frame_parms);
+      
+      generate_pcfich_reg_mapping(frame_parms);
+      generate_phich_reg_mapping(frame_parms);
+      //    init_prach625(frame_parms);
 #ifndef OPENAIR2
-    phy_vars_ue->UE_mode[0] = PUSCH;
+      phy_vars_ue->UE_mode[0] = PUSCH;
 #else
-    phy_vars_ue->UE_mode[0] = PRACH;
+      phy_vars_ue->UE_mode[0] = PRACH;
 #endif
-    //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
-    phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
+      //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
+      phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
     //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
+    }
 
+    LOG_I(PHY,"[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",phy_vars_ue->Mod_id,
+	  phy_vars_ue->frame_rx,
+	  10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB,
+	  10*log10(phy_vars_ue->PHY_measurements.rssi),
+	  phy_vars_ue->rx_total_gain_dB,
+	  phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+	  10*log10(phy_vars_ue->PHY_measurements.rsrp[0])-phy_vars_ue->rx_total_gain_dB,
+	  (10*log10(phy_vars_ue->PHY_measurements.rsrq[0])));
+    
+    
+    LOG_I(PHY,"[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
+	  phy_vars_ue->Mod_id,
+	  phy_vars_ue->frame_rx,
+	  duplex_string[phy_vars_ue->lte_frame_parms.frame_type],
+	  prefix_string[phy_vars_ue->lte_frame_parms.Ncp],
+	  phy_vars_ue->lte_frame_parms.Nid_cell,
+	  phy_vars_ue->lte_frame_parms.N_RB_DL,
+	  phy_vars_ue->lte_frame_parms.phich_config_common.phich_duration,
+	  phich_string[phy_vars_ue->lte_frame_parms.phich_config_common.phich_resource],
+	  phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB);
+#if defined(OAI_USRP) || defined(EXMIMO)
+    LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+	  phy_vars_ue->Mod_id,
+	  phy_vars_ue->frame_rx,
+	  openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset,
+	  phy_vars_ue->lte_ue_common_vars.freq_offset);
+#endif
   } else {
 #ifdef DEBUG_INITIAL_SYNC
     LOG_I(PHY,"[UE%d] Initial sync : PBCH not ok\n",phy_vars_ue->Mod_id);
@@ -521,5 +595,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
   }
 
+  //  exit_fun("debug exit");
   return ret;
 }
+

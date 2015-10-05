@@ -61,13 +61,19 @@
 static void get_options (int argc, char **argv);
 static uint32_t eNB_app_register(const uint32_t enb_id_start, const uint32_t enb_id_end, const Enb_properties_array_t *enb_properties);
 static void    *eNB_app_task    (void *args_p);
-static void     mme_test_s1_start_test(instance_t instance);
+void     mme_test_s1_start_test(instance_t instance);
 //------------------------------------------------------------------------------
 static char                    *conf_config_file_name = NULL;
 static char                    *itti_dump_file        = NULL;
 const Enb_properties_array_t   *enb_properties        = NULL;
 int16_t                         glog_level            = LOG_INFO;
 int16_t                         glog_verbosity        = LOG_MED;
+s1c_test_t                      s1c_test = {
+	    0, // scenario_index
+	    0, // tx_next_message_index
+	    0, // rx_next_message_index
+	    0  // assoc_id
+      };
 
 //------------------------------------------------------------------------------
 static void get_options (int argc, char **argv)
@@ -116,7 +122,7 @@ static uint32_t eNB_app_register(const uint32_t enb_id_start, const uint32_t enb
   char            *str                  = NULL;
   struct in_addr   addr;
 
-
+  // 1 eNB should be max.
   // 1 eNB should be max.
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     {
@@ -228,7 +234,7 @@ static void *eNB_app_task(void *args_p)
       /* Check if all register eNB requests have been processed */
       if (register_enb_pending == 0) {
         if (registered_enb == enb_nb) {
-          mme_test_s1_start_test();
+          mme_test_s1_start_test(instance);
 
 
         } else {
@@ -288,10 +294,10 @@ void mme_test_s1_start_test(instance_t instance)
 //------------------------------------------------------------------------------
 {
 	s1ap_eNB_itti_send_sctp_data_req(instance,
-			int32_t assoc_id,
-			s1ap_scenario1[scenario_message_index].buffer,
-			s1ap_scenario1[scenario_message_index].buf_len,
-			s1ap_scenario1[scenario_message_index].sctp_stream_id);
+			s1c_test.assoc_id,
+			s1ap_scenarios[s1c_test.scenario_index][s1c_test.tx_next_message_index].buffer,
+			s1ap_scenarios[s1c_test.scenario_index][s1c_test.tx_next_message_index].buf_len,
+			s1ap_scenarios[s1c_test.scenario_index][s1c_test.tx_next_message_index].sctp_stream_id);
 }
 
 
@@ -301,6 +307,7 @@ void mme_test_s1_notify_sctp_data_ind(uint32_t assoc_id, int32_t stream, const u
 {
 
 }
+
 
 //------------------------------------------------------------------------------
 int main( int argc, char **argv )

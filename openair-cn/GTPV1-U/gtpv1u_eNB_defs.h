@@ -35,7 +35,7 @@
  */
 
 #include "hashtable.h"
-
+#include "asn1_constants.h"
 
 #ifndef GTPV1U_ENB_DEFS_H_
 #define GTPV1U_ENB_DEFS_H_
@@ -65,8 +65,9 @@ typedef struct gtpv1u_teid_data_s {
 
 typedef struct gtpv1u_bearer_s {
   /* TEID used in dl and ul */
-  teid_t          teid_eNB;         ///< eNB TEID
-  teid_t          teid_sgw;         ///< Remote TEID
+  teid_t          teid_eNB;                ///< eNB TEID
+  uintptr_t       teid_eNB_stack_session;  ///< eNB TEID
+  teid_t          teid_sgw;                ///< Remote TEID
   in_addr_t       sgw_ip_addr;
   struct in6_addr sgw_ip6_addr;
   tcp_udp_port_t  port;

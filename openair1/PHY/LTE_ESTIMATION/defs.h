@@ -162,11 +162,13 @@ We estimate the frequency offset by calculating the phase difference between cha
 \param frame_parms pointer to LTE frame parameters
 \param l symbol within slot
 \param freq_offset pointer to the returned frequency offset
+\param reset When non-zer it resets the filter to the initial value (set whenever tuning has been changed or for a one-shot estimate)
  */
 int lte_est_freq_offset(int **dl_ch_estimates,
                         LTE_DL_FRAME_PARMS *frame_parms,
                         int l,
-                        int* freq_offset);
+                        int* freq_offset,
+			int reset);
 
 int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
                               LTE_DL_FRAME_PARMS *frame_parms,

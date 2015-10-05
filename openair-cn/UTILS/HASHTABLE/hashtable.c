@@ -233,7 +233,7 @@ hashtable_rc_t hashtable_remove(hash_table_t *hashtblP, const uint64_t keyP)
   node=hashtblP->nodes[hash];
 
   while(node) {
-    if(node->key != keyP) {
+    if(node->key == keyP) {
       if(prevnode) prevnode->next=node->next;
       else hashtblP->nodes[hash]=node->next;
 

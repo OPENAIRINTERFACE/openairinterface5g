@@ -91,6 +91,7 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
 int
 rrc_mac_config_req(
   module_id_t                      Mod_id,
+  int                              CC_id,
   eNB_flag_t                       eNB_flagP,
   rnti_t                           rntiP,
   uint8_t                          eNB_index,
@@ -125,7 +126,7 @@ rrc_mac_config_req(
                       )
 {
 
-  int i,CC_id=0;
+  int i;
 
   int UE_id = -1;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
@@ -139,15 +140,15 @@ rrc_mac_config_req(
   } else {
     UE_id = find_UE_id(Mod_id, rntiP);
     if (physicalConfigDedicated == NULL) {
-      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY\n",Mod_id);
+      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY\n", Mod_id, CC_id);
     } else {
-      LOG_I(MAC,"[CONFIG][eNB %d] Configuring MAC/PHY for UE %d (%x)\n",Mod_id,UE_id,UE_RNTI(Mod_id,UE_id));
+      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY for UE %d (%x)\n", Mod_id, CC_id, UE_id, UE_RNTI(Mod_id, UE_id));
     }
   }
 
   if (tdd_Config && SIwindowsize && SIperiod) {
     if (eNB_flagP == ENB_FLAG_YES) {
-      mac_xface->phy_config_sib1_eNB(Mod_id,0,tdd_Config,*SIwindowsize,*SIperiod);
+      mac_xface->phy_config_sib1_eNB(Mod_id, CC_id, tdd_Config, *SIwindowsize, *SIperiod);
     } else {
       mac_xface->phy_config_sib1_ue(Mod_id,0,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
     }
@@ -164,7 +165,7 @@ rrc_mac_config_req(
       LOG_I(MAC,"[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
       LOG_I(MAC,"[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
-      mac_xface->phy_config_sib2_eNB(Mod_id,0,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
+      mac_xface->phy_config_sib2_eNB(Mod_id, CC_id, radioResourceConfigCommon, ul_CarrierFreq, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
     } else {
       UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
       mac_xface->phy_config_sib2_ue(Mod_id,0,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
@@ -219,8 +220,8 @@ rrc_mac_config_req(
 
 #ifdef Rel10
 
-      if (mac_MainConfig->sr_ProhibitTimer_r9) {
-        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->sr_ProhibitTimer_r9;
+      if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
+        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
       } else {
         UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
       }
@@ -260,7 +261,7 @@ rrc_mac_config_req(
 
   if (physicalConfigDedicated != NULL) {
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_eNB(Mod_id,0,UE_RNTI(Mod_id,UE_id),physicalConfigDedicated);
+      mac_xface->phy_config_dedicated_eNB(Mod_id, CC_id, UE_RNTI(Mod_id, UE_id), physicalConfigDedicated);
     } else {
       mac_xface->phy_config_dedicated_ue(Mod_id,0,eNB_index,physicalConfigDedicated);
       UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc

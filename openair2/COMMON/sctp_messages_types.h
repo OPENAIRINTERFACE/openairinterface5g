@@ -54,6 +54,10 @@ typedef struct sctp_new_association_req_s {
   /* Payload Protocol Identifier to use */
   uint32_t         ppid;
 
+  /* Number of streams used for this association */
+  uint16_t in_streams;
+  uint16_t out_streams;
+
   /* Local address to bind to */
   net_ip_address_t local_address;
   /* Remote address to connect to */

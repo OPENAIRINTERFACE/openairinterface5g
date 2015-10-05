@@ -26,12 +26,13 @@
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
+#include <stdlib.h>
 #include "oaisim_mme_test_s1c_scenario.h"
 
 
 // Description succesfull attach of UE, release UE.
 
-s1ap_test_t s1ap_scenario1[] = {
+s1ap_message_test_t s1ap_scenario1[] = {
   {
     .procedure_name = "id-initialUEMessage",
     .buffer = {

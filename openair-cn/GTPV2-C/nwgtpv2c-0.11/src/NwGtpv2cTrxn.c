@@ -253,7 +253,7 @@ nwGtpv2cTrxnNew( NW_IN  NwGtpv2cStackT* thiz)
  */
 NwGtpv2cTrxnT*
 nwGtpv2cTrxnWithSeqNumNew( NW_IN  NwGtpv2cStackT* thiz,
-                           NW_IN  NwU32T seqNum)
+                           NW_IN  uint32_t seqNum)
 {
   NwGtpv2cTrxnT *pTrxn;
 
@@ -292,10 +292,10 @@ nwGtpv2cTrxnWithSeqNumNew( NW_IN  NwGtpv2cStackT* thiz,
 
 NwGtpv2cTrxnT*
 nwGtpv2cTrxnOutstandingRxNew( NW_IN  NwGtpv2cStackT* thiz,
-                              NW_IN  NwU32T teidLocal,
-                              NW_IN  NwU32T peerIp,
-                              NW_IN  NwU32T peerPort,
-                              NW_IN  NwU32T seqNum)
+                              NW_IN  uint32_t teidLocal,
+                              NW_IN  uint32_t peerIp,
+                              NW_IN  uint32_t peerPort,
+                              NW_IN  uint32_t seqNum)
 {
   NwRcT rc;
   NwGtpv2cTrxnT *pTrxn, *pCollision;
@@ -321,7 +321,7 @@ nwGtpv2cTrxnOutstandingRxNew( NW_IN  NwGtpv2cStackT* thiz,
 
     if(pCollision) {
       NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Duplicate request message received for seq num 0x%x!",
-             (NwU32T) seqNum);
+             (uint32_t) seqNum);
 
       /* Case of duplicate request message from peer. Retransmit response. */
       if(pCollision->pMsg) {

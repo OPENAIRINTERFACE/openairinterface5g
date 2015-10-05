@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_TIMER_POLL_RETRANSMIT_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_TIMER_POLL_RETRANSMIT_C 1
 //-----------------------------------------------------------------------------
 //#include "rtos_header.h"
 #include "platform_types.h"
@@ -43,7 +43,6 @@ rlc_am_check_timer_poll_retransmit(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   // 5.2.2.3 Expiry of t-PollRetransmit
   // Upon expiry of t-PollRetransmit, the transmitting side of an AM RLC entity shall:
@@ -77,7 +76,7 @@ rlc_am_check_timer_poll_retransmit(
       rlc_pP->t_poll_retransmit.running   = 0;
       rlc_pP->t_poll_retransmit.timed_out = 1;
       rlc_pP->stat_timer_poll_retransmit_timed_out += 1;
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
       MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                              "0 "PROTOCOL_RLC_AM_MSC_FMT" t_poll_retransmit timed-out",\
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
@@ -98,7 +97,6 @@ rlc_am_is_timer_poll_retransmit_timed_out(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   return rlc_pP->t_poll_retransmit.timed_out;
 }
@@ -108,7 +106,6 @@ rlc_am_stop_and_reset_timer_poll_retransmit(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T_POLL_RETRANSMIT] STOPPED AND RESET\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -116,7 +113,7 @@ rlc_am_stop_and_reset_timer_poll_retransmit(
   rlc_pP->t_poll_retransmit.ms_time_out     = 0;
   rlc_pP->t_poll_retransmit.ms_start        = 0;
   rlc_pP->t_poll_retransmit.timed_out       = 0;
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
     MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                   "0 "PROTOCOL_RLC_AM_MSC_FMT" t_poll_retransmit stopped & reseted",\
                   PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
@@ -128,7 +125,6 @@ rlc_am_start_timer_poll_retransmit(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_poll_retransmit.timed_out       = 0;
 
@@ -140,7 +136,7 @@ rlc_am_start_timer_poll_retransmit(
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T_POLL_RETRANSMIT] STARTED (TIME-OUT = FRAME %05d)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_poll_retransmit.ms_time_out);
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
       MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                              "0 "PROTOCOL_RLC_AM_MSC_FMT" t_poll_retransmit started (TO %u ms)",\
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_poll_retransmit.ms_time_out);
@@ -150,7 +146,7 @@ rlc_am_start_timer_poll_retransmit(
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
     }
   } else {
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
       MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                              "0 "PROTOCOL_RLC_AM_MSC_FMT" t_poll_retransmit not restarted (TO %u ms)",\
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_poll_retransmit.ms_time_out);
@@ -164,7 +160,6 @@ rlc_am_init_timer_poll_retransmit(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP,
   const uint32_t ms_durationP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_poll_retransmit.running         = 0;
   rlc_pP->t_poll_retransmit.ms_time_out     = 0;

@@ -170,8 +170,8 @@ int
 mme_app_handle_authentication_info_answer(
   const s6a_auth_info_ans_t * const s6a_auth_info_ans_pP)
 {
-  struct ue_context_s *ue_context;
-  uint64_t imsi;
+  struct ue_context_s *ue_context = NULL;
+  uint64_t             imsi       = 0;
 
   DevAssert(s6a_auth_info_ans_pP != NULL);
 

@@ -56,18 +56,18 @@ nwGtpv2cUlpDestroy(NwGtpv2cNodeUlpT* thiz)
 }
 
 typedef struct NwGtpv2cPeerS {
-  NwU32T ipv4Addr;
-  NwU32T pingCount;
-  NwU32T pingInterval;
-  NwU32T t3Time;
-  NwU32T n3Count;
+  uint32_t ipv4Addr;
+  uint32_t pingCount;
+  uint32_t pingInterval;
+  uint32_t t3Time;
+  uint32_t n3Count;
 
-  NwU32T sendTimeStamp;
+  uint32_t sendTimeStamp;
   NwGtpv2cTunnelHandleT hTunnel;
 } NwGtpv2cPeerT;
 
 NwGtpv2cPeerT*
-nwGtpv2cUlpCreatePeerContext(NwGtpv2cNodeUlpT* thiz, NwU32T peerIp)
+nwGtpv2cUlpCreatePeerContext(NwGtpv2cNodeUlpT* thiz, uint32_t peerIp)
 {
   NwRcT                 rc;
   NwGtpv2cUlpApiT       ulpReq;
@@ -135,11 +135,11 @@ nwGtpv2cUlpSendEchoRequestToPeer(NwGtpv2cNodeUlpT* thiz, NwGtpv2cPeerT *pPeer)
 
 NwRcT
 nwGtpv2cUlpPing(NwGtpv2cNodeUlpT* thiz,
-                NwU32T peerIp,
-                NwU32T pingCount,
-                NwU32T pingInterval,
-                NwU32T t3Time,
-                NwU32T n3Count)
+                uint32_t peerIp,
+                uint32_t pingCount,
+                uint32_t pingInterval,
+                uint32_t t3Time,
+                uint32_t n3Count)
 {
   NwRcT                 rc;
   NwGtpv2cPeerT         *pPeer;
@@ -165,9 +165,9 @@ nwGtpv2cUlpProcessStackReqCallback (NwGtpv2cUlpHandleT hUlp,
                                     NwGtpv2cUlpApiT *pUlpApi)
 {
   NwRcT                 rc;
-  NwU32T                seqNum;
-  NwU32T                len;
-  NwU32T                recvTimeStamp;
+  uint32_t                seqNum;
+  uint32_t                len;
+  uint32_t                recvTimeStamp;
   struct timeval        tv;
   NwGtpv2cPeerT         *pPeer;
   NwGtpv2cNodeUlpT*     thiz;

@@ -62,13 +62,15 @@ void PHY_ofdm_mod(int *input,
 \param Ns Slot number (0..19)
 \param sample_offset offset within rxdata (points to beginning of subframe)
 \param no_prefix if 1 prefix is removed by HW
+\param reset_freq_est if non-zero it resets the frequency offset estimation loop
 */
 
 int slot_fep(PHY_VARS_UE *phy_vars_ue,
              unsigned char l,
              unsigned char Ns,
              int sample_offset,
-             int no_prefix);
+             int no_prefix,
+	     int reset_freq_est);
 
 int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    unsigned char l,

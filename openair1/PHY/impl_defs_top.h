@@ -43,8 +43,20 @@
 
 /** @defgroup _ref_implementation_ OpenAirInterface LTE Implementation
  * @{
- * @defgroup _physical_layer_ref_implementation_ Physical Layer Reference Implementation
+
+ * @defgroup _PHY_RF_INTERFACE_ Generic PHY - RF Interface
  * @ingroup _ref_implementation_
+ * @{
+ * This module is responsible for defining the generic interface between PHY and RF Target
+ * @}
+ 
+ * @defgroup _openair1_ openair1 Reference Implementation 
+ * @ingroup _ref_implementation_
+ * @{
+
+
+ * @defgroup _physical_layer_ref_implementation_ Physical Layer Reference Implementation
+ * @ingroup _openair1_
  * @{
 
 
@@ -83,14 +95,16 @@
  * @{
  * This module is responsible for defining and processing the PHY procedures (TX/RX) related to transport and physical channels.
  * @}
- * @}
 
  * @defgroup _PHY_PROCEDURES_ Physical Layer Procedures
- * @ingroup _ref_implementation_
+ * @ingroup _physical_layer_ref_implementation_
  * @{
  * This module is responsible for defining and processing the PHY procedures (TX/RX) related to transport and physical channels.
  * @}
 
+ * @}
+ * @}
+ * @}
  */
 
 #include "types.h"
@@ -98,7 +112,7 @@
 
 
 
-/**@addtogroup _PHY_STRUCTURES_
+/** @addtogroup _PHY_STRUCTURES_
  * @{
 */
 #define NUMBER_OF_OFDM_CARRIERS (frame_parms->ofdm_symbol_size)
@@ -242,6 +256,10 @@
 #define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
 #define AMP_OVER_2 (AMP>>1)
 
+/// Threshold for PUCCH Format 1 detection
+#define PUCCH1_THRES 10
+/// Threshold for PUCCH Format 1a/1b detection
+#define PUCCH1a_THRES 4
 
 #ifndef OPENAIR_LTE
 ///
@@ -322,10 +340,10 @@ typedef struct {
 #define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 
-#if defined(CBMIMO1) || defined(EXMIMO)
+#if defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP)
 #define MAX_FRAME_NUMBER 0x400
 #define NUMBER_OF_eNB_MAX 1
-#define NUMBER_OF_UE_MAX 16
+#define NUMBER_OF_UE_MAX 4
 #define NUMBER_OF_CONNECTED_eNB_MAX 3
 #else
 #define MAX_FRAME_NUMBER 0xFFFF
@@ -493,6 +511,5 @@ typedef struct {
 #define MCS_TABLE_LENGTH_MAX 64
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 
-/**@}
-  *@}
+/**@} 
 */

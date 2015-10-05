@@ -33,46 +33,54 @@
  */
 
 #include <libbladeRF.h>
-/*
-enum brf_err_num{
-  BLADERF_ERR_MIN=0,
-  BLADERF_ERR_UNEXPECTED=-1,
-  BLADERF_ERR_RANGE=-2,
-  BLADERF_ERR_INVAL=-3,
-  BLADERF_ERR_MEM=-4,
-  BLADERF_ERR_IO=-5,
-  BLADERF_ERR_TIMEOUT=-6,
-  BLADERF_ERR_NODEV=-7,
-  BLADERF_ERR_UNSUPPORTED=-8,
-  BLADERF_ERR_MISALIGNED=-9,
-  BLADERF_ERR_CHECKSUM=-10,
-  BLADERF_ERR_NO_FILE=-11,
-  BLADERF_ERR_UPDATE_FPGA=-12,
-  BLADERF_ERR_UPDATE_FW=-13,
-  BLADERF_ERR_TIME_PAST=-14,
-  BLADERF_ERR_MAX=-15,
-}
-mapping brf_err_names[] = {
-  {"BLADERF_OK", BLADERF_ERR_MIN},
-  {"BLADERF_ERR_UNEXPECTED",BLADERF_ERR_UNEXPECTED},
-  {"BLADERF_ERR_RANGE",BLADERF_ERR_RANGE},
-  {"BLADERF_ERR_INVAL",BLADERF_ERR_INVAL},
-  {"BLADERF_ERR_MEM",BLADERF_ERR_MEM},
-  {"BLADERF_ERR_IO",BLADERF_ERR_IO},
-  {"BLADERF_ERR_TIMEOUT",BLADERF_ERR_TIMEOUT},
-  {"BLADERF_ERR_NODEV",BLADERF_ERR_NODEV},
-  {"BLADERF_ERR_UNSUPPORTED",BLADERF_ERR_UNSUPPORTED},
-  {"BLADERF_ERR_MISALIGNED",BLADERF_ERR_MISALIGNED},
-  {"BLADERF_ERR_CHECKSUM",BLADERF_ERR_CHECKSUM},
-  {"BLADERF_ERR_NO_FILE",BLADERF_ERR_NO_FILE},
-  {"BLADERF_ERR_UPDATE_FPGA",BLADERF_ERR_UPDATE_FPGA},
-  {"BLADERF_ERR_UPDATE_FW",BLADERF_ERR_UPDATE_FW},
-  {"BLADERF_ERR_TIME_PAST",BLADERF_ERR_TIME_PAST},
-  {NULL, BLADERF_ERR_MAX}
-};
-*/
+
+#include "common_lib.h"
+#include "log.h"
+
+typedef struct {
+
+  // opaque BRF data struct
+  struct bladerf *dev;
+  // An empty ("") or NULL device identifier will result in the first encountered device being opened (using the first discovered backend)
+
+  unsigned int num_buffers;
+  unsigned int buffer_size;
+  unsigned int num_transfers;
+  unsigned int rx_timeout_ms;
+  unsigned int tx_timeout_ms;
+
+  struct bladerf_metadata meta_rx;
+  struct bladerf_metadata meta_tx;
+
+  unsigned int sample_rate;
+  // time offset between transmiter timestamp and receiver timestamp;
+  double tdiff;
+  // use brf_time_offset to get this value
+  int tx_forward_nsamps; //166 for 20Mhz
+
+
+  // --------------------------------
+  // Debug and output control
+  // --------------------------------
+  int num_underflows;
+  int num_overflows;
+  int num_seq_errors;
+  int num_rx_errors;
+  int num_tx_errors;
+
+  uint64_t tx_current_ts;
+  uint64_t rx_current_ts;
+  uint64_t tx_actual_nsamps;
+  uint64_t rx_actual_nsamps;
+  uint64_t tx_nsamps;
+  uint64_t rx_nsamps;
+  uint64_t tx_count;
+  uint64_t rx_count;
+  openair0_timestamp rx_timestamp;
+
+} brf_state_t;
 /*
  * func prototypes 
  */
 
-void brf_error(int status);
+int brf_error(int status);

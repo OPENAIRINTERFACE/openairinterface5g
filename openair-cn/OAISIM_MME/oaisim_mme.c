@@ -48,7 +48,6 @@
 #include "log.h"
 #include "timer.h"
 #include "sgw_lite_defs.h"
-#include "sgi.h"
 #include "mme_app_extern.h"
 #include "nas_defs.h"
 #include "s11_mme.h"
@@ -74,12 +73,10 @@ int main(int argc, char *argv[])
   CHECK_INIT_RETURN(udp_init(&mme_config));
   CHECK_INIT_RETURN(s11_mme_init(&mme_config));
   CHECK_INIT_RETURN(s1ap_mme_init(&mme_config));
-  //     if (sgi_init(&mme_config) < 0) return -1;
   //     if (gtpv1u_init(&mme_config) < 0) return -1;
   CHECK_INIT_RETURN(mme_app_init(&mme_config));
 
   CHECK_INIT_RETURN(s6a_init(&mme_config));
-  //     if (sgw_lite_init(&mme_config) < 0) return -1;
 
   /* Handle signals here */
   itti_wait_tasks_end();

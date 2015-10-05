@@ -28,7 +28,6 @@
  *******************************************************************************/
 #include "defs.h"
 
-#ifndef EXPRESSMIMO_TARGET
 
 int add_vector16(short *x,
                  short *y,
@@ -286,17 +285,3 @@ main ()
 }
 
 #endif //MAIN
-
-#else //EXPRESSMIMO_TARGET
-
-/*
-int add_vector16(short *x,
-     short *y,
-     short *z,
-     unsigned int N)
-{
-
-}
-*/
-
-#endif // EXPRESSMIMO_TARGET

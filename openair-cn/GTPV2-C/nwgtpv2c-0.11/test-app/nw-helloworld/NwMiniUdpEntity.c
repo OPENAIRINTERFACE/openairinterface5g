@@ -46,9 +46,9 @@ static
 void NW_EVT_CALLBACK(nwUdpDataIndicationCallbackData)
 {
   NwRcT         rc;
-  NwU8T         udpBuf[MAX_UDP_PAYLOAD_LEN];
+  uint8_t         udpBuf[MAX_UDP_PAYLOAD_LEN];
   NwS32T        bytesRead;
-  NwU32T        peerLen;
+  uint32_t        peerLen;
   struct sockaddr_in peer;
   NwGtpv2cNodeUdpT* thiz = (NwGtpv2cNodeUdpT*) arg;
 
@@ -57,7 +57,7 @@ void NW_EVT_CALLBACK(nwUdpDataIndicationCallbackData)
   bytesRead = recvfrom(fd, udpBuf, MAX_UDP_PAYLOAD_LEN , 0, (struct sockaddr *) &peer,(socklen_t*) &peerLen);
 
   if(bytesRead) {
-    NwU32T peerIp = (peer.sin_addr.s_addr);
+    uint32_t peerIp = (peer.sin_addr.s_addr);
     NW_LOG(NW_LOG_LEVEL_DEBG, "Received UDP message of size %u from peer %u.%u.%u.%u:%u", bytesRead,
            (peerIp & 0x000000ff),
            (peerIp & 0x0000ff00) >> 8,
@@ -75,7 +75,7 @@ void NW_EVT_CALLBACK(nwUdpDataIndicationCallbackData)
  * Public functions
  *--------------------------------------------------------------------------*/
 
-NwRcT nwGtpv2cUdpInit(NwGtpv2cNodeUdpT* thiz, NwGtpv2cStackHandleT hGtpv2cStack, NwU8T* ipv4Addr)
+NwRcT nwGtpv2cUdpInit(NwGtpv2cNodeUdpT* thiz, NwGtpv2cStackHandleT hGtpv2cStack, uint8_t* ipv4Addr)
 {
   int sd;
   struct sockaddr_in addr;
@@ -111,10 +111,10 @@ NwRcT nwGtpv2cUdpDestroy(NwGtpv2cNodeUdpT* thiz)
 }
 
 NwRcT nwGtpv2cUdpDataReq(NwGtpv2cUdpHandleT udpHandle,
-                         NwU8T* dataBuf,
-                         NwU32T dataSize,
-                         NwU32T peerIp,
-                         NwU32T peerPort)
+                         uint8_t* dataBuf,
+                         uint32_t dataSize,
+                         uint32_t peerIp,
+                         uint32_t peerPort)
 {
   struct sockaddr_in peerAddr;
   NwS32T bytesSent;

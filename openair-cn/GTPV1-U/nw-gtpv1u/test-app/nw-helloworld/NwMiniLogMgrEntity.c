@@ -23,27 +23,27 @@
 extern "C" {
 #endif
 
-NwU32T g_log_level = NW_LOG_LEVEL_INFO;
+uint32_t g_log_level = NW_LOG_LEVEL_INFO;
 
 /*---------------------------------------------------------------------------
  * Public functions
  *--------------------------------------------------------------------------*/
 
-NwGtpv1uRcT nwMiniLogMgrInit(NwMiniLogMgrT *thiz, NwU32T logLevel )
+NwGtpv1uRcT nwMiniLogMgrInit(NwMiniLogMgrT *thiz, uint32_t logLevel )
 {
   thiz->logLevel = logLevel;
   return NW_GTPV1U_OK;
 }
 
-NwGtpv1uRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT *thiz, NwU32T logLevel)
+NwGtpv1uRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT *thiz, uint32_t logLevel)
 {
   thiz->logLevel = logLevel;
 }
 
 NwGtpv1uRcT nwMiniLogMgrLogRequest (NwGtpv1uLogMgrHandleT hLogMgr,
-                                    NwU32T logLevel,
+                                    uint32_t logLevel,
                                     NwCharT *file,
-                                    NwU32T line,
+                                    uint32_t line,
                                     NwCharT *logStr)
 {
   NwMiniLogMgrT *thiz = (NwMiniLogMgrT *) hLogMgr;

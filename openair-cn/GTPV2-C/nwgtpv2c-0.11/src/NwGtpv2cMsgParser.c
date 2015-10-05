@@ -54,11 +54,11 @@ extern "C" {
 
 NwRcT
 nwGtpv2cMsgParserNew( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                      NW_IN NwU8T     msgType,
-                      NW_IN NwRcT (*ieReadCallback) (NwU8T ieType,
-                          NwU8T ieLength,
-                          NwU8T ieInstance,
-                          NwU8T* ieValue,
+                      NW_IN uint8_t     msgType,
+                      NW_IN NwRcT (*ieReadCallback) (uint8_t ieType,
+                          uint8_t ieLength,
+                          uint8_t ieInstance,
+                          uint8_t* ieValue,
                           void* ieReadCallbackArg),
                       NW_IN void* ieReadCallbackArg,
                       NW_IN NwGtpv2cMsgParserT **pthiz)
@@ -97,10 +97,10 @@ nwGtpv2cMsgParserDelete( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cMsgParserUpdateIeReadCallback( NW_IN NwGtpv2cMsgParserT* thiz,
-                                       NW_IN NwRcT (*ieReadCallback) (NwU8T ieType,
-                                           NwU8T ieLength,
-                                           NwU8T ieInstance,
-                                           NwU8T* ieValue,
+                                       NW_IN NwRcT (*ieReadCallback) (uint8_t ieType,
+                                           uint8_t ieLength,
+                                           uint8_t ieInstance,
+                                           uint8_t* ieValue,
                                            void* ieReadCallbackArg))
 {
   if(thiz) {
@@ -125,13 +125,13 @@ nwGtpv2cMsgParserUpdateIeReadCallbackArg( NW_IN NwGtpv2cMsgParserT* thiz,
 
 NwRcT
 nwGtpv2cMsgParserAddIe( NW_IN NwGtpv2cMsgParserT* thiz,
-                        NW_IN NwU8T ieType,
-                        NW_IN NwU8T ieInstance,
-                        NW_IN NwU8T iePresence,
-                        NW_IN NwRcT (*ieReadCallback) (NwU8T ieType,
-                            NwU8T ieLength,
-                            NwU8T ieInstance,
-                            NwU8T* ieValue,
+                        NW_IN uint8_t ieType,
+                        NW_IN uint8_t ieInstance,
+                        NW_IN uint8_t iePresence,
+                        NW_IN NwRcT (*ieReadCallback) (uint8_t ieType,
+                            uint8_t ieLength,
+                            uint8_t ieInstance,
+                            uint8_t* ieValue,
                             void* ieReadCallbackArg),
                         NW_IN void* ieReadCallbackArg)
 {
@@ -156,13 +156,13 @@ nwGtpv2cMsgParserAddIe( NW_IN NwGtpv2cMsgParserT* thiz,
 
 NwRcT
 nwGtpv2cMsgParserUpdateIe( NW_IN NwGtpv2cMsgParserT* thiz,
-                           NW_IN NwU8T ieType,
-                           NW_IN NwU8T ieInstance,
-                           NW_IN NwU8T iePresence,
-                           NW_IN NwRcT (*ieReadCallback) (NwU8T ieType,
-                               NwU8T ieLength,
-                               NwU8T ieInstance,
-                               NwU8T* ieValue,
+                           NW_IN uint8_t ieType,
+                           NW_IN uint8_t ieInstance,
+                           NW_IN uint8_t iePresence,
+                           NW_IN NwRcT (*ieReadCallback) (uint8_t ieType,
+                               uint8_t ieLength,
+                               uint8_t ieInstance,
+                               uint8_t* ieValue,
                                void* ieReadCallbackArg),
                            NW_IN void* ieReadCallbackArg)
 {
@@ -186,26 +186,26 @@ nwGtpv2cMsgParserUpdateIe( NW_IN NwGtpv2cMsgParserT* thiz,
 NwRcT
 nwGtpv2cMsgParserRun( NW_IN NwGtpv2cMsgParserT *thiz,
                       NW_IN NwGtpv2cMsgHandleT  hMsg,
-                      NW_OUT NwU8T             *pOffendingIeType,
-                      NW_OUT NwU8T             *pOffendingIeInstance,
-                      NW_OUT NwU16T            *pOffendingIeLength)
+                      NW_OUT uint8_t             *pOffendingIeType,
+                      NW_OUT uint8_t             *pOffendingIeInstance,
+                      NW_OUT uint16_t            *pOffendingIeLength)
 {
   NwRcT                 rc = NW_OK;
-  NwU8T                 flags;
-  NwU16T                mandatoryIeCount =0;
+  uint8_t                 flags;
+  uint16_t                mandatoryIeCount =0;
   NwGtpv2cIeTlvT        *pIe;
-  NwU8T                 *pIeStart;
-  NwU8T                 *pIeEnd;
-  NwU16T                ieLength;
+  uint8_t                 *pIeStart;
+  uint8_t                 *pIeEnd;
+  uint16_t                ieLength;
   NwGtpv2cMsgT          *pMsg = (NwGtpv2cMsgT*) hMsg;
 
   NW_ASSERT(pMsg);
-  flags    = *((NwU8T*)(pMsg->msgBuf));
-  pIeStart = (NwU8T *) (pMsg->msgBuf + (flags & 0x08 ? 12: 8));
-  pIeEnd   = (NwU8T *) (pMsg->msgBuf + pMsg->msgLen);
+  flags    = *((uint8_t*)(pMsg->msgBuf));
+  pIeStart = (uint8_t *) (pMsg->msgBuf + (flags & 0x08 ? 12: 8));
+  pIeEnd   = (uint8_t *) (pMsg->msgBuf + pMsg->msgLen);
 
-  memset(thiz->pIe, 0, sizeof(NwU8T*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
-  memset(pMsg->pIe, 0, sizeof(NwU8T*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
+  memset(thiz->pIe, 0, sizeof(uint8_t*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
+  memset(pMsg->pIe, 0, sizeof(uint8_t*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
 
   while (pIeStart < pIeEnd) {
     pIe = (NwGtpv2cIeTlvT*) pIeStart;
@@ -219,8 +219,8 @@ nwGtpv2cMsgParserRun( NW_IN NwGtpv2cMsgParserT *thiz,
     }
 
     if((thiz->ieParseInfo[pIe->t][pIe->i].iePresence)) {
-      thiz->pIe[pIe->t][pIe->i] = (NwU8T*) pIeStart;
-      pMsg->pIe[pIe->t][pIe->i] = (NwU8T*) pIeStart;
+      thiz->pIe[pIe->t][pIe->i] = (uint8_t*) pIeStart;
+      pMsg->pIe[pIe->t][pIe->i] = (uint8_t*) pIeStart;
 
       NW_LOG(thiz->hStack, NW_LOG_LEVEL_DEBG, "Received IE %u of length %u!", pIe->t, ieLength);
 
@@ -258,7 +258,7 @@ nwGtpv2cMsgParserRun( NW_IN NwGtpv2cMsgParserT *thiz,
   }
 
   if((NW_OK == rc) && (mandatoryIeCount != thiz->mandatoryIeCount)) {
-    NwU16T t, i;
+    uint16_t t, i;
     *pOffendingIeType     = 0;
     *pOffendingIeInstance = 0;
     *pOffendingIeLength   = 0;

@@ -49,6 +49,7 @@
 #include "hashtable.h"
 #include "spgw_config.h"
 #include "pgw_lite_paa.h"
+#include "msc.h"
 
 spgw_config_t spgw_config;
 sgw_app_t     sgw_app;
@@ -57,6 +58,7 @@ pgw_app_t     pgw_app;
 static void *sgw_lite_intertask_interface(void *args_p)
 {
   itti_mark_task_ready(TASK_SPGW_APP);
+  MSC_START_USE();
 
   while(1) {
     MessageDef *received_message_p;
@@ -137,7 +139,6 @@ static void *sgw_lite_intertask_interface(void *args_p)
 int sgw_lite_init(char* config_file_name_pP)
 {
   SPGW_APP_DEBUG("Initializing SPGW-APP  task interface\n");
-#if defined (ENABLE_USE_GTPU_IN_KERNEL)
   spgw_system("modprobe ip_tables",    SPGW_ABORT_ON_ERROR, __FILE__, __LINE__);
   spgw_system("modprobe x_tables",     SPGW_ABORT_ON_ERROR, __FILE__, __LINE__);
   spgw_system("iptables -P INPUT ACCEPT", SPGW_WARN_ON_ERROR, __FILE__, __LINE__);
@@ -180,7 +181,7 @@ int sgw_lite_init(char* config_file_name_pP)
   spgw_system("sysctl -w net.ipv4.conf.all.route_localnet=1",SPGW_WARN_ON_ERROR, __FILE__, __LINE__);
   spgw_system("sysctl -w net.ipv4.conf.all.rp_filter=0",SPGW_WARN_ON_ERROR, __FILE__, __LINE__);
   spgw_system("sync",                    SPGW_ABORT_ON_ERROR, __FILE__, __LINE__);
-#endif
+
   spgw_config_init(config_file_name_pP, &spgw_config);
   pgw_lite_load_pool_ip_addresses();
 

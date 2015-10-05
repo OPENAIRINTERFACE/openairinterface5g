@@ -137,7 +137,11 @@ typedef guint8   gboolean;
 
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
+#ifdef JUMBO_FRAME
+static unsigned char g_frameBuffer[9000];
+#else
 static unsigned char g_frameBuffer[1600];
+#endif 
 //static unsigned char g_fileBuffer[1600];
 static unsigned int g_frameOffset;
 

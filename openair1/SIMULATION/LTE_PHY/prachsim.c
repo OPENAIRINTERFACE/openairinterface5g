@@ -554,7 +554,7 @@ int main(int argc, char **argv)
 
         for (i=1; i<64; i++) {
           if (preamble_energy_max < preamble_energy_list[i]) {
-            //    printf("preamble %d => %d\n",i,preamble_energy_list[i]);
+            //   printf("preamble %d => %d\n",i,preamble_energy_list[i]);
             preamble_energy_max = preamble_energy_list[i];
             preamble_max = i;
           }

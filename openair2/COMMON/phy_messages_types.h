@@ -38,7 +38,9 @@
 #define PHY_MESSAGES_TYPES_H_
 
 #include "PHY/impl_defs_lte.h"
-#include "ral_messages_types.h"
+#if ENABLE_RAL
+#include "ral_messages_types.h" //LG: MIH moved from repository/trunk to repository/extras
+#endif
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 #define PHY_CONFIGURATION_REQ(mSGpTR)       (mSGpTR)->ittiMsg.phy_configuration_req
@@ -93,9 +95,9 @@ typedef struct PhyDeactivateReq_s {
 } PhyDeactivateReq;
 
 typedef struct PhyFindCellReq_s {
-  //#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
-  //#   endif
+#   endif
   Earfcn                  earfcn_start;
   Earfcn                  earfcn_end;
 } PhyFindCellReq;
@@ -104,28 +106,34 @@ typedef struct PhyFindNextCellReq_s {
 } PhyFindNextCellReq;
 
 typedef struct PhyMeasThresholdReq_s {
+#   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
   ral_link_cfg_param_t    cfg_param;
+#endif
 } PhyMeasThresholdReq;
 
 typedef struct PhyMeasReportInd_s {
+#   if ENABLE_RAL
   ral_threshold_t         threshold;
   ral_link_param_t        link_param;
+#endif
 } PhyMeasReportInd;
 
 // UE: PHY -> RRC messages
 typedef struct PhyFindCellInd_s {
-  //#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
-  //#   endif
+#   endif
   uint8_t                  cell_nb;
   CellInfo                 cells[MAX_REPORTED_CELL];
 } PhyFindCellInd;
 
 typedef struct PhyMeasThresholdConf_s {
+#   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
   ral_status_t            status;
   uint8_t                 num_link_cfg_params;
   ral_link_cfg_status_t   cfg_status[RAL_MAX_LINK_CFG_PARAMS];
+#endif
 } PhyMeasThresholdConf;
 #endif /* PHY_MESSAGES_TYPES_H_ */

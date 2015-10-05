@@ -60,14 +60,14 @@ static NwGtpv1uMsgT *gpGtpv1uMsgPool = NULL;
 
 NwGtpv1uRcT
 nwGtpv1uMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                NW_IN NwU8T     seqNumFlag,
-                NW_IN NwU8T     npduNumFlag,
-                NW_IN NwU8T     extHdrFlag,
-                NW_IN NwU8T     msgType,
-                NW_IN NwU8T     teid,
-                NW_IN NwU16T    seqNum,
-                NW_IN NwU8T     npduNum,
-                NW_IN NwU8T     nextExtHeader,
+                NW_IN uint8_t     seqNumFlag,
+                NW_IN uint8_t     npduNumFlag,
+                NW_IN uint8_t     extHdrFlag,
+                NW_IN uint8_t     msgType,
+                NW_IN uint8_t     teid,
+                NW_IN uint16_t    seqNum,
+                NW_IN uint8_t     npduNum,
+                NW_IN uint8_t     nextExtHeader,
                 NW_OUT NwGtpv1uMsgHandleT *phMsg)
 {
   NwGtpv1uStackT *pStack = (NwGtpv1uStackT *) hGtpuStackHandle;
@@ -118,18 +118,18 @@ nwGtpv1uMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                    NW_IN NwU32T    teid,
-                    NW_IN NwU8T     seqNumFlag,
-                    NW_IN NwU16T    seqNum,
-                    NW_IN NwU8T    *tpdu,
-                    NW_IN NwU16T    tpduLength,
-                    NW_IN NwU32T    tpduOffset,
+                    NW_IN uint32_t    teid,
+                    NW_IN uint8_t     seqNumFlag,
+                    NW_IN uint16_t    seqNum,
+                    NW_IN uint8_t    *tpdu,
+                    NW_IN uint16_t    tpduLength,
+                    NW_IN uint32_t    tpduOffset,
                     NW_OUT NwGtpv1uMsgHandleT *phMsg)
 {
   NwGtpv1uStackT *pStack = (NwGtpv1uStackT *) hGtpuStackHandle;
   NwGtpv1uMsgT   *pMsg;
-  //NwU32T          header_len  = 0;
-  NwU32T          msgExtraLen = 0;
+  //uint32_t          header_len  = 0;
+  uint32_t          msgExtraLen = 0;
 
   if(gpGtpv1uMsgPool) {
     pMsg = gpGtpv1uMsgPool;
@@ -237,8 +237,8 @@ nwGtpv1uMsgFromMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                          NW_IN NwU8T *pBuf,
-                          NW_IN NwU32T bufLen,
+                          NW_IN uint8_t *pBuf,
+                          NW_IN uint32_t bufLen,
                           NW_OUT NwGtpv1uMsgHandleT *phMsg)
 {
   NwGtpv1uStackT *pStack = (NwGtpv1uStackT *) hGtpuStackHandle;
@@ -267,17 +267,17 @@ nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
     pBuf += 2;
 
-    pMsg->teid          = ntohl(*((NwU32T *)pBuf));
+    pMsg->teid          = ntohl(*((uint32_t *)pBuf));
     pBuf += 4;
 
     if(pMsg->extHdrFlag || pMsg->seqNumFlag || pMsg->npduNumFlag) {
-      pMsg->seqNum              = ntohs(*(((NwU16T *)pBuf)));
+      pMsg->seqNum              = ntohs(*(((uint16_t *)pBuf)));
       pBuf += 2;
       pMsg->npduNum             = *(pBuf++);
       pMsg->nextExtHdrType      = *(pBuf++);
     }
 
-    pMsg->msgBufOffset = (NwU32T)(pBuf - pMsg->msgBuf);
+    pMsg->msgBufOffset = (uint32_t)(pBuf - pMsg->msgBuf);
     pMsg->msgBufLen = bufLen - pMsg->msgBufOffset;
     pMsg->msgLen    = bufLen;
 #if defined(LOG_GTPU) && LOG_GTPU > 0
@@ -308,7 +308,7 @@ nwGtpv1uMsgDelete( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
  */
 
 NwGtpv1uRcT
-nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T teid)
+nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, uint32_t teid)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
   thiz->teid = teid;
@@ -326,7 +326,7 @@ nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T teid)
  */
 
 NwGtpv1uRcT
-nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T seqNum)
+nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, uint32_t seqNum)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
   thiz->seqNum = seqNum;
@@ -339,7 +339,7 @@ nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T seqNum)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetTeid(NW_IN NwGtpv1uMsgHandleT hMsg)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
@@ -353,7 +353,7 @@ nwGtpv1uMsgGetTeid(NW_IN NwGtpv1uMsgHandleT hMsg)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
@@ -366,7 +366,7 @@ nwGtpv1uMsgGetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetMsgType(NW_IN NwGtpv1uMsgHandleT hMsg)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
@@ -380,11 +380,11 @@ nwGtpv1uMsgGetMsgType(NW_IN NwGtpv1uMsgHandleT hMsg)
  */
 
 NwGtpv1uRcT
-nwGtpv1uMsgGetTpdu(NW_IN NwGtpv1uMsgHandleT hMsg, NwU8T *pTpduBuf,
-                   NwU32T *pTpduLength)
+nwGtpv1uMsgGetTpdu(NW_IN NwGtpv1uMsgHandleT hMsg, uint8_t *pTpduBuf,
+                   uint32_t *pTpduLength)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
-  NwU8T headerLength = ((thiz->seqNumFlag || thiz->extHdrFlag
+  uint8_t headerLength = ((thiz->seqNumFlag || thiz->extHdrFlag
                          || thiz->npduNumFlag) ? 12 : 8);
 
   *pTpduLength = thiz->msgLen - headerLength;
@@ -392,7 +392,7 @@ nwGtpv1uMsgGetTpdu(NW_IN NwGtpv1uMsgHandleT hMsg, NwU8T *pTpduBuf,
   return NW_GTPV1U_OK;
 }
 
-NwU8T *
+uint8_t *
 nwGtpv1uMsgGetTpduHandle(NW_IN NwGtpv1uMsgHandleT hMsg)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
@@ -400,7 +400,7 @@ nwGtpv1uMsgGetTpduHandle(NW_IN NwGtpv1uMsgHandleT hMsg)
                            || thiz->npduNumFlag) ? 12 : 8));
 }
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetTpduLength(NW_IN NwGtpv1uMsgHandleT hMsg)
 {
   NwGtpv1uMsgT *thiz = (NwGtpv1uMsgT *) hMsg;
@@ -410,8 +410,8 @@ nwGtpv1uMsgGetTpduLength(NW_IN NwGtpv1uMsgHandleT hMsg)
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV1(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU8T       value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint8_t       value)
 {
   NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
   NwGtpv1uIeTv1T *pIe;
@@ -428,9 +428,9 @@ nwGtpv1uMsgAddIeTV1(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV2(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU16T      length,
-                    NW_IN NwU16T      value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint16_t      length,
+                    NW_IN uint16_t      value)
 {
   NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
   NwGtpv1uIeTv2T *pIe;
@@ -447,9 +447,9 @@ nwGtpv1uMsgAddIeTV2(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV4(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU16T      length,
-                    NW_IN NwU32T      value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint16_t      length,
+                    NW_IN uint32_t      value)
 {
   NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
   NwGtpv1uIeTv4T *pIe;
@@ -466,9 +466,9 @@ nwGtpv1uMsgAddIeTV4(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIe(NW_IN NwGtpv1uMsgHandleT hMsg,
-                 NW_IN NwU8T       type,
-                 NW_IN NwU16T      length,
-                 NW_IN NwU8T      *pVal)
+                 NW_IN uint8_t       type,
+                 NW_IN uint16_t      length,
+                 NW_IN uint8_t      *pVal)
 {
   NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
   NwGtpv1uIeTlvT *pIe;
@@ -489,8 +489,8 @@ nwGtpv1uMsgHexDump(NwGtpv1uMsgHandleT hMsg, FILE *fp)
 {
 
   NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
-  NwU8T *data = pMsg->msgBuf;
-  NwU32T size = pMsg->msgLen;
+  uint8_t *data = pMsg->msgBuf;
+  uint32_t size = pMsg->msgLen;
 
   unsigned char *p = (unsigned char *)data;
   unsigned char c;

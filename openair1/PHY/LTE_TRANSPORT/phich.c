@@ -291,6 +291,7 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
   // compute Ngroup_PHICH (see formula at beginning of Section 6.9 in 36-211
   Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
 
+
   if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
     Ngroup_PHICH++;
 
@@ -299,16 +300,25 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     Ngroup_PHICH<<=1;
   }
 
-#ifdef DEBUG_PHICH
-  LOG_D(PHY,"Ngroup_PHICH %d (phich_config_common.phich_resource %d,NidCell %d,Ncp %d, frame_type %d)\n",((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
-        frame_parms->phich_config_common.phich_resource,
-        frame_parms->Nid_cell,frame_parms->Ncp,frame_parms->frame_type);
-#endif
+  //#ifdef DEBUG_PHICH
+  printf("Ngroup_PHICH %d (phich_config_common.phich_resource %d,phich_config_common.phich_duration %s, NidCell %d,Ncp %d, frame_type %d), smallest pcfich REG %d, n0 %d, n1 %d (first PHICH REG %d)\n",
+	 ((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)),
+	 frame_parms->phich_config_common.phich_resource,
+	 frame_parms->phich_config_common.phich_duration==normal?"normal":"extended",
+	 frame_parms->Nid_cell,frame_parms->Ncp,frame_parms->frame_type,
+	 pcfich_reg[frame_parms->pcfich_first_reg_idx],
+	 n0,
+	 n1,
+	 ((frame_parms->Nid_cell))%n0);
+  //#endif
 
-  // This is the algorithm from Section 6.9.3 in 36-211
-  for (mprime=0; mprime<((frame_parms->Ncp == 0)?Ngroup_PHICH:(Ngroup_PHICH>>1)); mprime++) {
+  // This is the algorithm from Section 6.9.3 in 36-211, it works only for normal PHICH duration for now ...
 
-    if (frame_parms->Ncp==0) { // normal prefix
+  for (mprime=0; 
+       mprime<((frame_parms->Ncp == NORMAL)?Ngroup_PHICH:(Ngroup_PHICH>>1)); 
+       mprime++) {
+
+    if (frame_parms->phich_config_common.phich_duration==normal) { // normal PHICH duration
 
       frame_parms->phich_reg[mprime][0] = (frame_parms->Nid_cell + mprime)%n0;
 
@@ -326,9 +336,10 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 
       frame_parms->phich_reg[mprime][1] = (frame_parms->Nid_cell + mprime + (n0/3))%n0;
 
+      
       if (frame_parms->phich_reg[mprime][1]>=pcfich_reg[frame_parms->pcfich_first_reg_idx])
         frame_parms->phich_reg[mprime][1]++;
-
+      
       if (frame_parms->phich_reg[mprime][1]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+1)&3])
         frame_parms->phich_reg[mprime][1]++;
 
@@ -337,9 +348,10 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 
       if (frame_parms->phich_reg[mprime][1]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
         frame_parms->phich_reg[mprime][1]++;
+      
 
       frame_parms->phich_reg[mprime][2] = (frame_parms->Nid_cell + mprime + (2*n0/3))%n0;
-
+      
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[frame_parms->pcfich_first_reg_idx])
         frame_parms->phich_reg[mprime][2]++;
 
@@ -351,11 +363,11 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 
       if (frame_parms->phich_reg[mprime][2]>=pcfich_reg[(frame_parms->pcfich_first_reg_idx+3)&3])
         frame_parms->phich_reg[mprime][2]++;
-
-#ifdef DEBUG_PHICH
-      LOG_D(PHY,"phich_reg :%d => %d,%d,%d\n",mprime,frame_parms->phich_reg[mprime][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
-#endif
-    } else { // extended prefix
+      
+      //#ifdef DEBUG_PHICH
+      printf("phich_reg :%d => %d,%d,%d\n",mprime,frame_parms->phich_reg[mprime][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
+      //#endif
+    } else { // extended PHICH duration
       frame_parms->phich_reg[mprime<<1][0] = (frame_parms->Nid_cell + mprime)%n0;
       frame_parms->phich_reg[1+(mprime<<1)][0] = (frame_parms->Nid_cell + mprime)%n0;
 
@@ -364,10 +376,10 @@ void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
 
       frame_parms->phich_reg[1+(mprime<<1)][1] = ((frame_parms->Nid_cell*n1/n0) + mprime + (n1/3))%n1;
       frame_parms->phich_reg[1+(mprime<<1)][2] = ((frame_parms->Nid_cell*n2/n0) + mprime + (2*n2/3))%n2;
-#ifdef DEBUG_PHICH
-      LOG_D(PHY,"phich_reg :%d => %d,%d,%d\n",mprime<<1,frame_parms->phich_reg[mprime<<1][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
-      LOG_D(PHY,"phich_reg :%d => %d,%d,%d\n",1+(mprime<<1),frame_parms->phich_reg[1+(mprime<<1)][0],frame_parms->phich_reg[1+(mprime<<1)][1],frame_parms->phich_reg[1+(mprime<<1)][2]);
-#endif
+      //#ifdef DEBUG_PHICH
+      printf("phich_reg :%d => %d,%d,%d\n",mprime<<1,frame_parms->phich_reg[mprime<<1][0],frame_parms->phich_reg[mprime][1],frame_parms->phich_reg[mprime][2]);
+      printf("phich_reg :%d => %d,%d,%d\n",1+(mprime<<1),frame_parms->phich_reg[1+(mprime<<1)][0],frame_parms->phich_reg[1+(mprime<<1)][1],frame_parms->phich_reg[1+(mprime<<1)][2]);
+      //#endif
     }
   } // mprime loop
 }  // num_pdcch_symbols loop

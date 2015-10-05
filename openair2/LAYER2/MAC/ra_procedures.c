@@ -107,6 +107,7 @@ int8_t get_DELTA_PREAMBLE(module_id_t module_idP,int CC_id)
 
 }
 
+
 /// This routine implements Section 5.1.2 (UE Random Access Resource Selection) from 36.321
 void get_prach_resources(module_id_t module_idP,
                          int CC_id,
@@ -121,6 +122,11 @@ void get_prach_resources(module_id_t module_idP,
   RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
   uint8_t noGroupB = 0;
   uint8_t f_id = 0,num_prach=0;
+  int numberOfRA_Preambles;
+  int messageSizeGroupA;
+  int sizeOfRA_PreamblesGroupA;
+  int messagePowerOffsetGroupB;
+  int PLThreshold;
 
   if (CC_id>0) {
     LOG_E(MAC,"Transmission on secondary CCs is not supported yet\n");
@@ -136,6 +142,8 @@ void get_prach_resources(module_id_t module_idP,
     return; // not reached
   }
 
+  numberOfRA_Preambles = (1+rach_ConfigCommon->preambleInfo.numberOfRA_Preambles)<<2;  
+
   if (rach_ConfigDedicated) {   // This is for network controlled Mobility, later
     if (rach_ConfigDedicated->ra_PRACH_MaskIndex != 0) {
       prach_resources->ra_PreambleIndex = rach_ConfigDedicated->ra_PreambleIndex;
@@ -146,10 +154,54 @@ void get_prach_resources(module_id_t module_idP,
 
   if (!rach_ConfigCommon->preambleInfo.preamblesGroupAConfig) {
     noGroupB = 1;
-
   } else {
-    if (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA ==
-        rach_ConfigCommon->preambleInfo.numberOfRA_Preambles) {
+    sizeOfRA_PreamblesGroupA = (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA+1)<<2;
+    switch (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messageSizeGroupA) {
+    case 0:
+      messageSizeGroupA = 56;
+      break;
+    case 1:
+      messageSizeGroupA = 144;
+      break;
+    case 2:
+      messageSizeGroupA = 208;
+      break;
+    case 3:
+      messageSizeGroupA = 256;
+      break;
+    }
+
+    switch (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB) {
+    case 0:
+      messagePowerOffsetGroupB = -9999;
+      break;
+    case 1:
+      messagePowerOffsetGroupB = 0;
+      break;
+    case 2:
+      messagePowerOffsetGroupB = 5;
+      break;
+    case 3:
+      messagePowerOffsetGroupB = 8;
+      break;
+    case 4:
+      messagePowerOffsetGroupB = 10;
+      break;
+    case 5:
+      messagePowerOffsetGroupB = 12;
+      break;
+    case 6:
+      messagePowerOffsetGroupB = 15;
+      break;
+    case 7:
+      messagePowerOffsetGroupB = 18;
+      break;
+    }
+
+    PLThreshold = 0 - get_DELTA_PREAMBLE(module_idP,CC_id) - get_Po_NOMINAL_PUSCH(module_idP,CC_id) - messagePowerOffsetGroupB;
+    // Note Pcmax is set to 0 here, we have to fix this
+
+    if (sizeOfRA_PreamblesGroupA == numberOfRA_Preambles) {
       noGroupB = 1;
     }
   }
@@ -157,20 +209,18 @@ void get_prach_resources(module_id_t module_idP,
   if (first_Msg3 == 1) {
     if (noGroupB == 1) {
       // use Group A procedure
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())&0x3f;
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%numberOfRA_Preambles;
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 1;
-    } else if ((Msg3_size < rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messageSizeGroupA) ||
-               (mac_xface->get_PL(module_idP,0,eNB_index) > UE_mac_inst[module_idP].RA_maxPL)) {
+    } else if ((Msg3_size <messageSizeGroupA) ||
+               (mac_xface->get_PL(module_idP,0,eNB_index) > PLThreshold)) {
       // use Group A procedure
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA;
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = (taus())%sizeOfRA_PreamblesGroupA;
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 1;
     } else { // use Group B
-      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  =
-        rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA +
-        (taus())%(rach_ConfigCommon->preambleInfo.numberOfRA_Preambles -
-                  rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA);
+      UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  = sizeOfRA_PreamblesGroupA +
+        (taus())%(numberOfRA_Preambles - sizeOfRA_PreamblesGroupA);
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
       UE_mac_inst[module_idP].RA_usedGroupA = 0;
     }
@@ -186,6 +236,7 @@ void get_prach_resources(module_id_t module_idP,
 
       UE_mac_inst[module_idP].RA_prach_resources.ra_RACH_MaskIndex = 0;
     } else {
+      // FIXME rach_ConfigCommon->preambleInfo.preamblesGroupAConfig may be zero
       UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex  =
         rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->sizeOfRA_PreamblesGroupA +
         (taus())%(rach_ConfigCommon->preambleInfo.numberOfRA_Preambles -
@@ -221,16 +272,14 @@ void Msg1_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
 
   // start contention resolution timer
   UE_mac_inst[module_idP].RA_attempt_number++;
-#if defined(USER_MODE) && defined(OAI_EMU)
 
-  if (oai_emulation.info.opt_enabled) {
-    trace_pdu(0, NULL, 0, module_idP, 3, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
+  if (opt_enabled) {
+    trace_pdu(0, NULL, 0, module_idP, 2, UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex,
               UE_mac_inst[module_idP].subframe, 0, UE_mac_inst[module_idP].RA_attempt_number);
     LOG_D(OPT,"[UE %d][RAPROC] TX MSG1 Frame %d trace pdu for rnti %x  with size %d\n",
           module_idP, frameP, 1, UE_mac_inst[module_idP].RA_Msg3_size);
   }
 
-#endif
 }
 
 
@@ -244,19 +293,17 @@ void Msg3_tx(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id
   }
 
   // start contention resolution timer
-  LOG_I(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Setting contention resolution timer\n",module_idP,frameP);
+  LOG_D(MAC,"[UE %d][RAPROC] Frame %d : Msg3_tx: Setting contention resolution timer\n",module_idP,frameP);
   UE_mac_inst[module_idP].RA_contention_resolution_cnt = 0;
   UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 1;
-#if defined(USER_MODE) && defined(OAI_EMU)
 
-  if (oai_emulation.info.opt_enabled) { // msg3
+  if (opt_enabled) { // msg3
     trace_pdu(0, &UE_mac_inst[module_idP].CCCH_pdu.payload[0], UE_mac_inst[module_idP].RA_Msg3_size,
               module_idP, 3, UE_mac_inst[module_idP].crnti, UE_mac_inst[module_idP].subframe, 0, 0);
     LOG_D(OPT,"[UE %d][RAPROC] MSG3 Frame %d trace pdu Preamble %d   with size %d\n",
           module_idP, frameP, UE_mac_inst[module_idP].crnti /*UE_mac_inst[module_idP].RA_prach_resources.ra_PreambleIndex*/, UE_mac_inst[module_idP].RA_Msg3_size);
   }
 
-#endif
 }
 
 
@@ -291,7 +338,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
     if (Is_rrc_registered == 1) {
 
       if (UE_mac_inst[module_idP].RA_active == 0) {
-        printf("RA not active\n");
+        LOG_D(MAC,"RA not active\n");
         // check if RRC is ready to initiate the RA procedure
         Size = mac_rrc_data_req(module_idP,
                                 CC_id,
@@ -363,7 +410,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
                   module_idP,frameP, rlc_status.bytes_in_buffer,dcch_header_len);
 
           sdu_lengths[0] = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti,
-					    eNB_indexP, frameP,ENB_FLAG_NO, MBMS_FLAG_NO,
+                                            eNB_indexP, frameP,ENB_FLAG_NO, MBMS_FLAG_NO,
                                             DCCH,
                                             (char *)&ulsch_buff[0]);
 
@@ -448,9 +495,45 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER++;
           UE_mac_inst[module_idP].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER +=
             (rach_ConfigCommon->powerRampingParameters.powerRampingStep<<1);  // 2dB increments in ASN.1 definition
+	  int preambleTransMax;
+	  switch (rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax) {
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3:
+	    preambleTransMax = 3;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4:
+	    preambleTransMax = 4;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5:
+	    preambleTransMax = 5;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6:
+	    preambleTransMax = 6;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7:
+	    preambleTransMax = 7;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8:
+	    preambleTransMax = 8;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10:
+	    preambleTransMax = 10;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20:
+	    preambleTransMax = 20;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50:
+	    preambleTransMax = 50;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100:
+	    preambleTransMax = 100;
+	    break;
+	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200:
+	    preambleTransMax = 200;
+	    break;
+	  } 
 
-          if (UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER == rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax) {
-            LOG_D(MAC,"[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n",module_idP,frameP,rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax);
+          if (UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER == preambleTransMax) {
+            LOG_D(MAC,"[UE %d] Frame %d: Maximum number of RACH attempts (%d)\n",module_idP,frameP,preambleTransMax);
             // send message to RRC
             UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER=1;
             UE_mac_inst[module_idP].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER = get_Po_NOMINAL_PUSCH(module_idP,CC_id);

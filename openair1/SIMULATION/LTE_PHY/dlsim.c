@@ -135,7 +135,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_tx_phy, unsigned char N_
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource         = oneSixth;
+  lte_frame_parms->phich_config_common.phich_resource         = one;
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
   //  lte_frame_parms->Csrs = 2;
@@ -240,8 +240,8 @@ void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LT
 int main(int argc, char **argv)
 {
 
-  char c;
-  int k,i,aa,aarx,aatx,re;
+  int c;
+  int k,i,aa,aarx,aatx;
 
   int s,Kr,Kr_bytes;
 
@@ -356,12 +356,24 @@ int main(int argc, char **argv)
   LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
   LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
   uint8_t Kmimo;
-
+  FILE    *proc_fd = NULL;
+  char buf[64];
 
   opp_enabled=1; // to enable the time meas
 
-  cpu_freq_GHz = (double)get_cpu_freq_GHz();
-
+#if defined(__arm__)
+  proc_fd = fopen("/sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq", "r");
+  if(!proc_fd)
+     printf("cannot open /sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq");
+  else {
+     while(fgets(buf, 63, proc_fd))
+        printf("%s", buf);
+  }
+  fclose(proc_fd);
+  cpu_freq_GHz = ((double)atof(buf))/1e6;
+#else
+  cpu_freq_GHz = get_cpu_freq_GHz();
+#endif
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
 
   //signal(SIGSEGV, handler);
@@ -533,6 +545,7 @@ int main(int argc, char **argv)
       if ((transmission_mode!=1) &&
           (transmission_mode!=2) &&
           (transmission_mode!=3) &&
+          (transmission_mode!=4) &&
           (transmission_mode!=5) &&
           (transmission_mode!=6) &&
           (transmission_mode!=7)) {
@@ -681,7 +694,7 @@ int main(int argc, char **argv)
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
       printf("-R Number of HARQ rounds (fixed)\n");
-      printf("-M Turns on calibration mode for abstraction.\n");
+      printf("-A Turns on calibration mode for abstraction.\n");
       printf("-N Determines the number of Channel Realizations in Abstraction mode. Default value is 1. \n");
       printf("-O Set the percenatge of effective rate to testbench the modem performance (typically 30 and 70, range 1-100) \n");
       printf("-I Input filename for TrCH data (binary)\n");
@@ -758,18 +771,18 @@ int main(int argc, char **argv)
     lte_gold_ue_spec_port5(PHY_vars_UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
  
     beamforming_weights = (int32_t **)malloc(12*N_RB_DL*sizeof(int32_t*));
-    for(re=0;re<12*N_RB_DL;re++){
-      beamforming_weights[re]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
+    for(i=0;i<12*N_RB_DL;i++){
+      beamforming_weights[i]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
       for(aa=0;aa<n_tx_phy;aa++){
         //tmp
         if (n_tx_phy==1)
-	  beamforming_weights[re][aa] = 0x00007fff;
+	  beamforming_weights[i][aa] = 0x00007fff;
         else if (n_tx_phy==4)
-	  beamforming_weights[re][aa] = 0x00007fff>>1;
+	  beamforming_weights[i][aa] = 0x00007fff>>1;
         else if (n_tx_phy==16)
-	  beamforming_weights[re][aa] = 0x00007fff>>2;
+	  beamforming_weights[i][aa] = 0x00007fff>>2;
         else if (n_tx_phy==64)
-	  beamforming_weights[re][aa] = 0x00007fff>>3;
+	  beamforming_weights[i][aa] = 0x00007fff>>3;
       }
     }
     printf("***n_tx_phy=%d,n_tx_phy>>2=%d,beamforming_weights=%d\n",n_tx_phy,n_tx_phy>>2,beamforming_weights[0][0]);
@@ -1203,6 +1216,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format1,
@@ -1345,6 +1359,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1511,6 +1526,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d / format 2A (%d)\n",k,format2A);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format2A,
@@ -1650,6 +1666,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1817,6 +1834,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              n_rnti+k,
                                              format2,
@@ -1956,6 +1974,7 @@ int main(int argc, char **argv)
 
           printf("Generating dlsch params for user %d\n",k);
           generate_eNB_dlsch_params_from_dci(0,
+					     subframe,
                                              &DLSCH_alloc_pdu_1[0],
                                              SI_RNTI,
                                              format1A,
@@ -1984,6 +2003,7 @@ int main(int argc, char **argv)
         dci_alloc[num_dci].nCCE       = 4*k;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
+					   subframe,
                                            &DLSCH_alloc_pdu2_1E[k],
                                            n_rnti+k,
                                            format1E_2A_M10PRB,
@@ -2049,7 +2069,8 @@ int main(int argc, char **argv)
 
       if (input_trch_file==0) {
         for (i=0; i<input_buffer_length0; i++) {
-          input_buffer0[k][i]= (unsigned char)(taus()&0xff);
+          //input_buffer0[k][i] = (unsigned char)(i&0xff);
+          input_buffer0[k][i] = (unsigned char)(taus()&0xff);
         }
 
         for (i=0; i<input_buffer_length1; i++) {
@@ -2890,8 +2911,7 @@ PMI_FEEDBACK:
               if (PHY_vars_eNB->nb_antennas_tx_phy>1)// to be updated
                 write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
                              nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
-            } 
-
+            }
             tx_lev = 0;
 
             for (aa=0; aa<PHY_vars_eNB->nb_antennas_tx_phy; aa++) {
@@ -3109,16 +3129,15 @@ PMI_FEEDBACK:
               no_prefix  if 1 prefix is removed by HW
 
               */
-              if(Ns==(2*subframe) || Ns==(2*subframe+1)) {
-                start_meas(&PHY_vars_UE->ofdm_demod_stats);
-                slot_fep(PHY_vars_UE,
-                         l,
-                         Ns%20,
-                         0,
-                         0);
-                stop_meas(&PHY_vars_UE->ofdm_demod_stats);
-              }
-              //write_output("rxsigF0.m","rxsF0", &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+
+              start_meas(&PHY_vars_UE->ofdm_demod_stats);
+              slot_fep(PHY_vars_UE,
+                       l,
+                       Ns%20,
+                       0,
+                       0,
+		       0);
+              stop_meas(&PHY_vars_UE->ofdm_demod_stats);
 
               if (PHY_vars_UE->perfect_ce==1) {
                 if (awgn_flag==0) {
@@ -3254,6 +3273,7 @@ PMI_FEEDBACK:
 
                     if ((dci_alloc_rx[i].rnti == n_rnti) &&
                         (generate_ue_dlsch_params_from_dci(0,
+							   subframe,
                                                            dci_alloc_rx[i].dci_pdu,
                                                            dci_alloc_rx[i].rnti,
                                                            dci_alloc_rx[i].format,
@@ -3266,7 +3286,7 @@ PMI_FEEDBACK:
                       //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->nb_rb,
-                                                      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc,
+                                                      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc_even,
                                                       get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->Nl,
                                                       PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,
@@ -3316,6 +3336,7 @@ PMI_FEEDBACK:
                   case 2:
                   case 7:
                     generate_ue_dlsch_params_from_dci(0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format1 : format1A,
@@ -3332,6 +3353,7 @@ PMI_FEEDBACK:
                   case 3:
                     //        printf("Rate: TM3 (before) round %d (%d) first_tx %d\n",round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->first_tx);
                     generate_ue_dlsch_params_from_dci(0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2A : format1A,
@@ -3346,6 +3368,7 @@ PMI_FEEDBACK:
 
                   case 4:
                     generate_ue_dlsch_params_from_dci(0,
+						      subframe,
                                                       &DLSCH_alloc_pdu_1[0],
                                                       (common_flag==0)? C_RNTI : SI_RNTI,
                                                       (common_flag==0)? format2 : format1A,
@@ -3360,6 +3383,7 @@ PMI_FEEDBACK:
                   case 5:
                   case 6:
                     generate_ue_dlsch_params_from_dci(0,
+						      subframe,
                                                       &DLSCH_alloc_pdu2_1E[0],
                                                       C_RNTI,
                                                       format1E_2A_M10PRB,
@@ -3627,7 +3651,7 @@ PMI_FEEDBACK:
               dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
               dlsch0_eNB_harq = PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
               dlsch0_eNB_harq->mimo_mode    = LARGE_CDD;
-              dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc[0];
+              dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
               dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
               dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
               dlsch0_eNB_harq->rvidx        = dlsch0_ue_harq->rvidx;

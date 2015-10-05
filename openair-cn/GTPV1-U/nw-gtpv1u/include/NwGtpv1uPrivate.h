@@ -79,15 +79,15 @@ extern "C" {
  */
 
 typedef struct NwGtpv1uStack {
-  NwU32T                        stackType;/**< GTPU_STACK_ENB or GTPU_STACK_SGW   */
+  uint32_t                        stackType;/**< GTPU_STACK_ENB or GTPU_STACK_SGW   */
   NwPtrT                        id;
-  NwU32T                        seq;
+  uint32_t                        seq;
   NwGtpv1uUlpEntityT            ulp;
   NwGtpv1uUdpEntityT            udp;
   NwGtpv1uMemMgrEntityT         memMgr;
   NwGtpv1uTimerMgrEntityT       tmrMgr;
   NwGtpv1uLogMgrEntityT         logMgr;
-  NwU32T                        logLevel;
+  uint32_t                        logLevel;
   RB_HEAD( NwGtpv1uOutstandingTxSeqNumTrxnMap, NwGtpv1uTrxn) outstandingTxSeqNumMap;
   RB_HEAD( NwGtpv1uOutstandingRxSeqNumTrxnMap, NwGtpv1uTrxn) outstandingRxSeqNumMap;
   RB_HEAD(NwGtpv1uTunnelEndPointTMap, NwGtpv1uTunnelEndPoint) sessionMap;
@@ -99,8 +99,8 @@ typedef struct NwGtpv1uStack {
  */
 
 typedef struct NwGtpv1uTunnelEndPoint {
-  NwU32T                        teid;                                   /**< Gtpu Tunnel End Point Identifier   */
-  NwU32T                        peerAddr;                               /**< Peer IP address for the session    */
+  uint32_t                        teid;                                   /**< Gtpu Tunnel End Point Identifier   */
+  uint32_t                        peerAddr;                               /**< Peer IP address for the session    */
   NwGtpv1uStackT*               pStack;                                 /**< Pointer to the parent stack        */
   NwGtpv1uUlpSessionHandleT     hUlpSession;                            /**< ULP session handle for the session */
   RB_ENTRY (NwGtpv1uTunnelEndPoint)    sessionMapRbtNode;               /**< RB Tree Data Structure Node        */
@@ -152,20 +152,20 @@ nwGtpStopTrxnPeerRspTimer(NwGtpv1uStackT* thiz, NwGtpv1uTimerHandleT* phTmr);
  * NwGtpv1uMsgT holds gtpv1u messages to/from the peer.
  */
 typedef struct NwGtpv1uMsg {
-  NwU8T         version;
-  NwU8T         protocolType;
-  NwU8T         extHdrFlag;
-  NwU8T         seqNumFlag;
-  NwU16T        npduNumFlag;
-  NwU32T        msgType;
-  NwU16T        msgLen;
-  NwU32T        teid;
-  NwU16T        seqNum;
-  NwU8T         npduNum;
-  NwU8T         nextExtHdrType;
-  NwU8T*        msgBuf;
-  NwU32T        msgBufLen;
-  NwU32T        msgBufOffset;
+  uint8_t         version;
+  uint8_t         protocolType;
+  uint8_t         extHdrFlag;
+  uint8_t         seqNumFlag;
+  uint16_t        npduNumFlag;
+  uint32_t        msgType;
+  uint16_t        msgLen;
+  uint32_t        teid;
+  uint16_t        seqNum;
+  uint8_t         npduNum;
+  uint8_t         nextExtHdrType;
+  uint8_t*        msgBuf;
+  uint32_t        msgBufLen;
+  uint32_t        msgBufOffset;
   struct NwGtpv1uMsg* next;
 } NwGtpv1uMsgT;
 
@@ -179,16 +179,16 @@ typedef struct NwGtpv1uMsg {
  */
 
 typedef struct NwGtpv1uTrxn {
-  NwU32T                        seqNum;
-  NwU32T                        peerIp;
-  NwU32T                        peerPort;
-  NwU8T                         maxRetries;
-  NwU8T                         t3Timer;
+  uint32_t                        seqNum;
+  uint32_t                        peerIp;
+  uint32_t                        peerPort;
+  uint8_t                         maxRetries;
+  uint8_t                         t3Timer;
   NwGtpv1uTimerHandleT          hRspTmr;
   NwGtpv1uTimeoutInfoT          peerRspTimeoutInfo;
   NwGtpv1uStackT*               pStack;
   NwGtpv1uTunnelEndPointT*      pSession;
-  NwU32T                        hUlpTrxn;
+  uint32_t                        hUlpTrxn;
   NwGtpv1uMsgT*                 pMsg;
   RB_ENTRY (NwGtpv1uTrxn)       outstandingTxSeqNumMapRbtNode;            /**< RB Tree Data Structure Node        */
   RB_ENTRY (NwGtpv1uTrxn)       outstandingRxSeqNumMapRbtNode;            /**< RB Tree Data Structure Node        */
@@ -203,15 +203,15 @@ typedef struct NwGtpv1uTrxn {
 #pragma pack(1)
 
 typedef struct NwGtpv1uMsgHeader {
-  NwU8T PN:1;
-  NwU8T S:1;
-  NwU8T E:1;
-  NwU8T spare:1;
-  NwU8T PT:1;
-  NwU8T version:3;
-  NwU8T msgType;
-  NwU16T msgLength;
-  NwU32T teid;
+  uint8_t PN:1;
+  uint8_t S:1;
+  uint8_t E:1;
+  uint8_t spare:1;
+  uint8_t PT:1;
+  uint8_t version:3;
+  uint8_t msgType;
+  uint16_t msgLength;
+  uint32_t teid;
 } NwGtpv1uMsgHeaderT;
 
 #pragma pack()

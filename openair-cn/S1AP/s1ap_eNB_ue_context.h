@@ -66,7 +66,8 @@ typedef struct s1ap_eNB_ue_context_s {
   uint32_t mme_ue_s1ap_id;
 
   /* Stream used for this particular UE */
-  int32_t stream;
+  int32_t tx_stream;
+  int32_t rx_stream;
 
   /* Current UE state. */
   s1ap_ue_state ue_state;

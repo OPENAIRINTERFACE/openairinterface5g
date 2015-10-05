@@ -398,7 +398,15 @@ int logInit (void)
   g_log->log_component[SCTP].fd = 0;
   g_log->log_component[SCTP].filelog = 0;
   g_log->log_component[SCTP].filelog_name = "";
-
+ 
+  g_log->log_component[RRH].name = "RRH";
+  g_log->log_component[RRH].level = LOG_EMERG;
+  g_log->log_component[RRH].flag = LOG_MED;
+  g_log->log_component[RRH].interval = 1;
+  g_log->log_component[RRH].fd = 0;
+  g_log->log_component[RRH].filelog = 0;
+  g_log->log_component[RRH].filelog_name = "";
+  
   g_log->level2string[LOG_EMERG]         = "G"; //EMERG
   g_log->level2string[LOG_ALERT]         = "A"; // ALERT
   g_log->level2string[LOG_CRIT]          = "C"; // CRITIC

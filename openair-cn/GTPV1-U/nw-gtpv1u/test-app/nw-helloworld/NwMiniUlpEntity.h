@@ -21,11 +21,11 @@
 
 typedef struct {
   int                           hSocket;
-  NwU16T                        seqNum;
-  NwU8T                         restartCounter;
-  NwU8T                         localIpStr[16];
-  NwU8T                         peerIpStr[16];
-  NwU32T                        localPort[1025];
+  uint16_t                        seqNum;
+  uint8_t                         restartCounter;
+  uint8_t                         localIpStr[16];
+  uint8_t                         peerIpStr[16];
+  uint32_t                        localPort[1025];
   NwEventT                      ev[1025];
   NwGtpv1uStackHandleT          hGtpv1uStack;
   NwGtpv1uStackSessionHandleT   hGtpv1uConn;
@@ -42,7 +42,7 @@ NwGtpv1uRcT
 nwMiniUlpDestroy(NwMiniUlpEntityT* thiz);
 
 NwGtpv1uRcT
-nwMiniUlpCreateConn(NwMiniUlpEntityT* thiz, char* localIpStr, NwU16T localPort, char* peerIpStr);
+nwMiniUlpCreateConn(NwMiniUlpEntityT* thiz, char* localIpStr, uint16_t localPort, char* peerIpStr);
 
 NwGtpv1uRcT
 nwMiniUlpDestroyConn(NwMiniUlpEntityT* thiz);
@@ -51,7 +51,7 @@ NwGtpv1uRcT
 nwMiniUlpSendMsg(NwMiniUlpEntityT* thiz);
 
 NwGtpv1uRcT
-nwMiniUlpTpduSend(NwMiniUlpEntityT* thiz, NwU8T* tpduBuf, NwU32T tpduLen , NwU16T fromPort);
+nwMiniUlpTpduSend(NwMiniUlpEntityT* thiz, uint8_t* tpduBuf, uint32_t tpduLen , uint16_t fromPort);
 
 NwGtpv1uRcT
 nwMiniUlpProcessStackReqCallback (NwGtpv1uUlpHandleT hUlp,

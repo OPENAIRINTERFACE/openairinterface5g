@@ -116,13 +116,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   i = UE_list->head;
 
   while (i>=0) {
-
-    rnti = UE_RNTI(module_idP,i);
-    LOG_D(MAC,"UE %d: rnti %x (%p)\n",i,rnti,mac_xface->get_eNB_UE_stats(module_idP,0,rnti));
+    rnti = UE_RNTI(module_idP, i);
+    CC_id = UE_PCCID(module_idP, i);
+    LOG_D(MAC,"UE %d: rnti %x (%p)\n", i, rnti,
+          mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti));
     next_i= UE_list->next[i];
 
-    if (mac_xface->get_eNB_UE_stats(module_idP,0,rnti)==NULL) {
-      mac_remove_ue(module_idP,i,frameP, subframeP);
+    if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
+      mac_remove_ue(module_idP, i, frameP, subframeP);
     }
     i = next_i;
   }
@@ -313,8 +314,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-      //schedule_ue_spec(module_idP,frameP,subframeP,nprb,nCCE,mbsfn_status);
-      //fill_DLSCH_dci(module_idP,frameP,subframeP,RBalloc,0,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,nprb,nCCE,mbsfn_status);
+      fill_DLSCH_dci(module_idP,frameP,subframeP,RBalloc,0,mbsfn_status);
       schedule_ulsch(module_idP,frameP,cooperation_flag,3,7,nCCE);
 
     }
@@ -349,9 +350,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else {
       if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
-        schedule_RA(module_idP,frameP, subframeP, 0, nprb, nCCE);
+	//        schedule_RA(module_idP,frameP, subframeP, 0, nprb, nCCE);
         //  schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8, nCCE);
-        //schedule_ue_spec(module_idP, frameP, subframeP, nprb, nCCE, mbsfn_status);
+        schedule_ue_spec(module_idP, frameP, subframeP, nprb, nCCE, mbsfn_status);
         fill_DLSCH_dci(module_idP, frameP, subframeP, RBalloc, 1, mbsfn_status);
 
       }
@@ -368,9 +369,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     //schedule_RA(module_idP,frameP,subframeP,5,nprb,nCCE);
     if (mac_xface->lte_frame_parms->frame_type == FDD) {
-      //      schedule_RA(module_idP,frameP,subframeP,1,nprb,nCCE);
+      schedule_RA(module_idP,frameP,subframeP,1,nprb,nCCE);
       //      schedule_ulsch(module_idP,frameP,cooperation_flag,5,9,nCCE);
-      fill_DLSCH_dci(module_idP,frameP,subframeP,RBalloc,0,mbsfn_status);
+      fill_DLSCH_dci(module_idP,frameP,subframeP,RBalloc,1,mbsfn_status);
 
     } else if ((mac_xface->lte_frame_parms->tdd_config == 0) || // TDD Config 0
                (mac_xface->lte_frame_parms->tdd_config == 6)) { // TDD Config 6

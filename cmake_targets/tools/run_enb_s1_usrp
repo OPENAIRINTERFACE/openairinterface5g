@@ -39,6 +39,8 @@
 ################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/build_helper
+declare -i g_run_msc_gen=0
+declare    g_msc_dir="/tmp"
 
 
 function help()
@@ -57,6 +59,7 @@ function help()
   echo_error "  -K, --itti-dump-file      filename  ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
   echo_error "  -M, --target-dl-mcs       mcs       Downlink target MCS."
   echo_error "  -m, --mscgen              directory Generate mscgen output files in a directory"
+  echo_error "  -s, --show-stdout                   Do not redirect stdout and stderr to file /tmp/lte_softmodem.stdout.txt."
   echo_error "  -S, --enable-missed-slot            Continue execution in case of missed slot."
   echo_error "  -T, --target-ul-mcs       mcs       Uplink target MCS."
   echo_error "  -V, --vcd                           Dump timings of processing in a GTKWave compliant file format."
@@ -68,13 +71,40 @@ function help()
 }
 
 
+function do_msc_gen()
+{
+  cd $g_msc_dir
+  last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
+  $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py
+  sync
+  last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
+        
+  if [ x"$last_created_file" != x"$last_created_file2" ]; then
+    if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
+      command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
+    fi
+  fi 
+
+}
+
+
+function control_c()
+# run if user hits control-c
+{
+  echo_warning "\nExiting by ctrl+c\n"
+  if [ $g_run_msc_gen -eq 1 ]; then 
+    do_msc_gen
+  fi
+  exit $?
+}
+
 
 function main()
 {
   local -i run_gdb=0
-  local -i run_mscgen=0
+  local -i show_stdout=0
   local    exe_arguments=""
-  local    MSC_DIR="/tmp"
+  local    itti_dump_file=""
   
   until [ -z "$1" ]
     do
@@ -99,7 +129,7 @@ function main()
         ;;
       -g | --gdb)
         run_gdb=1
-        echo "setting GDB flag to: $GDB"
+        echo "setting GDB flag to: $run_gdb"
         shift;
         ;;
       -h | --help)
@@ -108,23 +138,23 @@ function main()
         exit 0
         ;;
       -K | --itti-dump-file)
-        ITTI_DUMP_FILE=$2
+        itti_dump_file=$2
         # can omit file name if last arg on the line
-        if [ "x$ITTI_DUMP_FILE" = "x" ]; then
-          ITTI_DUMP_FILE="/tmp/enb_s1_usrp_itti.log"
+        if [ "x$itti_dump_file" = "x" ]; then
+          itti_dump_file="/tmp/enb_s1_usrp_itti.log"
           shift 1;
         else
           shift 2;
         fi
-        echo "setting ITTI dump file to: $ITTI_DUMP_FILE"
-        exe_arguments="$exe_arguments -K $ITTI_DUMP_FILE"
+        echo "setting ITTI dump file to: $itti_dump_file"
+        exe_arguments="$exe_arguments -K $itti_dump_file"
         ;;      
       -m | --mscgen)
-        MSC_DIR=$2
+        g_msc_dir=$2
         # can omit file name if last arg on the line
-        if [ -d  "$MSC_DIR" ]; then
-          echo "setting mscgen log files to dir: $MSC_DIR"
-          run_mscgen=1
+        if [ -d  "$g_msc_dir" ]; then
+          echo "setting mscgen log files to dir: $g_msc_dir"
+          g_run_msc_gen=1
           shift 2;
         else
           echo_error "Mscgen log dir does not exist"
@@ -141,6 +171,11 @@ function main()
         exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
         shift ;
         ;;
+      -s | --show-stdout)
+        echo "setting show stdout"
+        show_stdout=1
+        shift ;
+        ;;
       -S | --enable-missed-slot)
         echo "setting continue even if missed slot"
         exe_arguments="$exe_arguments -S"
@@ -151,14 +186,14 @@ function main()
         exe_arguments="$exe_arguments -t $2"
         shift 2;
         ;;
-      -W | ----wireshark-l2)
+      -W | --wireshark-l2)
         echo "setting l2 pcap dump output"
         exe_arguments="$exe_arguments -W"
         shift ;
         ;;
       -x | --xforms)
         exe_arguments="$exe_arguments -d"
-        echo "setting xforms to: $XFORMS"
+        echo "setting xforms"
         shift;
         ;;
       *)   
@@ -174,37 +209,38 @@ function main()
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
 
-  if [ ! -e $OPENAIR_DIR/targets/bin/lte-softmodem ]; then
-    echo_fatal "Cannot find $OPENAIR_DIR/targets/bin/lte-softmodem executable"
+  if [ ! -e $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10 ]; then
+    echo_fatal "Cannot find $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10 executable"
   fi
 
 
   if [ $run_gdb -eq 0 ]; then 
-    exec $OPENAIR_DIR/targets/bin/lte-softmodem  `echo $exe_arguments` 2>&1 > /tmp/lte_softmodem.stdout.txt
+    # trap keyboard interrupt (control-c)
+    trap control_c SIGINT
+    if  [ $show_stdout -eq 0 ]; then 
+      echo_warning "stdout/sderr of lte-softmodem executable redirected to /tmp/lte_softmodem.stdout.txt"
+      exec $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10  `echo $exe_arguments` 2>&1 > /tmp/lte_softmodem.stdout.txt
+    else
+      exec $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10  `echo $exe_arguments`
+    fi
   else
+    # trap keyboard interrupt (control-c) is done by gdb
     touch      ~/.gdb_lte_softmodem
     chmod 777  ~/.gdb_lte_softmodem
-    echo "file $OPENAIR_DIR/targets/bin/lte-softmodem" > ~/.gdb_lte_softmodem
+    echo "file $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10" > ~/.gdb_lte_softmodem
     echo "set args $exe_arguments" >> ~/.gdb_lte_softmodem
     echo "run"                        >> ~/.gdb_lte_softmodem
     cat ~/.gdb_lte_softmodem
-    gdb -n -x ~/.gdb_lte_softmodem 2>&1 > /tmp/gdb_lte_softmodem.stdout.txt
+    if  [ $show_stdout -eq 0 ]; then 
+      echo_warning "stdout/sderr of lte-softmodem executable redirected to /tmp/gdb_lte_softmodem.stdout.txt"
+      gdb -n -x ~/.gdb_lte_softmodem 2>&1 > /tmp/gdb_lte_softmodem.stdout.txt
+    else
+      gdb -n -x ~/.gdb_lte_softmodem 
+    fi
+    if [ $g_run_msc_gen -eq 1 ]; then 
+      do_msc_gen
+    fi
   fi
-  
-  if [ $run_mscgen -eq 1 ]; then 
-    cd $MSC_DIR
-    last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
-    $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py  --profile E_UTRAN
-    sync
-    last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
-        
-    if [ x"$last_created_file" != x"$last_created_file2" ]; then
-      if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
-        command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
-      fi
-    fi 
-  fi
-
 }
 
 

@@ -54,11 +54,6 @@ extern "C" {
 #define NW_TRUE                 (1)             /**< Truth value                        */
 #define NW_FALSE                (0)             /**< False value                        */
 
-typedef unsigned char           NwU8T;          /**< Unsigned 1 byte                    */
-typedef unsigned short          NwU16T;         /**< Unsigned 2 byte                    */
-typedef unsigned int            NwU32T;         /**< Unsigned 4 byte                    */
-typedef unsigned long long      NwU64T;         /**< Unsigned 8 byte                    */
-
 typedef signed char             NwS8T;          /**< Signed 1 byte                      */
 typedef signed short            NwS16T;         /**< Signed 2 byte                      */
 typedef signed int              NwS32T;         /**< Signed 4 byte                      */

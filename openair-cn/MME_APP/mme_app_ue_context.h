@@ -177,6 +177,7 @@ typedef struct ue_context_s {
   int                    pending_pdn_connectivity_req_pti;
   unsigned               pending_pdn_connectivity_req_ue_id;
   network_qos_t          pending_pdn_connectivity_req_qos;
+  pco_flat_t             pending_pdn_connectivity_req_pco;
   void                  *pending_pdn_connectivity_req_proc_data;
   int                    pending_pdn_connectivity_req_request_type;
 
@@ -239,6 +240,13 @@ ue_context_t *mme_ue_context_exists_guti(mme_ue_context_t *mme_ue_context,
  **/
 int mme_insert_ue_context(mme_ue_context_t *mme_ue_context,
                           struct ue_context_s *ue_context_p);
+
+/** \brief Remove a UE context of the tree of known UEs.
+ * \param ue_context_p The UE context to remove
+ **/
+void mme_remove_ue_context(mme_ue_context_t *mme_ue_context,
+		                   struct ue_context_s *ue_context_p);
+
 
 /** \brief Allocate memory for a new UE context
  * @returns Pointer to the new structure, NULL if allocation failed

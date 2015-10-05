@@ -56,7 +56,7 @@
 #include "s1ap_eNB_itti_messaging.h"
 
 #include "s1ap_eNB_ue_context.h" // test, to be removed
-
+#include "msc.h"
 
 #include "assertions.h"
 #include "conversions.h"
@@ -98,7 +98,9 @@ uint32_t s1ap_generate_eNB_id(void)
 
 static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *mme_ip_address,
-                                  net_ip_address_t    *local_ip_addr)
+                                  net_ip_address_t    *local_ip_addr,
+                                  uint16_t             in_streams,
+                                  uint16_t             out_streams)
 {
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
@@ -113,6 +115,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
 
   sctp_new_association_req_p->port = S1AP_PORT_NUMBER;
   sctp_new_association_req_p->ppid = S1AP_SCTP_PPID;
+
+  sctp_new_association_req_p->in_streams  = in_streams;
+  sctp_new_association_req_p->out_streams = out_streams;
 
   memcpy(&sctp_new_association_req_p->remote_address,
          mme_ip_address,
@@ -197,8 +202,11 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
 
   /* Trying to connect to provided list of MME ip address */
   for (index = 0; index < s1ap_register_eNB->nb_mme; index++) {
-    s1ap_eNB_register_mme(new_instance, &s1ap_register_eNB->mme_ip_address[index],
-                          &s1ap_register_eNB->enb_ip_address);
+    s1ap_eNB_register_mme(new_instance,
+    		              &s1ap_register_eNB->mme_ip_address[index],
+                          &s1ap_register_eNB->enb_ip_address,
+                          s1ap_register_eNB->sctp_in_streams,
+                          s1ap_register_eNB->sctp_out_streams);
   }
 }
 
@@ -264,6 +272,7 @@ void *s1ap_eNB_task(void *arg)
   s1ap_eNB_prepare_internal_data();
 
   itti_mark_task_ready(TASK_S1AP);
+  MSC_START_USE();
 
   while (1) {
     itti_receive_msg(TASK_S1AP, &received_msg);

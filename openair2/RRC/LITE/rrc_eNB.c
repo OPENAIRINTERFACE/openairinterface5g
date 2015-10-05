@@ -93,7 +93,7 @@
 #   include "intertask_interface.h"
 #endif
 
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
 #   include "rrc_eNB_ral.h"
 #endif
 
@@ -328,7 +328,7 @@ init_SI(
     LOG_D(RRC,
           PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",
           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
-    rrc_mac_config_req(ctxt_pP->module_id, ENB_FLAG_YES, 0, 0,
+    rrc_mac_config_req(ctxt_pP->module_id, CC_id, ENB_FLAG_YES, 0, 0,
                        (RadioResourceConfigCommonSIB_t *) &
                        eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib2->radioResourceConfigCommon,
                        (struct PhysicalConfigDedicated *)NULL,
@@ -378,7 +378,7 @@ init_MCCH(
   int                                 sync_area = 0;
   // initialize RRC_eNB_INST MCCH entry
   eNB_rrc_inst[enb_mod_idP].carrier[CC_id].MCCH_MESSAGE =
-      malloc(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].num_mbsfn_sync_area * sizeof(uint32_t *));
+    malloc(eNB_rrc_inst[enb_mod_idP].carrier[CC_id].num_mbsfn_sync_area * sizeof(uint8_t*));
 
   for (sync_area = 0; sync_area < eNB_rrc_inst[enb_mod_idP].carrier[CC_id].num_mbsfn_sync_area; sync_area++) {
 
@@ -425,7 +425,7 @@ init_MCCH(
 
   //  LOG_I(RRC, "DUY: serviceID is %d\n",eNB_rrc_inst[enb_mod_idP].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",eNB_rrc_inst[enb_mod_idP].mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
-  rrc_mac_config_req(enb_mod_idP, ENB_FLAG_YES, 0, 0,
+  rrc_mac_config_req(enb_mod_idP, CC_id, ENB_FLAG_YES, 0, 0,
                      (RadioResourceConfigCommonSIB_t *) NULL,
                      (struct PhysicalConfigDedicated *)NULL,
 #ifdef Rel10
@@ -538,6 +538,23 @@ rrc_eNB_get_next_transaction_identifier(
 //        return (i);
 //}
 
+
+//-----------------------------------------------------------------------------
+// return 1 if there is already an UE with ue_identityP, 0 otherwise
+static int
+rrc_eNB_ue_context_random_exist(
+  const protocol_ctxt_t* const ctxt_pP,
+  const uint64_t               ue_identityP
+)
+//-----------------------------------------------------------------------------
+{
+  struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+    if (ue_context_p->ue_context.random_ue_identity == ue_identityP)
+      return 1;
+  }
+  return 0;
+}
 
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
@@ -745,6 +762,7 @@ rrc_eNB_free_mem_UE_context(
 
 //-----------------------------------------------------------------------------
 // called by MAC layer only
+// should be called when UE is lost by eNB
 void
 rrc_eNB_free_UE(
   const module_id_t enb_mod_idP,
@@ -779,11 +797,13 @@ rrc_eNB_free_UE(
      *  procedure, see TS 23.401 [17].
      */
 #else
+#if defined(OAI_EMU)
     AssertFatal(ue_context_p->local_uid < NUMBER_OF_UE_MAX, "local_uid invalid (%d<%d) for UE %x!", ue_context_p->local_uid, NUMBER_OF_UE_MAX, rntiP);
     ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_p->local_uid];
     AssertFatal(ue_module_id < NUMBER_OF_UE_MAX, "ue_module_id invalid (%d<%d) for UE %x!", ue_module_id, NUMBER_OF_UE_MAX, rntiP);
     oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_p->local_uid] = -1;
     oai_emulation.info.eNB_ue_module_id_to_rnti[enb_mod_idP][ue_module_id] = NOT_A_RNTI;
+#endif
 #endif
     ue_context_p->ue_context.Status = RRC_IDLE;
 
@@ -941,6 +961,49 @@ rrc_eNB_generate_UECapabilityEnquiry(
     buffer,
     PDCP_TRANSMISSION_MODE_CONTROL);
 
+}
+
+//-----------------------------------------------------------------------------
+void
+rrc_eNB_generate_RRCConnectionReestablishmentReject(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const int                    CC_id
+)
+//-----------------------------------------------------------------------------
+{
+#ifdef RRC_MSG_PRINT
+  int                                 cnt;
+#endif
+
+  eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
+    do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
+                          (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
+
+#ifdef RRC_MSG_PRINT
+  LOG_F(RRC,"[MSG] RRCConnectionReestablishmentReject\n");
+
+  for (cnt = 0; cnt < eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
+    LOG_F(RRC,"%02x ", ((uint8_t*)eNB_rrc_inst[ctxt_pP->module_id].Srb0.Tx_buffer.Payload)[cnt]);
+  }
+
+  LOG_F(RRC,"\n");
+#endif
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Header,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    MSC_AS_TIME_FMT" RRCConnectionReestablishmentReject UE %x size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size);
+
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReestablishmentReject (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -1222,7 +1285,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 #ifdef Rel10
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
-  mac_MainConfig->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
+  mac_MainConfig->ext1 = CALLOC(1, sizeof(struct MAC_MainConfig__ext1));
+  mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
   //sps_RA_ConfigList_rlola = NULL;
 #endif
 
@@ -2215,6 +2279,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);
   rrc_mac_config_req(
     ctxt_pP->module_id,
+    ue_context_pP->ue_context.primaryCC_id,
     ENB_FLAG_YES,
     ue_context_pP->ue_context.rnti,
     0,
@@ -2361,7 +2426,8 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 #ifdef Rel10
   sr_ProhibitTimer_r9 = CALLOC(1, sizeof(long));
   *sr_ProhibitTimer_r9 = 0;   // SR tx on PUCCH, Value in number of SR period(s). Value 0 = no timer for SR, Value 2= 2*SR
-  mac_MainConfig->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
+  mac_MainConfig->ext1 = CALLOC(1, sizeof(struct MAC_MainConfig__ext1));
+  mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
   //sps_RA_ConfigList_rlola = NULL;
 #endif
   // Measurement ID list
@@ -2785,6 +2851,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   //pdcp_data_req (ctxt_pP->module_id, frameP, 1, (ue_mod_idP * NB_RB_MAX) + DCCH,rrc_eNB_mui++, 0, size, (char *) buffer, 1);
   rrc_mac_config_req(
     ctxt_pP->module_id,
+    ue_context_pP->ue_context.primaryCC_id,
     ENB_FLAG_YES,
     ue_context_pP->ue_context.rnti,
     0,
@@ -2897,7 +2964,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                      ue_context_pP->ue_context.kenb, &kRRCint);
 
 #endif
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
   {
     MessageDef                         *message_ral_p = NULL;
     rrc_ral_connection_reconfiguration_ind_t connection_reconfiguration_ind;
@@ -3001,7 +3068,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
 #if  defined(PDCP_USE_NETLINK) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
           // can mean also IPV6 since ether -> ipv6 autoconf
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO)
+#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET)
           LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
                 ctxt_pP->module_id,
                 ctxt_pP->module_id);
@@ -3050,6 +3117,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 
           rrc_mac_config_req(
             ctxt_pP->module_id,
+            ue_context_pP->ue_context.primaryCC_id,
             ENB_FLAG_YES,
             ue_context_pP->ue_context.rnti,
             0,
@@ -3097,6 +3165,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
           rrc_mac_config_req(ctxt_pP->module_id,
+                             ue_context_pP->ue_context.primaryCC_id,
                              ENB_FLAG_YES,
                              ue_context_pP->ue_context.rnti,
                              0,
@@ -3186,6 +3255,7 @@ rrc_eNB_generate_RRCConnectionSetup(
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
         rrc_mac_config_req(
           ctxt_pP->module_id,
+          ue_context_pP->ue_context.primaryCC_id,
           ENB_FLAG_YES,
           ue_context_pP->ue_context.rnti,
           0,
@@ -3289,15 +3359,21 @@ openair_rrc_lite_eNB_init(
   //        }
   //    }
   eNB_rrc_inst[ctxt.module_id].Nb_ue = 0;
+
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     eNB_rrc_inst[ctxt.module_id].carrier[CC_id].Srb0.Active = 0;
   }
+
   uid_linear_allocator_init(&eNB_rrc_inst[ctxt.module_id].uid_allocator);
   RB_INIT(&eNB_rrc_inst[ctxt.module_id].rrc_ue_head);
-  RB_INIT(&eNB_rrc_inst[ctxt.module_id].rrc_rnti_head);
   //    for (j = 0; j < (NUMBER_OF_UE_MAX + 1); j++) {
   //        eNB_rrc_inst[enb_mod_idP].Srb2[j].Active = 0;
   //    }
+
+
+  eNB_rrc_inst[ctxt.module_id].initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+  eNB_rrc_inst[ctxt.module_id].s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
+
 
   /// System Information INIT
 
@@ -3334,6 +3410,7 @@ openair_rrc_lite_eNB_init(
           eNB_rrc_inst[ctxt.module_id].carrier[CC_id].cba_rnti[3],
           eNB_rrc_inst[ctxt.module_id].carrier[CC_id].num_active_cba_groups);
   }
+
 #endif
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -3506,11 +3583,15 @@ rrc_eNB_decode_ccch(
 
       if ((eNB_rrc_inst[enb_mod_idP].phyCellId == rrcConnectionReestablishmentRequest.UE_identity.physCellId) &&
       (ue_mod_id != UE_INDEX_INVALID)){
-      rrc_eNB_generate_RRCConnectionReestablishement(enb_mod_idP, frameP, ue_mod_id);
+      rrc_eNB_generate_RRCConnectionReestablishment(enb_mod_idP, frameP, ue_mod_id);
       }else {
-      rrc_eNB_generate_RRCConnectionReestablishementReject(enb_mod_idP, frameP, ue_mod_id);
+      rrc_eNB_generate_RRCConnectionReestablishmentReject(enb_mod_idP, frameP, ue_mod_id);
       }
       */
+      /* reject all reestablishment attempts for the moment */
+      rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP,
+                       rrc_eNB_get_ue_context(&eNB_rrc_inst[ctxt_pP->module_id], ctxt_pP->rnti),
+                       CC_id);
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
@@ -3546,10 +3627,23 @@ rrc_eNB_decode_ccch(
       } else {
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
+          AssertFatal(rrcConnectionRequest->ue_Identity.present == InitialUE_Identity_PR_randomValue,
+                      "unsupported InitialUE-Identity in RRCConnectionRequest");
+          AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
+                      "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
+                      rrcConnectionRequest->ue_Identity.choice.randomValue.size);
           memcpy(((uint8_t*) & random_value) + 3,
                  rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
                  rrcConnectionRequest->ue_Identity.choice.randomValue.size);
-          ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+          /* if there is already a registered UE (with another RNTI) with this random_value,
+           * the current one must be removed from MAC/PHY (zombie UE)
+           */
+          if (rrc_eNB_ue_context_random_exist(ctxt_pP, random_value)) {
+            AssertFatal(0 == 1, "TODO: remove UE fro MAC/PHY (how?)");
+            ue_context_p = NULL;
+          } else {
+            ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+          }
         }
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" UE context: %X\n",
@@ -3626,6 +3720,8 @@ rrc_eNB_decode_ccch(
 #ifndef NO_RRM
       send_msg(&S_rrc, msg_rrc_MR_attach_ind(ctxt_pP->module_id, Mac_id));
 #else
+
+      ue_context_p->ue_context.primaryCC_id = CC_id;
 
       //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
       Idx = DCCH;
@@ -4263,16 +4359,6 @@ rrc_enb_task(
       rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
       break;
 
-    case GTPV1U_ENB_CREATE_TUNNEL_RESP:
-      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                    instance,
-                                    ENB_FLAG_YES,
-                                    GTPV1U_ENB_CREATE_TUNNEL_RESP(msg_p).rnti,
-                                    msg_p->ittiMsgHeader.lte_time.frame,
-                                    msg_p->ittiMsgHeader.lte_time.slot);
-      rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(&ctxt, msg_p, msg_name_p);
-      break;
-
     case GTPV1U_ENB_DELETE_TUNNEL_RESP:
       /* Nothing to do. Apparently everything is done in S1AP processing */
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
@@ -4287,12 +4373,11 @@ rrc_enb_task(
       openair_rrc_lite_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
       break;
 
-#   ifdef ENABLE_RAL
+#   if ENABLE_RAL
 
     case RRC_RAL_CONFIGURE_THRESHOLD_REQ:
       rrc_enb_ral_handle_configure_threshold_request(instance, msg_p);
       break;
-#   endif
 
       //SPECTRA: Add the RRC connection reconfiguration with Second cell configuration
     case RRC_RAL_CONNECTION_RECONFIGURATION_REQ:
@@ -4306,13 +4391,11 @@ rrc_enb_task(
                                     msg_p->ittiMsgHeader.lte_time.slot);
       LOG_I(RRC, "[eNB %d] Send RRC_RAL_CONNECTION_RECONFIGURATION_REQ to UE %s\n", instance, msg_name_p);
       //Method RRC connection reconfiguration command with Second cell configuration
-#   ifdef ENABLE_RAL
       //rrc_eNB_generate_RRCConnectionReconfiguration_SCell(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0, 36126);
-#   else
       //rrc_eNB_generate_defaultRRCConnectionReconfiguration(instance, 0/* TODO put frameP number ! */, /*ue_mod_id force ue_mod_id to first UE*/0,
       //                                                     eNB_rrc_inst[instance].HO_flag);
-#   endif
       break;
+#   endif
 
     default:
       LOG_E(RRC, "[eNB %d] Received unexpected message %s\n", instance, msg_name_p);

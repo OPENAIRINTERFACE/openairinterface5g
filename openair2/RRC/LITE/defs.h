@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 
-/*! \file defs.h
+/*! \file RRC/LITE/defs.h
 * \brief RRC struct definitions and function prototypes
 * \author Navid Nikaein and Raymond Knopp
 * \date 2010 - 2014
@@ -115,7 +115,7 @@
 # include "commonDef.h"
 #endif
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 # include "collection/hashtable/obj_hashtable.h"
 #endif
 
@@ -135,12 +135,12 @@ typedef struct uid_linear_allocator_s {
 
 #define PROTOCOL_RRC_CTXT_FMT           PROTOCOL_CTXT_FMT
 #define PROTOCOL_RRC_CTXT_ARGS(CTXT_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp)
-/** @defgroup _rrc_impl_ RRC Layer Reference Implementation
- * @ingroup _ref_implementation_
+/** @defgroup _rrc RRC 
+ * @ingroup _oai2
  * @{
  */
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 typedef struct rrc_ral_threshold_key_s {
   ral_link_param_type_t   link_param_type;
   ral_threshold_t         threshold;
@@ -189,16 +189,16 @@ typedef enum HO_STATE_e {
 
 typedef struct UE_RRC_INFO_s {
   UE_STATE_t State;
-  uint8_t SIB1Status;
   uint8_t SIB1systemInfoValueTag;
-  uint8_t SIStatus;
+  uint32_t SIStatus;
+  uint32_t SIcnt;
 #ifdef Rel10
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
-  uint8_t SIwindowsize;
+  uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
   uint8_t handoverTarget;
   HO_STATE_t ho_state;
-  uint16_t SIperiod;
+  uint16_t SIperiod; //!< Corresponds to the SIB1 si-Periodicity parameter (multiplied by 10). Possible values are (final): 80,160,320,640,1280,2560,5120
   unsigned short UE_index;
   uint32_t T300_active;
   uint32_t T300_cnt;
@@ -295,7 +295,9 @@ typedef struct HANDOVER_INFO_UE_s {
   PhysCellId_t targetCellId;
   uint8_t measFlag;
 } HANDOVER_INFO_UE;
+
 typedef struct eNB_RRC_UE_s {
+  uint8_t                            primaryCC_id;
 #ifdef Rel10
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
@@ -317,7 +319,6 @@ typedef struct eNB_RRC_UE_s {
   MeasConfig_t*                      measConfig;
   HANDOVER_INFO*                     handover_info;
 
-
 #if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */
   uint8_t kenb[32];
@@ -325,8 +326,6 @@ typedef struct eNB_RRC_UE_s {
   /* Used integrity/ciphering algorithms */
   e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
-
-
 
   uint8_t                            Status;
   rnti_t                             rnti;
@@ -361,6 +360,7 @@ typedef struct eNB_RRC_UE_s {
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;
+
 typedef struct rrc_eNB_ue_context_s {
   /* Tree related data */
   RB_ENTRY(rrc_eNB_ue_context_s) entries;
@@ -370,7 +370,7 @@ typedef struct rrc_eNB_ue_context_s {
    */
   rnti_t         ue_id_rnti;
 
-  // an other key for protocol layers but should not be used as a key for RB tree
+  // another key for protocol layers but should not be used as a key for RB tree
   ue_uid_t       local_uid;
 
   /* UE id for initial connection to S1AP */
@@ -412,12 +412,14 @@ typedef struct eNB_RRC_INST_s {
   rcc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
-  RB_HEAD(rrc_rnti_tree_s, rrc_ue_s1ap_ids_s)      rrc_rnti_head; // ue-rnti tree key search by S1AP ids
   uint8_t                           HO_flag;
   uint8_t                            Nb_ue;
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   obj_hash_table_t                  *ral_meas_thresholds;
 #endif
+  hash_table_t                      *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
+  hash_table_t                      *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
+
 #ifdef LOCALIZATION
   /// localization type, 0: power based, 1: time based
   uint8_t loc_type;
@@ -460,7 +462,7 @@ typedef struct UE_RRC_INST_s {
   uint8_t SIB1Status[NB_CNX_UE];
   uint8_t SIStatus[NB_CNX_UE];
   SystemInformationBlockType1_t *sib1[NB_CNX_UE];
-  SystemInformation_t *si[NB_CNX_UE][8];
+  SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
   SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   SystemInformationBlockType4_t *sib4[NB_CNX_UE];
@@ -507,7 +509,7 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   obj_hash_table_t               *ral_meas_thresholds;
   ral_transaction_id_t            scan_transaction_id;
 #endif
@@ -524,4 +526,4 @@ typedef struct UE_RRC_INST_s {
 #include "proto.h"
 
 #endif
-/** @ */
+/** @} */

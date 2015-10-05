@@ -26,7 +26,7 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
+extern unsigned int dlsch_tbs25[27][25],TBStable[27][110],TBStable1C[32];
 extern unsigned short lte_cqi_eff1024[16];
 extern char lte_cqi_snr_dB[15];
 extern short conjugate[8],conjugate2[8];

@@ -93,7 +93,8 @@ int timer_handle_signal(siginfo_t *info)
   /* Get back pointer to timer list element */
   timer_p = (struct timer_elm_s *)info->si_ptr;
 
-  TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
+  // LG: To many traces for msc timer:
+  // TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
 
   task_id = timer_p->task_id;
   instance = timer_p->instance;

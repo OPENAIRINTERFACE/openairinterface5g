@@ -86,7 +86,11 @@ function main() {
       else 
         echo_error "Bad mme fqdn found in cert file: $full_hostname  fqdn is $fqdn"
       fi
+    else
+      echo_error "File $freediameter_path/etc/freeDiameter/mme.cert.pem not found"
     fi
+  else
+    echo_error "Directory $freediameter_path/etc/freeDiameter not found"
   fi
   echo_error "MME S6A: Did not find valid certificate in $freediameter_path/etc/freeDiameter"
   echo_warning "MME S6A: generating new certificate in $freediameter_path/etc/freeDiameter..."

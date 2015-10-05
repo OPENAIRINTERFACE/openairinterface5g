@@ -60,7 +60,7 @@ nwGtpv2cTrxnNew( NW_IN  NwGtpv2cStackT* pStack);
  */
 NwGtpv2cTrxnT*
 nwGtpv2cTrxnWithSeqNumNew( NW_IN  NwGtpv2cStackT* pStack,
-                           NW_IN  NwU32T seqNum);
+                           NW_IN  uint32_t seqNum);
 
 /**
  * Another overloaded constructor. Create transaction as outstanding
@@ -76,10 +76,10 @@ nwGtpv2cTrxnWithSeqNumNew( NW_IN  NwGtpv2cStackT* pStack,
 
 NwGtpv2cTrxnT*
 nwGtpv2cTrxnOutstandingRxNew( NW_IN  NwGtpv2cStackT* pStack,
-                              NW_IN  NwU32T teidLocal,
-                              NW_IN  NwU32T peerIp,
-                              NW_IN  NwU32T peerPort,
-                              NW_IN  NwU32T seqNum);
+                              NW_IN  uint32_t teidLocal,
+                              NW_IN  uint32_t peerIp,
+                              NW_IN  uint32_t peerPort,
+                              NW_IN  uint32_t seqNum);
 
 NwRcT
 nwGtpv2cTrxnDelete( NW_INOUT NwGtpv2cTrxnT **ppTrxn);

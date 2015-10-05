@@ -37,7 +37,7 @@
  * MiniLogMgr Class Definition
  */
 typedef struct NwMiniLogMgr {
-  NwU8T  logLevel; /*< Log level */
+  uint8_t  logLevel; /*< Log level */
 } NwMiniLogMgrT;
 
 
@@ -59,14 +59,14 @@ NwMiniLogMgrT* nwMiniLogMgrGetInstance();
  * @param thiz : Pointer to global singleton MiniLogMgr instance
  * @param logLevel : Log Level
  */
-NwRcT nwMiniLogMgrInit(NwMiniLogMgrT* thiz, NwU32T logLevel );
+NwRcT nwMiniLogMgrInit(NwMiniLogMgrT* thiz, uint32_t logLevel );
 
 /**
  * Set MiniLogMgr log level
  * @param thiz : Pointer to global singleton MiniLogMgr instance
  * @param logLevel : Log Level
  */
-NwRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT* thiz, NwU32T logLevel);
+NwRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT* thiz, uint32_t logLevel);
 
 /**
  * Process log request from stack
@@ -77,9 +77,9 @@ NwRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT* thiz, NwU32T logLevel);
  * @param logStr : Log string
  */
 NwRcT nwMiniLogMgrLogRequest (NwGtpv2cLogMgrHandleT logMgrHandle,
-                              NwU32T logLevel,
+                              uint32_t logLevel,
                               NwCharT* file,
-                              NwU32T line,
+                              uint32_t line,
                               NwCharT* logStr);
 
 #ifdef __cplusplus

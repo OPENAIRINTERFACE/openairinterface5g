@@ -49,7 +49,6 @@
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-
 #define N_TRIALS 100
 
 PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
@@ -89,7 +88,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
   lte_frame_parms->nb_antennas_tx_eNB     = N_tx;
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->phich_config_common.phich_resource = oneSixth; //half
+  lte_frame_parms->phich_config_common.phich_resource = one; //half
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = frame_type;
 
@@ -1189,7 +1188,8 @@ int main(int argc, char **argv)
                  l%(PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2),
                  (2*subframe)+(l/(PHY_vars_eNB->lte_frame_parms.symbols_per_tti/2)),
                  0,
-                 0);
+                 0,
+		 0);
 
         if (PHY_vars_UE->perfect_ce == 1) {
           if (awgn_flag==0) {

@@ -20,8 +20,8 @@
 #define __NW_MINI_ULP_H__
 
 typedef struct {
-  NwU8T                         peerIpStr[16];
-  NwU32T                        restartCounter;
+  uint8_t                         peerIpStr[16];
+  uint32_t                        restartCounter;
   NwGtpv2cStackHandleT          hGtpv2cStack;
 } NwGtpv2cNodeUlpT;
 
@@ -41,11 +41,11 @@ nwGtpv2cUlpProcessStackReqCallback (NwGtpv2cUlpHandleT hUlp,
 
 NwRcT
 nwGtpv2cUlpPing(NwGtpv2cNodeUlpT* thiz,
-                NwU32T peerIp,
-                NwU32T pingCount,
-                NwU32T pingInterval,
-                NwU32T t3Time,
-                NwU32T n3Count);
+                uint32_t peerIp,
+                uint32_t pingCount,
+                uint32_t pingInterval,
+                uint32_t t3Time,
+                uint32_t n3Count);
 
 #ifdef __cplusplus
 }

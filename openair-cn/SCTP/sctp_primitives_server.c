@@ -60,6 +60,7 @@
 
 #include "sctp_common.h"
 #include "sctp_itti_messaging.h"
+#include "msc.h"
 
 #define SCTP_DUMP_LIST
 
@@ -553,6 +554,7 @@ void *sctp_receiver_thread(void *args_p)
 
   FD_SET(sctp_arg_p->sd, &master);
   fdmax = sctp_arg_p->sd; /* so far, it's this one*/
+  MSC_START_USE();
 
   while(1) {
 
@@ -616,6 +618,7 @@ void *sctp_receiver_thread(void *args_p)
 static void *sctp_intertask_interface(void *args_p)
 {
   itti_mark_task_ready(TASK_SCTP);
+  MSC_START_USE();
 
   while(1) {
     MessageDef *received_message_p;

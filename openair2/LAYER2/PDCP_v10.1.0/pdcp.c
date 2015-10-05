@@ -1394,10 +1394,10 @@ pdcp_config_req_asn1 (
   case CONFIG_ACTION_ADD:
     DevAssert(pdcp_pP != NULL);
     if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
-#warning "TODO pdcp_module_id_to_rnti"
       pdcp_pP->is_ue = FALSE;
-      //pdcp_eNB_module_id_to_rnti[ctxt_pP.module_id][] = ctxt_pP->rnti;
-
+      //pdcp_eNB_UE_instance_to_rnti[ctxtP->module_id] = ctxt_pP->rnti;
+      pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index] = ctxt_pP->rnti;
+      //pdcp_eNB_UE_instance_to_rnti_index = (pdcp_eNB_UE_instance_to_rnti_index + 1) % NUMBER_OF_UE_MAX;
     } else {
       pdcp_pP->is_ue = TRUE;
       pdcp_UE_UE_module_id_to_rnti[ctxt_pP->module_id] = ctxt_pP->rnti;
@@ -1845,10 +1845,12 @@ void pdcp_layer_init(void)
         memset(&pdcp_mbms_array_ue[instance][service_id][session_id], 0, sizeof(pdcp_mbms_t));
       }
     }
-
 #endif
+    pdcp_eNB_UE_instance_to_rnti[instance] = NOT_A_RNTI;
   }
+  pdcp_eNB_UE_instance_to_rnti_index = 0; 
 
+    
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
 #if defined(Rel10)
 

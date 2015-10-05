@@ -175,14 +175,14 @@ void pusch_power_cntl(PHY_VARS_UE *phy_vars_ue,uint8_t subframe,uint8_t eNB_id,u
 
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH +=  ((alpha_lut[phy_vars_ue->lte_frame_parms.ul_power_control_config_common.alpha]*PL)/100);
     phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH +=  phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH;
-    phy_vars_ue->ulsch_ue[eNB_id]->PHR       =  phy_vars_ue->tx_power_max_dBm-phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;  // 15 dBm, FIX ME should be P0_max
+    phy_vars_ue->ulsch_ue[eNB_id]->PHR       =  phy_vars_ue->tx_power_max_dBm-phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH;  
 
     if (phy_vars_ue->ulsch_ue[eNB_id]->PHR < -23)
       phy_vars_ue->ulsch_ue[eNB_id]->PHR = -23;
     else if (phy_vars_ue->ulsch_ue[eNB_id]->PHR > 40)
       phy_vars_ue->ulsch_ue[eNB_id]->PHR = 40;
 
-    LOG_I(PHY,"[UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
+    LOG_D(PHY,"[UE  %d][PUSCH %d] frame %d, subframe %d: Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
           phy_vars_ue->Mod_id,harq_pid,phy_vars_ue->frame_tx,subframe,
           phy_vars_ue->ulsch_ue[eNB_id]->Po_PUSCH,
           phy_vars_ue->tx_power_max_dBm,

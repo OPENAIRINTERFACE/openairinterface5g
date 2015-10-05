@@ -51,7 +51,7 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "collection/hashtable/hashtable.h"
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
@@ -65,38 +65,31 @@
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
-#ifdef EXPRESSMIMO_TARGET
-#define malloc16(x) malloc(x)
-#else //EXPRESSMIMO_TARGET
+#ifdef __AVX2__
+#define malloc16(x) memalign(32,x)
+#else
 #define malloc16(x) memalign(16,x)
-#endif //EXPRESSMIMO_TARGET
+#endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
 
-#ifdef EXPRESSMIMO_TARGET
-//! \brief Allocate \c size bytes of memory on the heap and zero it afterwards.
-//! If no more memory is available, this function will terminate the program with an assertion error.
-static inline void* malloc16_clear( size_t size )
-{
-  void* ptr = malloc(size);
-  DevAssert(ptr);
-  memset( ptr, 0, size );
-  return ptr;
-}
-#else //EXPRESSMIMO_TARGET
 //! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
 //! If no more memory is available, this function will terminate the program with an assertion error.
 static inline void* malloc16_clear( size_t size )
 {
+#ifdef __AVX2__
+  void* ptr = memalign(32, size);
+#else
   void* ptr = memalign(16, size);
+#endif
   DevAssert(ptr);
   memset( ptr, 0, size );
   return ptr;
 }
-#endif //EXPRESSMIMO_TARGET
+
 
 
 #define PAGE_MASK 0xfffff000
@@ -118,10 +111,6 @@ static inline void* malloc16_clear( size_t size )
 
 /// suppress compiler warning for unused arguments
 #define UNUSED(x) (void)x;
-
-#ifdef EXPRESSMIMO_TARGET
-#define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
-#endif //EXPRESSMiMO_TARGET
 
 
 #include "spec_defs_top.h"
@@ -146,7 +135,7 @@ static inline void* malloc16_clear( size_t size )
 
 #define NB_BANDS_MAX 8
 
-typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
+typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
 
 enum transmission_access_mode {
   NO_ACCESS=0,
@@ -164,7 +153,7 @@ typedef struct UE_SCAN_INFO_s {
   int32_t freq_offset_Hz[3][10];
 } UE_SCAN_INFO_t;
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
 typedef struct ral_threshold_phy_s {
   SLIST_ENTRY(ral_threshold_phy_s) ral_thresholds;
   ral_threshold_t                  threshold;
@@ -391,7 +380,12 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t localization_stats;
 #endif
 
-#if defined(ENABLE_RAL)
+  int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
+  int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][10*1024];
+
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
@@ -419,6 +413,8 @@ typedef struct {
   runmode_t mode;
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
+  /// \brief Indicator that UE should perform coarse scanning around carrier
+  int UE_scan_carrier;
   /// \brief Indicator that UE is synchronized to an eNB
   int is_synchronized;
   /// \brief Instance count of TX processing thread (-1 means ready, 0 means busy)
@@ -505,7 +501,6 @@ typedef struct {
   uint8_t               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
-  int8_t               g_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
@@ -669,7 +664,7 @@ typedef struct {
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];

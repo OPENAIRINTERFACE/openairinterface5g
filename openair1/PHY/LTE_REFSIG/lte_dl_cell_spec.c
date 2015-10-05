@@ -94,9 +94,9 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
     output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
-    debug_msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
               Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    debug_msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;

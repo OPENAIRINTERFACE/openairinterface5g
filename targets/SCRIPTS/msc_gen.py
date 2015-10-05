@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 # The aim of this script is to collect some traces from oai stack and generate a sequence diagram image (png or jpeg).
-
+#
+# It is supposed that a protocol name (MSC_NEW_STR) starts with...its name (RRC, MAC, NAS, S1AP, etc) then is followed by an underscore and whatever (RRC_UE,  RRC_eNB)
+#   Like this it is possible to distinguish between PDUS, SDUs or other messages only by reading source ans destination
 
 import sys
 import subprocess
@@ -20,6 +22,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--diag_rlc_um", "-u", type=str,help="Try to find RLC protocol diagnostics", default="no")
 parser.add_argument("--dir", "-d", type=str,help="Directory where msc logs can be found", default="/tmp")
 parser.add_argument("--profile", "-p", type=str,help="E_UTRAN, EPC", default="EPC")
+parser.add_argument("--no_message", "-M", type=str,help="Trace PDUs, not messages, SDUs", default="no")
+parser.add_argument("--no_pdu", "-P", type=str,help="Trace messages, SDUs, not PDUs", default="no")
+parser.add_argument("--no_event", "-E", type=str,help="Do not trace events", default="no")
 args = parser.parse_args()
 
 MSCGEN_OUTPUT_TYPE       = "png"
@@ -30,8 +35,10 @@ MSC_MSG_STR              = '[MESSAGE]'
 MSC_BOX_STR              = '[EVENT]'
 
 
-# This list is filled as follow : g_proto_names[module_id_int] = (proto_name)
+# This list is filled as follow : g_proto_names[module_id_int] = (proto_name), example RRC_UE
 g_proto_names = []
+# This list is filled as follow : g_proto_names[module_id_int] = (basename proto_name) example: RRC
+g_proto_types = []
 
 
 
@@ -83,38 +90,14 @@ g_sequence_generator = 0
 
 g_filenames = []
 if "E_UTRAN" == args.profile.strip():
-    g_filenames = [
-        args.dir+'/openair.msc.ip_ue.log',
-        args.dir+'/openair.msc.ip_enb.log',
-        args.dir+'/openair.msc.nas_ue.log',
-        args.dir+'/openair.msc.pdcp_ue.log',
-        args.dir+'/openair.msc.rrc_ue.log',
-        args.dir+'/openair.msc.rlc_ue.log',
-        args.dir+'/openair.msc.mac_ue.log',
-        args.dir+'/openair.msc.phy_ue.log',
-        args.dir+'/openair.msc.phy_enb.log',
-        args.dir+'/openair.msc.mac_enb.log',
-        args.dir+'/openair.msc.rlc_enb.log',
-        args.dir+'/openair.msc.pdcp_enb.log',
-        args.dir+'/openair.msc.rrc_enb.log',
-        args.dir+'/openair.msc.s1ap_enb.log',
-        args.dir+'/openair.msc.gtpu_enb.log',
-        args.dir+'/openair.msc.gtpu_sgw.utran.log',
-        args.dir+'/openair.msc.s1ap_mme.utran.log',
-        args.dir+'/openair.msc.nas_mme.utran.log']
+    g_filenames = [    
+        args.dir+'/openair.msc.0.log',
+        args.dir+'/openair.msc.1.log']
 elif "EPC" == args.profile.strip():
     g_filenames = [        
-        args.dir+'/openair.msc.s1ap_enb.epc.log',
-        args.dir+'/openair.msc.mme_app.log',
-        args.dir+'/openair.msc.nas_mme.log',
-        args.dir+'/openair.msc.nas_emm_mme.log',
-        args.dir+'/openair.msc.nas_esm_mme.log',
-        args.dir+'/openair.msc.spgwapp_mme.log',
-        args.dir+'/openair.msc.s11_mme.log',
-        args.dir+'/openair.msc.s6a_mme.log',
-        args.dir+'/openair.msc.gtpu_sgw.log',
-        args.dir+'/openair.msc.s1ap_mme.log',
-        args.dir+'/openair.msc.hss.log']
+        args.dir+'/openair.msc.2.log',
+        args.dir+'/openair.msc.3.log',
+        args.dir+'/openair.msc.4.log']
 
 def sequence_number_generator():
     global g_sequence_generator
@@ -145,8 +128,8 @@ def parse_oai_log_files():
             # split file content in lines
             lines = fcontent.splitlines()
             for line in lines:
+                print ("INPUT LINE:  %s " % line)
                 if line.strip() != ""  and not line.strip().startswith('#'):
-                    print ("INPUT LINE:  %s " % line)
                     partition = line.split(' ',3)
                     event_id = int(partition[0]) + event_id_offset
                     event_type = partition[1]
@@ -156,8 +139,13 @@ def parse_oai_log_files():
                         if len(g_proto_names) <= entity_id:
                             for i in range(len(g_proto_names),(entity_id +1)):
                                 g_proto_names.append("NotDeclared")
+                                g_proto_types.append("NotDeclared")
                         g_proto_names[entity_id] = entity_name
-
+                        partition_name1 = entity_name.split('_',1);
+                        partition_name2 = partition_name1[0].split('-',1);
+                        partition_name3 = partition_name2[0].split();
+                        g_proto_types[entity_id] = partition_name3
+                        print ("entity name %s , entity type %s" % (g_proto_names[entity_id],g_proto_types[entity_id]) )
                     # if line is a trace of a message between 2 protocol entities or layers
                     elif MSC_MSG_STR == event_type:
                         #print ("partition[3]:%s" % partition[3])
@@ -278,6 +266,7 @@ def get_new_file_descriptor():
     global g_page_index
     l_file_name = g_base_file_name + str(g_page_index)+'.txt'
     l_file = open(l_file_name, "wb")
+    print "Generating mscgen input file ",l_file_name;
     return l_file
 
 
@@ -301,10 +290,26 @@ msc_chart_write_header(g_file)
 for event_id_int in sorted(g_messages.iterkeys()):
     message = g_messages[event_id_int]
     if 'tx' in message['type']:
+        if "yes" == args.no_message.strip():
+            if g_proto_types[message['tx']] != g_proto_types[message['rx']]:
+                continue
+        if "yes" == args.no_pdu.strip():
+            if g_proto_types[message['tx']] == g_proto_types[message['rx']]:
+                continue   
         g_file.write("  %s=>%s [ label = \"(%d|%s) %s\", linecolour=%s , textcolour=%s ] ;\n" % (g_proto_names[message['tx']], g_proto_names[message['rx']], event_id_int, message['time'], message['message'], message['line_color'], message['text_color']))
+
     elif 'rx' in message['type']:
+        if "yes" == args.no_message.strip():
+            if g_proto_types[message['tx']] != g_proto_types[message['rx']]:
+                continue
+        if "yes" == args.no_pdu.strip():
+            if g_proto_types[message['tx']] == g_proto_types[message['rx']]:
+                continue   
         g_file.write("  %s<=%s [ label = \"(%d|%s) %s\", linecolour=%s , textcolour=%s ] ;\n" % (g_proto_names[message['rx']], g_proto_names[message['tx']], event_id_int, message['time'], message['message'], message['line_color'], message['text_color']))
+
     elif 'box' in message['type']:
+        if "yes" == args.no_event.strip():
+            continue  
         g_file.write("  %s note %s [ label = \"%s\", textcolour=%s ] ;\n" % (g_proto_names[message['tx']], g_proto_names[message['rx']], message['message'], message['text_color']))
 
     g_message_index = g_message_index + 1

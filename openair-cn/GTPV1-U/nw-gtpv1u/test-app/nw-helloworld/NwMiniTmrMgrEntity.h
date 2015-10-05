@@ -35,9 +35,9 @@ extern "C" {
 #endif
 
 NwGtpv1uRcT nwTimerStart( NwGtpv1uTimerMgrHandleT tmrMgrHandle,
-                          NwU32T timeoutSec,
-                          NwU32T timeoutUsec,
-                          NwU32T tmrType,
+                          uint32_t timeoutSec,
+                          uint32_t timeoutUsec,
+                          uint32_t tmrType,
                           void*  timeoutArg,
                           NwGtpv1uTimerHandleT* hTmr);
 

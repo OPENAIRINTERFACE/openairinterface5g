@@ -1,6 +1,0 @@
-libnetlink is written by Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>.  It
-is distributed under the GNU General Public License.
-
-A modified version of libnetlink is distributed with MIPL Mobile IPv6
-for Linux package.  This version does not include all the
-functionality of libnetlink package, but only those used by MIPL.

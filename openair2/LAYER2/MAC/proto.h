@@ -26,24 +26,29 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
-/*! \file proto.h
+/*! \file LAYER2/MAC/proto.h
  * \brief MAC functions prototypes for eNB and UE
  * \author Navid Nikaein and Raymond Knopp
  * \date 2010 - 2014
  * \email navid.nikaein@eurecom.fr
  * \version 1.0
- * @ingroup _mac
-
  */
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
+/** \addtogroup _mac
+ *  @{
+ */
 
+/** \fn void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt,uint8_t ra_flag);
+\brief 
 
+*/
 void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_size_bytes,unsigned char aggregation,unsigned char dci_size_bits,unsigned char dci_fmt,uint8_t ra_flag);
 
 //LG commented cause compilation error for RT eNB extern inline unsigned int taus(void);
 
-/** \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
+/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb,unsigned int *nCCE);
+\brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
 for the message.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -148,6 +153,7 @@ int8_t get_DELTA_PREAMBLE(module_id_t module_idP,int CC_id);
 
 /** \brief Function for compute deltaP_rampup from 36.321 (for RA power ramping procedure and Msg3 PUSCH power control policy)
     @param Mod_id Module id of UE
+    @param CC_id carrier component id of UE
     @returns deltaP_rampup
 */
 int8_t get_deltaP_rampup(module_id_t module_idP,uint8_t CC_id);
@@ -172,14 +178,13 @@ void mac_top_cleanup(void);
 
 void mac_UE_out_of_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_index);
 
-void dlsch_scheduler_pre_processor_reset (int UE_id,
+void dlsch_scheduler_pre_processor_reset (int module_idP,int UE_id,
     uint8_t  CC_id,
+    int frameP,
+    int subframeP,
     int N_RBG,
-    uint8_t dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t  nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
@@ -188,20 +193,14 @@ void dlsch_scheduler_pre_processor_reset (int UE_id,
 @param Mod_id Instance ID of eNB
 @param frame Index of frame
 @param subframe Index of current subframe
-@param dl_pow_off Pointer to store resulting power offset for DCI
-@param pre_nb_available_rbs Pointer to store number of remaining rbs after scheduling
 @param N_RBS Number of resource block groups
-@param rb_alloc_sub Table of resource block groups allocated to each UE
  */
 
 
 void dlsch_scheduler_pre_processor (module_id_t module_idP,
                                     frame_t frameP,
                                     sub_frame_t subframe,
-                                    uint8_t dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-                                    uint16_t pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
                                     int N_RBG[MAX_NUM_CCs],
-                                    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
                                     int *mbsfn_flag);
 
 
@@ -212,11 +211,8 @@ void dlsch_scheduler_pre_processor_allocate (module_id_t   Mod_id,
     int           transmission_mode,
     int           min_rb_unit,
     uint8_t       N_RB_DL,
-    uint8_t       dl_pow_off[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t      pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
     uint16_t      nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub_UE[MAX_NUM_CCs][NUMBER_OF_UE_MAX][N_RBG_MAX],
     unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
     unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX]);
 
@@ -700,6 +696,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 
 /** \brief RRC Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of eNB
+@param CC_id Component Carrier of the eNB
 @param eNB_flag Indicates if this is a eNB or UE configuration
 @param rntiP id of UE if this is an eNB configuration
 @param eNB_id Index of eNB if this is a UE configuration
@@ -720,6 +717,7 @@ unsigned char generate_dlsch_header(unsigned char *mac_header,
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 */
 int rrc_mac_config_req(module_id_t     module_idP,
+                       int             CC_id,
                        eNB_flag_t eNB_flag,
                        rnti_t          rntiP,
                        uint8_t         eNB_index,
@@ -771,3 +769,4 @@ rrc_get_estimated_ue_distance(
 
 
 #endif
+/** @}*/

@@ -245,6 +245,10 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end, con
                  sizeof(s1ap_register_eNB->mme_ip_address[0].ipv6_address));
       }
 
+      s1ap_register_eNB->sctp_in_streams       = enb_properties->properties[enb_id]->sctp_in_streams;
+      s1ap_register_eNB->sctp_out_streams      = enb_properties->properties[enb_id]->sctp_out_streams;
+
+
       s1ap_register_eNB->enb_ip_address.ipv6 = 0;
       s1ap_register_eNB->enb_ip_address.ipv4 = 1;
       addr.s_addr = enb_properties->properties[enb_id]->enb_ipv4_address_for_S1_MME;

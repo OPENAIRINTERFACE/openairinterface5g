@@ -52,9 +52,6 @@
 #include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 
-// Hard to find a defined value for max enb...
-#define MAX_ENB 16
-
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
             if ( inet_aton(AdDr_StR, &inp ) < 0 ) {\
@@ -63,6 +60,15 @@
                 NwBo = inp.s_addr;\
             }\
         } while (0);
+
+/** @defgroup _enb_app ENB APP 
+ * @ingroup _oai2
+ * @{
+ */
+
+// Hard to find a defined value for max enb...
+#define MAX_ENB 16
+
 
 typedef struct mme_ip_address_s {
   unsigned  ipv4:1;
@@ -187,6 +193,9 @@ typedef struct Enb_properties_s {
   /* List of MME to connect to */
   mme_ip_address_t    mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
 
+  int                 sctp_in_streams;
+  int                 sctp_out_streams;
+
   char               *enb_interface_name_for_S1U;
   in_addr_t           enb_ipv4_address_for_S1U;
   tcp_udp_port_t      enb_port_for_S1U;
@@ -235,3 +244,4 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 const Enb_properties_array_t *enb_config_get(void);
 
 #endif /* ENB_CONFIG_H_ */
+/** @} */

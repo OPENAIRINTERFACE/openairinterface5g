@@ -77,6 +77,8 @@ struct vcd_module_s {
 const char* eurecomVariablesNames[] = {
   "frame_number_TX_eNB",
   "frame_number_RX_eNB",
+  "runtime_TX_eNB",
+  "runtime_RX_eNB",
   "frame_number_TX_UE",
   "frame_number_RX_UE",
   "slot_number_TX_UE",
@@ -90,16 +92,30 @@ const char* eurecomVariablesNames[] = {
   "diff2",
   "hw_subframe",
   "hw_frame",
+  "hw_subframe_rx",
+  "hw_frame_rx",
   "txcnt",
   "rxcnt",
   "trx_ts",
   "trx_tst",
+  "tx_ts",
+  "rx_ts",
+  "hw_cnt_rx",
+  "lhw_cnt_rx",
+  "hw_cnt_tx",
+  "lhw_cnt_tx",
+  "pck_rx",
+  "pck_tx",
+  "cnt",
+  "dummy_dump",
   "itti_send_msg",
   "itti_poll_msg",
   "itti_recv_msg",
   "itti_alloc_msg",
   "mp_alloc",
   "mp_free",
+  "ue_inst_cnt_rx",
+  "ue_inst_cnt_tx"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -127,6 +143,19 @@ const char* eurecomFunctionsNames[] = {
   "eNB_thread_rx8",
   "eNB_thread_tx9",
   "eNB_thread_rx9",
+  "ue_thread_tx",
+  "ue_thread_rx",
+
+ /* RRH signals  */ 
+  "eNB_tx",
+  "eNB_rx",
+  "eNB_trx",
+  "eNB_tm",
+  "eNB_rx_sleep",
+  "eNB_tx_sleep",
+  "eNB_proc_sleep",
+  "trx_read_rf",
+  "trx_write_rf",
 
   /* PHY signals  */
   "ue_synch",
@@ -197,6 +226,7 @@ const char* eurecomFunctionsNames[] = {
   "mac_dlsch_preprocessor",
   "mac_schedule_dlsch",
   "mac_fill_dlsch_dci",
+
   "macxface_out_of_sync_ind",
   "macxface_ue_decode_si",
   "macxface_ue_decode_ccch",
@@ -209,7 +239,6 @@ const char* eurecomFunctionsNames[] = {
   "macxface_ue_get_sr",
 
   "ue_send_mch_sdu",
-  "ue_synch",
 
   /*RLC signals   */
   "rlc_data_req",

@@ -78,9 +78,9 @@ void generate_pcfich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms)
     first_reg = pcfich_reg[3];
   }
 
-#ifdef DEBUG_PCFICH
-  msg("[PHY] pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
-#endif
+  //#ifdef DEBUG_PCFICH
+  printf("pcfich_reg : %d,%d,%d,%d\n",pcfich_reg[0],pcfich_reg[1],pcfich_reg[2],pcfich_reg[3]);
+  //#endif
 }
 
 void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,

@@ -80,7 +80,7 @@ typedef NwPtrT  NwGtpv1uTimerHandleT;                     /**< Gtpv2 Stack Timer
 typedef NwPtrT  NwGtpv1uMsgHandleT;                       /**< Gtpv2 Msg Handle                 */
 
 typedef struct NwGtpv1uStackConfig {
-  NwU16T udpSrcPort;
+  uint16_t udpSrcPort;
 } NwGtpv1uStackConfigT;
 
 /*--------------------------------------------------------------------------*
@@ -121,7 +121,7 @@ typedef enum {
  *--------------------------------------------------------------------------*/
 
 typedef NwPtrT  NwGtpv1uStackSessionHandleT;/**< Gtpv2 Stack session Handle */
-typedef NwU8T   NwGtpv1uMsgTypeT;           /**< Gtpv2 Msg Type     */
+typedef uint8_t   NwGtpv1uMsgTypeT;           /**< Gtpv2 Msg Type     */
 typedef NwPtrT  NwGtpv1uTrxnHandleT;        /**< Gtpv2 Transaction Handle */
 typedef NwPtrT  NwGtpv1uUlpTrxnHandleT;     /**< Gtpv2 Ulp Transaction Handle */
 typedef NwPtrT  NwGtpv1uUlpSessionHandleT;  /**< Gtpv2 Ulp session Handle */
@@ -132,7 +132,7 @@ typedef NwPtrT  NwGtpv1uUlpSessionHandleT;  /**< Gtpv2 Ulp session Handle */
  */
 
 typedef struct {
-  NW_IN    NwU32T                       teid;
+  NW_IN    uint32_t                       teid;
   NW_IN    NwGtpv1uUlpSessionHandleT    hUlpSession;
   NW_OUT   NwGtpv1uStackSessionHandleT  hStackSession;
 } NwGtpv1uCreateTunnelEndPointT;
@@ -153,10 +153,10 @@ typedef struct {
 
 typedef struct {
   NW_IN    NwGtpv1uUlpTrxnHandleT        hUlpTrxn;
-  NW_IN    NwU32T                        peerIp;
-  NW_IN    NwU32T                        peerPort;
-  NW_IN    NwU8T                         flags;
-  NW_IN    NwU32T                        teid;
+  NW_IN    uint32_t                        peerIp;
+  NW_IN    uint32_t                        peerPort;
+  NW_IN    uint8_t                         flags;
+  NW_IN    uint32_t                        teid;
 } NwGtpv1uInitialReqInfoT;
 
 /**
@@ -166,11 +166,11 @@ typedef struct {
 
 typedef struct {
   NW_IN    NwGtpv1uUlpTrxnHandleT        hUlpTrxn;
-  NW_IN    NwU32T                        peerIp;
-  NW_IN    NwU32T                        peerPort;
-  NW_IN    NwU8T                         flags;
-  NW_IN    NwU32T                        teid;
-  NW_IN    NwU32T                        seqNum;
+  NW_IN    uint32_t                        peerIp;
+  NW_IN    uint32_t                        peerPort;
+  NW_IN    uint8_t                         flags;
+  NW_IN    uint32_t                        teid;
+  NW_IN    uint32_t                        seqNum;
   NW_IN    NwGtpv1uMsgHandleT            hMsg;
 } NwGtpv1uTriggeredRspInfoT;
 
@@ -181,11 +181,11 @@ typedef struct {
 
 typedef struct {
   NW_IN    NwGtpv1uUlpTrxnHandleT        hUlpTrxn;
-  NW_IN    NwU32T                        peerIp;
-  NW_IN    NwU32T                        peerPort;
-  NW_IN    NwU8T                         flags;
-  NW_IN    NwU32T                        teid;
-  NW_IN    NwU32T                        seqNum;
+  NW_IN    uint32_t                        peerIp;
+  NW_IN    uint32_t                        peerPort;
+  NW_IN    uint8_t                         flags;
+  NW_IN    uint32_t                        teid;
+  NW_IN    uint32_t                        seqNum;
   NW_IN    NwGtpv1uMsgHandleT            hMsg;
 } NwGtpv1uTriggeredReqInfoT;
 
@@ -196,9 +196,9 @@ typedef struct {
  */
 
 typedef struct {
-  NW_IN    NwU32T                       teid;
-  NW_IN    NwU32T                       ipAddr;
-  NW_IN    NwU8T                        flags;
+  NW_IN    uint32_t                       teid;
+  NW_IN    uint32_t                       ipAddr;
+  NW_IN    uint8_t                        flags;
   NW_IN    NwGtpv1uMsgHandleT           hMsg;
 } NwGtpv1uSendtoInfoT;
 
@@ -213,7 +213,7 @@ typedef struct {
   NW_INOUT NwGtpv1uTrxnHandleT          hTrxn;
   NW_IN    NwGtpv1uUlpTrxnHandleT       hUlpTrxn;
   NW_IN    NwGtpv1uMsgTypeT            msgType;
-  NW_IN    NwU8T                        flags;
+  NW_IN    uint8_t                        flags;
   NW_IN    NwGtpv1uMsgHandleT           hMsg;
 } NwGtpv1uSendMsgInfoT;
 
@@ -225,10 +225,10 @@ typedef struct {
 typedef struct {
   NW_IN    NwGtpv1uUlpSessionHandleT    hUlpSession;
   NW_IN    NwGtpv1uUlpTrxnHandleT       hUlpTrxn;
-  NW_IN    NwU32T                       teid;
-  NW_IN    NwU32T                       peerIp;
-  NW_IN    NwU32T                       peerPort;
-  NW_IN    NwU32T                       msgType;      /**< Message type                       */
+  NW_IN    uint32_t                       teid;
+  NW_IN    uint32_t                       peerIp;
+  NW_IN    uint32_t                       peerPort;
+  NW_IN    uint32_t                       msgType;      /**< Message type                       */
   NW_IN    NwGtpv1uMsgHandleT           hMsg;         /**< Gtp Message handle                 */
 } NwGtpv1uRecvMsgInfoT;
 
@@ -297,11 +297,11 @@ typedef struct {
 typedef struct {
   NwGtpv1uUdpHandleT        hUdp;
   NwGtpv1uRcT (*udpDataReqCallback) ( NW_IN     NwGtpv1uUdpHandleT udpHandle,
-                                      NW_IN     NwU8T* dataBuf,
-                                      NW_IN     NwU32T dataSize,
-                                      NW_IN     NwU32T dataOffset,
-                                      NW_IN     NwU32T peerIP,
-                                      NW_IN     NwU16T peerPort);
+                                      NW_IN     uint8_t* dataBuf,
+                                      NW_IN     uint32_t dataSize,
+                                      NW_IN     uint32_t dataOffset,
+                                      NW_IN     uint32_t peerIP,
+                                      NW_IN     uint16_t peerPort);
 } NwGtpv1uUdpEntityT;
 
 /**
@@ -311,14 +311,14 @@ typedef struct {
 typedef struct {
   NwGtpv1uMemMgrHandleT         hMemMgr;
   void* (*memAlloc)( NW_IN      NwGtpv1uMemMgrHandleT hMemMgr,
-                     NW_IN      NwU32T memSize,
+                     NW_IN      uint32_t memSize,
                      NW_IN      NwCharT* fileName,
-                     NW_IN      NwU32T lineNumber);
+                     NW_IN      uint32_t lineNumber);
 
   void (*memFree) ( NW_IN       NwGtpv1uMemMgrHandleT hMemMgr,
                     NW_IN       void* hMem,
                     NW_IN       NwCharT* fileName,
-                    NW_IN       NwU32T lineNumber);
+                    NW_IN       uint32_t lineNumber);
 } NwGtpv1uMemMgrEntityT;
 
 
@@ -336,9 +336,9 @@ typedef struct {
 typedef struct {
   NwGtpv1uTimerMgrHandleT        tmrMgrHandle;
   NwGtpv1uRcT (*tmrStartCallback)( NW_IN       NwGtpv1uTimerMgrHandleT tmrMgrHandle,
-                                   NW_IN       NwU32T timeoutSecs,
-                                   NW_IN       NwU32T timeoutUsec,
-                                   NW_IN       NwU32T tmrType,
+                                   NW_IN       uint32_t timeoutSecs,
+                                   NW_IN       uint32_t timeoutUsec,
+                                   NW_IN       uint32_t tmrType,
                                    NW_IN       void* tmrArg,
                                    NW_OUT      NwGtpv1uTimerHandleT* tmrHandle);
 
@@ -358,9 +358,9 @@ typedef struct {
 typedef struct {
   NwGtpv1uLogMgrHandleT          logMgrHandle;
   NwGtpv1uRcT (*logReqCallback) (NW_IN      NwGtpv1uLogMgrHandleT logMgrHandle,
-                                 NW_IN      NwU32T logLevel,
+                                 NW_IN      uint32_t logLevel,
                                  NW_IN      NwCharT* file,
-                                 NW_IN      NwU32T line,
+                                 NW_IN      uint32_t line,
                                  NW_IN      NwCharT* logStr);
 } NwGtpv1uLogMgrEntityT;
 
@@ -385,7 +385,7 @@ extern "C" {
  */
 
 NwGtpv1uRcT
-nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT* phGtpv1uStackHandle, NwU32T stackType);
+nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT* phGtpv1uStackHandle, uint32_t stackType);
 
 /*---------------------------------------------------------------------------
  * Destructor
@@ -493,7 +493,7 @@ nwGtpv1uSetLogMgrEntity( NW_IN NwGtpv1uStackHandleT hGtpv1uStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uSetLogLevel( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                     NW_IN NwU32T logLevel);
+                     NW_IN uint32_t logLevel);
 /*---------------------------------------------------------------------------
  * Process Request from Udp Layer
  *--------------------------------------------------------------------------*/
@@ -511,10 +511,10 @@ nwGtpv1uSetLogLevel( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpv1uStackHandle,
-                       NW_IN NwU8T* udpData,
-                       NW_IN NwU32T udpDataLen,
-                       NW_IN NwU16T peerPort,
-                       NW_IN NwU32T peerIP);
+                       NW_IN uint8_t* udpData,
+                       NW_IN uint32_t udpDataLen,
+                       NW_IN uint16_t peerPort,
+                       NW_IN uint32_t peerIP);
 
 /*---------------------------------------------------------------------------
  * Process Request from Upper Layer

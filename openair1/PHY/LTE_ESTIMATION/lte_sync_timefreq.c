@@ -46,14 +46,15 @@
 //#include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
+
+#if defined(__x86_64__) || defined(__i386__)
 #include "pss6144.h"
-
-
 extern void print_shorts(char*,__m128i*);
+#endif
 
 void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
 {
-
+#if defined(__x86_64__) || defined(__i386__)
   UE_SCAN_INFO_t *scan_info = &ue->scan_info[band];
   int16_t spectrum[12288] __attribute__((aligned(16)));
   int16_t spectrum_p5ms[12288] __attribute__((aligned(16)));
@@ -358,5 +359,6 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
   for (band_idx=0; band_idx<10; band_idx++)
     printf("pss 2: level %d dB, freq %u\n", dB_fixed(scan_info->amp[2][band_idx]),scan_info->freq_offset_Hz[2][band_idx]);
 
+#endif
 }
 

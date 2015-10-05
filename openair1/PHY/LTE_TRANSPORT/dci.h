@@ -829,14 +829,73 @@ struct DCI1B_5MHz_4A_TDD {
 typedef struct DCI1B_5MHz_4A_TDD DCI1B_5MHz_4A_TDD_t;
 #define sizeof_DCI1B_5MHz_4A_TDD_t 31
 
-/// DCI Format Type 1C (5 MHz, 12 bits)
-typedef struct __attribute__ ((__packed__))
+/// DCI Format Type 1C (1.4 MHz, 8 bits)
+struct DCI1C_1_5MHz
 {
-  uint32_t rballoc:7;
-  uint32_t tbs_index:5;
-}
-DCI1C_5MHz_t;
-#define sizeof_DCI1C_5MHz_t 12
+  /// padding to 32bits
+  uint32_t padding32:24;
+  uint32_t mcs:5;
+  uint32_t rballoc:3;  // N_RB_step = 2, Ngap=Ngap1=3, NDLVRBGap = 6, ceil(log2((3*4)/2)) = 3
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_1_5MHz DCI1C_1_5MHz_t;
+#define sizeof_DCI1C_1_5MHz_t 8
+
+/*********************************************************
+**********************************************************/
+/// DCI Format Type 1C (5 MHz, 12 bits)
+struct DCI1C_5MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:20;
+  uint32_t mcs:5;
+  uint32_t rballoc:7;   // N_RB_step = 2, Ngap1=Ngap2=12, NDLVRBGap = 24, ceil(log2((12*13)/2)) = 7
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_5MHz DCI1C_5MHz_t;
+#define sizeof_DCI1C_5MHz_t 12 
+
+/// DCI Format Type 1C (10 MHz, 13 bits)
+struct DCI1C_10MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:19;
+  uint32_t mcs:5;
+  uint32_t rballoc:7;  // N_RB_step = 4, Ngap1=27, NDLVRBGap = 46, ceil(log2(((11*12)/2)) = 7
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_10MHz DCI1C_10MHz_t;
+#define sizeof_DCI1C_10MHz_t 13
+
+/// DCI Format Type 1C (15 MHz, 14 bits)
+struct DCI1C_15MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:18;
+  uint32_t mcs:5;
+  uint32_t rballoc:8; // N_RB_step = 4, Ngap1=64, ceil(log2((16*17)/2)) = 8
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_15MHz DCI1C_15MHz_t;
+#define sizeof_DCI1C_15MHz_t X
+
+/// DCI Format Type 1C (20 MHz, 15 bits)
+struct DCI1C_20MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:17;
+  uint32_t mcs:5;
+  uint32_t rballoc:9; // N_RB_step = 4, Ngap1=48, ceil(log2((24*25)/2)) = 9
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_20MHz DCI1C_20MHz_t;
+#define sizeof_DCI1C_20MHz_t 15
+
+/*********************************************************
+**********************************************************/
 
 /// DCI Format Type 1D (5 MHz, FDD, 2 Antenna Ports, 27 bits)
 struct DCI1D_5MHz_2A_FDD {

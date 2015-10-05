@@ -267,6 +267,8 @@ typedef enum {
   TMR,
   USIM,
   LOCALIZE,
+  RRH,
+  X2AP,
   MAX_LOG_COMPONENTS,
 }
 comp_name_t;

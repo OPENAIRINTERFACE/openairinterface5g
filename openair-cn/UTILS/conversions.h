@@ -259,6 +259,13 @@ do {                                                                    \
           + pLMN.MNCdigit2 * 10 + pLMN.MNCdigit1;                       \
 } while(0)
 
+/* TS 36.413 v10.9.0 section 9.2.1.37:
+ * Macro eNB ID:
+ * Equal to the 20 leftmost bits of the Cell
+ * Identity IE contained in the E-UTRAN CGI
+ * IE (see subclause 9.2.1.38) of each cell
+ * served by the eNB.
+ */
 #define MACRO_ENB_ID_TO_BIT_STRING(mACRO, bITsTRING)    \
 do {                                                    \
     (bITsTRING)->buf = calloc(3, sizeof(uint8_t));      \
@@ -268,14 +275,20 @@ do {                                                    \
     (bITsTRING)->size = 3;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)
-
-#define MACRO_ENB_ID_TO_CELL_IDENTITY(mACRO, bITsTRING) \
+/*
+/* TS 36.413 v10.9.0 section 9.2.1.38:
+ * E-UTRAN CGI/Cell Identity
+ * The leftmost bits of the Cell
+ * Identity correspond to the eNB
+ * ID (defined in subclause 9.2.1.37).
+ */
+#define MACRO_ENB_ID_TO_CELL_IDENTITY(mACRO, cELL_iD, bITsTRING) \
 do {                                                    \
     (bITsTRING)->buf = calloc(4, sizeof(uint8_t));      \
-    (bITsTRING)->buf[0] = 0;                            \
-    (bITsTRING)->buf[1] = ((mACRO) >> 12);              \
-    (bITsTRING)->buf[2] = (mACRO) >> 4;                 \
-    (bITsTRING)->buf[3] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->buf[0] = ((mACRO) >> 12);              \
+    (bITsTRING)->buf[1] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[2] = (((mACRO) & 0x0f) << 4) | ((cELL_iD) >> 4);        \
+    (bITsTRING)->buf[3] = ((cELL_iD) & 0x0f) << 4;        \
     (bITsTRING)->size = 4;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)

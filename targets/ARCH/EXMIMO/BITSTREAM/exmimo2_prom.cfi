@@ -1,11 +1,11 @@
-# PROMGEN: Xilinx Prom Generator P.49d
-# Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+# PROMGEN: Xilinx Prom Generator P.20131013
+# Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
 
-SOFTWARE_VERSION P.49d
-DATE             3/21/2014 - 17:31
-SOURCE          /homes/ghaddab/riadh/openair0/express-mimo2/grlib-gpl-1.1.0-b4113/designs/express-mimo2/exmimo2_prom.mcs
+SOFTWARE_VERSION P.20131013
+DATE             6/16/2015 - 16:10
+SOURCE          /homes/maatalla/openair/openair0/express-mimo2/backup_houssem/express-mimo2/grlib-gpl-1.1.0-b4113/designs/express-mimo2/exmimo2_prom.mcs
 DEVICE          8192K
 DATA_WIDTH      4
 FILL_DATA       0xFF
-SIGNATURE       0x41900D70
+SIGNATURE       0x41521D58
 START_ADDRESS   0x00000000 END_ADDRESS 0x00406577 DIRECTION_UP   "express-mimo2.bit" 6slx150tfgg900

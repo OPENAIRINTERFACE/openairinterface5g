@@ -55,22 +55,22 @@ unsigned char  ccodelte_table_rev[128];  // for receiver
 
 
 void
-ccodelte_encode (unsigned int numbits,
-                 unsigned char add_crc,
-                 unsigned char *inPtr,
-                 unsigned char *outPtr,
-                 unsigned short rnti)
+ccodelte_encode (int32_t numbits,
+                 uint8_t add_crc,
+                 uint8_t *inPtr,
+                 uint8_t *outPtr,
+                 uint16_t rnti)
 {
-  unsigned int             state;
+  uint32_t             state;
 
-  unsigned char              c, out, first_bit;
-  char shiftbit=0;
-  unsigned short c16;
-  unsigned short next_last_byte=0;
-  unsigned int crc=0;
+  uint8_t              c, out, first_bit;
+  int8_t shiftbit=0;
+  uint16_t c16;
+  uint16_t next_last_byte=0;
+  uint32_t crc=0;
 
 #ifdef DEBUG_CCODE
-  unsigned int  dummy=0;
+  uint32_t  dummy=0;
 #endif //DEBUG_CCODE
 
   /* The input bit is shifted in position 8 of the state.
@@ -80,20 +80,19 @@ ccodelte_encode (unsigned int numbits,
   if (add_crc == 1) {
     crc = crc8(inPtr,numbits);
     first_bit      = 2;
-    c = (unsigned char)(crc>>24);
+    c = (uint8_t)(crc>>24);
   } else if (add_crc == 2) {
     crc = crc16(inPtr,numbits);
 #ifdef DEBUG_CCODE
     printf("ccode_lte : crc %x\n",crc);
 #endif
     // scramble with RNTI
-    crc ^= (((unsigned int)rnti)<<16);
+    crc ^= (((uint32_t)rnti)<<16);
 #ifdef DEBUG_CCODE
     printf("ccode_lte : crc %x (rnti %x)\n",crc,rnti);
 #endif
     first_bit      = 2;
-    //    c = (unsigned char)(crc>>24);
-    c = (unsigned char)((crc>>16)&0xff);
+    c = (uint8_t)((crc>>16)&0xff);
   } else {
     next_last_byte = numbits>>3;
     first_bit      = (numbits-6)&7;
@@ -182,7 +181,7 @@ ccodelte_encode (unsigned int numbits,
   // now code 8-bit CRC for UCI
   if (add_crc == 1) {
 
-    c = (unsigned char)(crc>>24);
+    c = (uint8_t)(crc>>24);
 
     //    for (shiftbit = 0; (shiftbit<8);shiftbit++) {
     for (shiftbit = 7; (shiftbit>=0); shiftbit--) {
@@ -209,7 +208,7 @@ ccodelte_encode (unsigned int numbits,
   // now code 16-bit CRC for DCI
   if (add_crc == 2) {
 
-    c16 = (unsigned short)(crc>>16);
+    c16 = (uint16_t)(crc>>16);
 
     //    for (shiftbit = 0; (shiftbit<16);shiftbit++) {
     for (shiftbit = 15; (shiftbit>=0); shiftbit--) {

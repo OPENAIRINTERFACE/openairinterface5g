@@ -56,7 +56,7 @@ nwGtpv1uTrxnNew( NW_IN  NwGtpv1uStackT* thiz,
 
 NwGtpv1uRcT
 nwGtpv1uTrxnWithSeqNew( NW_IN  NwGtpv1uStackT* thiz,
-                        NW_IN  NwU32T seqNum,
+                        NW_IN  uint32_t seqNum,
                         NW_OUT NwGtpv1uTrxnT **ppTrxn);
 
 NwGtpv1uRcT
@@ -72,8 +72,8 @@ nwGtpv1uTrxnDelete( NW_INOUT NwGtpv1uTrxnT **pthiz);
 NwGtpv1uRcT
 nwGtpv1uTrxnCreateAndSendMsg( NW_IN  NwGtpv1uStackT* thiz,
                               NW_IN  NwGtpv1uTrxnT *pTrxn,
-                              NW_IN  NwU32T peerIp,
-                              NW_IN  NwU32T peerPort,
+                              NW_IN  uint32_t peerIp,
+                              NW_IN  uint32_t peerPort,
                               NW_IN  NwGtpv1uMsgT *pMsg);
 
 #ifdef __cplusplus

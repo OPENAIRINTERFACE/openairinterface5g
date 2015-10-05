@@ -248,13 +248,15 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
              (frame_parms->symbols_per_tti/2)-2, // second to last symbol of
              0,                                  // slot 0
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
     // PSS
     slot_fep(phy_vars_ue,
              (frame_parms->symbols_per_tti/2)-1, // last symbol of
              0,                                  // slot 0
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
   } else { // TDD
 #ifdef DEBUG_SSS
     if (phy_vars_ue->lte_frame_parms.Ncp == NORMAL)
@@ -268,13 +270,15 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
              (frame_parms->symbols_per_tti>>1)-1,  // last symbol of
              1,                                    // slot 1
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
     // PSS
     slot_fep(phy_vars_ue,
              2,                                   // symbol 2 of
              2,                                   // slot 2
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
   }
 
   pss_sss_extract(phy_vars_ue,
@@ -303,26 +307,28 @@ int rx_sss(PHY_VARS_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uint8_
              (frame_parms->symbols_per_tti/2)-2,
              10,
              phy_vars_ue->rx_offset,
-             0);
+             0,1);
     // PSS
     slot_fep(phy_vars_ue,
              (frame_parms->symbols_per_tti/2)-1,
              10,
              phy_vars_ue->rx_offset,
-             0);
+             0,1);
   } else { // TDD
     // SSS
     slot_fep(phy_vars_ue,
              (frame_parms->symbols_per_tti>>1)-1,
              11,
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
     // PSS
     slot_fep(phy_vars_ue,
              2,
              12,
              phy_vars_ue->rx_offset,
-             0);
+             0,
+	     1);
   }
 
   pss_sss_extract(phy_vars_ue,

@@ -45,7 +45,7 @@
 #include "s11_ie_formatter.h"
 
 NwRcT s11_imsi_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   Imsi_t *imsi;
   uint8_t i;
@@ -108,7 +108,7 @@ int s11_imsi_ie_set(NwGtpv2cMsgHandleT *msg, const Imsi_t *imsi)
 }
 
 NwRcT s11_msisdn_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   Msisdn_t *msisdn;
   uint8_t   i;
@@ -143,7 +143,7 @@ NwRcT s11_msisdn_ie_get(
 }
 
 NwRcT s11_mei_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   Mei_t *mei = (Mei_t *)arg;
 
@@ -155,7 +155,7 @@ NwRcT s11_mei_ie_get(
 }
 
 NwRcT s11_pdn_type_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   pdn_type_t *pdn_type = (pdn_type_t *)arg;
 
@@ -207,14 +207,14 @@ int s11_pdn_type_ie_set(NwGtpv2cMsgHandleT *msg, const pdn_type_t *pdn_type)
     return -1;
   }
 
-  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_PDN_TYPE, 1, 0, (NwU8T*)&value);
+  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_PDN_TYPE, 1, 0, (uint8_t*)&value);
   DevAssert(NW_OK == rc);
 
   return 0;
 }
 
 NwRcT s11_rat_type_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   rat_type_t *rat_type = (rat_type_t *)arg;
 
@@ -295,7 +295,7 @@ int s11_rat_type_ie_set(NwGtpv2cMsgHandleT *msg, const rat_type_t *rat_type)
     return -1;
   }
 
-  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_RAT_TYPE, 1, 0, (NwU8T*)&value);
+  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_RAT_TYPE, 1, 0, (uint8_t*)&value);
   DevAssert(NW_OK == rc);
 
   return 0;
@@ -316,7 +316,7 @@ int s11_ebi_ie_set(NwGtpv2cMsgHandleT *msg, const unsigned ebi)
 }
 
 NwRcT s11_ebi_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   uint8_t *ebi = (uint8_t *)arg;
 
@@ -330,7 +330,7 @@ NwRcT s11_ebi_ie_get(
 }
 
 NwRcT s11_cause_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   SGWCause_t *cause = (SGWCause_t *)arg;
 
@@ -371,7 +371,7 @@ int s11_cause_ie_set(NwGtpv2cMsgHandleT *msg,
 }
 
 NwRcT s11_bearer_context_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   bearer_to_create_t *bearer_to_create = (bearer_to_create_t *)arg;
   uint8_t read = 0;
@@ -428,7 +428,7 @@ int s11_bearer_context_to_create_ie_set(
 }
 
 NwRcT s11_bearer_context_to_modifiy_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   bearer_context_to_modify_t *bearer_to_modify = (bearer_context_to_modify_t *)arg;
   uint8_t read = 0;
@@ -467,7 +467,7 @@ NwRcT s11_bearer_context_to_modifiy_ie_get(
 }
 
 NwRcT s11_bearer_context_created_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   bearer_context_created_t *bearer_created = (bearer_context_created_t *)arg;
   uint8_t read = 0;
@@ -534,7 +534,7 @@ int s11_bearer_context_created_ie_set(
                              bearer->s1u_sgw_fteid.interface_type,
                              bearer->s1u_sgw_fteid.teid,
                              bearer->s1u_sgw_fteid.ipv4 ? htonl(bearer->s1u_sgw_fteid.ipv4_address) : 0,
-                             bearer->s1u_sgw_fteid.ipv6 ? (NwU8T*)bearer->s1u_sgw_fteid.ipv6_address : NULL);
+                             bearer->s1u_sgw_fteid.ipv6 ? (uint8_t*)bearer->s1u_sgw_fteid.ipv6_address : NULL);
   DevAssert(NW_OK == rc);
 
   /* End section for grouped IE: bearer context created */
@@ -558,14 +558,14 @@ int s11_apn_restriction_ie_set(
   DevAssert(msg != NULL);
 
   rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_APN_RESTRICTION, 1, 0,
-                        (NwU8T *)&apn_restriction);
+                        (uint8_t *)&apn_restriction);
   DevAssert(NW_OK == rc);
 
   return 0;
 }
 
 NwRcT s11_serving_network_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   ServingNetwork_t *serving_net = (ServingNetwork_t *)arg;
 
@@ -628,7 +628,7 @@ int s11_serving_network_ie_set(
 }
 
 NwRcT s11_fteid_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   uint8_t offset = 0;
   FTeid_t *fteid = (FTeid_t *)arg;
@@ -670,7 +670,7 @@ NwRcT s11_fteid_ie_get(
 }
 
 NwRcT s11_paa_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   uint8_t offset = 0;
   PAA_t *paa = (PAA_t *)arg;
@@ -756,7 +756,7 @@ int s11_paa_ie_set(NwGtpv2cMsgHandleT *msg, const PAA_t *paa)
  * and the hyphen (-).
  */
 NwRcT s11_apn_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   uint8_t read = 1;
   uint8_t word_length;
@@ -831,7 +831,7 @@ int s11_apn_ie_set(NwGtpv2cMsgHandleT *msg, const char *apn)
 }
 
 NwRcT s11_ambr_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   ambr_t *ambr = (ambr_t *)arg;
 
@@ -847,7 +847,7 @@ NwRcT s11_ambr_ie_get(
 }
 
 NwRcT s11_uli_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   Uli_t *uli = (Uli_t *)arg;
 
@@ -886,7 +886,7 @@ int s11_bearer_qos_ie_set(NwGtpv2cMsgHandleT *msg, const BearerQOS_t *bearer_qos
 }
 
 NwRcT s11_ip_address_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   gtp_ip_address_t *ip_address = (gtp_ip_address_t *)arg;
 
@@ -915,7 +915,7 @@ int s11_ip_address_ie_set(NwGtpv2cMsgHandleT     *msg,
 }
 
 NwRcT s11_delay_value_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   DelayValue_t *delay_value = (DelayValue_t *)arg;
 
@@ -943,14 +943,14 @@ int s11_delay_value_ie_set(NwGtpv2cMsgHandleT *msg,
 
   value = *delay_value;
 
-  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_DELAY_VALUE, 1, 0, (NwU8T*)&value);
+  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_DELAY_VALUE, 1, 0, (uint8_t*)&value);
   DevAssert(NW_OK == rc);
 
   return 0;
 }
 
 NwRcT s11_ue_time_zone_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   UETimeZone_t *ue_time_zone = (UETimeZone_t *)arg;
 
@@ -988,7 +988,7 @@ int s11_ue_time_zone_ie_set(NwGtpv2cMsgHandleT *msg,
 }
 
 NwRcT s11_target_identification_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   target_identification_t *target_identification = (target_identification_t *)arg;
 
@@ -1055,7 +1055,7 @@ NwRcT s11_target_identification_ie_get(
 }
 
 NwRcT s11_bearer_flags_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   bearer_flags_t *bearer_flags = (bearer_flags_t *)arg;
 
@@ -1082,14 +1082,14 @@ int s11_bearer_flags_ie_set(NwGtpv2cMsgHandleT   *msg,
 
   value = (bearer_flags->vb << 1) | bearer_flags->ppc;
 
-  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_BEARER_FLAGS, 1, 0, (NwU8T*)&value);
+  rc = nwGtpv2cMsgAddIe(*msg, NW_GTPV2C_IE_BEARER_FLAGS, 1, 0, (uint8_t*)&value);
   DevAssert(NW_OK == rc);
 
   return 0;
 }
 
 NwRcT s11_indication_flags_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   indication_flags_t *indication_flags = (indication_flags_t*)arg;
 
@@ -1107,7 +1107,7 @@ NwRcT s11_indication_flags_ie_get(
 }
 
 NwRcT s11_fqcsid_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg)
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg)
 {
   FQ_CSID_t *fq_csid = (FQ_CSID_t *)arg;
 

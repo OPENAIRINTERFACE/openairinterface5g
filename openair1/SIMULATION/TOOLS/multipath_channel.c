@@ -41,7 +41,7 @@ uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
   return(1);
 }
 
-#define CHANNEL_SSE
+//#define CHANNEL_SSE
 #ifdef CHANNEL_SSE
 void multipath_channel(channel_desc_t *desc,
                        double **tx_sig_re,

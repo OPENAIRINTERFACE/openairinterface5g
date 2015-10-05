@@ -25,7 +25,7 @@
 #define __NW_MINI_UDP_ENTITY_H__
 
 typedef struct {
-  NwU32T        hSocket;
+  uint32_t        hSocket;
   NwEventT      ev;
   NwGtpv2cStackHandleT hGtpv2cStack;
 } NwGtpv2cNodeUdpT;
@@ -34,15 +34,15 @@ typedef struct {
 extern "C" {
 #endif
 
-NwRcT nwGtpv2cUdpInit(NwGtpv2cNodeUdpT* thiz, NwGtpv2cStackHandleT hGtpv2cStack, NwU8T* ipv4Addr);
+NwRcT nwGtpv2cUdpInit(NwGtpv2cNodeUdpT* thiz, NwGtpv2cStackHandleT hGtpv2cStack, uint8_t* ipv4Addr);
 
 NwRcT nwGtpv2cUdpDestroy(NwGtpv2cNodeUdpT* thiz);
 
 NwRcT nwGtpv2cUdpDataReq(NwGtpv2cUdpHandleT udpHandle,
-                         NwU8T* dataBuf,
-                         NwU32T dataSize,
-                         NwU32T peerIp,
-                         NwU32T peerPort);
+                         uint8_t* dataBuf,
+                         uint32_t dataSize,
+                         uint32_t peerIp,
+                         uint32_t peerPort);
 
 #ifdef __cplusplus
 }

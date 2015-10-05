@@ -992,7 +992,8 @@ int main(int argc, char **argv)
                    l%(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
                    l/(PHY_vars_eNb->lte_frame_parms.symbols_per_tti/2),
                    0,
-                   0);
+                   0,
+		   0);
 
 
           if (l==0) {
@@ -1033,7 +1034,8 @@ int main(int argc, char **argv)
             lte_est_freq_offset(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0],
                                 &PHY_vars_UE->lte_frame_parms,
                                 l,
-                                &freq_offset);
+                                &freq_offset,
+				1);
           }
 
           if (l==((PHY_vars_eNb->lte_frame_parms.Ncp==0)?10:9)) {

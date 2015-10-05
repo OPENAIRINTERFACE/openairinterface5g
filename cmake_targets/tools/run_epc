@@ -39,6 +39,8 @@
 ################################
 THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/build_helper
+declare -i g_run_msc_gen=0
+declare    g_msc_dir="/tmp"
 
 set_openair_env 
 
@@ -62,17 +64,39 @@ function help()
   echo_error "                                       2 -> ASN1 XER printf on and ASN1 debug on"
 }
 
+function do_msc_gen()
+{
+  cd $g_msc_dir
+  last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
+  $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py
+  sync
+  last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
+        
+  if [ x"$last_created_file" != x"$last_created_file2" ]; then
+    if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
+      command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
+    fi
+  fi 
 
+}
+
+function control_c()
+# run if user hits control-c
+{
+  echo_warning "\nExiting by ctrl+c\n"
+  if [ $g_run_msc_gen -eq 1 ]; then 
+    do_msc_gen
+  fi
+  exit $?
+}
 
 function main()
 {
   local -i run_gdb=0
-  local -i run_mscgen=0
   local    exe_arguments=" "
   local -i epc_local=0
   local -r epc_default_config_file="$OPENAIR_TARGETS/bin/epc.conf"
   local    epc_config_file=$epc_default_config_file
-  local    MSC_DIR="/tmp"
 
   until [ -z "$1" ]
     do
@@ -103,12 +127,10 @@ function main()
         shift;
         ;;
       -m | --mscgen)
-        MSC_DIR=$2
-        # can omit file name if last arg on the line
-        if [ -d  "$MSC_DIR" ]; then
-          echo "setting mscgen log files to dir: $MSC_DIR"
-          run_mscgen=1
-          exe_arguments="-m $exe_arguments"
+        g_msc_dir=$2
+        if [ -d  "$g_msc_dir" ]; then
+          echo "setting mscgen log files to dir: $g_msc_dir"
+          g_run_msc_gen=1
           shift 2;
         else
           echo_error "Mscgen log dir does not exist"
@@ -133,47 +155,45 @@ function main()
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
 
-  if [ ! -e $OPENAIR_DIR/targets/bin/mme_gw ]; then
-    echo_fatal "Cannot find $OPENAIR_DIR/targets/bin/mme_gw executable, have a look at the output of build_epc executable"
+  if [ ! -e $OPENAIR_DIR/targets/bin/mme_gw.Rel10 ]; then
+    echo_fatal "Cannot find $OPENAIR_DIR/targets/bin/mme_gw.Rel10 executable, have a look at the output of build_epc executable"
   fi
 
   if [ $epc_local -eq 1 ]; then
     epc_config_file="$OPENAIR_DIR/targets/bin/epc.local.enb.conf"
   fi
 
-  if [ $run_mscgen -eq 1 ]; then 
+  if [ $g_run_msc_gen -eq 1 ]; then 
     rm -f /tmp/openair.msc.*
   fi
 
   exe_arguments="-O $epc_config_file $exe_arguments"
 
   if [ $run_gdb -eq 0 ]; then 
-    $OPENAIR_DIR/targets/bin/mme_gw  `echo $exe_arguments` 2>&1 
+    # trap keyboard interrupt (control-c)
+    trap control_c SIGINT
+    $OPENAIR_DIR/targets/bin/mme_gw.Rel10  `echo $exe_arguments` 2>&1 
   else
+    # trap keyboard interrupt (control-c) is done by gdb
     touch      ~/.gdb_mme_gw
     chmod 777  ~/.gdb_mme_gw
-    echo "file $OPENAIR_DIR/targets/bin/mme_gw" > ~/.gdb_mme_gw
+    echo "file $OPENAIR_DIR/targets/bin/mme_gw.Rel10" > ~/.gdb_mme_gw
     echo "set args $exe_arguments "        >> ~/.gdb_mme_gw
     echo "run"                             >> ~/.gdb_mme_gw
     cat ~/.gdb_mme_gw
-    gdb -n -x ~/.gdb_mme_gw 
+    gdb -n -x ~/.gdb_mme_gw
+    if [ $g_run_msc_gen -eq 1 ]; then 
+      do_msc_gen
+    fi
   fi
-  
-  if [ $run_mscgen -eq 1 ]; then 
-    cd $MSC_DIR
-    last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
-    $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py
-    sync
-    last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
-        
-    if [ x"$last_created_file" != x"$last_created_file2" ]; then
-      if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
-        command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
-      fi
-    fi 
-  fi
-
 }
 
+sudo echo
+is_sudo=$?
+if [[ "$is_sudo" -ne 0 ]]; then
+  echo_error "This script must be run by root or a sudo'er"
+  echo
+  exit 1
+fi
 
 main "$@"

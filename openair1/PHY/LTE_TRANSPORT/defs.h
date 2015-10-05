@@ -114,6 +114,10 @@ typedef struct {
   uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
+  /// Frame where current HARQ round was sent
+  uint32_t frame;
+  /// Subframe where current HARQ round was sent
+  uint32_t subframe;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// MCS format for this DLSCH
@@ -124,6 +128,8 @@ typedef struct {
   MIMO_mode_t mimo_mode;
   /// Current RB allocation
   uint32_t rb_alloc[4];
+  /// distributed/localized flag
+  vrb_t vrb_type;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
   /// Current subband RI allocation
@@ -139,7 +145,7 @@ typedef struct {
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
   uint8_t e[MAX_NUM_CHANNEL_BITS];
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
-  uint8_t d[MAX_NUM_DLSCH_SEGMENTS][(96+3+(3*6144))];
+  uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
   uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
@@ -515,6 +521,8 @@ typedef struct {
   uint8_t round;
   /// MCS format for this DLSCH
   uint8_t mcs;
+  /// Qm (modulation order) for this DLSCH
+  uint8_t Qm;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// MIMO mode for this DLSCH
@@ -547,8 +555,12 @@ typedef struct {
   uint16_t nb_rb;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
-  /// Current RB allocation
-  uint32_t rb_alloc[4];
+  /// Current RB allocation (even slots)
+  uint32_t rb_alloc_even[4];
+  /// Current RB allocation (odd slots)
+  uint32_t rb_alloc_odd[4];
+  /// distributed/localized flag
+  vrb_t vrb_type;
   /// downlink power offset field
   uint8_t dl_power_off;
 } LTE_DL_UE_HARQ_t;
@@ -563,6 +575,16 @@ typedef struct {
 typedef struct {
   /// UL RSSI per receive antenna
   int32_t UL_rssi[NB_ANTENNAS_RX];
+  /// PUCCH1a/b power (digital linear)
+  int32_t Po_PUCCH;
+  /// PUCCH1a/b power (dBm)
+  int32_t Po_PUCCH_dBm;
+  /// PUCCH1 power (digital linear), conditioned on below threshold
+  int32_t Po_PUCCH1_below;
+  /// PUCCH1 power (digital linear), conditioned on above threshold
+  int32_t Po_PUCCH1_above;
+  /// Indicator that Po_PUCCH has been updated by PHY
+  int32_t Po_PUCCH_update;
   /// DL Wideband CQI index (2 TBs)
   uint8_t DL_cqi[2];
   /// DL Subband CQI index (from HLC feedback)
@@ -673,6 +695,8 @@ typedef struct {
   uint8_t Kmimo;
   /// Maximum number of Turbo iterations
   uint8_t max_turbo_iterations;
+  /// accumulated tx power adjustment for PUCCH
+  int8_t               g_pucch;
 } LTE_UE_DLSCH_t;
 
 typedef enum {format0,

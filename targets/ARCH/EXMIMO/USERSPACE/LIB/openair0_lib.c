@@ -247,10 +247,10 @@ int openair0_stop_without_reset(int card)
 #define MY_RF_MODE      (RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX)
 #define RF_MODE_BASE    (LNA1ON + RFBBNORM)
 
-int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
+int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   // Initialize card
-  exmimo_config_t         *p_exmimo_config;
+  //  exmimo_config_t         *p_exmimo_config;
   exmimo_id_t             *p_exmimo_id;
   int ret;
 
@@ -276,7 +276,7 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
     printf ("Detected %d number of cards, %d number of antennas.\n", openair0_num_detected_cards, openair0_num_antennas[0]);
   }
 
-  p_exmimo_config = openair0_exmimo_pci[0].exmimo_config_ptr;
+  //  p_exmimo_config = openair0_exmimo_pci[0].exmimo_config_ptr;
   p_exmimo_id     = openair0_exmimo_pci[0].exmimo_id_ptr;
 
   printf("Card %d: ExpressMIMO %d, HW Rev %d, SW Rev 0x%d\n", 0, p_exmimo_id->board_exmimoversion, p_exmimo_id->board_hwrev, p_exmimo_id->board_swrev);
@@ -356,14 +356,15 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
     for (ant=0; ant<4; ant++) {
       if (openair0_cfg[card].rx_freq[ant] || openair0_cfg[card].tx_freq[ant]) {
         p_exmimo_config->rf.rf_mode[ant] = RF_MODE_BASE;
-        p_exmimo_config->rf.do_autocal[ant] = 1;
+        p_exmimo_config->rf.do_autocal[ant] = 1;//openair0_cfg[card].autocal[ant];
+	printf("card %d, antenna %d, autocal %d\n",card,ant,openair0_cfg[card].autocal[ant]);
       }
 
       if (openair0_cfg[card].tx_freq[ant]) {
         p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX + TXLPFNORM + TXLPFEN + tx_filter);
         p_exmimo_config->rf.rf_freq_tx[ant] = (unsigned int)openair0_cfg[card].tx_freq[ant];
         p_exmimo_config->rf.tx_gain[ant][0] = (unsigned int)openair0_cfg[card].tx_gain[ant];
-        printf("openair0 : programming card %d TX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
+
       }
 
       if (openair0_cfg[card].rx_freq[ant]) {
@@ -419,11 +420,11 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 
 int openair0_reconfig(openair0_config_t *openair0_cfg)
 {
-  int ret;
+
   int ant, card;
 
   exmimo_config_t         *p_exmimo_config;
-  exmimo_id_t             *p_exmimo_id;
+  //  exmimo_id_t             *p_exmimo_id;
 
   if (!openair0_cfg) {
     printf("Error, openair0_cfg is null!!\n");
@@ -433,7 +434,7 @@ int openair0_reconfig(openair0_config_t *openair0_cfg)
   for (card=0; card<openair0_num_detected_cards; card++) {
 
     p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
-    p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
+    //    p_exmimo_id     = openair0_exmimo_pci[card].exmimo_id_ptr;
 
     for (ant=0; ant<4; ant++) {
       if (openair0_cfg[card].tx_freq[ant]) {
@@ -468,6 +469,22 @@ int openair0_reconfig(openair0_config_t *openair0_cfg)
   return(0);
 }
 
+int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
+
+  if (exmimo_dump_config > 0) {
+    // do a full configuration
+    openair0_config(openair0_cfg,0);
+  }
+  else {  // just change the frequencies in pci descriptor
+    openair0_reconfig(openair0_cfg);
+  }
+  return(0);
+  
+}
+
+int openair0_set_gains(openair0_device* device, openair0_config_t *openair0_cfg){
+  return(0);
+}
 
 unsigned int *openair0_daq_cnt(void) {
 

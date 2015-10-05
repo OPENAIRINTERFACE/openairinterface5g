@@ -393,13 +393,13 @@ RB_GENERATE(NwGtpv2cActiveTimerList, NwGtpv2cTimeoutInfo, activeTimerListRbtNode
  */
 static NwRcT
 nwGtpv2cCreateAndSendMsg(NW_IN  NwGtpv2cStackT* thiz,
-                         NW_IN  NwU32T seqNum,
-                         NW_IN  NwU32T peerIp,
-                         NW_IN  NwU32T peerPort,
+                         NW_IN  uint32_t seqNum,
+                         NW_IN  uint32_t peerIp,
+                         NW_IN  uint32_t peerPort,
                          NW_IN  NwGtpv2cMsgT *pMsg)
 {
   NwRcT rc;
-  NwU8T* msgHdr;
+  uint8_t* msgHdr;
 
   NW_ASSERT(thiz);
   NW_ASSERT(pMsg);
@@ -413,17 +413,17 @@ nwGtpv2cCreateAndSendMsg(NW_IN  NwGtpv2cStackT* thiz,
   *(msgHdr++)         = (pMsg->msgType);
 
   /* Set msg length in header*/
-  *((NwU16T*) msgHdr) = htons(pMsg->msgLen - 4 );
+  *((uint16_t*) msgHdr) = htons(pMsg->msgLen - 4 );
   msgHdr += 2;
 
   /* Set TEID, if present in header */
   if(pMsg->teidPresent) {
-    *((NwU32T*) msgHdr) = htonl(pMsg->teid);
+    *((uint32_t*) msgHdr) = htonl(pMsg->teid);
     msgHdr += 4;
   }
 
   /* Set seq num in header */
-  *((NwU32T*) msgHdr) = htonl(seqNum << 8);
+  *((uint32_t*) msgHdr) = htonl(seqNum << 8);
 
   /* Call UDP data request callback */
   NW_ASSERT(thiz->udp.udpDataReqCallback != NULL);
@@ -446,9 +446,9 @@ nwGtpv2cCreateAndSendMsg(NW_IN  NwGtpv2cStackT* thiz,
 
 static NwRcT
 nwGtpv2cSendVersionNotSupportedInd( NW_IN NwGtpv2cStackT* thiz,
-                                    NW_IN NwU32T peerIp,
-                                    NW_IN NwU32T peerPort,
-                                    NW_IN NwU32T seqNum)
+                                    NW_IN uint32_t peerIp,
+                                    NW_IN uint32_t peerPort,
+                                    NW_IN uint32_t seqNum)
 {
   NwRcT rc;
   NwGtpv2cMsgHandleT    hMsg = 0;
@@ -485,8 +485,8 @@ nwGtpv2cSendVersionNotSupportedInd( NW_IN NwGtpv2cStackT* thiz,
 
 static NwRcT
 nwGtpv2cCreateLocalTunnel( NW_IN NwGtpv2cStackT* thiz,
-                           NW_IN NwU32T teid,
-                           NW_IN NwU32T ipv4Remote,
+                           NW_IN uint32_t teid,
+                           NW_IN uint32_t ipv4Remote,
                            NW_IN NwGtpv2cUlpTunnelHandleT hUlpTunnel,
                            NW_OUT NwGtpv2cTunnelHandleT *phTunnel)
 {
@@ -798,10 +798,10 @@ static NwRcT
 nwGtpv2cSendInitialReqIndToUlp( NW_IN NwGtpv2cStackT *thiz,
                                 NW_IN NwGtpv2cErrorT *pError,
                                 NW_IN NwGtpv2cTrxnT *pTrxn,
-                                NW_IN NwU32T  hUlpTunnel,
-                                NW_IN NwU32T  msgType,
-                                NW_IN NwU32T  peerIp,
-                                NW_IN NwU16T  peerPort,
+                                NW_IN uint32_t  hUlpTunnel,
+                                NW_IN uint32_t  msgType,
+                                NW_IN uint32_t  peerIp,
+                                NW_IN uint16_t  peerPort,
                                 NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwRcT rc;
@@ -836,9 +836,9 @@ nwGtpv2cSendInitialReqIndToUlp( NW_IN NwGtpv2cStackT *thiz,
 static NwRcT
 nwGtpv2cSendTriggeredRspIndToUlp( NW_IN NwGtpv2cStackT* thiz,
                                   NW_IN NwGtpv2cErrorT *pError,
-                                  NW_IN NwU32T  hUlpTrxn,
-                                  NW_IN NwU32T  hUlpTunnel,
-                                  NW_IN NwU32T  msgType,
+                                  NW_IN uint32_t  hUlpTrxn,
+                                  NW_IN uint32_t  hUlpTunnel,
+                                  NW_IN uint32_t  msgType,
                                   NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwRcT rc;
@@ -870,17 +870,17 @@ nwGtpv2cSendTriggeredRspIndToUlp( NW_IN NwGtpv2cStackT* thiz,
 
 static NwRcT
 nwGtpv2cHandleEchoReq(NW_IN NwGtpv2cStackT *thiz,
-                      NW_IN NwU32T msgType,
-                      NW_IN NwU8T* msgBuf,
-                      NW_IN NwU32T msgBufLen,
-                      NW_IN NwU16T peerPort,
-                      NW_IN NwU32T peerIp)
+                      NW_IN uint32_t msgType,
+                      NW_IN uint8_t* msgBuf,
+                      NW_IN uint32_t msgBufLen,
+                      NW_IN uint16_t peerPort,
+                      NW_IN uint32_t peerIp)
 {
   NwRcT                 rc;
-  NwU32T                seqNum = 0;
+  uint32_t                seqNum = 0;
   NwGtpv2cMsgHandleT    hMsg = 0;
 
-  seqNum = ntohl(*((NwU32T*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;
+  seqNum = ntohl(*((uint32_t*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;
 
   /* Send Echo Response */
 
@@ -918,22 +918,22 @@ nwGtpv2cHandleEchoReq(NW_IN NwGtpv2cStackT *thiz,
 
 static NwRcT
 nwGtpv2cHandleInitialReq(NW_IN NwGtpv2cStackT *thiz,
-                         NW_IN NwU32T msgType,
-                         NW_IN NwU8T* msgBuf,
-                         NW_IN NwU32T msgBufLen,
-                         NW_IN NwU16T peerPort,
-                         NW_IN NwU32T peerIp)
+                         NW_IN uint32_t msgType,
+                         NW_IN uint8_t* msgBuf,
+                         NW_IN uint32_t msgBufLen,
+                         NW_IN uint16_t peerPort,
+                         NW_IN uint32_t peerIp)
 {
   NwRcT                         rc;
-  NwU32T                        seqNum = 0;
-  NwU32T                        teidLocal = 0;
+  uint32_t                        seqNum = 0;
+  uint32_t                        teidLocal = 0;
   NwGtpv2cTrxnT                 *pTrxn;
   NwGtpv2cTunnelT               *pLocalTunnel, keyTunnel;
   NwGtpv2cMsgHandleT            hMsg = 0;
   NwGtpv2cUlpTunnelHandleT      hUlpTunnel;
   NwGtpv2cErrorT                error;
 
-  teidLocal = *((NwU32T*)(msgBuf + 4));
+  teidLocal = *((uint32_t*)(msgBuf + 4));
 
   if(teidLocal) {
     keyTunnel.teid           = ntohl(teidLocal);
@@ -950,7 +950,7 @@ nwGtpv2cHandleInitialReq(NW_IN NwGtpv2cStackT *thiz,
     hUlpTunnel = 0;
   }
 
-  seqNum = ntohl(*((NwU32T*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;
+  seqNum = ntohl(*((uint32_t*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;
   pTrxn = nwGtpv2cTrxnOutstandingRxNew(thiz, ntohl(teidLocal), peerIp, peerPort, (seqNum));
 
   if(pTrxn) {
@@ -987,25 +987,25 @@ nwGtpv2cHandleInitialReq(NW_IN NwGtpv2cStackT *thiz,
 
 static NwRcT
 nwGtpv2cHandleTriggeredRsp(NW_IN NwGtpv2cStackT *thiz,
-                           NW_IN NwU32T msgType,
-                           NW_IN NwU8T* msgBuf,
-                           NW_IN NwU32T msgBufLen,
-                           NW_IN NwU16T peerPort,
-                           NW_IN NwU32T peerIp)
+                           NW_IN uint32_t msgType,
+                           NW_IN uint8_t* msgBuf,
+                           NW_IN uint32_t msgBufLen,
+                           NW_IN uint16_t peerPort,
+                           NW_IN uint32_t peerIp)
 {
   NwRcT                 rc;
   NwGtpv2cTrxnT         *pTrxn, keyTrxn;
   NwGtpv2cMsgHandleT    hMsg = 0;
   NwGtpv2cErrorT        error;
 
-  keyTrxn.seqNum          = ntohl(*((NwU32T*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;;
+  keyTrxn.seqNum          = ntohl(*((uint32_t*)(msgBuf + (((*msgBuf) & 0x08) ? 8 : 4)))) >> 8;;
   keyTrxn.peerIp          = peerIp;
 
   pTrxn = RB_FIND(NwGtpv2cOutstandingTxSeqNumTrxnMap, &(thiz->outstandingTxSeqNumMap), &keyTrxn);
 
   if(pTrxn) {
-    NwU32T hUlpTrxn;
-    NwU32T hUlpTunnel;
+    uint32_t hUlpTrxn;
+    uint32_t hUlpTunnel;
 
     hUlpTrxn = pTrxn->hUlpTrxn;
     hUlpTunnel = (pTrxn->hTunnel ? ((NwGtpv2cTunnelT*)(pTrxn->hTunnel))->hUlpTunnel : 0);
@@ -1021,7 +1021,7 @@ nwGtpv2cHandleTriggeredRsp(NW_IN NwGtpv2cStackT *thiz,
     rc = nwGtpv2cMsgIeParse(thiz->pGtpv2cMsgIeParseInfo[msgType], hMsg, &error);
 
     if(rc != NW_OK) {
-      NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Malformed message received on TEID %u from peer 0x%x. Notifying ULP.", ntohl((*((NwU32T*)(msgBuf + 4)))), htonl(peerIp));
+      NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Malformed message received on TEID %u from peer 0x%x. Notifying ULP.", ntohl((*((uint32_t*)(msgBuf + 4)))), htonl(peerIp));
     }
 
     rc  = nwGtpv2cSendTriggeredRspIndToUlp( thiz,
@@ -1057,8 +1057,8 @@ nwGtpv2cInitialize( NW_INOUT NwGtpv2cStackHandleT* hGtpcStackHandle)
   memset(thiz, 0, sizeof(NwGtpv2cStackT));
 
   if(thiz) {
-    thiz->id            = (NwU32T) thiz;
-    thiz->seqNum        = ((NwU32T) thiz) & 0x0000FFFF;
+    thiz->id            = (uint32_t) thiz;
+    thiz->seqNum        = ((uint32_t) thiz) & 0x0000FFFF;
 
     RB_INIT(&(thiz->tunnelMap));
     RB_INIT(&(thiz->outstandingTxSeqNumMap));
@@ -1205,7 +1205,7 @@ nwGtpv2cSetLogMgrEntity( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cSetLogLevel( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                     NW_IN NwU32T logLevel)
+                     NW_IN uint32_t logLevel)
 {
   NwGtpv2cStackT* thiz = (NwGtpv2cStackT*) hGtpcStackHandle;
   thiz->logLevel = logLevel;
@@ -1218,14 +1218,14 @@ nwGtpv2cSetLogLevel( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cProcessUdpReq( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                       NW_IN NwU8T* udpData,
-                       NW_IN NwU32T udpDataLen,
-                       NW_IN NwU16T peerPort,
-                       NW_IN NwU32T peerIp)
+                       NW_IN uint8_t* udpData,
+                       NW_IN uint32_t udpDataLen,
+                       NW_IN uint16_t peerPort,
+                       NW_IN uint32_t peerIp)
 {
   NwRcT                 rc;
   NwGtpv2cStackT*       thiz;
-  NwU16T                msgType;
+  uint16_t                msgType;
 
   thiz = (NwGtpv2cStackT*) hGtpcStackHandle;
   NW_ASSERT(thiz);
@@ -1243,26 +1243,26 @@ nwGtpv2cProcessUdpReq( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
     return NW_OK;
   }
 
-  if( (ntohs(*((NwU16T*)((NwU8T*)udpData + 2))) /* Length */
-       + ((*((NwU8T*)(udpData)) & 0x08) ? 4 : 0) /* Extra Header length if TEID present */) > udpDataLen) {
+  if( (ntohs(*((uint16_t*)((uint8_t*)udpData + 2))) /* Length */
+       + ((*((uint8_t*)(udpData)) & 0x08) ? 4 : 0) /* Extra Header length if TEID present */) > udpDataLen) {
     NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Received message with errneous length of %u against expected length of %u! Discarding", udpDataLen,
-           ntohs(*((NwU16T*)((NwU8T*)udpData + 2))) + ((*((NwU8T*)(udpData)) & 0x08) ? 4 : 0));
+           ntohs(*((uint16_t*)((uint8_t*)udpData + 2))) + ((*((uint8_t*)(udpData)) & 0x08) ? 4 : 0));
     return NW_OK;
   }
 
-  if(((*((NwU8T*)(udpData)) & 0xE0) >> 5) != NW_GTP_VERSION) {
-    NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Received unsupported GTP version '%u' message! Discarding.", ((*((NwU8T*)(udpData)) & 0xE0) >> 5));
+  if(((*((uint8_t*)(udpData)) & 0xE0) >> 5) != NW_GTP_VERSION) {
+    NW_LOG(thiz, NW_LOG_LEVEL_WARN, "Received unsupported GTP version '%u' message! Discarding.", ((*((uint8_t*)(udpData)) & 0xE0) >> 5));
     /* Send Version Not Supported Message to peer */
     rc = nwGtpv2cSendVersionNotSupportedInd(
            thiz,
            peerIp,
            peerPort,
-           *((NwU32T*)(udpData + ((*((NwU8T*)(udpData)) & 0x08) ? 8 : 4))) /* Seq Num */);
+           *((uint32_t*)(udpData + ((*((uint8_t*)(udpData)) & 0x08) ? 8 : 4))) /* Seq Num */);
 
     return NW_OK;
   }
 
-  msgType = *((NwU8T*)(udpData + 1));
+  msgType = *((uint8_t*)(udpData + 1));
 
   switch(msgType) {
   case NW_GTP_ECHO_REQ: {
@@ -1520,9 +1520,9 @@ nwGtpv2cProcessTimeout(void* arg)
 
 NwRcT
 nwGtpv2cStartTimer(NwGtpv2cStackT* thiz,
-                   NwU32T timeoutSec,
-                   NwU32T timeoutUsec,
-                   NwU32T tmrType,
+                   uint32_t timeoutSec,
+                   uint32_t timeoutUsec,
+                   uint32_t tmrType,
                    NwRcT (*timeoutCallbackFunc)(void*),
                    void*  timeoutCallbackArg,
                    NwGtpv2cTimerHandleT *phTimer)
@@ -1610,9 +1610,9 @@ nwGtpv2cStartTimer(NwGtpv2cStackT* thiz,
 
 NwRcT
 nwGtpv2cStartTimerOld(NwGtpv2cStackT* thiz,
-                      NwU32T timeoutSec,
-                      NwU32T timeoutUsec,
-                      NwU32T tmrType,
+                      uint32_t timeoutSec,
+                      uint32_t timeoutUsec,
+                      uint32_t tmrType,
                       NwRcT (*timeoutCallbackFunc)(void*),
                       void*  timeoutCallbackArg,
                       NwGtpv2cTimerHandleT *phTimer)

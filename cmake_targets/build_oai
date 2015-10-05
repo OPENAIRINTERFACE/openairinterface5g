@@ -41,10 +41,12 @@ source $THIS_SCRIPT_PATH/tools/build_helper
 
 MSC_GEN="False"
 XFORMS="False"
+PRINT_STATS="False"
 VCD_TIMING="False"
 REL="Rel10"
 HW="EXMIMO"
 EPC=0
+VERBOSE_COMPILE=0
 
 function print_help() {
   echo_info '
@@ -74,14 +76,16 @@ Options
    Makes the UE specific parts (ue_ip, usim, nvram) 
 --EPC
    Makes the EPC (MME-SPGW, HSS)
+--RRH
+   Makes the RRH
 -r | --3gpp-release
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, None
+   EXMIMO (Default), USRP, BLADERF, ETHERNET, None
    Adds this RF board support (in external packages installation and in compilation)
 --oaisim
-   Makes the oaisim simulator
+   Makes the oaisim simulator. Hardware will be defaulted to "NONE".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -91,11 +95,22 @@ Options
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
-   Adds a software oscilloscope feature to the produced binaries
+   Adds a software oscilloscope feature to the produced binaries. If oaisim, then enable PRINT_STATS.
 --install-system-files
    Install OpenArInterface required files in Linux system
    (will ask root password)
-Typical Options for a quick startup with a COTS UE and Eurecom RF board: build_oai -I -g -eNB -EPC -x --install-system-files'
+--noS1 
+   Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
+--verbose-compile
+   Shows detailed compilation instructions in makefile
+Usage (first build):
+ oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
+ Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
+ NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files -w USRP
+Usage (Regular):
+ oaisim : ./build_oai --oaisim -x 
+ Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
+ NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP'
 }
 
 
@@ -137,6 +152,10 @@ function main() {
             EPC=1
             echo_info "Will compile EPC"
             shift;;
+       --RRH)
+            RRH=1
+            echo_info "Will compile RRH"
+            shift;;
        -r | --3gpp-release)
             REL=$2
             echo_info "setting release to: $REL"
@@ -174,13 +193,21 @@ function main() {
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
-            XFORMS=1
+            XFORMS="True"
             EXE_ARGUMENTS="$EXE_ARGUMENTS -d"
             echo_info "Will generate the software oscilloscope features"
             shift;;
        --install-system-files)
             INSTALL_SYSTEM_FILES=1
             echo_info "Will copy OpenAirInterface files in Linux directories"
+            shift;;
+       --noS1)
+	    NOS1=1
+            echo_info "Will compile without S1 interface"
+            shift;;
+       --verbose-compile)
+	    VERBOSE_COMPILE=1
+            echo_info "Will compile with verbose instructions"
             shift;;
         -h | --help)
             print_help
@@ -243,37 +270,70 @@ function main() {
     check_install_additional_tools
   fi
 
+  if [ "$oaisim" = "1" ] ; then
+      if [ "$HW" != "ETHERNET" ] ; then 
+	  HW="NONE"
+      fi 
+      if [ "$XFORMS" == "True" ] ; then 
+	  PRINT_STATS="True"
+      fi 
+  fi
+  
+  
   echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
+  if [ "$NOS1" =  "1" ] ; then
+      lte_build_dir=lte_noS1_build_oai
+      lte_exec=lte-softmodem-nos1
+  else
+      lte_build_dir=lte_build_oai
+      lte_exec=lte-softmodem
+  fi
 
+  # first generate the CMakefile in the right directory
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$HW" = "EXMIMO" ] ; then
 
-  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
     # LTE softmodem compilation
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/lte_build_oai/build
-    mkdir -p $DIR/lte_build_oai/build
-    cmake_file=$DIR/lte_build_oai/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-    echo "set(XFORMS $XFORMS )"                  >>  $cmake_file
-    echo "set(RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-    echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo 'set(PACKAGE_NAME "\"lte-softmodem\"")' >>  $cmake_file
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$lte_build_dir/build
+    mkdir -p $DIR/$lte_build_dir/build
+    cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
+    if [ "$NOS1" = "1" ] ; then
+	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
+    fi
+    echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+    echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
+    echo "set(PACKAGE_NAME \"${lte_exec}\")"     >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    cd  $DIR/lte_build_oai/build
+    cd  $DIR/$lte_build_dir/build
     cmake ..
-    echo_info "Compiling LTE softmodem"
-    compilations \
-	  lte_build_oai lte-softmodem \
-	  lte-softmodem lte-softmodem.$REL
+  fi
 
+  if [ "$eNB" = "1" ] ; then
+    echo_info "Compiling $lte_exec"
+    compilations \
+	  $lte_build_dir $lte_exec \
+	  $lte_exec $dbin/$lte_exec.$REL
+
+    if [ "$NOS1" = "1" ] ; then
+	compilations \
+	    $lte_build_dir nasmesh \
+	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+	compilations \
+	    $lte_build_dir rb_tool \
+	    rb_tool $dbin/rb_tool
+	cp $OPENAIR_DIR/cmake_targets/tools/init_nas_nos1 $dbin
+    fi
   fi
 
   if [ "$UE" = 1 ] ; then
     # ue_ip driver compilation
     echo_info "Compiling UE specific part"
     compilations \
-      lte_build_oai ue_ip \
+      $lte_build_dir ue_ip \
       CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
       
 #    mkdir -p $DIR/at_commands/build
@@ -282,7 +342,7 @@ function main() {
 #    compilations \
 #      at_commands at_nas_ue \
 #      at_nas_ue $dbin/at_nas_ue
-      
+    
     [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
@@ -341,99 +401,98 @@ function main() {
   if [ "$HW" = "EXMIMO" -a "$EPC" = "0" ] ; then
     
     echo_info "Compiling Express MIMO 2 board drivers"
-    mkdir -p $DIR/lte_noS1_build_oai/build
-    cd $DIR/lte_noS1_build_oai/build
-    cmake ..
     compilations \
-        lte_noS1_build_oai openair_rf \
+        $lte_build_dir openair_rf \
         CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
     compilations \
-	  lte_noS1_build_oai updatefw \
+	  $lte_build_dir updatefw \
 	  updatefw $dbin/updatefw
-    make -C $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/*.oct $dbin
-    echo_success "oarf tools compiled"
+    make -C $OPENAIR_DIR/cmake_targets/$lte_build_dir/build oarf > $dlog/oarf.txt 2>&1
+    cp $OPENAIR_DIR/cmake_targets/$lte_build_dir/build/*.oct $dbin
+    if [ -s $dbin/oarf_config_exmimo.oct ] ; then
+	echo_success "oarf tools compiled"
+    else
+	echo_error "oarf tools compilation failed"
+    fi
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
 
   if [ "$oaisim" = "1" ] ; then
     dconf=$OPENAIR_DIR/targets/bin
-
-    echo_info "Compiling at_nas_ue"
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/at_commands/build
-    mkdir -p $DIR/at_commands/build
-    cd $DIR/at_commands/build
-    cmake ..
-    compilations \
-      at_commands at_nas_ue \
-      at_nas_ue $dbin/at_nas_ue
-
-    echo_info "Compiling oaisim"
-    cmake_file=$DIR/oaisim_build_oai/CMakeLists.txt
-    cp $DIR/oaisim_build_oai/CMakeLists.template $cmake_file
-    echo "set(XFORMS $XFORMS )" >>  $cmake_file
-    echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+      if [ "$NOS1" =  "1" ] ; then
+	  oaisim_build_dir=oaisim_noS1_build_oai
+	  oaisim_exec=oaisim_nos1
+      else
+	  oaisim_build_dir=oaisim_build_oai
+	  oaisim_exec=oaisim
+      fi
+    
+    echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
+    cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
+    cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
+    echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_build_oai/build
-    mkdir -p $DIR/oaisim_build_oai/build
-    cd $DIR/oaisim_build_oai/build
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
+    mkdir -p $DIR/$oaisim_build_dir/build
+    cd $DIR/$oaisim_build_dir/build
     cmake ..
     compilations \
-	  oaisim_build_oai oaisim \
-	  oaisim $dbin/oaisim.$REL
+	  $oaisim_build_dir $oaisim_exec \
+	  $oaisim_exec $dbin/$oaisim_exec.$REL
 
-    # ue_ip driver compilation
-    echo_info "Compiling UE specific part (ue_ip driver and usim tools)"
-    compilations \
-	  oaisim_build_oai ue_ip \
-	  CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+    if [ "$NOS1" != "1" ] ; then
 
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
-    mkdir -p $DIR/nas_sim_tools/build
-    cd $DIR/nas_sim_tools/build
-    cmake ..
-    compilations \
-	  nas_sim_tools usim \
-	  usim $dbin/usim
-    compilations \
-	  nas_sim_tools nvram \
-	  nvram $dbin/nvram
+	[ "$CLEAN" = "1" ] && rm -rf $DIR/at_commands/build
+    	echo_info "Compiling at_nas_ue"
+	mkdir -p $DIR/at_commands/build
+	cd $DIR/at_commands/build
+	cmake ..
+	compilations \
+	    at_commands at_nas_ue \
+	    at_nas_ue $dbin/at_nas_ue
 
-    # generate USIM data
-    if [ -f $dbin/nvram ]; then
-      install_nas_tools $dbin $dconf
+	# ue_ip driver compilation
+	echo_info "Compiling UE specific part (ue_ip driver and usim tools)"
+	compilations \
+	    oaisim_build_oai ue_ip \
+	    CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+
+	[ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
+	mkdir -p $DIR/nas_sim_tools/build
+	cd $DIR/nas_sim_tools/build
+	cmake ..
+	compilations \
+	    nas_sim_tools usim \
+	    usim $dbin/usim
+	compilations \
+	    nas_sim_tools nvram \
+	    nvram $dbin/nvram
+
+	# generate USIM data
+	if [ -f $dbin/nvram ]; then
+	    install_nas_tools $dbin $dconf
+	else
+	    echo_warning "not generated UE NAS files: binaries not found"
+	fi
     else
-      echo_warning "not generated UE NAS files: binaries not found"
+
+	compilations \
+	    $oaisim_build_dir rb_tool \
+	    rb_tool $dbin/rb_tool
+
+	# nasmesh driver compilation
+	compilations \
+	    $oaisim_build_dir nasmesh \
+	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
+
+	#oai_nw_drv
+	compilations \
+	    $oaisim_build_dir oai_nw_drv \
+	    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
     fi
-
-    echo_info "Compiling oaisim_nos1"
-    cmake_file=$DIR/oaisim_noS1_build_oai/CMakeLists.txt
-    cp $DIR/oaisim_noS1_build_oai/CMakeLists.template $cmake_file
-    echo "set(XFORMS $XFORMS )" >>  $cmake_file
-    echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_noS1_build_oai/build
-    mkdir -p $DIR/oaisim_noS1_build_oai/build
-    cd $DIR/oaisim_noS1_build_oai/build
-    cmake ..
-    compilations \
-      oaisim_noS1_build_oai oaisim_nos1 \
-      oaisim_nos1 $dbin/oaisim_nos1.$REL
-
-    compilations \
-      oaisim_noS1_build_oai rb_tool \
-      rb_tool $dbin/rb_tool
-
-    # nasmesh driver compilation
-    compilations \
-	  oaisim_noS1_build_oai nasmesh \
-	  CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-    #oai_nw_drv
-    compilations \
-	  oaisim_noS1_build_oai oai_nw_drv \
-	  CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
 
     cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
     cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
@@ -441,40 +500,66 @@ function main() {
     echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
-    mkdir -p $DIR/oaisim_mme_build_oai/build
-    cd $DIR/oaisim_mme_build_oai/build
+    #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
+    #mkdir -p $DIR/oaisim_mme_build_oai/build
+    #cd $DIR/oaisim_mme_build_oai/build
+    #cmake ..
+    #compilations \
+	#  oaisim_mme_build_oai oaisim_mme \
+	#  oaisim_mme $dbin/oaisim_mme.$REL
+  fi
+
+  # RRH compilation
+  ##################
+  if [ "$RRH" = "1" ] ; then
+    echo_info "Compiling RRH"
+    if [  $HW == "ETHERNET" ] ; then 
+	echo_info "RF frontend for RRH is not defined. This mode is used for testing (loopback)."
+    elif [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
+	echo_fatal "Hardware not defined ($HW)"
+    fi
+    cmake_file=$DIR/rrh_gw/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+    echo "set(ENABLE_ITTI False )"     					 >>  $cmake_file
+    echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
+    echo 'set(PACKAGE_NAME "\"rrh_gw\"")' >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
+
+    [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build
+    mkdir -p $DIR/rrh_gw/build
+    cd $DIR/rrh_gw/build
     cmake ..
     compilations \
-	  oaisim_mme_build_oai oaisim_mme \
-	  oaisim_mme $dbin/oaisim_mme.$REL
+      rrh_gw rrh_gw \
+      rrh_gw $dbin/rrh_gw
   fi
 
   # EPC compilation
   ##################
   if [ "$EPC" = "1" ] ; then
-    echo_info "Compiling EPC"
-    # Example HSS and EPC run on the same host
-    if [ "$CLEAN" = "1" ]; then
-      $OPENAIR_DIR/cmake_targets/tools/build_epc --clean --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-      $OPENAIR_DIR/cmake_targets/tools/build_hss --clean --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-    else
-      $OPENAIR_DIR/cmake_targets/tools/build_epc --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-      $OPENAIR_DIR/cmake_targets/tools/build_hss --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-    fi
-
-#   if [ "$INSTALL_SYSTEM_FILES" = "1" ] ;then
-#    if [ -f $dbin/hss.conf ] ; then
-#      sed -e 's/ *= */=/' $dbin/hss.conf > $dconf/hss.conf.nospace
-#      source $dconf/hss.conf.nospace
-#      rm -f $dconf/hss.conf.nospace
-#      create_hss_database root linux "$MYSQL_user" "$MYSQL_pass" "$MYSQL_db"
-#    else
-#      echo_warning "not created HSS database: config not found"
-#    fi
-#  fi
-fi
-
+      echo_info "Compiling EPC"
+      # Example HSS and EPC run on the same host
+      if [ "$CLEAN" = "1" ]; then
+	  $OPENAIR_DIR/cmake_targets/tools/build_epc --clean --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
+	  $OPENAIR_DIR/cmake_targets/tools/build_hss --clean --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
+      else
+	  $OPENAIR_DIR/cmake_targets/tools/build_epc --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
+	  $OPENAIR_DIR/cmake_targets/tools/build_hss --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
+      fi
+      
+      #   if [ "$INSTALL_SYSTEM_FILES" = "1" ] ;then
+      #    if [ -f $dbin/hss.conf ] ; then
+      #      sed -e 's/ *= */=/' $dbin/hss.conf > $dconf/hss.conf.nospace
+      #      source $dconf/hss.conf.nospace
+      #      rm -f $dconf/hss.conf.nospace
+      #      create_hss_database root linux "$MYSQL_user" "$MYSQL_pass" "$MYSQL_db"
+      #    else
+      #      echo_warning "not created HSS database: config not found"
+      #    fi
+      #  fi
+  fi
+  
   # Auto-tests
   #####################
   if [ "$OAI_TEST" = "1" ]; then

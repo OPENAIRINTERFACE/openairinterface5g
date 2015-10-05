@@ -50,10 +50,10 @@ extern "C" {
 
 
 typedef struct NwGtpv2cMsgIeInfo {
-  NwU8T ieType;
-  NwU8T ieMinLength;
-  NwU8T ieInstance;
-  NwU8T iePresence;
+  uint8_t ieType;
+  uint8_t ieMinLength;
+  uint8_t ieInstance;
+  uint8_t iePresence;
   struct NwGtpv2cMsgIeInfo *pGroupedIeInfo;
 } NwGtpv2cMsgIeInfoT;
 
@@ -351,10 +351,10 @@ NwGtpv2cMsgIeInfoT forwardRelocationCompleteAckIeInfoTbl[] = {
  *                     P R I V A T E     F U N C T I O N S                    *
  *----------------------------------------------------------------------------*/
 
-static NwU32T
+static uint32_t
 nwGtpv2cMsgGroupedIeCount(NwGtpv2cMsgIeInfoT *pMsgIeInfo)
 {
-  NwU32T count = 0;
+  uint32_t count = 0;
   NwGtpv2cMsgIeInfoT *pGroupedIeInfo = pMsgIeInfo;
 
   while (pGroupedIeInfo++) {
@@ -372,7 +372,7 @@ static NwRcT
 nwGtpv2cMsgIeParseInfoUpdate(NwGtpv2cMsgIeParseInfoT *thiz,
                              NwGtpv2cMsgIeInfoT      *pMsgIeInfo)
 {
-  NwU32T i, j;
+  uint32_t i, j;
 
   for (i = 0; pMsgIeInfo[i].ieType; i++) {
     if (pMsgIeInfo[i].pGroupedIeInfo) {
@@ -411,10 +411,10 @@ nwGtpv2cMsgIeParseInfoUpdate(NwGtpv2cMsgIeParseInfoT *thiz,
 
 static NwRcT
 nwGtpv2cMsgGroupedIeParse(NW_IN NwGtpv2cGroupedIeParseInfoT* thiz,
-                          NW_IN NwU8T  ieType,
-                          NW_IN NwU16T ieLength,
-                          NW_IN NwU8T  ieInstance,
-                          NW_IN NwU8T  *pIeValue)
+                          NW_IN uint8_t  ieType,
+                          NW_IN uint16_t ieLength,
+                          NW_IN uint8_t  ieInstance,
+                          NW_IN uint8_t  *pIeValue)
 {
   NW_ASSERT(thiz);
 
@@ -434,7 +434,7 @@ nwGtpv2cMsgGroupedIeParse(NW_IN NwGtpv2cGroupedIeParseInfoT* thiz,
  */
 
 NwGtpv2cMsgIeParseInfoT*
-nwGtpv2cMsgIeParseInfoNew(NwGtpv2cStackHandleT hStack, NwU8T msgType)
+nwGtpv2cMsgIeParseInfoNew(NwGtpv2cStackHandleT hStack, uint8_t msgType)
 {
   NwRcT rc;
   NwGtpv2cMsgIeParseInfoT *thiz;
@@ -578,21 +578,21 @@ nwGtpv2cMsgIeParse(NW_IN NwGtpv2cMsgIeParseInfoT* thiz,
                    NW_INOUT    NwGtpv2cErrorT     *pError)
 {
   NwRcT                 rc = NW_OK;
-  NwU16T                mandatoryIeCount =0;
-  NwU8T                 *pIeBufStart;
-  NwU8T                 *pIeBufEnd;
-  NwU16T                ieType;
-  NwU16T                ieLength;
-  NwU16T                ieInstance;
+  uint16_t                mandatoryIeCount =0;
+  uint8_t                 *pIeBufStart;
+  uint8_t                 *pIeBufEnd;
+  uint16_t                ieType;
+  uint16_t                ieLength;
+  uint16_t                ieInstance;
   NwGtpv2cIeTlvT        *pIe;
   NwGtpv2cMsgT          *pMsg = (NwGtpv2cMsgT*) hMsg;
-  NwU8T                 flags = *((NwU8T*)(pMsg->msgBuf));
+  uint8_t                 flags = *((uint8_t*)(pMsg->msgBuf));
 
-  pIeBufStart = (NwU8T *) (pMsg->msgBuf + (flags & 0x08 ? 12: 8));
-  pIeBufEnd   = (NwU8T *) (pMsg->msgBuf + pMsg->msgLen);
+  pIeBufStart = (uint8_t *) (pMsg->msgBuf + (flags & 0x08 ? 12: 8));
+  pIeBufEnd   = (uint8_t *) (pMsg->msgBuf + pMsg->msgLen);
 
-  //memset(pMsg->pIe, 0, sizeof(NwU8T*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
-  memset(pMsg->isIeValid, (NW_FALSE), sizeof(NwU8T) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
+  //memset(pMsg->pIe, 0, sizeof(uint8_t*) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
+  memset(pMsg->isIeValid, (NW_FALSE), sizeof(uint8_t) * (NW_GTPV2C_IE_TYPE_MAXIMUM) * (NW_GTPV2C_IE_INSTANCE_MAXIMUM));
 
   while (pIeBufStart < pIeBufEnd) {
     pIe         = (NwGtpv2cIeTlvT*) pIeBufStart;
@@ -640,12 +640,12 @@ nwGtpv2cMsgIeParse(NW_IN NwGtpv2cMsgIeParseInfoT* thiz,
         continue;
       }
 
-      pMsg->pIe[ieType][ieInstance] = (NwU8T*) pIeBufStart;
+      pMsg->pIe[ieType][ieInstance] = (uint8_t*) pIeBufStart;
       pMsg->isIeValid[ieType][ieInstance] = NW_TRUE;
 
       if(thiz->ieParseInfo[ieType][ieInstance].pGroupedIeInfo) {
         /* Parse the grouped IE */
-        rc = nwGtpv2cMsgGroupedIeParse(thiz->ieParseInfo[ieType][ieInstance].pGroupedIeInfo, ieType, ieLength, ieInstance, ((NwU8T*) pIe) + 4);
+        rc = nwGtpv2cMsgGroupedIeParse(thiz->ieParseInfo[ieType][ieInstance].pGroupedIeInfo, ieType, ieLength, ieInstance, ((uint8_t*) pIe) + 4);
 
         if (rc != NW_OK) {
           pError->cause                     = NW_GTPV2C_CAUSE_MANDATORY_IE_INCORRECT;

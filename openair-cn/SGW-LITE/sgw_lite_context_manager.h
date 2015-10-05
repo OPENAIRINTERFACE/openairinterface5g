@@ -119,9 +119,7 @@ typedef struct pgw_eps_bearer_context_information_s {
 
 // A primary key for a EPS Bearer entry  can be a tuple (eps bearer id, imsi)
 typedef struct sgw_eps_bearer_entry_s {
-#if defined (ENABLE_USE_GTPU_IN_KERNEL)
   PAA_t                paa;
-#endif
   ebi_t                eps_bearer_id;                         ///< An EPS bearer identity uniquely identifies an EPS bearer for one UE accessing via E-UTRAN
   // TO DO traffic_flow_template_t tft;                   ///< Traffic Flow Template
 

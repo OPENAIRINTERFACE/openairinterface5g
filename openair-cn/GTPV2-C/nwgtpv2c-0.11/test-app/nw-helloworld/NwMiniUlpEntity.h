@@ -20,8 +20,8 @@
 #define __NW_MINI_ULP_H__
 
 typedef struct {
-  NwU8T                       peerIpStr[16];
-  NwU32T                      restartCounter;
+  uint8_t                       peerIpStr[16];
+  uint32_t                      restartCounter;
   NwGtpv2cStackHandleT        hGtpv2cStack;
 } NwGtpv2cNodeUlpT;
 

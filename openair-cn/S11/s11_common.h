@@ -34,10 +34,10 @@
 #define S11_WARN(x, args...)  fprintf(stdout, "[S11] [W]"x, ##args)
 #define S11_ERROR(x, args...) fprintf(stderr, "[S11] [E]"x, ##args)
 
-NwRcT s11_ie_indication_generic(NwU8T  ieType,
-                                NwU8T  ieLength,
-                                NwU8T  ieInstance,
-                                NwU8T *ieValue,
+NwRcT s11_ie_indication_generic(uint8_t  ieType,
+                                uint8_t  ieLength,
+                                uint8_t  ieInstance,
+                                uint8_t *ieValue,
                                 void  *arg);
 
 #endif /* S11_COMMON_H_ */

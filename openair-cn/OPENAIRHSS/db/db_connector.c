@@ -394,7 +394,8 @@ int hss_mysql_push_rand_sqn(const char *imsi, uint8_t *rand_p, uint8_t *sqn)
   }
 
   sqn_decimal = ((uint64_t)sqn[0] << 40) | ((uint64_t)sqn[1] << 32) |
-                (sqn[2] << 24) | (sqn[3] << 16) | (sqn[4] << 8) | sqn[5];
+                ((uint64_t)sqn[2] << 24) | (sqn[3] << 16) |
+                (sqn[4] << 8) | sqn[5];
 
   query_length = sprintf(query, "UPDATE `users` SET `rand`=UNHEX('");
 

@@ -37,12 +37,12 @@
  * octet n+4 | Number digit m | Number digit m-1 |
  */
 NwRcT s11_imsi_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_imsi_ie_set(NwGtpv2cMsgHandleT *msg, const Imsi_t *imsi);
 
 NwRcT s11_msisdn_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* PDN Type Information Element
  * 3GPP TS 29.274 #8.34
@@ -52,7 +52,7 @@ NwRcT s11_msisdn_ie_get(
  *      * 3 = IPv4v6
  */
 NwRcT s11_pdn_type_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_pdn_type_ie_set(NwGtpv2cMsgHandleT *msg, const pdn_type_t *pdn_type);
 
@@ -61,7 +61,7 @@ int s11_pdn_type_ie_set(NwGtpv2cMsgHandleT *msg, const pdn_type_t *pdn_type);
  * for S11 interface defined in 3GPP TS 29.274 #8.17.
  */
 NwRcT s11_rat_type_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_rat_type_ie_set(NwGtpv2cMsgHandleT *msg, const rat_type_t *rat_type);
 
@@ -69,7 +69,7 @@ int s11_rat_type_ie_set(NwGtpv2cMsgHandleT *msg, const rat_type_t *rat_type);
  * 3GPP TS 29.274 #8.8
  */
 NwRcT s11_ebi_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_ebi_ie_set(NwGtpv2cMsgHandleT *msg, const unsigned ebi);
 
@@ -77,13 +77,13 @@ int s11_ebi_ie_set(NwGtpv2cMsgHandleT *msg, const unsigned ebi);
  * 3GPP TS 29.274 Table 7.2.1-2.
  */
 NwRcT s11_bearer_context_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_bearer_context_to_create_ie_set(
   NwGtpv2cMsgHandleT *msg, const bearer_to_create_t *bearer_to_create);
 
 NwRcT s11_bearer_context_to_modifiy_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* EPS Bearer Id Information Element
  * 3GPP TS 29.274 #8.8
@@ -93,14 +93,14 @@ int s11_ebi_ie_set(NwGtpv2cMsgHandleT *msg, const unsigned ebi);
 
 /* Cause Information Element */
 NwRcT s11_cause_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_cause_ie_set(NwGtpv2cMsgHandleT *msg,
                      const gtp_cause_t  *cause);
 
 /* Bearer Context Created grouped Information Element */
 NwRcT s11_bearer_context_created_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_bearer_context_created_ie_set(
   NwGtpv2cMsgHandleT *msg, const bearer_context_created_t *bearer);
@@ -109,18 +109,18 @@ int s11_bearer_context_created_ie_set(
  * 3GPP TS 29.274 #8.18
  */
 NwRcT s11_serving_network_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_serving_network_ie_set(
   NwGtpv2cMsgHandleT     *msg,
   const ServingNetwork_t *serving_network);
 
 NwRcT s11_fteid_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* PDN Address Allocation Information Element */
 NwRcT s11_paa_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_paa_ie_set(NwGtpv2cMsgHandleT *msg, const PAA_t *paa);
 
@@ -131,18 +131,18 @@ int s11_paa_ie_set(NwGtpv2cMsgHandleT *msg, const PAA_t *paa);
  * The encoding of the APN field follows 3GPP TS 23.003 subclause 9.1
  */
 NwRcT s11_apn_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_apn_ie_set(NwGtpv2cMsgHandleT *msg, const char *apn);
 
 NwRcT s11_ambr_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 NwRcT s11_mei_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 NwRcT s11_uli_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* APN restrtiction Information Element */
 int s11_apn_restriction_ie_set(
@@ -157,7 +157,7 @@ int s11_bearer_qos_ie_set(NwGtpv2cMsgHandleT *msg, const BearerQOS_t *bearer_qos
  * 3GPP TS 29.274 #8.9
  */
 NwRcT s11_ip_address_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_ip_address_ie_set(NwGtpv2cMsgHandleT     *msg,
                           const gtp_ip_address_t *ip_address);
@@ -166,7 +166,7 @@ int s11_ip_address_ie_set(NwGtpv2cMsgHandleT     *msg,
  * 3GPP TS 29.274 #8.27
  */
 NwRcT s11_delay_value_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_delay_value_ie_set(NwGtpv2cMsgHandleT *msg,
                            const DelayValue_t *delay_value);
@@ -175,7 +175,7 @@ int s11_delay_value_ie_set(NwGtpv2cMsgHandleT *msg,
  * 3GPP TS 29.274 #8.44
  */
 NwRcT s11_ue_time_zone_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_ue_time_zone_ie_set(NwGtpv2cMsgHandleT *msg,
                             const UETimeZone_t *ue_time_zone);
@@ -184,25 +184,25 @@ int s11_ue_time_zone_ie_set(NwGtpv2cMsgHandleT *msg,
  * 3GPP TS 29.274 #8.51
  */
 NwRcT s11_target_identification_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* Bearer Flags Information Element
  * 3GPP TS 29.274 #8.32
  */
 NwRcT s11_bearer_flags_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 int s11_bearer_flags_ie_set(NwGtpv2cMsgHandleT   *msg,
                             const bearer_flags_t *bearer_flags);
 
 NwRcT s11_indication_flags_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 /* FQ-CSID Information Element
  * 3GPP TS 29.274 #8.62
  */
 
 NwRcT s11_fqcsid_ie_get(
-  NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T *ieValue, void *arg);
+  uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t *ieValue, void *arg);
 
 #endif /* S11_IE_FORMATTER_H_ */

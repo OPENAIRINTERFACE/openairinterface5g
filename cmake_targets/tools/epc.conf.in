@@ -1,3 +1,36 @@
+#                               Internet
+#                                  | 
+#         PGW_IPV4_ADDRESS_FOR_SGI | 
+# +-----------+-------+------------+---------------+--------------------------+
+# |host y     |       | PGW_INTERFACE_NAME_FOR_SGI |                          |
+# +-----------+       +------------+---------------+                          |
+# |                                |                                          |
+# |                           +----+----+   (HSS may run on this host         |
+# |                           | mme_gw  |    or on another one)               |
+# |                           +----+----+                                     |
+# |                                |                                          |
+# |              +-----------------+--------------------+                     |
+# |              | SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP |                     |
+# |              | MME_INTERFACE_NAME_FOR_S1_MME        |                     |
+# +----------------------------+---+--+---------------------------------------+
+#     MME_IPV4_ADDRESS_FOR_S1_MME  |  (S1-C and S1-U addresses/interfaces may be the same)  
+# SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP 
+#                                  |
+#                                  |
+#                          a.b.c.d |
+# +---------------+------------+---+--+---------------------------------------+
+# |eNBx           |            | ethx |                                       |
+# +---------------+            +---+--+                                       |
+# |                                |                                          |
+# |                         +------+---------+                                |
+# |                         | lte-softmodem  |                                |
+# |                         |       or       |                                |
+# |                         | oaisim (1)eNB (x UEs)                           |
+# |                         +-------+--------+                                |
+# +---------------------------------+-----------------------------------------+
+#                                   |
+#                                   O (RF antenna)
+
 MME : 
 {
 
@@ -34,8 +67,8 @@ MME :
     SCTP :
     {
         # Number of streams to use in input/output
-        SCTP_INSTREAMS  = 32;
-        SCTP_OUTSTREAMS = 32;
+        SCTP_INSTREAMS  = 8;
+        SCTP_OUTSTREAMS = 8;
     };
 
     # ------- S1AP definitions
@@ -61,7 +94,7 @@ MME :
         # TA (mcc.mnc:tracking area code) DEFAULT = 208.34:0
         # max values = 999.999:65535
         # maximum of 32 values, comma separated
-        PLMN = ( 
+        TAI_LIST = ( 
              {MCC="208" ; MNC="95";  TAC = "1"; }                               # YOUR PLMN CONFIG HERE
         );
     };
@@ -123,9 +156,8 @@ P-GW =
                     );
     };
     
-    #WARNING DNS ARE HARDCODED IN openair-cn/NAS/EURECOM-NAS/src/esm/msg/ActivateDefaultEpsBearerContextRequest.c:305
-    DEFAULT_DNS_1_IPV4_ADDRESS = "192.168.12.100";                              # YOUR NETWORK CONFIG HERE
-    DEFAULT_DNS_2_IPV4_ADDRESS = "192.168.106.12";                              # YOUR NETWORK CONFIG HERE
+    DEFAULT_DNS_IPV4_ADDRESS     = "192.168.106.12";                              # YOUR NETWORK CONFIG HERE
+    DEFAULT_DNS_SEC_IPV4_ADDRESS = "192.168.12.100";                              # YOUR NETWORK CONFIG HERE
 };
 
 

@@ -39,9 +39,7 @@
 #include "SCHED/extern.h"
 #include "MAC_INTERFACE/defs.h"
 #include "MAC_INTERFACE/extern.h"
-#ifdef USER_MODE
 #include <math.h>
-#endif
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
@@ -296,12 +294,10 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
 
 
-#ifdef USER_MODE
 #ifdef DEBUG_PHY
   write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
   write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
   write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
-#endif
 #endif
   return (1);
 }
@@ -310,7 +306,6 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 void lte_sync_time_free(void)
 {
 
-#ifdef USER_MODE
 
   if (sync_corr_ue0) {
     msg("Freeing sync_corr_ue (%p)...\n",sync_corr_ue0);
@@ -342,7 +337,6 @@ void lte_sync_time_free(void)
     free(primary_synch2_time);
   }
 
-#endif
   sync_corr_ue0 = NULL;
   sync_corr_ue1 = NULL;
   sync_corr_ue2 = NULL;
@@ -502,19 +496,19 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       sync_source,peak_pos,peak_val);
 
 
-#ifdef USER_MODE
 
-  if (debug_cnt == 5) {
+
+  if (debug_cnt == 0) {
     write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
     write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
     write_output("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
     write_output("rxdata0.m","rxd0",rxdata[0],length<<1,1,1);
-    exit(-1);
+    //    exit(-1);
   } else {
     debug_cnt++;
   }
 
-#endif
+
 #endif
 
 
@@ -574,11 +568,8 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0; ar<frame_parms->nb_antennas_rx; ar++)  {
-        //#ifndef USER_MODE
+
         result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
-        //#else
-        //        result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples, 12);
-        //#endif
         //((short*)sync_corr)[2*n]   += ((short*) &result)[0];
         //((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
         sync_corr_eNB[n] += abs32(result);

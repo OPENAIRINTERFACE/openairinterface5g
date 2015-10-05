@@ -53,9 +53,9 @@
 #define RRC_MAC_MCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_ind
 
 // Some constants from "LAYER2/MAC/defs.h"
-#define BCCH_SDU_SIZE                           (128)
-#define CCCH_SDU_SIZE                           (128)
-#define MCCH_SDU_SIZE                           (128)
+#define BCCH_SDU_SIZE                           (512)
+#define CCCH_SDU_SIZE                           (512)
+#define MCCH_SDU_SIZE                           (512)
 
 //-------------------------------------------------------------------------------------------//
 // Messages between RRC and MAC layers

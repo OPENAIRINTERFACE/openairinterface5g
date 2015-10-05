@@ -48,7 +48,7 @@ extern "C" {
 static NwGtpv2cTunnelT* gpGtpv2cTunnelPool = NULL;
 
 NwGtpv2cTunnelT*
-nwGtpv2cTunnelNew(struct NwGtpv2cStack *pStack, NwU32T teid, NwU32T ipv4AddrRemote, NwGtpv2cUlpTunnelHandleT hUlpTunnel)
+nwGtpv2cTunnelNew(struct NwGtpv2cStack *pStack, uint32_t teid, uint32_t ipv4AddrRemote, NwGtpv2cUlpTunnelHandleT hUlpTunnel)
 {
   NwGtpv2cTunnelT* thiz;
 

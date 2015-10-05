@@ -40,8 +40,8 @@ NwCharT* gLogLevelStr[] = {"EMER", "ALER", "CRIT",  "ERRO", "WARN", "NOTI", "INF
 int main(int argc, char* argv[])
 {
   NwRcT                         rc;
-  NwU32T                        logLevel;
-  NwU8T*                        logLevelStr;
+  uint32_t                        logLevel;
+  uint8_t*                        logLevelStr;
 
   NwGtpv2cStackHandleT          hGtpv2cStack = 0;
 

@@ -46,7 +46,9 @@
 #include "pdcp_messages_types.h"
 #include "rrc_messages_types.h"
 #include "nas_messages_types.h"
+#if ENABLE_RAL
 #include "ral_messages_types.h"
+#endif
 #include "s1ap_messages_types.h"
 #include "x2ap_messages_types.h"
 #include "sctp_messages_types.h"

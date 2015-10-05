@@ -46,6 +46,8 @@ typedef struct {
   FL_OBJECT * chest_f;
   FL_OBJECT * chest_t;
   FL_OBJECT * pusch_comp;
+  FL_OBJECT * pucch_comp;
+  FL_OBJECT * pucch_comp1;
   FL_OBJECT * pusch_llr;
   FL_OBJECT * pusch_tput;
   FL_OBJECT * button_0;

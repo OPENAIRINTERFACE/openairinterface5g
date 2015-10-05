@@ -140,6 +140,7 @@ int main(int argc, char **argv)
   double **s_re,**s_im,**r_re,**r_im;
   double iqim = 0.0;
   int subframe=1;
+  int sched_subframe;
   char fname[40];//, vname[40];
   uint8_t transmission_mode = 1,n_tx=1,n_rx=2;
   uint16_t Nid_cell=0;
@@ -316,6 +317,9 @@ int main(int argc, char **argv)
     }
   }
 
+
+  sched_subframe = (subframe+9)%10;
+
   if (awgn_flag == 1)
     channel_model = AWGN;
 
@@ -444,7 +448,8 @@ int main(int argc, char **argv)
 
   for (SNR=snr0; SNR<snr1; SNR+=snr_step) {
     PHY_vars_UE->frame_tx=0;
-    PHY_vars_eNB->proc[subframe].frame_tx=0;
+    PHY_vars_eNB->proc[sched_subframe].frame_tx=0;
+    PHY_vars_eNB->proc[sched_subframe].subframe_tx=subframe;
 
     errs[0]=0;
     errs[1]=0;
@@ -467,7 +472,8 @@ int main(int argc, char **argv)
       eNB2UE->first_run = 1;
       memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
 
-      generate_mch(PHY_vars_eNB,subframe,input_buffer,0);
+      generate_mch(PHY_vars_eNB,sched_subframe,input_buffer,0);
+
 
       PHY_ofdm_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],        // input,
                    txdata[0],         // output
@@ -477,7 +483,7 @@ int main(int argc, char **argv)
                    CYCLIC_PREFIX);
 
       if (n_frames==1) {
-        write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
+        write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
                      nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
         //if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
         //write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -548,10 +554,12 @@ int main(int argc, char **argv)
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
           PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->nb_rb,
-          PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->rb_alloc,
+          PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->rb_alloc_even,
           get_Qm(PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->mcs),
           1,2,
           PHY_vars_UE->frame_tx,subframe,0);
+      PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->Qm = get_Qm(PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->mcs);
+
       dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,1,PHY_vars_UE->dlsch_ue_MCH[0],
                          PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G,
                          PHY_vars_UE->lte_ue_pdsch_vars_MCH[0]->llr[0],0,subframe<<1);
@@ -571,7 +579,7 @@ int main(int argc, char **argv)
         errs[0]++;
 
       PHY_vars_UE->frame_tx++;
-      PHY_vars_eNB->proc[subframe].frame_tx++;
+      PHY_vars_eNB->proc[sched_subframe].frame_tx++;
     }
 
     printf("errors %d/%d (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);

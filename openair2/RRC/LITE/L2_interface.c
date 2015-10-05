@@ -362,7 +362,7 @@ mac_rrc_lite_data_ind(
 
   if(eNB_flagP == ENB_FLAG_NO) {
     if(srb_idP == BCCH) {
-      LOG_T(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
+      LOG_D(RRC,"[UE %d] Received SDU for BCCH on SRB %d from eNB %d\n",module_idP,srb_idP,eNB_indexP);
 
 #if defined(ENABLE_ITTI)
       {
@@ -673,8 +673,9 @@ void rrc_lite_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_inde
 void rrc_lite_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
-  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 %d, N310 %d, N311 %d)\n ",
+  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
         Mod_idP,frameP,eNB_index,
+	UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
         UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
         UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
         UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);

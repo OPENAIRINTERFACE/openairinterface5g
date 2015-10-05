@@ -33,20 +33,19 @@
   COMPANY : EURECOM
   EMAIL   : Lionel.Gauthier@eurecom.fr
  ***************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_IN_SDU_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_IN_SDU_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-#define TRACE_RLC_AM_FREE_SDU
+#define TRACE_RLC_AM_FREE_SDU 0
 //-----------------------------------------------------------------------------
 void rlc_am_free_in_sdu(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const        rlcP,
   const unsigned int            index_in_bufferP)
-//-----------------------------------------------------------------------------
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
@@ -70,7 +69,7 @@ void rlc_am_free_in_sdu(
     }
   }
 
-#ifdef TRACE_RLC_AM_FREE_SDU
+#if TRACE_RLC_AM_FREE_SDU
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[FREE SDU] SDU INDEX %03u current_sdu_index=%u next_sdu_index=%u nb_sdu_no_segmented=%u\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlcP),
         index_in_bufferP,
@@ -86,7 +85,6 @@ rlc_am_free_in_sdu_data(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t* const       rlcP,
   const unsigned int           index_in_bufferP)
-//-----------------------------------------------------------------------------
 {
   if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
     if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
@@ -102,7 +100,6 @@ signed int
 rlc_am_in_sdu_is_empty(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t       *const rlcP)
-//-----------------------------------------------------------------------------
 {
   if (rlcP->nb_sdu == 0) {
     return 1;

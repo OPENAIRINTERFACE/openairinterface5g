@@ -100,6 +100,10 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
             free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
             dlsch->harq_processes[i]->c[r] = NULL;
           }
+          if (dlsch->harq_processes[i]->d[r]) {
+            free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
+            dlsch->harq_processes[i]->d[r] = NULL;
+          }
         }
 
         free16(dlsch->harq_processes[i],sizeof(LTE_DL_eNB_HARQ_t));
@@ -168,12 +172,18 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
         if (abstraction_flag==0) {
           for (r=0; r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling; r++) {
             // account for filler in first segment and CRCs for multiple segment case
-            dlsch->harq_processes[i]->c[r] = (unsigned char*)malloc16(((r==0)?8:0) + 3+ 768);
-
+            dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 3+ 768);
+            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16((96+12+3+(3*6144)));
             if (dlsch->harq_processes[i]->c[r]) {
               bzero(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+ 768);
             } else {
               msg("Can't get c\n");
+              exit_flag=2;
+            }
+            if (dlsch->harq_processes[i]->d[r]) {
+              bzero(dlsch->harq_processes[i]->d[r],(96+12+3+(3*6144)));
+            } else {
+              msg("Can't get d\n");
               exit_flag=2;
             }
           }
@@ -190,8 +200,10 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
 
         if (abstraction_flag==0) {
           for (j=0; j<96; j++)
-            for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
+            for (r=0; r<MAX_NUM_DLSCH_SEGMENTS/bw_scaling; r++) {
+        //      printf("dlsch->harq_processes[%d]->d[%d] %p\n",i,r,dlsch->harq_processes[i]->d[r]);
               dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
+            }
         }
       }
 
@@ -230,7 +242,8 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag)
         if (abstraction_flag==0) {
           for (j=0; j<96; j++)
             for (r=0; r<MAX_NUM_DLSCH_SEGMENTS; r++)
-              dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
+	      if (dlsch->harq_processes[i]->d[r])
+		dlsch->harq_processes[i]->d[r][j] = LTE_NULL;
         }
       }
     }

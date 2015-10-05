@@ -232,7 +232,7 @@ nwGtpv1uTrxnNew( NW_IN  NwGtpv1uStackT *thiz,
  */
 NwGtpv1uRcT
 nwGtpv1uTrxnWithSeqNew( NW_IN  NwGtpv1uStackT *thiz,
-                        NW_IN  NwU32T seqNum,
+                        NW_IN  uint32_t seqNum,
                         NW_OUT NwGtpv1uTrxnT **ppTrxn)
 {
   NwGtpv1uRcT rc = NW_GTPV1U_OK;
@@ -313,12 +313,12 @@ nwGtpv1uTrxnDelete( NW_INOUT NwGtpv1uTrxnT **pthiz)
 NwGtpv1uRcT
 nwGtpv1uTrxnCreateAndSendMsg( NW_IN  NwGtpv1uStackT *thiz,
                               NW_IN  NwGtpv1uTrxnT *pTrxn,
-                              NW_IN  NwU32T peerIp,
-                              NW_IN  NwU32T peerPort,
+                              NW_IN  uint32_t peerIp,
+                              NW_IN  uint32_t peerPort,
                               NW_IN  NwGtpv1uMsgT *pMsg)
 {
   NwGtpv1uRcT rc;
-  NwU8T *msgHdr;
+  uint8_t *msgHdr;
 
   NW_ASSERT(thiz);
   NW_ASSERT(pMsg);
@@ -334,33 +334,33 @@ nwGtpv1uTrxnCreateAndSendMsg( NW_IN  NwGtpv1uStackT *thiz,
                         (pMsg->npduNumFlag);
 
   *(msgHdr++)         = (pMsg->msgType);
-  *((NwU16T *) msgHdr) = htons(pMsg->msgLen);
+  *((uint16_t *) msgHdr) = htons(pMsg->msgLen);
   msgHdr += 2;
 
-  *((NwU32T *) msgHdr) = htonl(pMsg->teid);
+  *((uint32_t *) msgHdr) = htonl(pMsg->teid);
   msgHdr += 4;
 
   if(pMsg->seqNumFlag | pMsg->extHdrFlag | pMsg->npduNumFlag) {
     if(pMsg->seqNumFlag) {
-      *((NwU16T *) msgHdr) = htons((pTrxn ? pTrxn->seqNum : pMsg->seqNum));
+      *((uint16_t *) msgHdr) = htons((pTrxn ? pTrxn->seqNum : pMsg->seqNum));
     } else {
-      *((NwU16T *) msgHdr) = 0x0000;
+      *((uint16_t *) msgHdr) = 0x0000;
     }
 
     msgHdr += 2;
 
     if(pMsg->npduNumFlag) {
-      *((NwU8T *) msgHdr) = pMsg->npduNumFlag;
+      *((uint8_t *) msgHdr) = pMsg->npduNumFlag;
     } else {
-      *((NwU8T *) msgHdr) = 0x00;
+      *((uint8_t *) msgHdr) = 0x00;
     }
 
     msgHdr++;
 
     if(pMsg->extHdrFlag) {
-      *((NwU8T *) msgHdr) = pMsg->extHdrFlag;
+      *((uint8_t *) msgHdr) = pMsg->extHdrFlag;
     } else {
-      *((NwU8T *) msgHdr) = 0x00;
+      *((uint8_t *) msgHdr) = 0x00;
     }
 
     msgHdr++;

@@ -688,9 +688,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   (*sib2)->ac_BarringInfo = NULL;
 #ifdef Rel10
+#if 0
   (*sib2)->ssac_BarringForMMTEL_Voice_r9 = NULL;
   (*sib2)->ssac_BarringForMMTEL_Video_r9 = NULL;
   (*sib2)->ac_BarringForCSFB_r10 = NULL;
+#endif
+  (*sib2)->ext1 = NULL;
+  (*sib2)->ext2 = NULL;
 #endif
 
 #if defined(ENABLE_ITTI)
@@ -989,10 +993,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
   /// (*SIB3)
 #ifdef Rel10
+  (*sib3)->ext1 = NULL;
+#if 0
   (*sib3)->s_IntraSearch_v920=NULL;
   (*sib3)->s_NonIntraSearch_v920=NULL;
   (*sib3)->q_QualMin_r9=NULL;
   (*sib3)->threshServingLowQ_r9=NULL;
+#endif
 #endif
   (*sib3)->cellReselectionInfoCommon.q_Hyst=SystemInformationBlockType3__cellReselectionInfoCommon__q_Hyst_dB4;
 
@@ -1636,7 +1643,7 @@ do_RRCConnectionSetup(
   // SchedulingRequestConfig
 
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
-  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = ue_context_pP->local_uid;
+  physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = 3;//ue_context_pP->local_uid;
 
   if (frame_parms->frame_type == 0) { // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5+(ue_context_pP->local_uid%10);  // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
@@ -2041,6 +2048,64 @@ do_RRCConnectionReconfiguration(
   // msg("\n");
 
   //#endif
+
+  return((enc_rval.encoded+7)/8);
+}
+
+//------------------------------------------------------------------------------
+uint8_t
+do_RRCConnectionReestablishmentReject(
+  uint8_t                    Mod_id,
+  uint8_t*                   const buffer)
+//------------------------------------------------------------------------------
+{
+
+  asn_enc_rval_t enc_rval;
+
+  DL_CCCH_Message_t dl_ccch_msg;
+  RRCConnectionReestablishmentReject_t *rrcConnectionReestablishmentReject;
+
+  memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+  dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
+  dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject;
+  rrcConnectionReestablishmentReject    = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionReestablishmentReject;
+
+  // RRCConnectionReestablishmentReject
+  rrcConnectionReestablishmentReject->criticalExtensions.present = RRCConnectionReestablishmentReject__criticalExtensions_PR_rrcConnectionReestablishmentReject_r8;
+
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+                                   (void*)&dl_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+#if defined(ENABLE_ITTI)
+# if !defined(DISABLE_XER_SPRINT)
+  {
+    char        message_string[20000];
+    size_t      message_string_size;
+
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message, (void *) &dl_ccch_msg)) > 0) {
+      MessageDef *msg_p;
+
+      msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
+      msg_p->ittiMsg.rrc_dl_ccch.size = message_string_size;
+      memcpy(&msg_p->ittiMsg.rrc_dl_ccch.text, message_string, message_string_size);
+
+      itti_send_msg_to_task(TASK_UNKNOWN, Mod_id, msg_p);
+    }
+  }
+# endif
+#endif
+
+#ifdef USER_MODE
+  LOG_D(RRC,"RRCConnectionReestablishmentReject Encoded %d bits (%d bytes)\n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
 
   return((enc_rval.encoded+7)/8);
 }
@@ -2630,6 +2695,7 @@ EXPORT_SYMBOL(do_RRCConnectionRequest);
 EXPORT_SYMBOL(do_RRCConnectionSetupComplete);
 EXPORT_SYMBOL(do_RRCConnectionReconfigurationComplete);
 EXPORT_SYMBOL(do_RRCConnectionSetup);
+EXPORT_SYMBOL(do_RRCConnectionReestablishmentReject);
 EXPORT_SYMBOL(do_RRCConnectionReconfiguration);
 EXPORT_SYMBOL(asn_DEF_UL_DCCH_Message);
 EXPORT_SYMBOL(asn_DEF_UL_CCCH_Message);

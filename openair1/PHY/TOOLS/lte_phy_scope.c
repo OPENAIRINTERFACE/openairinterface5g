@@ -77,10 +77,10 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   FD_lte_phy_scope_enb *fdui = fl_malloc( sizeof *fdui );
 
   // Define form
-  fdui->lte_phy_scope_enb = fl_bgn_form( FL_NO_BOX, 800, 600 );
+  fdui->lte_phy_scope_enb = fl_bgn_form( FL_NO_BOX, 800, 800 );
 
   // This the whole UI box
-  obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 600, "" );
+  obj = fl_add_box( FL_BORDER_BOX, 0, 0, 800, 800, "" );
   fl_set_object_color( obj, FL_BLACK, FL_BLACK );
 
   // Received signal
@@ -118,6 +118,22 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_xyplot_symbolsize( fdui->pusch_comp,2);
   fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
 
+  // I/Q PUCCH comp (format 1)
+  fdui->pucch_comp1 = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 480, 240, 100, "PUCCH I/Q of MF Output" );
+  fl_set_object_boxtype( fdui->pucch_comp1, FL_EMBOSSED_BOX );
+  fl_set_object_color( fdui->pucch_comp1, FL_BLACK, FL_YELLOW );
+  fl_set_object_lcolor( fdui->pucch_comp1, FL_WHITE ); // Label color
+  fl_set_xyplot_symbolsize( fdui->pucch_comp1,2);
+  //  fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
+
+  // I/Q PUCCH comp (fromat 1a/b)
+  fdui->pucch_comp = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 600, 240, 100, "PUCCH I/Q of MF Output" );
+  fl_set_object_boxtype( fdui->pucch_comp, FL_EMBOSSED_BOX );
+  fl_set_object_color( fdui->pucch_comp, FL_BLACK, FL_YELLOW );
+  fl_set_object_lcolor( fdui->pucch_comp, FL_WHITE ); // Label color
+  fl_set_xyplot_symbolsize( fdui->pucch_comp,2);
+  //  fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
+
   // Throughput on PUSCH
   fdui->pusch_tput = fl_add_xyplot( FL_NORMAL_XYPLOT, 20, 480, 500, 100, "PUSCH Throughput [frame]/[kbit/s]" );
   fl_set_object_boxtype( fdui->pusch_tput, FL_EMBOSSED_BOX );
@@ -125,7 +141,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_object_lcolor( fdui->pusch_tput, FL_WHITE ); // Label color
 
   // Generic eNB Button
-  fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 540, 480, 240, 40, "" );
+  fdui->button_0 = fl_add_button( FL_PUSH_BUTTON, 20, 600, 240, 40, "" );
   fl_set_object_lalign(fdui->button_0, FL_ALIGN_CENTER );
   fl_set_button(fdui->button_0,0);
   otg_enabled = 0;
@@ -154,9 +170,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_f;
   int16_t *pusch_llr;
   int16_t *pusch_comp;
+  int32_t *pucch1_comp;
+  int16_t *pucch1ab_comp;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
+  float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240];
   float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
   float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
   float *chest_f_abs;
@@ -186,6 +205,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_f = (int16_t**) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
   pusch_llr = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->llr;
   pusch_comp = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
+  pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
+  pucch1ab_comp = (int16_t*) phy_vars_enb->pucch1ab_stats[UE_id];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -209,13 +230,13 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     }
   }
 
-  // Channel Impulse Response 
+  // Channel Impulse Response
   if (chest_t != NULL) {
     ymax = 0;
 
     if (chest_t[0] !=NULL) {
       for (i=0; i<(frame_parms->ofdm_symbol_size); i++) {
-        chest_t_abs[0][i] = (float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]);
+        chest_t_abs[0][i] = 10*log10((float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]));
 
         if (chest_t_abs[0][i] > ymax)
           ymax = chest_t_abs[0][i];
@@ -227,8 +248,8 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     for (arx=1; arx<nb_antennas_rx; arx++) {
       if (chest_t[arx] !=NULL) {
         for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-          chest_t_abs[arx][i] = (float) (chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]);
-
+          chest_t_abs[arx][i] = 10*log10((float) (chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
+ 
           if (chest_t_abs[arx][i] > ymax)
             ymax = chest_t_abs[arx][i];
         }
@@ -313,6 +334,22 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     fl_set_xyplot_data(form->pusch_comp,I,Q,ind,"","","");
   }
 
+  // PUSCH I/Q of MF Output
+  if (pucch1ab_comp!=NULL) {
+    for (ind=0; ind<10240; ind++) {
+      I_pucch[ind] = pucch1ab_comp[2*ind];
+      Q_pucch[ind] = pucch1ab_comp[2*ind+1];
+      A_pucch[ind] = 10*log10(pucch1_comp[ind]);
+      B_pucch[ind] = ind;
+    }
+    fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
+    fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
+    fl_set_xyplot_xbounds(form->pucch_comp,-200,200);
+    fl_set_xyplot_ybounds(form->pucch_comp,-100,100);
+    fl_set_xyplot_ybounds(form->pucch_comp1,10,40);
+  }
+
+
   // PUSCH Throughput
   memmove( tput_time_enb[UE_id], &tput_time_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
   memmove( tput_enb[UE_id], &tput_enb[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
@@ -380,8 +417,8 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
   fl_set_object_color( fdui->pbch_comp, FL_BLACK, FL_GREEN );
   fl_set_object_lcolor( fdui->pbch_comp, FL_WHITE ); // Label color
   fl_set_xyplot_symbolsize( fdui->pbch_comp,2);
-  fl_set_xyplot_xbounds( fdui->pbch_comp,-100,100);
-  fl_set_xyplot_ybounds( fdui->pbch_comp,-100,100);
+  //  fl_set_xyplot_xbounds( fdui->pbch_comp,-100,100);
+  //  fl_set_xyplot_ybounds( fdui->pbch_comp,-100,100);
 
   // LLR of PDCCH
   fdui->pdcch_llr = fl_add_xyplot( FL_POINTS_XYPLOT, 20, 380, 500, 100, "PDCCH Log-Likelihood Ratios (LLR, mag)" );
@@ -443,7 +480,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 {
   int i,arx,atx,ind,k;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  int nsymb_ce = frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti;
+  int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx_eNB;
   int16_t **rxsig_t;
@@ -470,6 +507,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   unsigned char harq_pid = 0;
   int beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]>6 ? phy_vars_ue->transmission_mode[eNB_id] : 0;
 
+
   if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
     harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid;
 
@@ -493,7 +531,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   if (phy_vars_ue->dlsch_ue[eNB_id][0]!=NULL) {
     coded_bits_per_codeword = get_G(frame_parms,
                                     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-                                    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc,
+                                    phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
                                     get_Qm(mcs),
                                     phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
                                     num_pdcch_symbols,
@@ -504,8 +542,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     coded_bits_per_codeword = 0; //frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
   }
 
-  I = (float*) calloc(nsymb_ce*2,sizeof(float));
-  Q = (float*) calloc(nsymb_ce*2,sizeof(float));
+  I = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*2,sizeof(float));
+  Q = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*2,sizeof(float));
   chest_t_abs = (float**) malloc(nb_antennas_rx*sizeof(float*));
 
   for (arx=0; arx<nb_antennas_rx; arx++) {
@@ -699,8 +737,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
 
   // PDSCH Throughput
-  memcpy((void*)tput_time_ue[UE_id],(void*)&tput_time_ue[UE_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
-  memcpy((void*)tput_ue[UE_id],(void*)&tput_ue[UE_id][1],(TPUT_WINDOW_LENGTH-1)*sizeof(float));
+  memmove( tput_time_ue[UE_id], &tput_time_ue[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
+  memmove( tput_ue[UE_id],      &tput_ue[UE_id][1],      (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
 
   tput_time_ue[UE_id][TPUT_WINDOW_LENGTH-1]  = (float) frame;
   tput_ue[UE_id][TPUT_WINDOW_LENGTH-1] = ((float) total_dlsch_bitrate)/1000.0;

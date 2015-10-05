@@ -26,18 +26,18 @@
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
- *******************************************************************************/
+*******************************************************************************/
 
 /*! \file PHY/LTE_TRANSPORT/dlsch_llr_computation.c
-* \brief Top-level routines for LLR computation of the PDSCH physical channel from 36-211, V8.6 2009-03
-* \author R. Knopp, F. Kaltenberger,A. Bhamri, S. Aubert, S. Wagner
-* \date 2011
-* \version 0.1
-* \company Eurecom
-* \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,ankit.bhamri@eurecom.fr,sebastien.aubert@eurecom.fr, sebastian.wagner@eurecom.fr
-* \note
-* \warning
-*/
+ * \brief Top-level routines for LLR computation of the PDSCH physical channel from 36-211, V8.6 2009-03
+ * \author R. Knopp, F. Kaltenberger,A. Bhamri, S. Aubert, S. Wagner
+ * \date 2011
+ * \version 0.1
+ * \company Eurecom
+ * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,ankit.bhamri@eurecom.fr,sebastien.aubert@eurecom.fr, sebastian.wagner@eurecom.fr
+ * \note
+ * \warning
+ */
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
@@ -45,567 +45,563 @@
 #include "extern.h"
 #include "PHY/sse_intrin.h"
 
-#ifndef USER_MODE
-#define NOCYGWIN_STATIC static
-#else
-#define NOCYGWIN_STATIC
-#endif
+int16_t zero[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
+int16_t ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
+#if defined(__x86_64__) || defined(__i386__)
+__m128i rho_rpi __attribute__ ((aligned(16)));
+__m128i rho_rmi __attribute__ ((aligned(16)));
+__m128i rho_rpi_1_1 __attribute__ ((aligned(16)));
+__m128i rho_rpi_1_3 __attribute__ ((aligned(16)));
+__m128i rho_rpi_1_5 __attribute__ ((aligned(16)));
+__m128i rho_rpi_1_7 __attribute__ ((aligned(16)));
+__m128i rho_rpi_3_1 __attribute__ ((aligned(16)));
+__m128i rho_rpi_3_3 __attribute__ ((aligned(16)));
+__m128i rho_rpi_3_5 __attribute__ ((aligned(16)));
+__m128i rho_rpi_3_7 __attribute__ ((aligned(16)));
+__m128i rho_rpi_5_1 __attribute__ ((aligned(16)));
+__m128i rho_rpi_5_3 __attribute__ ((aligned(16)));
+__m128i rho_rpi_5_5 __attribute__ ((aligned(16)));
+__m128i rho_rpi_5_7 __attribute__ ((aligned(16)));
+__m128i rho_rpi_7_1 __attribute__ ((aligned(16)));
+__m128i rho_rpi_7_3 __attribute__ ((aligned(16)));
+__m128i rho_rpi_7_5 __attribute__ ((aligned(16)));
+__m128i rho_rpi_7_7 __attribute__ ((aligned(16)));
+__m128i rho_rmi_1_1 __attribute__ ((aligned(16)));
+__m128i rho_rmi_1_3 __attribute__ ((aligned(16)));
+__m128i rho_rmi_1_5 __attribute__ ((aligned(16)));
+__m128i rho_rmi_1_7 __attribute__ ((aligned(16)));
+__m128i rho_rmi_3_1 __attribute__ ((aligned(16)));
+__m128i rho_rmi_3_3 __attribute__ ((aligned(16)));
+__m128i rho_rmi_3_5 __attribute__ ((aligned(16)));
+__m128i rho_rmi_3_7 __attribute__ ((aligned(16)));
+__m128i rho_rmi_5_1 __attribute__ ((aligned(16)));
+__m128i rho_rmi_5_3 __attribute__ ((aligned(16)));
+__m128i rho_rmi_5_5 __attribute__ ((aligned(16)));
+__m128i rho_rmi_5_7 __attribute__ ((aligned(16)));
+__m128i rho_rmi_7_1 __attribute__ ((aligned(16)));
+__m128i rho_rmi_7_3 __attribute__ ((aligned(16)));
+__m128i rho_rmi_7_5 __attribute__ ((aligned(16)));
+__m128i rho_rmi_7_7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC short zero[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
-NOCYGWIN_STATIC short ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
-NOCYGWIN_STATIC __m128i rho_rpi __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_1_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_1_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_1_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_1_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_3_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_3_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_3_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_3_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_5_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_5_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_5_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_5_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_7_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_7_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_7_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rpi_7_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_1_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_1_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_1_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_1_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_3_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_3_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_3_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_3_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_5_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_5_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_5_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_5_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_7_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_7_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_7_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i rho_rmi_7_7 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_m7_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_m5_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_m3_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_m1_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_p1_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_p3_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_p5_p7 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_m7 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_m5 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_m3 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_m1 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_p1 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_p3 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_p5 __attribute__ ((aligned(16)));
+__m128i psi_r_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i psi_r_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_r_p7_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_m7_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_m5_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_m3_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_m1_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_p1_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_p3_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_p5_p7 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_m7 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_m5 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_m3 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_m1 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_p1 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_p3 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_p5 __attribute__ ((aligned(16)));
+__m128i psi_i_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i psi_i_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_i_p7_p7 __attribute__ ((aligned(16)));
+__m128i a_r_m7_m7 __attribute__ ((aligned(16)));
+__m128i a_r_m7_m5 __attribute__ ((aligned(16)));
+__m128i a_r_m7_m3 __attribute__ ((aligned(16)));
+__m128i a_r_m7_m1 __attribute__ ((aligned(16)));
+__m128i a_r_m7_p1 __attribute__ ((aligned(16)));
+__m128i a_r_m7_p3 __attribute__ ((aligned(16)));
+__m128i a_r_m7_p5 __attribute__ ((aligned(16)));
+__m128i a_r_m7_p7 __attribute__ ((aligned(16)));
+__m128i a_r_m5_m7 __attribute__ ((aligned(16)));
+__m128i a_r_m5_m5 __attribute__ ((aligned(16)));
+__m128i a_r_m5_m3 __attribute__ ((aligned(16)));
+__m128i a_r_m5_m1 __attribute__ ((aligned(16)));
+__m128i a_r_m5_p1 __attribute__ ((aligned(16)));
+__m128i a_r_m5_p3 __attribute__ ((aligned(16)));
+__m128i a_r_m5_p5 __attribute__ ((aligned(16)));
+__m128i a_r_m5_p7 __attribute__ ((aligned(16)));
+__m128i a_r_m3_m7 __attribute__ ((aligned(16)));
+__m128i a_r_m3_m5 __attribute__ ((aligned(16)));
+__m128i a_r_m3_m3 __attribute__ ((aligned(16)));
+__m128i a_r_m3_m1 __attribute__ ((aligned(16)));
+__m128i a_r_m3_p1 __attribute__ ((aligned(16)));
+__m128i a_r_m3_p3 __attribute__ ((aligned(16)));
+__m128i a_r_m3_p5 __attribute__ ((aligned(16)));
+__m128i a_r_m3_p7 __attribute__ ((aligned(16)));
+__m128i a_r_m1_m7 __attribute__ ((aligned(16)));
+__m128i a_r_m1_m5 __attribute__ ((aligned(16)));
+__m128i a_r_m1_m3 __attribute__ ((aligned(16)));
+__m128i a_r_m1_m1 __attribute__ ((aligned(16)));
+__m128i a_r_m1_p1 __attribute__ ((aligned(16)));
+__m128i a_r_m1_p3 __attribute__ ((aligned(16)));
+__m128i a_r_m1_p5 __attribute__ ((aligned(16)));
+__m128i a_r_m1_p7 __attribute__ ((aligned(16)));
+__m128i a_r_p1_m7 __attribute__ ((aligned(16)));
+__m128i a_r_p1_m5 __attribute__ ((aligned(16)));
+__m128i a_r_p1_m3 __attribute__ ((aligned(16)));
+__m128i a_r_p1_m1 __attribute__ ((aligned(16)));
+__m128i a_r_p1_p1 __attribute__ ((aligned(16)));
+__m128i a_r_p1_p3 __attribute__ ((aligned(16)));
+__m128i a_r_p1_p5 __attribute__ ((aligned(16)));
+__m128i a_r_p1_p7 __attribute__ ((aligned(16)));
+__m128i a_r_p3_m7 __attribute__ ((aligned(16)));
+__m128i a_r_p3_m5 __attribute__ ((aligned(16)));
+__m128i a_r_p3_m3 __attribute__ ((aligned(16)));
+__m128i a_r_p3_m1 __attribute__ ((aligned(16)));
+__m128i a_r_p3_p1 __attribute__ ((aligned(16)));
+__m128i a_r_p3_p3 __attribute__ ((aligned(16)));
+__m128i a_r_p3_p5 __attribute__ ((aligned(16)));
+__m128i a_r_p3_p7 __attribute__ ((aligned(16)));
+__m128i a_r_p5_m7 __attribute__ ((aligned(16)));
+__m128i a_r_p5_m5 __attribute__ ((aligned(16)));
+__m128i a_r_p5_m3 __attribute__ ((aligned(16)));
+__m128i a_r_p5_m1 __attribute__ ((aligned(16)));
+__m128i a_r_p5_p1 __attribute__ ((aligned(16)));
+__m128i a_r_p5_p3 __attribute__ ((aligned(16)));
+__m128i a_r_p5_p5 __attribute__ ((aligned(16)));
+__m128i a_r_p5_p7 __attribute__ ((aligned(16)));
+__m128i a_r_p7_m7 __attribute__ ((aligned(16)));
+__m128i a_r_p7_m5 __attribute__ ((aligned(16)));
+__m128i a_r_p7_m3 __attribute__ ((aligned(16)));
+__m128i a_r_p7_m1 __attribute__ ((aligned(16)));
+__m128i a_r_p7_p1 __attribute__ ((aligned(16)));
+__m128i a_r_p7_p3 __attribute__ ((aligned(16)));
+__m128i a_r_p7_p5 __attribute__ ((aligned(16)));
+__m128i a_r_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i a_r_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_r_p7_p7 __attribute__ ((aligned(16)));
+__m128i a_i_m7_m7 __attribute__ ((aligned(16)));
+__m128i a_i_m7_m5 __attribute__ ((aligned(16)));
+__m128i a_i_m7_m3 __attribute__ ((aligned(16)));
+__m128i a_i_m7_m1 __attribute__ ((aligned(16)));
+__m128i a_i_m7_p1 __attribute__ ((aligned(16)));
+__m128i a_i_m7_p3 __attribute__ ((aligned(16)));
+__m128i a_i_m7_p5 __attribute__ ((aligned(16)));
+__m128i a_i_m7_p7 __attribute__ ((aligned(16)));
+__m128i a_i_m5_m7 __attribute__ ((aligned(16)));
+__m128i a_i_m5_m5 __attribute__ ((aligned(16)));
+__m128i a_i_m5_m3 __attribute__ ((aligned(16)));
+__m128i a_i_m5_m1 __attribute__ ((aligned(16)));
+__m128i a_i_m5_p1 __attribute__ ((aligned(16)));
+__m128i a_i_m5_p3 __attribute__ ((aligned(16)));
+__m128i a_i_m5_p5 __attribute__ ((aligned(16)));
+__m128i a_i_m5_p7 __attribute__ ((aligned(16)));
+__m128i a_i_m3_m7 __attribute__ ((aligned(16)));
+__m128i a_i_m3_m5 __attribute__ ((aligned(16)));
+__m128i a_i_m3_m3 __attribute__ ((aligned(16)));
+__m128i a_i_m3_m1 __attribute__ ((aligned(16)));
+__m128i a_i_m3_p1 __attribute__ ((aligned(16)));
+__m128i a_i_m3_p3 __attribute__ ((aligned(16)));
+__m128i a_i_m3_p5 __attribute__ ((aligned(16)));
+__m128i a_i_m3_p7 __attribute__ ((aligned(16)));
+__m128i a_i_m1_m7 __attribute__ ((aligned(16)));
+__m128i a_i_m1_m5 __attribute__ ((aligned(16)));
+__m128i a_i_m1_m3 __attribute__ ((aligned(16)));
+__m128i a_i_m1_m1 __attribute__ ((aligned(16)));
+__m128i a_i_m1_p1 __attribute__ ((aligned(16)));
+__m128i a_i_m1_p3 __attribute__ ((aligned(16)));
+__m128i a_i_m1_p5 __attribute__ ((aligned(16)));
+__m128i a_i_m1_p7 __attribute__ ((aligned(16)));
+__m128i a_i_p1_m7 __attribute__ ((aligned(16)));
+__m128i a_i_p1_m5 __attribute__ ((aligned(16)));
+__m128i a_i_p1_m3 __attribute__ ((aligned(16)));
+__m128i a_i_p1_m1 __attribute__ ((aligned(16)));
+__m128i a_i_p1_p1 __attribute__ ((aligned(16)));
+__m128i a_i_p1_p3 __attribute__ ((aligned(16)));
+__m128i a_i_p1_p5 __attribute__ ((aligned(16)));
+__m128i a_i_p1_p7 __attribute__ ((aligned(16)));
+__m128i a_i_p3_m7 __attribute__ ((aligned(16)));
+__m128i a_i_p3_m5 __attribute__ ((aligned(16)));
+__m128i a_i_p3_m3 __attribute__ ((aligned(16)));
+__m128i a_i_p3_m1 __attribute__ ((aligned(16)));
+__m128i a_i_p3_p1 __attribute__ ((aligned(16)));
+__m128i a_i_p3_p3 __attribute__ ((aligned(16)));
+__m128i a_i_p3_p5 __attribute__ ((aligned(16)));
+__m128i a_i_p3_p7 __attribute__ ((aligned(16)));
+__m128i a_i_p5_m7 __attribute__ ((aligned(16)));
+__m128i a_i_p5_m5 __attribute__ ((aligned(16)));
+__m128i a_i_p5_m3 __attribute__ ((aligned(16)));
+__m128i a_i_p5_m1 __attribute__ ((aligned(16)));
+__m128i a_i_p5_p1 __attribute__ ((aligned(16)));
+__m128i a_i_p5_p3 __attribute__ ((aligned(16)));
+__m128i a_i_p5_p5 __attribute__ ((aligned(16)));
+__m128i a_i_p5_p7 __attribute__ ((aligned(16)));
+__m128i a_i_p7_m7 __attribute__ ((aligned(16)));
+__m128i a_i_p7_m5 __attribute__ ((aligned(16)));
+__m128i a_i_p7_m3 __attribute__ ((aligned(16)));
+__m128i a_i_p7_m1 __attribute__ ((aligned(16)));
+__m128i a_i_p7_p1 __attribute__ ((aligned(16)));
+__m128i a_i_p7_p3 __attribute__ ((aligned(16)));
+__m128i a_i_p7_p5 __attribute__ ((aligned(16)));
+__m128i a_i_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i a_i_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_i_p7_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_m7_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_m5_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_m3_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_m1_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_p1_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_p3_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_p5_p7 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_m7 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_m5 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_m3 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_m1 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_p1 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_p3 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_p5 __attribute__ ((aligned(16)));
+__m128i psi_a_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i psi_a_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i psi_a_p7_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_m7_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_m5_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_m3_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_m1_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_p1_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_p3_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_p5_p7 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_m7 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_m5 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_m3 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_m1 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_p1 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_p3 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_p5 __attribute__ ((aligned(16)));
+__m128i a_sq_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i a_sq_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i a_sq_p7_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_m7_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_m5_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_m3_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_m1_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_p1_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_p3_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_p5_p7 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_m7 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_m5 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_m3 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_m1 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_p1 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_p3 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_p5 __attribute__ ((aligned(16)));
+__m128i bit_met_p7_p7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i bit_met_m7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m7_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_m1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p1_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p3_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p5_p7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_m7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_m5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_m3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_m1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_p1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_p3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_p5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i bit_met_p7_p7 __attribute__ ((aligned(16)));
+__m128i  y0_p_1_1 __attribute__ ((aligned(16)));
+__m128i  y0_p_1_3 __attribute__ ((aligned(16)));
+__m128i  y0_p_1_5 __attribute__ ((aligned(16)));
+__m128i  y0_p_1_7 __attribute__ ((aligned(16)));
+__m128i  y0_p_3_1 __attribute__ ((aligned(16)));
+__m128i  y0_p_3_3 __attribute__ ((aligned(16)));
+__m128i  y0_p_3_5 __attribute__ ((aligned(16)));
+__m128i  y0_p_3_7 __attribute__ ((aligned(16)));
+__m128i  y0_p_5_1 __attribute__ ((aligned(16)));
+__m128i  y0_p_5_3 __attribute__ ((aligned(16)));
+__m128i  y0_p_5_5 __attribute__ ((aligned(16)));
+__m128i  y0_p_5_7 __attribute__ ((aligned(16)));
+__m128i  y0_p_7_1 __attribute__ ((aligned(16)));
+__m128i  y0_p_7_3 __attribute__ ((aligned(16)));
+__m128i  y0_p_7_5 __attribute__ ((aligned(16)));
+__m128i  y0_p_7_7 __attribute__ ((aligned(16)));
+__m128i  y0_m_1_1 __attribute__ ((aligned(16)));
+__m128i  y0_m_1_3 __attribute__ ((aligned(16)));
+__m128i  y0_m_1_5 __attribute__ ((aligned(16)));
+__m128i  y0_m_1_7 __attribute__ ((aligned(16)));
+__m128i  y0_m_3_1 __attribute__ ((aligned(16)));
+__m128i  y0_m_3_3 __attribute__ ((aligned(16)));
+__m128i  y0_m_3_5 __attribute__ ((aligned(16)));
+__m128i  y0_m_3_7 __attribute__ ((aligned(16)));
+__m128i  y0_m_5_1 __attribute__ ((aligned(16)));
+__m128i  y0_m_5_3 __attribute__ ((aligned(16)));
+__m128i  y0_m_5_5 __attribute__ ((aligned(16)));
+__m128i  y0_m_5_7 __attribute__ ((aligned(16)));
+__m128i  y0_m_7_1 __attribute__ ((aligned(16)));
+__m128i  y0_m_7_3 __attribute__ ((aligned(16)));
+__m128i  y0_m_7_5 __attribute__ ((aligned(16)));
+__m128i  y0_m_7_7 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  y0_p_1_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_1_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_1_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_1_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_3_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_3_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_3_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_3_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_5_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_5_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_5_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_5_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_7_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_7_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_7_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_p_7_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_1_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_1_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_1_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_1_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_3_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_3_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_3_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_3_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_5_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_5_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_5_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_5_7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_7_1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_7_3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_7_5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0_m_7_7 __attribute__ ((aligned(16)));
+__m128i  xmm0 __attribute__ ((aligned(16)));
+__m128i  xmm1 __attribute__ ((aligned(16)));
+__m128i  xmm2 __attribute__ ((aligned(16)));
+__m128i  xmm3 __attribute__ ((aligned(16)));
+__m128i  xmm4 __attribute__ ((aligned(16)));
+__m128i  xmm5 __attribute__ ((aligned(16)));
+__m128i  xmm6 __attribute__ ((aligned(16)));
+__m128i  xmm7 __attribute__ ((aligned(16)));
+__m128i  xmm8 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  xmm0 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm4 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm5 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm6 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm7 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  xmm8 __attribute__ ((aligned(16)));
+__m128i  y0r __attribute__ ((aligned(16)));
+__m128i  y0i __attribute__ ((aligned(16)));
+__m128i  y1r __attribute__ ((aligned(16)));
+__m128i  y1i __attribute__ ((aligned(16)));
+__m128i  y2r __attribute__ ((aligned(16)));
+__m128i  y2i __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  y0r __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y1r __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y1i __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y2r __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y2i __attribute__ ((aligned(16)));
+__m128i  logmax_num_re0 __attribute__ ((aligned(16)));
+__m128i  logmax_num_im0 __attribute__ ((aligned(16)));
+__m128i  logmax_den_re0 __attribute__ ((aligned(16)));
+__m128i  logmax_den_im0 __attribute__ ((aligned(16)));
+__m128i  logmax_num_re1 __attribute__ ((aligned(16)));
+__m128i  logmax_num_im1 __attribute__ ((aligned(16)));
+__m128i  logmax_den_re1 __attribute__ ((aligned(16)));
+__m128i  logmax_den_im1 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  logmax_num_re0 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_num_im0 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_den_re0 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_den_im0 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_num_re1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_num_im1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_den_re1 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  logmax_den_im1 __attribute__ ((aligned(16)));
+__m128i tmp_result  __attribute__ ((aligned(16)));
+__m128i tmp_result2 __attribute__ ((aligned(16)));
+__m128i tmp_result3 __attribute__ ((aligned(16)));
+__m128i tmp_result4 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i tmp_result  __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i tmp_result2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i tmp_result3 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i tmp_result4 __attribute__ ((aligned(16)));
 
 //==============================================================================================
 // Auxiliary Makros
@@ -626,6 +622,10 @@ NOCYGWIN_STATIC __m128i tmp_result4 __attribute__ ((aligned(16)));
 // calculates a_sq = int_ch_mag*(a_r^2 + a_i^2)*scale_factor for 64-QAM
 #define square_a_64qam_epi16(a_r,a_i,int_ch_mag,scale_factor,a_sq)  tmp_result = _mm_mulhi_epi16(a_r,a_r); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result = _mm_mulhi_epi16(tmp_result,scale_factor); tmp_result = _mm_slli_epi16(tmp_result,3); tmp_result = _mm_mulhi_epi16(tmp_result,int_ch_mag); tmp_result = _mm_slli_epi16(tmp_result,1); tmp_result2 = _mm_mulhi_epi16(a_i,a_i); tmp_result2 = _mm_slli_epi16(tmp_result2,1); tmp_result2 = _mm_mulhi_epi16(tmp_result2,scale_factor); tmp_result2 = _mm_slli_epi16(tmp_result2,3); tmp_result2 = _mm_mulhi_epi16(tmp_result2,int_ch_mag); tmp_result2 = _mm_slli_epi16(tmp_result2,1); a_sq = _mm_adds_epi16(tmp_result,tmp_result2);
 
+#elif defined(__arm__)
+
+#endif
+
 //==============================================================================================
 // SINGLE-STREAM
 //==============================================================================================
@@ -635,17 +635,17 @@ NOCYGWIN_STATIC __m128i tmp_result4 __attribute__ ((aligned(16)));
 //----------------------------------------------------------------------------------------------
 
 int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                   int **rxdataF_comp,
-                   short *dlsch_llr,
-                   unsigned char symbol,
+                   int32_t **rxdataF_comp,
+                   int16_t *dlsch_llr,
+                   uint8_t symbol,
                    uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint16_t pbch_pss_sss_adjust,
-                   short **llr32p,
+                   int16_t **llr32p,
 		   uint8_t beamforming_mode)
 {
 
-  uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*frame_parms->N_RB_DL*12)];
   uint32_t *llr32;
   int i,len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
@@ -675,17 +675,14 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-  //    printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+//  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
     rxF++;
     llr32++;
   }
 
-  *llr32p = (short *)llr32;
-
-  _mm_empty();
-  _m_empty();
+  *llr32p = (int16_t *)llr32;
 
   return(0);
 }
@@ -695,35 +692,55 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 //----------------------------------------------------------------------------------------------
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                     int **rxdataF_comp,
-                     short *dlsch_llr,
-                     int **dl_ch_mag,
-                     unsigned char symbol,
+                     int32_t **rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t **dl_ch_mag,
+                     uint8_t symbol,
                      uint8_t first_symbol_flag,
-                     unsigned short nb_rb,
+                     uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
                      int16_t **llr32p,
                      uint8_t beamforming_mode)
 {
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag;
   __m128i llr128[2];
+  uint32_t *llr32;
+#elif defined(__arm__)
+  int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16x8_t *ch_mag;
+  int16x8_t xmm0;
+  int16_t *llr16;
+#endif
+
+
   int i,len;
   unsigned char symbol_mod,len_mod4=0;
-  uint32_t *llr32;
 
 
+#if defined(__x86_64__) || defined(__i386__)
   if (first_symbol_flag==1) {
     llr32 = (uint32_t*)dlsch_llr;
   } else {
     llr32 = (uint32_t*)*llr32p;
   }
+#elif defined(__arm__)
+  if (first_symbol_flag==1) {
+    llr16 = (int16_t*)dlsch_llr;
+  } else {
+    llr16 = (int16_t*)*llr32p;
+  }
+#endif
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
+#if defined(__x86_64__) || defined(__i386__)
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-
+#elif defined(__arm__)
+  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+#endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
@@ -749,6 +766,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<len; i++) {
 
+#if defined(__x86_64__) || defined(__i386)
     xmm0 = _mm_abs_epi16(rxF[i]);
     xmm0 = _mm_subs_epi16(ch_mag[i],xmm0);
 
@@ -764,10 +782,36 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr32[6] = _mm_extract_epi32(llr128[1],2); //((uint32_t *)&llr128[1])[2];
     llr32[7] = _mm_extract_epi32(llr128[1],3); //((uint32_t *)&llr128[1])[3];
     llr32+=8;
+#elif defined(__arm__)
+    xmm0 = vabsq_s16(rxF[i]);
+    xmm0 = vqsubq_s16(ch_mag[i],xmm0);
+    // lambda_1=y_R, lambda_2=|y_R|-|h|^2, lamda_3=y_I, lambda_4=|y_I|-|h|^2
+
+    llr16[0] = vgetq_lane_s16(rxF[i],0);
+    llr16[1] = vgetq_lane_s16(rxF[i],1);
+    llr16[2] = vgetq_lane_s16(xmm0,0);
+    llr16[3] = vgetq_lane_s16(xmm0,1);
+    llr16[4] = vgetq_lane_s16(rxF[i],2);
+    llr16[5] = vgetq_lane_s16(rxF[i],3);
+    llr16[6] = vgetq_lane_s16(xmm0,2);
+    llr16[7] = vgetq_lane_s16(xmm0,3);
+    llr16[8] = vgetq_lane_s16(rxF[i],4);
+    llr16[9] = vgetq_lane_s16(rxF[i],5);
+    llr16[10] = vgetq_lane_s16(xmm0,4);
+    llr16[11] = vgetq_lane_s16(xmm0,5);
+    llr16[12] = vgetq_lane_s16(rxF[i],6);
+    llr16[13] = vgetq_lane_s16(rxF[i],6);
+    llr16[14] = vgetq_lane_s16(xmm0,7);
+    llr16[15] = vgetq_lane_s16(xmm0,7);
+    llr16+=16;
+#endif
+
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 //----------------------------------------------------------------------------------------------
@@ -775,20 +819,24 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 //----------------------------------------------------------------------------------------------
 
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                     int **rxdataF_comp,
-                     short *dlsch_llr,
-                     int **dl_ch_mag,
-                     int **dl_ch_magb,
-                     unsigned char symbol,
+                     int32_t **rxdataF_comp,
+                     int16_t *dlsch_llr,
+                     int32_t **dl_ch_mag,
+                     int32_t **dl_ch_magb,
+                     uint8_t symbol,
                      uint8_t first_symbol_flag,
-                     unsigned short nb_rb,
+                     uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     short **llr_save,
+                     int16_t **llr_save,
                      uint8_t beamforming_mode)
 {
-
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag,*ch_magb;
+#elif defined(__arm__)
+  int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16x8_t *ch_mag,*ch_magb,xmm1,xmm2;
+#endif
   int i,len,len2;
   unsigned char symbol_mod,len_mod4;
   short *llr;
@@ -801,9 +849,13 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
+#if defined(__x86_64__) || defined(__i386__)
   ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
-
+#elif defined(__arm__)
+  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+#endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
@@ -826,62 +878,96 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<len2; i++) {
 
+#if defined(__x86_64__) || defined(__i386__)
     xmm1 = _mm_abs_epi16(rxF[i]);
     xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
     xmm2 = _mm_abs_epi16(xmm1);
     xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
-
+#elif defined(__arm__)
+    xmm1 = vabsq_s16(rxF[i]);
+    xmm1 = vsubq_s16(ch_mag[i],xmm1);
+    xmm2 = vabsq_s16(xmm1);
+    xmm2 = vsubq_s16(ch_magb[i],xmm2);
+#endif
     // loop over all LLRs in quad word (24 coded bits)
     /*
-          for (j=0;j<8;j+=2) {
-              llr2[0] = ((short *)&rxF[i])[j];
-              llr2[1] = ((short *)&rxF[i])[j+1];
-              llr2[2] = ((short *)&xmm1)[j];
-              llr2[3] = ((short *)&xmm1)[j+1];
-              llr2[4] = ((short *)&xmm2)[j];
-              llr2[5] = ((short *)&xmm2)[j+1];
+      for (j=0;j<8;j+=2) {
+      llr2[0] = ((short *)&rxF[i])[j];
+      llr2[1] = ((short *)&rxF[i])[j+1];
+      llr2[2] = ((short *)&xmm1)[j];
+      llr2[3] = ((short *)&xmm1)[j+1];
+      llr2[4] = ((short *)&xmm2)[j];
+      llr2[5] = ((short *)&xmm2)[j+1];
 
-              llr2+=6;
-          }
+      llr2+=6;
+      }
     */
     llr2[0] = ((short *)&rxF[i])[0];
     llr2[1] = ((short *)&rxF[i])[1];
+#if defined(__x86_64__) || defined(__i386__)
     llr2[2] = _mm_extract_epi16(xmm1,0);
     llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
+#elif defined(__arm__)
+    llr2[2] = vgetq_lane_s16(xmm1,0);
+    llr2[3] = vgetq_lane_s16(xmm1,1);//((short *)&xmm1)[j+1];
+    llr2[4] = vgetq_lane_s16(xmm2,0);//((short *)&xmm2)[j];
+    llr2[5] = vgetq_lane_s16(xmm2,1);//((short *)&xmm2)[j+1];
+#endif
 
     llr2+=6;
     llr2[0] = ((short *)&rxF[i])[2];
     llr2[1] = ((short *)&rxF[i])[3];
+#if defined(__x86_64__) || defined(__i386__)
     llr2[2] = _mm_extract_epi16(xmm1,2);
     llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+#elif defined(__arm__)
+    llr2[2] = vgetq_lane_s16(xmm1,2);
+    llr2[3] = vgetq_lane_s16(xmm1,3);//((short *)&xmm1)[j+1];
+    llr2[4] = vgetq_lane_s16(xmm2,2);//((short *)&xmm2)[j];
+    llr2[5] = vgetq_lane_s16(xmm2,3);//((short *)&xmm2)[j+1];
+#endif
 
     llr2+=6;
     llr2[0] = ((short *)&rxF[i])[4];
     llr2[1] = ((short *)&rxF[i])[5];
+#if defined(__x86_64__) || defined(__i386__)
     llr2[2] = _mm_extract_epi16(xmm1,4);
     llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
-
+#elif defined(__arm__)
+    llr2[2] = vgetq_lane_s16(xmm1,4);
+    llr2[3] = vgetq_lane_s16(xmm1,5);//((short *)&xmm1)[j+1];
+    llr2[4] = vgetq_lane_s16(xmm2,4);//((short *)&xmm2)[j];
+    llr2[5] = vgetq_lane_s16(xmm2,5);//((short *)&xmm2)[j+1];
+#endif
     llr2+=6;
     llr2[0] = ((short *)&rxF[i])[6];
     llr2[1] = ((short *)&rxF[i])[7];
+#if defined(__x86_64__) || defined(__i386__)
     llr2[2] = _mm_extract_epi16(xmm1,6);
     llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
     llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
     llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
-
+#elif defined(__arm__)
+    llr2[2] = vgetq_lane_s16(xmm1,6);
+    llr2[3] = vgetq_lane_s16(xmm1,7);//((short *)&xmm1)[j+1];
+    llr2[4] = vgetq_lane_s16(xmm2,6);//((short *)&xmm2)[j];
+    llr2[5] = vgetq_lane_s16(xmm2,7);//((short *)&xmm2)[j+1];
+#endif
     llr2+=6;
 
   }
 
   *llr_save = llr;
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 
@@ -893,20 +979,22 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 // QPSK
 //----------------------------------------------------------------------------------------------
 
-NOCYGWIN_STATIC __m128i  y0r_over2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_over2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y1r_over2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y1i_over2 __attribute__ ((aligned(16)));
+#if defined(__x86_64__) || defined(__i386)
+__m128i  y0r_over2 __attribute__ ((aligned(16)));
+__m128i  y0i_over2 __attribute__ ((aligned(16)));
+__m128i  y1r_over2 __attribute__ ((aligned(16)));
+__m128i  y1i_over2 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  A __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  B __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  C __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  D __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  E __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  F __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  G __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  H __attribute__ ((aligned(16)));
+__m128i  A __attribute__ ((aligned(16)));
+__m128i  B __attribute__ ((aligned(16)));
+__m128i  C __attribute__ ((aligned(16)));
+__m128i  D __attribute__ ((aligned(16)));
+__m128i  E __attribute__ ((aligned(16)));
+__m128i  F __attribute__ ((aligned(16)));
+__m128i  G __attribute__ ((aligned(16)));
+__m128i  H __attribute__ ((aligned(16)));
 
+#endif
 
 int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                         int **rxdataF_comp,
@@ -964,47 +1052,53 @@ int dlsch_qpsk_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_8 __attribute__((aligned(16)));
+//__m128i ONE_OVER_SQRT_8 __attribute__((aligned(16)));
 
 void qpsk_qpsk(short *stream0_in,
                short *stream1_in,
                short *stream0_out,
                short *rho01,
                int length
-              )
+	       )
 {
 
   /*
-  This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
+    This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
 
-  Parameters:
-  stream0_in = Matched filter output y0' = (h0*g0)*y0
-  stream1_in = Matched filter output y1' = (h0*g1)*y0
-  stream0_out = LLRs
-  rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
-  length = number of resource elements
+    Parameters:
+    stream0_in = Matched filter output y0' = (h0*g0)*y0
+    stream1_in = Matched filter output y1' = (h0*g1)*y0
+    stream0_out = LLRs
+    rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
+    length = number of resource elements
   */
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
   __m128i *stream1_128i_in = (__m128i *)stream1_in;
   __m128i *stream0_128i_out = (__m128i *)stream0_out;
-
-#ifdef DEBUG_LLR
-  print_shorts2("rho01_128i:\n",rho01_128i);
+  __m128i ONE_OVER_SQRT_8 = _mm_set1_epi16(23170); //round(2^16/sqrt(8))
+#elif defined(__arm__)
+  int16x8_t *rho01_128i = (int16x8_t *)rho01;
+  int16x8_t *stream0_128i_in = (int16x8_t *)stream0_in;
+  int16x8_t *stream1_128i_in = (int16x8_t *)stream1_in;
+  int16x8_t *stream0_128i_out = (int16x8_t *)stream0_out;
+  int16x8_t ONE_OVER_SQRT_8 = vdupq_n_s16(23170); //round(2^16/sqrt(8))
 #endif
 
   int i;
-  ONE_OVER_SQRT_8 = _mm_set1_epi16(23170); //round(2^16/sqrt(8))
+
 
   for (i=0; i<length>>2; i+=2) {
     // in each iteration, we take 8 complex samples
-
+#if defined(__x86_64__) || defined(__i386__)
     xmm0 = rho01_128i[i]; // 4 symbols
     xmm1 = rho01_128i[i+1];
 
     // put (rho_r + rho_i)/2sqrt2 in rho_rpi
     // put (rho_r - rho_i)/2sqrt2 in rho_rmi
+
     xmm0 = _mm_shufflelo_epi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
     xmm0 = _mm_shufflehi_epi16(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
     xmm0 = _mm_shuffle_epi32(xmm0,0xd8); //_MM_SHUFFLE(0,2,1,3));
@@ -1021,10 +1115,14 @@ void qpsk_qpsk(short *stream0_in,
     // divide by sqrt(8), no shift needed ONE_OVER_SQRT_8 = Q1.16
     rho_rpi = _mm_mulhi_epi16(rho_rpi,ONE_OVER_SQRT_8);
     rho_rmi = _mm_mulhi_epi16(rho_rmi,ONE_OVER_SQRT_8);
+#elif defined(__arm__)
 
+
+#endif
     // Compute LLR for first bit of stream 0
 
     // Compute real and imaginary parts of MF output for stream 0
+#if defined(__x86_64__) || defined(__i386__)
     xmm0 = stream0_128i_in[i];
     xmm1 = stream0_128i_in[i+1];
 
@@ -1041,8 +1139,12 @@ void qpsk_qpsk(short *stream0_in,
 
     y0r_over2  = _mm_srai_epi16(y0r,1);   // divide by 2
     y0i_over2  = _mm_srai_epi16(y0i,1);   // divide by 2
+#elif defined(__arm__)
 
+
+#endif
     // Compute real and imaginary parts of MF output for stream 1
+#if defined(__x86_64__) || defined(__i386__)
     xmm0 = stream1_128i_in[i];
     xmm1 = stream1_128i_in[i+1];
 
@@ -1132,23 +1234,28 @@ void qpsk_qpsk(short *stream0_in,
     if (i<((length>>1) - 1)) // false if only 2 REs remain
       _mm_storeu_si128(&stream0_128i_out[i+1],_mm_unpackhi_epi16(y0r,y0i));
 
+#elif defined(__x86_64__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 int dlsch_qpsk_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                         int **rxdataF_comp,
-                         int **rxdataF_comp_i,
-                         int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                         int **rho_i,
-                         short *dlsch_llr,
-                         unsigned char symbol,
-                         unsigned char first_symbol_flag,
-                         unsigned short nb_rb,
+                         int32_t **rxdataF_comp,
+                         int32_t **rxdataF_comp_i,
+                         int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
                          uint16_t pbch_pss_sss_adjust,
-                         short **llr16p)
+                         int16_t **llr16p)
 {
 
   int16_t *rxF=(int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -1196,38 +1303,58 @@ int dlsch_qpsk_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_10 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i THREE_OVER_SQRT_10 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_10_Q15 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i SQRT_10_OVER_FOUR __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_int __attribute__((aligned(16)));
-
-void qpsk_qam16(short *stream0_in,
-                short *stream1_in,
-                short *ch_mag_i,
-                short *stream0_out,
-                short *rho01,
-                int length
-               )
+/*
+#if defined(__x86_64__) || defined(__i386__)
+__m128i ONE_OVER_SQRT_2 __attribute__((aligned(16)));
+__m128i ONE_OVER_SQRT_10 __attribute__((aligned(16)));
+__m128i THREE_OVER_SQRT_10 __attribute__((aligned(16)));
+__m128i ONE_OVER_SQRT_10_Q15 __attribute__((aligned(16)));
+__m128i SQRT_10_OVER_FOUR __attribute__((aligned(16)));
+__m128i ch_mag_int;
+#endif
+*/
+void qpsk_qam16(int16_t *stream0_in,
+                int16_t *stream1_in,
+                int16_t *ch_mag_i,
+                int16_t *stream0_out,
+                int16_t *rho01,
+                int32_t length
+		)
 {
-
   /*
-  This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
+    This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
 
-  Parameters:
-  stream0_in = Matched filter output y0' = (h0*g0)*y0
-  stream1_in = Matched filter output y1' = (h0*g1)*y0
-  stream0_out = LLRs
-  rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
-  length = number of resource elements
+    Parameters:
+    stream0_in = Matched filter output y0' = (h0*g0)*y0
+    stream1_in = Matched filter output y1' = (h0*g1)*y0
+    stream0_out = LLRs
+    rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
+    length = number of resource elements
   */
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
   __m128i *stream1_128i_in = (__m128i *)stream1_in;
   __m128i *stream0_128i_out = (__m128i *)stream0_out;
   __m128i *ch_mag_128i_i    = (__m128i *)ch_mag_i;
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
+  __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
+  __m128i SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
+  __m128i ch_mag_int __attribute__((aligned(16)));
+#elif defined(__arm__)
+  int16x8_t *rho01_128i = (int16x8_t *)rho01;
+  int16x8_t *stream0_128i_in = (int16x8_t *)stream0_in;
+  int16x8_t *stream1_128i_in = (int16x8_t *)stream1_in;
+  int16x8_t *stream0_128i_out = (int16x8_t *)stream0_out;
+  int16x8_t *ch_mag_128i_i    = (int16x8_t *)ch_mag_i;
+  int16x8_t ONE_OVER_SQRT_2 = vdupq_n_s16(23170); // round(1/sqrt(2)*2^15)
+  int16x8_t ONE_OVER_SQRT_10_Q15 = vdupq_n_s16(10362); // round(1/sqrt(10)*2^15)
+  int16x8_t THREE_OVER_SQRT_10 = vdupq_n_s16(31086); // round(3/sqrt(10)*2^15)
+  int16x8_t SQRT_10_OVER_FOUR = vdupq_n_s16(25905); // round(sqrt(10)/4*2^15)
+  int16x8_t ch_mag_int __attribute__((aligned(16)));
+#endif
 
 #ifdef DEBUG_LLR
   print_shorts2("rho01_128i:\n",rho01_128i);
@@ -1235,13 +1362,11 @@ void qpsk_qam16(short *stream0_in,
 
   int i;
 
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
-  THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
-  SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
 
   for (i=0; i<length>>2; i+=2) {
     // in each iteration, we take 8 complex samples
+
+#if defined(__x86_64__) || defined(__i386__)
 
     xmm0 = rho01_128i[i]; // 4 symbols
     xmm1 = rho01_128i[i+1];
@@ -1393,23 +1518,28 @@ void qpsk_qam16(short *stream0_in,
     if (i<((length>>1) - 1)) // false if only 2 REs remain
       stream0_128i_out[i+1] = _mm_unpackhi_epi16(y0r,y0i);
 
+#elif defined(__arm__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 int dlsch_qpsk_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                         int **rxdataF_comp,
-                         int **rxdataF_comp_i,
-                         int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                         int **rho_i,
-                         short *dlsch_llr,
-                         unsigned char symbol,
-                         unsigned char first_symbol_flag,
-                         unsigned short nb_rb,
+                         int32_t **rxdataF_comp,
+                         int32_t **rxdataF_comp_i,
+                         int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
                          uint16_t pbch_pss_sss_adjust,
-                         short **llr16p)
+                         int16_t **llr16p)
 {
 
   int16_t *rxF=(int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -1456,42 +1586,56 @@ int dlsch_qpsk_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   return(0);
 }
+/*
+__m128i ONE_OVER_SQRT_2_42 __attribute__((aligned(16)));
+__m128i THREE_OVER_SQRT_2_42 __attribute__((aligned(16)));
+__m128i FIVE_OVER_SQRT_2_42 __attribute__((aligned(16)));
+__m128i SEVEN_OVER_SQRT_2_42 __attribute__((aligned(16)));
 
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_2_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i THREE_OVER_SQRT_2_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i FIVE_OVER_SQRT_2_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i SEVEN_OVER_SQRT_2_42 __attribute__((aligned(16)));
-
-NOCYGWIN_STATIC __m128i ch_mag_int_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i two_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i three_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i SQRT_42_OVER_FOUR __attribute__((aligned(16)));
-
+__m128i ch_mag_int_with_sigma2 __attribute__((aligned(16)));
+__m128i two_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
+__m128i three_ch_mag_int_with_sigma2 __attribute__((aligned(16)));
+__m128i SQRT_42_OVER_FOUR __attribute__((aligned(16)));
+*/
 void qpsk_qam64(short *stream0_in,
                 short *stream1_in,
                 short *ch_mag_i,
                 short *stream0_out,
                 short *rho01,
                 int length
-               )
+		)
 {
 
   /*
-  This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
+    This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
 
-  Parameters:
-  stream0_in = Matched filter output y0' = (h0*g0)*y0
-  stream1_in = Matched filter output y1' = (h0*g1)*y0
-  stream0_out = LLRs
-  rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
-  length = number of resource elements
+    Parameters:
+    stream0_in = Matched filter output y0' = (h0*g0)*y0
+    stream1_in = Matched filter output y1' = (h0*g1)*y0
+    stream0_out = LLRs
+    rho01 = Correlation between the two effective channels \rho_{10} = (h1*g1)*(h0*g0)
+    length = number of resource elements
   */
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
   __m128i *stream1_128i_in = (__m128i *)stream1_in;
   __m128i *stream0_128i_out = (__m128i *)stream0_out;
   __m128i *ch_mag_128i_i    = (__m128i *)ch_mag_i;
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
+  __m128i THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
+  __m128i FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
+  __m128i SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
+  __m128i SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.1
+  __m128i ch_mag_int;
+  __m128i ch_mag_int_with_sigma2;
+  __m128i two_ch_mag_int_with_sigma2;
+  __m128i three_ch_mag_int_with_sigma2;
+#elif defined(__arm__)
+
+#endif
 
 #ifdef DEBUG_LLR
   print_shorts2("rho01_128i:\n",rho01_128i);
@@ -1499,15 +1643,11 @@ void qpsk_qam64(short *stream0_in,
 
   int i;
 
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
-  THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
-  FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
-  SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
-  SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
 
   for (i=0; i<length>>2; i+=2) {
     // in each iteration, we take 8 complex samples
+
+#if defined(__x86_64__) || defined(__i386__)
 
     xmm0 = rho01_128i[i]; // 4 symbols
     xmm1 = rho01_128i[i+1];
@@ -1678,10 +1818,15 @@ void qpsk_qam64(short *stream0_in,
     if (i<((length>>1) - 1)) // false if only 2 REs remain
       stream0_128i_out[i+1] = _mm_unpackhi_epi16(y0r,y0i);
 
+#elif defined(__arm__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 
@@ -1689,18 +1834,20 @@ void qpsk_qam64(short *stream0_in,
 // 16-QAM
 //----------------------------------------------------------------------------------------------
 
-NOCYGWIN_STATIC __m128i ONE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i NINE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
+/*
+__m128i ONE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
+__m128i NINE_OVER_TWO_SQRT_10 __attribute__((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  y0r_over_sqrt10 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_over_sqrt10 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0r_three_over_sqrt10 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_three_over_sqrt10 __attribute__ ((aligned(16)));
+__m128i  y0r_over_sqrt10 __attribute__ ((aligned(16)));
+__m128i  y0i_over_sqrt10 __attribute__ ((aligned(16)));
+__m128i  y0r_three_over_sqrt10 __attribute__ ((aligned(16)));
+__m128i  y0i_three_over_sqrt10 __attribute__ ((aligned(16)));
 
-NOCYGWIN_STATIC __m128i ch_mag_des __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_over_10 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_over_2 __attribute__ ((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_9_over_10 __attribute__ ((aligned(16)));
+__m128i ch_mag_des __attribute__((aligned(16)));
+__m128i ch_mag_over_10 __attribute__ ((aligned(16)));
+__m128i ch_mag_over_2 __attribute__ ((aligned(16)));
+__m128i ch_mag_9_over_10 __attribute__ ((aligned(16)));
+*/
 
 void qam16_qpsk(short *stream0_in,
                 short *stream1_in,
@@ -1708,42 +1855,56 @@ void qam16_qpsk(short *stream0_in,
                 short *stream0_out,
                 short *rho01,
                 int length
-               )
+		)
 {
 
   /*
-     Author: Sebastian Wagner
-     Date: 2012-06-04
+    Author: Sebastian Wagner
+    Date: 2012-06-04
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i       = (__m128i *)rho01;
   __m128i *stream0_128i_in  = (__m128i *)stream0_in;
   __m128i *stream1_128i_in  = (__m128i *)stream1_in;
   __m128i *stream0_128i_out = (__m128i *)stream0_out;
   __m128i *ch_mag_128i      = (__m128i *)ch_mag;
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
+  __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
+  __m128i SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
+  __m128i ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
+  __m128i NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
+  __m128i  y0r_over_sqrt10;
+  __m128i  y0i_over_sqrt10;
+  __m128i  y0r_three_over_sqrt10;
+  __m128i  y0i_three_over_sqrt10;
+  
+  __m128i ch_mag_des;
+  __m128i ch_mag_over_10;
+  __m128i ch_mag_over_2;
+  __m128i ch_mag_9_over_10;
+#elif defined(__arm__)
+
+#endif
 
   int i;
 
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
-  THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
-  SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
-  ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
-  NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
 
   for (i=0; i<length>>2; i+=2) {
     // In one iteration, we deal with 8 REs
 
+#if defined(__x86_64__) || defined(__i386__)
     // Get rho
     xmm0 = rho01_128i[i];
     xmm1 = rho01_128i[i+1];
@@ -2123,23 +2284,30 @@ void qam16_qpsk(short *stream0_in,
     stream0_128i_out[2*i+1] = _mm_unpackhi_epi32(xmm0,xmm2);
     stream0_128i_out[2*i+2] = _mm_unpacklo_epi32(xmm1,xmm3);
     stream0_128i_out[2*i+3] = _mm_unpackhi_epi32(xmm1,xmm3);
+
+#elif defined(__arm__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
+
 }
 
 int dlsch_16qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                         int **rxdataF_comp,
-                         int **rxdataF_comp_i,
-                         int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                         int **rho_i,
-                         short *dlsch_llr,
-                         unsigned char symbol,
-                         unsigned char first_symbol_flag,
-                         unsigned short nb_rb,
+                         int32_t **rxdataF_comp,
+                         int32_t **rxdataF_comp_i,
+                         int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
                          uint16_t pbch_pss_sss_adjust,
-                         short **llr16p)
+                         int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -2198,23 +2366,24 @@ void qam16_qam16(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-                )
+		 )
 {
 
   /*
-     Author: Sebastian Wagner
-     Date: 2012-06-04
+    Author: Sebastian Wagner
+    Date: 2012-06-04
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i       = (__m128i *)rho01;
   __m128i *stream0_128i_in  = (__m128i *)stream0_in;
   __m128i *stream1_128i_in  = (__m128i *)stream1_in;
@@ -2222,18 +2391,32 @@ void qam16_qam16(short *stream0_in,
   __m128i *ch_mag_128i      = (__m128i *)ch_mag;
   __m128i *ch_mag_128i_i    = (__m128i *)ch_mag_i;
 
-  int i;
 
-  ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
-  ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
-  THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
-  SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
-  ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
-  NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
+
+  __m128i ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
+  __m128i ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
+  __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
+  __m128i SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
+  __m128i ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
+  __m128i NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
+  __m128i ch_mag_des,ch_mag_int;
+  __m128i  y0r_over_sqrt10;
+  __m128i  y0i_over_sqrt10;
+  __m128i  y0r_three_over_sqrt10;
+  __m128i  y0i_three_over_sqrt10;
+  __m128i ch_mag_over_10;
+  __m128i ch_mag_over_2;
+  __m128i ch_mag_9_over_10;
+#elif defined(__arm__)
+
+#endif
+
+  int i;
 
   for (i=0; i<length>>2; i+=2) {
     // In one iteration, we deal with 8 REs
 
+#if defined(__x86_64__) || defined(__i386__)
     // Get rho
     xmm0 = rho01_128i[i];
     xmm1 = rho01_128i[i+1];
@@ -2658,24 +2841,30 @@ void qam16_qam16(short *stream0_in,
     stream0_128i_out[2*i+1] = _mm_unpackhi_epi32(xmm0,xmm2);
     stream0_128i_out[2*i+2] = _mm_unpacklo_epi32(xmm1,xmm3);
     stream0_128i_out[2*i+3] = _mm_unpackhi_epi32(xmm1,xmm3);
+#elif defined(__arm__)
+
+#endif
+
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
+                          int32_t **rxdataF_comp,
+                          int32_t **rxdataF_comp_i,
+                          int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                          int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t symbol,
+                          uint8_t first_symbol_flag,
+                          uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p)
+                          int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -2729,30 +2918,32 @@ int dlsch_16qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
-void qam16_qam64(short *stream0_in,
-                 short *stream1_in,
-                 short *ch_mag,
-                 short *ch_mag_i,
-                 short *stream0_out,
-                 short *rho01,
-                 int length
-                )
+void qam16_qam64(int16_t *stream0_in,
+                 int16_t *stream1_in,
+                 int16_t *ch_mag,
+                 int16_t *ch_mag_i,
+                 int16_t *stream0_out,
+                 int16_t *rho01,
+                 int32_t length
+		 )
 {
 
   /*
-     Author: Sebastian Wagner
-     Date: 2012-06-04
+    Author: Sebastian Wagner
+    Date: 2012-06-04
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream!_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      2*h0/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    2*h1/sqrt(00), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
+
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i       = (__m128i *)rho01;
   __m128i *stream0_128i_in  = (__m128i *)stream0_in;
   __m128i *stream1_128i_in  = (__m128i *)stream1_in;
@@ -2760,24 +2951,39 @@ void qam16_qam64(short *stream0_in,
   __m128i *ch_mag_128i      = (__m128i *)ch_mag;
   __m128i *ch_mag_128i_i    = (__m128i *)ch_mag_i;
 
-  int i;
+  
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
+  __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
+  __m128i SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
+  __m128i ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
+  __m128i NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
+  __m128i ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
+  __m128i THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
+  __m128i FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
+  __m128i SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
+  __m128i SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.
+  __m128i ch_mag_des,ch_mag_int;
+  __m128i  y0r_over_sqrt10;
+  __m128i  y0i_over_sqrt10;
+  __m128i  y0r_three_over_sqrt10;
+  __m128i  y0i_three_over_sqrt10;
+  __m128i ch_mag_over_10;
+  __m128i ch_mag_over_2;
+  __m128i ch_mag_9_over_10;
+  __m128i ch_mag_int_with_sigma2;
+  __m128i two_ch_mag_int_with_sigma2;
+  __m128i three_ch_mag_int_with_sigma2;
 
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_10 = _mm_set1_epi16(20724); // round(1/sqrt(10)*2^16)
-  ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
-  THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
-  SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
-  ONE_OVER_TWO_SQRT_10 = _mm_set1_epi16(10362); // round(1/2/sqrt(10)*2^16)
-  NINE_OVER_TWO_SQRT_10 = _mm_set1_epi16(23315); // round(9/2/sqrt(10)*2^14)
-  ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
-  THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
-  FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
-  SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
-  SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
+#elif defined(__arm__)
+
+#endif
+  int i;
 
   for (i=0; i<length>>2; i+=2) {
     // In one iteration, we deal with 8 REs
 
+#if defined(__x86_64__) || defined(__i386__)
     // Get rho
     xmm0 = rho01_128i[i];
     xmm1 = rho01_128i[i+1];
@@ -3271,24 +3477,30 @@ void qam16_qam64(short *stream0_in,
     stream0_128i_out[2*i+1] = _mm_unpackhi_epi32(xmm0,xmm2);
     stream0_128i_out[2*i+2] = _mm_unpacklo_epi32(xmm1,xmm3);
     stream0_128i_out[2*i+3] = _mm_unpackhi_epi32(xmm1,xmm3);
+#elif defined(__arm__)
+
+#endif
+
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 }
 
 int dlsch_16qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
+                          int32_t **rxdataF_comp,
+                          int32_t **rxdataF_comp_i,
+                          int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
+                          int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t symbol,
+                          uint8_t first_symbol_flag,
+                          uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p)
+                          int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -3346,93 +3558,117 @@ int dlsch_16qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 // 64-QAM
 //----------------------------------------------------------------------------------------------
 
-NOCYGWIN_STATIC __m128i ONE_OVER_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i THREE_OVER_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i FIVE_OVER_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i SEVEN_OVER_SQRT_42 __attribute__((aligned(16)));
+/*
+__m128i ONE_OVER_SQRT_42 __attribute__((aligned(16)));
+__m128i THREE_OVER_SQRT_42 __attribute__((aligned(16)));
+__m128i FIVE_OVER_SQRT_42 __attribute__((aligned(16)));
+__m128i SEVEN_OVER_SQRT_42 __attribute__((aligned(16)));
 
-NOCYGWIN_STATIC __m128i FORTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i THIRTYSEVEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i TWENTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i TWENTYFIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i SEVENTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i NINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i THIRTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i FIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ONE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i FORTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i THIRTYSEVEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i TWENTYNINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i TWENTYFIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i SEVENTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i NINE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i THIRTEEN_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i FIVE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
+__m128i ONE_OVER_FOUR_SQRT_42 __attribute__((aligned(16)));
 
-NOCYGWIN_STATIC __m128i  y0r_one_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0r_three_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0r_five_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0r_seven_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_one_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_three_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_five_over_sqrt_21 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i  y0i_seven_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0r_one_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0r_three_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0r_five_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0r_seven_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0i_one_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0i_three_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0i_five_over_sqrt_21 __attribute__((aligned(16)));
+__m128i  y0i_seven_over_sqrt_21 __attribute__((aligned(16)));
 
-NOCYGWIN_STATIC __m128i ch_mag_98_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_74_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_58_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_50_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_34_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_18_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_26_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_10_over_42_with_sigma2 __attribute__((aligned(16)));
-NOCYGWIN_STATIC __m128i ch_mag_2_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_98_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_74_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_58_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_50_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_34_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_18_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_26_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_10_over_42_with_sigma2 __attribute__((aligned(16)));
+__m128i ch_mag_2_over_42_with_sigma2 __attribute__((aligned(16)));
 
-void qam64_qpsk(short *stream0_in,
-                short *stream1_in,
-                short *ch_mag,
-                short *stream0_out,
-                short *rho01,
-                int length
-               )
+*/
+
+void qam64_qpsk(int16_t *stream0_in,
+                int16_t *stream1_in,
+                int16_t *ch_mag,
+                int16_t *stream0_out,
+                int16_t *rho01,
+                int32_t length
+		)
 {
 
   /*
-     Author: S. Wagner
-     Date: 31-07-12
+    Author: S. Wagner
+    Date: 31-07-12
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rho01_128i      = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
   __m128i *stream1_128i_in = (__m128i *)stream1_in;
   __m128i *ch_mag_128i     = (__m128i *)ch_mag;
 
-  int i,j;
 
-  ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
-  THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
-  FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
-  SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(5/sqrt(42)*2^15)
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
-  THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
-  FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
-  SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
-  FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
-  THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
-  TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
-  TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
-  SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
-  NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
-  THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
-  FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
-  ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
-  SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
+  __m128i ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
+  __m128i THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
+  __m128i FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
+  __m128i SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(5/sqrt(42)*2^15)
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
+  __m128i THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
+  __m128i TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
+  __m128i TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
+  __m128i SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
+  __m128i NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
+  __m128i THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
+  __m128i FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
+  __m128i ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
+
+
+  __m128i ch_mag_des;
+  __m128i ch_mag_98_over_42_with_sigma2;
+  __m128i ch_mag_74_over_42_with_sigma2;
+  __m128i ch_mag_58_over_42_with_sigma2;
+  __m128i ch_mag_50_over_42_with_sigma2;
+  __m128i ch_mag_34_over_42_with_sigma2;
+  __m128i ch_mag_18_over_42_with_sigma2;
+  __m128i ch_mag_26_over_42_with_sigma2;
+  __m128i ch_mag_10_over_42_with_sigma2;
+  __m128i ch_mag_2_over_42_with_sigma2;
+  __m128i  y0r_one_over_sqrt_21;
+  __m128i  y0r_three_over_sqrt_21;
+  __m128i  y0r_five_over_sqrt_21;
+  __m128i  y0r_seven_over_sqrt_21;
+  __m128i  y0i_one_over_sqrt_21;
+  __m128i  y0i_three_over_sqrt_21;
+  __m128i  y0i_five_over_sqrt_21;
+  __m128i  y0i_seven_over_sqrt_21;
+#elif defined(__arm__)
+
+#endif
+  
+  int i,j;
 
   for (i=0; i<length>>2; i+=2) {
 
+#if defined(__x86_64) || defined(__i386__)
     // Get rho
     xmm0 = rho01_128i[i];
     xmm1 = rho01_128i[i+1];
@@ -4750,6 +4986,7 @@ void qam64_qpsk(short *stream0_in,
 
     y2i = _mm_subs_epi16(logmax_num_re0, logmax_den_re0);
 
+
     // map to output stream, difficult to do in SIMD since we have 6 16bit LLRs
     // RE 1
     j = 24*i;
@@ -4808,25 +5045,29 @@ void qam64_qpsk(short *stream0_in,
     stream0_out[j + 45] = ((short *)&y0i)[7];
     stream0_out[j + 46] = ((short *)&y1i)[7];
     stream0_out[j + 47] = ((short *)&y2i)[7];
+#elif defined(__arm__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 
 int dlsch_64qam_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                         int **rxdataF_comp,
-                         int **rxdataF_comp_i,
-                         int **dl_ch_mag,
-                         int **rho_i,
-                         short *dlsch_llr,
-                         unsigned char symbol,
-                         unsigned char first_symbol_flag,
-                         unsigned short nb_rb,
+                         int32_t **rxdataF_comp,
+                         int32_t **rxdataF_comp_i,
+                         int32_t **dl_ch_mag,
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
                          uint16_t pbch_pss_sss_adjust,
-                         short **llr16p)
+                         int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -4883,23 +5124,25 @@ void qam64_qam16(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-                )
+		 )
 {
 
   /*
-     Author: S. Wagner
-     Date: 31-07-12
+    Author: S. Wagner
+    Date: 31-07-12
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
+
+#if defined(__x86_64__) || defined(__i386__)
 
   __m128i *rho01_128i      = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
@@ -4907,37 +5150,54 @@ void qam64_qam16(short *stream0_in,
   __m128i *ch_mag_128i     = (__m128i *)ch_mag;
   __m128i *ch_mag_128i_i   = (__m128i *)ch_mag_i;
 
+  __m128i ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
+  __m128i THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
+  __m128i FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
+  __m128i SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(5/sqrt(42)*2^15)
+  __m128i FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
+  __m128i THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
+  __m128i TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
+  __m128i TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
+  __m128i SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
+  __m128i NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
+  __m128i THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
+  __m128i FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
+  __m128i ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
+  __m128i ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
+  __m128i THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
+  __m128i SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
+
+
+  __m128i ch_mag_int;
+  __m128i ch_mag_des;
+  __m128i ch_mag_98_over_42_with_sigma2;
+  __m128i ch_mag_74_over_42_with_sigma2;
+  __m128i ch_mag_58_over_42_with_sigma2;
+  __m128i ch_mag_50_over_42_with_sigma2;
+  __m128i ch_mag_34_over_42_with_sigma2;
+  __m128i ch_mag_18_over_42_with_sigma2;
+  __m128i ch_mag_26_over_42_with_sigma2;
+  __m128i ch_mag_10_over_42_with_sigma2;
+  __m128i ch_mag_2_over_42_with_sigma2;
+  __m128i  y0r_one_over_sqrt_21;
+  __m128i  y0r_three_over_sqrt_21;
+  __m128i  y0r_five_over_sqrt_21;
+  __m128i  y0r_seven_over_sqrt_21;
+  __m128i  y0i_one_over_sqrt_21;
+  __m128i  y0i_three_over_sqrt_21;
+  __m128i  y0i_five_over_sqrt_21;
+  __m128i  y0i_seven_over_sqrt_21;
+  
+#elif defined(__arm__)
+
+#endif
   int i,j;
 
-  ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
-  THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
-  FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
-  SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(5/sqrt(42)*2^15)
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
-  THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
-  FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
-  SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
-  FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
-  THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
-  TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
-  TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
-  SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
-  NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
-  THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
-  FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
-  ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
-  SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
-  ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(10362); // round(1/sqrt(10)*2^15)
-  THREE_OVER_SQRT_10 = _mm_set1_epi16(31086); // round(3/sqrt(10)*2^15)
-  SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15)
-  //    ONE_OVER_SQRT_10_Q15 = _mm_set1_epi16(7327); // round(1/sqrt(10)*2^15)
-  //    THREE_OVER_SQRT_10 = _mm_set1_epi16(21981); // round(3/sqrt(10)*2^15)
-  //    SQRT_10_OVER_FOUR = _mm_set1_epi16(25905); // round(sqrt(10)/4*2^15) Q3.13
 
 
   for (i=0; i<length>>2; i+=2) {
 
+#if defined(__x86_64__) || defined(__i386__)
     // Get rho
     xmm0 = rho01_128i[i];
     xmm1 = rho01_128i[i+1];
@@ -6268,6 +6528,7 @@ void qam64_qam16(short *stream0_in,
 
     y2i = _mm_subs_epi16(logmax_num_re0, logmax_den_re0);
 
+
     // map to output stream, difficult to do in SIMD since we have 6 16bit LLRs
     // RE 1
     j = 24*i;
@@ -6326,26 +6587,32 @@ void qam64_qam16(short *stream0_in,
     stream0_out[j + 45] = ((short *)&y0i)[7];
     stream0_out[j + 46] = ((short *)&y1i)[7];
     stream0_out[j + 47] = ((short *)&y2i)[7];
+
+#elif defined(__arm__)
+
+#endif
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 
 }
 
 
 int dlsch_64qam_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,
-                          int **dl_ch_mag_i,
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
+                          int32_t **rxdataF_comp,
+                          int32_t **rxdataF_comp_i,
+                          int32_t **dl_ch_mag,
+                          int32_t **dl_ch_mag_i,
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t symbol,
+                          uint8_t first_symbol_flag,
+                          uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p)
+                          int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
@@ -6402,23 +6669,25 @@ void qam64_qam64(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-                )
+		 )
 {
 
   /*
-     Author: S. Wagner
-     Date: 31-07-12
+    Author: S. Wagner
+    Date: 31-07-12
 
-     Input:
-     stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
-     stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
-     ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
-     rho01:       Channel cross correlation, i.e., h1'*h0
+    Input:
+    stream0_in:  MF filter for 1st stream, i.e., y0=h0'*y
+    stream1_in:  MF filter for 2nd stream, i.e., y1=h1'*y
+    ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    ch_mag_i:    4*h1/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+    rho01:       Channel cross correlation, i.e., h1'*h0
 
-     Output:
-     stream0_out: output LLRs for 1st stream
+    Output:
+    stream0_out: output LLRs for 1st stream
   */
+
+#if defined(__x86_64__) || defined(__i386__)
 
   __m128i *rho01_128i      = (__m128i *)rho01;
   __m128i *stream0_128i_in = (__m128i *)stream0_in;
@@ -6426,29 +6695,58 @@ void qam64_qam64(short *stream0_in,
   __m128i *ch_mag_128i     = (__m128i *)ch_mag;
   __m128i *ch_mag_128i_i   = (__m128i *)ch_mag_i;
 
+  __m128i ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
+  __m128i THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
+  __m128i FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
+  __m128i SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(7/sqrt(42)*2^14) Q2.14
+  __m128i ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
+  __m128i ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
+  __m128i THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
+  __m128i FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
+  __m128i SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
+  __m128i FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
+  __m128i THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
+  __m128i TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
+  __m128i TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
+  __m128i SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
+  __m128i NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
+  __m128i THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
+  __m128i FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
+  __m128i ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
+  __m128i SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
+
+  __m128i ch_mag_des;
+  __m128i ch_mag_int;
+  __m128i ch_mag_98_over_42_with_sigma2;
+  __m128i ch_mag_74_over_42_with_sigma2;
+  __m128i ch_mag_58_over_42_with_sigma2;
+  __m128i ch_mag_50_over_42_with_sigma2;
+  __m128i ch_mag_34_over_42_with_sigma2;
+  __m128i ch_mag_18_over_42_with_sigma2;
+  __m128i ch_mag_26_over_42_with_sigma2;
+  __m128i ch_mag_10_over_42_with_sigma2;
+  __m128i ch_mag_2_over_42_with_sigma2;
+  __m128i  y0r_one_over_sqrt_21;
+  __m128i  y0r_three_over_sqrt_21;
+  __m128i  y0r_five_over_sqrt_21;
+  __m128i  y0r_seven_over_sqrt_21;
+  __m128i  y0i_one_over_sqrt_21;
+  __m128i  y0i_three_over_sqrt_21;
+  __m128i  y0i_five_over_sqrt_21;
+  __m128i  y0i_seven_over_sqrt_21;
+  __m128i ch_mag_int_with_sigma2;
+  __m128i two_ch_mag_int_with_sigma2;
+  __m128i three_ch_mag_int_with_sigma2;  
+#elif defined(__arm__)
+
+#endif
+
   int i,j;
 
-  ONE_OVER_SQRT_42 = _mm_set1_epi16(10112); // round(1/sqrt(42)*2^16)
-  THREE_OVER_SQRT_42 = _mm_set1_epi16(30337); // round(3/sqrt(42)*2^16)
-  FIVE_OVER_SQRT_42 = _mm_set1_epi16(25281); // round(5/sqrt(42)*2^15)
-  SEVEN_OVER_SQRT_42 = _mm_set1_epi16(17697); // round(7/sqrt(42)*2^14) Q2.14
-  ONE_OVER_SQRT_2 = _mm_set1_epi16(23170); // round(1/sqrt(2)*2^15)
-  ONE_OVER_SQRT_2_42 = _mm_set1_epi16(3575); // round(1/sqrt(2*42)*2^15)
-  THREE_OVER_SQRT_2_42 = _mm_set1_epi16(10726); // round(3/sqrt(2*42)*2^15)
-  FIVE_OVER_SQRT_2_42 = _mm_set1_epi16(17876); // round(5/sqrt(2*42)*2^15)
-  SEVEN_OVER_SQRT_2_42 = _mm_set1_epi16(25027); // round(7/sqrt(2*42)*2^15)
-  FORTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(30969); // round(49/(4*sqrt(42))*2^14), Q2.14
-  THIRTYSEVEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(23385); // round(37/(4*sqrt(42))*2^14), Q2.14
-  TWENTYFIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(31601); // round(25/(4*sqrt(42))*2^15)
-  TWENTYNINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(18329); // round(29/(4*sqrt(42))*2^15), Q2.14
-  SEVENTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(21489); // round(17/(4*sqrt(42))*2^15)
-  NINE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(11376); // round(9/(4*sqrt(42))*2^15)
-  THIRTEEN_OVER_FOUR_SQRT_42 = _mm_set1_epi16(16433); // round(13/(4*sqrt(42))*2^15)
-  FIVE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(6320); // round(5/(4*sqrt(42))*2^15)
-  ONE_OVER_FOUR_SQRT_42 = _mm_set1_epi16(1264); // round(1/(4*sqrt(42))*2^15)
-  SQRT_42_OVER_FOUR = _mm_set1_epi16(13272); // round(sqrt(42)/4*2^13), Q3.12
 
   for (i=0; i<length>>2; i+=2) {
+
+#if defined(__x86_64__) || defined(__i386__)
 
     // Get rho
     xmm0 = rho01_128i[i];
@@ -8043,6 +8341,7 @@ void qam64_qam64(short *stream0_in,
 
     y2i = _mm_subs_epi16(logmax_num_re0, logmax_den_re0);
 
+
     // map to output stream, difficult to do in SIMD since we have 6 16bit LLRs
     // RE 1
     j = 24*i;
@@ -8101,26 +8400,32 @@ void qam64_qam64(short *stream0_in,
     stream0_out[j + 45] = ((short *)&y0i)[7];
     stream0_out[j + 46] = ((short *)&y1i)[7];
     stream0_out[j + 47] = ((short *)&y2i)[7];
+
+#elif defined(__arm__)
+
+#endif
+
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 
 int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,
-                          int **dl_ch_mag_i,
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
+                          int32_t **rxdataF_comp,
+                          int32_t **rxdataF_comp_i,
+                          int32_t **dl_ch_mag,
+                          int32_t **dl_ch_mag_i,
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t symbol,
+                          uint8_t first_symbol_flag,
+                          uint16_t nb_rb,
                           uint16_t pbch_pss_sss_adjust,
-                          short **llr16p)
+                          int16_t **llr16p)
 {
 
   int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];

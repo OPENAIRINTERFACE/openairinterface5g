@@ -50,8 +50,8 @@ int s11_sgw_handle_create_session_request(NwGtpv2cStackHandleT *stack_p,
     NwGtpv2cUlpApiT      *pUlpApi)
 {
   NwRcT  rc = NW_OK;
-  NwU8T  offendingIeType, offendingIeInstance;
-  NwU16T offendingIeLength;
+  uint8_t  offendingIeType, offendingIeInstance;
+  uint16_t offendingIeLength;
 
   SgwCreateSessionRequest *create_session_request_p;
   MessageDef              *message_p;
@@ -352,8 +352,8 @@ int s11_sgw_handle_delete_session_request(NwGtpv2cStackHandleT *stack_p,
     NwGtpv2cUlpApiT      *pUlpApi)
 {
   NwRcT  rc = NW_OK;
-  NwU8T  offendingIeType, offendingIeInstance;
-  NwU16T offendingIeLength;
+  uint8_t  offendingIeType, offendingIeInstance;
+  uint16_t offendingIeLength;
 
   SgwDeleteSessionRequest *delete_session_request_p;
   MessageDef              *message_p;

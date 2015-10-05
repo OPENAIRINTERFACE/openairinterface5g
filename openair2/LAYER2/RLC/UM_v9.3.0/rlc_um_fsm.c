@@ -26,14 +26,13 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_FSM_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_FSM_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_um.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
-//-----------------------------------------------------------------------------
 
 
 //-----------------------------------------------------------------------------
@@ -42,7 +41,6 @@ rlc_um_fsm_notify_event (
   const protocol_ctxt_t* const ctxt_pP,
   rlc_um_entity_t *rlc_pP, uint8_t eventP)
 {
-  //-----------------------------------------------------------------------------
 
   switch (rlc_pP->protocol_state) {
     //-------------------------------

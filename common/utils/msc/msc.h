@@ -30,12 +30,13 @@
 #ifndef MSC_H_
 #define MSC_H_
 #include <stdarg.h>
+#include <stdint.h>
 
 typedef enum {
 	MIN_MSC_ENV = 0,
     MSC_E_UTRAN = MIN_MSC_ENV,
     MSC_E_UTRAN_LIPA,
-    MSC_EPC,
+    MSC_MME_GW,
     MSC_MME,
     MSC_SP_GW,
     MAX_MSC_ENV
@@ -81,44 +82,32 @@ typedef enum {
     (CTXT_Pp)->frame, \
     (CTXT_Pp)->subframe
 #if defined(MESSAGE_CHART_GENERATOR)
-int msc_init(msc_env_t envP);
+int msc_init(const msc_env_t envP, const int max_threadsP);
+void msc_start_use(void);
+void msc_flush_messages(void);
 void msc_end(void);
 void msc_log_declare_proto(const msc_proto_t  protoP);
 void msc_log_event(const msc_proto_t  protoP,char *format, ...);
-void msc_log_rx_message(
+void msc_log_message(
+	const char * const message_operationP,
     const msc_proto_t  receiverP,
     const msc_proto_t  senderP,
-    const char*        bytesP,
+    const uint8_t* const bytesP,
     const unsigned int num_bytes,
     char *format, ...);
-void msc_log_rx_discarded_message(
-    const msc_proto_t  receiverP,
-    const msc_proto_t  senderP,
-    const char*        bytesP,
-    const unsigned int num_bytes,
-    char *format, ...);
-void msc_log_tx_message(
-    const msc_proto_t  senderP,
-    const msc_proto_t  receiverP,
-    const char*        bytesP,
-    const unsigned int num_bytes,
-    char *format, ...);
-void msc_log_tx_message_failed(
-    const msc_proto_t  senderP,
-    const msc_proto_t  receiverP,
-    const char*        bytesP,
-    const unsigned int num_bytes,
-    char *format, ...);
-#define MSC_INIT(mScPaRaMs)                                      msc_init(mScPaRaMs)
+
+#define MSC_INIT(arg1,arg2)                                      msc_init(arg1,arg2)
+#define MSC_START_USE                                            msc_start_use
 #define MSC_END                                                  msc_end
 #define MSC_LOG_EVENT(mScPaRaMs, fORMAT, aRGS...)                msc_log_event(mScPaRaMs, fORMAT, ##aRGS)
-#define MSC_LOG_RX_MESSAGE(mScPaRaMs, fORMAT, aRGS...)           msc_log_rx_message(mScPaRaMs, fORMAT, ##aRGS)
-#define MSC_LOG_RX_DISCARDED_MESSAGE(mScPaRaMs, fORMAT, aRGS...) msc_log_rx_discarded_message(mScPaRaMs, fORMAT, ##aRGS)
-#define MSC_LOG_TX_MESSAGE(mScPaRaMs, fORMAT, aRGS...)           msc_log_tx_message(mScPaRaMs, fORMAT, ##aRGS)
-#define MSC_LOG_TX_MESSAGE_FAILED(mScPaRaMs, fORMAT, aRGS...)    msc_log_tx_message_failed(mScPaRaMs, fORMAT, ##aRGS)
+#define MSC_LOG_RX_MESSAGE(rECEIVER, sENDER, bYTES, nUMbYTES, fORMAT, aRGS...)           msc_log_message("<-",rECEIVER, sENDER, bYTES, nUMbYTES, fORMAT, ##aRGS)
+#define MSC_LOG_RX_DISCARDED_MESSAGE(rECEIVER, sENDER, bYTES, nUMbYTES, fORMAT, aRGS...) msc_log_message("x-",rECEIVER, sENDER, bYTES, nUMbYTES, fORMAT, ##aRGS)
+#define MSC_LOG_TX_MESSAGE(sENDER, rECEIVER, bYTES, nUMbYTES, fORMAT, aRGS...)           msc_log_message("->",sENDER, rECEIVER, bYTES, nUMbYTES, fORMAT, ##aRGS)
+#define MSC_LOG_TX_MESSAGE_FAILED(sENDER, rECEIVER, bYTES, nUMbYTES, fORMAT, aRGS...)    msc_log_message("-x",sENDER, rECEIVER, bYTES, nUMbYTES, fORMAT, ##aRGS)
 #else
-#define MSC_INIT(mScPaRaMs)
-#define MSC_END
+#define MSC_INIT(arg1,arg2)
+#define MSC_START_USE(mScPaRaMs)
+#define MSC_END(mScPaRaMs)
 #define MSC_LOG_EVENT(mScPaRaMs, fORMAT, aRGS...)
 #define MSC_LOG_RX_MESSAGE(mScPaRaMs, fORMAT, aRGS...)
 #define MSC_LOG_RX_DISCARDED_MESSAGE(mScPaRaMs, fORMAT, aRGS...)

@@ -317,6 +317,10 @@ typedef struct s1ap_register_enb_req_s {
   uint8_t          nb_mme;
   /* List of MME to connect to */
   net_ip_address_t mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
+
+  /* Number of SCTP streams used for a mme association */
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
 } s1ap_register_enb_req_t;
 
 //-------------------------------------------------------------------------------------------//

@@ -214,12 +214,12 @@ function main()
 
   is_tun=`is_tun_interface $ENB_INTERFACE_NAME_FOR_S1_MME  $ENB_INTERFACE_NAME_FOR_S1U`
 #  if [ $is_tun = "1" ]; then
-#    $SUDO openvpn --mktun --dev $ENB_INTERFACE_NAME_FOR_S1U;sync
-#    $SUDO openvpn --mktun --dev $ENB_INTERFACE_NAME_FOR_S1_MME;sync
-#    $SUDO ip -4 addr add $ENB_IPV4_ADDRESS_FOR_S1U/$ENB_IPV4_NETMASK_FOR_S1U        dev $ENB_INTERFACE_NAME_FOR_S1U;sync
-#    $SUDO ip -4 addr add $ENB_IPV4_ADDRESS_FOR_S1_MME/$ENB_IPV4_NETMASK_FOR_S1_MME  dev $ENB_INTERFACE_NAME_FOR_S1_MME;sync
-#    $SUDO ifconfig  $ENB_INTERFACE_NAME_FOR_S1U up;sync
-#    $SUDO ifconfig  $ENB_INTERFACE_NAME_FOR_S1_MME up;sync
+#    openvpn --mktun --dev $ENB_INTERFACE_NAME_FOR_S1U;sync
+#    openvpn --mktun --dev $ENB_INTERFACE_NAME_FOR_S1_MME;sync
+#    ip -4 addr add $ENB_IPV4_ADDRESS_FOR_S1U/$ENB_IPV4_NETMASK_FOR_S1U        dev $ENB_INTERFACE_NAME_FOR_S1U;sync
+#    ip -4 addr add $ENB_IPV4_ADDRESS_FOR_S1_MME/$ENB_IPV4_NETMASK_FOR_S1_MME  dev $ENB_INTERFACE_NAME_FOR_S1_MME;sync
+#    ifconfig  $ENB_INTERFACE_NAME_FOR_S1U up;sync
+#    ifconfig  $ENB_INTERFACE_NAME_FOR_S1_MME up;sync
 #    echo_success "Configured local eNB S1 tun interfaces"
 #  else
 #     echo_success "eNB S1 tun interfaces should be ethernet interfaces (no tunnels configured)"
@@ -228,21 +228,21 @@ function main()
   ##################################################
   # LAUNCH eNB + UE executable
   ##################################################
-  $SUDO pkill oaisim
-  $SUDO rmmod ue_ip > /dev/null 2>&1
+  pkill oaisim
+  rmmod ue_ip > /dev/null 2>&1
 
   echo_success "Bringup UE interface..."
-  $SUDO insmod  $OPENAIR_DIR/targets/bin/ue_ip.ko 
+  insmod  $OPENAIR_DIR/targets/bin/ue_ip.ko 
 
-  $SUDO ip route flush cache
+  ip route flush cache
 
   # Check table 200 lte in /etc/iproute2/rt_tables
   fgrep lte /etc/iproute2/rt_tables  > /dev/null
   if [ $? -ne 0 ]; then
-    $SUDO echo "200 lte " >> /etc/iproute2/rt_tables
+    bash -c echo "200 lte " >> /etc/iproute2/rt_tables
   fi
-  $SUDO ip rule add fwmark 1 table lte
-  $SUDO ip route add default dev oip1 table lte
+  ip rule add fwmark 1 table lte
+  ip route add default dev oip1 table lte
 
   exe_arguments="$exe_arguments -s15 -AAWGN -y1 -b1 -u1 -Q0"
     
@@ -250,19 +250,19 @@ function main()
    
    
   if [ $run_mscgen -eq 1 ]; then 
-    $SUDO rm -f /tmp/openair.msc.*
+    rm -f /tmp/openair.msc.*
   fi
    
   if [ $run_gdb -eq 0 ]; then 
-    exec $SUDO $OPENAIR_DIR/targets/bin/oaisim $exe_arguments | tee /tmp/enb_ue_s1.log.txt
+    exec $OPENAIR_DIR/targets/bin/oaisim.Rel10 $exe_arguments | tee /tmp/enb_ue_s1.log.txt
   else
     touch      ~/.gdb_enb_ue_s1
     chmod 777  ~/.gdb_enb_ue_s1
-    echo "file $OPENAIR_DIR/targets/bin/oaisim" > ~/.gdb_enb_ue_s1
+    echo "file $OPENAIR_DIR/targets/bin/oaisim.Rel10" > ~/.gdb_enb_ue_s1
     echo "set args $exe_arguments" >> ~/.gdb_enb_ue_s1
     echo "run"                        >> ~/.gdb_enb_ue_s1
     cat ~/.gdb_enb_ue_s1
-    $SUDO gdb -n -x ~/.gdb_enb_ue_s1 
+    gdb -n -x ~/.gdb_enb_ue_s1 
   fi
   
   if [ $run_mscgen -eq 1 ]; then 
@@ -280,5 +280,13 @@ function main()
   fi
   
 }
+
+sudo echo
+is_sudo=$?
+if [[ "$is_sudo" -ne 0 ]]; then
+  echo_error "This script must be run by root or a sudo'er"
+  echo
+  exit 1
+fi
 
 main "$@"

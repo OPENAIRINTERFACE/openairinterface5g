@@ -52,7 +52,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   short ch[2], *pil, *rxF, *dl_bf_ch, *dl_bf_ch_prev;
   short *fl, *fm, *fr, *fl_dc, *fm_dc, *fr_dc, *f1, *f2l, *f2r;
 
-  unsigned int *rb_alloc; 
+  unsigned int *rballoc; 
   int **rxdataF;
   int32_t **dl_bf_ch_estimates;
   int uespec_pilot[300];
@@ -64,7 +64,11 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
   harq_pid    = dlsch_ue[0]->current_harq_pid; 
   dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
 
-  rb_alloc = dlsch0_harq->rb_alloc;
+  if (((frame_parms->Ncp == NORMAL) && (symbol>=7)) ||
+      ((frame_parms->Ncp == EXTENDED) && (symbol>=6)))
+    rballoc = dlsch0_harq->rb_alloc_odd;
+  else
+    rballoc = dlsch0_harq->rb_alloc_even;
 
   rxdataF = phy_vars_ue->lte_ue_common_vars.rxdataF;
 
@@ -205,13 +209,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
 
         if (rb < 32)
-          rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
+          rb_alloc_ind = (rballoc[0]>>rb) & 1;
         else if (rb < 64)
-          rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
+          rb_alloc_ind = (rballoc[1]>>(rb-32)) & 1;
         else if (rb < 96)
-          rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
+          rb_alloc_ind = (rballoc[2]>>(rb-64)) & 1;
         else if (rb < 100)
-          rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
+          rb_alloc_ind = (rballoc[3]>>(rb-96)) & 1;
         else
           rb_alloc_ind = 0;
 
@@ -256,13 +260,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         skip_half=0;
 
         if (rb < 32)
-          rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
+          rb_alloc_ind = (rballoc[0]>>rb) & 1;
         else if (rb < 64)
-          rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
+          rb_alloc_ind = (rballoc[1]>>(rb-32)) & 1;
         else if (rb < 96)
-          rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
+          rb_alloc_ind = (rballoc[2]>>(rb-64)) & 1;
         else if (rb < 100)
-          rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
+          rb_alloc_ind = (rballoc[3]>>(rb-96)) & 1;
         else
           rb_alloc_ind = 0;
 
@@ -403,13 +407,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       // Do middle RB (around DC) 
       if (rb < 32)
-        rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
+        rb_alloc_ind = (rballoc[0]>>rb) & 1;
       else if (rb < 64)
-        rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
+        rb_alloc_ind = (rballoc[1]>>(rb-32)) & 1;
       else if (rb < 96)
-        rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
+        rb_alloc_ind = (rballoc[2]>>(rb-64)) & 1;
       else if (rb < 100)
-        rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
+        rb_alloc_ind = (rballoc[3]>>(rb-96)) & 1;
       else
         rb_alloc_ind = 0;
 
@@ -493,13 +497,13 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         skip_half=0;
 
         if (rb < 32)
-          rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
+          rb_alloc_ind = (rballoc[0]>>rb) & 1;
         else if (rb < 64)
-          rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
+          rb_alloc_ind = (rballoc[1]>>(rb-32)) & 1;
         else if (rb < 96)
-          rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
+          rb_alloc_ind = (rballoc[2]>>(rb-64)) & 1;
         else if (rb < 100)
-          rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
+          rb_alloc_ind = (rballoc[3]>>(rb-96)) & 1;
         else
           rb_alloc_ind = 0;
 

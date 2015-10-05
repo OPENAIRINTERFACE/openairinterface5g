@@ -34,10 +34,10 @@
 
 #include "s11_common.h"
 
-NwRcT s11_ie_indication_generic(NwU8T  ieType,
-                                NwU8T  ieLength,
-                                NwU8T  ieInstance,
-                                NwU8T *ieValue,
+NwRcT s11_ie_indication_generic(uint8_t  ieType,
+                                uint8_t  ieLength,
+                                uint8_t  ieInstance,
+                                uint8_t *ieValue,
                                 void  *arg)
 {
   S11_DEBUG("Received IE Parse Indication for of type %u, length %u, "

@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_INIT_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_INIT_C 1
 #ifdef USER_MODE
 #include <string.h>
 #endif
@@ -40,7 +40,6 @@ void
 rlc_am_init(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const        rlc_pP)
-//-----------------------------------------------------------------------------
 {
   if (rlc_pP->initialized == TRUE) {
     LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM INIT] INITIALIZATION ALREADY DONE, DOING NOTHING\n",
@@ -97,7 +96,6 @@ void
 rlc_am_reestablish(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const        rlc_pP)
-//-----------------------------------------------------------------------------
 {
   /*
    * RLC re-establishment is performed upon request by RRC, and the function
@@ -153,7 +151,6 @@ void
 rlc_am_cleanup(
   rlc_am_entity_t* const        rlc_pP
 )
-//-----------------------------------------------------------------------------
 {
   list2_free(&rlc_pP->receiver_buffer);
   list_free(&rlc_pP->pdus_to_mac_layer);
@@ -207,7 +204,6 @@ rlc_am_configure(
   const uint32_t                t_poll_retransmitP,
   const uint32_t                t_reorderingP,
   const uint32_t                t_status_prohibitP)
-//-----------------------------------------------------------------------------
 {
   if (rlc_pP->configured == TRUE) {
     LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[RECONFIGURE] max_retx_threshold %d poll_pdu %d poll_byte %d t_poll_retransmit %d t_reordering %d t_status_prohibit %d\n",
@@ -258,7 +254,6 @@ rlc_am_set_debug_infos(
   rlc_am_entity_t *const        rlc_pP,
   const srb_flag_t              srb_flagP,
   const rb_id_t                 rb_idP)
-//-----------------------------------------------------------------------------
 {
 
   rlc_pP->rb_id         = rb_idP;

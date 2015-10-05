@@ -117,7 +117,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 
 
   //LG s1ap_eNB_itti_send_sctp_close_association(s1ap_eNB_instance_p->instance,
@@ -234,7 +234,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 
   return 0;
 }

@@ -52,6 +52,7 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 //#define DEBUG_PHY
 #include "assertions.h"
+#include <math.h>
 
 #ifdef EXMIMO
 extern openair0_rf_map rf_map[MAX_NUM_CCs];
@@ -127,6 +128,8 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
+  LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
+  int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
   int i;
 
   LOG_D(PHY,"[eNB%d] CCid %d Frame %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id,PHY_vars_eNB_g[Mod_id][CC_id]->proc[8].frame_tx);
@@ -885,10 +888,8 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms)
   ccodelte_init();
   ccodelte_init_inv();
 
-#ifndef EXPRESSMIMO_TARGET
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
-#endif //EXPRESSMIMO_TARGET
 
   init_td8();
   init_td16();
@@ -1234,7 +1235,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
   LTE_eNB_PUSCH** const eNB_pusch_vars  = phy_vars_eNB->lte_eNB_pusch_vars;
   LTE_eNB_SRS* const eNB_srs_vars       = phy_vars_eNB->lte_eNB_srs_vars;
   LTE_eNB_PRACH* const eNB_prach_vars   = &phy_vars_eNB->lte_eNB_prach_vars;
-  int i, j, eNB_id, UE_id;
+  int i, j, eNB_id, UE_id; 
 
   phy_vars_eNB->total_dlsch_bitrate = 0;
   phy_vars_eNB->total_transmitted_bits = 0;

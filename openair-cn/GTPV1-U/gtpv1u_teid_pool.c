@@ -37,7 +37,7 @@
 
 #include "gtpv1u.h"
 
-#define GTPV1U_LINEAR_TEID_ALLOCATION 1
+//#define GTPV1U_LINEAR_TEID_ALLOCATION 1
 
 #ifdef GTPV1U_LINEAR_TEID_ALLOCATION
 static uint32_t g_gtpv1u_teid = 0;

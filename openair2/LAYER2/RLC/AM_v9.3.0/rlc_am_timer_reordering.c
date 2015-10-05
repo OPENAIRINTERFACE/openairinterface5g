@@ -26,10 +26,9 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_TIMER_POLL_REORDERING_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_TIMER_POLL_REORDERING_C 1
 //-----------------------------------------------------------------------------
-//#include "rtos_header.h"
 #include "platform_types.h"
 #include "platform_constants.h"
 //-----------------------------------------------------------------------------
@@ -42,7 +41,6 @@ void
 rlc_am_check_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const rlc_pP)
-//-----------------------------------------------------------------------------
 {
 
   if (rlc_pP->t_reordering.running) {
@@ -73,7 +71,7 @@ rlc_am_check_timer_reordering(
       //         - start t-Reordering;
       //         - set VR(X) to VR(H).
 
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
       MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                              "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering timed out",\
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
@@ -126,7 +124,6 @@ void
 rlc_am_stop_and_reset_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
-//-----------------------------------------------------------------------------
 {
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] STOPPED AND RESET\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
@@ -134,7 +131,7 @@ rlc_am_stop_and_reset_timer_reordering(
   rlc_pP->t_reordering.ms_time_out     = 0;
   rlc_pP->t_reordering.ms_start        = 0;
   rlc_pP->t_reordering.timed_out       = 0;
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
     MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                   "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering stopped & reseted",\
                   PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP));
@@ -145,7 +142,6 @@ void
 rlc_am_start_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_reordering.timed_out       = 0;
 
@@ -157,7 +153,7 @@ rlc_am_start_timer_reordering(
       LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[T-REORDERING] STARTED (TIME-OUT = %5u ms)\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
           rlc_pP->t_reordering.ms_time_out);
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
       MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                              "0 "PROTOCOL_RLC_AM_MSC_FMT" t_reordering started (TO %u ms)",\
                              PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), rlc_pP->t_reordering.ms_time_out);
@@ -174,7 +170,6 @@ rlc_am_init_timer_reordering(
   const protocol_ctxt_t* const ctxt_pP,
   rlc_am_entity_t * const      rlc_pP,
   const uint32_t              ms_durationP)
-//-----------------------------------------------------------------------------
 {
   rlc_pP->t_reordering.running         = 0;
   rlc_pP->t_reordering.ms_time_out     = 0;

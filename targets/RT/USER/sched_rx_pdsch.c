@@ -152,7 +152,7 @@ static void * rx_pdsch_thread(void *param)
     harq_pid = UE->dlsch_ue[eNB_id][0]->current_harq_pid;
     UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->G = get_G(&UE->lte_frame_parms,
         UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb,
-        UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc,
+        UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rb_alloc_even,
         get_Qm(UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
         UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
         UE->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,

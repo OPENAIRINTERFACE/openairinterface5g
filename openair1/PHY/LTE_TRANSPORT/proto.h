@@ -48,7 +48,7 @@
  * @{
  */
 
-/** \fn free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
+/** \fn free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch,unsigned char N_RB_DL)
     \brief This function frees memory allocated for a particular DLSCH at eNB
     @param dlsch Pointer to DLSCH to be removed
 */
@@ -74,9 +74,7 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
 LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
-void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
 
@@ -754,7 +752,7 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
-                     short **llr_save,
+                     int16_t **llr_save,
                      uint8_t beamforming_mode);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
@@ -875,6 +873,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
     @param rb_alloc RB allocation vector
     @param symbol Symbol to extract
     @param subframe Subframe number
+    @param vrb_type Flag to indicate distributed VRB type
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
@@ -1292,7 +1291,7 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
    @param vrb_type VRB type (0=localized,1=distributed)
    @param rb_alloc_dci rballoc field from DCI
 */
-uint32_t get_rballoc(uint8_t vrb_type,uint16_t rb_alloc_dci);
+uint32_t get_rballoc(vrb_t vrb_type,uint16_t rb_alloc_dci);
 
 /* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
    @returns Transmission mode (1-7)
@@ -1401,7 +1400,8 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
 uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,frame_t frame,uint8_t subframe);
 uint8_t subframe2harq_pid_eNBrx(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
-int generate_ue_dlsch_params_from_dci(uint8_t subframe,
+int generate_ue_dlsch_params_from_dci(int frame,
+				      uint8_t subframe,
                                       void *dci_pdu,
                                       rnti_t rnti,
                                       DCI_format_t dci_format,
@@ -1412,7 +1412,8 @@ int generate_ue_dlsch_params_from_dci(uint8_t subframe,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti);
 
-int32_t generate_eNB_dlsch_params_from_dci(uint8_t subframe,
+int32_t generate_eNB_dlsch_params_from_dci(int frame,
+    uint8_t subframe,
     void *dci_pdu,
     rnti_t rnti,
     DCI_format_t dci_format,
@@ -1822,5 +1823,8 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   uint8_t n_antenna_port,
   LTE_UE_DLSCH_t *dlsch_ue);
 */
+
+  uint8_t get_prach_prb_offset(LTE_DL_FRAME_PARMS *frame_parms, uint8_t tdd_mapindex, uint16_t Nf); 
+
 /**@}*/
 #endif

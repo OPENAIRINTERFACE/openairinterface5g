@@ -50,8 +50,8 @@ int s11_sgw_handle_modify_bearer_request(NwGtpv2cStackHandleT *stack_p,
     NwGtpv2cUlpApiT      *pUlpApi)
 {
   NwRcT  rc = NW_OK;
-  NwU8T  offendingIeType, offendingIeInstance;
-  NwU16T offendingIeLength;
+  uint8_t  offendingIeType, offendingIeInstance;
+  uint16_t offendingIeLength;
 
   SgwModifyBearerRequest *modify_bearer_request_p;
   MessageDef             *message_p;

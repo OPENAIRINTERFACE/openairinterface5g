@@ -76,7 +76,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
 
   s1ap_eNB_itti_send_sctp_data_req(ue_desc_p->mme_ref->s1ap_eNB_instance->instance,
                                    ue_desc_p->mme_ref->assoc_id, buffer,
-                                   length, ue_desc_p->stream);
+                                   length, ue_desc_p->tx_stream);
 }
 
 int s1ap_eNB_handle_trace_start(uint32_t               assoc_id,

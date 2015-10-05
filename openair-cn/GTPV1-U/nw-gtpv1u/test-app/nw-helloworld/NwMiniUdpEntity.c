@@ -44,9 +44,9 @@ static
 void NW_TMR_CALLBACK(nwUdpDataIndicationCallbackData)
 {
   NwGtpv1uRcT         rc;
-  NwU8T         udpBuf[MAX_UDP_PAYLOAD_LEN];
+  uint8_t         udpBuf[MAX_UDP_PAYLOAD_LEN];
   NwS32T        bytesRead;
-  NwU32T        peerLen;
+  uint32_t        peerLen;
   struct sockaddr_in peer;
   NwMiniUdpEntityT *thiz = (NwMiniUdpEntityT *) arg;
 
@@ -71,7 +71,7 @@ void NW_TMR_CALLBACK(nwUdpDataIndicationCallbackData)
  *--------------------------------------------------------------------------*/
 
 NwGtpv1uRcT nwMiniUdpInit(NwMiniUdpEntityT *thiz,
-                          NwGtpv1uStackHandleT hGtpv1uStack, NwU8T *ipAddr)
+                          NwGtpv1uStackHandleT hGtpv1uStack, uint8_t *ipAddr)
 {
   int sd;
   struct sockaddr_in addr;
@@ -109,10 +109,10 @@ NwGtpv1uRcT nwMiniUdpDestroy(NwMiniUdpEntityT *thiz)
 }
 
 NwGtpv1uRcT nwMiniUdpDataReq(NwGtpv1uUdpHandleT udpHandle,
-                             NwU8T *dataBuf,
-                             NwU32T dataSize,
-                             NwU32T peerIpAddr,
-                             NwU32T peerPort)
+                             uint8_t *dataBuf,
+                             uint32_t dataSize,
+                             uint32_t peerIpAddr,
+                             uint32_t peerPort)
 {
   struct sockaddr_in peerAddr;
   NwS32T bytesSent;

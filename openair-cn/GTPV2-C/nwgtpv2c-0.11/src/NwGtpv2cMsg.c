@@ -62,10 +62,10 @@ static NwGtpv2cMsgT* gpGtpv2cMsgPool = NULL;
 
 NwRcT
 nwGtpv2cMsgNew( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                NW_IN NwU8T     teidPresent,
-                NW_IN NwU8T     msgType,
-                NW_IN NwU32T    teid,
-                NW_IN NwU32T    seqNum,
+                NW_IN uint8_t     teidPresent,
+                NW_IN uint8_t     msgType,
+                NW_IN uint32_t    teid,
+                NW_IN uint32_t    seqNum,
                 NW_OUT NwGtpv2cMsgHandleT *phMsg)
 {
   NwGtpv2cStackT* pStack = (NwGtpv2cStackT*) hGtpcStackHandle;
@@ -101,8 +101,8 @@ nwGtpv2cMsgNew( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cMsgFromBufferNew( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                          NW_IN NwU8T* pBuf,
-                          NW_IN NwU32T bufLen,
+                          NW_IN uint8_t* pBuf,
+                          NW_IN uint32_t bufLen,
                           NW_OUT NwGtpv2cMsgHandleT *phMsg)
 {
   NwGtpv2cStackT* pStack = (NwGtpv2cStackT*) hGtpcStackHandle;
@@ -130,11 +130,11 @@ nwGtpv2cMsgFromBufferNew( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
     pBuf += 3;
 
     if(pMsg->teidPresent) {
-      pMsg->teid          = ntohl(*((NwU32T*)(pBuf)));
+      pMsg->teid          = ntohl(*((uint32_t*)(pBuf)));
       pBuf += 4;
     }
 
-    memcpy(((NwU8T*)&pMsg->seqNum) + 1, pBuf, 3);
+    memcpy(((uint8_t*)&pMsg->seqNum) + 1, pBuf, 3);
     pMsg->seqNum  = ntohl(pMsg->seqNum);
 
     pMsg->hStack        = hGtpcStackHandle;
@@ -166,7 +166,7 @@ nwGtpv2cMsgDelete( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
  */
 
 NwRcT
-nwGtpv2cMsgSetTeid(NW_IN NwGtpv2cMsgHandleT hMsg, NwU32T teid)
+nwGtpv2cMsgSetTeid(NW_IN NwGtpv2cMsgHandleT hMsg, uint32_t teid)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   thiz->teid = teid;
@@ -196,7 +196,7 @@ nwGtpv2cMsgSetTeidPresent(NW_IN NwGtpv2cMsgHandleT hMsg, NwBoolT teidPresent)
  */
 
 NwRcT
-nwGtpv2cMsgSetSeqNumber(NW_IN NwGtpv2cMsgHandleT hMsg, NwU32T seqNum)
+nwGtpv2cMsgSetSeqNumber(NW_IN NwGtpv2cMsgHandleT hMsg, uint32_t seqNum)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   thiz->seqNum = seqNum;
@@ -209,7 +209,7 @@ nwGtpv2cMsgSetSeqNumber(NW_IN NwGtpv2cMsgHandleT hMsg, NwU32T seqNum)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv2cMsgGetTeid(NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
@@ -235,7 +235,7 @@ nwGtpv2cMsgGetTeidPresent(NW_IN NwGtpv2cMsgHandleT hMsg)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv2cMsgGetSeqNumber(NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
@@ -248,7 +248,7 @@ nwGtpv2cMsgGetSeqNumber(NW_IN NwGtpv2cMsgHandleT hMsg)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv2cMsgGetMsgType(NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
@@ -261,7 +261,7 @@ nwGtpv2cMsgGetMsgType(NW_IN NwGtpv2cMsgHandleT hMsg)
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv2cMsgGetLength(NW_IN NwGtpv2cMsgHandleT hMsg)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
@@ -271,9 +271,9 @@ nwGtpv2cMsgGetLength(NW_IN NwGtpv2cMsgHandleT hMsg)
 
 NwRcT
 nwGtpv2cMsgAddIeTV1(NW_IN NwGtpv2cMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU8T       instance,
-                    NW_IN NwU8T       value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint8_t       instance,
+                    NW_IN uint8_t       value)
 {
   NwGtpv2cMsgT *pMsg = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv1T *pIe;
@@ -292,9 +292,9 @@ nwGtpv2cMsgAddIeTV1(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgAddIeTV2(NW_IN NwGtpv2cMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU8T       instance,
-                    NW_IN NwU16T      value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint8_t       instance,
+                    NW_IN uint16_t      value)
 {
   NwGtpv2cMsgT *pMsg = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv2T *pIe;
@@ -313,9 +313,9 @@ nwGtpv2cMsgAddIeTV2(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgAddIeTV4(NW_IN NwGtpv2cMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU8T       instance,
-                    NW_IN NwU32T      value)
+                    NW_IN uint8_t       type,
+                    NW_IN uint8_t       instance,
+                    NW_IN uint32_t      value)
 {
   NwGtpv2cMsgT *pMsg = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv4T *pIe;
@@ -334,10 +334,10 @@ nwGtpv2cMsgAddIeTV4(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgAddIe(NW_IN NwGtpv2cMsgHandleT hMsg,
-                 NW_IN NwU8T       type,
-                 NW_IN NwU16T      length,
-                 NW_IN NwU8T       instance,
-                 NW_IN NwU8T*      pVal)
+                 NW_IN uint8_t       type,
+                 NW_IN uint16_t      length,
+                 NW_IN uint8_t       instance,
+                 NW_IN uint8_t*      pVal)
 {
   NwGtpv2cMsgT *pMsg = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -348,7 +348,7 @@ nwGtpv2cMsgAddIe(NW_IN NwGtpv2cMsgHandleT hMsg,
   pIe->l        = htons(length);
   pIe->i        = instance & 0x00ff;
 
-  memcpy(((NwU8T*)pIe) + 4, pVal, length);
+  memcpy(((uint8_t*)pIe) + 4, pVal, length);
   pMsg->msgLen += (4 + length);
 
   return NW_OK;
@@ -356,8 +356,8 @@ nwGtpv2cMsgAddIe(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGroupedIeStart(NW_IN NwGtpv2cMsgHandleT hMsg,
-                          NW_IN NwU8T       type,
-                          NW_IN NwU8T       instance)
+                          NW_IN uint8_t       type,
+                          NW_IN uint8_t       instance)
 {
   NwGtpv2cMsgT *pMsg = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -395,13 +395,13 @@ nwGtpv2cMsgGroupedIeEnd(NW_IN NwGtpv2cMsgHandleT hMsg)
 
 NwRcT
 nwGtpv2cMsgAddIeCause(NW_IN NwGtpv2cMsgHandleT hMsg,
-                      NW_IN NwU8T instance,
-                      NW_IN NwU8T causeValue,
-                      NW_IN NwU8T bitFlags,
-                      NW_IN NwU8T offendingIeType,
-                      NW_IN NwU8T offendingIeInstance)
+                      NW_IN uint8_t instance,
+                      NW_IN uint8_t causeValue,
+                      NW_IN uint8_t bitFlags,
+                      NW_IN uint8_t offendingIeType,
+                      NW_IN uint8_t offendingIeInstance)
 {
-  NwU8T causeBuf[8];
+  uint8_t causeBuf[8];
 
   causeBuf[0] = causeValue;
   causeBuf[1] = bitFlags;
@@ -418,25 +418,25 @@ nwGtpv2cMsgAddIeCause(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgAddIeFteid(NW_IN NwGtpv2cMsgHandleT hMsg,
-                      NW_IN NwU8T       instance,
-                      NW_IN NwU8T       ifType,
-                      NW_IN NwU32T      teidOrGreKey,
-                      NW_IN NwU32T      ipv4Addr,
-                      NW_IN NwU8T*      pIpv6Addr)
+                      NW_IN uint8_t       instance,
+                      NW_IN uint8_t       ifType,
+                      NW_IN uint32_t      teidOrGreKey,
+                      NW_IN uint32_t      ipv4Addr,
+                      NW_IN uint8_t*      pIpv6Addr)
 {
 
-  NwU8T fteidBuf[32];
-  NwU8T *pFteidBuf = fteidBuf;
+  uint8_t fteidBuf[32];
+  uint8_t *pFteidBuf = fteidBuf;
 
   fteidBuf[0] = (ifType & 0x1F);
   pFteidBuf++;
 
-  *((NwU32T*)(pFteidBuf)) = htonl((teidOrGreKey));
+  *((uint32_t*)(pFteidBuf)) = htonl((teidOrGreKey));
   pFteidBuf += 4;
 
   if(ipv4Addr) {
     fteidBuf[0] |= (0x01 << 7);
-    *((NwU32T*)(pFteidBuf)) = htonl(ipv4Addr);
+    *((uint32_t*)(pFteidBuf)) = htonl(ipv4Addr);
     pFteidBuf += 4;
   }
 
@@ -452,8 +452,8 @@ nwGtpv2cMsgAddIeFteid(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwBoolT
 nwGtpv2cMsgIsIePresent(NW_IN NwGtpv2cMsgHandleT hMsg,
-                       NW_IN NwU8T type,
-                       NW_IN NwU8T instance)
+                       NW_IN uint8_t type,
+                       NW_IN uint8_t instance)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
 
@@ -465,9 +465,9 @@ nwGtpv2cMsgIsIePresent(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTV1(NW_IN NwGtpv2cMsgHandleT hMsg,
-                    NW_IN NwU8T type,
-                    NW_IN NwU8T instance,
-                    NW_OUT NwU8T* pVal)
+                    NW_IN uint8_t type,
+                    NW_IN uint8_t instance,
+                    NW_OUT uint8_t* pVal)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv1T *pIe;
@@ -489,9 +489,9 @@ nwGtpv2cMsgGetIeTV1(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTV2( NW_IN NwGtpv2cMsgHandleT hMsg,
-                     NW_IN NwU8T type,
-                     NW_IN NwU8T instance,
-                     NW_OUT NwU16T* pVal)
+                     NW_IN uint8_t type,
+                     NW_IN uint8_t instance,
+                     NW_OUT uint16_t* pVal)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv2T *pIe;
@@ -513,9 +513,9 @@ nwGtpv2cMsgGetIeTV2( NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTV4( NW_IN NwGtpv2cMsgHandleT hMsg,
-                     NW_IN NwU8T type,
-                     NW_IN NwU8T instance,
-                     NW_OUT NwU32T* pVal)
+                     NW_IN uint8_t type,
+                     NW_IN uint8_t instance,
+                     NW_OUT uint32_t* pVal)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv4T *pIe;
@@ -537,9 +537,9 @@ nwGtpv2cMsgGetIeTV4( NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTV8( NW_IN NwGtpv2cMsgHandleT hMsg,
-                     NW_IN NwU8T type,
-                     NW_IN NwU8T instance,
-                     NW_OUT NwU64T* pVal)
+                     NW_IN uint8_t type,
+                     NW_IN uint8_t instance,
+                     NW_OUT uint64_t* pVal)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTv8T *pIe;
@@ -562,11 +562,11 @@ nwGtpv2cMsgGetIeTV8( NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTlv( NW_IN NwGtpv2cMsgHandleT hMsg,
-                     NW_IN NwU8T type,
-                     NW_IN NwU8T instance,
-                     NW_IN NwU16T maxLen,
-                     NW_OUT NwU8T* pVal,
-                     NW_OUT NwU16T* pLen)
+                     NW_IN uint8_t type,
+                     NW_IN uint8_t instance,
+                     NW_IN uint16_t maxLen,
+                     NW_OUT uint8_t* pVal,
+                     NW_OUT uint16_t* pLen)
 {
   NwGtpv2cMsgT *thiz  = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -576,7 +576,7 @@ nwGtpv2cMsgGetIeTlv( NW_IN NwGtpv2cMsgHandleT hMsg,
     pIe = (NwGtpv2cIeTlvT*) thiz->pIe[type][instance];
 
     if(ntohs(pIe->l) <= maxLen) {
-      if(pVal) memcpy(pVal, ((NwU8T*) pIe) + 4, ntohs(pIe->l));
+      if(pVal) memcpy(pVal, ((uint8_t*) pIe) + 4, ntohs(pIe->l));
 
       if(pLen) *pLen = ntohs(pIe->l);
 
@@ -589,10 +589,10 @@ nwGtpv2cMsgGetIeTlv( NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeTlvP( NW_IN NwGtpv2cMsgHandleT hMsg,
-                      NW_IN NwU8T type,
-                      NW_IN NwU8T instance,
-                      NW_OUT NwU8T** ppVal,
-                      NW_OUT NwU16T* pLen)
+                      NW_IN uint8_t type,
+                      NW_IN uint8_t instance,
+                      NW_OUT uint8_t** ppVal,
+                      NW_OUT uint16_t* pLen)
 {
   NwGtpv2cMsgT *thiz  = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -601,7 +601,7 @@ nwGtpv2cMsgGetIeTlvP( NW_IN NwGtpv2cMsgHandleT hMsg,
   if(thiz->isIeValid[type][instance]) {
     pIe = (NwGtpv2cIeTlvT*) thiz->pIe[type][instance];
 
-    if(ppVal) *ppVal = ((NwU8T*) pIe) + 4;
+    if(ppVal) *ppVal = ((uint8_t*) pIe) + 4;
 
     if(pLen)  *pLen  = ntohs(pIe->l);
 
@@ -613,11 +613,11 @@ nwGtpv2cMsgGetIeTlvP( NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeCause(NW_IN NwGtpv2cMsgHandleT hMsg,
-                      NW_IN  NwU8T       instance,
-                      NW_OUT NwU8T*      causeValue,
-                      NW_OUT NwU8T*      flags,
-                      NW_OUT NwU8T*      offendingIeType,
-                      NW_OUT NwU8T*      offendingIeInstance)
+                      NW_IN  uint8_t       instance,
+                      NW_OUT uint8_t*      causeValue,
+                      NW_OUT uint8_t*      flags,
+                      NW_OUT uint8_t*      offendingIeType,
+                      NW_OUT uint8_t*      offendingIeInstance)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -626,12 +626,12 @@ nwGtpv2cMsgGetIeCause(NW_IN NwGtpv2cMsgHandleT hMsg,
 
   if(thiz->isIeValid[NW_GTPV2C_IE_CAUSE][instance]) {
     pIe = (NwGtpv2cIeTlvT*) thiz->pIe[NW_GTPV2C_IE_CAUSE][instance];
-    *causeValue = *((NwU8T*)(((NwU8T*)pIe) + 4));
-    *flags      = *((NwU8T*)(((NwU8T*)pIe) + 5));
+    *causeValue = *((uint8_t*)(((uint8_t*)pIe) + 4));
+    *flags      = *((uint8_t*)(((uint8_t*)pIe) + 5));
 
     if(pIe->l == 6) {
-      *offendingIeType    = *((NwU8T*)(((NwU8T*)pIe) + 6));
-      *offendingIeType    = *((NwU8T*)(((NwU8T*)pIe) + 8));
+      *offendingIeType    = *((uint8_t*)(((uint8_t*)pIe) + 6));
+      *offendingIeType    = *((uint8_t*)(((uint8_t*)pIe) + 8));
     }
 
     return NW_OK;
@@ -642,11 +642,11 @@ nwGtpv2cMsgGetIeCause(NW_IN NwGtpv2cMsgHandleT hMsg,
 
 NwRcT
 nwGtpv2cMsgGetIeFteid(NW_IN NwGtpv2cMsgHandleT hMsg,
-                      NW_IN  NwU8T       instance,
-                      NW_OUT NwU8T*      ifType,
-                      NW_OUT NwU32T*     teidOrGreKey,
-                      NW_OUT NwU32T*     ipv4Addr,
-                      NW_OUT NwU8T*      pIpv6Addr)
+                      NW_IN  uint8_t       instance,
+                      NW_OUT uint8_t*      ifType,
+                      NW_OUT uint32_t*     teidOrGreKey,
+                      NW_OUT uint32_t*     ipv4Addr,
+                      NW_OUT uint8_t*      pIpv6Addr)
 {
   NwGtpv2cMsgT *thiz = (NwGtpv2cMsgT*) hMsg;
   NwGtpv2cIeTlvT *pIe;
@@ -655,17 +655,17 @@ nwGtpv2cMsgGetIeFteid(NW_IN NwGtpv2cMsgHandleT hMsg,
 
   if(thiz->isIeValid[NW_GTPV2C_IE_FTEID][instance]) {
     pIe = (NwGtpv2cIeTlvT*) thiz->pIe[NW_GTPV2C_IE_FTEID][instance];
-    NwU8T flags;
-    NwU8T* pIeValue     = ((NwU8T*) pIe) + 4;
+    uint8_t flags;
+    uint8_t* pIeValue     = ((uint8_t*) pIe) + 4;
     flags               = (*pIeValue) & 0xE0;
     *ifType             = (*pIeValue) & 0x1F;
     pIeValue += 1;
 
-    *teidOrGreKey       = ntohl(*((NwU32T*)(pIeValue)));
+    *teidOrGreKey       = ntohl(*((uint32_t*)(pIeValue)));
     pIeValue += 4;
 
     if(flags & 0x80) {
-      *ipv4Addr           = ntohl(*((NwU32T*)(pIeValue)));
+      *ipv4Addr           = ntohl(*((uint32_t*)(pIeValue)));
       pIeValue += 4;
     }
 
@@ -680,8 +680,8 @@ nwGtpv2cMsgHexDump(NwGtpv2cMsgHandleT hMsg, FILE* fp)
 {
 
   NwGtpv2cMsgT* pMsg = (NwGtpv2cMsgT*) hMsg;
-  NwU8T* data = pMsg->msgBuf;
-  NwU32T size = pMsg->msgLen;
+  uint8_t* data = pMsg->msgBuf;
+  uint32_t size = pMsg->msgLen;
 
   unsigned char *p = (unsigned char*)data;
   unsigned char c;

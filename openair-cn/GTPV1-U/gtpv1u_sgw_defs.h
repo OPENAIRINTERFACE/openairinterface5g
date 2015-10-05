@@ -48,12 +48,12 @@ typedef enum {
   BEARER_MAX,
 } bearer_state_t;
 
-#define BUFFER_TO_NwU32T(buf, x) \
+#define BUFFER_TO_uint32_t(buf, x) \
 do {                            \
-    x = ((NwU32T)((buf)[0]) ) |      \
-        ((NwU32T)((buf)[1]) << 8) |      \
-        ((NwU32T)((buf)[2]) << 16)  |      \
-        ((NwU32T)((buf)[3]) << 24);             \
+    x = ((uint32_t)((buf)[0]) ) |      \
+        ((uint32_t)((buf)[1]) << 8) |      \
+        ((uint32_t)((buf)[2]) << 16)  |      \
+        ((uint32_t)((buf)[3]) << 24);             \
 } while(0)
 
 

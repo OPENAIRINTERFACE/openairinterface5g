@@ -43,6 +43,7 @@
 #include "mme_app_extern.h"
 #include "mme_app_ue_context.h"
 #include "mme_app_defs.h"
+#include "sgw_lite_ie_defs.h"
 
 #include "secu_defs.h"
 
@@ -246,6 +247,13 @@ mme_app_send_s11_create_session_req(
     }
   }
 
+  if ((ue_context_pP->pending_pdn_connectivity_req_pco.length >= PCO_MIN_LENGTH) && (ue_context_pP->pending_pdn_connectivity_req_pco.length <= PCO_MAX_LENGTH)) {
+	  memcpy(&session_request_p->pco.byte[0],
+			  &ue_context_pP->pending_pdn_connectivity_req_pco.byte[0],
+			  ue_context_pP->pending_pdn_connectivity_req_pco.length);
+	  session_request_p->pco.length = ue_context_pP->pending_pdn_connectivity_req_pco.length;
+  }
+
   config_read_lock(&mme_config);
   session_request_p->peer_ip = mme_config.ipv4.sgw_ip_address_for_S11;
   config_unlock(&mme_config);
@@ -320,6 +328,11 @@ mme_app_handle_nas_pdn_connectivity_req(
   FREE_OCTET_STRING(nas_pdn_connectivity_req_pP->pdn_addr)
   ue_context_p->pending_pdn_connectivity_req_pti          = nas_pdn_connectivity_req_pP->pti;
   ue_context_p->pending_pdn_connectivity_req_ue_id        = nas_pdn_connectivity_req_pP->ue_id;
+
+  memcpy(&ue_context_p->pending_pdn_connectivity_req_pco.byte[0],
+         &nas_pdn_connectivity_req_pP->pco.byte[0],
+         nas_pdn_connectivity_req_pP->pco.length);
+  ue_context_p->pending_pdn_connectivity_req_pco.length = nas_pdn_connectivity_req_pP->pco.length;
 
   memcpy(&ue_context_p->pending_pdn_connectivity_req_qos,
          &nas_pdn_connectivity_req_pP->qos,
@@ -758,6 +771,11 @@ mme_app_handle_create_sess_resp(
     NAS_PDN_CONNECTIVITY_RSP(message_p).ambr.br_ul = ue_context_p->subscribed_ambr.br_ul;
     NAS_PDN_CONNECTIVITY_RSP(message_p).ambr.br_dl = ue_context_p->subscribed_ambr.br_dl;
 
+
+    memcpy(&NAS_PDN_CONNECTIVITY_RSP(message_p).pco.byte[0],
+           &create_sess_resp_pP->pco.byte[0],
+           create_sess_resp_pP->pco.length);
+    NAS_PDN_CONNECTIVITY_RSP(message_p).pco.length = create_sess_resp_pP->pco.length;
 
     MSC_LOG_TX_MESSAGE(
     		MSC_MMEAPP_MME,

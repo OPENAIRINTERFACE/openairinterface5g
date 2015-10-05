@@ -40,21 +40,21 @@ NwMiniLogMgrT* nwMiniLogMgrGetInstance()
   return &(__gLogMgr);
 }
 
-NwRcT nwMiniLogMgrInit(NwMiniLogMgrT* thiz, NwU32T logLevel )
+NwRcT nwMiniLogMgrInit(NwMiniLogMgrT* thiz, uint32_t logLevel )
 {
   thiz->logLevel = logLevel;
   return NW_OK;
 }
 
-NwRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT* thiz, NwU32T logLevel)
+NwRcT nwMiniLogMgrSetLogLevel(NwMiniLogMgrT* thiz, uint32_t logLevel)
 {
   thiz->logLevel = logLevel;
 }
 
 NwRcT nwMiniLogMgrLogRequest (NwGtpv2cLogMgrHandleT hLogMgr,
-                              NwU32T logLevel,
+                              uint32_t logLevel,
                               NwCharT* file,
-                              NwU32T line,
+                              uint32_t line,
                               NwCharT* logStr)
 {
   NwMiniLogMgrT* thiz = (NwMiniLogMgrT*) hLogMgr;

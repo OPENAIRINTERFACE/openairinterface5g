@@ -26,11 +26,9 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_RX_LIST_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_RX_LIST_C 1
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//#include "rtos_header.h"
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "assertions.h"
@@ -49,7 +47,6 @@ rlc_am_rx_list_insert_pdu(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const rlc_pP,
   mem_block_t* const tb_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_am_pdu_info_t* pdu_info_p                  = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
   rlc_am_pdu_info_t* pdu_info_cursor_p           = NULL;
@@ -496,7 +493,6 @@ rlc_am_rx_check_all_byte_segments(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const rlc_pP,
   mem_block_t* const tb_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_am_pdu_info_t  *pdu_info_p        = &((rlc_am_rx_pdu_management_t*)(tb_pP->data))->pdu_info;
   mem_block_t        *cursor_p        = NULL;
@@ -584,7 +580,6 @@ rlc_am_rx_mark_all_segments_received(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const        rlc_pP,
   mem_block_t* const            fisrt_segment_tbP)
-//-----------------------------------------------------------------------------
 {
   rlc_am_pdu_info_t* pdu_info_p          = &((rlc_am_rx_pdu_management_t*)(fisrt_segment_tbP->data))->pdu_info;
   rlc_am_pdu_info_t* pdu_info_cursor_p = NULL;
@@ -616,7 +611,6 @@ void
 rlc_am_rx_list_reassemble_rlc_sdus(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const        rlc_pP)
-//-----------------------------------------------------------------------------
 {
   mem_block_t*                cursor_p                     = NULL;
   rlc_am_rx_pdu_management_t* rlc_am_rx_old_pdu_management = NULL;
@@ -642,7 +636,7 @@ rlc_am_rx_list_reassemble_rlc_sdus(
 
       rlc_am_rx_pdu_management_p = ((rlc_am_rx_pdu_management_t*)(cursor_p->data));
     } else {
-#if defined(RLC_STOP_ON_LOST_PDU)
+#if RLC_STOP_ON_LOST_PDU
 
       if (list2_get_head(&rlc_pP->receiver_buffer) != cursor_p) {
         AssertFatal( 0 == 1,
@@ -663,7 +657,6 @@ list2_insert_before_element (
   mem_block_t * element_to_insert_pP,
   mem_block_t * element_pP,
   list2_t * list_pP)
-//-----------------------------------------------------------------------------
 {
   if ((element_to_insert_pP != NULL) && (element_pP != NULL)) {
     list_pP->nb_elements = list_pP->nb_elements + 1;
@@ -690,7 +683,6 @@ list2_insert_after_element (
   mem_block_t * element_to_insert_pP,
   mem_block_t * element_pP,
   list2_t * list_pP)
-//-----------------------------------------------------------------------------
 {
 
   if ((element_to_insert_pP != NULL) && (element_pP != NULL)) {
@@ -717,7 +709,6 @@ void
 rlc_am_rx_list_display (
   const rlc_am_entity_t* const rlc_pP,
   char* message_pP)
-//-----------------------------------------------------------------------------
 {
   mem_block_t      *cursor_p = NULL;
   unsigned int      loop     = 0;

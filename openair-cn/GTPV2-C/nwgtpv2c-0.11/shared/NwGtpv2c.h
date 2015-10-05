@@ -120,10 +120,10 @@ typedef NwPtrT  NwGtpv2cTunnelHandleT;                          /**< Gtpv2c Ulp 
 typedef NwPtrT  NwGtpv2cUlpTrxnHandleT;                         /**< Gtpv2c Ulp Transaction Handle      */
 typedef NwPtrT  NwGtpv2cUlpTunnelHandleT;                       /**< Gtpv2c Ulp Tunnel Handle           */
 
-typedef NwU8T   NwGtpv2cMsgTypeT;                               /**< Gtpv2c Msg Type                    */
+typedef uint8_t   NwGtpv2cMsgTypeT;                               /**< Gtpv2c Msg Type                    */
 
 typedef struct NwGtpv2cStackConfigS {
-  NwU16T                                __tbd;
+  uint16_t                                __tbd;
 } NwGtpv2cStackConfigT;
 
 /*--------------------------------------------------------------------------*
@@ -172,11 +172,11 @@ typedef enum {
  */
 
 typedef struct NwGtpv2cErrorS {
-  NW_IN    NwU8T                        cause;
-  NW_IN    NwU8T                        flags;
+  NW_IN    uint8_t                        cause;
+  NW_IN    uint8_t                        flags;
   struct {
-    NW_IN    NwU8T                      type;
-    NW_IN    NwU8T                      instance;
+    NW_IN    uint8_t                      type;
+    NW_IN    uint8_t                      instance;
   }                                     offendingIe;
 } NwGtpv2cErrorT;
 
@@ -187,12 +187,12 @@ typedef struct NwGtpv2cErrorS {
 
 typedef struct {
   NW_INOUT NwGtpv2cTunnelHandleT        hTunnel;        /**< Tunnel handle over which the mesasge is to be sent.*/
-  NW_IN    NwU16T                       t3Timer;
-  NW_IN    NwU16T                       maxRetries;
+  NW_IN    uint16_t                       t3Timer;
+  NW_IN    uint16_t                       maxRetries;
   NW_IN    NwGtpv2cUlpTrxnHandleT       hUlpTrxn;       /**< Optional handle to be returned in rsp of this msg. */
 
-  NW_IN    NwU32T                       peerIp;         /**< Required only in case when hTunnel == 0            */
-  NW_IN    NwU32T                       teidLocal;      /**< Required only in case when hTunnel == 0            */
+  NW_IN    uint32_t                       peerIp;         /**< Required only in case when hTunnel == 0            */
+  NW_IN    uint32_t                       teidLocal;      /**< Required only in case when hTunnel == 0            */
   NW_IN    NwGtpv2cUlpTunnelHandleT     hUlpTunnel;     /**< Required only in case when hTunnel == 0            */
 } NwGtpv2cInitialReqInfoT;
 
@@ -204,11 +204,11 @@ typedef struct {
 typedef struct {
   NW_IN    NwGtpv2cTunnelHandleT        hTunnel;        /**< Tunnel handle over which the mesasge is to be sent */
   NW_IN    NwGtpv2cTrxnHandleT          hTrxn;          /**< Request Trxn handle which to which triggered req is being sent */
-  NW_IN    NwU16T                       t3Timer;
-  NW_IN    NwU16T                       maxRetries;
+  NW_IN    uint16_t                       t3Timer;
+  NW_IN    uint16_t                       maxRetries;
   NW_IN    NwGtpv2cUlpTrxnHandleT       hUlpTrxn;       /**< Optional handle to be returned in rsp of this msg. */
-  NW_IN    NwU32T                       peerIp;         /**< Required only in case when hTunnel == 0            */
-  NW_IN    NwU32T                       teidLocal;      /**< Required only in case when hTunnel == 0            */
+  NW_IN    uint32_t                       peerIp;         /**< Required only in case when hTunnel == 0            */
+  NW_IN    uint32_t                       teidLocal;      /**< Required only in case when hTunnel == 0            */
   NW_IN    NwGtpv2cUlpTunnelHandleT     hUlpTunnel;     /**< Required only in case when hTunnel == 0            */
 
 } NwGtpv2cTriggeredReqInfoT;
@@ -220,7 +220,7 @@ typedef struct {
 
 typedef struct {
   NW_IN    NwGtpv2cTrxnHandleT          hTrxn;          /**< Request Trxn handle which to which triggered rsp is being sent */
-  NW_IN    NwU32T                       teidLocal;      /**< Required only if NW_GTPV2C_ULP_API_FLAG_CREATE_LOCAL_TUNNEL is set to flags. */
+  NW_IN    uint32_t                       teidLocal;      /**< Required only if NW_GTPV2C_ULP_API_FLAG_CREATE_LOCAL_TUNNEL is set to flags. */
   NW_IN    NwGtpv2cUlpTunnelHandleT     hUlpTunnel;     /**< Required only if NW_GTPV2C_ULP_API_FLAG_CREATE_LOCAL_TUNNEL is set to flags. */
 
   NW_OUT   NwGtpv2cTunnelHandleT        hTunnel;        /**< Returned only in case flags is set to
@@ -237,8 +237,8 @@ typedef struct {
   NW_IN    NwGtpv2cTrxnHandleT          hTrxn;
   NW_IN    NwGtpv2cUlpTrxnHandleT       hUlpTrxn;
   NW_IN    NwGtpv2cMsgTypeT             msgType;
-  NW_IN    NwU32T                       peerIp;
-  NW_IN    NwU32T                       peerPort;
+  NW_IN    uint32_t                       peerIp;
+  NW_IN    uint32_t                       peerPort;
   NW_IN    NwGtpv2cUlpTunnelHandleT     hUlpTunnel;
   NW_INOUT NwGtpv2cTunnelHandleT        hTunnel;
 } NwGtpv2cInitialReqIndInfoT;
@@ -253,9 +253,9 @@ typedef struct {
   NW_IN    NwGtpv2cTrxnHandleT          hTrxn;
   NW_IN    NwGtpv2cUlpTrxnHandleT       hUlpTrxn;
   NW_IN    NwGtpv2cMsgTypeT             msgType;
-  NW_IN    NwU32T                       seqNum;
-  NW_IN    NwU32T                       teidLocal;
-  NW_IN    NwU32T                       teidRemote;
+  NW_IN    uint32_t                       seqNum;
+  NW_IN    uint32_t                       teidLocal;
+  NW_IN    uint32_t                       teidRemote;
   NW_IN    NwGtpv2cUlpTunnelHandleT     hUlpTunnel;
 } NwGtpv2cTriggeredReqIndInfoT;
 
@@ -289,8 +289,8 @@ typedef struct {
 typedef struct {
   NW_OUT   NwGtpv2cTunnelHandleT         hTunnel;
   NW_IN    NwGtpv2cUlpTunnelHandleT      hUlpTunnel;
-  NW_IN    NwU32T                        teidLocal;
-  NW_IN    NwU32T                        peerIp;
+  NW_IN    uint32_t                        teidLocal;
+  NW_IN    uint32_t                        peerIp;
 } NwGtpv2cCreateLocalTunnelInfoT;
 
 
@@ -347,10 +347,10 @@ typedef struct {
 typedef struct {
   NwGtpv2cUdpHandleT        hUdp;
   NwRcT (*udpDataReqCallback) ( NW_IN     NwGtpv2cUdpHandleT udpHandle,
-                                NW_IN     NwU8T* dataBuf,
-                                NW_IN     NwU32T dataSize,
-                                NW_IN     NwU32T peerIp,
-                                NW_IN     NwU32T peerPort);
+                                NW_IN     uint8_t* dataBuf,
+                                NW_IN     uint32_t dataSize,
+                                NW_IN     uint32_t peerIp,
+                                NW_IN     uint32_t peerPort);
 } NwGtpv2cUdpEntityT;
 
 /**
@@ -360,14 +360,14 @@ typedef struct {
 typedef struct {
   NwGtpv2cMemMgrHandleT         hMemMgr;
   void* (*memAlloc)( NW_IN      NwGtpv2cMemMgrHandleT hMemMgr,
-                     NW_IN      NwU32T memSize,
+                     NW_IN      uint32_t memSize,
                      NW_IN      NwCharT* fileName,
-                     NW_IN      NwU32T lineNumber);
+                     NW_IN      uint32_t lineNumber);
 
   void (*memFree) ( NW_IN       NwGtpv2cMemMgrHandleT hMemMgr,
                     NW_IN       void* hMem,
                     NW_IN       NwCharT* fileName,
-                    NW_IN       NwU32T lineNumber);
+                    NW_IN       uint32_t lineNumber);
 } NwGtpv2cMemMgrEntityT;
 
 
@@ -380,9 +380,9 @@ typedef struct {
 typedef struct {
   NwGtpv2cTimerMgrHandleT        tmrMgrHandle;
   NwRcT (*tmrStartCallback)( NW_IN       NwGtpv2cTimerMgrHandleT tmrMgrHandle,
-                             NW_IN       NwU32T timeoutSec,
-                             NW_IN       NwU32T timeoutUsec,
-                             NW_IN       NwU32T tmrType,
+                             NW_IN       uint32_t timeoutSec,
+                             NW_IN       uint32_t timeoutUsec,
+                             NW_IN       uint32_t tmrType,
                              NW_IN       void* tmrArg,
                              NW_OUT      NwGtpv2cTimerHandleT* tmrHandle);
 
@@ -397,9 +397,9 @@ typedef struct {
 typedef struct {
   NwGtpv2cLogMgrHandleT          logMgrHandle;
   NwRcT (*logReqCallback) (NW_IN      NwGtpv2cLogMgrHandleT logMgrHandle,
-                           NW_IN      NwU32T logLevel,
+                           NW_IN      uint32_t logLevel,
                            NW_IN      NwCharT* filename,
-                           NW_IN      NwU32T line,
+                           NW_IN      uint32_t line,
                            NW_IN      NwCharT* logStr);
 } NwGtpv2cLogMgrEntityT;
 
@@ -519,7 +519,7 @@ nwGtpv2cSetLogMgrEntity( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cSetLogLevel( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                     NW_IN NwU32T logLevel);
+                     NW_IN uint32_t logLevel);
 
 
 /**
@@ -535,10 +535,10 @@ nwGtpv2cSetLogLevel( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
 
 NwRcT
 nwGtpv2cProcessUdpReq( NW_IN NwGtpv2cStackHandleT hGtpcStackHandle,
-                       NW_IN NwU8T* udpData,
-                       NW_IN NwU32T udpDataLen,
-                       NW_IN NwU16T peerPort,
-                       NW_IN NwU32T peerIP);
+                       NW_IN uint8_t* udpData,
+                       NW_IN uint32_t udpDataLen,
+                       NW_IN uint16_t peerPort,
+                       NW_IN uint32_t peerIP);
 
 /**
  Process Request from ULP entity.

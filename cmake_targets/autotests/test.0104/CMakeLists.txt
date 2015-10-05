@@ -10,4 +10,8 @@ set(RANDOM_BF False)
 set(PBS_SIM False)
 set(PERFECT_CE True)
 
+set(MESSAGE_CHART_GENERATOR         False)
+set(MESSAGE_CHART_GENERATOR_RLC_MAC False)
+set(MESSAGE_CHART_GENERATOR_PHY     False)
+
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)

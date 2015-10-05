@@ -82,7 +82,9 @@ unsigned short fill_rar(
     }
   }
 
-  DevAssert( ra_idx != -1 );
+  //DevAssert( ra_idx != -1 );
+  if (ra_idx==-1)
+    return(0);
 
   // subheader fixed
   rarh->E                     = 0; // First and last RAR
@@ -101,8 +103,8 @@ unsigned short fill_rar(
    */
   rar[4] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].rnti>>8);
   rar[5] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].rnti&0xff);
-  eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset = 0;
-  //eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset /= 16;
+  //eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset = 0;
+  eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset /= 16; //T_A = N_TA/16, where N_TA should be on a 30.72Msps
   rar[0] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset>>(2+4)); // 7 MSBs of timing advance + divide by 4
   rar[1] = (uint8_t)(eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[ra_idx].timing_offset<<(4-2))&0xf0; // 4 LSBs of timing advance + divide by 4
   rballoc = mac_xface->computeRIV(N_RB_UL,1,1); // first PRB only for UL Grant

@@ -308,23 +308,21 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 {
 #ifdef PDCP_USE_NETLINK
-  protocol_ctxt_t                ctxt_cpy;
+  protocol_ctxt_t                ctxt_cpy = *ctxt_pP;
   protocol_ctxt_t                ctxt;
   hash_key_t                     key       = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t                 h_rc;
   struct pdcp_netlink_element_s* data_p    = NULL;
   module_id_t                    ue_id     = 0;
   pdcp_t*                        pdcp_p    = NULL;
-# if defined(USE_PDCP_NETLINK_QUEUES)
+# if defined(PDCP_USE_NETLINK_QUEUES)
   rb_id_t                        rab_id    = 0;
 
   pdcp_transmission_mode_t       pdcp_mode = PDCP_TRANSMISSION_MODE_UNKNOWN;
 
 
-  ctxt_cpy = *ctxt_pP;
-
   while (pdcp_netlink_dequeue_element(ctxt_pP, &data_p) != 0) {
-    DevAssert(data != NULL);
+    DevAssert(data_p != NULL);
     rab_id = data_p->pdcp_read_header.rb_id % maxDRB;
     // ctxt_pP->rnti is NOT_A_RNTI
     ctxt_cpy.rnti = pdcp_module_id_to_rnti[ctxt_cpy.module_id][data_p->pdcp_read_header.inst];
@@ -428,7 +426,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   }
 
   return 0;
-# else /* USE_PDCP_NETLINK_QUEUES*/
+# else /* PDCP_USE_NETLINK_QUEUES*/
   int              len = 1;
   rb_id_t          rab_id  = 0;
 
@@ -501,10 +499,13 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
           if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
+            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index];
           } else {
             ctxt.module_id = 0;
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
+            ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
+
 
 #endif
 

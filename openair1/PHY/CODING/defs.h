@@ -320,7 +320,7 @@ void threegpplte_turbo_encoder(uint8_t *input,
                                uint16_t interleaver_f2);
 
 
-/** \fn void ccodelte_encode(uint32_t numbits,uint8_t add_crc, uint8_t *inPtr,uint8_t *outPtr,uint16_t rnti)
+/** \fn void ccodelte_encode(int32_t numbits,uint8_t add_crc, uint8_t *inPtr,uint8_t *outPtr,uint16_t rnti)
 \brief This function implements the LTE convolutional code of rate 1/3
   with a constraint length of 7 bits. The inputs are bit packed in octets
 (from MSB to LSB). Trellis tail-biting is included here.
@@ -331,7 +331,7 @@ void threegpplte_turbo_encoder(uint8_t *input,
 @param rnti RNTI for CRC scrambling
 */
 void
-ccodelte_encode (uint32_t numbits,
+ccodelte_encode (int32_t numbits,
                  uint8_t add_crc,
                  uint8_t *inPtr,
                  uint8_t *outPtr,

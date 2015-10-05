@@ -29,8 +29,8 @@
 
 /*! \file oaisim_config.c
 * \brief Configuration of oaisim
-* \author Navid Nikaein & Andre Gomes (One source)
-* \date 2014
+* \author Navid Nikaein 
+* \date 2013-2015
 * \version 1.0
 * \company Eurecom
 * \email: openair_tech@eurecom.fr
@@ -55,7 +55,7 @@
 #include "UTIL/OTG/otg_externs.h"
 #include "oml.h"
 #include "msc.h"
-#ifdef ENABLE_RAL
+#if ENABLE_RAL
 #include "lteRALenb.h"
 #include "lteRALue.h"
 #endif
@@ -337,6 +337,7 @@ void oaisim_config(void)
 
 #if defined(ENABLE_ITTI)
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, oai_emulation.info.itti_dump_file);
+  MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 
   // init ocg if enabled, otherwise take the params form the init_oai_emulation()
@@ -351,9 +352,8 @@ void oaisim_config(void)
     }
   }
 
-  // init other comps
-  MSC_INIT(MSC_E_UTRAN);
-#ifdef ENABLE_RAL
+
+#if ENABLE_RAL
   mRAL_init_default_values();
   eRAL_init_default_values();
 #endif
@@ -432,7 +432,7 @@ int olg_config(void)
   set_comp_log(SCTP,  LOG_DEBUG, LOG_MED,1);
 #endif
 
-#if defined(ENABLE_RAL)
+#if ENABLE_RAL
   set_comp_log(RAL_ENB, LOG_TRACE, LOG_MED,1);
   set_comp_log(RAL_UE,  LOG_TRACE, LOG_MED,1);
   set_log(RAL_ENB,  LOG_DEBUG, 1);
@@ -458,7 +458,7 @@ int olg_config(void)
    set_comp_log(RRC,  LOG_DEBUG, 0x15,1);
    set_comp_log(OCM,  LOG_ERR, 0x15,20);
    set_comp_log(OTG,  LOG_DEBUG, 0x15,1);
-   set_comp_log(OMG,  LOG_INFO, 0x15,1);
+   set_comp_log(OMG,  LOG_NOTICE, 0x15,1);
    set_comp_log(OPT,  LOG_ERR, 0x15,1);
 
 

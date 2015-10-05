@@ -23,11 +23,17 @@ xUnit_start() {
 # \pre xUnit_start() must have been called before
 # \param $1 classname
 # \param $2 testcase name
+# \param $3 testcase result
+# \param $4 run index
 xUnit_fail() {
+  class=$1
+  test_case=$2
+  result=$3
+  run_index=$4
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$1' name='$2' time='$time'><failure message='failed'/></testcase>"
-  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML $xml"
+  xml="<testcase classname='$class' name='$test_case' run='$run_index' time='$time' RESULT='$result'></testcase>"
+  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_FAILED=$((XUNIT_FAILED+1))
 }
 
@@ -36,11 +42,17 @@ xUnit_fail() {
 # \pre xUnit_start() must have been called before
 # \param $1 classname
 # \param $2 testcase name
+# \param $3 testcase result
+# \param $4 run index
 xUnit_success() {
+  class=$1
+  test_case=$2
+  result=$3
+  run_index=$4
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$1' name='$2' time='$time' />"
-  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML $xml"
+  xml="<testcase classname='$class' name='$test_case' run='$run_index' time='$time' RESULT='$result'></testcase>"
+  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_SUCCESS=$((XUNIT_SUCCESS+1))
 }
 
@@ -48,13 +60,14 @@ xUnit_success() {
 # This functions writes out the test report.
 # \param $1 filename
 xUnit_write() {
+  filename=$1
   tests=$((XUNIT_FAILED+XUNIT_SUCCESS))
   timestamp=$(date --iso-8601=seconds)
   time=$(echo "$currtime - $XUNIT_TESTSUITE_START" | bc -l)
   xml_header="<testsuites><testsuite errors='0' failures='$XUNIT_FAILED' hostname='$(hostname)' name='OAI' skipped='0' tests='$tests' time='$time' timestamp='$timestamp'>"
-  echo $xml_header > $1
-  echo $XUNIT_TESTCASES_XML >> $1
-  echo "</testsuite></testsuites>" >> $1
+  echo $xml_header > $filename
+  echo -e $XUNIT_TESTCASES_XML >> $filename
+  echo "</testsuite></testsuites>" >> $filename
   XUNIT_TESTSUITE_START=0
   XUNIT_START=0
   XUNIT_TOTAL=0

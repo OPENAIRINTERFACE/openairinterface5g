@@ -95,4 +95,7 @@ int openair0_stop_without_reset(int card);
 // return the DAQ block counter
 unsigned int *openair0_daq_cnt(void);
 
+// set the TX and RX frequencies (card 0 only for now, to retain USRP compatibility)
+int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
+
 #endif

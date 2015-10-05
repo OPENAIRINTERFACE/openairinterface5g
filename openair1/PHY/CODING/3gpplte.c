@@ -31,8 +31,9 @@
    author: raymond.knopp@eurecom.fr
    date: 10.2009
 */
-#include "defs.h"
-//#include "lte_interleaver_inline.h"
+#ifndef TC_MAIN
+//#include "defs.h"
+#endif
 
 #include "extern_3GPPinterleaver.h"
 

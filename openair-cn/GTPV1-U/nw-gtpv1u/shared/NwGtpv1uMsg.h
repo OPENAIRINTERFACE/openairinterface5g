@@ -53,23 +53,23 @@ extern "C" {
 #pragma pack(1)
 
 typedef struct NwGtpv1uIeTv1 {
-  NwU8T  t;
-  NwU8T  v;
+  uint8_t  t;
+  uint8_t  v;
 } NwGtpv1uIeTv1T;
 
 typedef struct NwGtpv1uIeTv2 {
-  NwU8T  t;
-  NwU8T  v;
+  uint8_t  t;
+  uint8_t  v;
 } NwGtpv1uIeTv2T;
 
 typedef struct NwGtpv1uIeTv4 {
-  NwU8T  t;
-  NwU32T  v;
+  uint8_t  t;
+  uint32_t  v;
 } NwGtpv1uIeTv4T;
 
 typedef struct NwGtpv1uIeTlv {
-  NwU8T  t;
-  NwU16T l;
+  uint8_t  t;
+  uint16_t l;
 } NwGtpv1uIeTlvT;
 
 #pragma pack()
@@ -87,14 +87,14 @@ typedef struct NwGtpv1uIeTlv {
 
 NwGtpv1uRcT
 nwGtpv1uMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                NW_IN NwU8T     seqNumFlag,
-                NW_IN NwU8T     npduNumFlag,
-                NW_IN NwU8T     extHdrFlag,
-                NW_IN NwU8T     msgType,
-                NW_IN NwU8T     teid,
-                NW_IN NwU16T    seqNum,
-                NW_IN NwU8T     npduNum,
-                NW_IN NwU8T     nextExtHeader,
+                NW_IN uint8_t     seqNumFlag,
+                NW_IN uint8_t     npduNumFlag,
+                NW_IN uint8_t     extHdrFlag,
+                NW_IN uint8_t     msgType,
+                NW_IN uint8_t     teid,
+                NW_IN uint16_t    seqNum,
+                NW_IN uint8_t     npduNum,
+                NW_IN uint8_t     nextExtHeader,
                 NW_OUT NwGtpv1uMsgHandleT *phMsg);
 
 
@@ -112,12 +112,12 @@ nwGtpv1uMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                    NW_IN NwU32T    teid,
-                    NW_IN NwU8T     seqNumFlag,
-                    NW_IN NwU16T    seqNum,
-                    NW_IN NwU8T*    tpdu,
-                    NW_IN NwU16T    tpduLength,
-                    NW_IN NwU32T    tpduOffset,
+                    NW_IN uint32_t    teid,
+                    NW_IN uint8_t     seqNumFlag,
+                    NW_IN uint16_t    seqNum,
+                    NW_IN uint8_t*    tpdu,
+                    NW_IN uint16_t    tpduLength,
+                    NW_IN uint32_t    tpduOffset,
                     NW_OUT NwGtpv1uMsgHandleT *phMsg);
 
 /**
@@ -143,8 +143,8 @@ nwGtpv1uMsgFromMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uMsgFromBufferNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                          NW_IN NwU8T* pBuf,
-                          NW_IN NwU32T bufLen,
+                          NW_IN uint8_t* pBuf,
+                          NW_IN uint32_t bufLen,
                           NW_OUT NwGtpv1uMsgHandleT *phMsg);
 
 /**
@@ -166,7 +166,7 @@ nwGtpv1uMsgDelete( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
  */
 
 NwGtpv1uRcT
-nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T teid);
+nwGtpv1uMsgSetTeid(NW_IN NwGtpv1uMsgHandleT hMsg, uint32_t teid);
 
 /**
  * Set TEID present flag for gtpv1u message.
@@ -186,7 +186,7 @@ nwGtpv1uMsgSetTeidPresent(NW_IN NwGtpv1uMsgHandleT hMsg, NwBoolT teidPresent);
  */
 
 NwGtpv1uRcT
-nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T seqNum);
+nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, uint32_t seqNum);
 
 /**
  * Get TEID present for gtpv1u message.
@@ -194,7 +194,7 @@ nwGtpv1uMsgSetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg, NwU32T seqNum);
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetTeid(NW_IN NwGtpv1uMsgHandleT hMsg);
 
 /**
@@ -212,7 +212,7 @@ nwGtpv1uMsgGetTeidPresent(NW_IN NwGtpv1uMsgHandleT hMsg);
  * @param[in] hMsg : Message handle.
  */
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg);
 
 /**
@@ -223,13 +223,13 @@ nwGtpv1uMsgGetSeqNumber(NW_IN NwGtpv1uMsgHandleT hMsg);
  * @param[out] hMsg : T-PDU length.
  */
 
-NwU32T
-nwGtpv1uMsgGetTpdu(NW_IN NwGtpv1uMsgHandleT hMsg, NwU8T* pTpduBuf, NwU32T* pTpduLength);
+uint32_t
+nwGtpv1uMsgGetTpdu(NW_IN NwGtpv1uMsgHandleT hMsg, uint8_t* pTpduBuf, uint32_t* pTpduLength);
 
-NwU8T*
+uint8_t*
 nwGtpv1uMsgGetTpduHandle(NW_IN NwGtpv1uMsgHandleT hMsg);
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetTpduLength(NW_IN NwGtpv1uMsgHandleT hMsg);
 
 /**
@@ -242,8 +242,8 @@ nwGtpv1uMsgGetTpduLength(NW_IN NwGtpv1uMsgHandleT hMsg);
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV1(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU8T       value);
+                    NW_IN uint8_t       type,
+                    NW_IN uint8_t       value);
 
 
 /**
@@ -256,9 +256,9 @@ nwGtpv1uMsgAddIeTV1(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV2(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU16T      length,
-                    NW_IN NwU16T      value);
+                    NW_IN uint8_t       type,
+                    NW_IN uint16_t      length,
+                    NW_IN uint16_t      value);
 
 
 /**
@@ -271,9 +271,9 @@ nwGtpv1uMsgAddIeTV2(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIeTV4(NW_IN NwGtpv1uMsgHandleT hMsg,
-                    NW_IN NwU8T       type,
-                    NW_IN NwU16T      length,
-                    NW_IN NwU32T      value);
+                    NW_IN uint8_t       type,
+                    NW_IN uint16_t      length,
+                    NW_IN uint32_t      value);
 
 
 /**
@@ -287,9 +287,9 @@ nwGtpv1uMsgAddIeTV4(NW_IN NwGtpv1uMsgHandleT hMsg,
 
 NwGtpv1uRcT
 nwGtpv1uMsgAddIe(NW_IN NwGtpv1uMsgHandleT hMsg,
-                 NW_IN NwU8T       type,
-                 NW_IN NwU16T      length,
-                 NW_IN NwU8T*      pVal);
+                 NW_IN uint8_t       type,
+                 NW_IN uint16_t      length,
+                 NW_IN uint8_t*      pVal);
 
 /**
  * Dump the contents of gtpv1u mesasge.
@@ -301,7 +301,7 @@ nwGtpv1uMsgAddIe(NW_IN NwGtpv1uMsgHandleT hMsg,
 NwGtpv1uRcT
 nwGtpv1uMsgHexDump(NwGtpv1uMsgHandleT hMsg, FILE* fp);
 
-NwU32T
+uint32_t
 nwGtpv1uMsgGetMsgType(NW_IN NwGtpv1uMsgHandleT hMsg);
 
 #ifdef __cplusplus

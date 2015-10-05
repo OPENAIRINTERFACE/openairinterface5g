@@ -45,6 +45,7 @@
 #include "s6a_messages.h"
 
 #include "assertions.h"
+#include "msc.h"
 
 #if defined(DISABLE_USE_HSS)
 # error "Disabling HSS support is currently not supported   \
@@ -67,6 +68,7 @@ static void fd_gnutls_debug(int level, const char *str)
 void *s6a_thread(void *args)
 {
   itti_mark_task_ready(TASK_S6A);
+  MSC_START_USE();
 
   while(1) {
     MessageDef *received_message_p = NULL;

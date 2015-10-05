@@ -36,7 +36,7 @@ extern "C" {
 #define MAX_UDP_PAYLOAD_LEN                     (4096)
 
 NwGtpv1uRcT
-nwMiniUlpSendEchoRequestToPeer(NwMiniUlpEntityT *thiz, NwU32T peerIp)
+nwMiniUlpSendEchoRequestToPeer(NwMiniUlpEntityT *thiz, uint32_t peerIp)
 {
   NwGtpv1uRcT rc;
   NwGtpv1uUlpApiT           ulpReq;
@@ -82,9 +82,9 @@ void NW_EVT_CALLBACK(nwMiniUlpDataIndicationCallbackData)
 {
   NwMiniUlpEntityT *thiz = (NwMiniUlpEntityT *) arg;
   NwGtpv1uRcT         rc;
-  NwU8T         udpBuf[MAX_UDP_PAYLOAD_LEN];
+  uint8_t         udpBuf[MAX_UDP_PAYLOAD_LEN];
   NwS32T        bytesRead;
-  NwU32T        peerLen;
+  uint32_t        peerLen;
   struct sockaddr_in peer;
 
   peerLen = sizeof(peer);
@@ -123,7 +123,7 @@ nwMiniUlpDestroy(NwMiniUlpEntityT *thiz)
 }
 
 NwGtpv1uRcT
-nwMiniUlpCreateConn(NwMiniUlpEntityT *thiz, char *localIpStr, NwU16T localport,
+nwMiniUlpCreateConn(NwMiniUlpEntityT *thiz, char *localIpStr, uint16_t localport,
                     char *peerIpStr)
 {
   NwGtpv1uRcT rc;
@@ -214,8 +214,8 @@ nwMiniUlpDestroyConn(NwMiniUlpEntityT *thiz)
 
 
 NwGtpv1uRcT
-nwMiniUlpTpduSend(NwMiniUlpEntityT *thiz, NwU8T *tpduBuf, NwU32T tpduLen ,
-                  NwU16T fromPort)
+nwMiniUlpTpduSend(NwMiniUlpEntityT *thiz, uint8_t *tpduBuf, uint32_t tpduLen ,
+                  uint16_t fromPort)
 {
   NwGtpv1uRcT rc;
   NwGtpv1uUlpApiT           ulpReq;
@@ -260,9 +260,9 @@ nwMiniUlpProcessStackReqCallback (NwGtpv1uUlpHandleT hUlp,
   case NW_GTPV1U_ULP_API_RECV_TPDU: {
     struct sockaddr_in peerAddr;
     NwS32T bytesSent;
-    NwU8T dataBuf[4096];
-    NwU32T dataSize;
-    NwU32T peerIpAddr = (inet_addr(thiz->peerIpStr));
+    uint8_t dataBuf[4096];
+    uint32_t dataSize;
+    uint32_t peerIpAddr = (inet_addr(thiz->peerIpStr));
 
     NW_ASSERT( NW_GTPV1U_OK == nwGtpv1uMsgGetTpdu(pUlpApi->apiInfo.recvMsgInfo.hMsg,
                dataBuf, &dataSize) );

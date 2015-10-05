@@ -1827,12 +1827,14 @@ void init_predef_traffic(
 #endif
 
           break;
-
-        default:
+	  
+	case FULL_BUFFER:
+	  LOG_E(OTG, "Full buffer is not yet supported\n");
+	default:
           LOG_D(OTG, "[SRC %d][DST %d] Unknown traffic type\n", i, j);
           /* TO ADD: 3GPP TSG-RAN WG1 Meeting #71: Low-cost MTC Traffic Models and Characteristics */
 
-
+	  
         }
       }
     }

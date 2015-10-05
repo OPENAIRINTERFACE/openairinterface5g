@@ -55,6 +55,10 @@
 /** @struct SgwCreateSessionRequest
  *  @brief Create Session Request
  *
+ * Spec 3GPP TS 29.274, Universal Mobile Telecommunications System (UMTS);
+ *                      LTE; 3GPP Evolved Packet System (EPS);
+ *                      Evolved General Packet Radio Service (GPRS);
+ *                      Tunnelling Protocol for Control plane (GTPv2-C); Stage 3
  * The Create Session Request will be sent on S11 interface as
  * part of these procedures:
  * - E-UTRAN Initial Attach
@@ -250,7 +254,8 @@ typedef struct SgwCreateSessionRequest_s {
   ///< RAU/TAU/HO procedures with SGW change to identify the
   ///< default bearer of the PDN Connection
 
-  // PCO protocol_configuration_options   ///< This IE is not applicable to TAU/RAU/Handover. If
+  pco_flat_t         pco;                 /// PCO protocol_configuration_options
+  ///< This IE is not applicable to TAU/RAU/Handover. If
   ///< MME/SGSN receives PCO from UE (during the attach
   ///< procedures), the MME/SGSN shall forward the PCO IE to
   ///< SGW. The SGW shall also forward it to PGW.
@@ -413,7 +418,9 @@ typedef struct SgwCreateSessionResponse_s {
   ///< Gn/Gp SGSN to S4-SGSN/MME RAU/TAU procedure to
   ///< identify the default bearer the PGW selects for the PDN
   ///< Connection.
-  // PCO protocol_configuration_options         ///< This IE is not applicable for TAU/RAU/Handover. If PGW
+
+  pco_flat_t         pco;// PCO protocol_configuration_options
+  ///< This IE is not applicable for TAU/RAU/Handover. If PGW
   ///< decides to return PCO to the UE, PGW shall send PCO to
   ///< SGW. If SGW receives the PCO IE, SGW shall forward it
   ///< MME/SGSN.

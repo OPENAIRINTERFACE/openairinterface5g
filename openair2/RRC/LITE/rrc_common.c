@@ -442,17 +442,19 @@ rrc_rx_tx(
       UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T300_cnt++;
     }
 
-    if (UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]) {
+    if ((UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].SIStatus&2)>0) {
       if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt
           == N310[UE_rrc_inst[ctxt_pP->module_id].sib2[enb_indexP]->ue_TimersAndConstants.n310]) {
+	LOG_I(RRC,"Activating T310\n");
         UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 1;
       }
     } else { // in case we have not received SIB2 yet
-      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt == 100) {
+      /*      if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt == 100) {
         UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].N310_cnt = 0;
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-        return RRC_PHY_RESYNCH;
-      }
+
+	}*/
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
+      return RRC_OK;
     }
 
     if (UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active == 1) {
@@ -470,7 +472,8 @@ rrc_rx_tx(
         UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
         rrc_t310_expiration (ctxt_pP, enb_indexP);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-        return (RRC_PHY_RESYNCH);
+	LOG_I(RRC,"Returning RRC_PHY_RESYNCH: T310 expired\n"); 
+        return RRC_PHY_RESYNCH;
       }
 
       UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_cnt++;

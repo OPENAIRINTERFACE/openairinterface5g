@@ -25,7 +25,7 @@
 #define __NW_MINI_TMR_MGR_H__
 
 typedef struct {
-  NwU8T _tbd;
+  uint8_t _tbd;
 } NwGtpv2cNodeTmrMgrT;
 
 typedef struct {
@@ -39,9 +39,9 @@ extern "C" {
 #endif
 
 NwRcT nwTimerStart( NwGtpv2cTimerMgrHandleT tmrMgrHandle,
-                    NwU32T timeoutSec,
-                    NwU32T timeoutUsec,
-                    NwU32T tmrType,
+                    uint32_t timeoutSec,
+                    uint32_t timeoutUsec,
+                    uint32_t tmrType,
                     void*  timeoutArg,
                     NwGtpv2cTimerHandleT* hTmr);
 

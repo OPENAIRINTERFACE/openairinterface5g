@@ -51,15 +51,15 @@ extern "C" {
 struct NwGtpv2cStack;
 
 typedef struct NwGtpv2cTunnel {
-  NwU32T                        teid;
-  NwU32T                        ipv4AddrRemote;
+  uint32_t                        teid;
+  uint32_t                        ipv4AddrRemote;
   NwGtpv2cUlpTunnelHandleT      hUlpTunnel;
   RB_ENTRY (NwGtpv2cTunnel)     tunnelMapRbtNode;            /**< RB Tree Data Structure Node        */
   struct NwGtpv2cTunnel*        next;
 } NwGtpv2cTunnelT;
 
 NwGtpv2cTunnelT*
-nwGtpv2cTunnelNew(struct NwGtpv2cStack *hStack, NwU32T teid, NwU32T peerIpv4Addr, NwGtpv2cUlpTunnelHandleT hUlpTunnel);
+nwGtpv2cTunnelNew(struct NwGtpv2cStack *hStack, uint32_t teid, uint32_t peerIpv4Addr, NwGtpv2cUlpTunnelHandleT hUlpTunnel);
 
 NwRcT
 nwGtpv2cTunnelDelete(struct NwGtpv2cStack *pStack, NwGtpv2cTunnelT* thiz);

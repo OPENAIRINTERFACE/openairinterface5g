@@ -104,10 +104,10 @@ NwRcT s11_sgw_ulp_process_stack_req_cb(
 static
 NwRcT s11_sgw_send_udp_msg(
   NwGtpv2cUdpHandleT udpHandle,
-  NwU8T *buffer,
-  NwU32T buffer_len,
-  NwU32T peerIpAddr,
-  NwU32T peerPort)
+  uint8_t *buffer,
+  uint32_t buffer_len,
+  uint32_t peerIpAddr,
+  uint32_t peerPort)
 {
   // Create and alloc new message
   MessageDef     *message_p;
@@ -130,9 +130,9 @@ NwRcT s11_sgw_send_udp_msg(
 
 static
 NwRcT s11_sgw_log_wrapper(NwGtpv2cLogMgrHandleT hLogMgr,
-                          NwU32T logLevel,
+                          uint32_t logLevel,
                           NwCharT* file,
-                          NwU32T line,
+                          uint32_t line,
                           NwCharT* logStr)
 {
   S11_DEBUG("%s\n", logStr);
@@ -142,9 +142,9 @@ NwRcT s11_sgw_log_wrapper(NwGtpv2cLogMgrHandleT hLogMgr,
 static
 NwRcT s11_sgw_start_timer_wrapper(
   NwGtpv2cTimerMgrHandleT tmrMgrHandle,
-  NwU32T                  timeoutSec,
-  NwU32T                  timeoutUsec,
-  NwU32T                  tmrType,
+  uint32_t                  timeoutSec,
+  uint32_t                  timeoutUsec,
+  uint32_t                  tmrType,
   void                   *timeoutArg,
   NwGtpv2cTimerHandleT   *hTmr)
 {

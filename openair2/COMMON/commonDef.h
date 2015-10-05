@@ -49,6 +49,9 @@ Description Contains global common definitions
 #include <stdint.h>
 #include <stddef.h>
 
+
+#define NAS_UE_ID_FMT "0x%06x"
+
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
@@ -80,17 +83,8 @@ Description Contains global common definitions
 -----------------------------------------------------------------------------
 */
 typedef int8_t      SByte_t;    /* 8 bit  signed integer     */
-typedef int8_t      Int8_t;     /* 8 bit  signed integer     */
-typedef int16_t     Int16_t;    /* 16 bit signed integer    */
-typedef int32_t     Int32_t;    /* 32 bit signed integer    */
-typedef int64_t     Int64_t;    /* 64 bit signed integer    */
-
-
 typedef uint8_t     Byte_t;     /* 8 bit unsigned integer   */
-typedef uint8_t     UInt8_t;    /* 8 bit unsigned integer   */
-typedef uint16_t    UInt16_t;   /* 16 bit unsigned integer  */
-typedef uint32_t    UInt32_t;   /* 32 bit unsigned integer  */
-typedef uint64_t    UInt64_t;   /* 64 bit unsigned integer  */
+
 
 /*
 -----------------------------------------------------------------------------
@@ -98,12 +92,12 @@ typedef uint64_t    UInt64_t;   /* 64 bit unsigned integer  */
 -----------------------------------------------------------------------------
 */
 
-typedef UInt8_t     Stat_t;     /* Registration status  */
-typedef UInt16_t    lac_t;      /* Location Area Code   */
-typedef UInt8_t     rac_t;      /* Routing Area Code    */
-typedef UInt16_t    tac_t;      /* Tracking Area Code   */
-typedef UInt32_t    ci_t;       /* Cell Identifier  */
-typedef UInt8_t     AcT_t;      /* Access Technology    */
+typedef uint8_t     Stat_t;     /* Registration status  */
+typedef uint16_t    lac_t;      /* Location Area Code   */
+typedef uint8_t     rac_t;      /* Routing Area Code    */
+typedef uint16_t    tac_t;      /* Tracking Area Code   */
+typedef uint32_t    ci_t;       /* Cell Identifier  */
+typedef uint8_t     AcT_t;      /* Access Technology    */
 
 /*
  * International Mobile Subscriber Identity
@@ -244,8 +238,8 @@ typedef struct {
  */
 typedef struct {
   plmn_t plmn;    /* <MCC> + <MNC>    */
-  UInt16_t MMEgid;    /* MME group identifier */
-  UInt8_t MMEcode;    /* MME code     */
+  uint16_t MMEgid;    /* MME group identifier */
+  uint8_t MMEcode;    /* MME code     */
 } gummei_t;
 
 /*
@@ -253,7 +247,7 @@ typedef struct {
  */
 typedef struct {
   gummei_t gummei;    /* Globally Unique MME Identity         */
-  UInt32_t m_tmsi;    /* M-Temporary Mobile Subscriber Identity   */
+  uint32_t m_tmsi;    /* M-Temporary Mobile Subscriber Identity   */
 } GUTI_t;
 #define GUTI2STR(GuTi_PtR, GuTi_StR, MaXlEn) \
         {\

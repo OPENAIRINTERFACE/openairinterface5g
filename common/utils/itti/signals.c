@@ -112,7 +112,7 @@ int signal_handle(int *end)
     return ret;
   }
 
-  printf("Received signal %d\n", info.si_signo);
+  //printf("Received signal %d\n", info.si_signo);
 
   /* Real-time signals are non constant and are therefore not suitable for
    * use in switch.

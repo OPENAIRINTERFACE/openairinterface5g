@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_UM_MODULE
-#define RLC_UM_CONTROL_PRIMITIVES_C
+#define RLC_UM_MODULE 1
+#define RLC_UM_CONTROL_PRIMITIVES_C 1
 #include "platform_types.h"
 #include "assertions.h"
 //-----------------------------------------------------------------------------
@@ -49,7 +49,6 @@ void config_req_rlc_um (
   const rlc_um_info_t  * const config_um_pP,
   const rb_id_t         rb_idP)
 {
-  //-----------------------------------------------------------------------------
   rlc_union_t     *rlc_union_p  = NULL;
   rlc_um_entity_t *rlc_p        = NULL;
   hash_key_t       key          = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
@@ -105,7 +104,7 @@ void config_req_rlc_um_asn1 (
   hash_key_t       key                 = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   hashtable_rc_t   h_rc;
 
-#if defined(Rel10)
+#if Rel10
 
   if (mbms_flagP) {
     AssertFatal(dl_rlc_pP, "No RLC UM DL config");
@@ -266,7 +265,6 @@ rlc_um_init (
   rlc_um_entity_t * const rlc_pP
 )
 {
-  //-----------------------------------------------------------------------------
 
   AssertFatal(rlc_pP, "Bad RLC UM pointer (NULL)");
 
@@ -316,7 +314,6 @@ rlc_um_reset_state_variables (
   rlc_um_entity_t * const rlc_pP
 )
 {
-  //-----------------------------------------------------------------------------
   rlc_pP->buffer_occupancy = 0;
 
 
@@ -332,7 +329,6 @@ void
 rlc_um_cleanup (
   rlc_um_entity_t * const rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   int             index;
   // TX SIDE
   list_free (&rlc_pP->pdus_to_mac_layer);
@@ -369,7 +365,6 @@ void rlc_um_configure(
   const uint32_t         rx_sn_field_lengthP,
   const uint32_t         tx_sn_field_lengthP,
   const uint32_t         is_mXchP)
-//-----------------------------------------------------------------------------
 {
   if (rx_sn_field_lengthP == 10) {
     rlc_pP->rx_sn_length                  = 10;
@@ -430,7 +425,6 @@ void rlc_um_set_debug_infos(
   rlc_um_entity_t * const rlc_pP,
   const srb_flag_t       srb_flagP,
   const rb_id_t          rb_idP)
-//-----------------------------------------------------------------------------
 {
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [SET DEBUG INFOS] rb_id %d srb_flag %d\n",
         PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),

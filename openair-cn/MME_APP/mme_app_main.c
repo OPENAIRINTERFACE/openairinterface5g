@@ -51,6 +51,7 @@ void *mme_app_thread(void *args);
 void *mme_app_thread(void *args)
 {
   itti_mark_task_ready(TASK_MME_APP);
+  MSC_START_USE();
 
   while(1) {
     MessageDef *received_message_p = NULL;

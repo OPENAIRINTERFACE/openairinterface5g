@@ -62,7 +62,7 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 
     if (*subframe>9) {
       *subframe = *subframe-10;
-      *frame = current_frame+1;
+      *frame = (current_frame+1) & 1023;
     } else {
       *frame=current_frame;
     }
@@ -77,17 +77,17 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
 
       case 4:
         *subframe = 2;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
 
       case 5:
         *subframe = 2;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
 
       case 9:
         *subframe = 7;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
       }
     } else if (frame_parms->tdd_config == 3) {
@@ -97,22 +97,22 @@ void get_Msg3_alloc(LTE_DL_FRAME_PARMS *frame_parms,
       case 5:
       case 6:
         *subframe = 2;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
 
       case 7:
         *subframe = 3;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
 
       case 8:
         *subframe = 4;
-        *frame = current_frame+1;
+        *frame = (current_frame+1) & 1023;
         break;
 
       case 9:
         *subframe = 2;
-        *frame = current_frame+2;
+        *frame = (current_frame+2) & 1023;
         break;
       }
     }
@@ -126,14 +126,14 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
                         unsigned char *subframe)
 {
   if (frame_parms->frame_type == FDD) {
-    // always retransmit in n+8
-    *subframe = current_subframe+8;
+    /* always retransmit in n+8 */
+    *subframe = current_subframe + 8;
 
-    if (*subframe>9) {
-      *subframe = *subframe-10;
-      *frame = current_frame+1;
+    if (*subframe > 9) {
+      *subframe = *subframe - 10;
+      *frame = (current_frame + 1) & 1023;
     } else {
-      *frame=current_frame;
+      *frame = current_frame;
     }
   } else {
     if (frame_parms->tdd_config == 1) {
@@ -141,12 +141,12 @@ void get_Msg3_alloc_ret(LTE_DL_FRAME_PARMS *frame_parms,
       // original PUSCH in 3, PHICH in 9, ret in 3
       // original PUSCH in 7, PHICH in 1 (S), ret in 7
       // original PUSCH in 8, PHICH in 4, ret in 8
-      *frame = current_frame+1;
+      *frame = (current_frame+1) & 1023;
     } else if (frame_parms->tdd_config == 3) {
       // original PUSCH in 2, PHICH in 8, ret in 2 next frame
       // original PUSCH in 3, PHICH in 9, ret in 3 next frame
       // original PUSCH in 4, PHICH in 0, ret in 4 next frame
-      *frame=current_frame+1;
+      *frame=(current_frame+1) & 1023;
     }
   }
 }
@@ -161,7 +161,7 @@ uint8_t get_Msg3_harq_pid(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (frame_parms->frame_type ==FDD) {
     ul_subframe = (current_subframe>3) ? (current_subframe-4) : (current_subframe+6);
-    ul_frame    = (current_subframe>3) ? (frame+1) : frame;
+    ul_frame    = (current_subframe>3) ? ((frame+1)&1023) : frame;
   } else {
     switch (frame_parms->tdd_config) {
     case 1:

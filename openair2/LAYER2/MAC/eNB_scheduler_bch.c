@@ -197,6 +197,10 @@ schedule_SI(
       eNB->common_channels[CC_id].bcch_active=1;
       nprbP[CC_id]=3;
       nCCEP[CC_id]=4;
+      eNB->eNB_stats[CC_id].total_num_bcch_pdu+=1;
+      eNB->eNB_stats[CC_id].bcch_buffer=bcch_sdu_length;
+      eNB->eNB_stats[CC_id].total_bcch_buffer+=bcch_sdu_length;
+      eNB->eNB_stats[CC_id].bcch_mcs=mcs;
     } else {
       eNB->common_channels[CC_id].bcch_active=0;
       nprbP[CC_id]=0;

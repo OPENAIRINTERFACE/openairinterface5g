@@ -30,10 +30,10 @@ NwCharT* gLogLevelStr[] = {"EMER", "ALER", "CRIT",  "ERRO", "WARN", "NOTI", "INF
 
 
 typedef struct NwEgtPingS {
-  NwU8T                         localIpStr[20];
-  NwU8T                         targetIpStr[20];
-  NwU32T                        pingInterval;
-  NwU32T                        pingCount;
+  uint8_t                         localIpStr[20];
+  uint8_t                         targetIpStr[20];
+  uint32_t                        pingInterval;
+  uint32_t                        pingCount;
   NwGtpv2cNodeUlpT              ulpObj;
   NwGtpv2cNodeUdpT              udpObj;
 } NwEgtPingT;
@@ -136,8 +136,8 @@ nwEgtPingParseCmdLineOpts(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
   NwRcT                         rc;
-  NwU32T                        logLevel;
-  NwU8T*                        logLevelStr;
+  uint32_t                        logLevel;
+  uint8_t*                        logLevelStr;
 
   NwGtpv2cStackHandleT          hGtpv2cStack = 0;
 

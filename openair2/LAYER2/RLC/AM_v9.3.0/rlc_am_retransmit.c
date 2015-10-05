@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_RETRANSMIT_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_RETRANSMIT_C 1
 //-----------------------------------------------------------------------------
 //#include "rtos_header.h"
 //-----------------------------------------------------------------------------
@@ -43,7 +43,6 @@ void rlc_am_nack_pdu (
   const rlc_sn_t snP,
   const sdu_size_t so_startP,
   const sdu_size_t so_endP)
-//-----------------------------------------------------------------------------
 {
   // 5.2.1 Retransmission
   // ...
@@ -112,7 +111,7 @@ void rlc_am_nack_pdu (
         rlc_pP->input_sdus[sdu_index].nb_pdus_ack += 1;
 
         if (rlc_pP->input_sdus[sdu_index].nb_pdus_ack == rlc_pP->input_sdus[sdu_index].nb_pdus) {
-#ifdef TEST_RLC_AM
+#if TEST_RLC_AM
           rlc_am_v9_3_0_test_data_conf (rlc_pP->module_id, rlc_pP->rb_id, rlc_pP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO);
 #else
           rlc_data_conf(ctxt_pP, rlc_pP->rb_id, rlc_pP->input_sdus[sdu_index].mui, RLC_SDU_CONFIRM_NO, rlc_pP->is_data_plane);
@@ -142,7 +141,6 @@ void rlc_am_ack_pdu (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   mem_block_t* mb_p         = rlc_pP->pdu_retrans_buffer[snP].mem_block;
   int          pdu_sdu_index;
@@ -173,7 +171,7 @@ void rlc_am_ack_pdu (
 
       if ((rlc_pP->input_sdus[sdu_index].nb_pdus_ack == rlc_pP->input_sdus[sdu_index].nb_pdus) &&
           (rlc_pP->input_sdus[sdu_index].sdu_remaining_size == 0)) {
-#ifdef TEST_RLC_AM
+#if TEST_RLC_AM
         rlc_am_v9_3_0_test_data_conf (
           rlc_pP->module_id,
           rlc_pP->rb_id,
@@ -276,7 +274,6 @@ mem_block_t* rlc_am_retransmit_get_copy (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP)
-//-----------------------------------------------------------------------------
 {
   mem_block_t* mb_original_p = rlc_pP->pdu_retrans_buffer[snP].mem_block;
 
@@ -305,7 +302,6 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
   rlc_am_entity_t *const rlc_pP,
   const rlc_sn_t snP,
   sdu_size_t * const sizeP /* in-out*/)
-//-----------------------------------------------------------------------------
 {
 
   // 5.2 ARQ procedures
@@ -487,7 +483,7 @@ mem_block_t* rlc_am_retransmit_get_subsegment(
                   test_start_offset,
                   test_li_sum);
             /*if (test_max_copy_payload_size > (test_li_sum - test_start_offset)) {
-                #ifdef TRACE_RLC_AM_RESEGMENT
+                #if TRACE_RLC_AM_RESEGMENT
                 LOG_D(RLC, "[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u][RE-SEGMENT] CUT test_max_copy_payload_size with test_li_sum - test_start_offset %d -> %d\n",ctxt_pP->frame, rlc_pP->module_id, rlc_pP->rb_id,  test_max_copy_payload_size, test_li_sum - test_start_offset);
                 #endif
                 test_max_copy_payload_size = test_li_sum - test_start_offset;
@@ -771,7 +767,6 @@ void rlc_am_tx_buffer_display (
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const rlc_pP,
   char* const message_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_sn_t       sn = rlc_pP->vt_a;
   int            i, loop = 0;
@@ -824,7 +819,6 @@ void rlc_am_tx_buffer_display (
 void rlc_am_retransmit_any_pdu(
   const protocol_ctxt_t* const  ctxt_pP,
   rlc_am_entity_t* const rlc_pP)
-//-----------------------------------------------------------------------------
 {
   rlc_sn_t             sn           = (rlc_pP->vt_s - 1) & RLC_AM_SN_MASK;
   rlc_sn_t             sn_end       = (rlc_pP->vt_a - 1) & RLC_AM_SN_MASK;
@@ -847,7 +841,7 @@ void rlc_am_retransmit_any_pdu(
         LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[FORCE-TRAFFIC] RE-SEND DATA PDU SN %04d\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sn);
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
         MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                                "0 "PROTOCOL_RLC_AM_MSC_FMT" RTX any pdu found SN %u",\
                                PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), sn);
@@ -882,7 +876,7 @@ void rlc_am_retransmit_any_pdu(
           found_pdu_sn);
 
     if (rlc_pP->nb_bytes_requested_by_mac > 4) {
-#if defined(MESSAGE_CHART_GENERATOR_RLC_MAC)
+#if MESSAGE_CHART_GENERATOR_RLC_MAC
         MSC_LOG_EVENT((ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
                                "0 "PROTOCOL_RLC_AM_MSC_FMT" RTX any pdu found SN %u (subseg)",\
                                PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP,rlc_pP), found_pdu_sn);

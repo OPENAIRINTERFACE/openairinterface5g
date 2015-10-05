@@ -44,6 +44,7 @@
 #include "PHY/extern.h" //for PHY_vars
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "msc.h"
 
 #define OPENAIR_THREAD_STACK_SIZE    8192
 #define OPENAIR_THREAD_PRIORITY        255
@@ -64,6 +65,7 @@ static void *pdcp_thread_main(void* param)
   uint8_t eNB_flag = !UE_flag;
 
   LOG_I(PDCP,"This is pdcp_thread eNB_flag = %d\n",eNB_flag);
+  MSC_START_USE();
 
   while (!oai_exit) {
 

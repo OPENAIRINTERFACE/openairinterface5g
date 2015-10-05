@@ -28,7 +28,6 @@
  *******************************************************************************/
 #include "defs.h"
 
-#ifndef EXPRESSMIMO_TARGET
 static  __m128i alpha_128 __attribute__ ((aligned(16)));
 static  __m128i shift     __attribute__ ((aligned(16)));
 
@@ -169,17 +168,3 @@ main ()
 }
 
 #endif //MAIN
-
-
-#else //EXPRESSMIMO_TARGET
-
-int add_cpx_vector(short *x,
-                   short *alpha,
-                   short *y,
-                   unsigned int N)
-{
-
-}
-
-
-#endif //EXPRESSMIMO_TARGET

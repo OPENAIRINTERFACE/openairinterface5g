@@ -48,6 +48,7 @@
 
 #include "s1ap_mme_nas_procedures.h"
 #include "s1ap_mme_retransmission.h"
+#include "msc.h"
 
 #define S1AP_DEBUG_LIST
 #ifdef S1AP_DEBUG_LIST
@@ -95,6 +96,7 @@ void *s1ap_mme_thread(void *args)
   MessageDef *received_message_p;
 
   itti_mark_task_ready(TASK_S1AP);
+  MSC_START_USE();
 
   while(1) {
     /* Trying to fetch a message from the message queue.

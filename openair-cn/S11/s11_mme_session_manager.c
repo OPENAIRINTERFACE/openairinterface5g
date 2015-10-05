@@ -70,7 +70,7 @@ int s11_mme_create_session_request(NwGtpv2cStackHandleT    *stack_p,
 
   /* Add recovery if contacting the peer for the first time */
   rc = nwGtpv2cMsgAddIe((ulp_req.hMsg), NW_GTPV2C_IE_RECOVERY, 1, 0,
-                        (NwU8T*)&restart_counter);
+                        (uint8_t*)&restart_counter);
   DevAssert(NW_OK == rc);
 
   /* Putting the information Elements */
@@ -114,8 +114,8 @@ int s11_mme_handle_create_session_response(NwGtpv2cStackHandleT *stack_p,
     NwGtpv2cUlpApiT      *pUlpApi)
 {
   NwRcT  rc = NW_OK;
-  NwU8T  offendingIeType, offendingIeInstance;
-  NwU16T offendingIeLength;
+  uint8_t  offendingIeType, offendingIeInstance;
+  uint16_t offendingIeLength;
 
   SgwCreateSessionResponse *create_session_resp_p;
   MessageDef               *message_p;

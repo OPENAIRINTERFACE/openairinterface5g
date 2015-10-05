@@ -59,8 +59,8 @@
  ******************************************************************************/
 
 #define SCTP_RECV_BUFFER_SIZE (1 << 16)
-#define SCTP_OUT_STREAMS      (64)
-#define SCTP_IN_STREAMS       (64)
+#define SCTP_OUT_STREAMS      (32)
+#define SCTP_IN_STREAMS       (32)
 #define SCTP_MAX_ATTEMPTS     (5)
 
 /*******************************************************************************

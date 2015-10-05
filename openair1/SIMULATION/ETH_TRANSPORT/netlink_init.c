@@ -75,7 +75,7 @@ int netlink_init(void)
 
   printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd);
 
-#if !defined(USE_PDCP_NETLINK_QUEUES)
+#if !defined(PDCP_USE_NETLINK_QUEUES)
   ret = fcntl(nas_sock_fd,F_SETFL,O_NONBLOCK);
 
   if (ret == -1) {

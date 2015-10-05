@@ -23,7 +23,7 @@
 #ifndef __NW_MINI_LOG_MGR_H__
 #define __NW_MINI_LOG_MGR_H__
 
-extern NwU32T g_log_level;
+extern uint32_t g_log_level;
 
 
 #define NW_LOG( _logLevel, ...)                                         \
@@ -37,7 +37,7 @@ extern NwU32T g_log_level;
   } while(0)
 
 typedef struct {
-  NwU8T  logLevel;
+  uint8_t  logLevel;
 } NwMiniLogMgrT;
 
 #ifdef __cplusplus
@@ -45,9 +45,9 @@ extern "C" {
 #endif
 
 NwGtpv1uRcT nwMiniLogMgrLogRequest (NwGtpv1uLogMgrHandleT logMgrHandle,
-                                    NwU32T logLevel,
+                                    uint32_t logLevel,
                                     NwCharT* file,
-                                    NwU32T line,
+                                    uint32_t line,
                                     NwCharT* logStr);
 
 #ifdef __cplusplus

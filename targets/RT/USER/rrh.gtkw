@@ -1,0 +1,119 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Thu Sep 17 14:23:43 2015
+[*]
+[dumpfile] "/tmp/openair_dump_rrh.vcd"
+[dumpfile_mtime] "Thu Sep 17 14:21:43 2015"
+[dumpfile_size] 636509125
+[savefile] "/home/guepe/openair4G/targets/RT/USER/rrh.gtkw"
+[timestart] 17746655400
+[size] 1855 1056
+[pos] -1 -1
+*-15.826077 17746846200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 224
+[signals_width] 230
+[sst_expanded] 1
+[sst_vpaned_height] 287
+@24
+[color] 1
+variables.hw_frame_rx[63:0]
+[color] 1
+variables.hw_subframe_rx[63:0]
+@28
+[color] 1
+functions.eNB_rx
+functions.eNB_rx_sleep
+functions.trx_write_rf
+@c00024
+variables.rxcnt[63:0]
+@28
+(0)variables.rxcnt[63:0]
+(1)variables.rxcnt[63:0]
+(2)variables.rxcnt[63:0]
+(3)variables.rxcnt[63:0]
+(4)variables.rxcnt[63:0]
+(5)variables.rxcnt[63:0]
+(6)variables.rxcnt[63:0]
+(7)variables.rxcnt[63:0]
+(8)variables.rxcnt[63:0]
+(9)variables.rxcnt[63:0]
+(10)variables.rxcnt[63:0]
+(11)variables.rxcnt[63:0]
+(12)variables.rxcnt[63:0]
+(13)variables.rxcnt[63:0]
+(14)variables.rxcnt[63:0]
+(15)variables.rxcnt[63:0]
+(16)variables.rxcnt[63:0]
+(17)variables.rxcnt[63:0]
+(18)variables.rxcnt[63:0]
+(19)variables.rxcnt[63:0]
+(20)variables.rxcnt[63:0]
+(21)variables.rxcnt[63:0]
+(22)variables.rxcnt[63:0]
+(23)variables.rxcnt[63:0]
+(24)variables.rxcnt[63:0]
+(25)variables.rxcnt[63:0]
+(26)variables.rxcnt[63:0]
+(27)variables.rxcnt[63:0]
+(28)variables.rxcnt[63:0]
+(29)variables.rxcnt[63:0]
+(30)variables.rxcnt[63:0]
+(31)variables.rxcnt[63:0]
+(32)variables.rxcnt[63:0]
+(33)variables.rxcnt[63:0]
+(34)variables.rxcnt[63:0]
+(35)variables.rxcnt[63:0]
+(36)variables.rxcnt[63:0]
+(37)variables.rxcnt[63:0]
+(38)variables.rxcnt[63:0]
+(39)variables.rxcnt[63:0]
+(40)variables.rxcnt[63:0]
+(41)variables.rxcnt[63:0]
+(42)variables.rxcnt[63:0]
+(43)variables.rxcnt[63:0]
+(44)variables.rxcnt[63:0]
+(45)variables.rxcnt[63:0]
+(46)variables.rxcnt[63:0]
+(47)variables.rxcnt[63:0]
+(48)variables.rxcnt[63:0]
+(49)variables.rxcnt[63:0]
+(50)variables.rxcnt[63:0]
+(51)variables.rxcnt[63:0]
+(52)variables.rxcnt[63:0]
+(53)variables.rxcnt[63:0]
+(54)variables.rxcnt[63:0]
+(55)variables.rxcnt[63:0]
+(56)variables.rxcnt[63:0]
+(57)variables.rxcnt[63:0]
+(58)variables.rxcnt[63:0]
+(59)variables.rxcnt[63:0]
+(60)variables.rxcnt[63:0]
+(61)variables.rxcnt[63:0]
+(62)variables.rxcnt[63:0]
+(63)variables.rxcnt[63:0]
+@1401200
+-group_end
+@24
+variables.pck_rx[63:0]
+variables.hw_frame[63:0]
+variables.hw_subframe[63:0]
+@28
+[color] 1
+functions.eNB_tx
+functions.eNB_tx_sleep
+functions.trx_read_rf
+[color] 7
+functions.trx_write
+[color] 7
+functions.trx_read
+@24
+variables.txcnt[63:0]
+variables.rx_ts[63:0]
+variables.tx_ts[63:0]
+variables.hw_cnt_rx[63:0]
+variables.lhw_cnt_rx[63:0]
+@25
+[color] 3
+variables.cnt[63:0]
+[pattern_trace] 1
+[pattern_trace] 0

@@ -196,11 +196,11 @@ nwGtpv1uCompareSeqNum(struct NwGtpv1uTrxn *a, struct NwGtpv1uTrxn *b)
  */
 
 static NwGtpv1uRcT
-nwGtpv1uCreateAndSendMsg( NwGtpv1uStackT *thiz, NwU32T peerIp, NwU16T peerPort,
+nwGtpv1uCreateAndSendMsg( NwGtpv1uStackT *thiz, uint32_t peerIp, uint16_t peerPort,
                           NwGtpv1uMsgT *pMsg)
 {
   NwGtpv1uRcT rc = NW_GTPV1U_FAILURE;
-  NwU8T *msgHdr;
+  uint8_t *msgHdr;
 
   NW_ASSERT(thiz);
   NW_ASSERT(pMsg);
@@ -219,10 +219,10 @@ nwGtpv1uCreateAndSendMsg( NwGtpv1uStackT *thiz, NwU32T peerIp, NwU16T peerPort,
                         (pMsg->npduNumFlag);
 
   *(msgHdr++)         = (pMsg->msgType);
-  *((NwU16T *) msgHdr) = htons(pMsg->msgLen);
+  *((uint16_t *) msgHdr) = htons(pMsg->msgLen);
   msgHdr += 2;
 
-  *((NwU32T *) msgHdr) = htonl(pMsg->teid);
+  *((uint32_t *) msgHdr) = htonl(pMsg->teid);
   msgHdr += 4;
 #if defined(LOG_GTPU) && LOG_GTPU > 0
   GTPU_DEBUG("nwGtpv1uCreateAndSendMsg to teid %u length %d offset %d\n",
@@ -232,13 +232,13 @@ nwGtpv1uCreateAndSendMsg( NwGtpv1uStackT *thiz, NwU32T peerIp, NwU16T peerPort,
 #endif
 
   if(pMsg->seqNumFlag || pMsg->extHdrFlag || pMsg->npduNumFlag) {
-    *((NwU16T *) msgHdr) = (pMsg->seqNumFlag ? htons(pMsg->seqNum) : 0x0000);
+    *((uint16_t *) msgHdr) = (pMsg->seqNumFlag ? htons(pMsg->seqNum) : 0x0000);
     msgHdr += 2;
 
-    *((NwU8T *) msgHdr) = (pMsg->npduNumFlag ? htons(pMsg->npduNum) : 0x00);
+    *((uint8_t *) msgHdr) = (pMsg->npduNumFlag ? htons(pMsg->npduNum) : 0x00);
     msgHdr++;
 
-    *((NwU8T *) msgHdr) = (pMsg->extHdrFlag ? htons(pMsg->nextExtHdrType) : 0x00);
+    *((uint8_t *) msgHdr) = (pMsg->extHdrFlag ? htons(pMsg->nextExtHdrType) : 0x00);
     msgHdr++;
   }
 
@@ -264,13 +264,13 @@ nwGtpv1uCreateAndSendMsg( NwGtpv1uStackT *thiz, NwU32T peerIp, NwU16T peerPort,
 
 static NwGtpv1uRcT
 nwGtpv1uSendUlpMessageIndication( NW_IN NwGtpv1uStackT *thiz,
-                                  NW_IN NwU32T  hUlpTrxn,
-                                  NW_IN NwU32T  apiType,
-                                  NW_IN NwU32T  msgType,
-                                  NW_IN NwU32T  peerIp,
-                                  NW_IN NwU16T  peerPort,
-                                  NW_IN NwU8T  *pMsgBuf,
-                                  NW_IN NwU16T  msgLength)
+                                  NW_IN uint32_t  hUlpTrxn,
+                                  NW_IN uint32_t  apiType,
+                                  NW_IN uint32_t  msgType,
+                                  NW_IN uint32_t  peerIp,
+                                  NW_IN uint16_t  peerPort,
+                                  NW_IN uint8_t  *pMsgBuf,
+                                  NW_IN uint16_t  msgLength)
 {
   NwGtpv1uRcT rc = NW_GTPV1U_FAILURE;
   NwGtpv1uUlpApiT ulpApi;
@@ -344,7 +344,7 @@ nwGtpv1uPeerRspTimeout(void *arg)
 
 static NwGtpv1uRcT
 NwGtpv1uCreateTunnelEndPoint( NW_IN  NwGtpv1uStackT *thiz,
-                              NW_IN  NwU32T teid,
+                              NW_IN  uint32_t teid,
                               NW_IN  NwGtpv1uUlpSessionHandleT hUlpSession,
                               NW_OUT NwGtpv1uStackSessionHandleT *phStackSession )
 {
@@ -515,16 +515,16 @@ nwGtpv1uSendto( NwGtpv1uStackT *thiz,  NW_IN NwGtpv1uUlpApiT *pUlpReq)
 
 static NwGtpv1uRcT
 nwGtpv1uProcessGpdu( NwGtpv1uStackT *thiz,
-                     NW_IN NwU8T *gpdu,
-                     NW_IN NwU32T gpduLen,
-                     NW_IN NwU32T peerIp)
+                     NW_IN uint8_t *gpdu,
+                     NW_IN uint32_t gpduLen,
+                     NW_IN uint32_t peerIp)
 
 {
   NwGtpv1uRcT              rc                = NW_GTPV1U_FAILURE;
   NwGtpv1uMsgHeaderT      *msgHdr            = NULL;
   NwGtpv1uTunnelEndPointT *pTunnelEndPoint   = NULL;
   NwGtpv1uTunnelEndPointT  tunnelEndPointKey;
-  //    NwU16T                   hdr_len           = 0;
+  //    uint16_t                   hdr_len           = 0;
 
 #if defined(LOG_GTPU) && LOG_GTPU > 0
   NW_ENTER(thiz);
@@ -542,14 +542,14 @@ nwGtpv1uProcessGpdu( NwGtpv1uStackT *thiz,
     NwGtpv1uMsgHandleT hMsg;
 
     rc = nwGtpv1uMsgFromBufferNew( (NwGtpv1uStackHandleT)thiz,
-                                   (NwU8T *)gpdu,
+                                   (uint8_t *)gpdu,
                                    gpduLen,
                                    &hMsg);
 
     /*
-      NwU8T*        msgBuf;
-      NwU32T        msgBufLen;
-      NwU32T        msgBufOffset;
+      uint8_t*        msgBuf;
+      uint32_t        msgBufLen;
+      uint32_t        msgBufOffset;
      */
     if(NW_GTPV1U_OK == rc) {
       NwGtpv1uMsgT *pMsg = (NwGtpv1uMsgT *) hMsg;
@@ -596,17 +596,17 @@ nwGtpv1uProcessGpdu( NwGtpv1uStackT *thiz,
 
 static NwGtpv1uRcT
 nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
-                      NW_IN NwU8T *msgBuf,
-                      NW_IN NwU32T msgBufLen,
-                      NW_IN NwU16T peerPort,
-                      NW_IN NwU32T peerIp)
+                      NW_IN uint8_t *msgBuf,
+                      NW_IN uint32_t msgBufLen,
+                      NW_IN uint16_t peerPort,
+                      NW_IN uint32_t peerIp)
 {
   NwGtpv1uRcT           rc     = NW_GTPV1U_FAILURE;
-  NwU16T                seqNum = 0;
+  uint16_t                seqNum = 0;
   NwGtpv1uMsgHandleT    hMsg   = 0;
   int                   bufLen = 0;
 
-  seqNum = ntohs(*(NwU16T *) (msgBuf + (((*msgBuf) & 0x02) ? 8 : 4)));
+  seqNum = ntohs(*(uint16_t *) (msgBuf + (((*msgBuf) & 0x02) ? 8 : 4)));
 
   MSC_LOG_RX_MESSAGE(
     (thiz->stackType == GTPU_STACK_ENB) ? MSC_GTPU_ENB:MSC_GTPU_SGW,
@@ -630,10 +630,15 @@ nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
 
   bufLen = sizeof(NwGtpv1uIeTv1T)+ ((NwGtpv1uMsgT*)hMsg)->msgLen;
 
+#warning CROUX DIRTY +16, TO BE FIXED!!!
+  /* the +16 is there because by analyzing memory allocation with some external
+   * tool, I saw that there were 6 bytes accessed after bufLen in nwGtpv1uCreateAndSendMsg
+   * the value "16" has been chosen arbitrarily, just bigger than 6
+   */
   ((NwGtpv1uMsgT*)hMsg)->msgBuf = itti_malloc(
                                     TASK_GTPV1_U,
                                     TASK_UDP,
-                                    bufLen);
+                                    bufLen + 16 /* CROUX - dirty +16, to be fixed! */);
   ((NwGtpv1uMsgT*)hMsg)->msgBufLen    = bufLen;
   NW_ASSERT(NW_GTPV1U_OK == rc);
 
@@ -678,7 +683,7 @@ nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
  *--------------------------------------------------------------------------*/
 
 NwGtpv1uRcT
-nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, NwU32T stackType)
+nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t stackType)
 {
   NwGtpv1uRcT rc = NW_GTPV1U_FAILURE;
   NwGtpv1uStackT *thiz;
@@ -689,7 +694,7 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, NwU32T stac
   if(thiz) {
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
-    thiz->seq   = (NwU16T) ((NwU32T)thiz) ; // FIXME interesting casts... don't know what this is good for...
+    thiz->seq   = (uint16_t) ((uint32_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
     RB_INIT(&(thiz->outstandingTxSeqNumMap));
     RB_INIT(&(thiz->outstandingRxSeqNumMap));
     RB_INIT(&(thiz->sessionMap));
@@ -824,7 +829,7 @@ nwGtpv1uSetLogMgrEntity( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uSetLogLevel( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                     NW_IN NwU32T logLevel)
+                     NW_IN uint32_t logLevel)
 {
   NwGtpv1uStackT *thiz = (NwGtpv1uStackT *) hGtpuStackHandle;
   thiz->logLevel = logLevel;
@@ -837,14 +842,14 @@ nwGtpv1uSetLogLevel( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
 NwGtpv1uRcT
 nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                       NW_IN NwU8T *udpData,
-                       NW_IN NwU32T udpDataLen,
-                       NW_IN NwU16T peerPort,
-                       NW_IN NwU32T peerIp)
+                       NW_IN uint8_t *udpData,
+                       NW_IN uint32_t udpDataLen,
+                       NW_IN uint16_t peerPort,
+                       NW_IN uint32_t peerIp)
 {
   NwGtpv1uRcT           ret = NW_GTPV1U_FAILURE;
   NwGtpv1uStackT       *thiz;
-  NwU16T                msgType;
+  uint16_t                msgType;
 
 #if defined(ENB_MODE)
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_PROCESS_UDP_REQ, VCD_FUNCTION_IN);
@@ -853,7 +858,7 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
 
   NW_ASSERT(thiz);
 
-  msgType = *((NwU8T *)(udpData + 1));
+  msgType = *((uint8_t *)(udpData + 1));
 
   switch(msgType) {
   case NW_GTP_ECHO_REQ:

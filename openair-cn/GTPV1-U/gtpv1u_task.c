@@ -50,13 +50,12 @@
 #include "NwLog.h"
 #include "gtpv1u_sgw_defs.h"
 #include "NwGtpv1uPrivate.h"
+#include "msc.h"
 
 //static NwGtpv1uStackHandleT gtpv1u_stack = 0;
 static gtpv1u_data_t        gtpv1u_sgw_data;
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
-static int gtpv1u_send_init_udp(uint16_t port_number);
-#endif
+
 static int gtpv1u_create_s1u_tunnel(Gtpv1uCreateTunnelReq *create_tunnel_reqP);
 static int gtpv1u_delete_s1u_tunnel(Teid_t context_teidP, Teid_t S1U_teidP);
 static int gtpv1u_update_s1u_tunnel(Gtpv1uUpdateTunnelReq *reqP);
@@ -64,17 +63,17 @@ static void *gtpv1u_thread(void *args);
 
 NwGtpv1uRcT gtpv1u_send_udp_msg(
   NwGtpv1uUdpHandleT udpHandle,
-  NwU8T *buffer,
-  NwU32T buffer_len,
-  NwU32T buffer_offset,
-  NwU32T peerIpAddr,
-  NwU32T peerPort);
+  uint8_t *buffer,
+  uint32_t buffer_len,
+  uint32_t buffer_offset,
+  uint32_t peerIpAddr,
+  uint32_t peerPort);
 
 NwGtpv1uRcT gtpv1u_log_request(
   NwGtpv1uLogMgrHandleT hLogMgr,
-  NwU32T logLevel,
+  uint32_t logLevel,
   NwCharT *file,
-  NwU32T line,
+  uint32_t line,
   NwCharT *logStr);
 
 NwGtpv1uRcT gtpv1u_process_stack_req(
@@ -149,48 +148,23 @@ void gtpu_print_hex_octets(unsigned char* dataP, unsigned long sizeP)
 }
 
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
-static int gtpv1u_send_init_udp(uint16_t port_number)
-{
-  // Create and alloc new message
-  MessageDef *message_p;
-  struct in_addr addr;
-
-  message_p = itti_alloc_new_message(TASK_GTPV1_U, UDP_INIT);
-
-  if (message_p == NULL) {
-    return -1;
-  }
-
-  UDP_INIT(message_p).port = port_number;
-  //LG UDP_INIT(message_p).address = "0.0.0.0"; //ANY address
-
-  addr.s_addr = gtpv1u_sgw_data.sgw_ip_address_for_S1u_S12_S4_up;
-  UDP_INIT(message_p).address = inet_ntoa(addr);
-  GTPU_DEBUG("Tx UDP_INIT IP addr %s\n", UDP_INIT(message_p).address);
-
-  return itti_send_msg_to_task(TASK_UDP, INSTANCE_DEFAULT, message_p);
-}
-#endif
-
 NwGtpv1uRcT gtpv1u_log_request(NwGtpv1uLogMgrHandleT hLogMgr,
-                               NwU32T logLevel,
+                               uint32_t logLevel,
                                NwCharT *file,
-                               NwU32T line,
+                               uint32_t line,
                                NwCharT *logStr)
 {
   GTPU_DEBUG("%s\n", logStr);
   return NW_GTPV1U_OK;
 }
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
 NwGtpv1uRcT gtpv1u_send_udp_msg(
   NwGtpv1uUdpHandleT udpHandle,
-  NwU8T *buffer,
-  NwU32T buffer_len,
-  NwU32T buffer_offset,
-  NwU32T peerIpAddr,
-  NwU32T peerPort)
+  uint8_t *buffer,
+  uint32_t buffer_len,
+  uint32_t buffer_offset,
+  uint32_t peerIpAddr,
+  uint32_t peerPort)
 {
   // Create and alloc new message
   MessageDef     *message_p;
@@ -208,7 +182,7 @@ NwGtpv1uRcT gtpv1u_send_udp_msg(
 
   return itti_send_msg_to_task(TASK_UDP, INSTANCE_DEFAULT, message_p);
 }
-#endif
+
 /* Callback called when a gtpv1u message arrived on UDP interface */
 NwGtpv1uRcT gtpv1u_process_stack_req(
   NwGtpv1uUlpHandleT hUlp,
@@ -229,7 +203,7 @@ NwGtpv1uRcT gtpv1u_process_stack_req(
      * task for transmission.
      */
     /*if (NW_GTPV1U_OK != nwGtpv1uMsgGetTpdu(pUlpApi->apiInfo.recvMsgInfo.hMsg,
-        buffer, (NwU32T *)&buffer_len)) {
+        buffer, (uint32_t *)&buffer_len)) {
         GTPU_ERROR("Error while retrieving T-PDU\n");
     }*/
     GTPU_DEBUG("Received TPDU from gtpv1u stack %u with size %d\n",
@@ -397,9 +371,9 @@ static int gtpv1u_update_s1u_tunnel(Gtpv1uUpdateTunnelReq *reqP)
 
 static NwGtpv1uRcT gtpv1u_start_timer_wrapper(
   NwGtpv1uTimerMgrHandleT tmrMgrHandle,
-  NwU32T                  timeoutSec,
-  NwU32T                  timeoutUsec,
-  NwU32T                  tmrType,
+  uint32_t                  timeoutSec,
+  uint32_t                  timeoutUsec,
+  uint32_t                  tmrType,
   void                   *timeoutArg,
   NwGtpv1uTimerHandleT   *hTmr)
 {
@@ -441,6 +415,7 @@ static NwGtpv1uRcT gtpv1u_stop_timer_wrapper(
 static void *gtpv1u_thread(void *args)
 {
   itti_mark_task_ready(TASK_GTPV1_U);
+  MSC_START_USE();
 
   while(1) {
     /* Trying to fetch a message from the message queue.
@@ -451,21 +426,11 @@ static void *gtpv1u_thread(void *args)
     itti_receive_msg(TASK_GTPV1_U, &received_message_p);
     DevAssert(received_message_p != NULL);
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
 
     switch (ITTI_MSG_ID(received_message_p)) {
-    case GTPV1U_CREATE_TUNNEL_REQ: {
-      gtpv1u_create_s1u_tunnel(&received_message_p->ittiMsg.gtpv1uCreateTunnelReq);
-    }
-    break;
 
-    case GTPV1U_DELETE_TUNNEL_REQ: {
-      gtpv1u_delete_s1u_tunnel(received_message_p->ittiMsg.gtpv1uDeleteTunnelReq.context_teid, received_message_p->ittiMsg.gtpv1uDeleteTunnelReq.S1u_teid);
-    }
-    break;
-
-    case GTPV1U_UPDATE_TUNNEL_REQ: {
-      gtpv1u_update_s1u_tunnel(&received_message_p->ittiMsg.gtpv1uUpdateTunnelReq);
+    case TERMINATE_MESSAGE: {
+      itti_exit_task();
     }
     break;
 
@@ -474,85 +439,11 @@ static void *gtpv1u_thread(void *args)
       udp_data_ind_t *udp_data_ind_p;
       udp_data_ind_p = &received_message_p->ittiMsg.udp_data_ind;
       nwGtpv1uProcessUdpReq(gtpv1u_sgw_data.gtpv1u_stack,
-                            udp_data_ind_p->buffer,
-                            udp_data_ind_p->buffer_length,
-                            udp_data_ind_p->peer_port,
-                            udp_data_ind_p->peer_address);
-      //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_ind_p->buffer);
-    }
-    break;
-
-    // DATA TO BE SENT TO UDP
-    case GTPV1U_TUNNEL_DATA_REQ: {
-      Gtpv1uTunnelDataReq     *data_req_p = NULL;
-      NwGtpv1uUlpApiT          stack_req;
-      NwGtpv1uRcT              rc;
-      hashtable_rc_t           hash_rc;
-      gtpv1u_teid2enb_info_t  *gtpv1u_teid2enb_info = NULL;
-
-      data_req_p = &received_message_p->ittiMsg.gtpv1uTunnelDataReq;
-
-      //GTPU_DEBUG("-- GTPV1U_TUNNEL_DATA_REQ -----------------------------------------------------\n%s :\n",
-      //        __FUNCTION__);
-      //gtpu_print_hex_octets(data_req_p->buffer, data_req_p->length);
-
-
-      memset(&stack_req, 0, sizeof(NwGtpv1uUlpApiT));
-
-      hash_rc = hashtable_get(gtpv1u_sgw_data.S1U_mapping, (uint64_t)data_req_p->local_S1u_teid, (void**)&gtpv1u_teid2enb_info);
-
-      if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
-        GTPU_ERROR("nwGtpv1uProcessUlpReq failed: while getting teid %u in hashtable S1U_mapping\n", data_req_p->local_S1u_teid);
-      } else {
-        stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
-        //stack_req.apiInfo.sendtoInfo.teid   = data_req_p->local_S1u_teid;
-        stack_req.apiInfo.sendtoInfo.teid   = gtpv1u_teid2enb_info->teid_enb;
-        BUFFER_TO_NwU32T(gtpv1u_teid2enb_info->enb_ip_addr.address.ipv4_address, stack_req.apiInfo.sendtoInfo.ipAddr);
-
-        /*nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
-                     NW_IN NwU32T    teid,
-                     NW_IN NwU8T     seqNumFlag,
-                     NW_IN NwU16T    seqNum,
-                     NW_IN NwU8T    *tpdu,
-                     NW_IN NwU16T    tpduLength,
-                     NW_OUT NwGtpv1uMsgHandleT *phMsg)*/
-        GTPU_DEBUG("GTPV1U_TUNNEL_DATA_REQ seq num %d  %d bytes\n",
-                   gtpv1u_sgw_data.seq_num,
-                   data_req_p->length);
-        rc = nwGtpv1uGpduMsgNew(gtpv1u_sgw_data.gtpv1u_stack,
-                                00,// TO DO bearer_p->port, but not needed when looking at processing
-                                NW_FALSE,
-                                gtpv1u_sgw_data.seq_num++,
-                                data_req_p->buffer,
-                                data_req_p->length,
-                                data_req_p->offset,
-                                &(stack_req.apiInfo.sendtoInfo.hMsg));
-
-        if (rc != NW_GTPV1U_OK) {
-          GTPU_ERROR("nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
-        } else {
-          rc = nwGtpv1uProcessUlpReq(gtpv1u_sgw_data.gtpv1u_stack, &stack_req);
-
-          if (rc != NW_GTPV1U_OK) {
-            GTPU_ERROR("nwGtpv1uProcessUlpReq failed: 0x%x\n", rc);
-          }
-
-          rc = nwGtpv1uMsgDelete(gtpv1u_sgw_data.gtpv1u_stack,
-                                 stack_req.apiInfo.sendtoInfo.hMsg);
-
-          if (rc != NW_GTPV1U_OK) {
-            GTPU_ERROR("nwGtpv1uMsgDelete failed: 0x%x\n", rc);
-          }
-        }
-      }
-
-      /* Buffer is still needed, do not free it */
-      //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), data_req_p->buffer);
-    }
-    break;
-
-    case TERMINATE_MESSAGE: {
-      itti_exit_task();
+                             udp_data_ind_p->buffer,
+                             udp_data_ind_p->buffer_length,
+                             udp_data_ind_p->peer_port,
+                             udp_data_ind_p->peer_address);
+       //itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), udp_data_ind_p->buffer);
     }
     break;
 
@@ -568,7 +459,6 @@ static void *gtpv1u_thread(void *args)
     break;
     }
 
-#endif
     itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
     received_message_p = NULL;
   }
@@ -591,82 +481,11 @@ int gtpv1u_init(const mme_config_t *mme_config_p)
 
   gtpv1u_sgw_data.sgw_ip_address_for_S1u_S12_S4_up = mme_config_p->ipv4.sgw_ip_address_for_S1u_S12_S4_up;
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
-  gtpv1u_sgw_data.S1U_mapping = hashtable_create (8192, NULL, NULL);
-
-  if (gtpv1u_sgw_data.S1U_mapping == NULL) {
-    perror("hashtable_create");
-    GTPU_ERROR("Initializing TASK_GTPV1_U task interface: ERROR\n");
-    return -1;
-  }
-
-  /* Initializing GTPv1-U stack */
-  if ((rc = nwGtpv1uInitialize(&gtpv1u_sgw_data.gtpv1u_stack, GTPU_STACK_SGW)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("Failed to setup nwGtpv1u stack %x\n", rc);
-    return -1;
-  }
-
-  if ((rc = nwGtpv1uSetLogLevel(gtpv1u_sgw_data.gtpv1u_stack,
-                                NW_LOG_LEVEL_DEBG)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("Failed to setup loglevel for stack %x\n", rc);
-    return -1;
-  }
-
-  /* Set the ULP API callback. Called once message have been processed by the
-   * nw-gtpv1u stack.
-   */
-  ulp.ulpReqCallback = gtpv1u_process_stack_req;
-
-  if ((rc = nwGtpv1uSetUlpEntity(gtpv1u_sgw_data.gtpv1u_stack, &ulp)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("nwGtpv1uSetUlpEntity: %x", rc);
-    return -1;
-  }
-
-  /* nw-gtpv1u stack requires an udp callback to send data over UDP.
-   * We provide a wrapper to UDP task.
-   */
-  udp.udpDataReqCallback = gtpv1u_send_udp_msg;
-
-  if ((rc = nwGtpv1uSetUdpEntity(gtpv1u_sgw_data.gtpv1u_stack, &udp)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("nwGtpv1uSetUdpEntity: %x", rc);
-    return -1;
-  }
-
-  log.logReqCallback = gtpv1u_log_request;
-
-  if ((rc = nwGtpv1uSetLogMgrEntity(gtpv1u_sgw_data.gtpv1u_stack, &log)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("nwGtpv1uSetLogMgrEntity: %x", rc);
-    return -1;
-  }
-
-  /* Timer interface is more complicated as both wrappers doesn't send a message
-   * to the timer task but call the timer API functions start/stop timer.
-   */
-  tmr.tmrMgrHandle     = 0;
-  tmr.tmrStartCallback = gtpv1u_start_timer_wrapper;
-  tmr.tmrStopCallback  = gtpv1u_stop_timer_wrapper;
-
-  if ((rc = nwGtpv1uSetTimerMgrEntity(gtpv1u_sgw_data.gtpv1u_stack, &tmr)) != NW_GTPV1U_OK) {
-    GTPU_ERROR("nwGtpv1uSetTimerMgrEntity: %x", rc);
-    return -1;
-  }
-
-#endif
-
   if (itti_create_task(TASK_GTPV1_U, &gtpv1u_thread, NULL) < 0) {
     GTPU_ERROR("gtpv1u phtread_create: %s", strerror(errno));
     return -1;
   }
 
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
-
-  ret = gtpv1u_send_init_udp(mme_config_p->gtpv1u_config.port_number);
-
-  if (ret < 0) {
-    return ret;
-  }
-
-#endif
   GTPU_DEBUG("Initializing GTPV1U interface: DONE\n");
 
   return ret;

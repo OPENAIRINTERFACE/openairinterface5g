@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Feb  5 17:45:30 2015
+[*] Tue Jun 23 10:22:38 2015
 [*]
 [dumpfile] "/tmp/openair_dump_UE.vcd"
-[dumpfile_mtime] "Thu Feb  5 17:10:05 2015"
-[dumpfile_size] 18764854
-[savefile] "/home/ephese/openair4G/targets/RT/USER/ue_exmimo2.gtkw"
-[timestart] 4937140000
-[size] 1463 640
+[dumpfile_mtime] "Tue Jun 23 10:21:56 2015"
+[dumpfile_size] 15561726
+[savefile] "/home/stevens/openair4G/targets/RT/USER/ue_exmimo2.gtkw"
+[timestart] 10448200000
+[size] 1215 640
 [pos] 105 102
-*-22.000000 4947033063 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-23.292629 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 224
 [signals_width] 262
 [sst_expanded] 1
@@ -26,8 +26,14 @@ functions.rt_sleep
 variables.subframe_number_RX_UE[63:0]
 variables.subframe_number_TX_UE[63:0]
 variables.slot_number_RX_UE[63:0]
-@25
 variables.slot_number_RX_UE[63:0]
+@28
+functions.ue_thread_rx
+functions.ue_thread_tx
+@420
+variables.ue_inst_cnt_rx[63:0]
+@421
+variables.ue_inst_cnt_tx[63:0]
 @28
 functions.phy_procedures_ue_rx
 functions.phy_procedures_ue_tx

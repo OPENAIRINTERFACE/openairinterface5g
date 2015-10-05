@@ -34,7 +34,7 @@ static
 NwCharT* gLogLevelStr[] = {"EMER", "ALER", "CRIT",  "ERRO", "WARN", "NOTI", "INFO", "DEBG"};
 
 static NwRcT
-nwGtpv2cCreateSessionRequestIeIndication(NwU8T ieType, NwU8T ieLength, NwU8T ieInstance, NwU8T* ieValue, void* arg)
+nwGtpv2cCreateSessionRequestIeIndication(uint8_t ieType, uint8_t ieLength, uint8_t ieInstance, uint8_t* ieValue, void* arg)
 {
   NW_LOG(NW_LOG_LEVEL_DEBG, "Received IE Parse Indication for of type %u, length %u, instance %u!", ieType, ieLength, ieInstance);
   return NW_OK;
@@ -62,7 +62,7 @@ nwGtpv2cUlpDestroy(NwGtpv2cNodeUlpT* thiz)
 }
 
 NwRcT
-nwGtpv2cUlpSenEchoRequestToPeer(NwGtpv2cNodeUlpT* thiz, NwU32T peerIp)
+nwGtpv2cUlpSenEchoRequestToPeer(NwGtpv2cNodeUlpT* thiz, uint32_t peerIp)
 {
   NwRcT rc;
   NwGtpv2cUlpApiT           ulpReq;
@@ -153,18 +153,18 @@ nwGtpv2cUlpProcessStackReqCallback (NwGtpv2cUlpHandleT hUlp,
     if(pUlpApi->apiInfo.initialReqIndInfo.msgType == NW_GTP_CREATE_SESSION_REQ) {
 
       struct {
-        NwU8T causeValue;
-        NwU8T spare:5;
-        NwU8T pce:1;
-        NwU8T bce:1;
-        NwU8T cs:1;
+        uint8_t causeValue;
+        uint8_t spare:5;
+        uint8_t pce:1;
+        uint8_t bce:1;
+        uint8_t cs:1;
       } cause;
 
 
       rc = nwGtpv2cMsgParserAddIe(pMsgParser, NW_GTPV2C_IE_RECOVERY, NW_GTPV2C_IE_INSTANCE_ZERO, NW_GTPV2C_IE_PRESENCE_MANDATORY, nwGtpv2cCreateSessionRequestIeIndication, NULL);
       NW_ASSERT(NW_OK == rc);
 
-      NwU8T offendingIeType, OffendingIeLength;
+      uint8_t offendingIeType, OffendingIeLength;
       rc = nwGtpv2cMsgParserRun(pMsgParser, (pUlpApi->hMsg), &offendingIeType, &OffendingIeLength);
 
       if( rc != NW_OK ) {
@@ -198,7 +198,7 @@ nwGtpv2cUlpProcessStackReqCallback (NwGtpv2cUlpHandleT hUlp,
                            nwGtpv2cMsgGetSeqNumber(pUlpApi->hMsg),
                            &(ulpReq.hMsg));
 
-      rc = nwGtpv2cMsgAddIe((ulpReq.hMsg), NW_GTPV2C_IE_CAUSE, 2, 0, (NwU8T*)&cause);
+      rc = nwGtpv2cMsgAddIe((ulpReq.hMsg), NW_GTPV2C_IE_CAUSE, 2, 0, (uint8_t*)&cause);
       NW_ASSERT(NW_OK == rc);
 
       NW_LOG(NW_LOG_LEVEL_NOTI, "Received NW_GTP_CREATE_SESSION_REQ, Sending NW_GTP_CREATE_SESSION_RSP!");
@@ -227,7 +227,7 @@ nwGtpv2cUlpProcessStackReqCallback (NwGtpv2cUlpHandleT hUlp,
       rc = nwGtpv2cMsgParserAddIe(pMsgParser, NW_GTPV2C_IE_CAUSE, NW_GTPV2C_IE_INSTANCE_ZERO, NW_GTPV2C_IE_PRESENCE_MANDATORY, nwGtpv2cCreateSessionRequestIeIndication, NULL);
       NW_ASSERT(NW_OK == rc);
 
-      NwU8T offendingIeType, OffendingIeLength;
+      uint8_t offendingIeType, OffendingIeLength;
       rc = nwGtpv2cMsgParserRun(pMsgParser, (pUlpApi->hMsg), &offendingIeType, &OffendingIeLength);
 
       if( rc != NW_OK ) {

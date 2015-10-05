@@ -53,6 +53,7 @@
 
 #include "assertions.h"
 #include "conversions.h"
+#include "msc.h"
 
 #define UDP_DEBUG(x, args...) do { fprintf(stdout, "[UDP] [D]"x, ##args); } while(0)
 #define UDP_ERROR(x, args...) do { fprintf(stderr, "[UDP] [E]"x, ##args); } while(0)
@@ -330,13 +331,13 @@ static void *udp_intertask_interface(void *args_p)
   struct epoll_event *events    = NULL;
 
   itti_mark_task_ready(TASK_UDP);
+  MSC_START_USE();
 
   while(1) {
     MessageDef *received_message_p = NULL;
     itti_receive_msg(TASK_UDP, &received_message_p);
 
     if (received_message_p != NULL) {
-#if !defined(ENABLE_USE_GTPU_IN_KERNEL)
 
       switch (ITTI_MSG_ID(received_message_p)) {
       case UDP_INIT: {
@@ -422,7 +423,6 @@ static void *udp_intertask_interface(void *args_p)
       break;
       }
 
-#endif
 on_error:
       rc = itti_free(ITTI_MSG_ORIGIN_ID(received_message_p), received_message_p);
       AssertFatal(rc == EXIT_SUCCESS, "Failed to free memory (%d)!\n", rc);

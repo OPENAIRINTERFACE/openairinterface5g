@@ -26,6 +26,7 @@
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
+#include <stdlib.h>
 #include <stdint.h>
 
 #define MME_TEST_S1_MAX_BUF_LENGTH (1024)
@@ -36,14 +37,15 @@ typedef enum entity_s{
   ENB
 } entity_t;
 
-typedef struct s1ap_test_s{
+typedef struct s1ap_message_test_s{
   char    *procedure_name;
   uint8_t  buffer[MME_TEST_S1_MAX_BUF_LENGTH];
   uint16_t dont_check[MME_TEST_S1_MAX_BYTES_TEST]; // bytes index test that can be omitted
   uint32_t buf_len;
   entity_t originating;
   uint16_t sctp_stream_id;
-} s1ap_test_t;
+  uint32_t assoc_id;
+} s1ap_message_test_t;
 
 void     fail (const char *format, ...);
 void     success (const char *format, ...);

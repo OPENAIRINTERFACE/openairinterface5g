@@ -68,15 +68,15 @@ extern "C" {
  * IPv4 logging macros
  *--------------------------------------------------------------------------*/
 #define NW_IPV4_ADDR                            "%u.%u.%u.%u"
-#define NW_IPV4_ADDR_FORMAT(__addr)             (NwU8T)((__addr) & 0x000000ff),        \
-                                                (NwU8T)(((__addr) & 0x0000ff00) >> 8 ), \
-                                                (NwU8T)(((__addr) & 0x00ff0000) >> 16), \
-                                                (NwU8T)(((__addr) & 0xff000000) >> 24)
+#define NW_IPV4_ADDR_FORMAT(__addr)             (uint8_t)((__addr) & 0x000000ff),        \
+                                                (uint8_t)(((__addr) & 0x0000ff00) >> 8 ), \
+                                                (uint8_t)(((__addr) & 0x00ff0000) >> 16), \
+                                                (uint8_t)(((__addr) & 0xff000000) >> 24)
 
-#define NW_IPV4_ADDR_FORMATP(__paddr)           (NwU8T)(*((NwU8T*)(__paddr)) & 0x000000ff),     \
-                                                (NwU8T)(*((NwU8T*)(__paddr + 1)) & 0x000000ff), \
-                                                (NwU8T)(*((NwU8T*)(__paddr + 2)) & 0x000000ff), \
-                                                (NwU8T)(*((NwU8T*)(__paddr + 3)) & 0x000000ff)
+#define NW_IPV4_ADDR_FORMATP(__paddr)           (uint8_t)(*((uint8_t*)(__paddr)) & 0x000000ff),     \
+                                                (uint8_t)(*((uint8_t*)(__paddr + 1)) & 0x000000ff), \
+                                                (uint8_t)(*((uint8_t*)(__paddr + 2)) & 0x000000ff), \
+                                                (uint8_t)(*((uint8_t*)(__paddr + 3)) & 0x000000ff)
 
 
 #ifdef __cplusplus

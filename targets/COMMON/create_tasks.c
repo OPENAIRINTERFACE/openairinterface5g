@@ -40,7 +40,7 @@
 #     include "udp_eNB_task.h"
 #     include "gtpv1u_eNB_task.h"
 #   endif
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "lteRALue.h"
 #     include "lteRALenb.h"
 #   endif
@@ -77,12 +77,14 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
         }
       }
 
+#      if defined(NAS_BUILT_IN_UE)
       if (ue_nb > 0) {
         if (itti_create_task (TASK_NAS_UE, nas_ue_task, NULL) < 0) {
           LOG_E(NAS, "Create task for NAS UE failed\n");
           return -1;
         }
       }
+#      endif
     }
 #   endif
 
@@ -92,7 +94,7 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
         return -1;
       }
 
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 
       if (itti_create_task (TASK_RAL_ENB, eRAL_task, NULL) < 0) {
         LOG_E(RAL_ENB, "Create task for RAL eNB failed\n");
@@ -108,7 +110,7 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
         return -1;
       }
 
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 
       if (itti_create_task (TASK_RAL_UE, mRAL_task, NULL) < 0) {
         LOG_E(RAL_UE, "Create task for RAL UE failed\n");

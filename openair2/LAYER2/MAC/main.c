@@ -534,7 +534,11 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;
 
   mac_xface->get_hundred_times_delta_TF = get_hundred_times_delta_IF_mac;
-  mac_xface->get_target_ul_rx_power     = get_target_ul_rx_power;
+  mac_xface->get_target_pusch_rx_power     = get_target_pusch_rx_power;
+  mac_xface->get_target_pucch_rx_power     = get_target_pucch_rx_power;
+
+  mac_xface->get_prach_prb_offset       = get_prach_prb_offset;
+  mac_xface->is_prach_subframe          = is_prach_subframe;
 
 #ifdef Rel10
   mac_xface->get_mch_sdu                 = get_mch_sdu;

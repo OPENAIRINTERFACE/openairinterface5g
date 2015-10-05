@@ -35,7 +35,11 @@
 #include "PHY/defs.h"
 //#define DEBUG_PHY
 
+#if defined(__x86_64__) || defined(__i386__)
 __m128i avg128F;
+#elif defined(__arm__)
+int32x4_t avg128F;
+#endif
 
 //compute average channel_level on each (TX,RX) antenna pair
 int dl_channel_level(int16_t *dl_ch,
@@ -43,10 +47,15 @@ int dl_channel_level(int16_t *dl_ch,
 {
 
   int16_t rb;
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
+#elif defined(__arm__)
+  int16x4_t *dl_ch128;
+#endif
   int avg;
 
   //clear average level
+#if defined(__x86_64__) || defined(__i386__)
   avg128F = _mm_setzero_si128();
   dl_ch128=(__m128i *)dl_ch;
 
@@ -59,24 +68,44 @@ int dl_channel_level(int16_t *dl_ch,
     dl_ch128+=3;
 
   }
+#elif defined(__arm__)
+  avg128F = vdupq_n_s32(0);
+  dl_ch128=(int16x4_t *)dl_ch;
 
+  for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
+
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[0],dl_ch128[0]));
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[1],dl_ch128[1]));
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[2],dl_ch128[2]));
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[3],dl_ch128[3]));
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[4],dl_ch128[4]));
+       avg128F = vqaddq_s32(avg128F,vmull_s16(dl_ch128[5],dl_ch128[5]));
+       dl_ch128+=6;
+
+
+  }
+
+
+#endif
+  DevAssert( frame_parms->N_RB_DL );
   avg = (((int*)&avg128F)[0] +
          ((int*)&avg128F)[1] +
          ((int*)&avg128F)[2] +
          ((int*)&avg128F)[3])/(frame_parms->N_RB_DL*12);
 
 
-
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
   return(avg);
 }
 
 int lte_est_freq_offset(int **dl_ch_estimates,
                         LTE_DL_FRAME_PARMS *frame_parms,
                         int l,
-                        int* freq_offset)
+                        int* freq_offset,
+			int reset)
 {
 
   int ch_offset, omega, dl_ch_shift;
@@ -89,6 +118,9 @@ int lte_est_freq_offset(int **dl_ch_estimates,
   int coef = 1<<10;
   int ncoef =  32767 - coef;
 
+  // initialize the averaging filter to initial value
+  if (reset!=0)
+    first_run=1;
 
   ch_offset = (l*(frame_parms->ofdm_symbol_size));
 
@@ -134,13 +166,13 @@ int lte_est_freq_offset(int **dl_ch_estimates,
     omega_cpx->i += ((struct complex16*) &omega)->i;
     //    phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
     phase_offset += atan2((double)omega_cpx->i,(double)omega_cpx->r);
-    //    LOG_D(PHY,"omega (%d,%d) -> %f\n",omega_cpx->r,omega_cpx->i,phase_offset);
+    //    LOG_I(PHY,"omega (%d,%d) -> %f\n",omega_cpx->r,omega_cpx->i,phase_offset);
   }
 
   //  phase_offset /= (frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx);
 
   freq_offset_est = (int) (phase_offset/(2*M_PI)/(frame_parms->Ncp==NORMAL ? (285.8e-6):(2.5e-4))); //2.5e-4 is the time between pilot symbols
-  //  LOG_D(PHY,"symbol %d : freq_offset_est %d\n",l,freq_offset_est);
+  //  LOG_I(PHY,"symbol %d : freq_offset_est %d\n",l,freq_offset_est);
 
   // update freq_offset with phase_offset using a moving average filter
   if (first_run == 1) {

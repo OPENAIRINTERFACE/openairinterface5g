@@ -26,8 +26,8 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_TM_MODULE
-#define RLC_TM_C
+#define RLC_TM_MODULE 1
+#define RLC_TM_C 1
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 #include "platform_constants.h"
@@ -46,12 +46,11 @@ rlc_tm_send_sdu (
   uint8_t * const         srcP,
   const sdu_size_t        length_in_bitsP)
 {
-  //-----------------------------------------------------------------------------
   int             length_in_bytes;
-#ifdef DEBUG_RLC_TM_DISPLAY_ASCII_DATA
+#if DEBUG_RLC_TM_DISPLAY_ASCII_DATA
   int             index;
 #endif
-#ifdef DEBUG_RLC_TM_REASSEMBLY
+#if DEBUG_RLC_TM_REASSEMBLY
   LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT"[SEND_SDU] %d bits\n",
         PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_pP),
         length_in_bitsP);
@@ -63,7 +62,7 @@ rlc_tm_send_sdu (
   }
 
   if ((rlc_pP->output_sdu_in_construction)) {
-#ifdef DEBUG_RLC_TM_DISPLAY_ASCII_DATA
+#if DEBUG_RLC_TM_DISPLAY_ASCII_DATA
     LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT"[SEND_SDU] DATA :",
           PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_pP));
 
@@ -95,7 +94,6 @@ rlc_tm_no_segment (
   rlc_tm_entity_t *const rlc_pP
 )
 {
-  //-----------------------------------------------------------------------------
   mem_block_t                     *pdu_p               = NULL;
   struct rlc_tm_tx_sdu_management *sdu_mngt_p          = NULL;
   struct rlc_tm_tx_pdu_management *pdu_mngt_p          = NULL;
@@ -138,7 +136,6 @@ rlc_tm_rx (
   void * const         argP,
   struct mac_data_ind data_indP)
 {
-  //-----------------------------------------------------------------------------
 
   rlc_tm_entity_t     * const rlc_p = (rlc_tm_entity_t *) argP;
   mem_block_t         *tb_p;
@@ -164,7 +161,6 @@ rlc_tm_mac_status_indication (
   const tb_size_t               tb_sizeP,
   struct mac_status_ind         tx_statusP)
 {
-  //-----------------------------------------------------------------------------
   struct mac_status_resp status_resp;
 
   ((rlc_tm_entity_t *) rlc_pP)->rlc_pdu_size = tb_sizeP;
@@ -181,7 +177,6 @@ rlc_tm_mac_data_request (
   const protocol_ctxt_t* const  ctxt_pP,
   void * const rlc_pP)
 {
-  //-----------------------------------------------------------------------------
   rlc_tm_entity_t*    rlc_p = (rlc_tm_entity_t*) rlc_pP;
   struct mac_data_req data_req;
 
@@ -208,7 +203,6 @@ rlc_tm_mac_data_indication (
   void * const        rlc_pP,
   struct mac_data_ind data_indP)
 {
-  //-----------------------------------------------------------------------------
   rlc_tm_entity_t* rlc_p = (rlc_tm_entity_t*) rlc_pP;
 
   if (data_indP.data.nb_elements > 0) {
@@ -227,10 +221,9 @@ rlc_tm_data_req (
   void *const rlc_pP,
   mem_block_t *const sdu_pP)
 {
-  //-----------------------------------------------------------------------------
   rlc_tm_entity_t *rlc_p = (rlc_tm_entity_t *) rlc_pP;
 
-#ifdef DEBUG_RLC_TM_DATA_REQUEST
+#if DEBUG_RLC_TM_DATA_REQUEST
   LOG_D (RLC, PROTOCOL_RLC_TM_CTXT_FMT" RLC_TM_DATA_REQ size %d Bytes, BO %ld , NB SDU %d current_sdu_index=%d next_sdu_index=%d\n",
          PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
          ((struct rlc_um_data_req *) (sdu_pP->data))->data_size,

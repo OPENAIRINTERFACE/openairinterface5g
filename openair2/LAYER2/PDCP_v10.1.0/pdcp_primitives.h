@@ -25,15 +25,18 @@
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
- *******************************************************************************/
-/*
-                             pdcp_primitives.h
-                             -------------------
-  AUTHOR  : Baris Demiray
-  COMPANY : EURECOM
-  EMAIL   : Baris.Demiray@eurecom.fr
- ***************************************************************************/
+  ***************************************************************************/
 
+/*! \file LAYER2/PDCP_v10.1.0/pdcp_primitives.h
+* \brief pdcp primitives  
+* \author  Baris Demiray and Navid Nikaein
+* \date 2009-2012
+* \version 1.0
+*/
+
+/** \addtogroup _pdcp
+*  @{
+ */
 #ifndef PDCP_PRIMITIVES_H
 #define PDCP_PRIMITIVES_H
 
@@ -41,9 +44,7 @@
  * 3GPP TS 36.323 V10.1.0 (2011-03)
  */
 
-/*
- * Data or control (1-bit, see 6.3.7)
- */
+/*! \brief Data or control (1-bit, see 6.3.7) */
 #define PDCP_CONTROL_PDU_BIT_SET 0x00
 #define PDCP_DATA_PDU_BIT_SET    0x01
 
@@ -201,3 +202,4 @@ int pdcp_validate_security(const protocol_ctxt_t* const  ctxt_pP,
 #endif /* defined(ENABLE_SECURITY) */
 
 #endif
+/** @}*/

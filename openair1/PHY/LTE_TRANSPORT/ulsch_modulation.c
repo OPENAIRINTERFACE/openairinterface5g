@@ -49,12 +49,15 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-__m128i dft_in128[4][1200],dft_in128[4][1200],dft_out128[4][1200],dft_out128[4][1200];
-
 #ifndef OFDMA_ULSCH
 void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 {
 
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i dft_in128[4][1200],dft_out128[4][1200];
+#elif defined(__arm__)
+  int16x8_t dft_in128[4][1200],dft_out128[4][1200];
+#endif
   uint32_t *dft_in0=(uint32_t*)dft_in128[0],*dft_out0=(uint32_t*)dft_out128[0];
   uint32_t *dft_in1=(uint32_t*)dft_in128[1],*dft_out1=(uint32_t*)dft_out128[1];
   uint32_t *dft_in2=(uint32_t*)dft_in128[2],*dft_out2=(uint32_t*)dft_out128[2];
@@ -64,8 +67,11 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 
   uint32_t *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11;
   uint32_t i,ip;
+#if defined(__x86_64__) || defined(__i386__)
   __m128i norm128;
-
+#elif defined(__arm__)
+  int16x8_t norm128;
+#endif
   //  msg("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   d0 = (uint32_t *)d;
@@ -119,12 +125,21 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
     dft12f(&((__m128i *)dft_in2)[0],&((__m128i *)dft_in2)[1],&((__m128i *)dft_in2)[2],&((__m128i *)dft_in2)[3],&((__m128i *)dft_in2)[4],&((__m128i *)dft_in2)[5],&((__m128i *)dft_in2)[6],&((__m128i *)dft_in2)[7],&((__m128i *)dft_in2)[8],&((__m128i *)dft_in2)[9],&((__m128i *)dft_in2)[10],&((__m128i *)dft_in2)[11],
     &((__m128i *)dft_out2)[0],&((__m128i *)dft_out2)[1],&((__m128i *)dft_out2)[2],&((__m128i *)dft_out2)[3],&((__m128i *)dft_out2)[4],&((__m128i *)dft_out2)[5],&((__m128i *)dft_out2)[6],&((__m128i *)dft_out2)[7],&((__m128i *)dft_out2)[8],&((__m128i *)dft_out2)[9],&((__m128i *)dft_out2)[10],&((__m128i *)dft_out2)[11]);
     */
+#if defined(__x86_64__) || defined(__i386__)
     norm128 = _mm_set1_epi16(9459);
-
+#elif defined(__arm__)
+    norm128 = vdupq_n_s16(9459);
+#endif
     for (i=0; i<12; i++) {
+#if defined(__x86_64__) || defined(__i386__)
       ((__m128i*)dft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out0)[i],norm128),1);
       ((__m128i*)dft_out1)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out1)[i],norm128),1);
       ((__m128i*)dft_out2)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out2)[i],norm128),1);
+#elif defined(__arm__)
+      ((int16x8_t*)dft_out0)[i] = vqdmulhq_s16(((int16x8_t*)dft_out0)[i],norm128);
+      ((int16x8_t*)dft_out1)[i] = vqdmulhq_s16(((int16x8_t*)dft_out1)[i],norm128);
+      ((int16x8_t*)dft_out2)[i] = vqdmulhq_s16(((int16x8_t*)dft_out2)[i],norm128);
+#endif
     }
 
     break;

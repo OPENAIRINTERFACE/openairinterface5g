@@ -57,6 +57,7 @@ typedef struct {
   ebi_t            eps_bearer_id;       ///< EPS bearer identifier
   pdn_type_t       pdn_type;            ///< PDN Type
   PAA_t            paa;                 ///< PDN Address Allocation
+  pco_flat_t       pco;                 ///< Protocol configuration options
 } SGICreateEndpointResp;
 
 typedef struct {

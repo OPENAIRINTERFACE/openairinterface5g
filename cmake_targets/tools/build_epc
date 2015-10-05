@@ -233,12 +233,12 @@ function main()
   ##############################################################################
   # Compile userspace executable
   ##############################################################################
-  rm -f $OPENAIR_DIR/targets/bin/mme_gw
   cd $OPENAIR_DIR/cmake_targets/epc_build_oai
   if [ $clean -ne 0 ]; then
     if [[ $verbose -eq 1 ]]; then
-      echo "Cleaning EPC"
+      echo "Cleaning EPC: certificates, generated configuration files, obj files, mme_gw executable, GTP kernel module"
     fi
+    rm -f $OPENAIR_DIR/targets/bin/mme_gw
     rm -Rf build 2>&1
     $SUDO rm -Rf $OPENAIR_TARGETS/CMAKE/EPC/MME_GW/build  2>&1
     $SUDO rm -f /usr/local/etc/freeDiameter/mme*    2>&1
@@ -246,8 +246,8 @@ function main()
     $SUDO rm -f /usr/etc/freeDiameter/mme*    2>&1
     $SUDO rm -f /usr/etc/freeDiameter/epc*    2>&1
     $SUDO rm -f $OPENAIR_DIR/targets/bin/xt_GTPU*.ko    2>&1
-    (cd $OPENAIRCN_DIR/GTPV1-U/GTPUAH && $SUDO make clean)
-    $SUDO rm -f $OPENAIRCN_DIR/GTPV1-U/GTPUAH/Bin/* 2>&1
+    (cd $OPENAIRCN_DIR/GTPV1-U/GTPU_SP && $SUDO make clean)
+    $SUDO rm -f $OPENAIRCN_DIR/GTPV1-U/GTPU_SP/Bin/* 2>&1
     $SUDO rm -f /lib/xtables/libxt_GTPU*.so             2>&1
     mkdir -m 777 -p -v build
   fi
@@ -273,20 +273,17 @@ function main()
       epc_build_oai mme_gw \
       mme_gw $dbin/mme_gw.$REL
     # Only integrated mme+sgw+pgw is operational today
-    #    compilations \
-    #  epc_build_oai oai_sgw \
-    #  oai_sgw $dbin/oai_sgw.$REL
     compilations \
-      epc_build_oai xt_GTPUAH_lib \
-      libxt_GTPUAH_lib.so $dbin
+      epc_build_oai xt_GTPUSP_lib \
+      libxt_GTPUSP_lib.so $dbin
     compilations \
-      epc_build_oai xt_GTPUAH \
-      CMakeFiles/xt_GTPUAH/xt_GTPUAH.ko $dbin
+      epc_build_oai xt_GTPUSP \
+      CMakeFiles/xt_GTPUSP/xt_GTPUSP.ko $dbin
     
     echo_info "Copying iptables libraries into system directory: /lib/xtables"
-    if [ -f  $dbin/libxt_GTPUAH_lib.so ] ; then
-      $SUDO rm -f /lib/xtables/libxt_GTPUAH.so
-      $SUDO ln -s $dbin/libxt_GTPUAH_lib.so /lib/xtables/libxt_GTPUAH.so
+    if [ -f  $dbin/libxt_GTPUSP_lib.so ] ; then
+      $SUDO rm -f /lib/xtables/libxt_GTPUSP.so
+      $SUDO ln -s $dbin/libxt_GTPUSP_lib.so /lib/xtables/libxt_GTPUSP.so
     else
       echo_fatal "not installed GTP-U iptables: binaries not found"
     fi
@@ -298,9 +295,6 @@ function main()
   else
     echo_fatal "not installed EPC config files: not found"
   fi
-
-
-    
 }
 
 

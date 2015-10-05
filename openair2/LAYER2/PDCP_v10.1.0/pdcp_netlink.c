@@ -67,6 +67,8 @@
 
 #include "pdcp.h"
 #include "pdcp_primitives.h"
+#include "msc.h"
+
 
 #define PDCP_QUEUE_NB_ELEMENTS 200
 
@@ -76,7 +78,7 @@ extern struct iovec nas_iov_rx;
 extern int nas_sock_fd;
 extern struct msghdr nas_msg_rx;
 
-#if defined(USE_PDCP_NETLINK_QUEUES)
+#if defined(PDCP_USE_NETLINK_QUEUES)
 static pthread_t pdcp_netlink_thread;
 
 /* We use lock-free queues between the User-plane driver running in kernel-space
@@ -219,7 +221,7 @@ void *pdcp_netlink_thread_fct(void *arg)
   pdcp_thread_read_state = 0;
   memset(nl_rx_buf, 0, NL_MAX_PAYLOAD);
   LOG_I(PDCP, "[NETLINK_THREAD] binding to fd  %d\n",nas_sock_fd);
-
+  MSC_START_USE();
   while (1) {
 
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);

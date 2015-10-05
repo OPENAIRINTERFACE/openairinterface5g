@@ -52,15 +52,19 @@
 //extern int **ulchmag_eren;
 //eren
 
-
 static short jitter[8]  __attribute__ ((aligned(16))) = {1,0,0,1,0,1,1,0};
 static short jitterc[8] __attribute__ ((aligned(16))) = {0,1,1,0,1,0,0,1};
 
 #ifndef OFDMA_ULSCH
 void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 {
-
+#if defined(__x86_64__) || defined(__i386__)
   __m128i idft_in128[3][1200],idft_out128[3][1200];
+  __m128i norm128;
+#elif defined(__arm__)
+  int16x8_t idft_in128[3][1200],idft_out128[3][1200];
+  int16x8_t norm128;
+#endif
   int16_t *idft_in0=(int16_t*)idft_in128[0],*idft_out0=(int16_t*)idft_out128[0];
   int16_t *idft_in1=(int16_t*)idft_in128[1],*idft_out1=(int16_t*)idft_out128[1];
   int16_t *idft_in2=(int16_t*)idft_in128[2],*idft_out2=(int16_t*)idft_out128[2];
@@ -68,7 +72,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
   uint32_t *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10=NULL,*z11=NULL;
   int i,ip;
 
-  __m128i norm128;
+
 
   //  printf("Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
@@ -108,6 +112,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 
   // conjugate input
   for (i=0; i<(Msc_PUSCH>>2); i++) {
+#if defined(__x86_64__)||defined(__i386__)
     *&(((__m128i*)z0)[i])=_mm_sign_epi16(*&(((__m128i*)z0)[i]),*(__m128i*)&conjugate2[0]);
     *&(((__m128i*)z1)[i])=_mm_sign_epi16(*&(((__m128i*)z1)[i]),*(__m128i*)&conjugate2[0]);
     *&(((__m128i*)z2)[i])=_mm_sign_epi16(*&(((__m128i*)z2)[i]),*(__m128i*)&conjugate2[0]);
@@ -119,10 +124,29 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     *&(((__m128i*)z8)[i])=_mm_sign_epi16(*&(((__m128i*)z8)[i]),*(__m128i*)&conjugate2[0]);
     *&(((__m128i*)z9)[i])=_mm_sign_epi16(*&(((__m128i*)z9)[i]),*(__m128i*)&conjugate2[0]);
 
-    if (frame_parms->Ncp==0) {
+    if (frame_parms->Ncp==NORMAL) {
       *&(((__m128i*)z10)[i])=_mm_sign_epi16(*&(((__m128i*)z10)[i]),*(__m128i*)&conjugate2[0]);
       *&(((__m128i*)z11)[i])=_mm_sign_epi16(*&(((__m128i*)z11)[i]),*(__m128i*)&conjugate2[0]);
     }
+#elif defined(__arm__)
+    *&(((int16x8_t*)z0)[i])=vmulq_s16(*&(((int16x8_t*)z0)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z1)[i])=vmulq_s16(*&(((int16x8_t*)z1)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z2)[i])=vmulq_s16(*&(((int16x8_t*)z2)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z3)[i])=vmulq_s16(*&(((int16x8_t*)z3)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z4)[i])=vmulq_s16(*&(((int16x8_t*)z4)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z5)[i])=vmulq_s16(*&(((int16x8_t*)z5)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z6)[i])=vmulq_s16(*&(((int16x8_t*)z6)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z7)[i])=vmulq_s16(*&(((int16x8_t*)z7)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z8)[i])=vmulq_s16(*&(((int16x8_t*)z8)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z9)[i])=vmulq_s16(*&(((int16x8_t*)z9)[i]),*(int16x8_t*)&conjugate2[0]);
+
+
+    if (frame_parms->Ncp==NORMAL) {
+      *&(((int16x8_t*)z10)[i])=vmulq_s16(*&(((int16x8_t*)z10)[i]),*(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z11)[i])=vmulq_s16(*&(((int16x8_t*)z11)[i]),*(int16x8_t*)&conjugate2[0]);
+    }
+
+#endif
   }
 
   for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
@@ -150,23 +174,21 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     dft12((int16_t *)idft_in1,(int16_t *)idft_out1);
     dft12((int16_t *)idft_in2,(int16_t *)idft_out2);
 
-    /*
-    dft12f(&((__m128i *)idft_in0)[0],&((__m128i *)idft_in0)[1],&((__m128i *)idft_in0)[2],&((__m128i *)idft_in0)[3],&((__m128i *)idft_in0)[4],&((__m128i *)idft_in0)[5],&((__m128i *)idft_in0)[6],&((__m128i *)idft_in0)[7],&((__m128i *)idft_in0)[8],&((__m128i *)idft_in0)[9],&((__m128i *)idft_in0)[10],&((__m128i *)idft_in0)[11],
-    &((__m128i *)idft_out0)[0],&((__m128i *)idft_out0)[1],&((__m128i *)idft_out0)[2],&((__m128i *)idft_out0)[3],&((__m128i *)idft_out0)[4],&((__m128i *)idft_out0)[5],&((__m128i *)idft_out0)[6],&((__m128i *)idft_out0)[7],&((__m128i *)idft_out0)[8],&((__m128i *)idft_out0)[9],&((__m128i *)idft_out0)[10],&((__m128i *)idft_out0)[11]);
-
-    dft12f(&((__m128i *)idft_in1)[0],&((__m128i *)idft_in1)[1],&((__m128i *)idft_in1)[2],&((__m128i *)idft_in1)[3],&((__m128i *)idft_in1)[4],&((__m128i *)idft_in1)[5],&((__m128i *)idft_in1)[6],&((__m128i *)idft_in1)[7],&((__m128i *)idft_in1)[8],&((__m128i *)idft_in1)[9],&((__m128i *)idft_in1)[10],&((__m128i *)idft_in1)[11],
-    &((__m128i *)idft_out1)[0],&((__m128i *)idft_out1)[1],&((__m128i *)idft_out1)[2],&((__m128i *)idft_out1)[3],&((__m128i *)idft_out1)[4],&((__m128i *)idft_out1)[5],&((__m128i *)idft_out1)[6],&((__m128i *)idft_out1)[7],&((__m128i *)idft_out1)[8],&((__m128i *)idft_out1)[9],&((__m128i *)idft_out1)[10],&((__m128i *)idft_out1)[11]);
-
-    dft12f(&((__m128i *)idft_in2)[0],&((__m128i *)idft_in2)[1],&((__m128i *)idft_in2)[2],&((__m128i *)idft_in2)[3],&((__m128i *)idft_in2)[4],&((__m128i *)idft_in2)[5],&((__m128i *)idft_in2)[6],&((__m128i *)idft_in2)[7],&((__m128i *)idft_in2)[8],&((__m128i *)idft_in2)[9],&((__m128i *)idft_in2)[10],&((__m128i *)idft_in2)[11],
-    &((__m128i *)idft_out2)[0],&((__m128i *)idft_out2)[1],&((__m128i *)idft_out2)[2],&((__m128i *)idft_out2)[3],&((__m128i *)idft_out2)[4],&((__m128i *)idft_out2)[5],&((__m128i *)idft_out2)[6],&((__m128i *)idft_out2)[7],&((__m128i *)idft_out2)[8],&((__m128i *)idft_out2)[9],&((__m128i *)idft_out2)[10],&((__m128i *)idft_out2)[11]);
-    */
-
+#if defined(__x86_64__)||defined(__i386__)
     norm128 = _mm_set1_epi16(9459);
-
+#elif defined(__arm__)
+    norm128 = vdupq_n_s16(9459);
+#endif
     for (i=0; i<12; i++) {
+#if defined(__x86_64__)||defined(__i386__)
       ((__m128i*)idft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out0)[i],norm128),1);
       ((__m128i*)idft_out1)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out1)[i],norm128),1);
       ((__m128i*)idft_out2)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out2)[i],norm128),1);
+#elif defined(__arm__)
+      ((int16x8_t*)idft_out0)[i] = vqdmulhq_s16(((int16x8_t*)idft_out0)[i],norm128);
+      ((int16x8_t*)idft_out1)[i] = vqdmulhq_s16(((int16x8_t*)idft_out1)[i],norm128);
+      ((int16x8_t*)idft_out2)[i] = vqdmulhq_s16(((int16x8_t*)idft_out2)[i],norm128);
+#endif
     }
 
     break;
@@ -363,6 +385,10 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     dft1200(idft_in2,idft_out2,1);
     break;
 
+  default:
+    // should not be reached
+    LOG_E( PHY, "Unsupported Msc_PUSCH value of %"PRIu16"\n", Msc_PUSCH );
+    return;
   }
 
 
@@ -394,6 +420,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 
   // conjugate output
   for (i=0; i<(Msc_PUSCH>>2); i++) {
+#if defined(__x86_64__) || defined(__i386__)
     ((__m128i*)z0)[i]=_mm_sign_epi16(((__m128i*)z0)[i],*(__m128i*)&conjugate2[0]);
     ((__m128i*)z1)[i]=_mm_sign_epi16(((__m128i*)z1)[i],*(__m128i*)&conjugate2[0]);
     ((__m128i*)z2)[i]=_mm_sign_epi16(((__m128i*)z2)[i],*(__m128i*)&conjugate2[0]);
@@ -405,11 +432,35 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     ((__m128i*)z8)[i]=_mm_sign_epi16(((__m128i*)z8)[i],*(__m128i*)&conjugate2[0]);
     ((__m128i*)z9)[i]=_mm_sign_epi16(((__m128i*)z9)[i],*(__m128i*)&conjugate2[0]);
 
-    if (frame_parms->Ncp==0) {
+    if (frame_parms->Ncp==NORMAL) {
       ((__m128i*)z10)[i]=_mm_sign_epi16(((__m128i*)z10)[i],*(__m128i*)&conjugate2[0]);
       ((__m128i*)z11)[i]=_mm_sign_epi16(((__m128i*)z11)[i],*(__m128i*)&conjugate2[0]);
     }
+#elif defined(__arm__)
+    *&(((int16x8_t*)z0)[i])=vmulq_s16(*&(((int16x8_t*)z0)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z1)[i])=vmulq_s16(*&(((int16x8_t*)z1)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z2)[i])=vmulq_s16(*&(((int16x8_t*)z2)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z3)[i])=vmulq_s16(*&(((int16x8_t*)z3)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z4)[i])=vmulq_s16(*&(((int16x8_t*)z4)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z5)[i])=vmulq_s16(*&(((int16x8_t*)z5)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z6)[i])=vmulq_s16(*&(((int16x8_t*)z6)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z7)[i])=vmulq_s16(*&(((int16x8_t*)z7)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z8)[i])=vmulq_s16(*&(((int16x8_t*)z8)[i]),*(int16x8_t*)&conjugate2[0]);
+    *&(((int16x8_t*)z9)[i])=vmulq_s16(*&(((int16x8_t*)z9)[i]),*(int16x8_t*)&conjugate2[0]);
+
+
+    if (frame_parms->Ncp==NORMAL) {
+      *&(((int16x8_t*)z10)[i])=vmulq_s16(*&(((int16x8_t*)z10)[i]),*(int16x8_t*)&conjugate2[0]);
+      *&(((int16x8_t*)z11)[i])=vmulq_s16(*&(((int16x8_t*)z11)[i]),*(int16x8_t*)&conjugate2[0]);
+    }
+
+#endif
   }
+
+#if defined(__x86_64__) || defined(__i386__)
+  _mm_empty();
+  _m_empty();
+#endif
 
 }
 #endif
@@ -425,10 +476,15 @@ int32_t ulsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
                        uint16_t nb_rb,
                        int16_t **llrp)
 {
-
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int32_t i;
   __m128i **llrp128 = (__m128i **)llrp;
+#elif defined(__arm__)
+  int16x8_t *rxF= (int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16x8_t **llrp128 = (int16x8_t **)llrp;
+#endif
+
+  int i;
 
   //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128U-(__m128i*)ulsch_llr);
 
@@ -439,8 +495,10 @@ int32_t ulsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
     (*llrp128)++;
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 
   return(0);
 
@@ -454,41 +512,64 @@ void ulsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t nb_rb,
                      int16_t **llrp)
 {
+int i;
 
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
   __m128i *ch_mag;
   __m128i mmtmpU0;
   __m128i **llrp128=(__m128i **)llrp;
-
-  int32_t i;
-  //  uint8_t symbol_mod;
-
-  //  printf("ulsch_rx.c: ulsch_16qam_llr: symbol %d\n",symbol);
-
-  //  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-
   ch_mag =(__m128i*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-
+#elif defined(__arm__)
+  int16x8_t *rxF=(int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16x8_t *ch_mag;
+  int16x8_t xmm0;
+  int16_t **llrp16=llrp;
+  ch_mag =(int16x8_t*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+#endif
 
   for (i=0; i<(nb_rb*3); i++) {
 
-
+#if defined(__x86_64__) || defined(__i386__)
     mmtmpU0 = _mm_abs_epi16(rxF[i]);
     //    print_shorts("tmp0",&tmp0);
 
     mmtmpU0 = _mm_subs_epi16(ch_mag[i],mmtmpU0);
 
-
     (*llrp128)[0] = _mm_unpacklo_epi32(rxF[i],mmtmpU0);
     (*llrp128)[1] = _mm_unpackhi_epi32(rxF[i],mmtmpU0);
     (*llrp128)+=2;
+#elif defined(__arm__)
+    xmm0 = vabsq_s16(rxF[i]);
+    xmm0 = vqsubq_s16(ch_mag[i],xmm0);
+    (*llrp16)[0] = vgetq_lane_s16(rxF[i],0);
+    (*llrp16)[1] = vgetq_lane_s16(xmm0,0);
+    (*llrp16)[2] = vgetq_lane_s16(rxF[i],1);
+    (*llrp16)[3] = vgetq_lane_s16(xmm0,1);
+    (*llrp16)[4] = vgetq_lane_s16(rxF[i],2);
+    (*llrp16)[5] = vgetq_lane_s16(xmm0,2);
+    (*llrp16)[6] = vgetq_lane_s16(rxF[i],2);
+    (*llrp16)[7] = vgetq_lane_s16(xmm0,3);
+    (*llrp16)[8] = vgetq_lane_s16(rxF[i],4);
+    (*llrp16)[9] = vgetq_lane_s16(xmm0,4);
+    (*llrp16)[10] = vgetq_lane_s16(rxF[i],5);
+    (*llrp16)[11] = vgetq_lane_s16(xmm0,5);
+    (*llrp16)[12] = vgetq_lane_s16(rxF[i],6);
+    (*llrp16)[13] = vgetq_lane_s16(xmm0,6);
+    (*llrp16)[14] = vgetq_lane_s16(rxF[i],7);
+    (*llrp16)[15] = vgetq_lane_s16(xmm0,7);
+    (*llrp16)+=16;
+#endif
+
 
     //    print_bytes("rxF[i]",&rxF[i]);
     //    print_bytes("rxF[i+1]",&rxF[i+1]);
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
+#endif
 
 }
 
@@ -501,27 +582,29 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t nb_rb,
                      int16_t **llrp)
 {
-
-  __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  __m128i *ch_mag,*ch_magb;
-  int32_t i;
-  __m128i mmtmpU1,mmtmpU2;
+  int i;
   int32_t **llrp32=(int32_t **)llrp;
 
-  //  uint8_t symbol_mod;
-
-
-
-  //  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+#if defined(__x86_64__) || defined(__i386)
+  __m128i *rxF=(__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  __m128i *ch_mag,*ch_magb;
+  __m128i mmtmpU1,mmtmpU2;
 
   ch_mag =(__m128i*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb =(__m128i*)&ul_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+#elif defined(__arm__)
+  int16x8_t *rxF=(int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int16x8_t *ch_mag,*ch_magb;
+  int16x8_t mmtmpU1,mmtmpU2;
 
+  ch_mag =(int16x8_t*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+  ch_magb =(int16x8_t*)&ul_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+#endif
   //  printf("symbol %d: mag %d, magb %d\n",symbol,_mm_extract_epi16(ch_mag[0],0),_mm_extract_epi16(ch_magb[0],0));
   for (i=0; i<(nb_rb*3); i++) {
 
 
-
+#if defined(__x86_64__) || defined(__i386__)
     mmtmpU1 = _mm_abs_epi16(rxF[i]);
 
     mmtmpU1  = _mm_subs_epi16(ch_mag[i],mmtmpU1);
@@ -541,12 +624,34 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     (*llrp32)[9]  = _mm_extract_epi32(rxF[i],3);
     (*llrp32)[10] = _mm_extract_epi32(mmtmpU1,3);
     (*llrp32)[11] = _mm_extract_epi32(mmtmpU2,3);
+#elif defined(__arm__)
+    mmtmpU1 = vabsq_s16(rxF[i]);
+
+    mmtmpU1 = vqsubq_s16(ch_mag[i],mmtmpU1);
+
+    mmtmpU2 = vabsq_s16(mmtmpU1);
+    mmtmpU2 = vqsubq_s16(ch_magb[i],mmtmpU2);
+
+    (*llrp32)[0]  = vgetq_lane_s32((int32x4_t)rxF[i],0);
+    (*llrp32)[1]  = vgetq_lane_s32((int32x4_t)mmtmpU1,0);
+    (*llrp32)[2]  = vgetq_lane_s32((int32x4_t)mmtmpU2,0);
+    (*llrp32)[3]  = vgetq_lane_s32((int32x4_t)rxF[i],1);
+    (*llrp32)[4]  = vgetq_lane_s32((int32x4_t)mmtmpU1,1);
+    (*llrp32)[5]  = vgetq_lane_s32((int32x4_t)mmtmpU2,1);
+    (*llrp32)[6]  = vgetq_lane_s32((int32x4_t)rxF[i],2);
+    (*llrp32)[7]  = vgetq_lane_s32((int32x4_t)mmtmpU1,2);
+    (*llrp32)[8]  = vgetq_lane_s32((int32x4_t)mmtmpU2,2);
+    (*llrp32)[9]  = vgetq_lane_s32((int32x4_t)rxF[i],3);
+    (*llrp32)[10] = vgetq_lane_s32((int32x4_t)mmtmpU1,3);
+    (*llrp32)[11] = vgetq_lane_s32((int32x4_t)mmtmpU2,3);
+
+#endif
     (*llrp32)+=12;
   }
-
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
@@ -558,13 +663,20 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 {
 
 
+#if defined(__x86_64__) || defined(__i386__)
 
   __m128i *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
   __m128i *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
+#elif defined(__arm__)
 
+  int16x8_t *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
+  int16x8_t *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
+
+#endif
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
+#if defined(__x86_64__) || defined(__i386__)
     rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128_0      = (__m128i *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
@@ -578,15 +690,31 @@ void ulsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
       ul_ch_mag128_0[i]    = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0[i],1),_mm_srai_epi16(ul_ch_mag128_1[i],1));
       ul_ch_mag128_0b[i]   = _mm_adds_epi16(_mm_srai_epi16(ul_ch_mag128_0b[i],1),_mm_srai_epi16(ul_ch_mag128_1b[i],1));
       rxdataF_comp128_0[i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i*)&jitterc[0]));
-    }
 
-    // remove any bias (DC component after IDFT)
-    //    ((uint32_t*)rxdataF_comp128_0)[0]=0;
+#elif defined(__arm__)
+    rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_0      = (int16x8_t *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_1      = (int16x8_t *)&ul_ch_mag[1][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_0b     = (int16x8_t *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128_1b     = (int16x8_t *)&ul_ch_magb[1][symbol*frame_parms->N_RB_DL*12];
+
+    // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
+    for (i=0; i<nb_rb*3; i++) {
+      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+      ul_ch_mag128_0[i]    = vhaddq_s16(ul_ch_mag128_0[i],ul_ch_mag128_1[i]);
+      ul_ch_mag128_0b[i]   = vhaddq_s16(ul_ch_mag128_0b[i],ul_ch_mag128_1b[i]);
+      rxdataF_comp128_0[i] = vqaddq_s16(rxdataF_comp128_0[i],(*(int16x8_t*)&jitterc[0]));
+
+
+#endif
+    }
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 void ulsch_extract_rbs_single(int32_t **rxdataF,
@@ -643,9 +771,6 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
     }
   }
 
-  _mm_empty();
-  _m_empty();
-
 }
 
 void ulsch_correct_ext(int32_t **rxdataF_ext,
@@ -683,28 +808,57 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 {
 
   uint16_t rb;
+
+#if defined(__x86_64__) || defined(__i386__)
+
   __m128i *ul_ch128,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
 #ifdef OFDMA_ULSCH
   __m128i QAM_amp128U,QAM_amp128bU;
 #endif
-  //  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  //    printf("comp: symbol %d\n",symbol);
+#elif defined(__arm__)
 
-#ifdef ULSCH_OFDMA
+  int16x4_t *ul_ch128,*rxdataF128;
+  int16x8_t *ul_ch_mag128,*ul_ch_mag128b,*rxdataF_comp128;
 
+  uint8_t aarx;//,symbol_mod;
+  int32x4_t mmtmpU0,mmtmpU1,mmtmpU0b,mmtmpU1b;
+#ifdef OFDMA_ULSCH
+  int16x8_t mmtmpU2,mmtmpU3;
+  int16x8_t QAM_amp128U,QAM_amp128bU;
+#endif
+  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
+  int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
+
+
+
+#endif
+
+#ifdef OFDMA_ULSCH
+
+#if defined(__x86_64__) || defined(__i386__)
   if (Qm == 4)
     QAM_amp128U = _mm_set1_epi16(QAM16_n1);
   else if (Qm == 6) {
     QAM_amp128U  = _mm_set1_epi16(QAM64_n1);
     QAM_amp128bU = _mm_set1_epi16(QAM64_n2);
   }
+#elif defined(__arm__)
+  if (Qm == 4)
+    QAM_amp128U = vdupq_n_s16(QAM16_n1);
+  else if (Qm == 6) {
+    QAM_amp128U  = vdupq_n_s16(QAM64_n1);
+    QAM_amp128bU = vdupq_n_s16(QAM64_n2);
+  }
 
+#endif
 #endif
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+
+#if defined(__x86_64__) || defined(__i386__)
 
     ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128      = (__m128i *)&ul_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
@@ -712,13 +866,23 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
 
+#elif defined(__arm__)
 
+
+    ul_ch128          = (int16x4_t *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128      = (int16x8_t *)&ul_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
+    ul_ch_mag128b     = (int16x8_t *)&ul_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
+    rxdataF128        = (int16x4_t *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128   = (int16x8_t *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
+
+#endif
     for (rb=0; rb<nb_rb; rb++) {
       //            printf("comp: symbol %d rb %d\n",symbol,rb);
 #ifdef OFDMA_ULSCH
       if (Qm>2) {
         // get channel amplitude if not QPSK
 
+#if defined(__x86_64__) || defined(__i386__)
         mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
 
         mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
@@ -757,10 +921,36 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
         ul_ch_mag128b[2] = _mm_mulhi_epi16(ul_ch_mag128b[2],QAM_amp128bU);
         ul_ch_mag128b[2] = _mm_slli_epi16(ul_ch_mag128b[2],2);// 2 to compensate the scale channel estimate
 
+#elif defined(__arm__)
+          mmtmpU0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          mmtmpU2 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+          mmtmpU0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          mmtmpU3 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+          mmtmpU0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          mmtmpU4 = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+
+          ul_ch_mag128b[0] = vqdmulhq_s16(mmtmpU2,QAM_amp128b);
+          ul_ch_mag128b[1] = vqdmulhq_s16(mmtmpU3,QAM_amp128b);
+          ul_ch_mag128[0] = vqdmulhq_s16(mmtmpU2,QAM_amp128);
+          ul_ch_mag128[1] = vqdmulhq_s16(mmtmpU3,QAM_amp128);
+          ul_ch_mag128b[2] = vqdmulhq_s16(mmtmpU4,QAM_amp128b);
+          ul_ch_mag128[2]  = vqdmulhq_s16(mmtmpU4,QAM_amp128);
+#endif
       }
 
-#else
+#else // SC-FDMA
+// just compute channel magnitude without scaling, this is done after equalization for SC-FDMA
 
+#if defined(__x86_64__) || defined(__i386__)
       mmtmpU0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
 
       mmtmpU0 = _mm_srai_epi32(mmtmpU0,output_shift);
@@ -780,8 +970,29 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpU1,mmtmpU1);
 
       // printf("comp: symbol %d rb %d => %d,%d,%d (output_shift %d)\n",symbol,rb,*((int16_t*)&ul_ch_mag128[0]),*((int16_t*)&ul_ch_mag128[1]),*((int16_t*)&ul_ch_mag128[2]),output_shift);
+
+
+#elif defined(__arm__)
+          mmtmpU0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          ul_ch_mag128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+          mmtmpU0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          ul_ch_mag128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+          mmtmpU0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
+          mmtmpU0 = vqshlq_s32(vqaddq_s32(mmtmpU0,vrev64q_s32(mmtmpU0)),-output_shift128);
+          mmtmpU1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
+          mmtmpU1 = vqshlq_s32(vqaddq_s32(mmtmpU1,vrev64q_s32(mmtmpU1)),-output_shift128);
+          ul_ch_mag128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+
+#endif
 #endif
 
+#if defined(__x86_64__) || defined(__i386__)
       // multiply by conjugated channel
       mmtmpU0 = _mm_madd_epi16(ul_ch128[0],rxdataF128[0]);
       //        print_ints("re",&mmtmpU0);
@@ -853,21 +1064,81 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       ul_ch_mag128b+=3;
       rxdataF128+=3;
       rxdataF_comp128+=3;
+#elif defined(__arm__)
+        mmtmpU0 = vmull_s16(ul_ch128[0], rxdataF128[0]);
+        //mmtmpU0 = [Re(ch[0])Re(rx[0]) Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1]) Im(ch[1])Im(ch[1])] 
+        mmtmpU1 = vmull_s16(ul_ch128[1], rxdataF128[1]);
+        //mmtmpU1 = [Re(ch[2])Re(rx[2]) Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3]) Im(ch[3])Im(ch[3])] 
+        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+        //mmtmpU0 = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])] 
 
+        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[0],*(int16x4_t*)conj)), rxdataF128[0]);
+        //mmtmpU0 = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
+        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[1],*(int16x4_t*)conj)), rxdataF128[1]);
+        //mmtmpU0 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
+        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+        //mmtmpU1 = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
+
+        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+        rxdataF_comp128[0] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+        mmtmpU0 = vmull_s16(ul_ch128[2], rxdataF128[2]);
+        mmtmpU1 = vmull_s16(ul_ch128[3], rxdataF128[3]);
+        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[2],*(int16x4_t*)conj)), rxdataF128[2]);
+        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[3],*(int16x4_t*)conj)), rxdataF128[3]);
+        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+        rxdataF_comp128[1] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+
+        mmtmpU0 = vmull_s16(ul_ch128[4], rxdataF128[4]);
+        mmtmpU1 = vmull_s16(ul_ch128[5], rxdataF128[5]);
+        mmtmpU0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0),vget_high_s32(mmtmpU0)),
+                               vpadd_s32(vget_low_s32(mmtmpU1),vget_high_s32(mmtmpU1)));
+
+        mmtmpU0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[4],*(int16x4_t*)conj)), rxdataF128[4]);
+        mmtmpU1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[5],*(int16x4_t*)conj)), rxdataF128[5]);
+        mmtmpU1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpU0b),vget_high_s32(mmtmpU0b)),
+                               vpadd_s32(vget_low_s32(mmtmpU1b),vget_high_s32(mmtmpU1b)));
+
+              
+        mmtmpU0 = vqshlq_s32(mmtmpU0,-output_shift128);
+        mmtmpU1 = vqshlq_s32(mmtmpU1,-output_shift128);
+        rxdataF_comp128[2] = vcombine_s16(vmovn_s32(mmtmpU0),vmovn_s32(mmtmpU1));
+              
+              // Add a jitter to compensate for the saturation in "packs" resulting in a bias on the DC after IDFT
+        rxdataF_comp128[0] = vqaddq_s16(rxdataF_comp128[0],(*(int16x8_t*)&jitter[0]));
+        rxdataF_comp128[1] = vqaddq_s16(rxdataF_comp128[1],(*(int16x8_t*)&jitter[0]));
+        rxdataF_comp128[2] = vqaddq_s16(rxdataF_comp128[2],(*(int16x8_t*)&jitter[0]));
+
+      
+        ul_ch128+=6;
+        ul_ch_mag128+=3;
+        ul_ch_mag128b+=3;
+        rxdataF128+=6;
+        rxdataF_comp128+=3;
+              
+#endif
     }
   }
 
-
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 
 
 
-
+#if defined(__x86_64__) || defined(__i386__)
 __m128i QAM_amp128U_0,QAM_amp128bU_0,QAM_amp128U_1,QAM_amp128bU_1;
+#endif
 
 void ulsch_channel_compensation_alamouti(int32_t **rxdataF_ext,                 // For Distributed Alamouti Combining
     int32_t **ul_ch_estimates_ext_0,
@@ -884,7 +1155,7 @@ void ulsch_channel_compensation_alamouti(int32_t **rxdataF_ext,                 
     uint16_t nb_rb,
     uint8_t output_shift)
 {
-
+#if defined(__x86_64__) || defined(__i386__)
   uint16_t rb;
   __m128i *ul_ch128_0,*ul_ch128_1,*ul_ch_mag128_0,*ul_ch_mag128_1,*ul_ch_mag128b_0,*ul_ch_mag128b_1,*rxdataF128,*rxdataF_comp128_0,*rxdataF_comp128_1;
   uint8_t aarx;//,symbol_mod;
@@ -1152,7 +1423,7 @@ void ulsch_channel_compensation_alamouti(int32_t **rxdataF_ext,                 
 
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 
@@ -1172,6 +1443,7 @@ void ulsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,// For Distributed Alamouti 
                     uint16_t nb_rb)
 {
 
+#if defined(__x86_64__) || defined(__i386__)
   int16_t *rxF,*rxF0,*rxF1;
   __m128i *ch_mag,*ch_magb,*ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
   uint8_t rb,re,aarx;
@@ -1227,13 +1499,18 @@ void ulsch_alamouti(LTE_DL_FRAME_PARMS *frame_parms,// For Distributed Alamouti 
   _mm_empty();
   _m_empty();
 
+#endif
 }
 
 
 
 
 
+#if defined(__x86_64__) || defined(__i386__)
 __m128i avg128U;
+#elif defined(__arm__)
+int32x4_t avg128U;
+#endif
 
 void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
                          LTE_DL_FRAME_PARMS *frame_parms,
@@ -1243,11 +1520,14 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 
   int16_t rb;
   uint8_t aarx;
+#if defined(__x86_64__) || defined(__i386__)
   __m128i *ul_ch128;
-
-
+#elif defined(__arm__)
+  int16x4_t *ul_ch128;
+#endif
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     //clear average level
+#if defined(__x86_64__) || defined(__i386__)
     avg128U = _mm_setzero_si128();
     ul_ch128=(__m128i *)drs_ch_estimates_ext[aarx];
 
@@ -1259,33 +1539,44 @@ void ulsch_channel_level(int32_t **drs_ch_estimates_ext,
 
       ul_ch128+=3;
 
-      if (rb==0) {
-        //  print_shorts("ul_ch128",&ul_ch128[0]);
-        //  print_shorts("ul_ch128",&ul_ch128[1]);
-        //  print_shorts("ul_ch128",&ul_ch128[2]);
-      }
 
     }
 
+#elif defined(__arm__)
+    avg128U = vdupq_n_s32(0);
+    ul_ch128=(int16x4_t *)drs_ch_estimates_ext[aarx];
+
+    for (rb=0; rb<nb_rb; rb++) {
+
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[0],ul_ch128[0]));
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[1],ul_ch128[1]));
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[2],ul_ch128[2]));
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[3],ul_ch128[3]));
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[4],ul_ch128[4]));
+       avg128U = vqaddq_s32(avg128U,vmull_s16(ul_ch128[5],ul_ch128[5]));
+       ul_ch128+=6;
+
+
+    }
+
+#endif
+
+    DevAssert( nb_rb );
     avg[aarx] = (((int*)&avg128U)[0] +
                  ((int*)&avg128U)[1] +
                  ((int*)&avg128U)[2] +
                  ((int*)&avg128U)[3])/(nb_rb*12);
 
-    //    printf("Channel level : %d\n",avg[aarx]);
   }
 
+#if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
-
+#endif
 }
 
 int32_t avgU[2];
 int32_t avgU_0[2],avgU_1[2]; // For the Distributed Alamouti Scheme
-/* --> moved to LTE_eNB_PUSCH structure
-int32_t ulsch_power[2];
-int32_t ulsch_power_0[2],ulsch_power_1[2];// For the distributed Alamouti Scheme
-*/
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
               uint32_t sched_subframe,
@@ -1324,6 +1615,11 @@ void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
 #endif //DEBUG_ULSCH
 
   rx_power_correction = 1;
+
+  if (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb == 0) {
+    LOG_E(PHY,"PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti,harq_pid);
+    return;
+  }
 
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
 

@@ -32,8 +32,10 @@
  * \date 2010 - 2014
  * \email navid.nikaein@eurecom.fr
  * \version 1.0
- * @ingroup _rrc
-
+ 
+ */
+/** \addtogroup _rrc
+ *  @{
  */
 
 //main.c
@@ -77,12 +79,7 @@ rrc_rx_tx(
     \param ctxt_pP Running context
     \param Srb_info Pointer to SRB_INFO structure (SRB0)
     \param eNB_index Index of corresponding eNB/CH*/
-int
-rrc_ue_decode_ccch(
-  const protocol_ctxt_t* const ctxt_pP,
-  const SRB_INFO*        const Srb_info,
-  const uint8_t                eNB_index
-);
+int rrc_ue_decode_ccch( const protocol_ctxt_t* const ctxt_pP, const SRB_INFO* const Srb_info, const uint8_t eNB_index );
 
 /** \brief Decodes a DL-DCCH message and invokes appropriate routine to handle the message
     \param ctxt_pP Running context
@@ -106,17 +103,6 @@ rrc_ue_generate_RRCConnectionRequest(
   const uint8_t                eNB_index
 );
 
-/** \brief Generates/Encodes RRCConnnectionSetupComplete message at UE
-    \param ctxt_pP Running context
-    \param eNB_index Index of corresponding eNB/CH
-    \param Transaction_id Transaction identifier*/
-void
-rrc_ue_generate_RRCConnectionSetupComplete(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                eNB_index,
-  const uint8_t                Transaction_id
-);
-
 /** \brief process the received rrcConnectionReconfiguration message at UE
     \param ctxt_pP Running context
     \param *rrcConnectionReconfiguration pointer to the sturcture
@@ -126,17 +112,6 @@ rrc_ue_process_rrcConnectionReconfiguration(
   const protocol_ctxt_t* const       ctxt_pP,
   RRCConnectionReconfiguration_t* rrcConnectionReconfiguration,
   uint8_t eNB_index
-);
-
-/** \brief Generates/Encodes RRCConnectionReconfigurationComplete  message at UE
-    \param ctxt_pP Running context
-    \param eNB_index Index of corresponding eNB/CH
-    \param Transaction_id RRC transaction identifier */
-void
-rrc_ue_generate_RRCConnectionReconfigurationComplete(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                eNB_index,
-  const uint8_t                Transaction_id
 );
 
 /** \brief Establish SRB1 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
@@ -228,6 +203,17 @@ rrc_eNB_decode_dcch(
    \param ue_context_pP UE context*/
 void
 rrc_eNB_generate_RRCConnectionSetup(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t* const ue_context_pP,
+  const int                    CC_id
+);
+
+/**\brief Generate RRCConnectionReestablishmentReject
+   \param ctxt_pP       Running context
+   \param ue_context_pP UE context
+   \param CC_id         Component Carrier ID*/
+void
+rrc_eNB_generate_RRCConnectionReestablishmentReject(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t* const ue_context_pP,
   const int                    CC_id
@@ -347,41 +333,15 @@ void rrc_lite_in_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_i
 
 void rrc_lite_out_of_sync_ind(module_id_t module_idP, frame_t frameP, unsigned short eNB_index);
 
-int
-decode_MCCH_Message(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                eNB_index,
-  const uint8_t*         const Sdu,
-  const uint8_t                Sdu_len,
-  const uint8_t                mbsfn_sync_area
-);
+int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t* const Sdu, const uint8_t Sdu_len, const uint8_t mbsfn_sync_area );
 
-void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
-
-int
-decode_BCCH_DLSCH_Message(
+int decode_BCCH_DLSCH_Message(
   const protocol_ctxt_t* const ctxt_pP,
   const uint8_t                eNB_index,
   uint8_t*               const Sdu,
   const uint8_t                Sdu_len,
   const uint8_t                rsrq,
-  const uint8_t                rsrp
-);
-
-int
-decode_SIB1(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                eNB_index,
-  const uint8_t                rsrq,
-  const uint8_t                rsrp
-);
-
-int
-decode_SI(
-  const protocol_ctxt_t* const ctxt_pP,
-  const uint8_t                eNB_index,
-  const uint8_t                si_window
-);
+  const uint8_t                rsrp );
 
 void
 ue_meas_filtering(
@@ -427,12 +387,6 @@ rrc_eNB_process_MeasurementReport(
 );
 
 void
-rrc_ue_generate_MeasurementReport(
-  const protocol_ctxt_t* const ctxt_pP,
-  uint8_t                      eNB_index
-);
-
-void
 rrc_eNB_generate_HandoverPreparationInformation(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
@@ -443,15 +397,6 @@ void
 check_handovers(
   protocol_ctxt_t* const ctxt_pP
 );
-
-uint8_t check_trigger_meas_event(
-  uint8_t module_idP,
-  frame_t frameP,
-  uint8_t eNB_index,
-  uint8_t ue_cnx_index,
-  uint8_t meas_index,
-  Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys,
-  Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt);
 
 //void rrc_ue_process_ueCapabilityEnquiry(uint8_t module_idP,uint32_t frame,UECapabilityEnquiry_t *UECapabilityEnquiry,uint8_t eNB_index);
 /*void
@@ -492,3 +437,4 @@ long binary_search_int(int elements[], long numElem, int value);
 
 long binary_search_float(float elements[], long numElem, float value);
 
+/** @}*/

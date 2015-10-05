@@ -249,22 +249,30 @@ static void * dlsch_thread(void *param)
 
 
 #ifdef DEBUG_PHY
-    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
-          phy_vars_ue->Mod_id,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,harq_pid,
-          phy_vars_ue->frame_rx,dlsch_subframe[dlsch_thread_index],ret,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
-          phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
 
-    if (phy_vars_ue->frame_rx%100==0) {
-      LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
-            phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
-            phy_vars_ue->frame_rx,dlsch_subframe[dlsch_thread_index],
-            phy_vars_ue->dlsch_errors[eNB_id],
-            phy_vars_ue->dlsch_received[eNB_id],
-            phy_vars_ue->dlsch_fer[eNB_id],
-            phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id]);
+    if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
+      LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
+            phy_vars_ue->Mod_id,
+            phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,harq_pid,
+            phy_vars_ue->frame_rx,dlsch_subframe[dlsch_thread_index],ret,
+            phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+            phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
+            phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
+
+      if (phy_vars_ue->frame_rx%100==0) {
+        LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d subframe %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
+              phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
+              phy_vars_ue->frame_rx,dlsch_subframe[dlsch_thread_index],
+              phy_vars_ue->dlsch_errors[eNB_id],
+              phy_vars_ue->dlsch_received[eNB_id],
+              phy_vars_ue->dlsch_fer[eNB_id],
+              phy_vars_ue->PHY_measurements.wideband_cqi_tot[eNB_id]);
+      }
+    } else {
+      LOG_I( PHY,"[UE %d][PDSCH ?/%d] Frame %d subframe %d: PDSCH/DLSCH decoding iter %d (phy_vars_ue->dlsch_ue[eNB_id][0] == 0)\n",
+             phy_vars_ue->Mod_id,
+             harq_pid,
+             phy_vars_ue->frame_rx, dlsch_subframe[dlsch_thread_index], ret );
     }
 
 #endif

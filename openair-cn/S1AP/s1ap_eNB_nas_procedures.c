@@ -155,7 +155,7 @@ int s1ap_eNB_handle_nas_first_req(
   initial_ue_message_p->rrC_Establishment_Cause = s1ap_nas_first_req_p->establishment_cause;
 
   if (s1ap_nas_first_req_p->ue_identity.presenceMask & UE_IDENTITIES_s_tmsi) {
-    S1AP_DEBUG("S_TMSI_PRESENT");
+    S1AP_DEBUG("S_TMSI_PRESENT\n");
     initial_ue_message_p->presenceMask |= S1AP_INITIALUEMESSAGEIES_S_TMSI_PRESENT;
 
     MME_CODE_TO_OCTET_STRING(s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code,
@@ -165,7 +165,7 @@ int s1ap_eNB_handle_nas_first_req(
   }
 
   if (s1ap_nas_first_req_p->ue_identity.presenceMask & UE_IDENTITIES_gummei) {
-    S1AP_DEBUG("GUMMEI_ID_PRESENT");
+    S1AP_DEBUG("GUMMEI_ID_PRESENT\n");
     initial_ue_message_p->presenceMask |= S1AP_INITIALUEMESSAGEIES_GUMMEI_ID_PRESENT;
 
     MCC_MNC_TO_PLMNID(
@@ -191,8 +191,10 @@ int s1ap_eNB_handle_nas_first_req(
    * The cell identity is defined on 28 bits but as we use macro enb id,
    * we have to pad.
    */
+#warning "TODO get cell id from RRC"
   MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
-                                &initial_ue_message_p->eutran_cgi.cell_ID);
+		  0, // Cell ID
+          &initial_ue_message_p->eutran_cgi.cell_ID);
   MCC_MNC_TO_TBCD(instance_p->mcc,
                   instance_p->mnc,
                   instance_p->mnc_digit_length,
@@ -224,14 +226,7 @@ int s1ap_eNB_handle_nas_first_req(
     mme_desc_p->nextstream += 1;
   }
 
-#if defined(S1AP_LIMIT_STREAM_ID_TO_0)
-  mme_desc_p->nextstream = 0;
-#else
-#  if defined(S1AP_LIMIT_STREAM_ID_TO_1)
-  mme_desc_p->nextstream = 1;
-#  endif
-#endif
-  ue_desc_p->stream = mme_desc_p->nextstream;
+  ue_desc_p->tx_stream = mme_desc_p->nextstream;
 
   MSC_LOG_TX_MESSAGE(
     MSC_S1AP_ENB,
@@ -244,7 +239,7 @@ int s1ap_eNB_handle_nas_first_req(
 
   /* Send encoded message over sctp */
   s1ap_eNB_itti_send_sctp_data_req(instance_p->instance, mme_desc_p->assoc_id,
-                                   buffer, length, ue_desc_p->stream);
+                                   buffer, length, ue_desc_p->tx_stream);
 
   return 0;
 }
@@ -300,6 +295,14 @@ int s1ap_eNB_handle_nas_downlink(const uint32_t               assoc_id,
     return -1;
   }
 
+  if (0 == ue_desc_p->rx_stream) {
+	ue_desc_p->rx_stream = stream;
+  } else if (stream != ue_desc_p->rx_stream) {
+    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream %u, expecting %u\n",
+               assoc_id, stream, ue_desc_p->rx_stream);
+    return -1;
+  }
+
   /* Is it the first outcome of the MME for this UE ? If so store the mme
    * UE s1ap id.
    */
@@ -313,6 +316,7 @@ int s1ap_eNB_handle_nas_downlink(const uint32_t               assoc_id,
                  downlink_NAS_transport_p->mme_ue_s1ap_id,
                  ue_desc_p->mme_ue_s1ap_id
                 );
+      return -1;
     }
   }
 
@@ -396,8 +400,10 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
     s1ap_eNB_instance_p->mnc_digit_length,
     &uplink_NAS_transport_p->eutran_cgi.pLMNidentity);
 
+#warning "TODO get cell id from RRC"
   MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
-                                &uplink_NAS_transport_p->eutran_cgi.cell_ID);
+          0,
+          &uplink_NAS_transport_p->eutran_cgi.cell_ID);
 
   /* MCC/MNC should be repeated in TAI and EUTRAN CGI */
   MCC_MNC_TO_PLMNID(
@@ -428,7 +434,7 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 
   return 0;
 }
@@ -506,7 +512,7 @@ void s1ap_eNB_nas_non_delivery_ind(instance_t instance,
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 }
 
 //------------------------------------------------------------------------------
@@ -596,7 +602,7 @@ int s1ap_eNB_initial_ctxt_resp(
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 
   return ret;
 }
@@ -675,7 +681,7 @@ int s1ap_eNB_ue_capabilities(instance_t instance,
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                    ue_context_p->mme_ref->assoc_id, buffer,
-                                   length, ue_context_p->stream);
+                                   length, ue_context_p->tx_stream);
 
   return ret;
 }

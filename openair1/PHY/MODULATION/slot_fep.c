@@ -33,22 +33,13 @@
 
 #define SOFFSET 0
 
-void rescale(int16_t *input,int length)
-{
-
-  __m128i *input128 = (__m128i *)input;
-  int i;
-
-  for (i=0; i<length>>2; i++) {
-    input128[i] = _mm_srai_epi16(input128[i],4);
-  }
-}
 
 int slot_fep(PHY_VARS_UE *phy_vars_ue,
              unsigned char l,
              unsigned char Ns,
              int sample_offset,
-             int no_prefix)
+             int no_prefix,
+	     int reset_freq_est)
 {
 
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
@@ -145,18 +136,11 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         memcpy((void *)tmp_dft_in,
                (void *)&ue_common_vars->rxdata[aa][(rx_offset-nb_prefix_samples0) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
-#ifdef OAI_USRP
-        rescale((int16_t *)tmp_dft_in,
-                frame_parms->ofdm_symbol_size);
-#endif
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
         start_meas(&phy_vars_ue->rx_dft_stats);
-#ifdef OAI_USRP
-        rescale((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset-nb_prefix_samples0) % frame_length_samples],
-                frame_parms->ofdm_symbol_size+nb_prefix_samples0);
-#endif
+
         dft((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
         stop_meas(&phy_vars_ue->rx_dft_stats);
@@ -183,17 +167,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         memcpy((void *)tmp_dft_in,
                (void *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
-#ifdef OAI_USRP
-        rescale((int16_t *)tmp_dft_in,
-                frame_parms->ofdm_symbol_size);
-#endif
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       } else { // use dft input from RX buffer directly
-#ifdef OAI_USRP
-        rescale((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset-nb_prefix_samples) % frame_length_samples],
-                frame_parms->ofdm_symbol_size+nb_prefix_samples);
-#endif
+
         dft((int16_t *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
             (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
       }
@@ -241,7 +218,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         lte_est_freq_offset(ue_common_vars->dl_ch_estimates[0],
                             frame_parms,
                             l,
-                            &ue_common_vars->freq_offset);
+                            &ue_common_vars->freq_offset,
+			    reset_freq_est);
         stop_meas(&phy_vars_ue->dlsch_freq_offset_estimation_stats);
 
       }

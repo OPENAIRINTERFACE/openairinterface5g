@@ -302,10 +302,10 @@ break;
         switch (mod_order0) {
           case 2:  //QPSK
 
-            //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-            for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-              ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
-            }
+//          printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+          for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+            ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
+          }
 
             *jj = *jj + 1;
 
@@ -315,8 +315,8 @@ break;
 
             *jj = *jj + 1;
 
-            //printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-            break;
+ //         printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+          break;
 
           case 4:  //16QAM
 
@@ -1089,7 +1089,7 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
   uint8_t first_re,last_re;
   int inc;
 #ifdef DEBUG_DLSCH_MODULATION
-  printf("allocate_re_MCH (mod %d): symbol_offset %d re_offset %d (%d), jj %d -> %d,%d\n",mod_order,symbol_offset,re_offset,skip_dc,*jj, x0[*jj], x0[1+*jj]);
+  printf("allocate_re_MCH (mod %d): symbol_offset %d re_offset %d (%d), jj %d -> %d,%d, gain_lin_QPSK %d,txdataF %p\n",mod_order,symbol_offset,re_offset,skip_dc,*jj, x0[*jj], x0[1+*jj],gain_lin_QPSK,&txdataF[0][symbol_offset]);
 #endif
 
   last_re=12;
@@ -1117,9 +1117,9 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
     switch (mod_order) {
       case 2:  //QPSK
 
-        //      printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-        for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
-          ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
+      //            printf("%d : %d,%d => ",tti_offset,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+      for (aa=0; aa<frame_parms->nb_antennas_tx; aa++)
+        ((int16_t*)&txdataF[aa][tti_offset])[0] += (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
 
         *jj = *jj + 1;
 
@@ -1128,8 +1128,8 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
 
     *jj = *jj + 1;
 
-    //  printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
-    break;
+      //      printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+      break;
 
       case 4:  //16QAM
 
@@ -1623,7 +1623,6 @@ int mch_modulation(mod_sym_t **txdataF,
                    LTE_DL_FRAME_PARMS *frame_parms,
                    LTE_eNB_DLSCH_t *dlsch)
 {
-
   uint8_t nsymb,nsymb_pmch;
   uint32_t i,jj,re_allocated,symbol_offset;
   uint16_t l,rb,re_offset;
@@ -1651,7 +1650,7 @@ int mch_modulation(mod_sym_t **txdataF,
   for (l=2; l<nsymb_pmch; l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    msg("Generating MCH (mod %d) in %d\n",mod_order, l);
+    printf("Generating MCH (mod %d) in subframe %d for symbol %d\n",mod_order, subframe_offset,l);
 #endif
 
     re_offset = frame_parms->first_carrier_offset;
@@ -1677,7 +1676,7 @@ int mch_modulation(mod_sym_t **txdataF,
       else
         qam_table_s = NULL;
 
-      //      printf("Allocated rb %d, subframe_offset %d\n",rb,subframe_offset);
+      //      printf("Allocated rb %d, subframe_offset %d,amp %d\n",rb,subframe_offset,amp);
       allocate_REs_in_RB_MCH(txdataF,
                              &jj,
                              re_offset,
