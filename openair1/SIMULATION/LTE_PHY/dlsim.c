@@ -3059,12 +3059,12 @@ PMI_FEEDBACK:
           for (i=0; i<2*frame_parms->samples_per_tti; i++) {
             for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
               // printf("s_re[0][%d]=> %f , r_re[0][%d]=> %f\n",i,s_re[aa][i],i,r_re[aa][i]);
-              //((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] =
-              // (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-              // ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
-              //  (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
-              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) r_re[aa][i];
-              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) r_im[aa][i]; 
+              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] =
+                (short) (r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              ((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] =
+                (short) (r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0));
+              //((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i] = (short) r_re[aa][i];
+              //((short*) PHY_vars_UE->lte_ue_common_vars.rxdata[aa])[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti)+2*i+1] = (short) r_im[aa][i]; 
               //printf("rxdata[%d][%d]=> %d, %d\n",aa,subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti+i,r_re[aa][i],r_im[aa][i]);
             }
           }
@@ -4340,8 +4340,10 @@ PMI_FEEDBACK:
     free(r_im[i]);
   }
 
-  for(i=0;i<12*N_RB_DL;i++)
-    free(beamforming_weights[i]);
+  if(transmission_mode == 7){
+    for(i=0;i<12*N_RB_DL;i++)
+      free(beamforming_weights[i]);
+  }
 
   free(s_re);
   free(s_im);
