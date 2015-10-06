@@ -372,7 +372,7 @@ static void usage (
   fprintf (stdout, "\t--help, -h          Print this help and return\n");
   fprintf (stdout, "\t--test-dir <path>\n");
   fprintf (stdout, "                      Set the test directory where pdml and original enb(s) config files are located\n");
-  fprintf (stdout, "                      See README in openair-cn/TEST/EPC_TEST\n");
+  fprintf (stdout, "                      See README in openair3/TEST/EPC_TEST\n");
   fprintf (stdout, "\t--new-enb-conf-file <file>\n");
   fprintf (stdout, "                      Provide an updated eNB config file for generating a copy of the original test\n");
   fprintf (stdout, "                      This option is set as many times as there are some eNB in the original test\n");
