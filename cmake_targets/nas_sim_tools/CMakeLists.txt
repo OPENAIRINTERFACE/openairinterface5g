@@ -12,7 +12,7 @@ set(OPENAIR_DIR     $ENV{OPENAIR_DIR})
 set(OPENAIR1_DIR    $ENV{OPENAIR_DIR}/openair1)
 set(OPENAIR2_DIR    $ENV{OPENAIR_DIR}/openair2)
 set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)
-set(OPENAIRCN_DIR   $ENV{OPENAIR_DIR}/openair-cn)
+set(OPENAIR3_DIR   $ENV{OPENAIR_DIR}/openair3)
 set(OPENAIR_TARGETS $ENV{OPENAIR_DIR}/targets)
 
 #set(EXECUTABLE_OUTPUT_PATH ${OPENAIR_DIR}/targets/bin)
@@ -20,30 +20,30 @@ set(OPENAIR_TARGETS $ENV{OPENAIR_DIR}/targets)
 
 # Add .h files for dependancies
 set(usim_SRC
-    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/usim_data.c
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/usim_api.c
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/aka_functions.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/OctetString.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/TLVEncoder.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/usim_data.c
+    ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.c
+    ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/aka_functions.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/OctetString.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/TLVEncoder.c
 )
 set(usim_HDR
-    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/network.h
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/usim_api.h
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM/aka_functions.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/OctetString.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/TLVEncoder.h
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/network.h
+    ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.h
+    ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/aka_functions.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/OctetString.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/TLVEncoder.h
 )
 include_directories(
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/API/USIM
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/EMM/
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/ESM/
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/IES/
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL
+    ${OPENAIR_DIR}/openair3/NAS/COMMON
+    ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM
+    ${OPENAIR_DIR}/openair3/NAS/UE/EMM/
+    ${OPENAIR_DIR}/openair3/NAS/UE/ESM/
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/IES/
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL
 )
 ADD_EXECUTABLE(usim  ${usim_SRC} ${usim_HDR})
 
@@ -51,15 +51,15 @@ ADD_EXECUTABLE(usim  ${usim_SRC} ${usim_HDR})
 
 
 set(nvram_SRC
-    ${OPENAIR_DIR}/openair-cn/NAS/TOOLS/ue_data.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.c
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/nas_log.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/ue_data.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.c
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.c
 )
 
 set(nvram_HDR
-    ${OPENAIR_DIR}/openair-cn/NAS/UE/EMM/emmData.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/UTIL/memory.h
-    ${OPENAIR_DIR}/openair-cn/NAS/COMMON/userDef.h
+    ${OPENAIR_DIR}/openair3/NAS/UE/EMM/emmData.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.h
+    ${OPENAIR_DIR}/openair3/NAS/COMMON/userDef.h
 )
 
 ADD_EXECUTABLE(nvram  ${nvram_SRC} ${nvram_HDR})

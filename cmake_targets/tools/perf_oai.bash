@@ -736,7 +736,7 @@ function main()
     cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
     cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
     cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
-    cecho "OPENAIRCN_DIR   = $OPENAIRCN_DIR" $green
+    cecho "OPENAIR3_DIR   = $OPENAIR3_DIR" $green
     cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
     
     
@@ -744,7 +744,7 @@ function main()
     echo "OPENAIR1_DIR    = $OPENAIR1_DIR"  >>  results/${oai_exp_date}
     echo "OPENAIR2_DIR    = $OPENAIR2_DIR"  >>  results/${oai_exp_date}
     echo "OPENAIR3_DIR    = $OPENAIR3_DIR"  >>  results/${oai_exp_date}
-    echo "OPENAIRCN_DIR   = $OPENAIRCN_DIR"  >>  results/${oai_exp_date}
+    echo "OPENAIR3_DIR   = $OPENAIR3_DIR"  >>  results/${oai_exp_date}
     echo "OPENAIR_TARGETS = $OPENAIR_TARGETS"  >>  results/${oai_exp_date}
     
 

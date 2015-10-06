@@ -36,7 +36,7 @@ set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
 set (OPENAIR_TARGETS ${OPENAIR_DIR}/targets)
-set (OPENAIRCN_DIR   ${OPENAIR_DIR}/openair-cn)
+set (OPENAIR3_DIR   ${OPENAIR_DIR}/openair3)
 set (OPENAIR_CMAKE   ${OPENAIR_DIR}/cmake_targets)
 set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
@@ -214,7 +214,7 @@ if (${ENABLE_ITTI})
     ${ITTI_DIR}/timer.c
     )
   set(ITTI_LIB ITTI)
-  set(GTPU_need_ITTI ${OPENAIRCN_DIR}/GTPV1-U/gtpv1u_eNB.c)
+  set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
@@ -278,7 +278,7 @@ add_custom_command (
 ##############
 add_list1_option(S1AP_VERSION R10 "S1AP Asn.1 grammar version" R8 R9 R10)
 
-set(S1AP_DIR ${OPENAIRCN_DIR}/S1AP)
+set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 if (${S1AP_VERSION} STREQUAL "R10")
   set (ASN1RELDIR R10.5)
   add_definitions("-DUPDATE_RELEASE_9 -DUPDATE_RELEASE_10")
@@ -470,7 +470,7 @@ add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchang
 ########################
 # Include order
 ##########################
-add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair-cn" )
+add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
 
 ##########################
 # Emulation options
@@ -620,11 +620,11 @@ if(ENB_MODE)
   include_directories("${OPENAIR2_DIR}/COMMON")
   include_directories("${OPENAIR2_DIR}/UTIL")
   include_directories("${OPENAIR2_DIR}/UTIL/LOG")
-  include_directories("${OPENAIRCN_DIR}/COMMON")
-  include_directories("${OPENAIRCN_DIR}/UTILS")
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
 else()
-  include_directories("${OPENAIRCN_DIR}/COMMON")
-  include_directories("${OPENAIRCN_DIR}/UTILS")
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
   include_directories("${OPENAIR2_DIR}/COMMON")
   include_directories("${OPENAIR2_DIR}/UTIL")
   include_directories("${OPENAIR2_DIR}/UTIL/LOG")
@@ -644,18 +644,18 @@ include_directories("${OPENAIR3_DIR}/RAL-LTE/LTE_RAL_ENB/INCLUDE")
 include_directories("${OPENAIR3_DIR}/RAL-LTE/LTE_RAL_UE/INCLUDE")
 include_directories("${OPENAIR_DIR}/common/utils")
 include_directories("${OPENAIR_DIR}/common/utils/itti")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON/API/NETWORK")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON/EMM/MSG")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON/ESM/MSG")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON/IES")
-include_directories("${OPENAIRCN_DIR}/NAS/COMMON/UTIL")
-include_directories("${OPENAIRCN_DIR}/SECU")
-include_directories("${OPENAIRCN_DIR}/SCTP")
-include_directories("${OPENAIRCN_DIR}/S1AP")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/API/NETWORK")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/EMM/MSG")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/ESM/MSG")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
+include_directories("${OPENAIR3_DIR}/SECU")
+include_directories("${OPENAIR3_DIR}/SCTP")
+include_directories("${OPENAIR3_DIR}/S1AP")
 include_directories("${OPENAIR2_DIR}/X2AP")
-include_directories("${OPENAIRCN_DIR}/UDP")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U")
+include_directories("${OPENAIR3_DIR}/UDP")
+include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
@@ -675,8 +675,8 @@ include_directories("${OPENAIR2_DIR}/UTIL/CLI")
 include_directories("${OPENAIR2_DIR}/UTIL/OPT")
 include_directories("${OPENAIR2_DIR}/UTIL/OMV")
 include_directories("${OPENAIR2_DIR}/RRC/LITE/MESSAGES")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/shared")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/include")
+include_directories("${OPENAIR3_DIR}/GTPV1-U/nw-gtpv1u/shared")
+include_directories("${OPENAIR3_DIR}/GTPV1-U/nw-gtpv1u/include")
 include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
@@ -749,14 +749,14 @@ set(SECU_OSA_SRC
 add_library(SECU_OSA ${SECU_OSA_SRC})
 
 set(SECU_CN_SRC
-  ${OPENAIRCN_DIR}/SECU/kdf.c
-  ${OPENAIRCN_DIR}/SECU/rijndael.c
-  ${OPENAIRCN_DIR}/SECU/snow3g.c
-  ${OPENAIRCN_DIR}/SECU/key_nas_deriver.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea2.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia2.c
+  ${OPENAIR3_DIR}/SECU/kdf.c
+  ${OPENAIR3_DIR}/SECU/rijndael.c
+  ${OPENAIR3_DIR}/SECU/snow3g.c
+  ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
   )
 add_library(SECU_CN ${SECU_CN_SRC})
 
@@ -988,14 +988,14 @@ endif()
 ##########################
 
 add_library(CN_UTILS
-  ${OPENAIRCN_DIR}/UTILS/conversions.c
-  ${OPENAIRCN_DIR}/UTILS/enum_string.c
-  ${OPENAIRCN_DIR}/UTILS/log.c
-  ${OPENAIRCN_DIR}/UTILS/mme_config.c
-  ${OPENAIRCN_DIR}/UTILS/mcc_mnc_itu.c
+  ${OPENAIR3_DIR}/UTILS/conversions.c
+  ${OPENAIR3_DIR}/UTILS/enum_string.c
+  ${OPENAIR3_DIR}/UTILS/log.c
+  ${OPENAIR3_DIR}/UTILS/mme_config.c
+  ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
-set(GTPV1U_DIR ${OPENAIRCN_DIR}/GTPV1-U)
+set(GTPV1U_DIR ${OPENAIR3_DIR}/GTPV1-U)
 set (GTPV1U_SRC
   ${RRC_DIR}/rrc_eNB_GTPV1U.c
   ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
@@ -1007,16 +1007,16 @@ set (GTPV1U_SRC
 add_library(GTPV1U ${GTPV1U_SRC})
 
 set(SCTP_SRC
-  ${OPENAIRCN_DIR}/SCTP/sctp_common.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_eNB_task.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_eNB_itti_messaging.c
+  ${OPENAIR3_DIR}/SCTP/sctp_common.c
+  ${OPENAIR3_DIR}/SCTP/sctp_eNB_task.c
+  ${OPENAIR3_DIR}/SCTP/sctp_eNB_itti_messaging.c
 )
 add_library(SCTP_CLIENT ${SCTP_SRC})
 
-add_library(UDP ${OPENAIRCN_DIR}/UDP/udp_eNB_task.c)
+add_library(UDP ${OPENAIR3_DIR}/UDP/udp_eNB_task.c)
 
 
-set(NAS_SRC ${OPENAIRCN_DIR}/NAS/)
+set(NAS_SRC ${OPENAIR3_DIR}/NAS/)
 set(libnas_api_OBJS
   ${NAS_SRC}COMMON/API/NETWORK/as_message.c
   ${NAS_SRC}COMMON/API/NETWORK/nas_message.c
@@ -1413,7 +1413,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIRCN_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${GTPU_need_ITTI}
   ${HW_SOURCE}
   ${RTAI_SOURCE}
@@ -1496,22 +1496,22 @@ Message("-- HW_SOURCE=${HW_SOURCE}")
 # USIM process
 #################
 #add_executable(usim
-#  ${OPENAIRCN_DIR}/NAS/TOOLS/usim_data.c
-#  ${OPENAIRCN_DIR}/NAS/USER/API/USIM/usim_api.c
-#  ${OPENAIRCN_DIR}/NAS/USER/API/USIM/aka_functions.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/memory.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/nas_log.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/OctetString.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/TLVEncoder.c
+#  ${OPENAIR3_DIR}/NAS/TOOLS/usim_data.c
+#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/usim_api.c
+#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/aka_functions.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/OctetString.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/TLVEncoder.c
 #  )
 #target_link_libraries (usim ${NAS_LIB} UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
 
 # ???
 #####################
 #add_executable(nvram
-#  ${OPENAIRCN_DIR}/NAS/TOOLS/ue_data.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/memory.c
-#  ${OPENAIRCN_DIR}/NAS/COMMON/UTIL/nas_log.c
+#  ${OPENAIR3_DIR}/NAS/TOOLS/ue_data.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
 #  )
 #target_link_libraries (nvram LIB_NAS_UE UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
 
@@ -1538,7 +1538,7 @@ add_executable(oaisim
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
-  ${OPENAIRCN_DIR}/NAS/UE/nas_ue_task.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${GTPU_need_ITTI}
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${HW_SOURCE}
@@ -1611,12 +1611,12 @@ foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syn
 endforeach(myExe)
 
 add_executable(test_epc_generate_scenario
-  ${OPENAIRCN_DIR}/TEST/EPC_TEST/generate_scenario.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.h
   ${OPENAIR2_DIR}/COMMON/commonDef.h
   ${OPENAIR2_DIR}/COMMON/messages_def.h
   ${OPENAIR2_DIR}/COMMON/messages_types.h
-  ${OPENAIRCN_DIR}/S1AP/s1ap_eNB_defs.h
+  ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   ${OPENAIR_BIN_DIR}/messages_xml.h
   )
 target_link_libraries (test_epc_generate_scenario

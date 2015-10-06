@@ -271,8 +271,8 @@ install_asn1c_from_source(){
     cd /tmp/asn1c-r1516
     rm -rf /tmp/asn1c-r1516/*
     svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 > /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair-cn/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair-cn/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
     patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
     ./configure
     make > /tmp/log_compile_asn1c 2>&1
@@ -311,13 +311,13 @@ set_openair_env(){
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/cmake_targets/*}
     openair_path=${openair_path%/targets/*}
-    openair_path=${openair_path%/openair-cn/*}
+    openair_path=${openair_path%/openair3/*}
     openair_path=${openair_path%/openair[123]/*}    
     export OPENAIR_DIR=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
     export OPENAIR3_DIR=$openair_path/openair3
-    export OPENAIRCN_DIR=$openair_path/openair-cn
+    export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR_TARGETS=$openair_path/targets
 }
 

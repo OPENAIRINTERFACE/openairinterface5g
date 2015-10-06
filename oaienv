@@ -4,7 +4,6 @@ export OPENAIR_DIR=$(pwd)
 export OPENAIR1_DIR=$OPENAIR_HOME/openair1
 export OPENAIR2_DIR=$OPENAIR_HOME/openair2
 export OPENAIR3_DIR=$OPENAIR_HOME/openair3
-export OPENAIRCN_DIR=$OPENAIR_HOME/openair-cn
 export OPENAIR_TARGETS=$OPENAIR_HOME/targets
 export OPENAIRITS_DIR=$OPENAIR_HOME/openairITS
 
@@ -17,4 +16,3 @@ alias oait='cd $OPENAIR_TARGETS'
 alias oailte='cd $OPENAIR_TARGETS/RT/USER'
 alias oais='cd $OPENAIR_TARGETS/SIMU/USER'
 alias oaiex='cd $OPENAIR_TARGETS/SIMU/EXAMPLES'
-alias oaicn='cd OPENAIRCN_DIR'
