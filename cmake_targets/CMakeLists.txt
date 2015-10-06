@@ -20,7 +20,7 @@
 # Contact Information
 # OpenAirInterface Admin: openair_admin@eurecom.fr
 # OpenAirInterface Tech : openair_tech@eurecom.fr
-# OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+# OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 # Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 # Author: laurent THOMAS, Lionel GAUTHIER
@@ -340,17 +340,7 @@ add_library(S1AP_ENB
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
   )
 
-add_library(S1AP_EPC
-  ${S1AP_C_DIR}/s1ap_ies_defs.h
-  ${S1AP_DIR}/s1ap_mme_encoder.c
-  ${S1AP_DIR}/s1ap_mme_decoder.c
-  ${S1AP_DIR}/s1ap_mme_handlers.c
-  ${S1AP_DIR}/s1ap_mme_nas_procedures.c
-  ${S1AP_DIR}/s1ap_mme.c
-  ${S1AP_DIR}/s1ap_mme_itti_messaging.c
-  ${S1AP_DIR}/s1ap_mme_retransmission.c
-  ${S1AP_DIR}/s1ap_mme_ta.c
-  )
+
 
 #X2AP
 # Same limitation as described in RRC/S1AP: unknown generated file list
@@ -467,8 +457,6 @@ add_boolean_option(USER_MODE True "????")
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
-add_boolean_option(ENABLE_STANDALONE_EPC True "Compile MME, SGW and PGW in a single executable")
-add_boolean_option(EPC_BUILD False "???")
 add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
@@ -542,10 +530,8 @@ add_boolean_option(USE_3GPP_ADDR_AS_LINK_ADDR False "As per attribute name")
 # NAS LAYER OPTIONS
 ##########################
 add_boolean_option(ENABLE_NAS_UE_LOGGING   True  "????")
-add_boolean_option(NAS_BUILT_IN_EPC        False "MME NAS layer not present in this executable")
 add_boolean_option(NAS_BUILT_IN_UE         True  "UE NAS layer present in this executable")
 add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)")
-add_boolean_option(NAS_MME                 False "NAS_UE and NAS_MME are incompatible options")
 
 
 ##########################
@@ -691,9 +677,6 @@ include_directories("${OPENAIR2_DIR}/UTIL/OMV")
 include_directories("${OPENAIR2_DIR}/RRC/LITE/MESSAGES")
 include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/shared")
 include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/include")
-include_directories("${OPENAIRCN_DIR}/SGW-LITE")
-include_directories("${OPENAIRCN_DIR}/MME_APP")
-include_directories("${OPENAIRCN_DIR}/S6A")
 include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
@@ -1023,42 +1006,6 @@ set (GTPV1U_SRC
 )
 add_library(GTPV1U ${GTPV1U_SRC})
 
-set(GTPV2C_DIR  ${OPENAIRCN_DIR}/GTPV2-C/nwgtpv2c-0.11/src)
-add_library(GTPV2C
-  ${GTPV2C_DIR}/NwGtpv2cTrxn.c
-  ${GTPV2C_DIR}/NwGtpv2cTunnel.c
-  ${GTPV2C_DIR}/NwGtpv2cMsg.c
-  ${GTPV2C_DIR}/NwGtpv2cMsgIeParseInfo.c
-  ${GTPV2C_DIR}/NwGtpv2cMsgParser.c
-  ${GTPV2C_DIR}/NwGtpv2c.c
-  )
-include_directories(${OPENAIRCN_DIR}/GTPV2-C/nwgtpv2c-0.11/include/)
-include_directories(${OPENAIRCN_DIR}/GTPV2-C/nwgtpv2c-0.11/shared/)
-
-execute_process(
-  COMMAND /sbin/iptables -V
-  OUTPUT_VARIABLE iptables_version
-  )
-string(REGEX REPLACE "[a-zA-Z .\r\n]" "" IPTVERSION ${iptables_version})
-string(REGEX REPLACE "[a-zA-Z \r\n]" "" IPTABLES_VERSION_STRING ${iptables_version})
-
-# From original Polaris code, added _lib because cmake doesn't accept two targets with the same name
-# and the driver is also named xt_GTPUSP
-# the _lib suffix is removed during installation in /lib/xtables
-add_library(xt_GTPUSP_lib SHARED ${OPENAIRCN_DIR}/GTPV1-U/GTPU_SP/libxt_GTPUSP.c)
-target_compile_definitions(xt_GTPUSP_lib PRIVATE
--D_LARGEFILE_SOURCE=1
--D_LARGE_FILES
--D_FILE_OFFSET_BITS=64
--D_REENTRANT
--D_INIT=libxt_GTPUSP_init
--DKVERSION=3
--DPIC
-IPTVERSION=${IPTVERSION} -DIPTABLES_VERSION_STRING=\"${IPTABLES_VERSION_STRING}\"
-)
-
-
-
 set(SCTP_SRC
   ${OPENAIRCN_DIR}/SCTP/sctp_common.c
   ${OPENAIRCN_DIR}/SCTP/sctp_eNB_task.c
@@ -1066,63 +1013,7 @@ set(SCTP_SRC
 )
 add_library(SCTP_CLIENT ${SCTP_SRC})
 
-add_library(SCTP_SERVER
-  ${OPENAIRCN_DIR}/SCTP/sctp_common.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_itti_messaging.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_primitives_server.c
-  )
-
-
 add_library(UDP ${OPENAIRCN_DIR}/UDP/udp_eNB_task.c)
-
-add_library(UDP_SERVER ${OPENAIRCN_DIR}/UDP/udp_primitives_server.c)
-
-set(S11_DIR ${OPENAIRCN_DIR}/S11)
-add_library(S11
-  ${S11_DIR}/s11_common.c
-  ${S11_DIR}/s11_ie_formatter.c
-  ${S11_DIR}/s11_mme_task.c
-  ${S11_DIR}/s11_sgw.c
-  ${S11_DIR}/s11_mme_session_manager.c
-  ${S11_DIR}/s11_sgw_session_manager.c
-  ${S11_DIR}/s11_sgw_bearer_manager.c
-)
-include_directories(${S11_DIR})
-
-set(S6A_DIR ${OPENAIRCN_DIR}/S6A)
-add_library(S6A
-  ${S6A_DIR}/s6a_auth_info.c
-  ${S6A_DIR}/s6a_dict.c
-  ${S6A_DIR}/s6a_error.c
-  ${S6A_DIR}/s6a_peer.c
-  ${S6A_DIR}/s6a_subscription_data.c
-  ${S6A_DIR}/s6a_task.c
-  ${S6A_DIR}/s6a_up_loc.c
-  )
-
-set(SGW_DIR ${OPENAIRCN_DIR}/SGW-LITE)
-add_library (SGW
-  ${SGW_DIR}/spgw_config.c
-  ${SGW_DIR}/s11_causes.c
-  ${SGW_DIR}/sgw_lite_task.c
-  ${SGW_DIR}/sgw_lite_handlers.c
-  ${SGW_DIR}/sgw_lite_context_manager.c
-  ${SGW_DIR}/pgw_lite_paa.c
-  )
-
-set(MME_DIR ${OPENAIRCN_DIR}/MME_APP)
-add_library(MME_APP
-  ${MME_DIR}/mme_app_capabilities.c
-  ${MME_DIR}/mme_app_context.c
-  ${MME_DIR}/mme_app_main.c
-  ${MME_DIR}/mme_app_bearer.c
-  ${MME_DIR}/mme_app_authentication.c
-  ${MME_DIR}/mme_app_location.c
-  ${MME_DIR}/mme_app_statistics.c
-  ${MME_DIR}/s6a_2_nas_cause.c
-  )
-
-
 
 
 set(NAS_SRC ${OPENAIRCN_DIR}/NAS/)
@@ -1383,99 +1274,6 @@ if(NAS_UE)
   include_directories(${NAS_SRC}UE/ESM/SAP)
 endif()
 
-if(NAS_MME)
-  set(libnas_mme_api_OBJS
-    ${NAS_SRC}MME/API/MME/mme_api.c
-  )
-  set(libnas_mme_emm_OBJS
-    ${NAS_SRC}MME/EMM/Attach.c
-    ${NAS_SRC}MME/EMM/Authentication.c
-    ${NAS_SRC}MME/EMM/Detach.c
-    ${NAS_SRC}MME/EMM/EmmCommon.c
-    ${NAS_SRC}MME/EMM/emm_data_ctx.c
-    ${NAS_SRC}MME/EMM/emm_main.c
-    ${NAS_SRC}MME/EMM/EmmStatusHdl.c
-    ${NAS_SRC}MME/EMM/Identification.c
-    ${NAS_SRC}MME/EMM/IdleMode.c
-    ${NAS_SRC}MME/EMM/LowerLayer.c
-    ${NAS_SRC}MME/EMM/SecurityModeControl.c
-    ${NAS_SRC}MME/EMM/ServiceRequestHdl.c
-    ${NAS_SRC}MME/EMM/TrackingAreaUpdate.c
-  )
-  set(libnas_mme_emm_sap_OBJS
-    ${NAS_SRC}MME/EMM/SAP/emm_as.c
-    ${NAS_SRC}MME/EMM/SAP/emm_cn.c
-    ${NAS_SRC}MME/EMM/SAP/EmmCommonProcedureInitiated.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredAttachNeeded.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredAttemptingToAttach.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregistered.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredInitiated.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredLimitedService.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredNoCellAvailable.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredNoImsi.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredNormalService.c
-    ${NAS_SRC}MME/EMM/SAP/EmmDeregisteredPlmnSearch.c
-    ${NAS_SRC}MME/EMM/SAP/emm_esm.c
-    ${NAS_SRC}MME/EMM/SAP/emm_fsm.c
-    ${NAS_SRC}MME/EMM/SAP/EmmNull.c
-    ${NAS_SRC}MME/EMM/SAP/emm_recv.c
-    ${NAS_SRC}MME/EMM/SAP/emm_reg.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredAttemptingToUpdate.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegistered.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredImsiDetachInitiated.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredInitiated.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredLimitedService.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredNoCellAvailable.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredNormalService.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredPlmnSearch.c
-    ${NAS_SRC}MME/EMM/SAP/EmmRegisteredUpdateNeeded.c
-    ${NAS_SRC}MME/EMM/SAP/emm_sap.c
-    ${NAS_SRC}MME/EMM/SAP/emm_send.c
-    ${NAS_SRC}MME/EMM/SAP/EmmServiceRequestInitiated.c
-    ${NAS_SRC}MME/EMM/SAP/EmmTrackingAreaUpdatingInitiated.c
-  )
-  set (libnas_mme_esm_OBJS
-    ${NAS_SRC}MME/ESM/DedicatedEpsBearerContextActivation.c
-    ${NAS_SRC}MME/ESM/DefaultEpsBearerContextActivation.c
-    ${NAS_SRC}MME/ESM/EpsBearerContextDeactivation.c
-    ${NAS_SRC}MME/ESM/esm_ebr.c
-    ${NAS_SRC}MME/ESM/esm_ebr_context.c
-    ${NAS_SRC}MME/ESM/esm_ip.c
-    ${NAS_SRC}MME/ESM/esm_main.c
-    ${NAS_SRC}MME/ESM/esm_pt.c
-    ${NAS_SRC}MME/ESM/EsmStatusHdl.c
-    ${NAS_SRC}MME/ESM/PdnConnectivity.c
-    ${NAS_SRC}MME/ESM/PdnDisconnect.c
-  )
-  set(libnas_mme_esm_sap_OBJS
-    ${NAS_SRC}MME/ESM/SAP/esm_recv.c
-    ${NAS_SRC}MME/ESM/SAP/esm_send.c
-    ${NAS_SRC}MME/ESM/SAP/esm_sap.c
-  )
-  add_library(LIB_NAS_MME
-    ${NAS_SRC}MME/nas_itti_messaging.c
-    ${NAS_SRC}MME/nas_network.c
-    ${NAS_SRC}MME/nas_parser.c
-    ${NAS_SRC}MME/nas_proc.c
-    ${libnas_api_OBJS}
-    ${libnas_mme_api_OBJS}
-    ${libnas_emm_msg_OBJS}
-    ${libnas_esm_msg_OBJS}
-    ${libnas_ies_OBJS}
-    ${libnas_utils_OBJS}
-    ${libnas_mme_emm_OBJS}
-    ${libnas_mme_emm_sap_OBJS}
-    ${libnas_mme_esm_OBJS}
-    ${libnas_mme_esm_sap_OBJS} 
-  )
-  include_directories(${NAS_SRC}MME)
-  include_directories(${NAS_SRC}MME/API/MME)
-  include_directories(${NAS_SRC}MME/EMM)
-  include_directories(${NAS_SRC}MME/EMM/SAP)
-  include_directories(${NAS_SRC}MME/ESM)
-  include_directories(${NAS_SRC}MME/ESM/SAP)
-endif()
-
 
 
 # Make lfds as a own source code (even if it is a outside library)
@@ -1667,112 +1465,6 @@ target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 
 
 
-# EPC is ??? nodes implementation in one process
-################################
-add_executable(mme_gw
-  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIRCN_DIR}/OAI_EPC/oai_epc_log.c
-  ${OPENAIRCN_DIR}/OAI_EPC/oai_epc.c
-  ${GTPV1U_DIR}/gtpv1u_task.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_primitives_server.c
-  ${OPENAIRCN_DIR}/NAS/MME/nas_mme_task.c
-  )
-target_link_libraries (mme_gw
-  -Wl,--start-group
-   LIB_NAS_MME S1AP_LIB S1AP_EPC GTPV1U GTPV2C SCTP_SERVER UDP_SERVER SECU_CN SECU_OSA S6A SGW MME_APP LFDS ${MSC_LIB} ${ITTI_LIB} CN_UTILS HASHTABLE
-  -Wl,--end-group
-  pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-  )
-
-
-# Default parameters
-# Does not work on simple install (fqdn in /etc/hosts 127.0.1.1)
-#cmake_host_system_information(RESULT HSS_FQDN_STR QUERY FQDN)
-#cmake_host_system_information(RESULT MME_FQDN_STR QUERY FQDN)
-IF( EPC_BUILD )
-  INCLUDE(FindFreeDiameter)
-  # if standalone eNB or UE no need for FreeDiameter
-  IF( FREEDIAMETER_FOUND )
-    IF( NOT FREEDIAMETER_HSS_S6A_ENABLED )
-      MESSAGE( SEND_ERROR "FreeDiameter is not enabled for OPENAIRHSS" )
-    ENDIF( NOT FREEDIAMETER_HSS_S6A_ENABLED )
-  ENDIF( FREEDIAMETER_FOUND )
-
-
-  execute_process(COMMAND hostname --fqdn OUTPUT_VARIABLE HSS_FQDN_STR TIMEOUT 3)
-  execute_process(COMMAND hostname --fqdn OUTPUT_VARIABLE MME_FQDN_STR TIMEOUT 3)
-  string(STRIP ${HSS_FQDN_STR} HSS_FQDN_STR)
-  string(STRIP ${MME_FQDN_STR} MME_FQDN_STR)
-
-  set(HSS_IP                       127.0.1.1                 CACHE STRING     "HSS IP address, default is local")
-  set(MME_FQDN                     ${MME_FQDN_STR}           CACHE STRING     "MME Fully qualified domain name")
-  set(HSS_FQDN                     ${HSS_FQDN_STR}           CACHE STRING     "HSS Fully qualified domain name")
-  set(TRANSPORT_option             "#No_TCP"                 CACHE STRING     "No_TCP or No_SCTP or comment string, FreeDiameter config option")
-  set(TRANSPORT_PREFER_TCP_option  "#Prefer_TCP"             CACHE STRING     "Prefer_TCP or comment string, FreeDiameter config option")
-  IF( NOT DEFINED REALM )
-    string(FIND ${MME_FQDN} "." pos)
-    math(EXPR pos1 "${pos}+1")
-    string(SUBSTRING ${MME_FQDN} ${pos1} -1 realm_string)
-    message("REALM extracted from MME FQDN is ${realm_string}")
-    set(REALM                      ${realm_string}           CACHE STRING     "EPC realm")
-  ENDIF( NOT DEFINED REALM )
-  message("REALM is ${REALM}")
-  IF( NOT DEFINED MME_HOSTNAME )
-    string(FIND ${MME_FQDN} "." pos)
-    string(SUBSTRING ${MME_FQDN} 0 ${pos} mme_hostname_string)
-    message("MME_HOSTNAME extracted from MME FQDN is ${mme_hostname_string}")
-    set(MME_HOSTNAME         ${mme_hostname_string}           CACHE STRING     "MME hostname")
-  ENDIF( NOT DEFINED MME_HOSTNAME )
-  IF( NOT DEFINED HSS_HOSTNAME )
-    string(FIND ${HSS_FQDN} "." pos)
-    string(SUBSTRING ${HSS_FQDN} 0 ${pos} hss_hostname_string)
-    message("HSS_HOSTNAME extracted from HSS FQDN is ${hss_hostname_string}")
-    set(HSS_HOSTNAME         ${hss_hostname_string}           CACHE STRING     "HSS hostname")
-  ENDIF( NOT DEFINED HSS_HOSTNAME )
-
-  if ( ${MME_HOSTNAME} STREQUAL ${HSS_HOSTNAME} )
-    set(MME_S6A_IS_SERVER      1 )
-  endif( ${MME_HOSTNAME} STREQUAL ${HSS_HOSTNAME} )
-
-  IF( MME_S6A_IS_SERVER )
-    set(ConnectPeer        "#ConnectPeer"     CACHE STRING   "HSS connect to MME")
-    set(DIAMETER_PORT      "Port = 3870"      CACHE STRING   "Diameter bind port, 3868 is always used by default by HSS, even if HSS client")
-    set(DIAMETER_SEC_PORT  "SecPort = 3871"   CACHE STRING   "Diameter bind sec port")
-  ELSE( MME_S6A_IS_SERVER )
-    set(ConnectPeer        "#ConnectPeer"     CACHE STRING   "HSS act as a server")
-    set(DIAMETER_PORT      "#Port = 3870"     CACHE STRING   "Diameter bind port")
-    set(DIAMETER_SEC_PORT  "#SecPort = 3871"  CACHE STRING   "Diameter bind sec port")
-  ENDIF( MME_S6A_IS_SERVER )
-
-  execute_process(COMMAND sudo ${OPENAIR_CMAKE}/tools/check_mme_s6a_certificate ${FREEDIAMETER_PATH}/.. ${MME_FQDN} WORKING_DIRECTORY ${OPENAIR_CMAKE})
-
-  configure_file(
-    ${OPENAIR_CMAKE}/tools/s6a.conf.in
-    ${CMAKE_CURRENT_BINARY_DIR}/mme_fd.conf)
-  configure_file(
-    ${OPENAIR_CMAKE}/tools/epc.local.enb.conf.in
-    ${CMAKE_CURRENT_BINARY_DIR}/epc.local.enb.conf)
-  configure_file(
-    ${OPENAIR_CMAKE}/tools/epc.conf.in
-    ${CMAKE_CURRENT_BINARY_DIR}/epc.conf)
-ENDIF( EPC_BUILD )
-
-# oai_sgw is SGW  node implementation
-################################
-add_executable(oai_sgw
-  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIRCN_DIR}/OAI_SGW/oai_sgw_log.c
-  ${OPENAIRCN_DIR}/OAI_SGW/oai_sgw.c
-  )
-target_link_libraries (oai_sgw
-  -Wl,--start-group
-  GTPV1U SECU_CN SECU_OSA S6A SGW CN_UTILS LFDS ${MSC_LIB} ${ITTI_LIB}
-  -Wl,--end-group
-  pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-  )
-
-
-
 # rrh
 ################################
 set(DRIVER2013)
@@ -1918,49 +1610,6 @@ foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syn
     )
 endforeach(myExe)
 
-#unitary tests for Core NEtwork pieces
-#################################
-foreach(myExe s1ap
-    secu_knas_encrypt_eia1
-    secu_kenb
-    aes128_ctr_encrypt
-    aes128_ctr_decrypt
-    secu_knas_encrypt_eea2
-    secu_knas secu_knas_encrypt_eea1
-    kdf
-    aes128_cmac_encrypt
-    secu_knas_encrypt_eia2)
-  add_executable(test_${myExe}
-    ${OPENAIRCN_DIR}/TEST/test_util.c
-    ${OPENAIRCN_DIR}/TEST/test_${myExe}.c
-    )
-  target_link_libraries (test_${myExe}
-    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-    )
-endforeach(myExe)
-
-add_executable(test_s1c_mme
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c.c
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_scenario.h
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_scenario1.c
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_scenario.c
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_scenario.h
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_s1ap.c
-  ${OPENAIRCN_DIR}/TEST/oaisim_mme_test_s1c_s1ap.h
-  ${OPENAIR2_DIR}/ENB_APP/enb_config.c
-  ${OPENAIR2_DIR}/ENB_APP/enb_config.h
-  ${OPENAIR2_DIR}/COMMON/commonDef.h
-  ${OPENAIR2_DIR}/COMMON/messages_def.h
-  ${OPENAIR2_DIR}/COMMON/messages_types.h
-  ${OPENAIRCN_DIR}/S1AP/s1ap_eNB_defs.h
-  ${S1AP_DIR}/s1ap_eNB_management_procedures.c
-  ${OPENAIR_BIN_DIR}/messages_xml.h
-  )
-target_link_libraries (test_s1c_mme
-  -Wl,--start-group SECU_CN S1AP_LIB  SCTP_CLIENT UTIL LFDS ${ITTI_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-  )
-
-
 add_executable(test_epc_generate_scenario
   ${OPENAIRCN_DIR}/TEST/EPC_TEST/generate_scenario.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.h
@@ -1971,9 +1620,8 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR_BIN_DIR}/messages_xml.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group SECU_CN S1AP_LIB UTIL S1AP_ENB LIB_NAS_UE LFDS ${ITTI_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
   )
-
 
 
 # to be added
@@ -1981,20 +1629,6 @@ target_link_libraries (test_epc_generate_scenario
 #../targets/TEST/PDCP/with_rlc/test_pdcp_rlc.c
 
 
-#  ???
-###########################
-#add_executable(oaisim_mme
-#  ${OPENAIR_BIN_DIR}/messages_xml.h
-#  ${OPENAIRCN_DIR}/OAISIM_MME/oai_mme_log.c
-#  ${OPENAIRCN_DIR}/OAISIM_MME/oaisim_mme.c
-#  ${OPENAIRCN_DIR}/NAS/nas_main.c
-#)
-#target_link_libraries (oaisim_mme
-#  -Wl,--start-group
-#   NAS S1AP_LIB S1AP_EPC GTPV1U GTPV2C SCTP_SERVER UDP_SERVER SECU_CN SECU_OSA S6A S11 SGW MME_APP LFDS MSC ${ITTI_LIB} CN_UTILS HASHTABLE
-#  -Wl,--end-group
-#  pthread m sctp  rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
-#)
 
 
 ##################################################
@@ -2124,15 +1758,6 @@ if(OAI_NW_DRIVER_USE_NETLINK)
 endif()
 make_driver(ue_ip ${OPENAIR2_DIR}/NETWORK_DRIVER/UE_IP ${ue_ip_src})
 
-# GTP
-########################
-# KVERSION is not used in the code, but required
-set(module_cc_opt "${module_cc_opt} -DKVERSION=3")
-make_driver(xt_GTPUSP ${OPENAIRCN_DIR}/GTPV1-U/GTPU_SP "")
-
-# add the install targets
-#install (TARGETS Tutorial DESTINATION bin)
-#install (FILES "${PROJECT_BIN_DIR}/TutorialConfig.h"        DESTINATION include)
 
 # OCTAVE tools
 ###############

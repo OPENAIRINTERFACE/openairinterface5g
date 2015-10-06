@@ -1,0 +1,147 @@
+#!/bin/bash
+################################################################################
+#   OpenAirInterface
+#   Copyright(c) 1999 - 2014 Eurecom
+#
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) anylater version.
+#
+#
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with OpenAirInterface.The full GNU General Public License is
+#    included in this distribution in the file called "COPYING". If not,
+#    see <http://www.gnu.org/licenses/>.
+#
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+#
+################################################################################
+# file build_test_epc_tools
+# brief
+# author Lionel Gauthier
+# company Eurecom
+# email: lionel.gauthier@eurecom.fr
+#
+################################
+# include helper functions
+################################
+THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
+source $THIS_SCRIPT_PATH/build_helper
+
+function help()
+{
+  echo_error " "
+  echo_error "Usage: build_test_epc_tools [OPTION]..."
+  echo_error "Build the executables for generating and running a test case for EPC."
+  echo_error " "
+  echo_error "Options:"
+  echo_error "Mandatory arguments to long options are mandatory for short options too."
+  echo_error "  -c, --clean                               Clean the build generated files (build from scratch)"
+  echo_error "  -d, --debug                               Compile with debug informations."
+  echo_error "  -h, --help                                Print this help."
+  echo_error "  -v, --verbose                             Build process verbose."
+  echo_error " "
+}
+
+
+
+function main()
+{
+  local -i clean=0
+  local -i verbose=0
+  local    cmake_args=" "
+  local    make_args="-j $NUM_CPU"
+  local    realm=""
+
+
+  until [ -z "$1" ]
+    do
+    case "$1" in
+      -c | --clean)
+        clean=1
+        echo "Clean the build generated files (build from scratch)"
+        shift;
+        ;;
+      -d | --debug)
+        cmake_args="$cmake_args -DDEBUG=1"
+        echo "Compile with debug informations"
+        shift;
+        ;;
+      -h | --help)
+        help
+        shift;
+        exit 0
+        ;;
+      -v | --verbose)
+        echo "Make build process verbose"
+        cmake_args="$cmake_args -DCMAKE_VERBOSE_MAKEFILE=ON"
+        make_args="VERBOSE=1 $make_args"
+        verbose=1
+        shift;
+        ;;
+      *)   
+        echo "Unknown option $1"
+        help
+        exit 1
+        ;;
+    esac
+  done
+  
+
+
+
+  set_openair_env 
+  if [[ $verbose -eq 1 ]]; then
+    cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
+  fi
+    
+  local dbin=$OPENAIR_DIR/targets/bin
+  local dlog=$OPENAIR_DIR/cmake_targets/log
+  local dconf=$OPENAIR_DIR/targets/bin
+  
+  mkdir -m 777 -p $dbin $dlog
+  
+  ##############################################################################
+  # Compile userspace executable
+  ##############################################################################
+  cd $OPENAIR_DIR/cmake_targets/epc_test
+  if [ $clean -ne 0 ]; then
+    if [[ $verbose -eq 1 ]]; then
+      echo "Cleaning TEST_EPC"
+    fi
+    rm -f $OPENAIR_DIR/targets/bin/test_epc_generate_scenario
+    rm -Rf build 2>&1
+    mkdir -m 777 -p -v build
+  fi
+  
+  ##############################################################################
+  # Compile EPC
+  ##############################################################################
+  cd $OPENAIR_DIR/cmake_targets/epc_test
+  if [ ! -d ./build ]; then
+    mkdir -m 777 -p -v build
+  fi
+  cmake_file=./CMakeLists.txt
+  cp $OPENAIR_DIR/cmake_targets/epc_test/CMakeLists.template $cmake_file
+  echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
+  cd ./build
+  cmake  $cmake_args ..
+  compilations \
+      epc_test test_epc_generate_scenario \
+      test_epc_generate_scenario $dbin/test_epc_generate_scenario
+}
+
+
+main "$@"
+
