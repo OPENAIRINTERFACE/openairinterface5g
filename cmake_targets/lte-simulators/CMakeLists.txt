@@ -5,7 +5,7 @@ set(RF_BOARD None)
 set(XFORMS False)
 
 set(DEBUG_PHY False)
-set(MU_RECIEVER Flase)
+set(MU_RECIEVER False)
 set(RANDOM_BF False)
 set(PBS_SIM False)
 set(PERFECT_CE False)
