@@ -1624,6 +1624,27 @@ target_link_libraries (test_epc_generate_scenario
   )
 
 
+#unitary tests for Core NEtwork pieces
+#################################
+foreach(myExe s1ap
+    secu_knas_encrypt_eia1
+    secu_kenb
+    aes128_ctr_encrypt
+    aes128_ctr_decrypt
+    secu_knas_encrypt_eea2
+    secu_knas secu_knas_encrypt_eea1
+    kdf
+    aes128_cmac_encrypt
+    secu_knas_encrypt_eia2)
+  add_executable(test_${myExe}
+    ${OPENAIR3_DIR}/TEST/test_util.c
+    ${OPENAIR3_DIR}/TEST/test_${myExe}.c
+    )
+  target_link_libraries (test_${myExe}
+    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
+    )
+endforeach(myExe)
+
 # to be added
 #../targets/TEST/PDCP/test_pdcp.c
 #../targets/TEST/PDCP/with_rlc/test_pdcp_rlc.c
