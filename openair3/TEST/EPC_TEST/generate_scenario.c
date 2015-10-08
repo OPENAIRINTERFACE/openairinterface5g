@@ -43,15 +43,22 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-
+#include <libxml/xmlmemory.h>
+#include <libxml/debugXML.h>
+#include <libxml/HTMLtree.h>
+#include <libxml/xmlIO.h>
+#include <libxml/DOCBparser.h>
+#include <libxml/xinclude.h>
+#include <libxml/catalog.h>
+#include <libxslt/xslt.h>
+#include <libxslt/xsltInternals.h>
+#include <libxslt/transform.h>
+#include <libxslt/xsltutils.h>
 
 #include "assertions.h"
 #include "generate_scenario.h"
 #include "s1ap_eNB.h"
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
-
+#include "intertask_interface.h"
 
 #define ENB_CONFIG_STRING_ACTIVE_ENBS                   "Active_eNBs"
 
@@ -85,23 +92,44 @@
 #define ENB_CONFIG_PROPERTIES_INDEX_OLD 0
 #define ENB_CONFIG_PROPERTIES_INDEX_NEW 1
 
+#define ENB_CONFIG_MAX_XSLT_PARAMS 64
+
 Enb_properties_array_t g_enb_properties[2];
 char                  *g_test_dir = "."; // default value
 char                  *g_pdml_in_basename = "trace.pdml"; // default value
-
+extern int             xmlLoadExtDtdDefaultValue;
 //------------------------------------------------------------------------------
 void generate_scenario(const char const * pdml_in_basenameP)
 //------------------------------------------------------------------------------
 {
-  int fd_pdml_in;
+  //int fd_pdml_in;
+  xsltStylesheetPtr cur = NULL;
+  xmlDocPtr         doc, res;
+  const char       *params[ENB_CONFIG_MAX_XSLT_PARAMS];
+  int               nb_params = 0;
+
   if (chdir(g_test_dir) == 0) {
     printf( "working in %s directory\n", g_test_dir);
-    fd_pdml_in = open(pdml_in_basenameP, O_RDONLY);
+    /*fd_pdml_in = open(pdml_in_basenameP, O_RDONLY);
     AssertFatal (fd_pdml_in > 0,
                  "Error while opening %s file in directory %s\n",
                  pdml_in_basenameP,
-                 g_test_dir);
+                 g_test_dir);*/
 
+    params[nb_params] = NULL;
+    xmlSubstituteEntitiesDefault(1);
+    xmlLoadExtDtdDefaultValue = 1;
+    cur = xsltParseStylesheetFile("enb_config.xsl");
+    doc = xmlParseFile(pdml_in_basenameP);
+    res = xsltApplyStylesheet(cur, doc, params);
+    xsltSaveResultToFile(stdout, res, cur);
+
+    xsltFreeStylesheet(cur);
+    xmlFreeDoc(res);
+    xmlFreeDoc(doc);
+
+    xsltCleanupGlobals();
+    xmlCleanupParser();
   } else {
     printf("Error: chdir %s returned %s\n", g_test_dir, strerror(errno));
     exit(-1);
