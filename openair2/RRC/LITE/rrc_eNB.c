@@ -965,6 +965,49 @@ rrc_eNB_generate_UECapabilityEnquiry(
 
 //-----------------------------------------------------------------------------
 void
+rrc_eNB_generate_RRCConnectionReject(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const int                    CC_id
+)
+//-----------------------------------------------------------------------------
+{
+#ifdef RRC_MSG_PRINT
+  int                                 cnt;
+#endif
+
+  eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
+    do_RRCConnectionReject(ctxt_pP->module_id,
+                          (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
+
+#ifdef RRC_MSG_PRINT
+  LOG_F(RRC,"[MSG] RRCConnectionReject\n");
+
+  for (cnt = 0; cnt < eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
+    LOG_F(RRC,"%02x ", ((uint8_t*)eNB_rrc_inst[ctxt_pP->module_id].Srb0.Tx_buffer.Payload)[cnt]);
+  }
+
+  LOG_F(RRC,"\n");
+#endif
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_RRC_UE,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Header,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    MSC_AS_TIME_FMT" RRCConnectionReject UE %x size %u",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
+    eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size);
+
+  LOG_I(RRC,
+        PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReject (bytes %d)\n",
+        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+        eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size);
+}
+
+//-----------------------------------------------------------------------------
+void
 rrc_eNB_generate_RRCConnectionReestablishmentReject(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
@@ -3627,8 +3670,15 @@ rrc_eNB_decode_ccch(
       } else {
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
-          AssertFatal(rrcConnectionRequest->ue_Identity.present == InitialUE_Identity_PR_randomValue,
-                      "unsupported InitialUE-Identity in RRCConnectionRequest");
+          if (rrcConnectionRequest->ue_Identity.present != InitialUE_Identity_PR_randomValue) {
+            LOG_E(RRC,
+                  PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionRequest with S-TMSI not supported yet, let's reject the UE\n",
+                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+            rrc_eNB_generate_RRCConnectionReject(ctxt_pP,
+                             rrc_eNB_get_ue_context(&eNB_rrc_inst[ctxt_pP->module_id], ctxt_pP->rnti),
+                             CC_id);
+            break;
+          }
           AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
                       "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
                       rrcConnectionRequest->ue_Identity.choice.randomValue.size);
