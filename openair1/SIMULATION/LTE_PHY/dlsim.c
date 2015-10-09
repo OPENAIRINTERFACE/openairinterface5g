@@ -1,4 +1,4 @@
-/******************************************************************************
+ /******************************************************************************
     ipenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
@@ -107,7 +107,7 @@ void handler(int sig)
   exit(1);
 }
 
-void lte_param_init(unsigned char N_tx, unsigned char N_tx_phy, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t fdd_flag, uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL, uint8_t osf,uint32_t perfect_ce)
+void lte_param_init(unsigned char N_tx_port_eNB, unsigned char N_tx_phy, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t fdd_flag, uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL, uint8_t osf,uint32_t perfect_ce)
 {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms;
@@ -132,9 +132,9 @@ void lte_param_init(unsigned char N_tx, unsigned char N_tx_phy, unsigned char N_
   lte_frame_parms->Ncp                = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
   lte_frame_parms->nushift            = Nid_cell%6;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
+  lte_frame_parms->nb_antennas_tx     = N_tx_phy;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->nb_antennas_tx_eNB = N_tx;
+  lte_frame_parms->nb_antennas_tx_eNB = N_tx_port_eNB;
   lte_frame_parms->phich_config_common.phich_resource         = one;
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
@@ -157,8 +157,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_tx_phy, unsigned char N_
 
   PHY_vars_eNB->transmission_mode[0] = transmission_mode;
   PHY_vars_UE->transmission_mode[0] = transmission_mode;
-  //printf("lte_param_init: transmission mode = %d\n",PHY_vars_eNB->transmission_mode[0]);
-  PHY_vars_eNB->nb_antennas_tx_phy = N_tx_phy;
 
   phy_init_lte_top(lte_frame_parms);
   dump_frame_parms(lte_frame_parms);
@@ -207,7 +205,7 @@ uint64_t DLSCH_alloc_pdu_1[2];
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 //#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x0001
-void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms, uint8_t nb_antennas_tx_phy)
+void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   int aa, slot_offset, slot_offset_F;
@@ -215,7 +213,7 @@ void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LT
   slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
-  for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
     //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
 
     if (frame_parms->Ncp == 1)
@@ -253,8 +251,7 @@ int main(int argc, char **argv)
   double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
   double iqim=0.0;
 
-  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx=1,n_rx=1;
-  uint16_t n_tx_phy=1;
+  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=1;
   uint16_t Nid_cell=0;
   int32_t **beamforming_weights;
 
@@ -335,7 +332,8 @@ int main(int argc, char **argv)
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;
   int dci_length_bytes=0,dci_length=0;
-  double BW = 5.0;
+  //double BW = 5.0;
+  double BW = 7.68;
   int common_flag=0,TPC=0;
 
   double cpu_freq_GHz;
@@ -387,7 +385,7 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:q:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdqZDe:m:n:o:s:f:t:c:g:r:F:x:p:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -464,7 +462,7 @@ int main(int argc, char **argv)
       n_ch_rlz= atof(optarg);
       break;
 
-    case 'p':
+    case 'q':
       extended_prefix_flag=1;
       break;
 
@@ -554,32 +552,39 @@ int main(int argc, char **argv)
       }
 
       if (transmission_mode>1 && transmission_mode<7){
-        n_tx = 2;
-        n_tx_phy = n_tx;
+        n_tx_port = 2;
+        n_tx_phy = n_tx_port;
+      } else if (transmission_mode==7){
+        n_tx_port = 1;
       }
 
       break;
 
-    case 'y':
-      n_tx=atoi(optarg);
+    case 'p':
+      n_tx_port=atoi(optarg);
 
-      if ((n_tx==0) || ((n_tx>2))) {
-        msg("Unsupported number of tx antennas ports %d\n",n_tx);
+      if ((n_tx_port==0) || ((n_tx_port>2))) {
+        msg("Unsupported number of cell specific antennas ports %d\n",n_tx_port);
         exit(-1);
       }
 
       break;
 
-    case 'q':
+    case 'y':
       n_tx_phy=atoi(optarg);
       
-      if (transmission_mode<7 && n_tx_phy!=n_tx) {
-        msg("For transmission mode below TM7, physical antenna number should be the same as antenna port number.\n");
-	exit(-1);
+      if (transmission_mode>1&&transmission_mode<7) {
+        if(n_tx_phy==1) {
+          msg("n_tx_phy must be >1 for transmission_mode %d\n",transmission_mode);
+          exit(-1);
+        } else if (n_tx_phy!=n_tx_port) { // to be changed 
+          msg("For transmission mode TM2-TM6, physical antenna number should be the same as antenna port number.\n");
+	  exit(-1);
+        }
       }
 
       //if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
-      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
+      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
         msg("For TM7, physical antenna number should be an exponent of 4, maximum 64 antennas supported.\n");
 	exit(-1);
       }
@@ -629,7 +634,7 @@ int main(int argc, char **argv)
       dual_stream_UE=1;
       openair_daq_vars.use_ia_receiver = 1;
 
-      if ((n_tx!=2) || (transmission_mode!=5)) {
+      if ((n_tx_port!=2) || (transmission_mode!=5)) {
         msg("IA receiver only supported for TM5!");
         exit(-1);
       }
@@ -689,8 +694,8 @@ int main(int argc, char **argv)
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6,7 for the moment)\n");
-      printf("-y Number of TX antennas ports used in eNB\n");
-      printf("-q Number of physical TX antennas used in eNB\n");
+      printf("-p Number of TX antennas ports used in eNB\n");
+      printf("-y Number of physical TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
       printf("-R Number of HARQ rounds (fixed)\n");
@@ -738,10 +743,6 @@ int main(int argc, char **argv)
 
   NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
 
-  if ((transmission_mode>1&&transmission_mode<7) && (n_tx_phy == 1)){
-    msg("n_tx_phy must be >1 for transmission_mode %d\n",transmission_mode);
-    exit(-1);
-  }
 
 #ifdef XFORMS
   fl_initialize (&argc, argv, NULL, 0, 0);
@@ -764,7 +765,7 @@ int main(int argc, char **argv)
   }
 
 
-  lte_param_init(n_tx,n_tx_phy,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf,perfect_ce);
+  lte_param_init(n_tx_port,n_tx_phy,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf,perfect_ce);
 
   if (transmission_mode==7){
     lte_gold_ue_spec_port5(PHY_vars_eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
@@ -775,14 +776,14 @@ int main(int argc, char **argv)
       beamforming_weights[i]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
       for(aa=0;aa<n_tx_phy;aa++){
         //tmp
-        if (n_tx_phy==1)
+        if (n_tx_phy==1 || n_tx_phy==2)
 	  beamforming_weights[i][aa] = 0x00007fff;
         else if (n_tx_phy==4)
 	  beamforming_weights[i][aa] = 0x00007fff>>1;
         else if (n_tx_phy==16)
 	  beamforming_weights[i][aa] = 0x00007fff>>2;
         else if (n_tx_phy==64)
-	  beamforming_weights[i][aa] = 0x00007fff>>3;
+	  beamforming_weights[i][aa] = 0x00007fff>>4;//3
       }
     }
     printf("***n_tx_phy=%d,n_tx_phy>>2=%d,beamforming_weights=%d\n",n_tx_phy,n_tx_phy>>2,beamforming_weights[0][0]);
@@ -840,7 +841,7 @@ int main(int argc, char **argv)
     char dirname[FILENAME_MAX];
     sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
     sprintf(time_meas_fname,"%s/time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
-            dirname,N_RB_DL,mcs1,n_tx,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
+            dirname,N_RB_DL,mcs1,n_tx_phy,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
     mkdir(dirname,0777);
     time_meas_fd = fopen(time_meas_fname,"w");
   }
@@ -2221,7 +2222,7 @@ PMI_FEEDBACK:
 
           //printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
           //for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
-          for (aa=0; aa<PHY_vars_eNB->nb_antennas_tx_phy; aa++) {
+          for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
             memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
           }
 
@@ -2878,22 +2879,19 @@ PMI_FEEDBACK:
               do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                             PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
                             i,
-                            &PHY_vars_eNB->lte_frame_parms,
-	   		    PHY_vars_eNB->nb_antennas_tx_phy);
+                            &PHY_vars_eNB->lte_frame_parms);
  	      } 
 
 */
             do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                           PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
                           (subframe*2),
-                          &PHY_vars_eNB->lte_frame_parms,
-			  PHY_vars_eNB->nb_antennas_tx_phy);
+                          &PHY_vars_eNB->lte_frame_parms);
 
             do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                           PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
                           (subframe*2)+1,
-                          &PHY_vars_eNB->lte_frame_parms,
-			  PHY_vars_eNB->nb_antennas_tx_phy);
+                          &PHY_vars_eNB->lte_frame_parms);
 
             stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
             stop_meas(&PHY_vars_eNB->phy_proc_tx);
@@ -2901,20 +2899,19 @@ PMI_FEEDBACK:
             do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                           PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
                           (subframe*2)+2,
-                          &PHY_vars_eNB->lte_frame_parms,
-			  PHY_vars_eNB->nb_antennas_tx_phy);
+                          &PHY_vars_eNB->lte_frame_parms);
 
             if (n_frames==1) {
               write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
                            nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 
-              if (PHY_vars_eNB->nb_antennas_tx_phy>1)// to be updated
+              if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)// to be updated
                 write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
                              nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
             }
             tx_lev = 0;
 
-            for (aa=0; aa<PHY_vars_eNB->nb_antennas_tx_phy; aa++) {
+            for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
               tx_lev += signal_energy(&PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]
                                       [subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],
                                       PHY_vars_eNB->lte_frame_parms.samples_per_tti);
@@ -2956,7 +2953,7 @@ PMI_FEEDBACK:
 
           //    printf("Copying tx ..., nsymb %d (n_tx %d), awgn %d\n",nsymb,PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,awgn_flag);
           for (i=0; i<2*frame_parms->samples_per_tti; i++) {
-            for (aa=0; aa<PHY_vars_eNB->nb_antennas_tx_phy; aa++) {
+            for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
               if (awgn_flag == 0) {
                 s_re[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) + (i<<1)]);
                 s_im[aa][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][aa]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
@@ -3147,31 +3144,41 @@ PMI_FEEDBACK:
                   //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
                   //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
-                    for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+                    for(aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                         for (i=0; i<frame_parms->N_RB_DL*12; i++) {
                           ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+                          //printf("x=%d,AMP=%d\n",eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x,AMP);
                           ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
                                 eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
 
                           if (transmission_mode == 7){
-                            ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
-                                eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
-                            ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
-                                eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+                            if (PHY_vars_UE->high_speed_flag==0) {
+                              ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(int16_t)(
+                                  eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+                              ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=(int16_t)(
+                                  eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+                              //printf("**,x=%d,AMP=%d\n",eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x,AMP);
+                            } else  {
+                              ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                                  eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+                              ((int16_t *)PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size)*2]=(int16_t)(
+                                  eNB2UE[round]->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+                                
+                            }
                           }
                         }
                       }
                     }
                   }
                 } else {
-                  for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+                  for(aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
                     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                       for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
-                        if (transmission_mode == 7){
+                          ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                          ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
+                        if (transmission_mode == 7) {
                           if (PHY_vars_UE->high_speed_flag==0){
                             ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i]=(short)(AMP);
                             ((int16_t *) PHY_vars_UE->lte_ue_pdsch_vars[0]->dl_bf_ch_estimates[(aa<<1)+aarx])[2*i+1]=0/2;

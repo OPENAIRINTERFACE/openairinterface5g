@@ -192,7 +192,6 @@ int allocate_REs_in_RB(PHY_VARS_eNB *phy_vars_eNB,
 
   uint8_t *x1=NULL;
   uint8_t mod_order1=2;
-  uint8_t nb_antennas_tx_phy = phy_vars_eNB->nb_antennas_tx_phy;
 
   // Fill these in later for TM8-10
   //  int Nlayers1;
@@ -917,7 +916,7 @@ break;
               *jj = *jj + 1;
 
               //printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&tmp_sample1)[0],((int16_t*)&tmp_sample1)[1]);
-              for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+              for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                 ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
@@ -956,7 +955,7 @@ break;
               ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
               ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
-              for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+              for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                 ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
@@ -1004,7 +1003,7 @@ break;
               ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
               ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
-              for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+              for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                 ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
                 ((int16_t*)&txdataF[aa][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);
@@ -1025,7 +1024,7 @@ break;
           tmp_sample1 = qpsk[(phy_vars_eNB->lte_gold_uespec_port5_table[0][Ns][ind_dword]>>(2*ind_qpsk_symb))&3];
           mprime2++;
 
-          for (aa=0; aa<nb_antennas_tx_phy; aa++) {
+          for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
            
             ((int16_t*)&txdataF[aa][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*((int16_t*)&beamforming_weights[re][aa])[0])>>15);
             ((int16_t*)&txdataF[aa][tti_offset])[0] +=-(int16_t)((((int16_t*)&tmp_sample1)[1]*((int16_t*)&beamforming_weights[re][aa])[1])>>15);

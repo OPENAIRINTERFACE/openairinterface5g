@@ -68,7 +68,7 @@ void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
       printf("generate_dl_ue_spec:tti_offset=%d\n",tti_offset);
 
       if(frame_parms->Ncp==0) {
-        for(aa=0;aa<phy_vars_eNB->nb_antennas_tx_phy;aa++){ 
+        for(aa=0;aa<frame_parms->nb_antennas_tx;aa++){ 
           //antenna port 5 symbol 0 slot 0
           lte_dl_ue_spec(phy_vars_eNB,
                          UE_id,
