@@ -49,6 +49,7 @@ REL="Rel10"
 HW="EXMIMO"
 EPC=0
 VERBOSE_COMPILE=0
+CFLAGS_PROCESSOR_USER=""
 
 function print_help() {
   echo_info '
@@ -105,6 +106,9 @@ Options
    Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
 --verbose-compile
    Shows detailed compilation instructions in makefile
+--cflags_processor
+   Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
+
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
@@ -211,6 +215,10 @@ function main() {
 	    VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
+       --cflags_processor)
+            CFLAGS_PROCESSOR_USER=$2
+            echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            shift 2;;
         -h | --help)
             print_help
             exit 1;;
@@ -302,6 +310,7 @@ function main() {
     if [ "$NOS1" = "1" ] ; then
 	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
     fi
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
@@ -430,6 +439,7 @@ function main() {
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
     cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file

@@ -143,8 +143,16 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
   endif()
 endif()
+
+set(C_FLAGS_PROCESSOR " ${C_FLAGS_PROCESSOR} ${CFLAGS_PROCESSOR_USER}")
+
 Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
 
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
+  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.2")) )
+    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1 -msse4.2. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -msse4.2\" ")
+  endif()
+endif()
 
 #
 set(CMAKE_C_FLAGS
