@@ -2885,7 +2885,7 @@ int main( int argc, char **argv )
     openair0_cfg[card].tx_delay = 5;
 #elif OAI_BLADERF
       openair0_cfg[card].tx_forward_nsamps = 0;
-      openair0_cfg[card].tx_delay = 8;
+      openair0_cfg[card].tx_delay = 4;
 #endif 
 #endif
     } else if (frame_parms[0]->N_RB_DL == 6) {
