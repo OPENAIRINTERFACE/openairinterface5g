@@ -262,15 +262,10 @@ function main() {
   if [ "$INSTALL_EXTERNAL" = "1" ] ; then
     echo_info "Installing packages"
     check_install_oai_software
-    if [ "$HW" == "OAI_USRP" ] ; then
-      echo_info "installing packages for USRP support"
-      check_install_usrp_uhd_driver
-    fi
-    if [ "$HW" == "OAI_BLADERF" ] ; then
-      echo_info "installing packages for BALDERF support"
-      check_install_bladerf_driver
-    fi
-
+    echo_info "installing packages for USRP support"
+    check_install_usrp_uhd_driver
+    echo_info "installing packages for BALDERF support"
+    check_install_bladerf_driver
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
