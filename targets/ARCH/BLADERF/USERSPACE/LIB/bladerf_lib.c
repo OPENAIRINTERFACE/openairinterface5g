@@ -38,6 +38,14 @@
 #include <inttypes.h>
 #include "bladerf_lib.h"
 
+#ifdef __SSE4_1__
+#  include <smmintrin.h>
+#endif
+ 
+#ifdef __AVX2__
+#  include <immintrin.h>
+#endif
+
 int num_devices=0;
 /*These items configure the underlying asynch stream used by the the sync interface. 
  */
@@ -47,16 +55,17 @@ int trx_brf_init(openair0_device *openair0) {
 }
 
  
-openair0_timestamp trx_get_timestamp(openair0_device *device) {
+openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module module) {
   int status;
   struct bladerf_metadata meta;
   brf_state_t *brf = (brf_state_t*)device->priv;
+  memset(&meta, 0, sizeof(meta));
   
-  if ((status=bladerf_get_timestamp(brf->dev, BLADERF_MODULE_TX, &meta.timestamp)) != 0) {
-    fprintf(stderr,"Failed to get current RX timestamp: %s\n",bladerf_strerror(status));
-  } else {
-    printf("Current TX timestampe  0x%016"PRIx64"\n", meta.timestamp);
-  }
+  if ((status=bladerf_get_timestamp(brf->dev, module, &meta.timestamp)) != 0) {
+    fprintf(stderr,"Failed to get current %s timestamp: %s\n",(module == BLADERF_MODULE_RX ) ? "RX" : "TX", bladerf_strerror(status));
+    return -1; 
+  } // else {printf("Current RX timestampe  0x%016"PRIx64"\n", meta.timestamp); }
+
   return meta.timestamp;
 }
 
@@ -73,22 +82,26 @@ static void trx_brf_stats(openair0_device *device){
 
 static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc) {
   
-  int status, i;
+  int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
   /* BRF has only 1 rx/tx chaine : is it correct? */
-  void *samples = (void*)buff[0];
+  int16_t *samples = (int16_t*)buff[0];
   
-  //brf->meta_tx.flags &= ~BLADERF_META_FLAG_TX_NOW;
-  brf->meta_tx.flags = BLADERF_META_FLAG_TX_BURST_START | 
-    BLADERF_META_FLAG_TX_NOW | 
-                       BLADERF_META_FLAG_TX_BURST_END;
-
-  brf->meta_tx.timestamp= (uint64_t) ptimestamp;
-
+  //memset(&brf->meta_tx, 0, sizeof(brf->meta_tx));
+  // When  BLADERF_META_FLAG_TX_NOW is used the timestamp is not used, so one can't schedule a tx 
+  if (brf->meta_tx.flags == 0 ) 
+    brf->meta_tx.flags = (BLADERF_META_FLAG_TX_BURST_START);// | BLADERF_META_FLAG_TX_BURST_END);// |  BLADERF_META_FLAG_TX_NOW);
+  
+  
+  brf->meta_tx.timestamp= (uint64_t) (ptimestamp); 
   status = bladerf_sync_tx(brf->dev, samples, (unsigned int) nsamps, &brf->meta_tx, 2*brf->tx_timeout_ms);
+ 
+  if (brf->meta_tx.flags == BLADERF_META_FLAG_TX_BURST_START) 
+    brf->meta_tx.flags =  BLADERF_META_FLAG_TX_UPDATE_TIMESTAMP;
   
+
   if (status != 0) {
-    fprintf(stderr,"Failed to TX sample: %s\n", bladerf_strerror(status));
+    //fprintf(stderr,"Failed to TX sample: %s\n", bladerf_strerror(status));
     brf->num_tx_errors++;
     brf_error(status);
   } else if (brf->meta_tx.status & BLADERF_META_STATUS_UNDERRUN){
@@ -96,6 +109,8 @@ static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, 
     fprintf(stderr, "TX Underrun detected. %u valid samples were read.\n",  brf->meta_tx.actual_count);
     brf->num_underflows++;
   } 
+  //printf("Provided TX timestampe  %u, meta timestame %u\n", ptimestamp,brf->meta_tx.timestamp);
+  
   //    printf("tx status %d \n",brf->meta_tx.status);
   brf->tx_current_ts=brf->meta_tx.timestamp;
   brf->tx_actual_nsamps+=brf->meta_tx.actual_count;
@@ -107,26 +122,27 @@ static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, 
 }
 
 static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
-  int status, ret;
-  
-  unsigned int i;
+
+  int status=0;
   brf_state_t *brf = (brf_state_t*)device->priv;
   
   // BRF has only one rx/tx chain
-  void *samples = (void*)buff[0];
- 
-  brf->meta_rx.flags |= BLADERF_META_FLAG_RX_NOW;
+  int16_t *samples = (int16_t*)buff[0];
+  
+  brf->meta_rx.flags = BLADERF_META_FLAG_RX_NOW;
   status = bladerf_sync_rx(brf->dev, samples, (unsigned int) nsamps, &brf->meta_rx, 2*brf->rx_timeout_ms);
   
+  //printf("Current RX timestampe  %u, nsamps %u, actual %u, cc %d\n",  brf->meta_rx.timestamp, nsamps, brf->meta_rx.actual_count, cc);
+   
   if (status != 0) {
     fprintf(stderr, "RX failed: %s\n", bladerf_strerror(status)); 
     brf->num_rx_errors++;
   } else if ( brf->meta_rx.status & BLADERF_META_STATUS_OVERRUN) {
     brf->num_overflows++;
-    fprintf(stderr, "RX overrun (%d) is detected. t=0x%"PRIu64". Got %u samples. nsymps %d\n", 
+    fprintf(stderr, "RX overrun (%d) is detected. t=%u. Got %u samples. nsymps %d\n", 
 	    brf->num_overflows,brf->meta_rx.timestamp,  brf->meta_rx.actual_count, nsamps);
-    //brf->meta_rx.timestamp=(unsigned int)(nsamps-brf->meta_rx.actual_count);
-  }
+  } 
+  //printf("Current RX timestampe  %u\n",  brf->meta_rx.timestamp);
   //printf("[BRF] (buff %p) ts=0x%"PRIu64" %s\n",samples, brf->meta_rx.timestamp,bladerf_strerror(status));
   brf->rx_current_ts=brf->meta_rx.timestamp;
   brf->rx_actual_nsamps+=brf->meta_rx.actual_count;
@@ -135,7 +151,7 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
   
   
   *ptimestamp = brf->meta_rx.timestamp;
-  
+ 
   return brf->meta_rx.actual_count;
 
 }
@@ -193,17 +209,21 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
   // init required params for BRF
-   brf->num_buffers   = 128;
-   brf->buffer_size   = (unsigned int) openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
-   brf->num_transfers = 16;
-   brf->rx_timeout_ms = 0;  
-   brf->tx_timeout_ms = 0;
-   brf->sample_rate=(unsigned int)openair0_cfg[card].sample_rate;
+  //  The number of buffers to use in the underlying data stream
+  brf->num_buffers   = 128;
+  // the size of the underlying stream buffers, in samples
+  brf->buffer_size   = (unsigned int) openair0_cfg[card].samples_per_packet;//*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
+  brf->num_transfers = 16;
+  brf->rx_timeout_ms = 0;  
+  brf->tx_timeout_ms = 0;
+  brf->sample_rate=(unsigned int)openair0_cfg[card].sample_rate;
 
-   
-   printf("\n[BRF] sampling_rate %d, num_buffers %d,  buffer_size %d, num transfer %d, timeout_ms (rx %d, tx %d)\n", 
-	  brf->sample_rate, brf->num_buffers, brf->buffer_size,brf->num_transfers, brf->rx_timeout_ms, brf->tx_timeout_ms);
+  memset(&brf->meta_rx, 0, sizeof(brf->meta_rx));
+  memset(&brf->meta_tx, 0, sizeof(brf->meta_tx));
 
+  printf("\n[BRF] sampling_rate %d, num_buffers %d,  buffer_size %d, num transfer %d, timeout_ms (rx %d, tx %d)\n", 
+	 brf->sample_rate, brf->num_buffers, brf->buffer_size,brf->num_transfers, brf->rx_timeout_ms, brf->tx_timeout_ms);
+  
   if ((status=bladerf_open(&brf->dev, "")) != 0 ) {
     fprintf(stderr,"Failed to open brf device: %s\n",bladerf_strerror(status));
     brf_error(status);
@@ -217,83 +237,78 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     printf("[BRF] Device does not operates at max speed, change the USB port\n");
     brf_error(BLADERF_ERR_UNSUPPORTED);
   }
-  // RX
+  // RX  
   // Example of CLI output: RX Frequency: 2539999999Hz
   
   if ((status=bladerf_set_frequency(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_freq[0])) != 0){
     fprintf(stderr,"Failed to set RX frequency: %s\n",bladerf_strerror(status));
     brf_error(status);
   } else 
-    printf("[BRF] set RX frequency to %f\n",openair0_cfg[card].rx_freq[0]);
+    printf("[BRF] set RX frequency to %u\n",(unsigned int)openair0_cfg[card].rx_freq[0]);
   
- 
-  if ((status=bladerf_set_sample_rate(brf->dev, BLADERF_MODULE_RX, (unsigned int)openair0_cfg[card].sample_rate, NULL)) != 0){
+  unsigned int actual_value=0;
+  if ((status=bladerf_set_sample_rate(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].sample_rate, &actual_value)) != 0){
     fprintf(stderr,"Failed to set RX sample rate: %s\n", bladerf_strerror(status));
     brf_error(status);
-  }else 
-    printf("[BRF] set RX sample rate to %f\n",openair0_cfg[card].sample_rate);
+  }else  
+    printf("[BRF] set RX sample rate to %u, %u\n", (unsigned int) openair0_cfg[card].sample_rate, actual_value);
  
-  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_bw, NULL)) != 0){
+
+  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_bw, &actual_value)) != 0){
     fprintf(stderr,"Failed to set RX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set RX bandwidth to %f\n",openair0_cfg[card].rx_bw);
+    printf("[BRF] set RX bandwidth to %u, %u\n",(unsigned int)openair0_cfg[card].rx_bw, actual_value);
  
   if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_RX, (int) openair0_cfg[card].rx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set RX gain: %s\n",bladerf_strerror(status));
     brf_error(status);
   } else 
-    printf("[BRF] set RX gain to %f\n",openair0_cfg[card].rx_gain[0]);
+    printf("[BRF] set RX gain to %d\n",(int)openair0_cfg[card].rx_gain[0]);
 
-  /* Configure the device's RX module for use with the sync interface.
-   * SC16 Q11 samples *with* metadata are used. */
-  if ((status=bladerf_sync_config(brf->dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11_META,brf->num_buffers,brf->buffer_size,brf->num_transfers,brf->rx_timeout_ms)) != 0 ) {
-    fprintf(stderr,"Failed to configure RX sync interface: %s\n", bladerf_strerror(status));
-     brf_error(status);
-  }else 
-    printf("[BRF] configured Rx for sync interface \n");
-  
-   /* We must always enable the RX module after calling bladerf_sync_config(), and 
-    * before  attempting to RX samples via  bladerf_sync_rx(). */
-  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, true)) != 0) {
-    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
-    brf_error(status);
-  }else 
-    printf("[BRF] RX module enabled \n");
-  
   // TX
+  
   if ((status=bladerf_set_frequency(brf->dev, BLADERF_MODULE_TX, (unsigned int) openair0_cfg[card].tx_freq[0])) != 0){
     fprintf(stderr,"Failed to set TX frequency: %s\n",bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set Tx Frequenct to %f \n", openair0_cfg[card].tx_freq[0]);
+    printf("[BRF] set TX Frequenct to %u\n", (unsigned int) openair0_cfg[card].tx_freq[0]);
 
   if ((status=bladerf_set_sample_rate(brf->dev, BLADERF_MODULE_TX, (unsigned int) openair0_cfg[card].sample_rate, NULL)) != 0){
     fprintf(stderr,"Failed to set TX sample rate: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set Tx sampling rate to %f \n", openair0_cfg[card].sample_rate);
+    printf("[BRF] set TX sampling rate to %u \n", (unsigned int) openair0_cfg[card].sample_rate);
 
   if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_TX,(unsigned int)openair0_cfg[card].tx_bw, NULL)) != 0){
-    fprintf(stderr, "Failed to set RX bandwidth: %s\n", bladerf_strerror(status));
+    fprintf(stderr, "Failed to set TX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set Tx sampling ratebandwidth to %f \n", openair0_cfg[card].tx_bw);
+    printf("[BRF] set TX bandwidth to %u \n", (unsigned int) openair0_cfg[card].tx_bw);
 
-  if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_TX, (int)openair0_cfg[card].tx_gain[0])) != 0) {
+  if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_TX, (int) openair0_cfg[card].tx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set TX gain: %s\n",bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set the Tx gain to %f \n", openair0_cfg[card].tx_gain[0]);
+    printf("[BRF] set the TX gain to %d\n", (int)openair0_cfg[card].tx_gain[0]);
+  
 
-
-  /* Configure the device's TX module for use with the sync interface.
+ /* Configure the device's TX module for use with the sync interface.
    * SC16 Q11 samples *with* metadata are used. */
   if ((status=bladerf_sync_config(brf->dev, BLADERF_MODULE_TX,BLADERF_FORMAT_SC16_Q11_META,brf->num_buffers,brf->buffer_size,brf->num_transfers,brf->tx_timeout_ms)) != 0 ) {
     fprintf(stderr,"Failed to configure TX sync interface: %s\n", bladerf_strerror(status));
      brf_error(status);
   }else 
-    printf("[BRF] configured tx for sync interface \n");
+    printf("[BRF] configured TX  sync interface \n");
+
+/* Configure the device's RX module for use with the sync interface.
+   * SC16 Q11 samples *with* metadata are used. */
+  if ((status=bladerf_sync_config(brf->dev, BLADERF_MODULE_RX, BLADERF_FORMAT_SC16_Q11_META,brf->num_buffers,brf->buffer_size,brf->num_transfers,brf->rx_timeout_ms)) != 0 ) {
+    fprintf(stderr,"Failed to configure RX sync interface: %s\n", bladerf_strerror(status));
+    brf_error(status);
+  }else 
+    printf("[BRF] configured Rx sync interface \n");
+
 
    /* We must always enable the TX module after calling bladerf_sync_config(), and 
     * before  attempting to TX samples via  bladerf_sync_tx(). */
@@ -303,6 +318,29 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   } else 
     printf("[BRF] TX module enabled \n");
  
+ /* We must always enable the RX module after calling bladerf_sync_config(), and 
+    * before  attempting to RX samples via  bladerf_sync_rx(). */
+  if ((status=bladerf_enable_module(brf->dev, BLADERF_MODULE_RX, true)) != 0) {
+    fprintf(stderr,"Failed to enable RX module: %s\n", bladerf_strerror(status));
+    brf_error(status);
+  }else 
+    printf("[BRF] RX module enabled \n");
+
+  // calibrate 
+  /*  
+ if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
+    fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
+    brf_error(status);
+  } else 
+    printf("[BRF] TX module calibrated DC \n");
+ 
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_RX)) != 0) {
+    fprintf(stderr,"Failed to calibrate RX DC: %s\n", bladerf_strerror(status));
+    brf_error(status);
+  }else 
+    printf("[BRF] RX module calibrated DC \n");
+  */
+
   bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg[card].log_level));
   
   printf("BLADERF: Initializing openair0_device\n");
@@ -359,7 +397,7 @@ struct bladerf * open_bladerf_from_serial(const char *serial) {
 int get_brf_log_level(int log_level){
 
   int level=BLADERF_LOG_LEVEL_INFO;
-  //return  BLADERF_LOG_LEVEL_DEBUG;
+  return  BLADERF_LOG_LEVEL_DEBUG; // BLADERF_LOG_LEVEL_VERBOSE;// BLADERF_LOG_LEVEL_DEBUG; //
   switch(log_level) {
   case LOG_DEBUG:
     level=BLADERF_LOG_LEVEL_DEBUG;
