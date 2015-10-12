@@ -1,0 +1,162 @@
+<xml>
+
+  <testCaseList>
+     <testCase id="010101" >
+     <class>compilation</class>
+     <desc>Build oaisim.Rel8</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>oaisim_nos1</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>2</nruns>
+     </testCase>
+  </testCaseList>
+ 
+<testCaseList>
+     <testCase id="010102" >
+     <class>compilation</class>
+     <desc>Build oaisim.Rel8 + network device driver(nasmesh_fix)</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>oaisim_nos1</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true> 
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010103" >
+     <class>compilation</class>
+     <desc>Build lte-softmodem EXMIMO.Rel8 + EXMIMO.Rel10 + USRP.Rel10</desc>
+     <pre_compile_prog>cp -vf ../CMakeLists.txt.Rel8 ../CMakeLists.txt
+                       cp -vf ../CMakeLists.txt.Rel10 ../CMakeLists.txt 
+                       cp -vf ../CMakeLists.txt.USRP ../CMakeLists.txt </pre_compile_prog>
+     <compile_prog>lte-softmodem</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+ 
+<testCaseList>
+     <testCase id="010104" >
+     <class>compilation</class>
+     <desc>Build phy unitary simulators + secuirity unitary tests</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim test_secu_knas_encrypt_eia1 test_secu_kenb test_aes128_ctr_encrypt test_aes128_ctr_decrypt test_secu_knas_encrypt_eea2 test_secu_knas test_secu_knas_encrypt_eea1 test_kdf test_aes128_cmac_encrypt test_secu_knas_encrypt_eia2</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010106" >
+     <class>compilation</class>
+     <desc>Build oaisim.Rel8 + ITTI</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>oaisim</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010107" >
+     <class>compilation</class>
+     <desc>Build oaisim_nos1.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>oaisim_nos1</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010108" >
+     <class>compilation</class>
+     <desc>Build oaisim.Rel10 + ITTI</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>oaisim</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010120" >
+     <class>compilation</class>
+     <desc>Build Nasmesh</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>nasmesh</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+<testCaseList>
+     <testCase id="010130" >
+     <class>compilation</class>
+     <desc>Build RRH Gateway</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>rrh_gw</compile_prog>
+     <compile_prog_args></compile_prog_args>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <nruns>1</nruns>
+     </testCase>
+  </testCaseList>
+
+</xml>
+
+
+
+
