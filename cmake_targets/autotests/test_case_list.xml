@@ -1,6 +1,6 @@
 <xml>
 
-  <testCaseList>
+ <testCaseList>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
@@ -128,6 +128,7 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>nasmesh</compile_prog>
      <compile_prog_args></compile_prog_args>
+     <compile_prog_out>CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -154,6 +155,9 @@
      <nruns>1</nruns>
      </testCase>
   </testCaseList>
+
+
+
 
 </xml>
 

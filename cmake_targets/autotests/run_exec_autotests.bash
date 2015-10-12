@@ -34,7 +34,7 @@ cd $tdir
 #\param $10 -> number of runs
 #\param $11 -> pre_compile program execution
 #\param $12 -> class of the test case (compilation, execution)
-
+#\param $13 -> output of compilation program that needs to be found for test case to pass
 test_compile() {
 
     xUnit_start
@@ -51,6 +51,7 @@ test_compile() {
     nruns=${10}
     pre_compile_prog=${11}
     class=${12}
+    compile_prog_out=${13}
     build_dir=$tdir/$1/build
     exec_file=$build_dir/$6
     
@@ -94,7 +95,7 @@ test_compile() {
        }>> $log_file 2>&1
        echo "</COMPILATION LOG>" >> $log_file 2>&1
        if [ "$class" == "compilation" ]; then
-         if [ -s "$compile_prog_array_index" ] ; then
+         if [ -s "$compile_prog_array_index" ] || [ -s "$compile_prog_out" ] ; then
            echo_success "$test_case_name $compile_prog_array_index compiled"
            xUnit_success "compilation" "$test_case_name.$compile_prog_array_index" "PASS" "$run_index"
          else
@@ -284,12 +285,43 @@ else
   fi
 fi
 }
+print_help() {
+ echo_info '
+This program runs automated test case system for OpenAirInterface
+You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
+Options
+-h | --help
+   This help
+-g | --run-group
+   Run test cases in a group. For example, ./run_exec_autotests "0101* 010102"
+'
+}
 
 main () {
+RUN_GROUP=0
+test_case_list=""
+
+until [ -z "$1" ]
+  do
+    case "$1" in
+       -g | --run-group)
+            RUN_GROUP=1
+            test_case_list=$2
+            "Will execute test cases only in group $test_case_list"
+            shift 2;;
+        -h | --help)
+            print_help
+            exit 1;;
+	*)
+	    print_help
+            echo_fatal "Unknown option $1"
+            break;;
+   esac
+  done
 
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
-test_case_list=`xmlstarlet sel -T -t -m /xml/testCaseList/testCase -s D:N:- "@id" -v "@id" -n $xml_conf`
+test_case_list=`xmlstarlet sel -T -t -m /xml/testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
 
 echo "test_case_list = $test_case_list"
 
@@ -310,7 +342,8 @@ for search_expr in "${test_case_array[@]}"
     search_expr_true=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/search_expr_true" $xml_conf`
     search_expr_false=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/search_expr_false" $xml_conf`
     nruns=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/nruns" $xml_conf`
-    
+    compile_prog_out=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/compile_prog_out" $xml_conf`
+
     echo "class = $class"
     echo "name = $name"
     echo "Description = $desc"
@@ -343,7 +376,7 @@ for search_expr in "${test_case_array[@]}"
     #echo "arg1 = ${search_array_true[0]}"
     #echo " arg2 = ${search_array_true[1]}"
     if [ "$class" == "compilation" ]; then
-        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class"
+        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out"
     elif  "$class" == "execution" ]; then
         test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class"
     else
@@ -356,7 +389,7 @@ for search_expr in "${test_case_array[@]}"
 
 }
 
-main
+main "$@"
 
 xUnit_write "$results_file"
 
