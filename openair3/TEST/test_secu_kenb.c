@@ -39,15 +39,15 @@ static
 void do_derive_kenb(uint32_t nas_count, const uint8_t *kasme, const unsigned length,
                     const uint8_t *kenb_exp)
 {
-  uint8_t *kenb;
+  uint8_t kenb[32];
 
-  derive_keNB(kasme, nas_count, &kenb);
+  memset(kenb, 0, sizeof(kenb));
+  derive_keNB(kasme, nas_count, kenb);
 
   if (compare_buffer(kenb_exp, length, kenb, length) != 0) {
     fail("Fail: kenb derivation\n");
   }
 
-  free(kenb);
 }
 
 void doit (void)
