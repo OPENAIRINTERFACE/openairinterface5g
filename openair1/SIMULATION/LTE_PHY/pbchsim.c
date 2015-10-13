@@ -53,9 +53,6 @@
 
 #include "OCG_vars.h"
 
-#define BW 5.0
-
-
 PHY_VARS_eNB *PHY_vars_eNb,*PHY_vars_eNb1,*PHY_vars_eNb2;
 PHY_VARS_UE *PHY_vars_UE;
 
@@ -485,7 +482,8 @@ int main(int argc, char **argv)
   eNB2UE = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+ 				N_RB2sampling_rate(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
+				N_RB2channel_bandwidth(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
                                 0);
@@ -494,7 +492,8 @@ int main(int argc, char **argv)
     eNB2UE1 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
                                    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                    channel_model,
-                                   BW,
+				   N_RB2sampling_rate(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
+				   N_RB2channel_bandwidth(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
                                    0,
                                    4,
                                    0);
@@ -503,7 +502,8 @@ int main(int argc, char **argv)
     eNB2UE2 = new_channel_desc_scm(PHY_vars_eNb->lte_frame_parms.nb_antennas_tx,
                                    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                    channel_model,
-                                   BW,
+				   N_RB2sampling_rate(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
+				   N_RB2channel_bandwidth(PHY_vars_eNb->lte_frame_parms.N_RB_DL),
                                    0,
                                    8,
                                    0);

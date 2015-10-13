@@ -54,8 +54,6 @@
 
 #include "OCG_vars.h"
 
-//#define BW 5.0
-
 
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
@@ -172,7 +170,6 @@ int main(int argc, char **argv)
   unsigned int trials,errs[4]= {0,0,0,0}; //,round_trials[4]={0,0,0,0};
 
   uint8_t N_RB_DL=25,osf=1;
-  double BW=5.0;
   uint32_t perfect_ce = 0;
 
   lte_frame_type_t frame_type = FDD;
@@ -255,27 +252,9 @@ int main(int argc, char **argv)
     case 'R':
       N_RB_DL = atoi(optarg);
 
-      switch (N_RB_DL) {
-      case 6:
-        BW=1.25;
-        break;
-
-      case 25:
-        BW=5.0;
-        break;
-
-      case 50:
-        BW=10.0;
-        break;
-
-      case 100:
-        BW=20.0;
-        break;
-
-      default:
+      if ((N_RB_DL!=6) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=100))  {
         printf("Unsupported Bandwidth %d\n",N_RB_DL);
         exit(-1);
-        break;
       }
 
       break;
@@ -397,7 +376,8 @@ int main(int argc, char **argv)
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
                                 0);
