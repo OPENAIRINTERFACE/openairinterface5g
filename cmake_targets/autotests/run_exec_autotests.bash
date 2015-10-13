@@ -35,6 +35,7 @@ cd $tdir
 #\param $11 -> pre_compile program execution
 #\param $12 -> class of the test case (compilation, execution)
 #\param $13 -> output of compilation program that needs to be found for test case to pass
+#\param $14 -> tags to help identify the test case for readability in output xml file
 test_compile() {
 
     xUnit_start
@@ -52,6 +53,7 @@ test_compile() {
     pre_compile_prog=${11}
     class=${12}
     compile_prog_out=${13}
+    tags=${14}
     build_dir=$tdir/$1/build
     exec_file=$build_dir/$6
     
@@ -71,18 +73,21 @@ test_compile() {
     
     compile_prog_array=()
     read -a compile_prog_array <<<"$compile_prog"
-     
+    
+    tags_array=()
+    read -a tags_array <<<"$tags"
+    
     pre_compile_prog_array=()
     readarray -t pre_compile_prog_array <<< "$pre_compile_prog"
     for (( run_index=1; run_index <= $nruns; run_index++ ))
     do
-
+    tags_array_index=0
     for pre_compile_prog_array_index in "${pre_compile_prog_array[@]}"  
     do
-
+    
     for compile_prog_array_index in "${compile_prog_array[@]}"  
     do
-       echo "Compiling test case $test_case_name.$compile_prog_array_index Log file = $log_file"  
+       echo "Compiling test case $test_case_name.$compile_prog_array_index.${tags_array[$tags_array_index]} Log file = $log_file"  
        echo "<COMPILATION LOG file=$compile_prog_array_index , Run = $run_index>" >> $log_file
        rm -fr $build_dir
        mkdir -p $build_dir
@@ -96,13 +101,14 @@ test_compile() {
        echo "</COMPILATION LOG>" >> $log_file 2>&1
        if [ "$class" == "compilation" ]; then
          if [ -s "$compile_prog_array_index" ] || [ -s "$compile_prog_out" ] ; then
-           echo_success "$test_case_name $compile_prog_array_index compiled"
-           xUnit_success "compilation" "$test_case_name.$compile_prog_array_index" "PASS" "$run_index"
+           echo_success "$test_case_name.$compile_prog_array_index.${tags_array[$tags_array_index]} compiled"
+           xUnit_success "compilation" "$test_case_name.$compile_prog_array_index.${tags_array[$tags_array_index]}" "PASS" "$run_index"
          else
-           echo_error "$test_case_name $exec_prog compilation failed"
-           xUnit_fail "compilation" "$test_case_name.$compile_prog_array_index" "FAIL" "$run_index"
+           echo_error "$test_case_name.$exec_prog.${tags_array[$tags_array_index]} compilation failed"
+           xUnit_fail "compilation" "$test_case_name.$compile_prog_array_index.${tags_array[$tags_array_index]}" "FAIL" "$run_index"
          fi
        fi
+       let "tags_array_index++"
     done # End of for loop compile_prog_array
     done # End of for loop (pre_compile_prog_array_index)
     done #End of for loop (run_index)
@@ -122,6 +128,8 @@ test_compile() {
 #\param $10 -> number of runs
 #\param $11 -> pre_compile program execution
 #\param $12 -> class of the test case (compilation, execution)
+#\param $13 -> output of compilation program that needs to be found for test case to pass
+#\param $14 -> tags to help identify the test case for readability in output xml file
 
 test_compile_and_run() {
     xUnit_start
@@ -132,12 +140,15 @@ test_compile_and_run() {
     compile_args=$3
     pre_exec_file=$4
     pre_exec_args=$5
+    main_exec=$6
     exec_args=$7
     search_expr_array=("${!8}")
     search_expr_negative=$9
     nruns=${10}
     pre_compile_prog=${11}
     class=${12}
+    compile_prog_out=${13}
+    tags=${14}
     build_dir=$tdir/$1/build
     exec_file=$build_dir/$6
     
@@ -160,6 +171,11 @@ test_compile_and_run() {
     compile_prog_array=()
     read -a compile_prog_array <<<"$compile_prog"
   
+    tags_array=()
+    read -a tags_array <<<"$tags"
+    
+    main_exec_args_array=()
+    readarray -t main_exec_args_array <<< "$exec_args"
 
     for search_expr in "${compile_prog_array[@]}"  
     do
@@ -178,14 +194,10 @@ test_compile_and_run() {
        }>> $log_file 2>&1
        echo "</COMPILATION LOG>" >> $log_file 2>&1
        if [ "$class" == "compilation" ]; then
-         echo "compilation 1"
-         #TODO: The number of runs for compilation test cases is always 1
          if [ -s "$search_expr" ] ; then
-           echo "compilation 1 pass"
            echo_success "$test_case_name $search_expr compiled"
            xUnit_success "compilation" "$test_name.$search_expr" "PASS" 1
          else
-           echo "compilation 1 fail"
            echo_error "$test_case_name $exec_prog compilation failed"
            xUnit_fail "compilation" "$test_name.$search_expr" "FAIL" 1
          fi
@@ -194,69 +206,74 @@ test_compile_and_run() {
 
     #process the test case if it is that of execution
     if [ "$class" == "execution" ]; then
-      for (( run_index=1; run_index <= $nruns; run_index++ ))
+      tags_array_index=0
+      for main_exec_args_array_index in "${main_exec_args_array[@]}"  
+      do
+        for (( run_index=1; run_index <= $nruns; run_index++ ))
         do
+          echo "Executing test case $test_case_name.$main_exec.${tags_array[$tags_array_index]}, Run Index = $run_index, Log file = $log_file"
 
-        echo "Executing test case $test_case_name, Run Index = $run_index, Log file = $log_file"
-
-        echo "-----------------------------------------------------------------------------" >> $log_file  2>&1
-        echo "<EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
+          echo "-----------------------------------------------------------------------------" >> $log_file  2>&1
+          echo "<EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
  
-        if [ -n "$pre_exec_file" ]; then
-          { eval "source $pre_exec_file $pre_exec_args"; } >> $log_file  2>&1
-        fi
+          if [ -n "$pre_exec_file" ]; then
+            { eval "source $pre_exec_file $pre_exec_args"; } >> $log_file  2>&1
+          fi
+          echo "Executing $exec_file $main_exec_args_array_index "
+          echo "Executing $exec_file $main_exec_args_array_index " >> $log_file
+          { eval "$exec_file $main_exec_args_array_index" ;} > $temp_exec_log  2>&1
 
-        { eval "$exec_file $exec_args" ;} > $temp_exec_log  2>&1
-
-        cat $temp_exec_log >> $log_file  2>&1
-        echo "</EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
+          cat $temp_exec_log >> $log_file  2>&1
+          echo "</EXECUTION LOG Test Case = $test_case_name.$main_exec.${tags_array[$tags_array_index]},  Run = $run_index >" >> $log_file  2>&1
     
-        result=1
-        for search_expr in "${search_expr_array[@]}"
-        do
+          result=1
+          for search_expr in "${search_expr_array[@]}"
+          do
      
-          search_result=`grep -E "$search_expr" $temp_exec_log`
+            search_result=`grep -E "$search_expr" $temp_exec_log`
 
-       #echo "search_expr  =   $search_expr"
-       #echo "search_result = $search_result"
+            #echo "search_expr  =   $search_expr"
+            #echo "search_result = $search_result"
 
-         if [ -z "$search_result" ]; then
-           let "result = result & 0"
-         else
-           let "result = result & 1"
-         fi
-        done
+            if [ -z "$search_result" ]; then
+              let "result = result & 0"
+            else
+              let "result = result & 1"
+            fi
+          done
 
-       #echo "result = $result"
+          #echo "result = $result"
 
-       test_case_result=""
-       if [ "$result" -eq "0" ]; then
-         test_case_result="FAIL"
-       fi
+          test_case_result=""
+          if [ "$result" -eq "0" ]; then
+            test_case_result="FAIL"
+          fi
 
-       if [ "$result" -eq "1" ]; then
-         test_case_result="PASS"
-       fi
+          if [ "$result" -eq "1" ]; then
+            test_case_result="PASS"
+          fi
 
-       #If we find a negative search result then there is crash of program and test case is failed even if above condition is true
+          #If we find a negative search result then there is crash of program and test case is failed even if above condition is true
 
-       search_result=`grep -iE "$search_expr_negative" $temp_exec_log`
-       if [ -n "$search_result" ]; then
-          test_case_result="FAIL"
-       fi
+          search_result=`grep -iE "$search_expr_negative" $temp_exec_log`
+          if [ -n "$search_result" ]; then
+            test_case_result="FAIL"
+          fi
      
-       if [ "$test_case_result" == "FAIL" ]; then
-         echo_error "execution $test_case_name.$compile_prog  FAIL $run_index"
-         xUnit_fail "execution" "$test_case_name.$compile_prog" "FAIL" "$run_index"
-       fi
+          if [ "$test_case_result" == "FAIL" ]; then
+            echo_error "execution $test_case_name.$compile_prog.${tags_array[$tags_array_index]}  FAIL $run_index"
+            xUnit_fail "execution" "$test_case_name.$compile_prog.${tags_array[$tags_array_index]}" "FAIL" "$run_index"
+          fi
 
-       if [ "$test_case_result" == "PASS" ]; then
-         echo_success "execution $test_case_name.$compile_prog  PASS $run_index"
-	 xUnit_success "execution" "$test_case_name.$compile_prog" "PASS" "$run_index"        
-       fi
+          if [ "$test_case_result" == "PASS" ]; then
+            echo_success "execution $test_case_name.$compile_prog.${tags_array[$tags_array_index]}  PASS $run_index"
+	    xUnit_success "execution" "$test_case_name.$compile_prog.${tags_array[$tags_array_index]}" "PASS" "$run_index"        
+          fi  
 
-      # End of for loop
-     done
+          
+          done
+       let "tags_array_index++"
+     done # End of for loop (nindex)
    fi
 }
 
@@ -299,15 +316,17 @@ Options
 
 main () {
 RUN_GROUP=0
-test_case_list=""
+test_case_group=""
+test_case_group_array=()
+test_case_array=()
 
 until [ -z "$1" ]
   do
     case "$1" in
        -g | --run-group)
             RUN_GROUP=1
-            test_case_list=$2
-            "Will execute test cases only in group $test_case_list"
+            test_case_group=$2
+            echo_info "Will execute test cases only in group $test_case_group"
             shift 2;;
         -h | --help)
             print_help
@@ -319,6 +338,7 @@ until [ -z "$1" ]
    esac
   done
 
+
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
 test_case_list=`xmlstarlet sel -T -t -m /xml/testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
@@ -327,8 +347,30 @@ echo "test_case_list = $test_case_list"
 
 readarray -t test_case_array <<<"$test_case_list"
 
+read -a test_case_group_array <<< "$test_case_group"
+ 
 for search_expr in "${test_case_array[@]}"
   do
+    flag_run_test_case=0
+    # search if this test case needs to be executed
+    if [ "$RUN_GROUP" -eq "1" ]; then
+       for search_group in "${test_case_group_array[@]}"
+       do  
+          if [[ $search_expr == $search_group ]];then
+             flag_run_test_case=1
+             echo_info "Test case $search_expr match found in group"
+             break
+          fi
+       done
+    else
+       flag_run_test_case=1
+    fi
+       
+    #We skip this test case if it is not in the group list
+    if [ "$flag_run_test_case" -ne "1" ]; then
+      continue
+    fi
+
     name=$search_expr
     class=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/class" $xml_conf`
     desc=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/desc" $xml_conf`
@@ -343,6 +385,7 @@ for search_expr in "${test_case_array[@]}"
     search_expr_false=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/search_expr_false" $xml_conf`
     nruns=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/nruns" $xml_conf`
     compile_prog_out=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/compile_prog_out" $xml_conf`
+    tags=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/tags" $xml_conf`
 
     echo "class = $class"
     echo "name = $name"
@@ -376,9 +419,9 @@ for search_expr in "${test_case_array[@]}"
     #echo "arg1 = ${search_array_true[0]}"
     #echo " arg2 = ${search_array_true[1]}"
     if [ "$class" == "compilation" ]; then
-        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out"
-    elif  "$class" == "execution" ]; then
-        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class"
+        test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
+    elif  [ "$class" == "execution" ]; then
+        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" 
     else
         echo "Unexpected class of test case...Exiting...."
     fi
