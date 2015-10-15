@@ -39,21 +39,23 @@ static
 void derive_knas_keys(algorithm_type_dist_t atd, uint8_t *kasme, unsigned length,
                       uint8_t *knas_enc_exp, uint8_t *knas_int_exp)
 {
-  uint8_t *knas_enc;
-  uint8_t *knas_int;
+  uint8_t *knas_enc = NULL;
+  uint8_t *knas_int = NULL;
 
-  derive_key_nas_enc(atd, kasme, &knas_enc);
-  derive_key_nas_int(atd, kasme, &knas_int);
+  knas_enc = calloc(1, 32);
+  knas_int = calloc(1, 32);
+
+  derive_key_nas_enc(atd, kasme, knas_enc);
+  derive_key_nas_int(atd, kasme, knas_int);
 
   /* Compare both keys with expected */
-  if (compare_buffer(knas_enc, 32, knas_enc_exp, 32) != 0) {
+  if (compare_buffer(knas_enc, 16, &knas_enc_exp[16], 16) != 0) {
     fail("Fail: knas_enc derivation\n");
   }
 
-  if (compare_buffer(knas_int, 32, knas_int_exp, 32) != 0) {
+  if (compare_buffer(knas_int, 16, &knas_int_exp[16], 16) != 0) {
     fail("Fail: knas_int derivation\n");
   }
-
   free(knas_enc);
   free(knas_int);
 }
