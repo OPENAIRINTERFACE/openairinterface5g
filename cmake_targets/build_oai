@@ -571,8 +571,7 @@ function main() {
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
-    $OPENAIR_DIR/cmake_targets/autotests/run_compilation_autotests.bash
-    $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
   else
     echo_info "10. Bypassing the Tests ..."
   fi
