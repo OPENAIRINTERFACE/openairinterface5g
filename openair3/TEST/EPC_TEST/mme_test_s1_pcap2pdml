@@ -35,14 +35,25 @@ packets = orig_dom.getElementsByTagName("packet")
 for packet in packets:
     found_sctp = False
     found_s1ap = False
+    sctp_node = None
+    frame_node = None
+    ip_node = None
     protos = packet.getElementsByTagName("proto")
     for proto in protos:
         attrs   = proto.attributes
         urlnode = attrs['name']
-        if urlnode.nodeValue == 'sctp':
+        if urlnode.nodeValue == 'frame':
+            frame_node = proto
+        elif urlnode.nodeValue == 'ip':
+            frame_node.appendChild(proto)
+            ip_node = proto
+        elif urlnode.nodeValue == 'sctp':
             found_sctp = True
+            ip_node.appendChild(proto)
+            sctp_node = proto
         elif urlnode.nodeValue == 's1ap':
             found_s1ap = True
+            sctp_node.appendChild(proto)
         elif urlnode.nodeValue == 'geninfo':
             packet.removeChild(proto)
         elif urlnode.nodeValue == 'eth':
@@ -54,20 +65,21 @@ for packet in packets:
 #####################
 # dom to xml string
 #####################
-filtered_pdml_string = orig_dom.toxml()
+filtered_pdml_string = orig_dom.toprettyxml(indent="  ")
 cleaned_pdml_string = ""
 #####################
 # remove blank lines in xml string
 #####################
 lines = filtered_pdml_string.splitlines()
 for line in lines:
-    if line[:-1]:
-        cleaned_pdml_string += line + '\r\n'
+    if len(line.strip()):
+        if line[:-1]:
+            cleaned_pdml_string += line + '\r\n'
 #print "'%s'" %  cleaned_pdml_string 
 #####################
 # write pdml string to pdml file
 #####################
-out_pdml_file_name = os.path.dirname(orig_pcap_file_name) + os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.pdml'
+out_pdml_file_name = os.path.dirname(orig_pcap_file_name) + '/' + os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.pdml'
 out_file = open(out_pdml_file_name, "w")
 out_file.write(cleaned_pdml_string)
 out_file.close()
@@ -86,7 +98,7 @@ filtered_html_string = etree.tostring(trans_root)
 #####################
 # write html string to html file
 #####################
-out_html_file_name = os.path.dirname(orig_pcap_file_name) + os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.html'
+out_html_file_name = os.path.dirname(orig_pcap_file_name) + '/' +os.path.splitext(os.path.basename(orig_pcap_file_name))[0] + '.html'
 out_file = open(out_html_file_name, "w")
 out_file.write(filtered_html_string)
 out_file.close()
