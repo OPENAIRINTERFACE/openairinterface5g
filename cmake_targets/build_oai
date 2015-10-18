@@ -47,6 +47,7 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 REL="Rel10"
 HW="EXMIMO"
+NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
@@ -321,7 +322,7 @@ function main() {
     cmake ..
   fi
 
-  if [ "$eNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
     echo_info "Compiling $lte_exec"
     compilations \
 	  $lte_build_dir $lte_exec \
@@ -338,7 +339,7 @@ function main() {
     fi
   fi
 
-  if [ "$UE" = 1 ] ; then
+  if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
     # ue_ip driver compilation
     echo_info "Compiling UE specific part"
     compilations \
