@@ -1166,7 +1166,7 @@ schedule_ue_spec(
           // this is the normalized RX power
 	  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 	  normalized_rx_power = eNB_UE_stats->Po_PUCCH_dBm; 
-	  target_rx_power = mac_xface->get_target_pucch_rx_power(module_idP,CC_id) + 10;
+	  target_rx_power = mac_xface->get_target_pucch_rx_power(module_idP,CC_id) + 20;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1178,6 +1178,7 @@ schedule_ue_spec(
 
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
+	      
 	      if (normalized_rx_power>(target_rx_power+1)) {
 		tpc = 0; //-1
 		tpc_accumulated--;
@@ -1187,9 +1188,11 @@ schedule_ue_spec(
 	      } else {
 		tpc = 1; //0
 	      }
-	      LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+	      /*	      
+	      LOG_I(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		    module_idP,frameP, subframeP,harq_pid,tpc,
-		    tpc_accumulated,normalized_rx_power,target_rx_power);
+		    tpc_accumulated,normalized_rx_power,target_rx_power);*/
+
 	    } // Po_PUCCH has been updated 
 	    else {
 	      tpc = 1; //0
@@ -1561,7 +1564,7 @@ fill_DLSCH_dci(
       eNB->common_channels[CC_id].bcch_active = 0;
       LOG_D(MAC,"[eNB %d] CC_id %d Frame %d subframeP %d: BCCH active\n", module_idP, CC_id, frameP, subframeP);
       // randomize frequency allocation for SI
-      first_rb = 10;//(unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
+      first_rb = 0;//10;//(unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
 
       /*  Where is this from, should be removed!!!!
 

@@ -1631,6 +1631,8 @@ static void* eNB_thread( void* arg )
 
   pthread_mutex_unlock(&sync_mutex);
 
+  printf( "got sync (eNB_thread)\n" );
+
   int frame = 0;
 
 #ifndef EXMIMO
@@ -2893,12 +2895,12 @@ int main( int argc, char **argv )
       bw          = 0.96e6;
 #ifndef EXMIMO
       openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_packet = 256;
+      openair0_cfg[card].samples_per_packet = 640;
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
       openair0_cfg[card].rx_bw = 1.5e6;
       openair0_cfg[card].tx_forward_nsamps = 40;
-      openair0_cfg[card].tx_delay = 8;
+      openair0_cfg[card].tx_delay = 6;
 #endif
     }
     
@@ -2992,10 +2994,14 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   openair0.func_type = BBU_FUNC;
   openair0_cfg[0].log_level = glog_level;
 
-  if ((mode!=loop_through_memory) && 
-      (openair0_device_init(&openair0, &openair0_cfg[0]) <0)) {
-    printf("Exiting, cannot initialize device\n");
-    exit(-1);
+  if (mode!=loop_through_memory){
+    int ret;
+    ret= openair0_device_init(&openair0, &openair0_cfg[0]);
+    printf("openair0_device_init returns %d\n",ret);
+    if (ret<0) {
+      printf("Exiting, cannot initialize device\n");
+      exit(-1);
+    }
   }
   else if (mode==loop_through_memory) {    
   }
@@ -3279,6 +3285,16 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
 #endif
     printf("UE threads created\n");
+#ifdef USE_MME
+
+    while (start_UE == 0) {
+      sleep(1);
+    }
+
+#endif
+
+
+
   } else {
     if (multi_thread>0) {
       init_eNB_proc();
@@ -3306,13 +3322,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   // Sleep to allow all threads to setup
   sleep(1);
 
-#ifdef USE_MME
 
-  while (start_UE == 0) {
-    sleep(1);
-  }
-
-#endif
 
 #ifndef EXMIMO
 
@@ -3325,6 +3335,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
 #endif
 
+  printf("Sending sync to all threads\n");
 
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;

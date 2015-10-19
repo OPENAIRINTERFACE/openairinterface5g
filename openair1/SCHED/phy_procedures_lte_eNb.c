@@ -104,7 +104,6 @@ extern uint8_t smbv_frame_cnt;
 #ifdef DIAG_PHY
 extern int rx_sig_fifo;
 #endif
-static unsigned char I0_clear = 1;
 
 uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t sched_subframe)
 {
@@ -476,6 +475,7 @@ void phy_procedures_eNB_S_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars
 
   if (abstraction_flag == 0) {
     lte_eNB_I0_measurements(phy_vars_eNB,
+			    subframe,
                             0,
                             phy_vars_eNB->first_run_I0_measurements);
   }
@@ -489,8 +489,6 @@ void phy_procedures_eNB_S_RX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars
 #endif
 
 
-  if (I0_clear == 1)
-    I0_clear = 0;
 }
 
 
@@ -3247,6 +3245,11 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 	    phy_vars_eNB->lte_frame_parms.samples_per_tti);
 #endif
   */
+  phy_vars_eNB->rb_mask_ul[0]=0;
+  phy_vars_eNB->rb_mask_ul[1]=0;
+  phy_vars_eNB->rb_mask_ul[2]=0;
+  phy_vars_eNB->rb_mask_ul[3]=0;
+
   if (abstraction_flag == 0) {
     remove_7_5_kHz(phy_vars_eNB,subframe<<1);
     remove_7_5_kHz(phy_vars_eNB,(subframe<<1)+1);
@@ -3395,6 +3398,12 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
       pusch_active = 1;
       round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
+      for (int rb=0;
+           rb<=phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb;
+	   rb++) {
+	int rb2 = rb+phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->first_rb;
+	phy_vars_eNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+      }
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d Scheduling PUSCH/ULSCH Reception for rnti %x (UE_id %d)\n",
             phy_vars_eNB->Mod_id,harq_pid,
@@ -3715,13 +3724,19 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         for (j=0; j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; j++)
           //this is the RSSI per RB
           phy_vars_eNB->eNB_UE_stats[i].UL_rssi[j] =
+	    
             dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]*
                      (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb*12)/
                      phy_vars_eNB->lte_frame_parms.ofdm_symbol_size) -
             phy_vars_eNB->rx_total_gain_eNB_dB -
             hundred_times_log10_NPRB[phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb-1]/100 -
             get_hundred_times_delta_IF_eNB(phy_vars_eNB,i,harq_pid, 0)/100;
-
+	    
+	    /*
+            dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[i]->ulsch_power[j]*phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb) -
+            phy_vars_eNB->rx_total_gain_eNB_dB -
+            hundred_times_log10_NPRB[phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb-1]/100 -
+            get_hundred_times_delta_IF_eNB(phy_vars_eNB,i,harq_pid, 0)/100;*/
         phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 1;
         phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_ACK = 1;
         phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round = 0;
@@ -3915,6 +3930,34 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
       } else {
         // otherwise we have some PUCCH detection to do
 
+	// Null out PUCCH PRBs for noise measurement
+	switch(phy_vars_eNB->lte_frame_parms.N_RB_UL) {
+	case 6:
+	  phy_vars_eNB->rb_mask_ul[0] |= (0x1 | (1<<5)); //position 5
+	  break;
+	case 15:
+	  phy_vars_eNB->rb_mask_ul[0] |= (0x1 | (1<<14)); // position 14
+	  break;
+	case 25:
+	  phy_vars_eNB->rb_mask_ul[0] |= (0x1 | (1<<24)); // position 24
+	  break;
+	case 50:
+	  phy_vars_eNB->rb_mask_ul[0] |= 0x1;
+	  phy_vars_eNB->rb_mask_ul[1] |= (1<<17); // position 49 (49-32)
+	  break;
+	case 75:
+	  phy_vars_eNB->rb_mask_ul[0] |= 0x1;
+	  phy_vars_eNB->rb_mask_ul[2] |= (1<<10); // position 74 (74-64)
+	  break;
+	case 100:
+	  phy_vars_eNB->rb_mask_ul[0] |= 0x1;
+	  phy_vars_eNB->rb_mask_ul[3] |= (1<<3); // position 99 (99-96)
+	  break;
+	default:
+	  LOG_E(PHY,"Unknown number for N_RB_UL %d\n",phy_vars_eNB->lte_frame_parms.N_RB_UL);
+	  break;
+	}
+
         if (do_SR == 1) {
           phy_vars_eNB->eNB_UE_stats[i].sr_total++;
 
@@ -3924,7 +3967,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                i,
                                phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
                                0, // n2_pucch
-                               1, // shortened format
+                               0, // shortened format, should be use_srs flag, later
                                &SR_payload,
                                subframe,
                                PUCCH1_THRES);
@@ -4336,13 +4379,15 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
-  if (pusch_active == 0) {
+  //  if (pusch_active == 0) {
     if (abstraction_flag == 0) {
       //      LOG_D(PHY,"[eNB] Frame %d, subframe %d Doing I0_measurements\n",
       //    (((subframe)==9)?-1:0) + phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
       lte_eNB_I0_measurements(phy_vars_eNB,
+			      subframe,
                               0,
                               phy_vars_eNB->first_run_I0_measurements);
+      phy_vars_eNB->first_run_I0_measurements = 0;
     }
 
 #ifdef PHY_ABSTRACTION
@@ -4354,9 +4399,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 #endif
 
 
-    if (I0_clear == 1)
-      I0_clear = 0;
-  }
+    //}
 
 #ifdef EMOS
   phy_procedures_emos_eNB_RX(subframe,phy_vars_eNB);

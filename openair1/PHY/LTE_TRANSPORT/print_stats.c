@@ -573,11 +573,13 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[0],
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[1]);
 
-    len += sprintf(&buffer[len],"[eNB PROC] Subband I0: ");
+    len += sprintf(&buffer[len],"[eNB PROC] PRB I0 (%X.%X.%X.%X): ",
+		   phy_vars_eNB->rb_mask_ul[0],
+		   phy_vars_eNB->rb_mask_ul[1],phy_vars_eNB->rb_mask_ul[2],phy_vars_eNB->rb_mask_ul[3]);
 
-    for (i=0; i<25; i++)
-      len += sprintf(&buffer[len],"%2d ",
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
+    for (i=0; i<phy_vars_eNB->lte_frame_parms.N_RB_UL; i++)
+      len += sprintf(&buffer[len],"%4d ",
+                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
 
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
@@ -634,11 +636,11 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                      dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[1]),
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[0],
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
 		     phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm, //-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
                      phy_vars_eNB->eNB_UE_stats[UE_id].sector);
 
       for(i=0; i<8; i++)
