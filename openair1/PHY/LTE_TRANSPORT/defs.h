@@ -576,13 +576,13 @@ typedef struct {
   /// UL RSSI per receive antenna
   int32_t UL_rssi[NB_ANTENNAS_RX];
   /// PUCCH1a/b power (digital linear)
-  int32_t Po_PUCCH;
+  uint32_t Po_PUCCH;
   /// PUCCH1a/b power (dBm)
   int32_t Po_PUCCH_dBm;
   /// PUCCH1 power (digital linear), conditioned on below threshold
-  int32_t Po_PUCCH1_below;
+  uint32_t Po_PUCCH1_below;
   /// PUCCH1 power (digital linear), conditioned on above threshold
-  int32_t Po_PUCCH1_above;
+  uint32_t Po_PUCCH1_above;
   /// Indicator that Po_PUCCH has been updated by PHY
   int32_t Po_PUCCH_update;
   /// DL Wideband CQI index (2 TBs)

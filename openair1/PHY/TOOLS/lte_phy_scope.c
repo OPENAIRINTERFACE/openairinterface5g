@@ -119,7 +119,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_xyplot_xgrid( fdui->pusch_llr,FL_GRID_MAJOR);
 
   // I/Q PUCCH comp (format 1)
-  fdui->pucch_comp1 = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 480, 240, 100, "PUCCH I/Q of MF Output" );
+  fdui->pucch_comp1 = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 480, 240, 100, "PUCCH1 Energy (SR)" );
   fl_set_object_boxtype( fdui->pucch_comp1, FL_EMBOSSED_BOX );
   fl_set_object_color( fdui->pucch_comp1, FL_BLACK, FL_YELLOW );
   fl_set_object_lcolor( fdui->pucch_comp1, FL_WHITE ); // Label color
@@ -171,11 +171,12 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t *pusch_llr;
   int16_t *pusch_comp;
   int32_t *pucch1_comp;
+  int32_t *pucch1_thres;
   int16_t *pucch1ab_comp;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
-  float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240];
+  float I_pucch[10240],Q_pucch[10240],A_pucch[10240],B_pucch[10240],C_pucch[10240];
   float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
   float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
   float *chest_f_abs;
@@ -206,6 +207,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   pusch_llr = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->llr;
   pusch_comp = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
   pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
+  pucch1_thres = (int32_t*) phy_vars_enb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int16_t*) phy_vars_enb->pucch1ab_stats[UE_id];
 
   // Received signal in time domain of receive antenna 0
@@ -341,12 +343,13 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
       Q_pucch[ind] = pucch1ab_comp[2*ind+1];
       A_pucch[ind] = 10*log10(pucch1_comp[ind]);
       B_pucch[ind] = ind;
+      C_pucch[ind] = (float)pucch1_thres[ind]; 
     }
     fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
     fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
-    fl_set_xyplot_xbounds(form->pucch_comp,-200,200);
-    fl_set_xyplot_ybounds(form->pucch_comp,-100,100);
-    fl_set_xyplot_ybounds(form->pucch_comp1,10,40);
+    fl_add_xyplot_overlay(form->pucch_comp1,1,B_pucch,C_pucch,1024,FL_RED);
+    //    fl_set_xyplot_ybounds(form->pucch_comp,-100,100);
+    fl_set_xyplot_ybounds(form->pucch_comp1,20,80);
   }
 
 

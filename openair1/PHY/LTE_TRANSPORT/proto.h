@@ -1637,22 +1637,22 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
                          uint8_t subframe);
 
 
-int32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
-                 PUCCH_FMT_t fmt,
-                 uint8_t UE_id,
-                 uint16_t n1_pucch,
-                 uint16_t n2_pucch,
-                 uint8_t shortened_format,
-                 uint8_t *payload,
-                 uint8_t subframe,
-                 uint8_t pucch1_thres);
+uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
+		  PUCCH_FMT_t fmt,
+		  uint8_t UE_id,
+		  uint16_t n1_pucch,
+		  uint16_t n2_pucch,
+		  uint8_t shortened_format,
+		  uint8_t *payload,
+		  uint8_t subframe,
+		  uint8_t pucch1_thres);
 
 int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-                      uint8_t UE_index,
-                      PUCCH_FMT_t fmt,
-                      uint8_t n1_pucch_sel,
-                      uint8_t *payload,
-                      uint8_t subframe);
+		       uint8_t UE_index,
+		       PUCCH_FMT_t fmt,
+		       uint8_t n1_pucch_sel,
+		       uint8_t *payload,
+		       uint8_t subframe);
 
 
 /*!

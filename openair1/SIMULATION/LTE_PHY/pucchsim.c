@@ -248,7 +248,7 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model!\n");
         exit(-1);
       }
 
@@ -260,13 +260,13 @@ int main(int argc, char **argv)
 
     case 's':
       snr0 = atof(optarg);
-      msg("Setting SNR0 to %f\n",snr0);
+      printf("Setting SNR0 to %f\n",snr0);
       break;
 
     case 'S':
       snr1 = atof(optarg);
       snr1set=1;
-      msg("Setting SNR1 to %f\n",snr1);
+      printf("Setting SNR1 to %f\n",snr1);
       break;
 
     case 'p':
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
       if ((transmission_mode!=1) &&
           (transmission_mode!=2) &&
           (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+        printf("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
 
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
       n_tx=atoi(optarg);
 
       if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
+        printf("Unsupported number of tx antennas %d\n",n_tx);
         exit(-1);
       }
 
@@ -309,7 +309,7 @@ int main(int argc, char **argv)
       n_rx=atoi(optarg);
 
       if ((n_rx==0) || (n_rx>2)) {
-        msg("Unsupported number of rx antennas %d\n",n_rx);
+        printf("Unsupported number of rx antennas %d\n",n_rx);
         exit(-1);
       }
 
@@ -414,7 +414,7 @@ int main(int argc, char **argv)
 
 
 
-  msg("[SIM] Using SCM/101\n");
+  printf("[SIM] Using SCM/101\n");
   UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
@@ -425,7 +425,7 @@ int main(int argc, char **argv)
 
 
   if (UE2eNB==NULL) {
-    msg("Problem generating channel model. Exiting.\n");
+    printf("Problem generating channel model. Exiting.\n");
     exit(-1);
   }
 
@@ -453,7 +453,7 @@ int main(int argc, char **argv)
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nRB_CQI          = 0;
   PHY_vars_UE->lte_frame_parms.pucch_config_common.nCS_AN           = 0;
 
-  pucch_payload = 1;
+  pucch_payload = 0;
 
   generate_pucch(PHY_vars_UE->lte_ue_common_vars.txdataF,
                  frame_parms,
@@ -596,9 +596,7 @@ int main(int argc, char **argv)
           }
         }
 
-        lte_eNB_I0_measurements(PHY_vars_eNB,
-                                0,
-                                1);
+
 
         for (i=0; i<2*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
           for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
@@ -646,6 +644,10 @@ int main(int argc, char **argv)
 
         //      if (sig == 1)
         //    printf("*");
+        lte_eNB_I0_measurements(PHY_vars_eNB,
+                                subframe,
+				0,
+                                1);
         PHY_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dB = N0;//(int8_t)(sigma2_dB-10*log10(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size/(12*NB_RB)));
         stat = rx_pucch(PHY_vars_eNB,
                         pucch_format,
