@@ -12,4 +12,4 @@ set(PERFECT_CE False)
 set(NAS_UE False)
 set(MESSAGE_CHART_GENERATOR False)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)
