@@ -672,6 +672,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
   //  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
+    //    printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
     rxF++;
     llr32++;
   }
