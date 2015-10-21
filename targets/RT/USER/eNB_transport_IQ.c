@@ -724,7 +724,7 @@ void *rrh_eNB_tx_thread(void *arg) {
 					tx_eNB,
 					spp_rf,
 					dev->devs->openair0_cfg.tx_num_channels,
-					0)<0){
+					1)<0){
 	  perror("RRH eNB : USRP write");
 	}
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_RF, 0 );
