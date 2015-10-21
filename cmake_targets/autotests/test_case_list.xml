@@ -1,4 +1,72 @@
 <xml>
+ <MachineList>mozart stevens calisson 192.168.12.62 amerique</MachineList>
+ <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
+ <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
+ <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
+ <GitBranch>develop</GitBranch>
+
+ <testCaseList_lte-softmodem>
+    <testCase id="015100" >
+    <class>lte-softmodem</class>
+    <eNB>calisson</eNB>
+    <UE>stevens</UE>
+    <EPC>nano</EPC>
+    <cleanupScript>killall oaisim; killall lte-softmodem; killall lte-softmodem-nos1; killall mme_gw; killall run_epc; killall run_hss</cleanupScript>
+
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_pre_compile_prog></eNB_pre_compile_prog>
+    <eNB_pre_compile_prog_args></eNB_pre_compile_prog_args>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai </eNB_compile_prog>
+    <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
+    <eNB_pre_exec>iperf </eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec_args></eNB_main_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_pre_compile_prog></UE_pre_compile_prog>
+    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
+    <UE_pre_exec>iperf </UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_search_expr_true></UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_pre_compile_prog></UE_pre_compile_prog>
+    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
+    <UE_pre_exec>iperf </UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_search_expr_true></UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+
+    <EPC_working_dir>/tmp</EPC_working_dir>
+    <EPC_pre_compile_prog></EPC_pre_compile_prog>
+    <EPC_pre_compile_prog_args></EPC_pre_compile_prog_args>
+    <EPC_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</EPC_compile_prog>
+    <EPC_compile_prog_args>--eNB -w USRP</EPC_compile_prog_args>
+    <EPC_pre_exec>iperf </EPC_pre_exec>
+    <EPC_pre_exec_args></EPC_pre_exec_args>
+    <EPC_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</EPC_main_exec>
+    <EPC_main_exec_args></EPC_main_exec_args>
+    <EPC_search_expr_true></EPC_search_expr_true>
+    <EPC_search_expr_false></EPC_search_expr_false>
+
+
+    <TimeOut_ssh>60</TimeOut_ssh>
+    <TimeOut_cmd>300</TimeOut_cmd>
+    <nruns>2</nruns>
+    </testCase> 
+ </testCaseList_lte-softmodem>
 
  <testCaseList>
      <testCase id="010101" >
@@ -13,7 +81,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <nruns>2</nruns>
+     <nruns>1</nruns>
      </testCase>
  
      <testCase id="010102" >

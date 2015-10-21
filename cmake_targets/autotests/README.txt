@@ -86,6 +86,7 @@ Obj.#   Case#   Test#	Description
 01      51      06      mbmssim (TBD)
 
 
+01      55              lte-softmodem tests
 
 02                      Functional test case
 
