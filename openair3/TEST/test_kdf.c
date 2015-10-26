@@ -42,9 +42,9 @@ static
 void do_kdf(uint8_t *key, unsigned key_length, uint8_t *data, unsigned data_length,
             uint8_t *exp, unsigned exp_length)
 {
-  uint8_t *result;
+  uint8_t result[32];
 
-  kdf(key, key_length, data, data_length, &result, 32);
+  kdf(key, key_length, data, data_length, result, 32);
 
   if (compare_buffer(result, exp_length, exp, exp_length) != 0) {
     fail("Fail: kdf\n");
