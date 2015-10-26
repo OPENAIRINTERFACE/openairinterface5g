@@ -777,6 +777,10 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_chan%d_nrx%d_mcs%d.csv",transmission_mode,channel_model,n_rx,mcs1);
 
   bler_fd = fopen(bler_fname,"w");
+  if (bler_fd==NULL) {
+    fprintf(stderr,"Cannot create file %s!\n",bler_fname);
+    exit(-1);
+  }
   fprintf(bler_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
 
   if (test_perf != 0) {
@@ -784,12 +788,16 @@ int main(int argc, char **argv)
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
     printf("Hostname: %s\n", hostname);
-    char dirname[FILENAME_MAX];
-    sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
-    sprintf(time_meas_fname,"%s/time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
-            dirname,N_RB_DL,mcs1,n_tx,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
-    mkdir(dirname,0777);
+    //char dirname[FILENAME_MAX];
+    //sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
+    sprintf(time_meas_fname,"time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
+            N_RB_DL,mcs1,n_tx,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
+    //mkdir(dirname,0777);
     time_meas_fd = fopen(time_meas_fname,"w");
+    if (time_meas_fd==NULL) {
+      fprintf(stderr,"Cannot create file %s!\n",time_meas_fname);
+      exit(-1);
+    }
   }
 
   if(abstx) {
@@ -797,6 +805,10 @@ int main(int argc, char **argv)
     sprintf(csv_fname,"dataout_tx%d_u2%d_mcs%d_chan%d_nsimus%d_R%d.m",transmission_mode,dual_stream_UE,mcs1,channel_model,n_frames,num_rounds);
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);
+    if (csv_fd==NULL) {
+      fprintf(stderr,"Cannot create file %s!\n",csv_fname);
+      exit(-1);
+    }
   }
 
   /*

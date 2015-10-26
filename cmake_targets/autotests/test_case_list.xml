@@ -716,7 +716,7 @@
       <tags>test1 test5 test6 test6b test7 test7b test10 test10b test11 TM2_test1 TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
-      <nruns>3</nruns>
+      <nruns>1</nruns>
     </testCase>
 
     <testCase id="015101">
@@ -742,7 +742,7 @@
      <tags>test1 test2 test3 test4 test5 test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
-      <nruns>3</nruns>
+      <nruns>1</nruns>
     </testCase>
 
   <testCase id="015500" >
