@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,l,aa,aarx,k;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
@@ -521,15 +521,26 @@ int main(int argc, char **argv)
                        subframe%10,
                        0,
                        0);
-      }
-
-      for (l=2; l<12; l++) {
-        rx_pmch(PHY_vars_UE,
+  
+	if (PHY_vars_UE->perfect_ce==1) {
+	  // fill in perfect channel estimates
+	  freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+	  for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
+	    for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+	      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+		for (i=0; i<frame_parms->N_RB_DL*12; i++) {
+		  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+		  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+		}
+	      }
+	    }
+	  }
+	}
+	
+	rx_pmch(PHY_vars_UE,
                 0,
                 subframe%10,
                 l);
-
-
       }
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,

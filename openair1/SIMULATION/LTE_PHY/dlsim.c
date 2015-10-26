@@ -2769,7 +2769,7 @@ PMI_FEEDBACK:
 
           // Multipath channel
           if (awgn_flag == 0) {
-            multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
+            multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
                               2*frame_parms->samples_per_tti,hold_channel);
 
             //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
