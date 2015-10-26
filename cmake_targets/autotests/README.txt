@@ -73,6 +73,8 @@ Obj.#   Case#   Test#	Description
                         (Test 10: 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
                         (Test 10b: 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
                         (Test 11: 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%))
+		        (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
+		        (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
 01      51      01      ulsim Test cases. (Test 1, 5 MHz, FDD (MCS 5), AWGN, 6dB), 
                         (Test 2, 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
                         (Test 3, 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
