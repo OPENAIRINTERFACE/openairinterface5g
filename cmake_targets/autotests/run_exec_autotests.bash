@@ -341,7 +341,7 @@ until [ -z "$1" ]
 
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
-test_case_list=`xmlstarlet sel -T -t -m /xml/testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
+test_case_list=`xmlstarlet sel -T -t -m /testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
 
 echo "test_case_list = $test_case_list"
 
@@ -372,20 +372,20 @@ for search_expr in "${test_case_array[@]}"
     fi
 
     name=$search_expr
-    class=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/class" $xml_conf`
-    desc=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/desc" $xml_conf`
-    pre_compile_prog=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/pre_compile_prog" $xml_conf`
-    compile_prog=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/compile_prog" $xml_conf`
-    compile_prog_args=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/compile_prog_args" $xml_conf`
-    pre_exec=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/pre_exec" $xml_conf`
-    pre_exec_args=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/pre_exec_args" $xml_conf`
-    main_exec=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/main_exec" $xml_conf`
-    main_exec_args=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/main_exec_args" $xml_conf`
-    search_expr_true=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/search_expr_true" $xml_conf`
-    search_expr_false=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/search_expr_false" $xml_conf`
-    nruns=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/nruns" $xml_conf`
-    compile_prog_out=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/compile_prog_out" $xml_conf`
-    tags=`xmlstarlet sel -t -v "/xml/testCaseList/testCase[@id='$search_expr']/tags" $xml_conf`
+    class=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/class" $xml_conf`
+    desc=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/desc" $xml_conf`
+    pre_compile_prog=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/pre_compile_prog" $xml_conf`
+    compile_prog=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/compile_prog" $xml_conf`
+    compile_prog_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/compile_prog_args" $xml_conf`
+    pre_exec=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/pre_exec" $xml_conf`
+    pre_exec_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/pre_exec_args" $xml_conf`
+    main_exec=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/main_exec" $xml_conf`
+    main_exec_args=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/main_exec_args" $xml_conf`
+    search_expr_true=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/search_expr_true" $xml_conf`
+    search_expr_false=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/search_expr_false" $xml_conf`
+    nruns=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/nruns" $xml_conf`
+    compile_prog_out=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/compile_prog_out" $xml_conf`
+    tags=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/tags" $xml_conf`
 
     echo "class = $class"
     echo "name = $name"
@@ -439,82 +439,6 @@ xUnit_write "$results_file"
 echo "Test Results are written to $results_file"
 
 exit
-
-
-
-
-#$1 -> name of test case
-#$2 -> name of compilation program
-#$3 -> arguments for compilation program
-#$4 -> name of pre-executable to install kernel modules, etc
-#$5 -> arguments of pre-executable
-#$6 -> name of executable
-#$7 -> arguments for running the program
-#$8 -> search expression ARRAY which needs to be found
-#$9 -> search expression which should NOT be found (for ex. segmentation fault) 
-#$10 -> number of runs
-#$11 -> pre compile program
-
-
-
-#oaisim tests
-search_array=("Received RRCConnectionReconfigurationComplete from UE 0")
-test_compile_and_run 010200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("Received RRCConnectionReconfigurationComplete from UE 0")
-test_compile_and_run 010201 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -a -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2")
-test_compile_and_run 010202 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2")
-test_compile_and_run 010203 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -a -n100" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-#PHY unitary simulations for secuirity tests
-search_array=("finished with 0 errors")
-test_compile_and_run 010300 "test_aes128_cmac_encrypt" "" "" "" "test_aes128_cmac_encrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010301 "test_aes128_ctr_decrypt" "" "" "" "test_aes128_ctr_decrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010302 "test_aes128_ctr_encrypt" "" "" "" "test_aes128_ctr_encrypt" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010303 "test_secu_kenb" "" "" "" "test_secu_kenb" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010304 "test_secu_knas" "" "" "" "test_secu_knas" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010305 "test_secu_knas_encrypt_eea1" "" "" "" "test_secu_knas_encrypt_eea1" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010306 "test_secu_knas_encrypt_eea2" "" "" "" "test_secu_knas_encrypt_eea2" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010307 "test_secu_knas_encrypt_eia1" "" "" "" "test_secu_knas_encrypt_eia1" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal"  3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010308 "test_secu_knas_encrypt_eia2" "" "" "" "test_secu_knas_encrypt_eia2" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fataln"  3
-
-search_array=("finished with 0 errors")
-test_compile_and_run 010309 "test_kdf" "" "" "" "test_kdf" " --verbose" "search_array[@]" "segmentation fault|assertion|exiting|fatal" 3
-
-
-
-
-#test_compile_and_run 0200 "oaisim_nos1" "" "$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1" "" "oaisim_nos1" " -O /home/calisson/rohit/oai_snav/taets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -b1 -u1 -a " "RRC_CONN" 3
-
-#run_test 0200 "$dbin/oaisim.r8 -a -A AWGN -n 100" false grep -q '(Segmentation.fault)|(Exiting)|(FATAL)'
-
-#run_test 0201 "$dbin/oaisim.r8 -a -A AWGN -n 100" false fgrep -q '[E]'
-
-# write the test results into a file
-
-xUnit_write "$results_file"
-
-echo "Test Results are written to $results_file"
 
 
 
