@@ -1,6 +1,6 @@
  <testCaseList>
 
-<MachineList>mozart stevens calisson nano amerique</MachineList>
+<MachineList>stevens calisson nano</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
@@ -755,35 +755,23 @@
     <TimeOut_cmd>300</TimeOut_cmd>
 
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>$OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 1
-                     $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 208
-                     $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 95</eNB_config_file>
-    <eNB_pre_compile_prog></eNB_pre_compile_prog>
-    <eNB_pre_compile_prog_args></eNB_pre_compile_prog_args>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 1
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code 2
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code 9</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai </eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
-    <eNB_pre_exec>iperf </eNB_pre_exec>
+    <eNB_pre_exec>iperf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args></eNB_main_exec_args>
+    <eNB_post_exec></eNB_post_exec>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_pre_compile_prog></UE_pre_compile_prog>
-    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
-    <UE_pre_exec>iperf </UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_search_expr_true></UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_pre_compile_prog></UE_pre_compile_prog>
-    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
+    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 4
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code 5
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code 6</UE_config_file>
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
     <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
     <UE_pre_exec>iperf </UE_pre_exec>
@@ -794,10 +782,11 @@
     <UE_search_expr_false></UE_search_expr_false>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_pre_compile_prog></EPC_pre_compile_prog>
-    <EPC_pre_compile_prog_args></EPC_pre_compile_prog_args>
-    <EPC_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</EPC_compile_prog>
-    <EPC_compile_prog_args>--eNB -w USRP</EPC_compile_prog_args>
+    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC 7
+                     BUILD/EPC/epc.local.enb.conf.in  MNC 8
+                     BUILD/EPC/epc.local.enb.conf.in   TAC 9</EPC_config_file>
+    <EPC_compile_prog>SCRIPTS/build_epc -c -SCRIPTS/build_hss -c -l </EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
     <EPC_pre_exec>iperf </EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</EPC_main_exec>
