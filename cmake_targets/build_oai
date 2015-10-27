@@ -54,6 +54,8 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 
+trap handle_ctrl_c INT
+
 function print_help() {
   echo_info '
 This program installs OpenAirInterface Software
@@ -583,13 +585,16 @@ function main() {
   #####################
   if [ "$OAI_TEST" = "1" ]; then
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
+    echo_info "The log file for the autotests is located here: $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log "
+    echo_info "You can hit CTRL-C any time to terminate the autotests..."
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     if [ "$RUN_GROUP" -eq "1" ]; then
-        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP"
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     else
-        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     fi
+    wait
   else
     echo_info "10. Bypassing the Tests ..."
   fi
