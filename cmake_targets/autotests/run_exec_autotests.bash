@@ -14,8 +14,8 @@ source $OPENAIR_DIR/cmake_targets/tools/test_helper
 
 #SUDO="sudo -E "
 tdir=$OPENAIR_DIR/cmake_targets/autotests
-rm -fr $tdir/bin $tdir/log
-mkdir -p $tdir/bin $tdir/log
+rm -fr $tdir/bin 
+mkdir -p $tdir/bin
 results_file="$tdir/log/results_autotests.xml"
 
 updated=$(svn st -q $OPENAIR_DIR)
@@ -277,6 +277,7 @@ function test_compile_and_run() {
        let "tags_array_index++"
      done # End of for loop (nindex)
    fi
+   rm -fr $build_dir
 }
 
 dbin=$OPENAIR_DIR/cmake_targets/autotests/bin
