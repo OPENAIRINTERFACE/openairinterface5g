@@ -255,7 +255,8 @@ check_install_oai_software() {
 	openssl \
 	python  \
 	subversion \
-        xmlstarlet
+        xmlstarlet \
+        python-pip
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
@@ -263,6 +264,7 @@ check_install_oai_software() {
     else
         $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin 
     fi
+    $SUDO pip install paramiko
     install_asn1c_from_source
 }
 
