@@ -346,7 +346,11 @@ do
            arraycounter=`expr $arraycounter - 1`
            ## We want to kill child process id first and then parent id's
            while [ $arraycounter -ne 0 ]
-           do
+           do  
+             echo "first we send ctrl-c to program"
+             $SUDO kill -INT "${procid[$arraycounter]}"
+             sleep 5
+             echo "Now we force kill if that didn't work"
              $SUDO kill -9 "${procid[$arraycounter]}" >/dev/null
              arraycounter=`expr $arraycounter - 1`
            done
