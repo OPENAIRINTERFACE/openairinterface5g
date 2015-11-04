@@ -36,6 +36,7 @@
  */
 
 #include <string.h>
+#include <limits.h>
 #include <libconfig.h>
 #include <inttypes.h>
 #include <getopt.h>
@@ -95,7 +96,7 @@
 #define ENB_CONFIG_PROPERTIES_INDEX_OLD 0
 #define ENB_CONFIG_PROPERTIES_INDEX_NEW 1
 
-#define ENB_CONFIG_MAX_XSLT_PARAMS 64
+#define ENB_CONFIG_MAX_XSLT_PARAMS 32
 
 Enb_properties_array_t g_enb_properties[2];
 char                  *g_openair_dir      = NULL;
@@ -136,6 +137,25 @@ int is_file_exists( const char const * file_nameP, const char const *file_roleP)
   return 0;
 }
 
+
+//------------------------------------------------------------------------------
+int strip_extension(char *in_filename)
+{
+  static const uint8_t name_min_len = 1;
+  static const uint8_t max_ext_len = 5; // .pdml !
+  fprintf(stdout, "strip_extension %s\n", in_filename);
+
+  if (NULL != in_filename) {
+    /* Check chars starting at end of string to find last '.' */
+    for (ssize_t i = strlen(in_filename); i > (name_min_len + max_ext_len); i--) {
+      if (in_filename[i] == '.') {
+        in_filename[i] = '\0';
+        return i;
+      }
+    }
+  }
+  return -1;
+}
 //------------------------------------------------------------------------------
 // return number of splitted items
 int split_path( char * pathP, char *** resP)
@@ -155,18 +175,21 @@ int split_path( char * pathP, char *** resP)
 }
 
 //------------------------------------------------------------------------------
-void generate_generic_scenario(const char const * test_nameP, const char const * pdml_in_basenameP)
+int generate_generic_scenario(const char const * test_nameP, const char const * pdml_in_basenameP)
 //------------------------------------------------------------------------------
 {
   //int fd_pdml_in;
   xsltStylesheetPtr cur = NULL;
   xmlDocPtr         doc, res;
-  const char       *params[ENB_CONFIG_MAX_XSLT_PARAMS];
+  FILE             *generic_scenario_file = NULL;
+  const char        generic_scenario_filename[NAME_MAX];
+  const char       *params[2*ENB_CONFIG_MAX_XSLT_PARAMS];
   int               nb_params = 0;
   int               i,j;
   char              astring[1024];
   struct in_addr    addr;
 
+  memset(generic_scenario_filename, 0, sizeof(generic_scenario_filename));
   memset(astring, 0, sizeof(astring));
   if (getcwd(astring, sizeof(astring)) != NULL) {
     fprintf(stdout, "working in %s directory\n", astring);
@@ -182,7 +205,18 @@ void generate_generic_scenario(const char const * test_nameP, const char const *
   xmlSubstituteEntitiesDefault(1);
   xmlLoadExtDtdDefaultValue = 1;
   cur = xsltParseStylesheetFile(astring);
+  if (NULL == cur) {
+    AssertFatal (0, "Could not parse stylesheet file %s (check OPENAIR_DIR env variable)!\n", astring);
+  } else {
+    fprintf(stdout, "XSLT style sheet: %s\n", astring);
+  }
+
   doc = xmlParseFile(pdml_in_basenameP);
+  if (NULL == doc) {
+    AssertFatal (0, "Could not parse pdml file %s!\n", pdml_in_basenameP);
+  } else {
+    fprintf(stdout, "pdml file: %s\n", pdml_in_basenameP);
+  }
   params[nb_params++] = "test_name";
   sprintf(astring, "\"%s\"", test_nameP);
   params[nb_params++] = strdup(astring);
@@ -207,8 +241,25 @@ void generate_generic_scenario(const char const * test_nameP, const char const *
   }
   params[nb_params] = NULL;
   res = xsltApplyStylesheet(cur, doc, params);
-  xsltSaveResultToFile(stdout, res, cur);
-
+  if (NULL != res) {
+    // since pdml filename is not relative (no path), just filename in current directory we can safely remove
+    sprintf(generic_scenario_filename,"%s",pdml_in_basenameP);
+    if (strip_extension(generic_scenario_filename) > 0) {
+      strcat(generic_scenario_filename, "_generic_scenario.xml");
+      generic_scenario_file = fopen( generic_scenario_filename, "w+");
+      if (NULL != generic_scenario_file) {
+        xsltSaveResultToFile(generic_scenario_file, res, cur);
+        fclose(generic_scenario_file);
+        fprintf(stdout, "Wrote generic scenario to %s\n", generic_scenario_filename);
+      } else {
+        fprintf(stderr, "Error in fopen(%s)\n", generic_scenario_filename);
+      }
+    } else {
+      fprintf(stderr, "Error in strip_extension()\n");
+    }
+  } else {
+    fprintf(stderr, "Error in xsltApplyStylesheet()\n");
+  }
   xsltFreeStylesheet(cur);
   xmlFreeDoc(res);
   xmlFreeDoc(doc);
@@ -494,7 +545,7 @@ static void usage (
   fprintf (stdout, "\t-o | --old-enb-conf-file <file>    Provide the old eNB config file for generating a copy of the original test\n");
   fprintf (stdout, "                                     This option is set as many times as there are some eNB config files in the original test\n");
   fprintf (stdout, "\t-p | --pdml             <file>     File name (with no path) of an original scenario that has to be reworked (IP addresses) with new testbed\n");
-  fprintf (stdout, "\t-s | --scenario-generic <file>     File name (with no path) of a  scenario that has to be customized (IP addresses) with new testbed\n");
+  fprintf (stdout, "\t-s | --scenario-generic <file>     File name (with no path) of a scenario that has to be customized (IP addresses) with new testbed\n");
   fprintf (stdout, "\n");
   fprintf (stdout, "\n");
   fprintf (stdout, "Example of generate_scenario use cases:  \n");
@@ -596,7 +647,7 @@ config_parse_opt_line (
   /*
    * Parsing command line
    */
-  while ((option = getopt_long (argc, argv, "hp:n:o:s:t", long_options, NULL)) != -1) {
+  while ((option = getopt_long (argc, argv, "hp:n:o:s:t:", long_options, NULL)) != -1) {
     switch (option) {
       case LONG_OPTION_OLD_ENB_CONF_FILE:
       case 'o':
@@ -669,8 +720,8 @@ config_parse_opt_line (
     if (is_file_exists(old_enb_config_file_name, "Old eNB config file") != GS_IS_FILE) {
       fprintf(stderr, "Error: original eNB config file name %s is not found in dir %s\n", old_enb_config_file_name, g_test_dir);
     }
-    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_OLD);
     enb_config_init(old_enb_config_file_name, ENB_CONFIG_PROPERTIES_INDEX_OLD);
+    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_OLD);
 
     if (NULL == pdml_in_file_name) {
       fprintf(stderr, "Error: please provide the PDML file name that should be in %s\n", g_test_dir);
@@ -688,8 +739,8 @@ config_parse_opt_line (
     if (is_file_exists(new_enb_config_file_name, "New eNB config file") != GS_IS_FILE) {
       fprintf(stderr, "Error: New eNB config file name %s is not found in dir %s\n", new_enb_config_file_name, g_test_dir);
     }
-    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_NEW);
     enb_config_init(new_enb_config_file_name, ENB_CONFIG_PROPERTIES_INDEX_NEW);
+    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_NEW);
 
     if (NULL == generic_scenario_file_name) {
       fprintf(stderr, "Error: please provide the Generic scenario file name that should be in %s\n", g_test_dir);
