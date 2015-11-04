@@ -93,12 +93,10 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
-#define ENB_CONFIG_PROPERTIES_INDEX_OLD 0
-#define ENB_CONFIG_PROPERTIES_INDEX_NEW 1
 
 #define ENB_CONFIG_MAX_XSLT_PARAMS 32
 
-Enb_properties_array_t g_enb_properties[2];
+Enb_properties_array_t g_enb_properties;
 char                  *g_openair_dir      = NULL;
 char                  *g_test_dir         = NULL;
 char                  *g_pdml_in_origin   = NULL;
@@ -107,7 +105,6 @@ extern int             xmlLoadExtDtdDefaultValue;
 
 #define GENERATE_PDML_FILE           1
 #define GENERATE_GENERIC_SCENARIO    2
-#define GENERATE_DEDICATED_SCENARIO  4
 
 #define GS_IS_FILE           1
 #define GS_IS_DIR            2
@@ -187,6 +184,7 @@ int generate_generic_scenario(const char const * test_nameP, const char const * 
   int               nb_params = 0;
   int               i,j;
   char              astring[1024];
+  char             *astring2 = NULL;
   struct in_addr    addr;
 
   memset(generic_scenario_filename, 0, sizeof(generic_scenario_filename));
@@ -218,24 +216,32 @@ int generate_generic_scenario(const char const * test_nameP, const char const * 
     fprintf(stdout, "pdml file: %s\n", pdml_in_basenameP);
   }
   params[nb_params++] = "test_name";
-  sprintf(astring, "\"%s\"", test_nameP);
+  sprintf(astring, "%s", pdml_in_basenameP);
+  if (strip_extension(astring) > 0) {
+    astring2 = strdup(astring);
+    sprintf(astring, "\"%s\"", astring2);
+    free(astring2);
+    astring2 = NULL;
+  } else {
+    fprintf(stderr, "Assigning test name failed: %s\n", astring);
+  }
   params[nb_params++] = strdup(astring);
 
-  for (i = 0; i < g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD].number; i++) {
+  for (i = 0; i < g_enb_properties.number; i++) {
     // eNB S1-C IPv4 address
     sprintf(astring, "enb_s1c%d", i);
     params[nb_params++] = strdup(astring);
-    addr.s_addr = g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD].properties[i]->enb_ipv4_address_for_S1_MME;
+    addr.s_addr = g_enb_properties.properties[i]->enb_ipv4_address_for_S1_MME;
     sprintf(astring, "\"%s\"", inet_ntoa(addr));
     params[nb_params++] = strdup(astring);
 
     // MME S1-C IPv4 address
-    for (j = 0; j < g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD].properties[i]->nb_mme; j++) {
+    for (j = 0; j < g_enb_properties.properties[i]->nb_mme; j++) {
       sprintf(astring, "mme_s1c%d_%d", i, j);
       params[nb_params++] = strdup(astring);
-      AssertFatal (g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD].properties[i]->mme_ip_address[j].ipv4_address,
+      AssertFatal (g_enb_properties.properties[i]->mme_ip_address[j].ipv4_address,
           "Only support MME IPv4 address\n");
-      sprintf(astring, "\"%s\"", g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD].properties[i]->mme_ip_address[j].ipv4_address);
+      sprintf(astring, "\"%s\"", g_enb_properties.properties[i]->mme_ip_address[j].ipv4_address);
       params[nb_params++] = strdup(astring);
     }
   }
@@ -269,26 +275,26 @@ int generate_generic_scenario(const char const * test_nameP, const char const * 
 }
 
 //------------------------------------------------------------------------------
-static void enb_config_display(const boolean_t new_config_fileP)
+static void enb_config_display(void)
 //------------------------------------------------------------------------------
 {
   int i;
 
   printf( "\n----------------------------------------------------------------------\n");
-  printf( " %s ENB CONFIG FILE CONTENT LOADED:\n", new_config_fileP == ENB_CONFIG_PROPERTIES_INDEX_OLD ? "Old":"New");
+  printf( " ENB CONFIG FILE CONTENT LOADED:\n");
   printf( "----------------------------------------------------------------------\n");
-  for (i = 0; i < g_enb_properties[new_config_fileP].number; i++) {
+  for (i = 0; i < g_enb_properties.number; i++) {
     printf( "ENB CONFIG for instance %u:\n\n", i);
-    printf( "\teNB name:           \t%s\n",g_enb_properties[new_config_fileP].properties[i]->eNB_name);
-    printf( "\teNB ID:             \t%"PRIu32"\n",g_enb_properties[new_config_fileP].properties[i]->eNB_id);
-    printf( "\tCell type:          \t%s\n",g_enb_properties[new_config_fileP].properties[i]->cell_type == CELL_MACRO_ENB ? "CELL_MACRO_ENB":"CELL_HOME_ENB");
-    printf( "\tTAC:                \t%"PRIu16"\n",g_enb_properties[new_config_fileP].properties[i]->tac);
-    printf( "\tMCC:                \t%"PRIu16"\n",g_enb_properties[new_config_fileP].properties[i]->mcc);
+    printf( "\teNB name:           \t%s\n",g_enb_properties.properties[i]->eNB_name);
+    printf( "\teNB ID:             \t%"PRIu32"\n",g_enb_properties.properties[i]->eNB_id);
+    printf( "\tCell type:          \t%s\n",g_enb_properties.properties[i]->cell_type == CELL_MACRO_ENB ? "CELL_MACRO_ENB":"CELL_HOME_ENB");
+    printf( "\tTAC:                \t%"PRIu16"\n",g_enb_properties.properties[i]->tac);
+    printf( "\tMCC:                \t%"PRIu16"\n",g_enb_properties.properties[i]->mcc);
 
-    if (g_enb_properties[new_config_fileP].properties[i]->mnc_digit_length == 3) {
-      printf( "\tMNC:                \t%03"PRIu16"\n",g_enb_properties[new_config_fileP].properties[i]->mnc);
+    if (g_enb_properties.properties[i]->mnc_digit_length == 3) {
+      printf( "\tMNC:                \t%03"PRIu16"\n",g_enb_properties.properties[i]->mnc);
     } else {
-      printf( "\tMNC:                \t%02"PRIu16"\n",g_enb_properties[new_config_fileP].properties[i]->mnc);
+      printf( "\tMNC:                \t%02"PRIu16"\n",g_enb_properties.properties[i]->mnc);
     }
     printf( "\n--------------------------------------------------------\n");
   }
@@ -301,7 +307,7 @@ static void enb_config_display(const boolean_t new_config_fileP)
 #define libconfig_int int
 #endif
 //------------------------------------------------------------------------------
-void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_t new_config_fileP)
+void enb_config_init(const  char const * lib_config_file_name_pP)
 //------------------------------------------------------------------------------
 {
   config_t          cfg;
@@ -336,9 +342,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
   char             *address                       = NULL;
   char             *cidr                          = NULL;
 
-  AssertFatal ((new_config_fileP == 0)  ||  (new_config_fileP == 1),
-               "Bad parameter new_config_fileP %d \n",
-               new_config_fileP);
+
   AssertFatal (lib_config_file_name_pP != NULL,
                "Bad parameter lib_config_file_name_pP %s , must reference a valid eNB config file\n",
                lib_config_file_name_pP);
@@ -374,7 +378,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
   setting = config_lookup(&cfg, ENB_CONFIG_STRING_ENB_LIST);
 
   if (setting != NULL) {
-    enb_properties_index = g_enb_properties[new_config_fileP].number;
+    enb_properties_index = g_enb_properties.number;
     parse_errors      = 0;
     num_enbs = config_setting_length(setting);
 
@@ -411,34 +415,34 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
       // search if in active list
       for (j=0; j < num_enb_properties; j++) {
         if (strcmp(active_enb[j], enb_name) == 0) {
-          g_enb_properties[new_config_fileP].properties[enb_properties_index] = calloc(1, sizeof(Enb_properties_t));
+          g_enb_properties.properties[enb_properties_index] = calloc(1, sizeof(Enb_properties_t));
 
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->eNB_id   = enb_id;
+          g_enb_properties.properties[enb_properties_index]->eNB_id   = enb_id;
 
           if (strcmp(cell_type, "CELL_MACRO_ENB") == 0) {
-            g_enb_properties[new_config_fileP].properties[enb_properties_index]->cell_type = CELL_MACRO_ENB;
+            g_enb_properties.properties[enb_properties_index]->cell_type = CELL_MACRO_ENB;
           } else  if (strcmp(cell_type, "CELL_HOME_ENB") == 0) {
-            g_enb_properties[new_config_fileP].properties[enb_properties_index]->cell_type = CELL_HOME_ENB;
+            g_enb_properties.properties[enb_properties_index]->cell_type = CELL_HOME_ENB;
           } else {
             AssertError (0, parse_errors ++,
                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                          lib_config_file_name_pP, i, cell_type);
           }
 
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->eNB_name         = strdup(enb_name);
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->tac              = (uint16_t)atoi(tac);
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->mcc              = (uint16_t)atoi(mcc);
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->mnc              = (uint16_t)atoi(mnc);
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->mnc_digit_length = strlen(mnc);
-          AssertFatal((g_enb_properties[new_config_fileP].properties[enb_properties_index]->mnc_digit_length == 2) ||
-                      (g_enb_properties[new_config_fileP].properties[enb_properties_index]->mnc_digit_length == 3),
+          g_enb_properties.properties[enb_properties_index]->eNB_name         = strdup(enb_name);
+          g_enb_properties.properties[enb_properties_index]->tac              = (uint16_t)atoi(tac);
+          g_enb_properties.properties[enb_properties_index]->mcc              = (uint16_t)atoi(mcc);
+          g_enb_properties.properties[enb_properties_index]->mnc              = (uint16_t)atoi(mnc);
+          g_enb_properties.properties[enb_properties_index]->mnc_digit_length = strlen(mnc);
+          AssertFatal((g_enb_properties.properties[enb_properties_index]->mnc_digit_length == 2) ||
+                      (g_enb_properties.properties[enb_properties_index]->mnc_digit_length == 3),
                       "BAD MNC DIGIT LENGTH %d",
-                      g_enb_properties[new_config_fileP].properties[i]->mnc_digit_length);
+                      g_enb_properties.properties[i]->mnc_digit_length);
 
 
           setting_mme_addresses = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_MME_IP_ADDRESS);
           num_mme_address     = config_setting_length(setting_mme_addresses);
-          g_enb_properties[new_config_fileP].properties[enb_properties_index]->nb_mme = 0;
+          g_enb_properties.properties[enb_properties_index]->nb_mme = 0;
 
           for (j = 0; j < num_mme_address; j++) {
             setting_mme_address = config_setting_get_elem(setting_mme_addresses, j);
@@ -456,22 +460,22 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
               continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
             }
 
-            g_enb_properties[new_config_fileP].properties[enb_properties_index]->nb_mme += 1;
+            g_enb_properties.properties[enb_properties_index]->nb_mme += 1;
 
-            g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv4_address = strdup(ipv4);
-            g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv6_address = strdup(ipv6);
+            g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4_address = strdup(ipv4);
+            g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6_address = strdup(ipv6);
 
             if (strcmp(active, "yes") == 0) {
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].active = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].active = 1;
             } // else { (calloc)
 
             if (strcmp(preference, "ipv4") == 0) {
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
             } else if (strcmp(preference, "ipv6") == 0) {
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
             } else if (strcmp(preference, "no") == 0) {
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
             }
           }
 
@@ -493,22 +497,22 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
                                                 &enb_port_for_S1U)
                  )
               ) {
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
+              g_enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
               cidr = enb_ipv4_address_for_S1U;
               address = strtok(cidr, "/");
 
               if (address) {
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties[new_config_fileP].properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
               }
 
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->enb_port_for_S1U = enb_port_for_S1U;
+              g_enb_properties.properties[enb_properties_index]->enb_port_for_S1U = enb_port_for_S1U;
 
-              g_enb_properties[new_config_fileP].properties[enb_properties_index]->enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
+              g_enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
               cidr = enb_ipv4_address_for_S1_MME;
               address = strtok(cidr, "/");
 
               if (address) {
-                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties[new_config_fileP].properties[enb_properties_index]->enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
+                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
               }
             }
           } // if (subsetting != NULL) {
@@ -518,7 +522,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP, const boolean_
     } // for (i = 0; i < num_enbs; i++)
   } //   if (setting != NULL) {
 
-  g_enb_properties[new_config_fileP].number += num_enb_properties;
+  g_enb_properties.number += num_enb_properties;
 
 
   AssertFatal (parse_errors == 0,
@@ -540,22 +544,19 @@ static void usage (
   fprintf (stdout, "\n");
   fprintf (stdout, "Available options:\n");
   fprintf (stdout, "\t-h | --help                        Print this help and return\n");
-  fprintf (stdout, "\t-n | --new-enb-conf-file <file>    Provide an updated eNB config file for generating a copy of the original test\n");
-  fprintf (stdout, "                                     This option is set as many times as there are some eNB config files in the original test\n");
   fprintf (stdout, "\t-o | --old-enb-conf-file <file>    Provide the old eNB config file for generating a copy of the original test\n");
   fprintf (stdout, "                                     This option is set as many times as there are some eNB config files in the original test\n");
   fprintf (stdout, "\t-p | --pdml             <file>     File name (with no path) of an original scenario that has to be reworked (IP addresses) with new testbed\n");
-  fprintf (stdout, "\t-s | --scenario-generic <file>     File name (with no path) of a scenario that has to be customized (IP addresses) with new testbed\n");
   fprintf (stdout, "\n");
   fprintf (stdout, "\n");
-  fprintf (stdout, "Example of generate_scenario use cases:  \n");
+  fprintf (stdout, "Example of generate_scenario use case:  \n");
   fprintf (stdout, "\n");
-  fprintf (stdout, "  Case 1: generate a generix xml scenario from a captured pcap file:        \n");
+  fprintf (stdout, "  Generate a generix xml scenario from a captured pcap file:        \n");
   fprintf (stdout, "           +---------------------+ \n");
   fprintf (stdout, "           |captured pcap-ng file| \n");
   fprintf (stdout, "           +----------+----------+ \n");
   fprintf (stdout, "                      |\n");
-  fprintf (stdout, "             mme_test_s1_pcap2pdml \n");
+  fprintf (stdout, "             mme_test_s1_pcap2pdml --pcap_file <`captured pcap-ng file`>\n");
   fprintf (stdout, "                      |\n");
   fprintf (stdout, "             +--------V----------+    +------------------------+\n");
   fprintf (stdout, "             |'pdml-in-orig' file|    |'old-enb-conf-file' file|\n");
@@ -563,51 +564,13 @@ static void usage (
   fprintf (stdout, "                      |                            |\n");
   fprintf (stdout, "                      +----------------------------+\n");
   fprintf (stdout, "                      |\n");
-  fprintf (stdout, "      generate_scenario -t <dir> -p <file>  -o <file> \n");
+  fprintf (stdout, "      generate_scenario -t <dir> -p <'pdml-in-orig' file>  -o <'old-enb-conf-file' file> \n");
   fprintf (stdout, "                      |\n");
   fprintf (stdout, "         +------------V--------------+\n");
   fprintf (stdout, "         +'xml-scenario-generic' file|\n");
   fprintf (stdout, "         +---------------------------+\n");
   fprintf (stdout, "\n");
-  fprintf (stdout, "\n");
-  fprintf (stdout, "  Case 2: generate a dedicated xml scenario from generic xml scenario:\n");
-  fprintf (stdout, "\n");
-  fprintf (stdout, "         +---------------------------+    +------------------------+\n");
-  fprintf (stdout, "         |'xml-scenario-generic' file|    |'new-enb-conf-file' file|\n");
-  fprintf (stdout, "         +--------+------------------+    +------------+-----------+\n");
-  fprintf (stdout, "                  |                                    |\n");
-  fprintf (stdout, "                  +--------------------+---------------+\n");
-  fprintf (stdout, "                                       |\n");
-  fprintf (stdout, "                            generate_scenario -t <dir> -s <file> -n <file> \n");
-  fprintf (stdout, "                                       |\n");
-  fprintf (stdout, "                        +--------------V--------------+\n");
-  fprintf (stdout, "                        +'xml-scenario-dedicated' file|\n");
-  fprintf (stdout, "                        +-----------------------------+\n");
-  fprintf (stdout, "\n");
-  fprintf (stdout, "\n");
-  fprintf (stdout, "  Case 3 = case 1 + case 2: generate a dedicated xml scenario from a captured pcap file:\n");
-  fprintf (stdout, "\n");
-  fprintf (stdout, "                           +---------------------+\n");
-  fprintf (stdout, "                           |captured pcap-ng file|\n");
-  fprintf (stdout, "                           +----------+----------+\n");
-  fprintf (stdout, "                                      |\n");
-  fprintf (stdout, "                             mme_test_s1_pcap2pdml  \n");
-  fprintf (stdout, "                                      |\n");
-  fprintf (stdout, "  +------------------------+ +--------V----------+ +------------------------+\n");
-  fprintf (stdout, "  |'old-enb-conf-file' file| |'pdml-in-orig' file| |'new-enb-conf-file' file|\n");
-  fprintf (stdout, "  +------------+-----------+ +--------+----------+ +------------+-----------+\n");
-  fprintf (stdout, "               |                      |                         |\n");
-  fprintf (stdout, "               +----------------------+-------------------------+\n");
-  fprintf (stdout, "                                      |\n");
-  fprintf (stdout, "                                      V\n");
-  fprintf (stdout, "                  generate_scenario -t <dir> -p <file>  -o <file>  -n <file> \n");
-  fprintf (stdout, "                       |  ^                           |\n");
-  fprintf (stdout, "                       |  |                           |\n");
-  fprintf (stdout, "        +--------------V------------+    +------------V----------------+\n");
-  fprintf (stdout, "        |'xml-scenario-generic' file|    |'xml-scenario-dedicated' file|\n");
-  fprintf (stdout, "        +---------------------------+    +-----------------------------+\n");
 }
-
 
 //------------------------------------------------------------------------------
 int
@@ -618,28 +581,22 @@ config_parse_opt_line (
 {
   int                           option;
   int                           rv                         = 0;
-  char                         *new_enb_config_file_name   = NULL;
   char                         *old_enb_config_file_name   = NULL;
   char                         *pdml_in_file_name          = NULL;
-  char                         *generic_scenario_file_name = NULL;
   char                         *test_dir_name              = NULL;
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
-    LONG_OPTION_NEW_ENB_CONF_FILE,
     LONG_OPTION_OLD_ENB_CONF_FILE,
     LONG_OPTION_PDML,
     LONG_OPTION_TEST_DIR,
-    LONG_OPTION_SCENARIO_GENERIC,
     LONG_OPTION_HELP,
   };
 
   static struct option long_options[] = {
     {"old-enb-conf-file",      required_argument, 0, LONG_OPTION_OLD_ENB_CONF_FILE},
-    {"new-enb-conf-file",      required_argument, 0, LONG_OPTION_NEW_ENB_CONF_FILE},
     {"pdml ",                  required_argument, 0, LONG_OPTION_PDML},
     {"test-dir",               required_argument, 0, LONG_OPTION_TEST_DIR},
-    {"scenario-generic",       required_argument, 0, LONG_OPTION_SCENARIO_GENERIC},
     {"help",                   required_argument, 0, LONG_OPTION_HELP},
     {NULL, 0, NULL, 0}
   };
@@ -655,15 +612,6 @@ config_parse_opt_line (
           old_enb_config_file_name = optarg;
           printf("Old eNB config file name is %s\n", old_enb_config_file_name);
           rv |= GENERATE_GENERIC_SCENARIO;
-        }
-        break;
-
-      case LONG_OPTION_NEW_ENB_CONF_FILE:
-      case 'n':
-        if (optarg) {
-          new_enb_config_file_name = optarg;
-          printf("New eNB config file name is %s\n", new_enb_config_file_name);
-          rv |= GENERATE_DEDICATED_SCENARIO;
         }
         break;
 
@@ -685,15 +633,6 @@ config_parse_opt_line (
             exit(1);
           }
           printf("Test dir name is %s\n", test_dir_name);
-        }
-        break;
-
-      case LONG_OPTION_SCENARIO_GENERIC:
-      case 's':
-        if (optarg) {
-          generic_scenario_file_name = strdup(optarg);
-          printf("Generic XML scenario input file name is %s\n", generic_scenario_file_name);
-          rv |= GENERATE_DEDICATED_SCENARIO;
         }
         break;
 
@@ -720,8 +659,8 @@ config_parse_opt_line (
     if (is_file_exists(old_enb_config_file_name, "Old eNB config file") != GS_IS_FILE) {
       fprintf(stderr, "Error: original eNB config file name %s is not found in dir %s\n", old_enb_config_file_name, g_test_dir);
     }
-    enb_config_init(old_enb_config_file_name, ENB_CONFIG_PROPERTIES_INDEX_OLD);
-    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_OLD);
+    enb_config_init(old_enb_config_file_name);
+    enb_config_display();
 
     if (NULL == pdml_in_file_name) {
       fprintf(stderr, "Error: please provide the PDML file name that should be in %s\n", g_test_dir);
@@ -730,25 +669,6 @@ config_parse_opt_line (
       fprintf(stderr, "Error: PDML file name %s is not found in dir %s\n", pdml_in_file_name, g_test_dir);
     }
     g_pdml_in_origin = pdml_in_file_name; pdml_in_file_name = NULL;
-  }
-
-  if (rv & GENERATE_DEDICATED_SCENARIO) {
-    if (NULL == new_enb_config_file_name) {
-      fprintf(stderr, "Error: please provide the new eNB config file name that should be in %s\n", g_test_dir);
-    }
-    if (is_file_exists(new_enb_config_file_name, "New eNB config file") != GS_IS_FILE) {
-      fprintf(stderr, "Error: New eNB config file name %s is not found in dir %s\n", new_enb_config_file_name, g_test_dir);
-    }
-    enb_config_init(new_enb_config_file_name, ENB_CONFIG_PROPERTIES_INDEX_NEW);
-    enb_config_display(ENB_CONFIG_PROPERTIES_INDEX_NEW);
-
-    if (NULL == generic_scenario_file_name) {
-      fprintf(stderr, "Error: please provide the Generic scenario file name that should be in %s\n", g_test_dir);
-    }
-    if (is_file_exists(generic_scenario_file_name, "Generic scenario file") != GS_IS_FILE) {
-      fprintf(stderr, "Error: Generic scenario file name %s is not found in dir %s\n", generic_scenario_file_name, g_test_dir);
-    }
-    g_generic_scenario = generic_scenario_file_name; generic_scenario_file_name = NULL;
   }
   return rv;
 }
@@ -765,16 +685,12 @@ int main( int argc, char **argv )
     exit(1);
   }
 
-  memset((char*) &g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD], 0 , sizeof(g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_OLD]));
-  memset((char*) &g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_NEW], 0 , sizeof(g_enb_properties[ENB_CONFIG_PROPERTIES_INDEX_NEW]));
+  memset((char*) &g_enb_properties, 0 , sizeof(g_enb_properties));
 
   actions = config_parse_opt_line (argc, argv); //Command-line options
   if  (actions & GENERATE_GENERIC_SCENARIO) {
     generate_generic_scenario(g_test_dir, g_pdml_in_origin);
   }
-  /*if  (actions & GENERATE_DEDICATED_SCENARIO) {
-    generate_dedicated_scenario(g_test_dir, g_pdml_in_origin);
-  }*/
 
   return 0;
 }

@@ -126,7 +126,7 @@ typedef struct Enb_properties_array_s {
   Enb_properties_t    *properties[EPC_TEST_SCENARIO_MAX_ENB];
 } Enb_properties_array_t;
 
-void enb_config_init(const char const * lib_config_file_name_pP, const boolean_t new_config_fileP);
+void enb_config_init(const char const * lib_config_file_name_pP);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */
