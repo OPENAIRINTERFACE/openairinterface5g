@@ -34,7 +34,7 @@
   <xsl:param name="mme_s1c3_2" select="'0.0.0.0'"/>
   <xsl:param name="mme_s1c3_3" select="'0.0.0.0'"/>
 
-  <xsl:template match="ip.src[parent::payload]/@value">
+  <xsl:template match="ip.src[parent::packet]/@value">
     <xsl:choose>
       <xsl:when test=".='enb_s1c0'"><xsl:value-of select="$enb_s1c0"/></xsl:when>
       <xsl:when test=".='enb_s1c1'"><xsl:value-of select="$enb_s1c1"/></xsl:when>
@@ -67,7 +67,7 @@
     </xsl:choose> 
   </xsl:template>
   
-  <xsl:template match="ip.dst[parent::payload]/@value">
+  <xsl:template match="ip.dst[parent::packet]/@value">
     <xsl:choose>
       <xsl:when test=".='enb_s1c0'"><xsl:value-of select="$enb_s1c0"/></xsl:when>
       <xsl:when test=".='enb_s1c1'"><xsl:value-of select="$enb_s1c1"/></xsl:when>

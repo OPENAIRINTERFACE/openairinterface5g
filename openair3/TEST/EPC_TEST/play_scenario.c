@@ -49,7 +49,6 @@
 #include <unistd.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/debugXML.h>
-#include <libxml/HTMLtree.h>
 #include <libxml/xmlIO.h>
 #include <libxml/DOCBparser.h>
 #include <libxml/xinclude.h>
@@ -138,16 +137,132 @@ int split_path( char * pathP, char *** resP)
   }
   return n_spaces;
 }
-
 //------------------------------------------------------------------------------
-void play_scenario(
+void display_node(xmlNodePtr node) {
+  if (node->type == XML_ELEMENT_NODE) {
+    xmlChar *path = xmlGetNodePath(node);
+    if (node->children != NULL && node->children->type == XML_TEXT_NODE) {
+      xmlChar *content = xmlNodeGetContent(node);
+      printf("%s -> %s\n", path, content);
+      xmlFree(content);
+    } else {
+      printf("%s\n", path);
+    }
+    xmlFree(path);
+  }
+}
+//------------------------------------------------------------------------------
+void free_scenario(test_scenario_t* scenario)
+{
+  //TODO
+}
+//------------------------------------------------------------------------------
+sctp_cid_t chunk_type_str2cid(xmlChar *chunk_type_str)
+{
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"DATA")))              { return SCTP_CID_DATA;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"INIT")))              { return SCTP_CID_INIT;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"INIT_ACK")))          { return SCTP_CID_INIT_ACK;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"SACK")))              { return SCTP_CID_SACK;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"HEARTBEAT")))         { return SCTP_CID_HEARTBEAT;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"HEARTBEAT_ACK")))     { return SCTP_CID_HEARTBEAT_ACK;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ABORT")))             { return SCTP_CID_ABORT;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"SHUTDOWN")))          { return SCTP_CID_SHUTDOWN;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"SHUTDOWN_ACK")))      { return SCTP_CID_SHUTDOWN_ACK;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ERROR")))             { return SCTP_CID_ERROR;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"COOKIE_ECHO")))       { return SCTP_CID_COOKIE_ECHO;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"COOKIE_ACK")))        { return SCTP_CID_COOKIE_ACK;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ECN_ECNE")))          { return SCTP_CID_ECN_ECNE;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ECN_CWR")))           { return SCTP_CID_ECN_CWR;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"SHUTDOWN_COMPLETE"))) { return SCTP_CID_SHUTDOWN_COMPLETE;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"AUTH")))              { return SCTP_CID_AUTH;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"FWD_TSN")))           { return SCTP_CID_FWD_TSN;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ASCONF")))            { return SCTP_CID_ASCONF;}
+  if ((!xmlStrcmp(chunk_type_str, (const xmlChar *)"ASCONF_ACK")))        { return SCTP_CID_ASCONF_ACK;}
+  fprintf(stderr, "ERROR: Could not convert: %s\n", chunk_type_str);
+  exit(-1);
+}
+//------------------------------------------------------------------------------
+test_packet_t* parse_xml_packet(xmlNodePtr node) {
+
+  test_packet_t *packet   = NULL;
+  xmlNode       *cur_node = NULL;
+  xmlChar       *xml_char = NULL;
+
+  if (NULL != node) {
+    packet = calloc(1, sizeof(*packet));
+
+    for (cur_node = node->children; cur_node; cur_node = cur_node->next) {
+      if (cur_node->type == XML_ELEMENT_NODE) {
+        printf("node type: Element, name: %s\n", cur_node->name);
+        if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"frame.time_relative"))) {
+        } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"ip.src"))) {
+        } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"ip.dst"))) {
+        } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"sctp.chunk_type_str"))) {
+          xml_char = xmlGetProp(cur_node, (const xmlChar *)"value");
+          packet->sctp_hdr.chunk_type = chunk_type_str2cid(xml_char);
+          fprintf(stdout, "chunk_type_str2cid: %s\n", xml_char);
+        }
+      }
+    }
+  }
+  return packet;
+}
+//------------------------------------------------------------------------------
+int play_scenario(test_scenario_t* scenario) {
+  //TODO
+  return 0;
+}
+//------------------------------------------------------------------------------
+test_scenario_t* generate_scenario(
     const char const * play_scenario_filename )
 {
+  xmlDocPtr         doc      = NULL;
+  xmlNodePtr        root     = NULL;
+  xmlNodePtr        node     = NULL;
+  xmlChar          *xml_char = NULL;
+  test_scenario_t  *scenario = NULL;
+  test_packet_t    *packet   = NULL;
+  test_packet_t   **next_packet   = NULL;
 
+  doc = xmlParseFile(play_scenario_filename);
+  if (NULL == doc) {
+    AssertFatal (0, "Could not parse scenario xml file %s!\n", play_scenario_filename);
+  } else {
+    fprintf(stdout, "Test scenario file to play: %s\n", play_scenario_filename);
+  }
+
+  // Get root
+  root = xmlDocGetRootElement(doc);
+  if (NULL != root) {
+    if ((!xmlStrcmp(root->name, (const xmlChar *)"scenario"))) {
+      xml_char = xmlGetProp(root, (const xmlChar *)"name");
+      printf("scenario name: %s\n", xml_char);
+      scenario = calloc(1, sizeof(*scenario));
+      scenario->name = xml_char; // nodup nofree
+      next_packet = &scenario->list_packet;
+      for (node = root->children; node != NULL; node = node->next) {
+        if ((!xmlStrcmp(node->name, (const xmlChar *)"packet"))) {
+          packet = parse_xml_packet(node);
+          if (NULL != packet) {
+            *next_packet = packet;
+            next_packet = &packet->next;
+          } else {
+            fprintf(stdout, "WARNING omitted packet:\n");
+            display_node(node);
+          }
+        }
+      }
+    }
+  } else {
+    fprintf(stderr, "Empty xml document\n");
+  }
+  xmlFreeDoc(doc);
+  xmlCleanupParser();
+  return scenario;
 }
 
 //------------------------------------------------------------------------------
-int generate_play_scenario(
+int generate_xml_scenario(
     const char const * test_dir_name,
     const char const * test_scenario_filename,
     const char const * enb_config_filename,
@@ -180,7 +295,7 @@ int generate_play_scenario(
 
   xmlSubstituteEntitiesDefault(1);
   xmlLoadExtDtdDefaultValue = 1;
-  cur = xsltParseStylesheetFile(astring);
+  cur = xsltParseStylesheetFile((const xmlChar *)astring);
   if (NULL == cur) {
     AssertFatal (0, "Could not parse stylesheet file %s (check OPENAIR_DIR env variable)!\n", astring);
   } else {
@@ -215,7 +330,6 @@ int generate_play_scenario(
   params[nb_params] = NULL;
   res = xsltApplyStylesheet(cur, doc, params);
   if (NULL != res) {
-    // since pdml filename is not relative (no path), just filename in current directory we can safely remove
     sprintf(play_scenario_filename,"%s",test_scenario_filename);
     if (strip_extension(play_scenario_filename) > 0) {
       strcat(play_scenario_filename, ".tsml");
@@ -237,8 +351,8 @@ int generate_play_scenario(
     ret = -1;
   }
   xsltFreeStylesheet(cur);
-  xmlFreeDoc(res);
   xmlFreeDoc(doc);
+  xmlFreeDoc(res);
 
   xsltCleanupGlobals();
   xmlCleanupParser();
@@ -378,11 +492,13 @@ config_parse_opt_line (
 int main( int argc, char **argv )
 //------------------------------------------------------------------------------
 {
-  int     actions              = 0;
-  char   *test_dir_name        = NULL;
-  char   *scenario_file_name   = NULL;
-  char   *enb_config_file_name = NULL;
-  char    play_scenario_filename[NAME_MAX];
+  int              actions              = 0;
+  char            *test_dir_name        = NULL;
+  char            *scenario_file_name   = NULL;
+  char            *enb_config_file_name = NULL;
+  char             play_scenario_filename[NAME_MAX];
+  int              ret                  = 0;
+  test_scenario_t *scenario             = NULL;
 
   memset(play_scenario_filename, 0, sizeof(play_scenario_filename));
   g_openair_dir = getenv("OPENAIR_DIR");
@@ -393,13 +509,21 @@ int main( int argc, char **argv )
 
   actions = config_parse_opt_line (argc, argv, &test_dir_name, &scenario_file_name, &enb_config_file_name); //Command-line options
   if  (actions & PLAY_SCENARIO) {
-    if (generate_play_scenario(test_dir_name, scenario_file_name,enb_config_file_name, play_scenario_filename) == 0) {
-      play_scenario(play_scenario_filename);
+    if (generate_xml_scenario(test_dir_name, scenario_file_name,enb_config_file_name, play_scenario_filename) == 0) {
+      if (NULL != (scenario = generate_scenario(play_scenario_filename))) {
+        ret = play_scenario(scenario);
+      } else {
+        fprintf(stderr, "Error: Could not generate scenario from tsml file\n");
+        ret = -1;
+      }
+    } else {
+      fprintf(stderr, "Error: Could not generate tsml scenario from xml file\n");
+      ret = -1;
     }
     free_pointer(test_dir_name);
     free_pointer(scenario_file_name);
     free_pointer(enb_config_file_name);
   }
 
-  return 0;
+  return ret;
 }
