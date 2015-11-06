@@ -121,6 +121,7 @@ function main()
       echo "Cleaning TEST_EPC"
     fi
     rm -f $OPENAIR_DIR/targets/bin/test_epc_generate_scenario
+    rm -f $OPENAIR_DIR/targets/bin/test_epc_play_scenario
     rm -Rf build 2>&1
     mkdir -m 777 -p -v build
   fi
@@ -140,6 +141,9 @@ function main()
   compilations \
       epc_test test_epc_generate_scenario \
       test_epc_generate_scenario $dbin/test_epc_generate_scenario
+  compilations \
+      epc_test test_epc_play_scenario \
+      test_epc_play_scenario $dbin/test_epc_play_scenario
 }
 
 

@@ -100,11 +100,10 @@ Enb_properties_array_t g_enb_properties;
 char                  *g_openair_dir      = NULL;
 char                  *g_test_dir         = NULL;
 char                  *g_pdml_in_origin   = NULL;
-char                  *g_generic_scenario = NULL;
 extern int             xmlLoadExtDtdDefaultValue;
 
 #define GENERATE_PDML_FILE           1
-#define GENERATE_GENERIC_SCENARIO    2
+#define GENERATE_SCENARIO    2
 
 #define GS_IS_FILE           1
 #define GS_IS_DIR            2
@@ -172,14 +171,14 @@ int split_path( char * pathP, char *** resP)
 }
 
 //------------------------------------------------------------------------------
-int generate_generic_scenario(const char const * test_nameP, const char const * pdml_in_basenameP)
+int generate_test_scenario(const char const * test_nameP, const char const * pdml_in_basenameP)
 //------------------------------------------------------------------------------
 {
   //int fd_pdml_in;
   xsltStylesheetPtr cur = NULL;
   xmlDocPtr         doc, res;
-  FILE             *generic_scenario_file = NULL;
-  const char        generic_scenario_filename[NAME_MAX];
+  FILE             *test_scenario_file = NULL;
+  const char        test_scenario_filename[NAME_MAX];
   const char       *params[2*ENB_CONFIG_MAX_XSLT_PARAMS];
   int               nb_params = 0;
   int               i,j;
@@ -187,7 +186,7 @@ int generate_generic_scenario(const char const * test_nameP, const char const * 
   char             *astring2 = NULL;
   struct in_addr    addr;
 
-  memset(generic_scenario_filename, 0, sizeof(generic_scenario_filename));
+  memset(test_scenario_filename, 0, sizeof(test_scenario_filename));
   memset(astring, 0, sizeof(astring));
   if (getcwd(astring, sizeof(astring)) != NULL) {
     fprintf(stdout, "working in %s directory\n", astring);
@@ -249,16 +248,16 @@ int generate_generic_scenario(const char const * test_nameP, const char const * 
   res = xsltApplyStylesheet(cur, doc, params);
   if (NULL != res) {
     // since pdml filename is not relative (no path), just filename in current directory we can safely remove
-    sprintf(generic_scenario_filename,"%s",pdml_in_basenameP);
-    if (strip_extension(generic_scenario_filename) > 0) {
-      strcat(generic_scenario_filename, "_generic_scenario.xml");
-      generic_scenario_file = fopen( generic_scenario_filename, "w+");
-      if (NULL != generic_scenario_file) {
-        xsltSaveResultToFile(generic_scenario_file, res, cur);
-        fclose(generic_scenario_file);
-        fprintf(stdout, "Wrote generic scenario to %s\n", generic_scenario_filename);
+    sprintf(test_scenario_filename,"%s",pdml_in_basenameP);
+    if (strip_extension(test_scenario_filename) > 0) {
+      strcat(test_scenario_filename, ".xml");
+      test_scenario_file = fopen( test_scenario_filename, "w+");
+      if (NULL != test_scenario_file) {
+        xsltSaveResultToFile(test_scenario_file, res, cur);
+        fclose(test_scenario_file);
+        fprintf(stdout, "Wrote test scenario to %s\n", test_scenario_filename);
       } else {
-        fprintf(stderr, "Error in fopen(%s)\n", generic_scenario_filename);
+        fprintf(stderr, "Error in fopen(%s)\n", test_scenario_filename);
       }
     } else {
       fprintf(stderr, "Error in strip_extension()\n");
@@ -537,17 +536,17 @@ static void usage (
     char *argv[])
 //------------------------------------------------------------------------------
 {
-  fprintf (stdout, "Please report any bug to: openair4g-devel@lists.eurecom.fr\n\n");
+  fprintf (stdout, "Please report any bug to: %s\n",PACKAGE_BUGREPORT);
   fprintf (stdout, "Usage: %s [options]\n\n", argv[0]);
+  fprintf (stdout, "\n");
   fprintf (stdout, "Mandatory options:\n");
-  fprintf (stdout, "\t-t | --test-dir <dir>              Directory where a set of files related to a particular test are located\n");
+  fprintf (stdout, "\t-c | --enb-conf-file    <file>     Provide the old eNB config file for generating a copy of the original test\n");
+  fprintf (stdout, "\t-d | --test-dir         <dir>      Directory where a set of files related to a particular test are located\n");
+  fprintf (stdout, "\t-p | --pdml             <file>     File name (with no path) in 'test-dir' directory of an original scenario that has to be reworked (IP addresses) with new testbed\n");
   fprintf (stdout, "\n");
-  fprintf (stdout, "Available options:\n");
+  fprintf (stdout, "Other options:\n");
   fprintf (stdout, "\t-h | --help                        Print this help and return\n");
-  fprintf (stdout, "\t-o | --old-enb-conf-file <file>    Provide the old eNB config file for generating a copy of the original test\n");
-  fprintf (stdout, "                                     This option is set as many times as there are some eNB config files in the original test\n");
-  fprintf (stdout, "\t-p | --pdml             <file>     File name (with no path) of an original scenario that has to be reworked (IP addresses) with new testbed\n");
-  fprintf (stdout, "\n");
+  fprintf (stdout, "\t-v | --version                     Print informations about the version of this executable\n");
   fprintf (stdout, "\n");
   fprintf (stdout, "Example of generate_scenario use case:  \n");
   fprintf (stdout, "\n");
@@ -558,16 +557,16 @@ static void usage (
   fprintf (stdout, "                      |\n");
   fprintf (stdout, "             mme_test_s1_pcap2pdml --pcap_file <`captured pcap-ng file`>\n");
   fprintf (stdout, "                      |\n");
-  fprintf (stdout, "             +--------V----------+    +------------------------+\n");
-  fprintf (stdout, "             |'pdml-in-orig' file|    |'old-enb-conf-file' file|\n");
-  fprintf (stdout, "             +--------+----------+    +------------+-----------+\n");
+  fprintf (stdout, "             +--------V----------+    +--------------------+\n");
+  fprintf (stdout, "             |'pdml-in-orig' file|    |'enb-conf-file' file|\n");
+  fprintf (stdout, "             +--------+----------+    +--------------------+\n");
   fprintf (stdout, "                      |                            |\n");
   fprintf (stdout, "                      +----------------------------+\n");
   fprintf (stdout, "                      |\n");
-  fprintf (stdout, "      generate_scenario -t <dir> -p <'pdml-in-orig' file>  -o <'old-enb-conf-file' file> \n");
+  fprintf (stdout, "      generate_scenario -d <dir> -p <'pdml-in-orig' file>  -c <'enb-conf-file' file> \n");
   fprintf (stdout, "                      |\n");
   fprintf (stdout, "         +------------V--------------+\n");
-  fprintf (stdout, "         +'xml-scenario-generic' file|\n");
+  fprintf (stdout, "         +'xml-test-scenario' file   |\n");
   fprintf (stdout, "         +---------------------------+\n");
   fprintf (stdout, "\n");
 }
@@ -581,37 +580,39 @@ config_parse_opt_line (
 {
   int                           option;
   int                           rv                         = 0;
-  char                         *old_enb_config_file_name   = NULL;
+  char                         *enb_config_file_name   = NULL;
   char                         *pdml_in_file_name          = NULL;
   char                         *test_dir_name              = NULL;
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
-    LONG_OPTION_OLD_ENB_CONF_FILE,
+    LONG_OPTION_ENB_CONF_FILE,
     LONG_OPTION_PDML,
     LONG_OPTION_TEST_DIR,
     LONG_OPTION_HELP,
+    LONG_OPTION_VERSION,
   };
 
   static struct option long_options[] = {
-    {"old-enb-conf-file",      required_argument, 0, LONG_OPTION_OLD_ENB_CONF_FILE},
-    {"pdml ",                  required_argument, 0, LONG_OPTION_PDML},
-    {"test-dir",               required_argument, 0, LONG_OPTION_TEST_DIR},
-    {"help",                   required_argument, 0, LONG_OPTION_HELP},
+    {"enb-conf-file",      required_argument, 0, LONG_OPTION_ENB_CONF_FILE},
+    {"pdml ",              required_argument, 0, LONG_OPTION_PDML},
+    {"test-dir",           required_argument, 0, LONG_OPTION_TEST_DIR},
+    {"help",               no_argument,       0, LONG_OPTION_HELP},
+    {"version",            no_argument,       0, LONG_OPTION_VERSION},
     {NULL, 0, NULL, 0}
   };
 
   /*
    * Parsing command line
    */
-  while ((option = getopt_long (argc, argv, "hp:n:o:s:t:", long_options, NULL)) != -1) {
+  while ((option = getopt_long (argc, argv, "vhp:n:c:s:d:", long_options, NULL)) != -1) {
     switch (option) {
-      case LONG_OPTION_OLD_ENB_CONF_FILE:
-      case 'o':
+      case LONG_OPTION_ENB_CONF_FILE:
+      case 'c':
         if (optarg) {
-          old_enb_config_file_name = optarg;
-          printf("Old eNB config file name is %s\n", old_enb_config_file_name);
-          rv |= GENERATE_GENERIC_SCENARIO;
+          enb_config_file_name = optarg;
+          printf("eNB config file name is %s\n", enb_config_file_name);
+          rv |= GENERATE_SCENARIO;
         }
         break;
 
@@ -620,12 +621,12 @@ config_parse_opt_line (
         if (optarg) {
           pdml_in_file_name = strdup(optarg);
           printf("PDML input file name is %s\n", pdml_in_file_name);
-          rv |= GENERATE_GENERIC_SCENARIO;
+          rv |= GENERATE_SCENARIO;
         }
         break;
 
       case LONG_OPTION_TEST_DIR:
-      case 't':
+      case 'd':
         if (optarg) {
           test_dir_name = strdup(optarg);
           if (is_file_exists(test_dir_name, "test dirname") != GS_IS_DIR) {
@@ -634,6 +635,12 @@ config_parse_opt_line (
           }
           printf("Test dir name is %s\n", test_dir_name);
         }
+        break;
+
+      case LONG_OPTION_VERSION:
+      case 'v':
+        printf("Version %s\n", PACKAGE_VERSION);
+        exit (0);
         break;
 
       case LONG_OPTION_HELP:
@@ -652,14 +659,14 @@ config_parse_opt_line (
     fprintf(stderr, "Error: chdir %s returned %s\n", g_test_dir, strerror(errno));
     exit(1);
   }
-  if (rv & GENERATE_GENERIC_SCENARIO) {
-    if (NULL == old_enb_config_file_name) {
+  if (rv & GENERATE_SCENARIO) {
+    if (NULL == enb_config_file_name) {
       fprintf(stderr, "Error: please provide the original eNB config file name that should be in %s\n", g_test_dir);
     }
-    if (is_file_exists(old_enb_config_file_name, "Old eNB config file") != GS_IS_FILE) {
-      fprintf(stderr, "Error: original eNB config file name %s is not found in dir %s\n", old_enb_config_file_name, g_test_dir);
+    if (is_file_exists(enb_config_file_name, "ENB config file") != GS_IS_FILE) {
+      fprintf(stderr, "Error: eNB config file name %s is not found in dir %s\n", enb_config_file_name, g_test_dir);
     }
-    enb_config_init(old_enb_config_file_name);
+    enb_config_init(enb_config_file_name);
     enb_config_display();
 
     if (NULL == pdml_in_file_name) {
@@ -688,8 +695,8 @@ int main( int argc, char **argv )
   memset((char*) &g_enb_properties, 0 , sizeof(g_enb_properties));
 
   actions = config_parse_opt_line (argc, argv); //Command-line options
-  if  (actions & GENERATE_GENERIC_SCENARIO) {
-    generate_generic_scenario(g_test_dir, g_pdml_in_origin);
+  if  (actions & GENERATE_SCENARIO) {
+    generate_test_scenario(g_test_dir, g_pdml_in_origin);
   }
 
   return 0;
