@@ -254,15 +254,15 @@ check_install_oai_software() {
 	openssh-server \
 	openssl \
 	python  \
-	subversion
+	subversion \
+        xmlstarlet
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
-	install_gnutls_from_source
+        install_gnutls_from_source
     else
         $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin 
     fi
-    install_freediameter_from_source
     install_asn1c_from_source
 }
 
@@ -311,12 +311,10 @@ set_openair_env(){
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/cmake_targets/*}
     openair_path=${openair_path%/targets/*}
-    openair_path=${openair_path%/openair3/*}
     openair_path=${openair_path%/openair[123]/*}    
     export OPENAIR_DIR=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
-    export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR_TARGETS=$openair_path/targets
 }

@@ -47,8 +47,12 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 REL="Rel10"
 HW="EXMIMO"
+NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
+CFLAGS_PROCESSOR_USER=""
+RUN_GROUP=0
+TEST_CASE_GROUP=""
 
 function print_help() {
   echo_info '
@@ -94,6 +98,8 @@ Options
    Makes the core security features unitary simulators
 -s | --check
    runs a set of auto-tests based on simulators and several compilation tests
+--run-group 
+   runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
@@ -105,6 +111,9 @@ Options
    Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
 --verbose-compile
    Shows detailed compilation instructions in makefile
+--cflags_processor
+   Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
+
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
@@ -189,6 +198,11 @@ function main() {
             OAI_TEST=1
             echo_info "Will run auto-tests"
             shift;;
+       --run-group)
+            RUN_GROUP=1
+            TEST_CASE_GROUP=$2
+            echo_info "executing test cases only in group: $TEST_CASE_GROUP"
+            shift 2;;
        -V | --vcd)
             echo_info "setting gtk-wave output"
             VCD_TIMING=1
@@ -211,6 +225,10 @@ function main() {
 	    VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
+       --cflags_processor)
+            CFLAGS_PROCESSOR_USER=$2
+            echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            shift 2;;
         -h | --help)
             print_help
             exit 1;;
@@ -254,17 +272,14 @@ function main() {
   if [ "$INSTALL_EXTERNAL" = "1" ] ; then
     echo_info "Installing packages"
     check_install_oai_software
-    echo_info "Making X.509 certificates"
-    make_certs eur
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
-    fi
+    fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BALDERF support"
       check_install_bladerf_driver
     fi
-
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -304,6 +319,7 @@ function main() {
     if [ "$NOS1" = "1" ] ; then
 	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
     fi
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
@@ -314,7 +330,7 @@ function main() {
     cmake ..
   fi
 
-  if [ "$eNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
     echo_info "Compiling $lte_exec"
     compilations \
 	  $lte_build_dir $lte_exec \
@@ -331,7 +347,7 @@ function main() {
     fi
   fi
 
-  if [ "$UE" = 1 ] ; then
+  if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
     # ue_ip driver compilation
     echo_info "Compiling UE specific part"
     compilations \
@@ -432,6 +448,7 @@ function main() {
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
     cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
@@ -568,8 +585,11 @@ function main() {
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
-    $OPENAIR_DIR/cmake_targets/autotests/run_compilation_autotests.bash
-    $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    if [ "$RUN_GROUP" -eq "1" ]; then
+        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP"
+    else
+        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    fi
   else
     echo_info "10. Bypassing the Tests ..."
   fi
