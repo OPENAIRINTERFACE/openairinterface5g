@@ -1078,7 +1078,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   struct LogicalChannelConfig        *DRB_lchan_config                 = NULL;
   struct LogicalChannelConfig__ul_SpecificParameters
       *DRB_ul_SpecificParameters        = NULL;
-  DRB_ToAddModList_t**                DRB_configList; 
+  DRB_ToAddModList_t**                DRB_configList=&ue_context_pP->ue_context.DRB_configList; 
   //DRB_ToAddModList_t**                RRC_DRB_configList=&ue_context_pP->ue_context.DRB_configList;
 
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
@@ -1109,6 +1109,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
     DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
     *(DRB_config->logicalChannelIdentity) = (long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
+    
     DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
     DRB_config->rlc_Config = DRB_rlc_config;
 
@@ -1129,6 +1130,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
       DRB_rlc_config->present = RLC_Config_PR_um_Bi_Directional;
       DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
       DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
+      DRB_rlc_config->choice.um_Bi_Directional.dl_UM_RLC.t_Reordering = T_Reordering_ms35;
       // PDCP
       PDCP_rlc_UM = CALLOC(1, sizeof(*PDCP_rlc_UM));
       DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
@@ -1171,9 +1173,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_ul_SpecificParameters->bucketSizeDuration =
       LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     
-    // LCG for DTCH can take the value from 1 to 3 as defined in 36331: normally controlled by upper layers (like RRM)
     logicalchannelgroup_drb = CALLOC(1, sizeof(long));
-    *logicalchannelgroup_drb = 1;
+    *logicalchannelgroup_drb = (i+1) % 3;
     DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
     
     ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
@@ -1801,6 +1802,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 
     /* TODO should test if e RAB are Ok before! */
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE;
+    LOG_D(RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n", 
+	  i, ue_context_pP->ue_context.e_rab[i].status, "E_RAB_STATUS_DONE");
   }
 
   /* If list is empty free the list and reset the address */
@@ -4188,6 +4191,7 @@ rrc_eNB_decode_dcch(
       }    
 #else  // establish a dedicated bearer 
       if (dedicated_DRB == 0 ) {
+	//	ue_context_p->ue_context.e_rab[0].status = E_RAB_STATUS_ESTABLISHED;
 	rrc_eNB_reconfigure_DRBs(ctxt_pP,ue_context_p);
       }
       
@@ -4402,7 +4406,14 @@ rrc_eNB_decode_dcch(
                                               ue_context_p,
                                               ul_dcch_msg);
       }
-
+#else 
+      ue_context_p->ue_context.nb_of_e_rabs = 1;
+      for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++){
+	ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+	ue_context_p->ue_context.e_rab[i].param.e_rab_id = 1+i;
+	ue_context_p->ue_context.e_rab[i].param.qos.qci=9;
+      }
+      ue_context_p->ue_context.setup_e_rabs =ue_context_p->ue_context.nb_of_e_rabs;
 #endif
 
       rrc_eNB_generate_defaultRRCConnectionReconfiguration(ctxt_pP,
@@ -4491,29 +4502,29 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
   int i;
 
   for (i = 0; 
-       i < NB_RB_MAX;  // S1AP_MAX_E_RAB
+       i < NB_RB_MAX - 3;  // S1AP_MAX_E_RAB
        i++) {
     
-    if ( (ue_context_pP->ue_context.e_rab[i].status != E_RAB_STATUS_ESTABLISHED) || 
-	 (ue_context_pP->ue_context.e_rab[i].status != E_RAB_STATUS_DONE)  ){ 
-	LOG_I(RRC,"setting up the dedicated DRBs %d \n", i);
-	ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
-        ue_context_pP->ue_context.e_rab[i].param.e_rab_id = i;
-	ue_context_pP->ue_context.e_rab[i].param.qos.qci = i % 9;
-	ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level= i % PRIORITY_LEVEL_LOWEST;
-	ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_capability= PRE_EMPTION_CAPABILITY_DISABLED;
-	ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_vulnerability= PRE_EMPTION_VULNERABILITY_DISABLED;
-	ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
-	ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length = 0;
-	//	memset (ue_context_pP->ue_context.e_rab[i].param.sgw_addr.buffer,0,20);
-	ue_context_pP->ue_context.e_rab[i].param.sgw_addr.length = 0;
-	ue_context_pP->ue_context.e_rab[i].param.gtp_teid=0;
-	
-       	ue_context_pP->ue_context.nb_of_e_rabs++;
-	}
+    if ( ue_context_pP->ue_context.e_rab[i].status < E_RAB_STATUS_DONE){ 
+      ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+      ue_context_pP->ue_context.e_rab[i].param.e_rab_id = i + 1;
+      ue_context_pP->ue_context.e_rab[i].param.qos.qci = i % 9;
+      ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level= i % PRIORITY_LEVEL_LOWEST;
+      ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_capability= PRE_EMPTION_CAPABILITY_DISABLED;
+      ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.pre_emp_vulnerability= PRE_EMPTION_VULNERABILITY_DISABLED;
+      ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer = NULL;
+      ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length = 0;
+      //	memset (ue_context_pP->ue_context.e_rab[i].param.sgw_addr.buffer,0,20);
+      ue_context_pP->ue_context.e_rab[i].param.sgw_addr.length = 0;
+      ue_context_pP->ue_context.e_rab[i].param.gtp_teid=0;
+      
+      ue_context_pP->ue_context.nb_of_e_rabs++;
+      
+      LOG_I(RRC,"setting up the dedicated DRBs %d (index %d) status %d \n", 
+	    ue_context_pP->ue_context.e_rab[i].param.e_rab_id, i, ue_context_pP->ue_context.e_rab[i].status);
+    }
     
     ue_context_pP->ue_context.setup_e_rabs+=ue_context_pP->ue_context.nb_of_e_rabs;
-
   }
   
   rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(ctxt_pP, ue_context_pP, 0);

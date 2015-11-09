@@ -906,7 +906,7 @@ pdcp_run (
           RRC_DCCH_DATA_REQ (msg_p).frame, 
 	  0,
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
-        LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+        LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
               PROTOCOL_CTXT_ARGS(&ctxt),
               msg_name,
               ITTI_MSG_ORIGIN_NAME(msg_p),
@@ -1427,7 +1427,7 @@ pdcp_config_req_asn1 (
     pdcp_pP->first_missing_pdu                = -1;
     pdcp_pP->rx_hfn_offset                    = 0;
 
-    LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (rb id %d) "
+    LOG_I(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (rb id %d) "
             "configured with SN size %d bits and RLC %s\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,
