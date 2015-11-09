@@ -220,7 +220,8 @@ typedef struct UE_S_TMSI_s {
 #if defined(ENABLE_ITTI)
 typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
-  E_RAB_STATUS_DONE,
+  E_RAB_STATUS_DONE, // from the eNB perspective
+  E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
   E_RAB_STATUS_FAILED,
 } e_rab_status_t;
 
@@ -229,7 +230,6 @@ typedef struct e_rab_param_s {
   uint8_t status;
 } __attribute__ ((__packed__)) e_rab_param_t;
 #endif
-
 
 
 
@@ -347,10 +347,12 @@ typedef struct eNB_RRC_UE_s {
 
   security_capabilities_t            security_capabilities;
 
+  /* Total number of e_rab already setup in the list */
+  uint8_t                           setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
   /* list of e_rab to be setup by RRC layers */
-  e_rab_param_t                      e_rab[S1AP_MAX_E_RAB];
+  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
 
   // LG: For GTPV1 TUNNELS
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];

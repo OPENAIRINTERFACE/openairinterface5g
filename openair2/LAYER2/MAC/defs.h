@@ -887,7 +887,7 @@ typedef struct {
   SBMAP_CONF sbmap_conf;
 
   ///  active flag for Other lcid
-  //  uint8_t lcid_active[NB_RB_MAX];
+  uint8_t lcid_active[NB_RB_MAX];
   /// eNB stats
   eNB_STATS eNB_stats[MAX_NUM_CCs];
   // MAC function execution peformance profiler

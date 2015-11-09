@@ -120,6 +120,14 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
     break;
 
 
+  case S1ap_ProcedureCode_id_E_RABSetup:
+    ret = s1ap_decode_s1ap_e_rabsetuprequesties(
+						&message->msg.s1ap_E_RABSetupRequestIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_paging(s1ap_xer__print2sp, message_string, message);
+    //message_id = S1AP_E_RABSETUP_REQ_LOG;
+    S1AP_ERROR("TODO E_RABSetup initiating message\n");
+    free(message_string);
+    break;
   default:
     S1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
                (int)initiating_p->procedureCode);

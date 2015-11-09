@@ -435,10 +435,12 @@ schedule_ue_spec(
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
-  unsigned char         sdu_lcids[11],offset,num_sdus=0;
+  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0, header_len_dcch_last=0; 
+  unsigned char         header_len_dtch=0, header_len_dtch_tmp=0, header_len_dtch_last=0; 
+  unsigned char         ta_len=0;
+  unsigned char         sdu_lcids[NB_RB_MAX],lcid,offset,num_sdus=0;
   uint16_t              nb_rb,nb_rb_temp,total_nb_available_rb[MAX_NUM_CCs],nb_available_rb;
-  uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
+  uint16_t              TBS,j,sdu_lengths[NB_RB_MAX],rnti,padding=0,post_padding=0;
   unsigned char         dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
   unsigned char         round            = 0;
   unsigned char         harq_pid         = 0;
@@ -903,84 +905,92 @@ schedule_ue_spec(
                                        ENB_FLAG_YES,
                                        MBMS_FLAG_NO,
                                        DCCH+1,
-                                       (char *)&dlsch_buffer[sdu_lengths[0]]);
+                                       (char *)&dlsch_buffer[sdu_lengths[num_sdus]]);
 
             sdu_lcids[num_sdus] = DCCH1;
             sdu_length_total += sdu_lengths[num_sdus];
             header_len_dcch += 2;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH1]+=1;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH1]+=sdu_lengths[num_sdus];
-            num_sdus++;
-            LOG_D(MAC,"[eNB %d] CC_id %d Got %d bytes for DCCH from RLC\n",module_idP,CC_id,sdu_lengths[0]);
-          }
+	    LOG_D(MAC,"[eNB %d] CC_id %d Got %d bytes for DCCH from RLC\n",module_idP,CC_id,sdu_lengths[num_sdus]);
+	    num_sdus++;
+	  }
         }
 
-        // check for DTCH and update header information
-        // here we should loop over all possible DTCH
+	// assume the max dtch header size, and adjust it later
+	header_len_dtch=0;
+	header_len_dtch_last=0; // the header length of the last mac sdu
+	// lcid has to be sorted before the actual allocation (similar struct as ue_list).
+	for (lcid=NB_RB_MAX-1; lcid>=DTCH ; lcid--){
+	  // TBD: check if the lcid is active
+	  
+	  header_len_dtch+=3; 
+	  header_len_dtch_last=3;
+	  LOG_D(MAC,"[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
+		module_idP,frameP,lcid,TBS,
+		TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+	  
+	  if (TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch > 0 ) { // NN: > 2 ? 
+	    rlc_status = mac_rlc_status_ind(module_idP,
+					    rnti,
+					    module_idP,
+					    frameP,
+					    ENB_FLAG_YES,
+					    MBMS_FLAG_NO,
+					    lcid,
+					    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+	   
 
-        header_len_dtch = 3; // 3 bytes DTCH SDU subheader
-
-        LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, CC_id %d, Checking RLC status (rab %d, tbs %d, len %d)\n",
-              module_idP,frameP,CC_id,DTCH,TBS,
-              TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-
-        if (TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch > 0 ) {
-          rlc_status = mac_rlc_status_ind(
-                         module_idP,
-                         rnti,
-			 module_idP,
-                         frameP,
-                         ENB_FLAG_YES,
-                         MBMS_FLAG_NO,
-                         DTCH,
-                         TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-
-          if (rlc_status.bytes_in_buffer > 0) {
-
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB], Frame %d, DTCH->DLSCH, CC_id %d, Requesting %d bytes from RLC (hdr len dtch %d)\n",
-                  module_idP,frameP,CC_id,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
-            sdu_lengths[num_sdus] = mac_rlc_data_req(
-                                      module_idP,
-                                      rnti,
-				      module_idP,
-                                      frameP,
-                                      ENB_FLAG_YES,
-                                      MBMS_FLAG_NO,
-                                      DTCH,
-                                      (char*)&dlsch_buffer[sdu_length_total]);
-
-            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] CC_id %d Got %d bytes for DTCH %d \n",
-                  module_idP,CC_id,sdu_lengths[num_sdus],DTCH);
-            sdu_lcids[num_sdus] = DTCH;
-            sdu_length_total += sdu_lengths[num_sdus];
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DTCH]+=1;
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DTCH]+=sdu_lengths[num_sdus];
-
-            if (sdu_lengths[num_sdus] < 128) {
-              header_len_dtch=2;
-            }
-
-            num_sdus++;
-          } else {
-            header_len_dtch = 0;
-          }
-        }
-
-        // there is a payload
-        if (((sdu_length_total + header_len_dcch + header_len_dtch )> 0)) {
-
-          // Now compute number of required RBs for total sdu length
-          // Assume RAH format 2
-          // adjust  header lengths
-          header_len_dcch_tmp = header_len_dcch;
-          header_len_dtch_tmp = header_len_dtch;
-
-          if (header_len_dtch==0) {
-            header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
-          } else {
-            header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
-          }
-
+	    if (rlc_status.bytes_in_buffer > 0) {
+	      
+	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH%d->DLSCH, Requesting %d bytes from RLC (total hdr len dtch %d)\n",
+		    module_idP,frameP,lcid,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
+	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
+						       rnti,
+						       module_idP,
+						       frameP,
+						       ENB_FLAG_YES,
+						       MBMS_FLAG_NO,
+						       lcid,
+						       (char*)&dlsch_buffer[sdu_length_total]);
+	      
+	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",module_idP,sdu_lengths[num_sdus],lcid);
+	      sdu_lcids[num_sdus] = lcid;
+	      sdu_length_total += sdu_lengths[num_sdus];
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]+=1;
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid]+=sdu_lengths[num_sdus];
+	      if (sdu_lengths[num_sdus] < 128) {
+		header_len_dtch--;
+		header_len_dtch_last--;
+	      }
+	      num_sdus++;
+	    } // no data for this LCID
+	    else {
+	      header_len_dtch-=3;
+	    }
+	  } // no TBS left
+	  else {
+	    header_len_dtch-=3;
+	    break; 
+	  }
+	}
+	if (header_len_dtch == 0 )
+	  header_len_dtch_last= 0;
+	// there is at least one SDU 
+	// if (num_sdus > 0 ){
+	if ((sdu_length_total + header_len_dcch + header_len_dtch )> 0) {
+	  
+	  // Now compute number of required RBs for total sdu length
+	  // Assume RAH format 2
+	  // adjust  header lengths
+	  header_len_dcch_tmp = header_len_dcch;
+	  header_len_dtch_tmp = header_len_dtch;
+	  if (header_len_dtch==0) {
+	    header_len_dcch = (header_len_dcch >0) ? 1 : 0;//header_len_dcch;  // remove length field
+	  } else {
+	    header_len_dtch_last-=1; // now use it to find how many bytes has to be removed for the last MAC SDU 
+	    header_len_dtch = (header_len_dtch > 0) ? header_len_dtch - header_len_dtch_last  :header_len_dtch;     // remove length field for the last SDU
+	  }
 
           mcs = eNB_UE_stats->dlsch_mcs1;
 
