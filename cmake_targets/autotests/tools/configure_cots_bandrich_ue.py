@@ -7,9 +7,20 @@ import re
 import threading
 import signal
 import traceback
+import os
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
-serial_port = '/dev/ttyUSB2'
+#First we find an open port to work with
+serial_port=''
+max_ports=100
+for port in range(1,100):
+  serial_port = '/dev/ttyUSB'+str(port)
+  if os.path.exists(serial_port) == True:
+     break
+
+print 'Using Serial port : ' + serial_port  
+    
+#serial_port = '/dev/ttyUSB2'
 bandrich_ppd_config = '$OPENAIR_DIR/cmake_targets/autotests/tools/wdial.bandrich.conf'
 
 exit_flag=0
