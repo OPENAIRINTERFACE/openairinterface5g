@@ -12,12 +12,20 @@ import os
 # configure the serial connections (the parameters differs on the device you are connecting to)
 #First we find an open port to work with
 serial_port=''
-max_ports=100
-for port in range(1,100):
-  serial_port = '/dev/ttyUSB'+str(port)
-  if os.path.exists(serial_port) == True:
-     break
+ser=''
+def find_open_port(serial_port):
+   max_ports=100
+   if os.path.exists(serial_port) == True:
+     return serial_port
+   for port in range(1,100):
+      serial_port = '/dev/ttyUSB'+str(port)
+      ser = serial.Serial(port=serial_port)
+      if os.path.exists(serial_port) == True:
+         print 'New Serial Port : ' + serial_port
+         break
+   return serial_port
 
+serial_port = find_open_port('')
 print 'Using Serial port : ' + serial_port  
     
 #serial_port = '/dev/ttyUSB2'
@@ -35,13 +43,7 @@ def signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
-ser = serial.Serial(
-    port=serial_port,
-    #baudrate=9600,
-    #parity=serial.PARITY_ODD,
-    #stopbits=serial.STOPBITS_TWO,
-    #bytesize=serial.EIGHTBITS
-)
+
 
 #ser.open()
 #ser.isOpen()
@@ -71,6 +73,10 @@ def send_command (cmd, response, timeout):
    sleep_duration = 1
    while count <= timeout:
       try:
+        #Sometimes the port does not exist coz of reset in modem.
+        #In that case, we need to search for this port again
+        if os.path.exists(serial_port) == False:
+            serial_port = find_open_port(serial_port)
         ser.write (cmd + '\r\n')
         out = ''
         time.sleep(sleep_duration)

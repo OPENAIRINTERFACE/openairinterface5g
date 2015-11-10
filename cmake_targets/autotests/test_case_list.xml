@@ -1,12 +1,13 @@
  <testCaseList>
 
-<MachineList>stevens calisson amerique</MachineList>
+<MachineList>amerique stevens calisson</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>feature-34-test_framework</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox* </CleanUpOldProgs>	
+ <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim </CleanUpOldProgs>	
+ <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 
      <testCase id="010101" >
      <class>compilation</class>
@@ -25,7 +26,7 @@
  
      <testCase id="010102" >
      <class>compilation</class>
-     <desc>Build oaisim.Rel8 + network device driver(nasmesh_fix)</desc>
+     <desc>Build oaisim.Rel8 + network device driver(nasmesh_fix)</desc> 
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>oaisim_nos1</compile_prog>
      <compile_prog_args></compile_prog_args>
@@ -760,7 +761,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code 208
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code 92
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address ({ipv4="192.168.12.26";ipv6="192:168:30::17";active="yes";preference="ipv4";})</eNB_config_file>
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address "({ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";})"</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
     <eNB_pre_exec></eNB_pre_exec>
@@ -771,6 +772,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 4
@@ -780,12 +782,13 @@
     <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue --start-ue </UE_main_exec>
+    <UE_main_exec>python $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; python $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>ping 192.172.0.1</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
     <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC 208
@@ -800,14 +803,16 @@
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
-    <EPC_main_exec>/opt/ltebox/tools/stop_ltebox ; /opt/ltebox/tools/start_ltebox </EPC_main_exec>
+    <EPC_main_exec>/opt/ltebox/tools/stop_ltebox ; /opt/ltebox/tools/start_ltebox ; sleep 3000</EPC_main_exec>
     <EPC_main_exec_args></EPC_main_exec_args>
-    <HSS_main_exec>/opt/hss_sim0609/starthss </HSS_main_exec>
+    <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>iperf -s</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
+    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+
     <nruns>2</nruns>
     </testCase> 
 
