@@ -224,7 +224,7 @@ int8_t find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB)
 
 int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t ul_flag)
 {
-  int sf2hp[] = { 1, 2, 3, 4, 6, 7, 8, 9 };
+  int hp2sf[] = { 1, 2, 3, 4, 6, 7, 8, 9 };
 
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
@@ -250,7 +250,7 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
       if (DLSCH_ptr->harq_processes[i]!=NULL) {
 	if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
 	  // store first inactive process
-	  if (sf2hp[i] == subframe && first_proc_found == 0) {
+	  if (hp2sf[i] == subframe && first_proc_found == 0) {
 	    first_proc_found = 1;
 	    *harq_pid = i;
 	    *round = 0;
