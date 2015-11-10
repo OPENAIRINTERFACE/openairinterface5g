@@ -2232,10 +2232,10 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
     else if ((phy_vars_ue->prach_resources[eNB_id]) &&
              (dci_alloc_rx[i].rnti == phy_vars_ue->prach_resources[eNB_id]->ra_RNTI) &&
-             (dci_alloc_rx[i].format == format1A)) {
+             (dci_alloc_rx[i].format == format1A || dci_alloc_rx[i].format == format1C)) {
 
 #ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1A, dci_cnt %d\n",phy_vars_ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,i);
+      LOG_D(PHY,"[UE  %d][RAPROC] subframe %d: Found RA rnti %x, format 1%s, dci_cnt %d\n",phy_vars_ue->Mod_id,subframe_rx,dci_alloc_rx[i].rnti,dci_alloc_rx[i].format==format1A?"A":"C",i);
 
       //if (((frame_rx%100) == 0) || (frame_rx < 20))
       //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
@@ -2255,9 +2255,9 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
       if (generate_ue_dlsch_params_from_dci(frame_rx,
 					    subframe_rx,
-                                            (DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
+					    (void*)&dci_alloc_rx[i].dci_pdu,//(DCI1A_5MHz_TDD_1_6_t *)&dci_alloc_rx[i].dci_pdu,
                                             phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
-                                            format1A,
+					    dci_alloc_rx[i].format, //format1A,
                                             &phy_vars_ue->dlsch_ue_ra[eNB_id],
                                             &phy_vars_ue->lte_frame_parms,
                                             phy_vars_ue->pdsch_config_dedicated,
