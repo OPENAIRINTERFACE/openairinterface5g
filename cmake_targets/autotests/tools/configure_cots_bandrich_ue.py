@@ -59,16 +59,21 @@ def send_command (cmd, response, timeout):
    count=0
    sleep_duration = 1
    while count <= timeout:
-      ser.write (cmd + '\r\n')
-      out = ''
-      time.sleep(sleep_duration)
-      count = count + sleep_duration
-      while ser.inWaiting() > 0:
-          out += ser.read(1)
-      print 'out = <' + out + '> response = <' + response + '> \n'
-      if re.search(response, out):
-        break
-
+      try:
+        ser.write (cmd + '\r\n')
+        out = ''
+        time.sleep(sleep_duration)
+        count = count + sleep_duration
+        while ser.inWaiting() > 0:
+            out += ser.read(1)
+        print 'out = <' + out + '> response = <' + response + '> \n'
+        if re.search(response, out):
+          break
+      except Exception, e:
+        error = ' cmd : ' + cmd + ' response : ' + response
+        error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+        error = error + traceback.format_exc()
+        print error
         
 
 def start_ue () :
