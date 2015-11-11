@@ -75,7 +75,7 @@ class pppThread (threading.Thread):
 def send_command (cmd, response, timeout):
    count=0
    sleep_duration = 1
-   print 'In function: send_command: cmd ' + cmd + '> response: <' + response + '> \n'
+   print 'In function: send_command: cmd = <' + cmd + '> response: <' + response + '> \n'
    global serial_port, ser
    while count <= timeout:
       try:
