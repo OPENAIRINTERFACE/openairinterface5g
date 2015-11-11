@@ -12,20 +12,22 @@ import os
 # configure the serial connections (the parameters differs on the device you are connecting to)
 #First we find an open port to work with
 serial_port=''
-ser=''
-def find_open_port(serial_port):
+ser=serial.Serial()
+def find_open_port():
+   global serial_port, ser
    max_ports=100
    if os.path.exists(serial_port) == True:
      return serial_port
-   for port in range(1,100):
+   for port in range(2,100):
       serial_port = '/dev/ttyUSB'+str(port)
-      ser = serial.Serial(port=serial_port)
       if os.path.exists(serial_port) == True:
          print 'New Serial Port : ' + serial_port
          break
-   return serial_port
 
-serial_port = find_open_port('')
+   ser = serial.Serial(port=serial_port)
+   return
+
+find_open_port()
 print 'Using Serial port : ' + serial_port  
     
 #serial_port = '/dev/ttyUSB2'
@@ -71,12 +73,14 @@ class pppThread (threading.Thread):
 def send_command (cmd, response, timeout):
    count=0
    sleep_duration = 1
+   print 'In function: send_command: cmd ' + cmd + '> response: <' + response + '> \n'
+   global serial_port, ser
    while count <= timeout:
       try:
         #Sometimes the port does not exist coz of reset in modem.
         #In that case, we need to search for this port again
         if os.path.exists(serial_port) == False:
-            serial_port = find_open_port(serial_port)
+            find_open_port()
         ser.write (cmd + '\r\n')
         out = ''
         time.sleep(sleep_duration)
