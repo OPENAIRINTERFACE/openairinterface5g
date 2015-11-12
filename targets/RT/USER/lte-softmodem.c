@@ -251,6 +251,8 @@ int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 
 FILE *input_fd=NULL;
+input_file= NULL;
+input_buffer_l = 0;
 
 
 #ifdef EXMIMO
@@ -2104,8 +2106,11 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_LOOPMEMORY:
       mode=loop_through_memory;
+      input_file = (char*)malloc(sizeof(char)*100);
+      strcpy(input_file,optarg);
       input_fd = fopen(optarg,"r");
       AssertFatal(input_fd != NULL,"Please provide an input file\n");
+	printf("%s\n",input_file);
       break;
 
    case LONG_OPTION_DUMP_FRAME:
@@ -3111,11 +3116,14 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
     }
 
     if (input_fd) {
-      printf("Reading in from file to antenna buffer %d\n",0);
+      printf("Reading in from file to antenna buffer %d, buffer_size %d\n",input_fd,frame_parms[0]->samples_per_tti*10);
+      //fseek(input_fd, 7680000/2,0);	
       fread(UE[0]->lte_ue_common_vars.rxdata[0],
 	    sizeof(int32_t),
 	    frame_parms[0]->samples_per_tti*10,
 	    input_fd);
+      input_buffer_l = ftell(input_fd);  
+      fclose(input_fd);
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {

@@ -2453,6 +2453,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
 #endif
 
+ //printf("subframe_rx(%d),slot_rx(%d)\n",subframe_rx,slot_rx);
   if (phy_vars_ue->lte_frame_parms.Ncp == 0) {  // normal prefix
     pilot1 = 4;
     pilot2 = 7;
@@ -2470,7 +2471,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
     else
       n_symb = 0;
   } else {
-    /*
+   /* 
     if (is_pmch_subframe(frame_rx,subframe_rx,&phy_vars_ue->lte_frame_parms)) {
       if ((slot_rx%2)==0) {
     n_symb=2;
@@ -2480,7 +2481,8 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
     n_symb=0;
     }
     else*/
-    n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
+    	n_symb = phy_vars_ue->lte_frame_parms.symbols_per_tti/2;
+	
   }
 
   //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -3101,6 +3103,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
       //      rt_printk("[PDCCH] Frame %d, slot %d, start %llu\n",frame_rx,slot_rx,rt_get_time_ns());
       if (lte_ue_pdcch_procedures(eNB_id,phy_vars_ue,abstraction_flag) == -1) {
+	  LOG_E(PHY,"[UE  %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,frame_rx,slot_rx);
 #ifdef DEBUG_PHY_PROC
 	  LOG_E(PHY,"[UE  %d] Frame %d, slot %d: Error in pdcch procedures\n",phy_vars_ue->Mod_id,frame_rx,slot_rx);
 #endif

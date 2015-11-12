@@ -119,6 +119,9 @@ extern int oai_exit;
 extern int32_t **rxdata;
 extern int32_t **txdata;
 
+extern char * input_file;
+extern int input_buffer_l;
+
 //extern unsigned int tx_forward_nsamps;
 //extern int tx_delay;
 
@@ -1188,9 +1191,43 @@ void *UE_thread(void *arg)
 	  
 	  LOG_D(HW,"signalled rx thread to wake up, hw_frame %d, hw_subframe %d (time %lli)\n", frame, hw_subframe, rt_get_time_ns()-T0 );
 	  if (UE->mode == loop_through_memory) {
-	    printf("Processing subframe %d",UE->slot_rx>>1);
+	     if (pthread_mutex_lock(&UE->mutex_rx) != 0) {
+          	LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX thread\n" );
+          	exit_fun("nothing to add");
+          	return &UE_thread_retval;
+             }
+	    printf(" Processing subframe %d",UE->slot_rx>>1);
+            if( input_file){
+		if( (UE->slot_rx>>1) == 9 ){
+			FILE * in_fd = fopen(input_file,"r");
+      			AssertFatal(in_fd != NULL,"Please provide an input file\n");
+			if(in_fd){
+				fseek(in_fd,0,SEEK_END);
+				int numbytes = ftell(in_fd);
+				fseek(in_fd,0,SEEK_SET);
+				printf("input_file:%s, numbytes(%d)\n",input_file,numbytes);
+				if( input_buffer_l + sizeof(int32_t)* UE->lte_frame_parms.samples_per_tti*10 > numbytes )
+					input_buffer_l = 0;
+      	    			LOG_W(PHY,"Reading in from file to antenna buffer, buffer_size %d ,dessired position %d\n", UE->lte_frame_parms.samples_per_tti*10*sizeof(int32_t),input_buffer_l);
+				fseek(in_fd,input_buffer_l,0);
+				fread(UE->lte_ue_common_vars.rxdata[0],
+            			sizeof(int32_t),
+            			UE->lte_frame_parms.samples_per_tti*10,
+            			in_fd);
+				input_buffer_l+=ftell(in_fd);	
+				fclose(in_fd);
+				LOG_W(PHY,"Buffer left %d\n",numbytes - input_buffer_l);
+			}
+		}
+	    }
+	    LOG_D(PHY,"Unlocking mutex_rx (IC %d)\n",instance_cnt_rx);
+            if (pthread_mutex_unlock(&UE->mutex_rx) != 0) {
+                LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RX thread\n" );
+             	exit_fun("nothing to add");
+           	return &UE_thread_retval;
+            }
 	    getchar();
-	  }
+	 }
 
           if (UE->mode == rx_calib_ue) {
             if (frame == 10) {
@@ -1900,6 +1937,13 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg,
       printf("Mapping UE CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][i],rf_map[CC_id].card,rf_map[CC_id].chain+i);
       free(phy_vars_ue[CC_id]->lte_ue_common_vars.txdata[i]);
       phy_vars_ue[CC_id]->lte_ue_common_vars.txdata[i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].dac_head[rf_map[CC_id].chain+i];
+
+      if (phy_vars_ue[CC_id]->mode == loop_through_memory) {
+      	if( !phy_vars_ue[CC_id]->lte_ue_common_vars.txdata[i] ){
+		LOG_W(PHY,"mode:loop_through_memory -- lte_ue_common_vars.txdata buffer no init by exmimo driver ... proceed with a local malloc\n");
+      		phy_vars_ue[CC_id]->lte_ue_common_vars.txdata[i]  = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
+	}
+      }
 
       if (openair0_cfg[rf_map[CC_id].card].tx_freq[rf_map[CC_id].chain+i]) {
         printf("Error with rf_map! A channel has already been allocated!\n");
