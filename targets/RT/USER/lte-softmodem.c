@@ -2105,6 +2105,10 @@ static void get_options (int argc, char **argv)
       break;
 
     case LONG_OPTION_LOOPMEMORY:
+#ifdef EXMIMO
+      fprintf(stderr, "loop memory option not supported with EXMIMO engine ... use USRP option\n");
+      exit(-1);
+#endif	
       mode=loop_through_memory;
       input_file = (char*)malloc(sizeof(char)*100);
       strcpy(input_file,optarg);
