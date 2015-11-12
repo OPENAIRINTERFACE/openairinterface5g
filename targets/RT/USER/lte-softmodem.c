@@ -2965,24 +2965,28 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
       else {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;// - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
       }
-
+      
       switch(frame_parms[0]->N_RB_DL) {
       case 6:
-        openair0_cfg[card].rx_gain[i] -= 6;
+        openair0_cfg[card].rx_gain[i] -= 12;
         break;
 
       case 25:
-        openair0_cfg[card].rx_gain[i] += 6;
+        openair0_cfg[card].rx_gain[i] -= 6;
         break;
 
       case 50:
-        openair0_cfg[card].rx_gain[i] += 8;
+        openair0_cfg[card].rx_gain[i] -= 3;
+        break;
+
+      case 100:
+        openair0_cfg[card].rx_gain[i] -= 0;
         break;
 
       default:
         break;
       }
-
+      
 
     }
 

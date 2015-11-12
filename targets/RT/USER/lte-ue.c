@@ -410,6 +410,7 @@ static void *UE_thread_synch(void *arg)
 	  UE->UE_scan_carrier = 0;
 	  // rerun with new cell parameters and frequency-offset
 	  for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
+	    openair0_cfg[0].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	    openair0_cfg[0].rx_freq[i] -= UE->lte_ue_common_vars.freq_offset;
 	    openair0_cfg[0].tx_freq[i] =  openair0_cfg[0].rx_freq[i]+uplink_frequency_offset[0][i];
 	    downlink_frequency[0][i] = openair0_cfg[0].rx_freq[i];
