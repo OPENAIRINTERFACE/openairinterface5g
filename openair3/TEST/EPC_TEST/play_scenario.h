@@ -28,18 +28,22 @@
 *******************************************************************************/
 
 /*
-                                generate_scenario.h
+                                play_scenario.h
                              -------------------
   AUTHOR  : Lionel GAUTHIER
   COMPANY : EURECOM
   EMAIL   : Lionel.Gauthier@eurecom.fr
 */
 
-#ifndef GENERATE_SCENARIO_H_
-#define GENERATE_SCENARIO_H_
-# include <time.h>
-# include <stdint.h>
-#include <libxml/tree.h>
+#ifndef PLAY_SCENARIO_H_
+#define PLAY_SCENARIO_H_
+#  include <time.h>
+#  include <stdint.h>
+#  include <libxml/tree.h>
+#  include <netinet/in.h>
+
+#include "s1ap_ies_defs.h"
+
 
 /** @defgroup _enb_app ENB APP 
  * @ingroup _oai2
@@ -83,13 +87,32 @@ typedef enum {
   SCTP_CID_ASCONF_ACK             = 0x80,
 } sctp_cid_t; /* enum */
 
+typedef enum {
+  TEST_S1AP_PDU_TYPE_START = 0,
+  TEST_S1AP_PDU_TYPE_UNKNOWN = TEST_S1AP_PDU_TYPE_START,
+  TEST_S1AP_PDU_TYPE_INITIATING,
+  TEST_S1AP_PDU_TYPE_SUCCESSFUL_OUTCOME,
+  TEST_S1AP_PDU_TYPE_UNSUCCESSFUL_OUTCOME,
+  TEST_S1AP_PDU_TYPE_END
+} test_s1ap_pdu_type_t;
+
+
+typedef struct test_s1ap_s {
+  //test_s1ap_pdu_type_t pdu_type;
+  uint16_t             binary_stream_pos;
+  uint16_t             binary_stream_allocated_size;
+  uint8_t             *binary_stream;
+  s1ap_message        message;
+} test_s1ap_t;
+
+
 // from kernel source file 3.19/include/linux/sctp.h, Big Endians
 typedef struct sctp_datahdr_s {
-  uint32_t tsn;
-  uint16_t stream;
-  uint16_t ssn;
-  uint32_t ppid;
-  uint8_t  payload[0];
+  uint32_t    tsn;
+  uint16_t    stream;
+  uint16_t    ssn;
+  uint32_t    ppid;
+  test_s1ap_t payload;
 } sctp_datahdr_t;
 
 // from kernel source file 3.19/include/linux/sctp.h, Big Endians
@@ -115,15 +138,28 @@ typedef struct test_sctp_hdr_s {
   } u;
 } test_sctp_hdr_t;
 
+typedef struct test_ip_s {
+  unsigned int  address_family; // AF_INET, AF_INET6
+  union {
+    struct in6_addr  ipv6;
+    in_addr_t        ipv4;
+  }address;
+}test_ip_t;
+
+typedef struct test_ip_hdr_s {
+  test_ip_t  src;
+  test_ip_t  dst;
+} test_ip_hdr_t;
+
 typedef struct test_packet_s {
   test_action_t   action;
   struct timeval  time_relative_to_first_packet;
-  struct timeval  time_relative_to_last_packet;
+  struct timeval  time_relative_to_last_sent_packet;
+  struct timeval  time_relative_to_last_received_packet;
+  unsigned int    original_frame_number;
+  unsigned int    packet_number;
+  test_ip_hdr_t   ip_hdr;
   test_sctp_hdr_t sctp_hdr;
-  uint16_t        s1ap_byte_stream_count;
-  uint8_t        *s1ap_byte_stream;
-  xmlNodePtr     *s1ap_node;
-
   struct test_packet_s *next;
 }test_packet_t;
 

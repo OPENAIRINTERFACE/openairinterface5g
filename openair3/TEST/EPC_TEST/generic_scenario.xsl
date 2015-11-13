@@ -106,6 +106,7 @@
 
   <xsl:template match="proto[@name='frame']">
     <xsl:variable name="time_relative" select="field[@name='frame.time_relative']/@show"/>
+    <xsl:variable name="frame_number" select="field[@name='frame.number']/@show"/>
     <xsl:variable name="ip" select="proto[@name='ip']"/>
     <xsl:variable name="ip_src">
       <xsl:call-template name="reverse_ip">
@@ -131,16 +132,17 @@
     <xsl:for-each select="$ip/proto[@name='sctp']">
       <xsl:variable name="sctp_data_sid"               select="./field/field[@name='sctp.data_sid']/@show"/>
       <!-- TODO resolv problem of 2 SCTP packets in 1 IP packet: src and dst ports are not in the 2nd SCTP packet -->
-      <xsl:variable name="sctp_srcport"                select="./field[@name='sctp.srcport']/@show"/>
-      <xsl:variable name="sctp_dstport"                select="./field[@name='sctp.dstport']/@show"/>
-      <xsl:variable name="sctp_data_ssn"               select="./field/field[@name='sctp.data_ssn']/@show"/>
-      <xsl:variable name="sctp_data_payload_proto_id"  select="./field/field[@name='sctp.data_payload_proto_id']/@show"/>
+      <!--xsl:variable name="sctp_srcport"                select="./field[@name='sctp.srcport']/@show"/-->
+      <!--xsl:variable name="sctp_dstport"                select="./field[@name='sctp.dstport']/@show"/-->
+      <!--xsl:variable name="sctp_data_ssn"               select="./field/field[@name='sctp.data_ssn']/@show"/-->
+      <!--xsl:variable name="sctp_data_payload_proto_id"  select="./field/field[@name='sctp.data_payload_proto_id']/@show"/-->
       <xsl:variable name="sctp_chunk_type_str">
         <xsl:call-template name="chunktype2str">
           <xsl:with-param name="chunk_type" select="./field/field[@name='sctp.chunk_type']/@value"/>
         </xsl:call-template>
       </xsl:variable>
       <xsl:variable name="sctp_pos_offset" select="./@pos"/>
+      <xsl:variable name="sctp_node" select="."/>
 
       <xsl:choose>
         <xsl:when test="$sctp_chunk_type_str='DATA'">
@@ -148,59 +150,61 @@
             <xsl:variable name="s1ap_pos_offset" select="./@pos"/>
             <packet name="{$sctp_chunk_type_str}" action="{$action}">
               <frame.time_relative        value="{$time_relative}"/>
+              <frame.number               value="{$frame_number}"/>
                
               <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
               <pos_offset                 value="{$s1ap_pos_offset}"/>
               <ip.src                     value="{$ip_src}"/>
               <ip.dst                     value="{$ip_dst}"/>
-              <sctp.data_sid              value="{$sctp_data_sid}"/>
-              <sctp.srcport               value="{$sctp_srcport}"/>
-              <sctp.dstport               value="{$sctp_dstport}"/>
-              <sctp.data_ssn              value="{$sctp_data_ssn}"/>
-              <sctp.data_payload_proto_id value="{$sctp_data_payload_proto_id}"/>
+              <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
+              <!--sctp.srcport               value="{$sctp_srcport}"/-->
+              <!--sctp.dstport               value="{$sctp_dstport}"/-->
+              <!--sctp.data_ssn              value="{$sctp_data_ssn}"/-->
+              <!--sctp.data_payload_proto_id value="{$sctp_data_payload_proto_id}"/-->
               <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-              <xsl:copy-of select="node()"/>
+              <xsl:copy-of select="$sctp_node"/>
             </packet>
           </xsl:for-each>
         </xsl:when>
         <xsl:when test="$sctp_chunk_type_str='INIT'">
-          <xsl:variable name="sctp_init_nr_out_streams"  select="./field/field[@name='sctp.init_nr_out_streams']/@show"/>
-          <xsl:variable name="sctp_init_nr_in_streams"   select="./field/field[@name='sctp.init_nr_in_streams']/@show"/>
-          <xsl:variable name="sctp_init_initial_tsn"     select="./field/field[@name='sctp.init_initial_tsn']/@show"/>
+          <!--xsl:variable name="sctp_init_nr_out_streams"  select="./field/field[@name='sctp.init_nr_out_streams']/@show"/-->
+          <!--xsl:variable name="sctp_init_nr_in_streams"   select="./field/field[@name='sctp.init_nr_in_streams']/@show"/-->
+          <!--xsl:variable name="sctp_init_initial_tsn"     select="./field/field[@name='sctp.init_initial_tsn']/@show"/-->
           <packet name="{$sctp_chunk_type_str}" action="{$action}">
             <frame.time_relative        value="{$time_relative}"/>
+            <frame.number               value="{$frame_number}"/>
             <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
-            <sctp.data_sid              value="{$sctp_data_sid}"/>
-            <sctp.srcport               value="{$sctp_srcport}"/>
-            <sctp.dstport               value="{$sctp_dstport}"/>
-            <sctp.init_nr_in_streams    value="{$sctp_init_nr_in_streams}"/>
-            <sctp.init_nr_out_streams   value="{$sctp_init_nr_out_streams}"/>
-            <sctp.init_initial_tsn      value="{$sctp_init_initial_tsn}"/>
+            <!--sctp.srcport               value="{$sctp_srcport}"/-->
+            <!--sctp.dstport               value="{$sctp_dstport}"/-->
+            <!--sctp.init_nr_in_streams    value="{$sctp_init_nr_in_streams}"/-->
+            <!--sctp.init_nr_out_streams   value="{$sctp_init_nr_out_streams}"/-->
+            <!--sctp.init_initial_tsn      value="{$sctp_init_initial_tsn}"/-->
             <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-            <!--xsl:copy-of select="node()"/-->
+            <xsl:copy-of select="$sctp_node"/>
           </packet>
         </xsl:when>
         <xsl:when test="$sctp_chunk_type_str='INIT_ACK'">
-          <xsl:variable name="sctp_initack_nr_out_streams"  select="./field/field[@name='sctp.initack_nr_out_streams']/@show"/>
-          <xsl:variable name="sctp_initack_nr_in_streams"   select="./field/field[@name='sctp.initack_nr_in_streams']/@show"/>
-          <xsl:variable name="sctp_initack_initial_tsn"     select="./field/field[@name='sctp.initack_initial_tsn']/@show"/>
+          <!--xsl:variable name="sctp_initack_nr_out_streams"  select="./field/field[@name='sctp.initack_nr_out_streams']/@show"/-->
+          <!--xsl:variable name="sctp_initack_nr_in_streams"   select="./field/field[@name='sctp.initack_nr_in_streams']/@show"/-->
+          <!--xsl:variable name="sctp_initack_initial_tsn"     select="./field/field[@name='sctp.initack_initial_tsn']/@show"/-->
           <packet name="{$sctp_chunk_type_str}" action="{$action}">
             <frame.time_relative        value="{$time_relative}"/>
+            <frame.number               value="{$frame_number}"/>
             <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
-            <sctp.data_sid              value="{$sctp_data_sid}"/>
-            <sctp.srcport               value="{$sctp_srcport}"/>
-            <sctp.dstport               value="{$sctp_dstport}"/>
-            <sctp.initack_nr_in_streams  value="{$sctp_initack_nr_in_streams}"/>
-            <sctp.initack_nr_out_streams value="{$sctp_initack_nr_out_streams}"/>
-            <sctp.initack_initial_tsn   value="{$sctp_initack_initial_tsn}"/>
+            <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
+            <!--sctp.srcport               value="{$sctp_srcport}"/-->
+            <!--sctp.dstport               value="{$sctp_dstport}"/-->
+            <!--sctp.initack_nr_in_streams  value="{$sctp_initack_nr_in_streams}"/-->
+            <!--sctp.initack_nr_out_streams value="{$sctp_initack_nr_out_streams}"/-->
+            <!--sctp.initack_initial_tsn   value="{$sctp_initack_initial_tsn}"/-->
             <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-            <!--xsl:copy-of select="node()"/-->
+            <xsl:copy-of select="$sctp_node"/>
           </packet>
         </xsl:when>
         <!--xsl:when test="$sctp_chunk_type_str='SACK'">       </xsl:when-->
@@ -209,44 +213,47 @@
         <xsl:when test="$sctp_chunk_type_str='ABORT'">
           <packet name="{$sctp_chunk_type_str}" action="{$action}">
             <frame.time_relative        value="{$time_relative}"/>
+            <frame.number               value="{$frame_number}"/>
             <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
-            <sctp.data_sid              value="{$sctp_data_sid}"/>
-            <sctp.srcport               value="{$sctp_srcport}"/>
-            <sctp.dstport               value="{$sctp_dstport}"/>
+            <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
+            <!--sctp.srcport               value="{$sctp_srcport}"/-->
+            <!--sctp.dstport               value="{$sctp_dstport}"/-->
             <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-            <xsl:copy-of select="node()"/>
+            <xsl:copy-of select="$sctp_node"/>
           </packet>
         </xsl:when>
         <xsl:when test="$sctp_chunk_type_str='SHUTDOWN'">
           <packet name="{$sctp_chunk_type_str}" action="{$action}">
             <frame.time_relative        value="{$time_relative}"/>
+            <frame.number               value="{$frame_number}"/>
             <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
-            <sctp.data_sid              value="{$sctp_data_sid}"/>
-            <sctp.srcport               value="{$sctp_srcport}"/>
-            <sctp.dstport               value="{$sctp_dstport}"/>
+            <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
+            <!--sctp.srcport               value="{$sctp_srcport}"/-->
+            <!--sctp.dstport               value="{$sctp_dstport}"/-->
             <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-            <xsl:copy-of select="node()"/>
+            <xsl:copy-of select="$sctp_node"/>
           </packet>
         </xsl:when>
         <!--xsl:when test="$sctp_chunk_type_str='SHUTDOWN_ACK'"></xsl:when-->
         <xsl:when test="$sctp_chunk_type_str='ERROR'">
           <packet name="{$sctp_chunk_type_str}" action="{$action}">
             <frame.time_relative        value="{$time_relative}"/>
+            <frame.number               value="{$frame_number}"/>
             <!-- TODO: pos_offset(substract it from all pos_offsets in s1ap, may depend on which test scenario protocol target S1AP/NAS or NAS only...)-->
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
-            <sctp.data_sid              value="{$sctp_data_sid}"/>
-            <sctp.srcport               value="{$sctp_srcport}"/>
-            <sctp.dstport               value="{$sctp_dstport}"/>
+            <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
+            <!--sctp.srcport               value="{$sctp_srcport}"/-->
+            <!--sctp.dstport               value="{$sctp_dstport}"/-->
             <sctp.chunk_type_str        value="{$sctp_chunk_type_str}"/>
-            <xsl:copy-of select="node()"/>
+            <xsl:copy-of select="$sctp_node"/>
           </packet>
         </xsl:when>
         <!--xsl:when test="$sctp_chunk_type_str='COOKIE_ECHO'">            </xsl:when-->
