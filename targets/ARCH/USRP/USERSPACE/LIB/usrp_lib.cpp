@@ -317,7 +317,7 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {2660000000.0,80.0},
   {2300000000.0,81.0},
   {1880000000.0,82.0},
-  {816000000.0,89},
+  {816000000.0,85.0},
   {-1,0}};
 
 void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
