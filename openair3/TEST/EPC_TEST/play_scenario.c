@@ -60,6 +60,7 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 
+#include "intertask_interface_init.h"
 #include "assertions.h"
 #include "play_scenario.h"
 //#include "s1ap_eNB.h"
@@ -470,7 +471,7 @@ int hex2data(unsigned char * const data, const unsigned char * const hexstring, 
     char buf[5] = {'0', 'x', pos[0], pos[1], 0};
     data[count] = strtol(buf, &endptr, 16);
     pos += 2 * sizeof(char);
-    AssertFatal (endptr[0] == '\0', "ERROR %s() non-hexadecimal character encountered buf %p endptr %p buf %s count %d pos %p\n", __FUNCTION__, buf, endptr, buf, count, pos);
+    AssertFatal (endptr[0] == '\0', "ERROR %s() non-hexadecimal character encountered buf %p endptr %p buf %s count %zu pos %p\n", __FUNCTION__, buf, endptr, buf, count, pos);
     AssertFatal (endptr != buf, "ERROR %s() No digits were found\n", __FUNCTION__);
   }
   return 0;
@@ -553,10 +554,13 @@ void ip_str2test_ip(const xmlChar  * const ip_str, test_ip_t * const ip)
 int test_s1ap_decode_initiating_message(s1ap_message *message,
     S1ap_InitiatingMessage_t *initiating_p)
 {
+  char       *message_string = NULL;
   int         ret = -1;
 
   DevAssert(initiating_p != NULL);
 
+  message_string = calloc(20000, sizeof(char));
+  AssertFatal (NULL != message_string, "ERROR malloc()failed!\n");
   message->procedureCode = initiating_p->procedureCode;
   message->criticality   = initiating_p->criticality;
 
@@ -565,58 +569,65 @@ int test_s1ap_decode_initiating_message(s1ap_message *message,
     ret = s1ap_decode_s1ap_downlinknastransporties(
             &message->msg.s1ap_DownlinkNASTransportIEs,
             &initiating_p->value);
+    s1ap_xer_print_s1ap_downlinknastransport(s1ap_xer__print2sp, message_string, message);
     break;
 
   case S1ap_ProcedureCode_id_InitialContextSetup:
     ret = s1ap_decode_s1ap_initialcontextsetuprequesties(
             &message->msg.s1ap_InitialContextSetupRequestIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_initialcontextsetuprequest(s1ap_xer__print2sp, message_string, message);
     break;
 
   case S1ap_ProcedureCode_id_UEContextRelease:
     ret = s1ap_decode_s1ap_uecontextreleasecommandies(
             &message->msg.s1ap_UEContextReleaseCommandIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_uecontextreleasecommand(s1ap_xer__print2sp, message_string, message);
     break;
 
   case S1ap_ProcedureCode_id_Paging:
     ret = s1ap_decode_s1ap_pagingies(
             &message->msg.s1ap_PagingIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_paging(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_uplinkNASTransport: {
-      ret = s1ap_decode_s1ap_uplinknastransporties (&message->msg.s1ap_UplinkNASTransportIEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_uplinkNASTransport:
+    ret = s1ap_decode_s1ap_uplinknastransporties (&message->msg.s1ap_UplinkNASTransportIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_uplinknastransport(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_S1Setup: {
-      ret = s1ap_decode_s1ap_s1setuprequesties (&message->msg.s1ap_S1SetupRequestIEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_S1Setup:
+    ret = s1ap_decode_s1ap_s1setuprequesties (&message->msg.s1ap_S1SetupRequestIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_s1setuprequest(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_initialUEMessage: {
-      ret = s1ap_decode_s1ap_initialuemessageies (&message->msg.s1ap_InitialUEMessageIEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_initialUEMessage:
+    ret = s1ap_decode_s1ap_initialuemessageies (&message->msg.s1ap_InitialUEMessageIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_initialuemessage(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_UEContextReleaseRequest: {
-      ret = s1ap_decode_s1ap_uecontextreleaserequesties (&message->msg.s1ap_UEContextReleaseRequestIEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_UEContextReleaseRequest:
+    ret = s1ap_decode_s1ap_uecontextreleaserequesties (&message->msg.s1ap_UEContextReleaseRequestIEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_uecontextreleaserequest(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_UECapabilityInfoIndication: {
-      ret = s1ap_decode_s1ap_uecapabilityinfoindicationies (&message->msg.s1ap_UECapabilityInfoIndicationIEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_UECapabilityInfoIndication:
+    ret = s1ap_decode_s1ap_uecapabilityinfoindicationies (&message->msg.s1ap_UECapabilityInfoIndicationIEs, &initiating_p->value);
+    //s1ap_xer_print_s1ap_uecapabilityinfoindication(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_NASNonDeliveryIndication: {
-      ret = s1ap_decode_s1ap_nasnondeliveryindication_ies (&message->msg.s1ap_NASNonDeliveryIndication_IEs, &initiating_p->value);
-    }
+  case S1ap_ProcedureCode_id_NASNonDeliveryIndication:
+    ret = s1ap_decode_s1ap_nasnondeliveryindication_ies (&message->msg.s1ap_NASNonDeliveryIndication_IEs, &initiating_p->value);
+    s1ap_xer_print_s1ap_nasnondeliveryindication_(s1ap_xer__print2sp, message_string, message);
     break;
 
   default:
+    free(message_string);
     AssertFatal( 0 , "Unknown procedure ID (%d) for initiating message\n",
                  (int)initiating_p->procedureCode);
     return -1;
   }
+  fprintf(stdout, "s1ap_xer_print:\n%s\n", message_string);
+  free(message_string);
   return ret;
 }
 
@@ -624,9 +635,12 @@ int test_s1ap_decode_initiating_message(s1ap_message *message,
 int test_s1ap_decode_successful_outcome(s1ap_message *message,
     S1ap_SuccessfulOutcome_t *successfullOutcome_p)
 {
-  int ret = -1;
+  char       *message_string = NULL;
+  int         ret = -1;
 
   DevAssert(successfullOutcome_p != NULL);
+  message_string = calloc(20000, sizeof(char));
+  AssertFatal (NULL != message_string, "ERROR malloc()failed!\n");
 
   message->procedureCode = successfullOutcome_p->procedureCode;
   message->criticality   = successfullOutcome_p->criticality;
@@ -635,23 +649,27 @@ int test_s1ap_decode_successful_outcome(s1ap_message *message,
   case S1ap_ProcedureCode_id_S1Setup:
     ret = s1ap_decode_s1ap_s1setupresponseies(
             &message->msg.s1ap_S1SetupResponseIEs, &successfullOutcome_p->value);
+    s1ap_xer_print_s1ap_s1setupresponse(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_InitialContextSetup: {
-      ret = s1ap_decode_s1ap_initialcontextsetupresponseies (&message->msg.s1ap_InitialContextSetupResponseIEs, &successfullOutcome_p->value);
-    }
+  case S1ap_ProcedureCode_id_InitialContextSetup:
+    ret = s1ap_decode_s1ap_initialcontextsetupresponseies (&message->msg.s1ap_InitialContextSetupResponseIEs, &successfullOutcome_p->value);
+    s1ap_xer_print_s1ap_initialcontextsetupresponse(s1ap_xer__print2sp, message_string, message);
     break;
 
-  case S1ap_ProcedureCode_id_UEContextRelease: {
+  case S1ap_ProcedureCode_id_UEContextRelease:
       ret = s1ap_decode_s1ap_uecontextreleasecompleteies (&message->msg.s1ap_UEContextReleaseCompleteIEs, &successfullOutcome_p->value);
-    }
+      s1ap_xer_print_s1ap_uecontextreleasecomplete(s1ap_xer__print2sp, message_string, message);
     break;
 
   default:
+    free(message_string);
     AssertFatal(0, "Unknown procedure ID (%d) for successfull outcome message\n",
                (int)successfullOutcome_p->procedureCode);
     return -1;
   }
+  fprintf(stdout, "s1ap_xer_print:\n%s\n", message_string);
+  free(message_string);
   return ret;
 }
 
@@ -659,29 +677,37 @@ int test_s1ap_decode_successful_outcome(s1ap_message *message,
 int test_s1ap_decode_unsuccessful_outcome(s1ap_message *message,
     S1ap_UnsuccessfulOutcome_t *unSuccessfullOutcome_p)
 {
+  char       *message_string = NULL;
   int ret = -1;
+
   DevAssert(unSuccessfullOutcome_p != NULL);
+  message_string = calloc(20000, sizeof(char));
+  AssertFatal (NULL != message_string, "ERROR malloc()failed!\n");
 
   message->procedureCode = unSuccessfullOutcome_p->procedureCode;
   message->criticality   = unSuccessfullOutcome_p->criticality;
 
   switch(unSuccessfullOutcome_p->procedureCode) {
   case S1ap_ProcedureCode_id_S1Setup:
-    return s1ap_decode_s1ap_s1setupfailureies(
+    ret = s1ap_decode_s1ap_s1setupfailureies(
              &message->msg.s1ap_S1SetupFailureIEs, &unSuccessfullOutcome_p->value);
+    s1ap_xer_print_s1ap_s1setupfailure(s1ap_xer__print2sp, message_string, message);
+    break;
 
-  case S1ap_ProcedureCode_id_InitialContextSetup: {
-      ret = s1ap_decode_s1ap_initialcontextsetupfailureies (&message->msg.s1ap_InitialContextSetupFailureIEs, &unSuccessfullOutcome_p->value);
-    }
+  case S1ap_ProcedureCode_id_InitialContextSetup:
+    ret = s1ap_decode_s1ap_initialcontextsetupfailureies (&message->msg.s1ap_InitialContextSetupFailureIEs, &unSuccessfullOutcome_p->value);
+    s1ap_xer_print_s1ap_initialcontextsetupfailure(s1ap_xer__print2sp, message_string, message);
     break;
 
 
   default:
+    free(message_string);
     AssertFatal(0,"Unknown procedure ID (%d) for unsuccessfull outcome message\n",
                (int)unSuccessfullOutcome_p->procedureCode);
     break;
   }
-
+  fprintf(stdout, "s1ap_xer_print:\n%s\n", message_string);
+  free(message_string);
   return ret;
 }
 
@@ -758,34 +784,35 @@ void parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, test_s1ap_t * con
         xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"hide");
         if (NULL != xml_char) {
           if ((!xmlStrcmp(xml_char, (const xmlChar *)"yes"))) {
-            xmlFree(xml_char);
-            return;
+            go_deeper_in_tree = 0;
           }
           xmlFree(xml_char);
         }
-        // first get size
-        xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"size");
-        if (NULL != xml_char) {
-          size = strtoul((const char *)xml_char, NULL, 0);
-          xmlFree(xml_char);
-          // second: try to get value (always hex)
-          xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
+        if (0 < go_deeper_in_tree) {
+          // first get size
+          xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"size");
           if (NULL != xml_char) {
-            xml_char2 = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"name");
-            fprintf(stdout, "s1ap %p field %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
-            xmlFree(xml_char2);
-            // if success to get value, do not parse children
-            //AssertFatal ((xmlStrlen(xml_char) == size), "ERROR %s() mismatch in size %d and strlen %d\n", __FUNCTION__, size, xmlStrlen(xml_char));
-            //if (xmlStrlen(xml_char) == size) {
-            AssertFatal ((s1ap->binary_stream_pos+xmlStrlen(xml_char)/2) <= s1ap->binary_stream_allocated_size,
-                "ERROR %s() in buffer size: binary_stream_pos %d xmlStrlen(xml_char)/2=%d\n", __FUNCTION__, s1ap->binary_stream_pos, xmlStrlen(xml_char)/2);
-            rc = hex2data( &s1ap->binary_stream[s1ap->binary_stream_pos], xml_char, xmlStrlen(xml_char));
-            s1ap->binary_stream_pos += xmlStrlen(xml_char)/2;
-            display_node(cur_node, 0);
-            AssertFatal (rc >= 0, "ERROR %s() in converting hex string %s len %d size %d rc %d\n", __FUNCTION__, xml_char, xmlStrlen(xml_char), size, rc);
-            go_deeper_in_tree = 0;
-            //}
+            size = strtoul((const char *)xml_char, NULL, 0);
             xmlFree(xml_char);
+            // second: try to get value (always hex)
+            xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
+            if (NULL != xml_char) {
+              xml_char2 = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"name");
+              fprintf(stdout, "s1ap %p field %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
+              xmlFree(xml_char2);
+              // if success to get value, do not parse children
+              //AssertFatal ((xmlStrlen(xml_char) == size), "ERROR %s() mismatch in size %d and strlen %d\n", __FUNCTION__, size, xmlStrlen(xml_char));
+              //if (xmlStrlen(xml_char) == size) {
+              AssertFatal ((s1ap->binary_stream_pos+xmlStrlen(xml_char)/2) <= s1ap->binary_stream_allocated_size,
+                "ERROR %s() in buffer size: binary_stream_pos %d xmlStrlen(xml_char)/2=%d\n", __FUNCTION__, s1ap->binary_stream_pos, xmlStrlen(xml_char)/2);
+              rc = hex2data( &s1ap->binary_stream[s1ap->binary_stream_pos], xml_char, xmlStrlen(xml_char));
+              s1ap->binary_stream_pos += xmlStrlen(xml_char)/2;
+              display_node(cur_node, 0);
+              AssertFatal (rc >= 0, "ERROR %s() in converting hex string %s len %d size %d rc %d\n", __FUNCTION__, xml_char, xmlStrlen(xml_char), size, rc);
+              go_deeper_in_tree = 0;
+              //}
+              xmlFree(xml_char);
+            }
           }
         }
       }
@@ -1166,7 +1193,6 @@ int generate_xml_scenario(
   int               nb_params = 0;
   int               i,j;
   char              astring[1024];
-  char             *astring2 = NULL;
   struct in_addr    addr;
   int               ret      = 0;
 
@@ -1219,8 +1245,8 @@ int generate_xml_scenario(
   params[nb_params] = NULL;
   res = xsltApplyStylesheet(cur, doc, params);
   if (NULL != res) {
-    sprintf(play_scenario_filename,"%s",test_scenario_filename);
-    if (strip_extension(play_scenario_filename) > 0) {
+    sprintf((char *)play_scenario_filename,"%s",test_scenario_filename);
+    if (strip_extension((char *)play_scenario_filename) > 0) {
       strcat((char *)play_scenario_filename, ".tsml");
       play_scenario_file = fopen( play_scenario_filename, "w+");
       if (NULL != play_scenario_file) {
@@ -1398,8 +1424,10 @@ int main( int argc, char **argv )
 
   // logging
   logInit();
-  set_comp_log(S1AP,  LOG_TRACE, LOG_MED,1);
-  set_comp_log(SCTP,  LOG_TRACE, LOG_MED,1);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+
+  set_comp_log(S1AP, LOG_TRACE, LOG_MED, 1);
+  set_comp_log(SCTP, LOG_TRACE, LOG_MED, 1);
   asn_debug      = 1;
   asn1_xer_print = 1;
 
