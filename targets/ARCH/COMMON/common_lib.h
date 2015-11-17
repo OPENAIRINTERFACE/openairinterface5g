@@ -151,8 +151,10 @@ typedef enum {
   ETH_IF,
   /*!\brief device is ExpressMIMO */
   EXMIMO_IF,
-  /*!\brief device is USRP*/
-  USRP_IF,
+  /*!\brief device is USRP B200/B210*/
+  USRP_B200_IF,
+  /*!\brief device is USRP X300/X310*/
+  USRP_X300_IF,
   /*!\brief device is BLADE RF*/
   BLADERF_IF,
   /*!\brief device is NONE*/

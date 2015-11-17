@@ -171,45 +171,44 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
 
 
-   /* 
-  if (cc>1) {
+  if (device->type == USRP_B200_IF) {  
+    if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
-    std::vector<void *> buff_ptrs;
+      std::vector<void *> buff_ptrs;
  
-    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
-    samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-  } else {
+      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
+      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
     // receive a single channel (e.g. from connector RF A)
-    samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
-    }*/
-
-  if (cc>1) {
-    // receive multiple channels (e.g. RF A and RF B)
-    std::vector<void *> buff_ptrs;
- 
-    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
-    samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-  } else {
-    // receive a single channel (e.g. from connector RF A)
-    samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
-  }
-
-  /*
+      samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
+    }
+   
   // bring RX data into 12 LSBs for softmodem RX
-  for (int i=0;i<cc;i++) {
-    for (int j=0; j<nsamps2; j++) {      
+    for (int i=0;i<cc;i++) {
+      for (int j=0; j<nsamps2; j++) {      
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-      ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 #else
-      ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
 #endif
 #elif defined(__arm__)
-      ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+        ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
 #endif
+      }
     }
+  } else if (device->type == USRP_X300_IF) {
+    if (cc>1) {
+    // receive multiple channels (e.g. RF A and RF B)
+      std::vector<void *> buff_ptrs;
+ 
+      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
+      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
+    // receive a single channel (e.g. from connector RF A)
+      samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
     }
-  */
+  }
 
   if (samples_received < nsamps) {
     printf("[recv] received %d samples out of %d\n",samples_received,nsamps);
@@ -397,6 +396,9 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     // lock mboard clocks
     s->usrp->set_clock_source("internal");
     
+    //Setting device type to USRP X300/X310 
+    device->type=USRP_X300_IF;
+
     // this is not working yet, master clock has to be set via constructor
     // set master clock rate and sample rate for tx & rx for streaming
     //s->usrp->set_master_clock_rate(usrp_master_clock);
