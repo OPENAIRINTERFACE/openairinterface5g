@@ -216,18 +216,20 @@ add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
 # Debug related options
 #########################################
-add_boolean_option(MSG_PRINT  False "print debug messages")
-add_boolean_option(DISABLE_XER_PRINT False "print XER Format")
-add_boolean_option(XER_PRINT False "print XER Format")
-add_boolean_option(RRC_MSG_PRINT False "print RRC messages")
-add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages to /tmp/pdcp.log")
-add_boolean_option(DEBUG_PDCP_PAYLOAD False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
+add_boolean_option(EMIT_ASN_DEBUG      False "ASN1 coder/decoder Debug")
+add_boolean_option(MSG_PRINT           False "print debug messages")
+add_boolean_option(DISABLE_XER_PRINT   False "print XER Format")
+add_boolean_option(XER_PRINT           False "print XER Format")
+add_boolean_option(RRC_MSG_PRINT       False "print RRC messages")
+add_boolean_option(PDCP_MSG_PRINT      False "print PDCP messages to /tmp/pdcp.log")
+add_boolean_option(DEBUG_PDCP_PAYLOAD  False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
 add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace 
-add_boolean_option(TRACE_RLC_PAYLOAD False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
-add_boolean_option(TEST_OMG False "???")
-add_boolean_option(DEBUG_OMG False "???")
-add_boolean_option(XFORMS False "This adds the possibility to see the signal oscilloscope")
-add_boolean_option(PRINT_STATS False "This adds the possibility to see the status")
+add_boolean_option(TRACE_RLC_PAYLOAD   False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(TEST_OMG            False "???")
+add_boolean_option(DEBUG_OMG           False "???")
+add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
+add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
@@ -1660,6 +1662,12 @@ target_link_libraries (test_epc_generate_scenario
 
 add_executable(test_epc_play_scenario
   ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_decode.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_display.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_fsm.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_parse.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_sctp.c
   ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.h
   ${OPENAIR2_DIR}/ENB_APP/enb_config.h
   ${OPENAIR2_DIR}/COMMON/commonDef.h
