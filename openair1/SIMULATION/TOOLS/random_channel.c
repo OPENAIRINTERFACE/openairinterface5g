@@ -39,6 +39,8 @@
 #include "UTIL/LOG/log.h"
 //#define DEBUG_CH
 
+extern void print_shorts(char *s,__m128i *x);
+
 void fill_channel_desc(channel_desc_t *chan_desc,
 		       uint8_t nb_tx,
 		       uint8_t nb_rx, 
@@ -119,7 +121,12 @@ void fill_channel_desc(channel_desc_t *chan_desc,
     }
   }
   else {
-    chan_desc->R_sqrt = R_sqrt;
+    chan_desc->R_sqrt = (struct complex**) calloc(nb_taps,sizeof(struct complex*));
+    for (i = 0; i<nb_taps; i++) {
+        chan_desc->R_sqrt[i]    = (struct complex*) calloc(nb_tx*nb_rx*nb_tx*nb_rx,sizeof(struct complex));
+	//chan_desc->R_sqrt = (struct complex*)&R_sqrt[i][0];
+	chan_desc->R_sqrt[i] = R_sqrt[0];
+	}	
   }
 
   for (i = 0; i<nb_taps; i++) {
@@ -159,6 +166,9 @@ double etu_amps_dB[] = {-1.0,-1.0,-1.0,0.0,0.0,0.0,-3.0,-5.0,-7.0};
 double default_amps_lin[] = {0.3868472 , 0.3094778 , 0.1547389 , 0.0773694 , 0.0386847 , 0.0193424 , 0.0096712 , 0.0038685};
 double default_amp_lin[] = {1};
 
+double ts_shift_delays[] = {0, 1/7.68};
+double ts_shift_amps[] = {0, 1};
+
 //correlation matrix for a 2x2 channel with full Tx correlation 
 struct complex R_sqrt_22_corr_tap[16] = {{0.70711,0}, {0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, 
 					{0.0, 0.0}, {0.70711,0}, {0.0, 0.0}, {0.70711,0},
@@ -183,6 +193,36 @@ struct complex *R_sqrt_21_anticorr[1]     = {R_sqrt_21_anticorr_tap};
 
 struct complex **R_sqrt_ptr2;
 
+// full correlation matrix in vectorized form for 2x2 channel, where h1 is  perfectly orthogonal to h2
+
+struct complex R_sqrt_22_orthogonal_tap[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, 
+							{0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, {0.0,0.0},
+							{0.0,0.0}, {0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, 
+							{0.0, 0.0}, {0.0,0.0}, {0.0, 0.0}, {0.70711,0.0}};
+struct complex *R_sqrt_22_orthogonal[1]     = {R_sqrt_22_orthogonal_tap};
+
+// full correlation matrix for TM4 to make orthogonal effective channel
+
+
+
+
+struct complex R_sqrt_22_orth_eff_ch_TM4_prec_real_tap[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, 
+							{0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {-0.70711,0.0},
+							{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, 
+							{0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}};
+struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_real[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_real_tap};
+
+
+
+struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap[16] = {{0.70711,0.0}, {0.0,0.0}, {0.0, -0.70711}, {0.0,0.0}, 
+							{0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {0.0,0.70711},
+							{0.0,-0.70711}, {0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, 
+							{0.0, 0.0}, {0.0,0.70711}, {0.0, 0.70711}, {-0.70711,0.0}};
+struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_imag[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap};
+
+
+
+//Rayleigh1_orth_eff_ch_TM4
 
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx, 
 				     uint8_t nb_rx, 
@@ -629,7 +669,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       aoa = .03;
       maxDoppler = 0;
 
-      if ((nb_tx==2) && (nb_rx==1)) {
+      if ((nb_tx==2) && (nb_rx==1)) { //check this
 	R_sqrt_ptr2 = R_sqrt_21_anticorr;
       }
       else if ((nb_tx==2) && (nb_rx==2)) {
@@ -710,6 +750,34 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
       break;
 
+  case TS_SHIFT:
+      nb_taps = 2;
+      Td = ts_shift_delays[1];
+      channel_length = 10;
+      ricean_factor = 0.0;
+      aoa = 0.0;
+      maxDoppler = 0;
+
+      fill_channel_desc(chan_desc,nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   ts_shift_amps,
+				   ts_shift_delays,
+				   NULL,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      printf("TS_SHIFT: ricean_factor %f\n",chan_desc->ricean_factor);
+
+      break;
+
   case Rice1_corr:
       nb_taps = 1;
       Td = 0;
@@ -779,7 +847,176 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   path_loss_dB,
 				   1);
       break;
+      
+  case Rayleigh1_orthogonal:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = 0.03;
+      maxDoppler = 0;
 
+      
+      if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_orthogonal;
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+      fill_channel_desc(chan_desc,nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+      
+  case Rayleigh1_orth_eff_ch_TM4_prec_real:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = 0.03;
+      maxDoppler = 0;
+
+      
+      if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_orth_eff_ch_TM4_prec_real; 
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+      fill_channel_desc(chan_desc,nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+      
+      case Rayleigh1_orth_eff_ch_TM4_prec_imag:
+      nb_taps = 1;
+      Td = 0;
+      channel_length = 1;
+      ricean_factor = 1;
+      aoa = 0.03;
+      maxDoppler = 0;
+
+      
+      if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_orth_eff_ch_TM4_prec_imag; 
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+      fill_channel_desc(chan_desc,nb_tx,
+				   nb_rx,
+				   nb_taps,
+				   channel_length,
+				   default_amp_lin,
+				   NULL,
+				   R_sqrt_ptr2,
+				   Td,
+				   BW,
+				   ricean_factor,
+				   aoa,
+				   forgetting_factor,
+				   maxDoppler,
+				   channel_offset, 
+				   path_loss_dB,
+				   0);
+      break;
+      
+       case Rayleigh8_orth_eff_ch_TM4_prec_real:
+
+    if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_orth_eff_ch_TM4_prec_real; 
+	//R_sqrt_ptr2 = NULL;
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+    
+      nb_taps = 8;
+      Td = 0.8;
+      channel_length = (int)11+2*BW*Td;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      fill_channel_desc(chan_desc,
+			nb_tx,
+			nb_rx,
+			nb_taps,
+			channel_length,
+			default_amps_lin,
+			NULL,
+			R_sqrt_ptr2,
+			Td,
+			BW,
+			ricean_factor,
+			aoa,
+			forgetting_factor,
+			maxDoppler,
+			channel_offset, 
+			path_loss_dB,
+			0);
+    
+      break;
+      
+      case Rayleigh8_orth_eff_ch_TM4_prec_imag:
+      nb_taps = 8;
+      Td = 0.8;
+      channel_length = (int)11+2*BW*Td;
+      ricean_factor = 1;
+      aoa = .03;
+      maxDoppler = 0;
+
+      if ((nb_tx==2) && (nb_rx==2)) {
+	R_sqrt_ptr2 = R_sqrt_22_orth_eff_ch_TM4_prec_imag; 
+      }
+      else 
+	R_sqrt_ptr2 = NULL;
+
+       fill_channel_desc(chan_desc,
+			nb_tx,
+			nb_rx,
+			nb_taps,
+			channel_length,
+			default_amps_lin,
+			NULL,
+			R_sqrt_ptr2,
+			Td,
+			BW,
+			ricean_factor,
+			aoa,
+			forgetting_factor,
+			maxDoppler,
+			channel_offset, 
+			path_loss_dB,
+			0);
+      break;
+      
   default:
     LOG_W(OCM,"channel model not yet supported\n");
     free(chan_desc);
@@ -906,6 +1143,11 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
       if (desc->channel_length == 1) {
 	desc->ch[aarx+(aatx*desc->nb_rx)][0].x = desc->a[0][aarx+(aatx*desc->nb_rx)].x;
 	desc->ch[aarx+(aatx*desc->nb_rx)][0].y = desc->a[0][aarx+(aatx*desc->nb_rx)].y;
+#ifdef DEBUG_CH
+	k=0;
+	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
+#endif
+
       }
       else {
 

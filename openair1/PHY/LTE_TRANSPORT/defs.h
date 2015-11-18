@@ -696,6 +696,12 @@ typedef enum {
 } PDSCH_t;
 
 typedef enum {
+  rx_standard=0,
+  rx_IC_single_stream,
+  rx_IC_dual_stream,
+} RX_type_t;
+
+typedef enum {
   pucch_format1=0,
   pucch_format1a,
   pucch_format1b,

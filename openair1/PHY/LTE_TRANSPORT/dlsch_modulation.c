@@ -155,14 +155,13 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
   int first_layer0        = dlsch0_harq->first_layer;
   int Nlayers0            = dlsch0_harq->Nlayers; 
   uint8_t mod_order0      = get_Qm(dlsch0_harq->mcs);
-
+  uint8_t mod_order1=2;
+  uint8_t precoder_index0,precoder_index1;
 
   uint8_t *x1=NULL;
-  uint8_t mod_order1=2;
   // Fill these in later for TM8-10
   //  int Nlayers1;
   //  int first_layer1;
-
 
   int use2ndpilots = (frame_parms->mode1_flag==1)?1:0;
 
@@ -642,7 +641,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	}
       }
       else if ((mimo_mode >= UNIFORM_PRECODING11)&&(mimo_mode <= PUSCH_PRECODING1)) {
-	// this is for transmission modes 4-6 (1 layer)
+	// this is for transmission modes 5-6 (1 layer)
 	*re_allocated = *re_allocated + 1;	         
 	amp = (int16_t)(((int32_t)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
 
@@ -740,6 +739,214 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	  
 	}
       }
+      else if ((mimo_mode >= DUALSTREAM_UNIFORM_PRECODING1)&&(mimo_mode <= DUALSTREAM_PUSCH_PRECODING)) {
+	// this is for transmission mode 4 (1 layer)
+	*re_allocated = *re_allocated + 1;	         
+	//amp = (int16_t)(((int32_t)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
+	amp = tmp_amp/2;
+	gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
+
+	if (precoder_index==0) {
+	  precoder_index0 = 0; //[1 1]
+	  precoder_index1 = 1; //[1 -1]
+	}
+	else if (precoder_index==1) {
+	  precoder_index0 = 2; //[1 j]
+	  precoder_index1 = 3; //[1 -j]
+	}
+	else {
+	  LOG_E(PHY,"problem with precoder in TM4\n");
+	  return(-1);
+	}
+
+	switch (mod_order0) {
+	case 2:  //QPSK
+
+	  ((int16_t*)&tmp_sample1)[0] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+	  ((int16_t*)&tmp_sample1)[1] = (x0[*jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj = *jj + 1;
+
+      // normalization for 2 tx antennas
+	  ((int16_t*)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	  ((int16_t*)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
+	  if (x0[*jj] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj=*jj+1;
+	  
+	  
+	  if (x0[*jj] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	   ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+	   ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+
+	   ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	   ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+	  
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+
+	  break;
+	  
+	case 6:  //64QAM
+	  
+	  
+	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj=*jj+1;
+	  if (x0[*jj] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj=*jj+1;
+	  
+	  ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+
+	  ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	  ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+	  
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+	  
+	  break;
+	  
+	}
+	switch (mod_order1) {
+	case 2:  //QPSK
+
+	  ((int16_t*)&tmp_sample1)[0] = (x1[*jj2]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj2 = *jj2 + 1;
+	  ((int16_t*)&tmp_sample1)[1] = (x1[*jj2]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK;
+	  *jj2 = *jj2 + 1;
+
+      // normalization for 2 tx antennas
+	  ((int16_t*)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	  ((int16_t*)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+
+	  break;
+	  
+	case 4:  //16QAM
+	  
+	  qam16_table_offset_re = 0;
+	  qam16_table_offset_im = 0;
+
+	  if (x1[*jj2] == 1)
+	    qam16_table_offset_re+=2;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam16_table_offset_im+=2;
+	  *jj2=*jj2+1;
+	  
+	  
+	  if (x1[*jj2] == 1)
+	    qam16_table_offset_re+=1;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam16_table_offset_im+=1;
+	  *jj2=*jj2+1;
+	  
+	   ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+	   ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+
+	   ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	   ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+	  
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+
+	  break;
+	  
+	case 6:  //64QAM
+	  
+	  
+	  qam64_table_offset_re = 0;
+	  qam64_table_offset_im = 0;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_re+=4;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_im+=4;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_re+=2;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_im+=2;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_re+=1;
+	  *jj2=*jj2+1;
+	  if (x1[*jj2] == 1)
+	    qam64_table_offset_im+=1;
+	  *jj2=*jj2+1;
+	  
+	  ((int16_t*)&tmp_sample1)[0] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+	  ((int16_t*)&tmp_sample1)[1] = (int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+
+	  ((int16_t *)&txdataF[0][tti_offset])[0] += ((int16_t*)&tmp_sample1)[0];
+	  ((int16_t *)&txdataF[0][tti_offset])[1] += ((int16_t*)&tmp_sample1)[1];
+	  
+	  if (frame_parms->nb_antennas_tx == 2) {
+	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index1);
+	    ((int16_t*)&txdataF[1][tti_offset])[0] += ((int16_t*)&tmp_sample2)[0];
+	    ((int16_t*)&txdataF[1][tti_offset])[1] += ((int16_t*)&tmp_sample2)[1];
+	  }
+	  
+	  break;
+	  
+	}
+      }
+
       if (mimo_mode == ALAMOUTI) {
 	re++;  // adjacent carriers are taken care of by precoding
 	*re_allocated = *re_allocated + 1;

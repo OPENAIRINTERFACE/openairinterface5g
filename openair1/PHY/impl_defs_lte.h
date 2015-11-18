@@ -795,19 +795,22 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_comp0;
-  /// \brief Received frequency-domain signal after extraction and channel compensation.
-  /// - first index: ? [0..7] (hard coded) accessed via \c round
-  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - third index: ? [0..168*N_RB_DL[
-  int32_t **rxdataF_comp1[8];
+  /// \brief Received frequency-domain signal after extraction and channel compensation for the second stream. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[ 
+  int32_t **rxdataF_comp1[8][8];
   /// \brief Downlink channel estimates extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
   int32_t **dl_ch_estimates_ext;
-  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
-  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-  /// - second index: ? [0..168*N_RB_DL[
-  int32_t **dl_ch_rho_ext;
+  /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS. For the SIC receiver we need to store the history of this for each harq process and round
+  /// - first index: ? [0..7] (hard coded) accessed via \c harq_pid
+  /// - second index: ? [0..7] (hard coded) accessed via \c round
+  /// - third index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - fourth index: ? [0..168*N_RB_DL[
+  int32_t **dl_ch_rho_ext[8][8];
   /// \brief Downlink cross-correlation of MIMO channel estimates (unquantized PMI) extracted in PRBS.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..168*N_RB_DL[
