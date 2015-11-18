@@ -266,6 +266,8 @@ typedef struct {
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
+  /// Nsoft parameter related to UE Category
+  uint32_t Nsoft;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
@@ -693,6 +695,8 @@ typedef struct {
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
+  /// Nsoft parameter related to UE Category
+  uint32_t Nsoft;
   /// Maximum number of Turbo iterations
   uint8_t max_turbo_iterations;
   /// accumulated tx power adjustment for PUCCH
@@ -737,7 +741,7 @@ typedef struct {
   /// Aggregation level
   uint8_t L;
   /// Position of first CCE of the dci
-  int nCCE;
+  int firstCCE;
   /// flag to indicate that this is a RA response
   boolean_t ra_flag;
   /// rnti

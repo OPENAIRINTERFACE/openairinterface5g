@@ -596,12 +596,14 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
 }
 
 
-void schedule_ulsch(module_id_t module_idP, frame_t frameP,unsigned char cooperation_flag,sub_frame_t subframeP, unsigned char sched_subframe,
-                    unsigned int *nCCE)  //,int calibration_flag) {
-{
+void schedule_ulsch(module_id_t module_idP, 
+		    frame_t frameP,
+		    unsigned char cooperation_flag,
+		    sub_frame_t subframeP, 
+		    unsigned char sched_subframe) {
 
 
-  unsigned int nCCE_available[MAX_NUM_CCs];
+
   uint16_t first_rb[MAX_NUM_CCs],i;
   int CC_id;
   eNB_MAC_INST *eNB=&eNB_mac_inst[module_idP];
@@ -612,7 +614,6 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,unsigned char coopera
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
     first_rb[CC_id] = 1;
-    nCCE_available[CC_id] = mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE[CC_id];
 
     // UE data info;
     // check which UE has data to transmit
@@ -644,10 +645,10 @@ void schedule_ulsch(module_id_t module_idP, frame_t frameP,unsigned char coopera
 
   }
 
-  schedule_ulsch_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe, nCCE, nCCE_available, first_rb);
+  schedule_ulsch_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe,first_rb);
 
 #ifdef CBA
-  schedule_ulsch_cba_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe, nCCE, nCCE_available, first_rb);
+  schedule_ulsch_cba_rnti(module_idP, cooperation_flag, frameP, subframeP, sched_subframe, first_rb);
 #endif
 
 
@@ -662,8 +663,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                          frame_t       frameP,
                          sub_frame_t   subframeP,
                          unsigned char sched_subframe,
-                         unsigned int *nCCE,
-                         unsigned int *nCCE_available,
                          uint16_t     *first_rb)
 {
 
@@ -697,8 +696,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                                 frameP,
                                 subframeP,
                                 first_rb,
-                                aggregation,
-                                nCCE);
+                                aggregation);
 
   //  LOG_I(MAC,"exiting ulsch preprocesor\n");
 
@@ -729,8 +727,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         continue; // mac_xface->macphy_exit("[MAC][eNB] Cannot find eNB_UE_stats\n");
       }
 
-      if (nCCE_available[CC_id] < (1<<aggregation)) {
-        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d CC %d: not enough nCCE (%d)\n", module_idP,frameP,subframeP,UE_id,CC_id,nCCE_available[CC_id]);
+      if (CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)) {
+        LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
         continue; // break;
       }
 
@@ -747,8 +745,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
           //should we continue or set harq_pid to 0?
           continue;
         } else
-          LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (nCCE %d, rnti %x,mode %s)\n",
-                module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,nCCE[CC_id],rnti,mode_string[eNB_UE_stats->mode]);
+          LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (rnti %x,mode %s)\n",
+                module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,rnti,mode_string[eNB_UE_stats->mode]);
 
 #undef EXMIMO_IOT
 #ifndef EXMIMO_IOT
@@ -1089,9 +1087,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                             subframeP,
                             S_UL_SCHEDULED);
 
-          nCCE[CC_id] = nCCE[CC_id] + (1<<aggregation);
-          nCCE_available[CC_id] = mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE[CC_id];
-
           LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
 #ifdef DEBUG
           dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
@@ -1104,8 +1099,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 }
 
 #ifdef CBA
-void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframeP, unsigned char sched_subframe, unsigned int *nCCE,
-                             unsigned int *nCCE_available, uint16_t *first_rb)
+void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframeP, unsigned char sched_subframe, uint16_t *first_rb)
 {
 
   eNB_MAC_INST *eNB = &eNB_mac_inst[module_idP];
@@ -1164,11 +1158,11 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
     // cba group template uses the exisitng UE template, and thus if a UE
     // is scheduled, the correspodning group can't be used for CBA
     // this can be fixed later
-    if ((total_groups > 0) && (nCCE[CC_id] == 0)) {
+    if (total_groups > 0)  {
       DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_id].DCI_pdu;
 
       for (cba_group=0;
-           (cba_group<total_groups)  && (nCCE_available[CC_id]* (total_cba_resources+1) > (1<<aggregation));
+           (cba_group<total_groups)   > (1<<aggregation));
            cba_group++) {
         // equal weight
         //weight[cba_group] = floor(total_UEs/active_groups);//find_num_active_UEs_in_cbagroup(module_idP, cba_group);
@@ -1256,13 +1250,6 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
       // phase 2 reduce the number of cba allocations among the groups
       cba_group=0;
 
-      while  (nCCE[CC_id] + (1<<aggregation) * total_cba_resources >= nCCE_available[CC_id]) {
-        num_cba_resources[cba_group%total_groups]--;
-        total_cba_resources--;
-        //  LOG_N(MAC,"reducing num cba resources to %d for group %d \n", num_cba_resources[cba_group%total_groups], cba_group%total_groups );
-        cba_group++;
-      }
-
       if (total_cba_resources <= 0) {
         return;
       }
@@ -1280,11 +1267,11 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
       for (cba_group=0; cba_group<total_groups; cba_group++) {
 
         LOG_N(MAC,
-              "[eNB %d] CC_id %d Frame %d, subframe %d: cba group %d active_ues %d total groups %d mcs %d, available/required rb (%d/%d), num resources %d, ncce (%d/%d required %d \n",
+              "[eNB %d] CC_id %d Frame %d, subframe %d: cba group %d active_ues %d total groups %d mcs %d, available/required rb (%d/%d), num resources %d, ncce required %d \n",
               module_idP, CC_id, frameP, subframeP, cba_group,active_UEs[cba_group],total_groups,
               mcs[cba_group], available_rbs,required_rbs[cba_group],
               num_cba_resources[cba_group],
-              nCCE[CC_id],nCCE_available[CC_id],(1<<aggregation) * num_cba_resources[cba_group]);
+              (1<<aggregation) * num_cba_resources[cba_group]);
 
         for (cba_resources=0; cba_resources < num_cba_resources[cba_group]; cba_resources++) {
           rb_table_index =0;
@@ -1310,10 +1297,10 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
 
           first_rb[CC_id]+=rb_table[rb_table_index];
           LOG_N(MAC,
-                "[eNB %d] CC_id %d Frame %d, subframeP %d: schedule CBA access %d rnti %x, total/required/allocated/remaining rbs (%d/%d/%d/%d), mcs %d, rballoc %d, nCCE (%d/%d)\n",
+                "[eNB %d] CC_id %d Frame %d, subframeP %d: schedule CBA access %d rnti %x, total/required/allocated/remaining rbs (%d/%d/%d/%d), mcs %d, rballoc %d\n",
                 module_idP, CC_id, frameP, subframeP, cba_group,eNB_mac_inst[module_idP].common_channels[CC_id].cba_rnti[cba_group],
                 available_rbs, required_rbs[cba_group], allocated_rbs, remaining_rbs,
-                mcs[cba_group],rballoc,nCCE_available[CC_id],nCCE[CC_id]);
+                mcs[cba_group],rballoc);
 
           switch (frame_parms->N_RB_UL) {
           case 6:
@@ -1426,8 +1413,6 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
             break;
           }
 
-          nCCE[CC_id] = nCCE[CC_id] + (1<<aggregation) ;
-          nCCE_available[CC_id] = mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE[CC_id];
           //      break;// for the moment only schedule one
         }
       }

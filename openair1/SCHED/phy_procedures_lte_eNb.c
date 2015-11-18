@@ -296,100 +296,6 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 }
 
 
-int CCE_table[800];
-
-void init_nCCE_table(void)
-{
-  memset(CCE_table,0,800*sizeof(int));
-}
-
-
-int get_nCCE_offset(const unsigned char L, const int nCCE, const int common_dci, const unsigned short rnti, const unsigned char subframe)
-{
-
-  int search_space_free,m,nb_candidates = 0,l,i;
-  unsigned int Yk;
-
-  /*
-    printf("CCE Allocation: ");
-    for (i=0;i<nCCE;i++)
-    printf("%d.",CCE_table[i]);
-    printf("\n");
-  */
-  if (common_dci == 1) {
-    // check CCE(0 ... L-1)
-    nb_candidates = (L==4) ? 4 : 2;
-    nb_candidates = min(nb_candidates,nCCE/L);
-
-    for (m = nb_candidates-1 ; m >=0 ; m--) {
-      search_space_free = 1;
-      for (l=0; l<L; l++) {
-        if (CCE_table[(m*L) + l] == 1) {
-          search_space_free = 0;
-          break;
-        }
-      }
-
-      if (search_space_free == 1) {
-        for (l=0; l<L; l++)
-          CCE_table[(m*L)+l]=1;
-        return(m*L);
-      }
-    }
-
-    return(-1);
-
-  } else { // Find first available in ue specific search space
-    // according to procedure in Section 9.1.1 of 36.213 (v. 8.6)
-    // compute Yk
-    Yk = (unsigned int)rnti;
-
-    for (i=0; i<=subframe; i++)
-      Yk = (Yk*39827)%65537;
-
-    Yk = Yk % (nCCE/L);
-
-
-    switch (L) {
-    case 1:
-    case 2:
-      nb_candidates = 6;
-      break;
-
-    case 4:
-    case 8:
-      nb_candidates = 2;
-      break;
-
-    default:
-      DevParam(L, nCCE, rnti);
-      break;
-    }
-
-    //    LOG_I(PHY,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
-
-    for (m = 0 ; m < nb_candidates ; m++) {
-      search_space_free = 1;
-
-      for (l=0; l<L; l++) {
-        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
-          search_space_free = 0;
-          break;
-        }
-      }
-
-      if (search_space_free == 1) {
-        for (l=0; l<L; l++)
-          CCE_table[(((Yk+m)%(nCCE/L))*L)+l]=1;
-
-        return(((Yk+m)%(nCCE/L))*L);
-      }
-    }
-
-    return(-1);
-  }
-}
-
 int16_t get_target_pusch_rx_power(const module_id_t module_idP, const uint8_t CC_id)
 {
   //return PHY_vars_eNB_g[module_idP][CC_id]->PHY_measurements_eNB[0].n0_power_tot_dBm;
@@ -1811,15 +1717,18 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
     phy_vars_eNB->dlsch_eNB[i][0]->subframe_tx[subframe] = 0;
   }
 
-  init_nCCE_table();
+  //  init_nCCE_table();
 
-  num_pdcch_symbols = get_num_pdcch_symbols(DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
-                      DCI_pdu->dci_alloc,
-                      &phy_vars_eNB->lte_frame_parms,
-                      subframe);
+  num_pdcch_symbols = DCI_pdu->num_pdcch_symbols;
+  /*get_num_pdcch_symbols(DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci,
+    DCI_pdu->dci_alloc,
+    &phy_vars_eNB->lte_frame_parms,
+    subframe);*/
+  /*
   DCI_pdu->nCCE = get_nCCE(num_pdcch_symbols,
                            &phy_vars_eNB->lte_frame_parms,
-                           get_mi(&phy_vars_eNB->lte_frame_parms,subframe));
+                           get_mi(&phy_vars_eNB->lte_frame_parms,subframe));*/
+
   LOG_D(PHY,"num_pdcch_symbols %"PRIu8", nCCE %u (dci commond %"PRIu8", dci uespec %"PRIu8"\n",num_pdcch_symbols,DCI_pdu->nCCE,
         DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
 
@@ -1835,6 +1744,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #endif
 
   for (i=0; i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
+    LOG_D(PHY,"[eNB] Subframe %d: DCI %d/%d : rnti %x, CCEind %d\n",subframe,i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,DCI_pdu->dci_alloc[i].rnti,DCI_pdu->dci_alloc[i].firstCCE);
 #ifdef DEBUG_PHY_PROC
 
     if (DCI_pdu->dci_alloc[i].rnti != SI_RNTI) {
@@ -1862,28 +1772,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                          phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 
 
-      int result = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L, DCI_pdu->nCCE, 1, SI_RNTI, subframe);
-      phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe] = result;
+      phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
 
-      if (result == -1) {
-        // FIXME what happens to phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe]?
-        LOG_E(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : No available CCE resources for common DCI (SI)!!!\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
-      } else {
-        LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (SI)  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
-              phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe],DCI_pdu->nCCE);
-
+      LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (SI)  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
+	    phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe],DCI_pdu->nCCE);
+      
 #if defined(SMBV) && !defined(EXMIMO)
 
-        // configure SI DCI
-        if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
-          msg("[SMBV] Frame %3d, SI in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
-          smbv_configure_common_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), "SI", &DCI_pdu->dci_alloc[i], i);
-        }
-
-#endif
+      // configure SI DCI
+      if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
+	msg("[SMBV] Frame %3d, SI in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
+	smbv_configure_common_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), "SI", &DCI_pdu->dci_alloc[i], i);
       }
-
-      DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe];
+      
+#endif
+      
 
     } else if (DCI_pdu->dci_alloc[i].ra_flag == 1) {
 #ifdef DEBUG_PHY_PROC
@@ -1904,28 +1807,20 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
       //    mac_xface->macphy_exit("Transmitted RAR, exiting\n");
 
-      int result = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L, DCI_pdu->nCCE, 1, DCI_pdu->dci_alloc[i].rnti, subframe);
-      phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe] = result;
 
-      if (result == -1) {
-        // FIXME what happens to phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe]?
-        LOG_E(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : No available CCE resources for common DCI (RA) !!!\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
-      } else {
-        LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (RA)  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
-              phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe],DCI_pdu->nCCE);
+      phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
+
+      LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for common DCI (RA)  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
+	    phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe],DCI_pdu->nCCE);
 #if defined(SMBV) && !defined(EXMIMO)
 
-        // configure RA DCI
-        if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
-          msg("[SMBV] Frame %3d, RA in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
-          smbv_configure_common_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), "RA", &DCI_pdu->dci_alloc[i], i);
-        }
-
-#endif
-
+      // configure RA DCI
+      if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
+	msg("[SMBV] Frame %3d, RA in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
+	smbv_configure_common_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), "RA", &DCI_pdu->dci_alloc[i], i);
       }
 
-      DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB_ra->nCCE[subframe];
+#endif
 
     }
 
@@ -1966,30 +1861,22 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         LOG_D(PHY,"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d subframe %d: Generated dlsch params\n",
               phy_vars_eNB->Mod_id,DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->current_harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
 
-        int result = get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L, DCI_pdu->nCCE, 0, DCI_pdu->dci_alloc[i].rnti, subframe);
-        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe] = result;
 
-        if (result == -1) {
-          // FIXME what happens to phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe]?
-          LOG_E(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : No available CCE resources for UE spec DCI (PDSCH %"PRIx16") !!!\n",
-                phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,DCI_pdu->dci_alloc[i].rnti);
-        } else {
-          LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
-                DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe],DCI_pdu->nCCE);
+        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
+
+	LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
+	      DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe],DCI_pdu->nCCE);
 
 #if defined(SMBV) && !defined(EXMIMO)
-          DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe];
-
-          // configure UE-spec DCI
-          if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
-            msg("[SMBV] Frame %3d, PDSCH in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
-            smbv_configure_ue_spec_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), UE_id+1, &DCI_pdu->dci_alloc[i], i);
-          }
+	
+	// configure UE-spec DCI
+	if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
+	  msg("[SMBV] Frame %3d, PDSCH in SF %d DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
+	  smbv_configure_ue_spec_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), UE_id+1, &DCI_pdu->dci_alloc[i], i);
+	}
 
 #endif
-        }
 
-        DCI_pdu->dci_alloc[i].nCCE = phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe];
 #ifdef DEBUG_PHY_PROC
         //if (phy_vars_eNB->proc[sched_subframe].frame_tx%100 == 0)
         LOG_D(PHY,"[eNB %"PRIu8"][DCI][PDSCH %"PRIx16"] Frame %d subframe %d UE_id %"PRId8" Generated DCI format %d, aggregation %d\n",
@@ -2067,29 +1954,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                          CBA_RNTI,
                                          0);  // do_srs
 
-      if ((DCI_pdu->dci_alloc[i].nCCE=get_nCCE_offset(1<<DCI_pdu->dci_alloc[i].L,
-                                      DCI_pdu->nCCE,
-                                      0,
-                                      DCI_pdu->dci_alloc[i].rnti,
-                                      subframe)) == -1) {
-        LOG_E(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : No available CCE resources (%u) for UE spec DCI (PUSCH %"PRIx16") !!!\n",
-              phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,DCI_pdu->nCCE,DCI_pdu->dci_alloc[i].rnti);
-      } else {
-        LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resources for UE spec DCI (PUSCH %"PRIx16") => %d/%u\n",
-              phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,DCI_pdu->dci_alloc[i].rnti,
-              DCI_pdu->dci_alloc[i].nCCE,DCI_pdu->nCCE);
-
+      LOG_T(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resources for UE spec DCI (PUSCH %"PRIx16") => %d/%u\n",
+	    phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,DCI_pdu->dci_alloc[i].rnti,
+	    DCI_pdu->dci_alloc[i].firstCCE,DCI_pdu->nCCE);
+      
 #if defined(SMBV) && !defined(EXMIMO)
 
         // configure UE-spec DCI for UL Grant
-        if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
-          msg("[SMBV] Frame %3d, SF %d UL DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
-          smbv_configure_ue_spec_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), UE_id+1, &DCI_pdu->dci_alloc[i], i);
-        }
-
+      if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
+	msg("[SMBV] Frame %3d, SF %d UL DCI %"PRIu32"\n",phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,i);
+	smbv_configure_ue_spec_dci(smbv_fname,(smbv_frame_cnt*10) + (subframe), UE_id+1, &DCI_pdu->dci_alloc[i], i);
+      }
+      
 #endif
 
-      }
+      
 
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %"PRIu8"][PUSCH %"PRIu8"] frame %d subframe %d Setting subframe_scheduling_flag for UE %"PRIu32" harq_pid %"PRIu8" (ul subframe %"PRIu8")\n",
@@ -2120,13 +1999,13 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   }
 
   if (abstraction_flag == 0) {
-#ifdef DEBUG_PHY_PROC
+    //#ifdef DEBUG_PHY_PROC
 
     if (DCI_pdu->Num_ue_spec_dci+DCI_pdu->Num_common_dci > 0)
       LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (common %"PRIu8",ue_spec %"PRIu8")\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx, subframe,
             DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
 
-#endif
+    //#endif
 
     //    for (sect_id=0;sect_id<number_of_cards;sect_id++)
     num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,
