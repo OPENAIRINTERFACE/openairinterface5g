@@ -56,15 +56,16 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag);
 
-/** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t abstraction_flag)
+/** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at eNB
     @returns Pointer to DLSCH to be removed
     @param Kmimo Kmimo factor from 36-212/36-213
     @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
+    @param Nsoft Soft-LLR buffer size from UE-Category
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
 */
-LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t N_RB_DL, uint8_t abstraction_flag);
+LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 /** \fn free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
     \brief This function frees memory allocated for a particular DLSCH at UE
@@ -72,8 +73,16 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t N_RB_DL, ui
 */
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 
-LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
-
+/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
+    \brief This function allocates structures for a particular DLSCH at eNB
+    @returns Pointer to DLSCH to be removed
+    @param Kmimo Kmimo factor from 36-212/36-213
+    @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
+    @param Nsoft Soft-LLR buffer size from UE-Category
+    @params N_RB_DL total number of resource blocks (determine the operating BW)
+    @param abstraction_flag Flag to indicate abstracted interface
+*/
+LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
@@ -1584,7 +1593,7 @@ uint16_t get_nquad(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uin
 
 uint8_t get_mi(LTE_DL_FRAME_PARMS *frame,uint8_t subframe);
 
-uint16_t get_nCCE_max(uint8_t Mod_id,uint8_t CC_id);
+uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int subframe);
 
 uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 

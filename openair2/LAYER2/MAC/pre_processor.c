@@ -828,8 +828,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
                                    uint16_t *first_rb,
-                                   uint8_t aggregation,
-                                   uint32_t *nCCE)
+                                   uint8_t aggregation)
 {
 
   int16_t            i;
@@ -839,7 +838,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   int16_t            total_remaining_rbs[MAX_NUM_CCs];
   uint16_t           max_num_ue_to_be_scheduled=0,total_ue_count=0;
   rnti_t             rnti= -1;
-  uint32_t            nCCE_to_be_used[MAX_NUM_CCs];
   UE_list_t          *UE_list = &eNB_mac_inst[module_idP].UE_list;
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
@@ -860,7 +858,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   // we need to distribute RBs among UEs
   // step1:  reset the vars
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    nCCE_to_be_used[CC_id]= nCCE[CC_id];
     total_allocated_rbs[CC_id]=0;
     total_remaining_rbs[CC_id]=0;
     average_rbs_per_user[CC_id]=0;
@@ -894,11 +891,13 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       if (UE_template->pre_allocated_nb_rb_ul > 0) {
         total_ue_count+=1;
       }
-
-      if((mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE_to_be_used[CC_id])  > (1<<aggregation)) {
+      /*
+      if((mac_xface->get_nCCE_max(module_idP,CC_id,3,subframeP) - nCCE_to_be_used[CC_id])  > (1<<aggregation)) {
         nCCE_to_be_used[CC_id] = nCCE_to_be_used[CC_id] + (1<<aggregation);
         max_num_ue_to_be_scheduled+=1;
-      }
+	}*/
+
+      max_num_ue_to_be_scheduled+=1;
 
       if (total_ue_count == 0) {
         average_rbs_per_user[CC_id] = 0;

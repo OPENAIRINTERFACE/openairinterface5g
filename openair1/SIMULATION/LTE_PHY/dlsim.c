@@ -347,6 +347,8 @@ int main(int argc, char **argv)
   LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
   LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
   uint8_t Kmimo;
+  uint8_t ue_category=4;
+  uint32_t Nsoft;
   FILE    *proc_fd = NULL;
   char buf[64];
 
@@ -378,7 +380,7 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:U:v:w:B:PLl:Y")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -522,12 +524,15 @@ int main(int argc, char **argv)
       case 'N':
         channel_model=AWGN;
         break;
-
       default:
         msg("Unsupported channel model!\n");
         exit(-1);
       }
 
+      break;
+
+    case 'U':
+      ue_category = atoi(optarg);
       break;
 
     case 'x':
@@ -993,10 +998,27 @@ int main(int argc, char **argv)
   else
     Kmimo=1;
 
+  switch (ue_category) {
+  case 1:
+    Nsoft = 250368;
+    break;
+  case 2:
+  case 3:
+    Nsoft = 1237248;
+    break;
+  case 4:
+    Nsoft = 1827072;
+    break;
+  default:
+    printf("Unsupported UE category %d\n",ue_category);
+    exit(-1);
+    break;
+  }
+
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
-      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
 
       if (!PHY_vars_eNB->dlsch_eNB[k][i]) {
         printf("Can't get eNB dlsch structures\n");
@@ -1008,7 +1030,7 @@ int main(int argc, char **argv)
   }
 
   for (i=0; i<2; i++) {
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(Kmimo,8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
     if (!PHY_vars_UE->dlsch_ue[0][i]) {
       printf("Can't get ue dlsch structures\n");
@@ -1019,7 +1041,7 @@ int main(int argc, char **argv)
   }
 
   // structure for SIC at UE
-  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
 
