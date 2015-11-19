@@ -101,19 +101,9 @@ int set_transport(openair0_device *device) {
 int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile, uint8_t flag) {
   
   void *lib_handle;
-  char *OAI_RF_LIBNAME;
-  char *OAI_TP_LIBNAME;
   oai_device_initfunc_t fp ;
 
-  if (device->host_type==BBU_HOST) {
-    OAI_RF_LIBNAME= "/home/guepe/openairinterface5g/cmake_targets/lte_noS1_build_oai/build/liboai_device.so";
-    OAI_TP_LIBNAME= "/home/guepe/openairinterface5g/cmake_targets/lte_noS1_build_oai/build/liboai_transpro.so";
-  } else {
-    OAI_RF_LIBNAME= "liboai_device.so";
-    OAI_TP_LIBNAME= "liboai_transpro.so";
-  }
-    
-    if (flag == RF_DEVICE) {
+  if (flag == RF_DEVICE) {
       lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
       if (!lib_handle) {
 	printf( "Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);

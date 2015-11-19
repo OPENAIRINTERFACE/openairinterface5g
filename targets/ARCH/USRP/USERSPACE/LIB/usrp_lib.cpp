@@ -332,44 +332,44 @@ int trx_usrp_reset_stats(openair0_device* device) {
 extern "C" {
   int device_init(openair0_device* device, openair0_config_t *openair0_cfg, char *cfgfile) {
     
-  uhd::set_thread_priority_safe(1.0);
-  usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
-  memset(s, 0, sizeof(usrp_state_t));
+    uhd::set_thread_priority_safe(1.0);
+    usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
+    memset(s, 0, sizeof(usrp_state_t));
+    
+    // Initialize USRP device
 
-  // Initialize USRP device
+    std::string args = "type=b200";
+    
 
-  std::string args = "type=b200";
-
-
-  uhd::device_addrs_t device_adds = uhd::device::find(args);
-  size_t i;
-
+    uhd::device_addrs_t device_adds = uhd::device::find(args);
+    size_t i;
+    
   printf("Checking for USRPs\n");
   
   if(device_adds.size() == 0)
   {
     double usrp_master_clock = 184.32e6;
-
+    
     std::string args = "type=x300";
     
     // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
     args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
     
     uhd::device_addrs_t device_adds = uhd::device::find(args);
-
+    
     if(device_adds.size() == 0)
-    {
-      std::cerr<<"No USRP Device Found. " << std::endl;
-      free(s);
-      return -1;
-
-    }
-
- printf("Found USRP X300\n");
+      {
+	std::cerr<<"No USRP Device Found. " << std::endl;
+	free(s);
+	return -1;
+	
+      }
+    
+    printf("Found USRP X300\n");
     s->usrp = uhd::usrp::multi_usrp::make(args);
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
-
+    
     // lock mboard clocks
     s->usrp->set_clock_source("internal");
     
@@ -382,16 +382,15 @@ extern "C" {
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
-
-// do not explicitly set the clock to "internal", because this will disable the gpsdo
-//    // lock mboard clocks
-//    s->usrp->set_clock_source("internal");
+    
+    // do not explicitly set the clock to "internal", because this will disable the gpsdo
+    //    // lock mboard clocks
+    //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
     s->usrp->set_master_clock_rate(30.72e6);
   }
 
-
-
+    
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
@@ -399,7 +398,7 @@ extern "C" {
       printf("Setting rx freq/gain on channel %lu/%lu\n",i,s->usrp->get_rx_num_channels());
       s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
       set_rx_gain_offset(&openair0_cfg[0],i);
-
+      
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
       if (openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] > gain_range.stop()) {
@@ -422,11 +421,11 @@ extern "C" {
       s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[i],i);
     }
   }
-
-
+  
+  
   // display USRP settings
   std::cout << boost::format("Actual master clock: %fMHz...") % (s->usrp->get_master_clock_rate()/1e6) << std::endl;
-
+  
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
   //stream_args_rx.args["spp"] = str(boost::format("%d") % 2048);//(openair0_cfg[0].rx_num_channels*openair0_cfg[0].samples_per_packet));
@@ -435,21 +434,17 @@ extern "C" {
   s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   std::cout << boost::format("rx_max_num_samps %u") % (s->rx_stream->get_max_num_samps()) << std::endl;
   //openair0_cfg[0].samples_per_packet = s->rx_stream->get_max_num_samps();
-
+  
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
   //stream_args_tx.args["spp"] = str(boost::format("%d") % 2048);//(openair0_cfg[0].tx_num_channels*openair0_cfg[0].samples_per_packet));
   for (i = 0; i<openair0_cfg[0].tx_num_channels; i++)
-      stream_args_tx.channels.push_back(i);
+    stream_args_tx.channels.push_back(i);
   s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
   std::cout << boost::format("tx_max_num_samps %u") % (s->tx_stream->get_max_num_samps()) << std::endl;
-
-
-  s->usrp->set_time_now(uhd::time_spec_t(0.0));
-
-
-
   
 
+  s->usrp->set_time_now(uhd::time_spec_t(0.0));
+  
   for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       printf("RX Channel %lu\n",i);
@@ -460,9 +455,8 @@ extern "C" {
       std::cout << boost::format("Actual RX antenna: %s...") % (s->usrp->get_rx_antenna(i)) << std::endl;
     }
   }
-
+  
   for (i=0;i<openair0_cfg[0].tx_num_channels;i++) {
-
     if (i<openair0_cfg[0].tx_num_channels) { 
       printf("TX Channel %lu\n",i);
       std::cout << std::endl<<boost::format("Actual TX sample rate: %fMSps...") % (s->usrp->get_tx_rate(i)/1e6) << std::endl;
@@ -472,7 +466,7 @@ extern "C" {
       std::cout << boost::format("Actual TX antenna: %s...") % (s->usrp->get_tx_antenna(i)) << std::endl;
     }
   }
-
+  
   std::cout << boost::format("Device timestamp: %f...") % (s->usrp->get_time_now().get_real_secs()) << std::endl;
 
   device->priv = s;
@@ -492,35 +486,35 @@ extern "C" {
   // init tx_forward_nsamps based usrp_time_offset ex
   /*if(is_equal(s->sample_rate, (double)30.72e6))
     s->tx_forward_nsamps  = 176;
-  if(is_equal(s->sample_rate, (double)15.36e6))
+    if(is_equal(s->sample_rate, (double)15.36e6))
     s->tx_forward_nsamps = 90;
   if(is_equal(s->sample_rate, (double)7.68e6))
-    s->tx_forward_nsamps = 50;*/
-/* move device specific parameters from lte-softmodem.c here */
-    if(is_equal(s->sample_rate, (double)30.72e6)) {
-      openair0_cfg->tx_delay = 8;
-      s->tx_forward_nsamps  = 175;
-      openair0_cfg->tx_forward_nsamps  = 175;
-    }
-    if(is_equal(s->sample_rate, (double)15.36e6)) {
-      openair0_cfg->tx_delay = 5;
-      s->tx_forward_nsamps = 95;
-      openair0_cfg->tx_forward_nsamps = 95;
-    }
-    if(is_equal(s->sample_rate, (double)7.68e6)) {
-      openair0_cfg->tx_delay = 5;
-      s->tx_forward_nsamps = 70;
-      openair0_cfg->tx_forward_nsamps = 70;
-    }
-    if(is_equal(s->sample_rate, (double)1.92e6)) {
-      openair0_cfg->tx_delay = 8;
-      s->tx_forward_nsamps = 40;
-      openair0_cfg->tx_forward_nsamps = 40;
-    }
-    openair0_cfg->iq_txshift= 5;
-    openair0_cfg->iq_rxrescale = 15;
-    printf("check params %d:%d",openair0_cfg->tx_forward_nsamps, openair0_cfg->tx_delay);
-   
+  s->tx_forward_nsamps = 50;*/
+  /* move device specific parameters from lte-softmodem.c here */
+  if(is_equal(s->sample_rate, (double)30.72e6)) {
+    openair0_cfg->tx_delay = 8;
+    s->tx_forward_nsamps  = 175;
+    openair0_cfg->tx_forward_nsamps  = 175;
+  }
+  if(is_equal(s->sample_rate, (double)15.36e6)) {
+    openair0_cfg->tx_delay = 5;
+    s->tx_forward_nsamps = 95;
+    openair0_cfg->tx_forward_nsamps = 95;
+  }
+  if(is_equal(s->sample_rate, (double)7.68e6)) {
+    openair0_cfg->tx_delay = 5;
+    s->tx_forward_nsamps = 70;
+    openair0_cfg->tx_forward_nsamps = 70;
+  }
+  if(is_equal(s->sample_rate, (double)1.92e6)) {
+    openair0_cfg->tx_delay = 8;
+    s->tx_forward_nsamps = 40;
+    openair0_cfg->tx_forward_nsamps = 40;
+  }
+  openair0_cfg->iq_txshift= 5;
+  openair0_cfg->iq_rxrescale = 15;
+  printf("check params %d:%d",openair0_cfg->tx_forward_nsamps, openair0_cfg->tx_delay);
+  
   return 0;
-}
+  }
 }
