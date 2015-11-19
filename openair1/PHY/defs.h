@@ -76,6 +76,13 @@
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
 
+//#ifdef SHRLIBDEV
+//extern int rxrescale;
+//#define RX_IQRESCALELEN rxrescale
+//#else
+//#define RX_IQRESCALELEN 15
+//#endif
+
 //! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
 //! If no more memory is available, this function will terminate the program with an assertion error.
 static inline void* malloc16_clear( size_t size )

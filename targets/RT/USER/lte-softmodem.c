@@ -329,7 +329,15 @@ time_stats_t softmodem_stats_rx_sf[10]; // total rx time
 void reset_opp_meas(void);
 void print_opp_meas(void);
 int transmission_mode=1;
-
+/*
+   FT: not a very clean way of managing the rescale of iqs in rx path, but this is done in
+  openair1/PHY/MODULATION/ul_7_5_kHz.c which doesn't have access to config parameters
+  to re-worked later.....
+  RX_IQRESCALELEN is setup in device libraries for all non expressmimo targets and acessed as an
+  external variable in ul_7_5_kHz.c. For expressmimo it is a macro (openair1/PHY/defs.h) 
+  Regarding the value of this variable or macro: 18 is for 15 bits iqs, 15 is used for USRP, EXMIMO
+*/
+//int rxrescale; 
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -361,8 +369,6 @@ int16_t           osa_log_verbosity  = LOG_MED;
 
 
 #ifdef ETHERNET
-//char rrh_eNB_ip[20] = "127.0.0.1";
-//int rrh_eNB_port = 50000;
 //char *rrh_UE_ip = "127.0.0.1";
 //int rrh_UE_port = 51000;
 #endif
@@ -372,6 +378,47 @@ uint8_t local_remote_RF;
 char uecap_xer[1024],uecap_xer_in=0;
 extern void *UE_thread(void *arg);
 extern void init_UE_threads(void);
+
+/*---------------------BMC: timespec helpers -----------------------------*/
+
+struct timespec min_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+struct timespec max_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+
+struct timespec clock_difftime(struct timespec start, struct timespec end)
+{
+    struct timespec temp;
+    if ((end.tv_nsec-start.tv_nsec)<0) {
+        temp.tv_sec = end.tv_sec-start.tv_sec-1;
+	temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+    } else {
+        temp.tv_sec = end.tv_sec-start.tv_sec;
+	temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+    }
+    return temp;
+}
+
+void print_difftimes()
+{
+#ifdef DEBUG
+    printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+#else
+    LOG_D(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+#endif
+}
+
+void update_difftimes(struct timespec start, struct timespec end)
+{
+    struct timespec diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+    int             changed = 0;
+    diff_time = clock_difftime(start, end);
+    if ((min_diff_time.tv_nsec == 0) || (diff_time.tv_nsec < min_diff_time.tv_nsec)) { min_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
+    if ((max_diff_time.tv_nsec == 0) || (diff_time.tv_nsec > max_diff_time.tv_nsec)) { max_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
+#if 1
+    if (changed) print_difftimes();
+#endif
+}
+
+/*------------------------------------------------------------------------*/
 
 unsigned int build_rflocal(int txi, int txq, int rxi, int rxq)
 {
@@ -949,6 +996,12 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
         if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti))
           tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
+    ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift ;
+
+	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
+
+
+/*
         ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
 #ifdef EXMIMO
           ((short*)dummy_tx_b)[2*i]<<4;
@@ -965,6 +1018,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 #else
 	  ((short*)dummy_tx_b)[2*i+1]<<4;
 #endif
+*/
      }
      // if S-subframe switch to RX in second subframe
      if (subframe_select(&phy_vars_eNB->lte_frame_parms,subframe) == SF_S) {
@@ -1782,7 +1836,9 @@ static void* eNB_thread( void* arg )
 				     PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx);
       
       stop_meas( &softmodem_stats_hw );
-      clock_gettime( CLOCK_MONOTONIC, &trx_time1 );
+      if (frame > 50) { 
+	  clock_gettime( CLOCK_MONOTONIC, &trx_time1 );
+      }
 
       if (frame > 20){ 
 	if (rxs != spp)
@@ -1791,8 +1847,6 @@ static void* eNB_thread( void* arg )
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
       // Transmit TX buffer based on timestamp from RX
-
-
     
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
       // prepare tx buffer pointers
@@ -1813,7 +1867,12 @@ static void* eNB_thread( void* arg )
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps)&0xffffffff );
 
       stop_meas( &softmodem_stats_mt );
-      clock_gettime( CLOCK_MONOTONIC, &trx_time2 );
+      if (frame > 50) { 
+	  clock_gettime( CLOCK_MONOTONIC, &trx_time2 );
+	  // BMC: compute time between rx and tx
+	  update_difftimes(trx_time1, trx_time2);
+      }
+
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE,0);
 #else
@@ -1985,6 +2044,9 @@ eNB_thread_cleanup:
 #endif
 
   eNB_thread_status = 0;
+
+  print_difftimes();
+
   return &eNB_thread_status;
 }
 
@@ -1997,7 +2059,7 @@ static void get_options (int argc, char **argv)
   //  char                          line[1000];
   //  int                           l;
   int k,i;//,j,k;
-#if defined(OAI_USRP) || defined(CPRIGW)
+#if defined(OAI_USRP) || defined(CPRIGW) //#ifndef EXMIMO?
   int clock_src;
 #endif
   int CC_id;
@@ -2245,7 +2307,7 @@ static void get_options (int argc, char **argv)
       break;
 
     case 's':
-#if defined(OAI_USRP) || defined(CPRIGW)
+#if defined(OAI_USRP) || defined(CPRIGW) //#ifndef EXMIMO
 
       clock_src = atoi(optarg);
 
@@ -2848,6 +2910,11 @@ int main( int argc, char **argv )
 
   for (card=0; card<MAX_CARDS; card++) {
 
+#ifdef EXMIMO
+/* FT: for all other devices the iq_txshift value is setup in the device library */
+       openair0_cfg[card].iq_txshift=4;
+#endif
+
     if(frame_parms[0]->N_RB_DL == 100) {
       sample_rate = 30.72e6;
       bw          = 10.0e6;
@@ -2932,24 +2999,20 @@ int main( int argc, char **argv )
 
 #ifndef EXMIMO
     openair0_cfg[card].samples_per_packet = openair0_cfg[0].samples_per_packet;
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_tx),
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_rx));
     openair0_cfg[card].Mod_id = 0;
 #ifdef ETHERNET/*do we need to separate ue and enb????*/
-    /*
+    
     if (UE_flag) {
       printf("ETHERNET: Configuring UE ETH for %s:%d\n",rrh_UE_ip,rrh_UE_port);
       openair0_cfg[card].remote_addr   = &rrh_UE_ip[0];
       openair0_cfg[card].remote_port = rrh_UE_port;
-    } else {
-      printf("ETHERNET: Configuring eNB ETH for %s:%d\n",rrh_eNB_ip,rrh_eNB_port);
-      openair0_cfg[card].remote_addr   =&rrh_eNB_ip[0];
-      openair0_cfg[card].remote_port =rrh_eNB_port;
-    }
-    */
-openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+    } 
+
 #endif
     openair0_cfg[card].sample_rate = sample_rate;
     openair0_cfg[card].tx_bw = bw;
@@ -3028,6 +3091,11 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
     else if (mode==loop_through_memory) {    
     }
   }
+//for EXMIMO
+//openair0_cfg[0].iq_rxrescale=15;  /* default value if build with EXMIMO */
+//rxrescale=openair0_cfg[0].iq_rxrescale; /* see comments near RX_IQRESCALELEN definition */
+
+
 
   printf("Done\n");
 
@@ -3446,7 +3514,6 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
     if (multi_thread>0) {
       printf("Killing eNB processing threads\n");
       kill_eNB_proc();
-
     }
   }
 
