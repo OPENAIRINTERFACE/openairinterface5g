@@ -369,7 +369,8 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
   /*hoedcoded!!!!*/
   eth->if_name[device->Mod_id] = "eth0";
   device->priv = eth; 	
-  
+  openair0_cfg->iq_txshift = 5;
+  openair0_cfg->iq_rxrescale = 15;
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
 
   /*iqoffset*/

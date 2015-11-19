@@ -341,7 +341,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg, char *
   }
   
   openair0_cfg->iq_txshift= 0;
-  openair0_cfg->iq_rxrescale = 15;
+  openair0_cfg->iq_rxrescale = 15; /*not sure*/
 
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
 
