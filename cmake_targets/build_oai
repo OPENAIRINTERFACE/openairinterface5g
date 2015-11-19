@@ -46,7 +46,8 @@ XFORMS="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 REL="Rel10"
-HW="EXMIMO"
+HW="NO_VALUE"
+TP="NO_VALUE"
 NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
@@ -88,10 +89,13 @@ Options
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, ETHERNET, None
+   EXMIMO, USRP, BLADERF
    Adds this RF board support (in external packages installation and in compilation)
+-t | --transport protocol
+   ETHERNET , None
+   Adds this trasport protocol support in compilation
 --oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to "NONE".
+   Makes the oaisim simulator. Hardware will be defaulted to "NO_VALUE".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -169,7 +173,7 @@ function main() {
             shift;;
        -r | --3gpp-release)
             REL=$2
-            echo_info "setting release to: $REL"
+            echo_info "Setting release to: $REL"
             shift 2;;
        -w | --hardware)
             HW="$2" #"${i#*=}"
@@ -180,7 +184,11 @@ function main() {
             if [ "$HW" == "BLADERF" ] ; then 
 		HW="OAI_BLADERF"
 	    fi 
-            echo_info "setting hardware to: $HW"
+            echo_info "Setting hardware to: $HW"
+            shift 2;;
+	-t | --transport_protocol)
+            TP="$2" #"${i#*=}"
+            echo_info "Setting transport protocol to: $TP"
             shift 2;;
        --oaisim)
             oaisim=1
@@ -204,7 +212,7 @@ function main() {
             echo_info "executing test cases only in group: $TEST_CASE_GROUP"
             shift 2;;
        -V | --vcd)
-            echo_info "setting gtk-wave output"
+            echo_info "Setting gtk-wave output"
             VCD_TIMING=1
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
@@ -227,7 +235,7 @@ function main() {
             shift;;
        --cflags_processor)
             CFLAGS_PROCESSOR_USER=$2
-            echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            echo_info "Setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
         -h | --help)
             print_help
@@ -238,6 +246,35 @@ function main() {
             break;;
    esac
   done
+  
+  ############################################
+  # check validity of HW and TP parameters for RRH and eNB
+  #############################################
+  
+  if [ "$eNB" = "1" ] ; then
+      if [ "$HW" = "NO_VALUE" -a  "$TP" = "NO_VALUE" ] ; then
+	  echo_fatal "A hardware target or a transport protocol must be defined!!"
+      fi
+      if [ "$HW" != "NO_VALUE" -a  "$TP" != "NO_VALUE" ] ; then
+	  echo_fatal "Currentlt lte-softmodem can not support simultaniously local and remote RF heads!!"
+      fi      
+      if [ "$HW" = "NO_VALUE" ] ; then 
+	  echo_info "No RF device has been selected: (HW=$HW)"	
+      fi
+      if [ "$TP" = "NO_VALUE" ] ; then
+	  echo_info "No transport protocol has been selected: (TP=$TP)"	
+      fi
+  fi
+  
+  if [ "$RRH" = "1" ] ; then
+      if [ "$TP" = "NO_VALUE" ] ; then
+	  echo_fatal "A transport protocol must be defined!!"
+      fi
+      if [ "$HW" = "NO_VALUE" ] ; then
+	  echo_info "No RF device has been selected: (HW=$HW)"	
+      fi
+  fi
+
 
   ############################################
   # setting and printing OAI envs, we should check here
@@ -277,7 +314,7 @@ function main() {
       check_install_usrp_uhd_driver
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
-      echo_info "installing packages for BALDERF support"
+      echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
     fi
   fi
@@ -288,16 +325,18 @@ function main() {
   fi
 
   if [ "$oaisim" = "1" ] ; then
-      if [ "$HW" != "ETHERNET" ] ; then 
-	  HW="NONE"
-      fi 
+      # if [ "$HW" == "ETHERNET" ] ; then # to ask
+      #	  HW="NONE"   
+      #fi 
+      if [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
+	  HW="NO_VALUE"   
+      fi
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
       fi 
   fi
   
-  
-  echo_info "3. building the compilation directives ..."
+    echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
@@ -324,7 +363,9 @@ function main() {
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo "set(PACKAGE_NAME \"${lte_exec}\")"     >>  $cmake_file
+    echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+    echo "set ( SHRLIBDEV ${SHRLIBDEV})"           >>  $cmake_file
+    echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -529,30 +570,86 @@ function main() {
   fi
 
   # RRH compilation
-  ##################
+  #####################
   if [ "$RRH" = "1" ] ; then
-    echo_info "Compiling RRH"
-    if [  $HW == "ETHERNET" ] ; then 
-	echo_info "RF frontend for RRH is not defined. This mode is used for testing (loopback)."
-    elif [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
-	echo_fatal "Hardware not defined ($HW)"
-    fi
-    cmake_file=$DIR/rrh_gw/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-    echo "set(ENABLE_ITTI False )"     					 >>  $cmake_file
-    echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo 'set(PACKAGE_NAME "\"rrh_gw\"")' >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build
-    mkdir -p $DIR/rrh_gw/build
-    cd $DIR/rrh_gw/build
-    cmake ..
-    compilations \
-      rrh_gw rrh_gw \
-      rrh_gw $dbin/rrh_gw
+     rrh_exec=rrh_gw
+     rrh_build_dir=rrh_gw
+     
+     echo_info "Compiling $rrh_exec ..."
+    
+     cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
+     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+     echo "set(ENABLE_ITTI False )"     		 >>  $cmake_file
+     echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+     echo "set(SHRLIBDEV ${SHRLIBDEV})"           >>  $cmake_file
+     echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
+     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
+     mkdir -p $DIR/$rrh_build_dir/build
+     cd $DIR/$rrh_build_dir/build
+     cmake ..
+     compilations \
+	 rrh_gw rrh_gw \
+	 rrh_gw $dbin/rrh_gw
   fi
+  
+  # build RF device and transport protocol libraries
+  #####################################
+  if [ "$eNB" = "1" -o  "$RRH" = "1" ] ; then
+
+      if [ "$eNB" = "1" ] ; then
+	  build_dir=$lte_build_dir	  
+      else
+	  build_dir=$rrh_build_dir	 
+      fi
+
+      # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
+      if [ "$HW" != "NO_VALUE" ] ; then
+	  rm -f liboai_device.so
+	  if [ -d "/usr/include/uhd" ] ; then
+	      compilations \
+		  $build_dir oai_usrpdevif \
+		  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
+	  fi
+	  if [ -f "/usr/include/libbladeRF.h" ] ; then
+	      compilations \
+		  $build_dir oai_bladerfdevif \
+		  liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
+	  fi
+
+	  #add exmimo compilation
+
+
+
+	  if [ "$HW" == "EXMIMO" ] ; then
+	      ln -s liboai_exmimodevif.so liboai_device.so
+	      echo_info "liboai_device.so is linked to EXMIMO device library"       
+	  elif [ "$HW" == "OAI_USRP" ] ; then
+	      ln -s liboai_usrpdevif.so liboai_device.so
+	      echo_info "liboai_device.so is linked to USRP device library"        
+	  elif [ "$HW" == "OAI_BLADERF" ] ; then
+	      ln -s liboai_bladerfdevif.so liboai_device.so
+	      echo_info "liboai_device.so is linked to BLADERF device library"	 
+	  else 
+	      echo_info "liboai_device.so is not linked to any device library"	    
+	  fi
+      fi
+      
+      # build trasport protocol libraries (currently only ETHERNET is available)
+      if [ "$TP" != "NO_VALUE" ] ; then
+	  rm -f liboai_transpro.so
+	  compilations \
+              $build_dir oai_eth_transpro \
+              liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+	  if [ "$TP" == "ETHERNET" ] ; then
+	      ln -s liboai_eth_transpro.so liboai_transpro.so
+	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
+	  fi      
+      fi
+fi
+
 
   # EPC compilation
   ##################
