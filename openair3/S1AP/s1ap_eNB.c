@@ -26,6 +26,15 @@
   Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
 
  *******************************************************************************/
+/*! \file s1ap_eNB.c
+ * \brief S1AP eNB task 
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2015
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+
+ */
 
 #include <pthread.h>
 #include <stdio.h>

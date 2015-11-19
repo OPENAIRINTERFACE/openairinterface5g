@@ -68,14 +68,19 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
                      ctxt_pP->rnti);
 
     for (i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
-      LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel %u bearer index %u id %u\n",
+      
+      ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs]  = create_tunnel_resp_pP->enb_S1u_teid[i];
+      ue_context_p->ue_context.enb_gtp_addrs[i+ue_context_p->ue_context.setup_e_rabs] = create_tunnel_resp_pP->enb_addr;
+      ue_context_p->ue_context.enb_gtp_ebi[i+ue_context_p->ue_context.setup_e_rabs]   = create_tunnel_resp_pP->eps_bearer_id[i];
+      
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u, %u) bearer UE context index %u, msg index %u, id %u, gtp addr len %d \n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             create_tunnel_resp_pP->enb_S1u_teid[i],
-            i,
-            create_tunnel_resp_pP->eps_bearer_id[i]);
-      ue_context_p->ue_context.enb_gtp_teid[i]  = create_tunnel_resp_pP->enb_S1u_teid[i];
-      ue_context_p->ue_context.enb_gtp_addrs[i] = create_tunnel_resp_pP->enb_addr;
-      ue_context_p->ue_context.enb_gtp_ebi[i]   = create_tunnel_resp_pP->eps_bearer_id[i];
+	    ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs],
+            i+ue_context_p->ue_context.setup_e_rabs, 
+	    i,
+            create_tunnel_resp_pP->eps_bearer_id[i],
+	    create_tunnel_resp_pP->enb_addr.length);
     }
 	MSC_LOG_RX_MESSAGE(
 			  MSC_RRC_ENB,

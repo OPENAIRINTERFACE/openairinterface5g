@@ -42,6 +42,8 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
+#add_definitions("-DEMIT_ASN_DEBUG=1")
+
 ###########################################
 # macros to define options as there is numerous options in oai
 ################################################
@@ -196,7 +198,7 @@ add_definitions("-DPACKAGE_BUGREPORT=\"OpenAirInterface web site\"")
 add_boolean_option(MSG_PRINT  False "print debug messages")
 add_boolean_option(DISABLE_XER_PRINT False "print XER Format")
 add_boolean_option(XER_PRINT False "print XER Format")
-add_boolean_option(RRC_MSG_PRINT False "print RRC messages")
+add_boolean_option(RRC_MSG_PRINT Flase "print RRC messages")
 add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages to /tmp/pdcp.log")
 add_boolean_option(DEBUG_PDCP_PAYLOAD False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
 add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace 

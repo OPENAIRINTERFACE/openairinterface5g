@@ -29,8 +29,9 @@
 
 /*! \file s1ap_eNB_handlers.c
  * \brief s1ap messages handlers for eNB part
- * \author Sebastien ROUX <sebastien.roux@eurecom.fr>
- * \date 2013
+ * \author Sebastien ROUX and Navid Nikaein
+ * \email navid.nikaein@eurecom.fr
+ * \date 2013 - 2015
  * \version 0.1
  */
 
@@ -963,6 +964,11 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
     S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.length =
       item_p->transportLayerAddress.size * 8 - item_p->transportLayerAddress.bits_unused;
 
+    /* S1AP_INFO("sgw addr %s  len: %d (size %d, index %d)\n", 
+	      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.buffer,
+	      S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].sgw_addr.length,
+	      item_p->transportLayerAddress.size, i);
+    */
     /* GTP tunnel endpoint ID */
     OCTET_STRING_TO_INT32(&item_p->gTP_TEID, S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].gtp_teid);
 

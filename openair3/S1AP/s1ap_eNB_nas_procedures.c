@@ -26,7 +26,14 @@
   Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
 
  *******************************************************************************/
-
+/*! \file s1ap_eNB_nas_procedures.c
+ * \brief S1AP eNb NAS procedure handler
+ * \author  S. Roux and Navid Nikaein 
+ * \date 2010 - 2015
+ * \email: navid.nikaein@eurecom.fr
+ * \version 1.0
+ * @ingroup _s1ap
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -579,6 +586,14 @@ int s1ap_eNB_initial_ctxt_resp(
     new_item->transportLayerAddress.size = initial_ctxt_resp_p->e_rabs[i].eNB_addr.length;
     new_item->transportLayerAddress.bits_unused = 0;
 
+    S1AP_DEBUG("initial_ctxt_resp_p: e_rab ID %d, enb_addr %d.%d.%d.%d, SIZE %d \n", 
+	      new_item->e_RAB_ID,
+	      new_item->transportLayerAddress.buf[0],
+	      new_item->transportLayerAddress.buf[1],
+	      new_item->transportLayerAddress.buf[2],
+	      new_item->transportLayerAddress.buf[3],
+	      new_item->transportLayerAddress.size);
+
     ASN_SEQUENCE_ADD(&initial_ies_p->e_RABSetupListCtxtSURes.s1ap_E_RABSetupItemCtxtSURes,
                      new_item);
   }
@@ -695,7 +710,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
   struct s1ap_eNB_ue_context_s *ue_context_p        = NULL;
 
   S1ap_E_RABSetupResponseIEs_t  *initial_ies_p  = NULL;
-
+ 
   s1ap_message  message;
 
   uint8_t  *buffer  = NULL;
@@ -727,39 +742,85 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
               e_rab_setup_resp_p->eNB_ue_s1ap_id, ue_context_p->ue_state);
     return -1;
   }
-
+ 
   /* Prepare the S1AP message to encode */
   memset(&message, 0, sizeof(s1ap_message));
 
   message.direction     = S1AP_PDU_PR_successfulOutcome;
   message.procedureCode = S1ap_ProcedureCode_id_E_RABSetup;
+  message.criticality   = S1ap_Criticality_reject;
 
   initial_ies_p = &message.msg.s1ap_E_RABSetupResponseIEs;
-
+  
   initial_ies_p->eNB_UE_S1AP_ID = e_rab_setup_resp_p->eNB_ue_s1ap_id;
   initial_ies_p->mme_ue_s1ap_id = ue_context_p->mme_ue_s1ap_id;
-
-  for (i = 0; i < e_rab_setup_resp_p->nb_of_e_rabs; i++) {
+  
+  if ( e_rab_setup_resp_p->nb_of_e_rabs >= 1 )
+    initial_ies_p->presenceMask |= S1AP_E_RABSETUPRESPONSEIES_E_RABSETUPLISTBEARERSURES_PRESENT; 
+  
+  for (i = 0; i < e_rab_setup_resp_p->nb_of_e_rabs; i++) { 
     S1ap_E_RABSetupItemBearerSURes_t *new_item;
 
     new_item = calloc(1, sizeof(S1ap_E_RABSetupItemBearerSURes_t));
 
     new_item->e_RAB_ID = e_rab_setup_resp_p->e_rabs[i].e_rab_id;
     GTP_TEID_TO_ASN1(e_rab_setup_resp_p->e_rabs[i].gtp_teid, &new_item->gTP_TEID);
-    new_item->transportLayerAddress.buf = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer;
+        
+    /*
+    new_item->transportLayerAddress.buf = MALLOC(e_rab_setup_resp_p->e_rabs[i].eNB_addr.length);  
+    memcpy (new_item->transportLayerAddress.buf, 
+	    e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer,
+	    e_rab_setup_resp_p->e_rabs[i].eNB_addr.length);
+    
+    */
+    /*
+      new_item->transportLayerAddress.buf[0] = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer[0];
+    new_item->transportLayerAddress.buf[1] = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer[1];
+    new_item->transportLayerAddress.buf[2] = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer[2];
+    new_item->transportLayerAddress.buf[3] = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer[3];
+    */
+    new_item->transportLayerAddress.buf = e_rab_setup_resp_p->e_rabs[i].eNB_addr.buffer; 
     new_item->transportLayerAddress.size = e_rab_setup_resp_p->e_rabs[i].eNB_addr.length;
     new_item->transportLayerAddress.bits_unused = 0;
-
+    
+    S1AP_DEBUG("e_rab_setup_resp: e_rab ID %d, teid %u, enb_addr %d.%d.%d.%d, SIZE %d\n", 
+	       new_item->e_RAB_ID,
+	       e_rab_setup_resp_p->e_rabs[i].gtp_teid,
+	       new_item->transportLayerAddress.buf[0],
+	       new_item->transportLayerAddress.buf[1],
+	       new_item->transportLayerAddress.buf[2],
+	       new_item->transportLayerAddress.buf[3],
+	       new_item->transportLayerAddress.size);
+    
+    S1ap_IE_t *ie = s1ap_new_ie(S1ap_ProtocolIE_ID_id_E_RABSetupItemBearerSURes,
+				S1ap_Criticality_ignore,
+				&asn_DEF_S1ap_E_RABSetupItemBearerSURes,
+				new_item);
+    /*
+    S1ap_IE_t *ie = s1ap_new_ie(S1ap_ProtocolIE_ID_id_E_RABSetupListBearerSURes,
+				S1ap_Criticality_ignore,
+				&asn_DEF_S1ap_E_RABSetupListBearerSURes,
+				new_item);
+    */
     ASN_SEQUENCE_ADD(&initial_ies_p->e_RABSetupListBearerSURes.s1ap_E_RABSetupItemBearerSURes,
-                     new_item);
+                     ie);
   }
-
+ 
+  /* S1ap_E_RABSetupListBearerSURes_t  e_RABSetupListBearerSURes;
+  memset(&e_RABSetupListBearerSURes, 0, sizeof(S1ap_E_RABSetupListBearerSURes_t));
+  if (s1ap_encode_s1ap_e_rabsetuplistbearersures(&e_RABSetupListBearerSURes, &initial_ies_p->e_RABSetupListBearerSURes.s1ap_E_RABSetupItemBearerSURes) < 0 )
+    return -1;
+ ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_S1ap_E_RABSetupListBearerSURes, &e_RABSetupListBearerSURes);
+  */
+  fprintf(stderr, "start encode\n");
   if (s1ap_eNB_encode_pdu(&message, &buffer, &length) < 0) {
-    S1AP_ERROR("Failed to encode uplink NAS transport\n");
+    S1AP_ERROR("Failed to encode uplink transport\n");
     /* Encode procedure has failed... */
     return -1;
   }
 
+ 
+  
   MSC_LOG_TX_MESSAGE(
     MSC_S1AP_ENB,
     MSC_S1AP_MME,

@@ -309,7 +309,7 @@ void rx_sdu(const module_id_t enb_mod_idP,
       } /* UE_id != -1 */
       
     } else if ((rx_lcids[i]  < NB_RB_MAX) && (rx_lcids[i] > DCCH1 )) {
-      LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH%d, received %d bytes form UE %d \n",
+      LOG_I(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DTCH%d, received %d bytes form UE %d \n",
 	    enb_mod_idP,CC_idP,frameP, rx_lcids[i], rx_lengths[i], UE_id);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)

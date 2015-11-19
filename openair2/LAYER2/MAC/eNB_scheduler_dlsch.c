@@ -1104,12 +1104,12 @@ schedule_ue_spec(
                                          post_padding);
 
           //#ifdef DEBUG_eNB_SCHEDULER
-          if (ta_update) {
+	  //    if (ta_update) {
             LOG_I(MAC,
-                  "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
-                  module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
+                  "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d LCID %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
+                  module_idP,frameP, UE_id, CC_id, sdu_lcids[0], sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
                   ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
-          }
+	    // }
 
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER

@@ -39,6 +39,8 @@ MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_REQ_LOG, MESSAGE_PRIORITY_MED, IttiMsgText  
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_COMMAND_LOG, MESSAGE_PRIORITY_MED, IttiMsgText                  , s1ap_ue_context_release_command_log)
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_COMPLETE_LOG, MESSAGE_PRIORITY_MED, IttiMsgText                 , s1ap_ue_context_release_complete_log)
 MESSAGE_DEF(S1AP_UE_CONTEXT_RELEASE_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_ue_context_release_log)
+MESSAGE_DEF(S1AP_E_RAB_SETUP_REQUEST_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_e_rab_setup_request_log)
+MESSAGE_DEF(S1AP_E_RAB_SETUP_RESPONSE_LOG    , MESSAGE_PRIORITY_MED, IttiMsgText                      , s1ap_e_rab_setup_response_log)
 
 /* eNB application layer -> S1AP messages */
 MESSAGE_DEF(S1AP_REGISTER_ENB_REQ          , MESSAGE_PRIORITY_MED, s1ap_register_enb_req_t          , s1ap_register_enb_req)

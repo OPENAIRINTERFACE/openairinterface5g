@@ -1085,30 +1085,33 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
 
   long                               *logicalchannelgroup, *logicalchannelgroup_drb;
-  int drb_Identity_index;
+  int drb_identity_index=0;
 
 // Configure DRB
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
   *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
+  dedicatedInfoNASList = CALLOC(1, sizeof(struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
   
   for ( i = 0  ;
-	i < ue_context_pP->ue_context.nb_of_e_rabs;
+	i < ue_context_pP->ue_context.setup_e_rabs ;
 	i++){
+    
     // bypass the already configured erabs
-    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_DONE) {
-      //drb_identiy_index++;
+    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED) {
+      drb_identity_index++;
       continue;
     }
+        
     DRB_config = CALLOC(1, sizeof(*DRB_config));
 
     DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
-    *(DRB_config->eps_BearerIdentity) = 5L; 
+    *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;  
 
-    DRB_config->drb_Identity = (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+    DRB_config->drb_Identity = 1 + drb_identity_index;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
     // 1 + drb_identiy_index;  
 
     DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
-    *(DRB_config->logicalChannelIdentity) = (long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
+    *(DRB_config->logicalChannelIdentity) = DRB_config->drb_Identity + 2; //(long) (ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 2); // value : x+2
     
     DRB_rlc_config = CALLOC(1, sizeof(*DRB_rlc_config));
     DRB_config->rlc_Config = DRB_rlc_config;
@@ -1174,13 +1177,20 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
       LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     
     logicalchannelgroup_drb = CALLOC(1, sizeof(long));
-    *logicalchannelgroup_drb = (i+1) % 3;
+    *logicalchannelgroup_drb = 1;//(i+1) % 3;
     DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
-    
-    ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
-  
-#if defined(ENABLE_ITTI)   
 
+    ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+
+    LOG_I(RRC,"EPS ID %d, DRB ID %d (index %d), QCI %d, priority %d, LCID %d LCGID %d \n",
+	  *DRB_config->eps_BearerIdentity,
+	  DRB_config->drb_Identity, i,
+	  ue_context_pP->ue_context.e_rab[i].param.qos.qci,
+	  DRB_ul_SpecificParameters->priority,
+	  *(DRB_config->logicalChannelIdentity),
+	  DRB_ul_SpecificParameters->logicalChannelGroup	  
+	  );
+ 
     if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
       dedicatedInfoNas = CALLOC(1, sizeof(DedicatedInfoNAS_t));
       memset(dedicatedInfoNas, 0, sizeof(OCTET_STRING_t));
@@ -1188,7 +1198,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 			   (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
                            ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
       ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
-    }
+    } 
     /* TODO parameters yet to process ... */
     {
       //      ue_context_pP->ue_context.e_rab[i].param.qos;
@@ -1201,7 +1211,6 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
       free(dedicatedInfoNASList);
       dedicatedInfoNASList = NULL;
     }
-#endif
     
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
     
@@ -1788,7 +1797,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
     if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
       dedicatedInfoNas = CALLOC(1, sizeof(DedicatedInfoNAS_t));
       memset(dedicatedInfoNas, 0, sizeof(OCTET_STRING_t));
-      OCTET_STRING_fromBuf(dedicatedInfoNas, (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
+      OCTET_STRING_fromBuf(dedicatedInfoNas, 
+			   (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
                            ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
       ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
     }
