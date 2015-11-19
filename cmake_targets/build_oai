@@ -51,6 +51,8 @@ NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
+RUN_GROUP=0
+TEST_CASE_GROUP=""
 
 function print_help() {
   echo_info '
@@ -96,6 +98,8 @@ Options
    Makes the core security features unitary simulators
 -s | --check
    runs a set of auto-tests based on simulators and several compilation tests
+--run-group 
+   runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
@@ -194,6 +198,11 @@ function main() {
             OAI_TEST=1
             echo_info "Will run auto-tests"
             shift;;
+       --run-group)
+            RUN_GROUP=1
+            TEST_CASE_GROUP=$2
+            echo_info "executing test cases only in group: $TEST_CASE_GROUP"
+            shift 2;;
        -V | --vcd)
             echo_info "setting gtk-wave output"
             VCD_TIMING=1
@@ -576,8 +585,11 @@ function main() {
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
-    $OPENAIR_DIR/cmake_targets/autotests/run_compilation_autotests.bash
-    $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    if [ "$RUN_GROUP" -eq "1" ]; then
+        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP"
+    else
+        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    fi
   else
     echo_info "10. Bypassing the Tests ..."
   fi

@@ -214,6 +214,7 @@ int main(int argc, char **argv)
   //  FILE *rx_frame_file;
   FILE *csv_fdUL=NULL;
 
+  /*
   FILE *fperen=NULL;
   char fperen_name[512];
 
@@ -222,6 +223,7 @@ int main(int argc, char **argv)
 
   FILE *flogeren=NULL;
   char flogeren_name[512];
+  */
 
   /* FILE *ftxlev;
      char ftxlev_name[512];
@@ -598,6 +600,7 @@ int main(int argc, char **argv)
     time_meas_fd = fopen(time_meas_fname,"w");
   }
 
+  /*
   if(abstx) {
     sprintf(fperen_name,"ULchan_estims_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
     fperen = fopen(fperen_name,"a+");
@@ -614,6 +617,7 @@ int main(int argc, char **argv)
     fprintf(flogeren,"mag_f = [");
     fclose(flogeren);
   }
+  */
 
   /*
     sprintf(ftxlev_name,"txlevel_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
@@ -626,6 +630,10 @@ int main(int argc, char **argv)
     // CSV file
     sprintf(csv_fname,"EULdataout_tx%d_mcs%d_nbrb%d_chan%d_nsimus%d_eren.m",transmission_mode,mcs,nb_rb,chMod,n_frames);
     csv_fdUL = fopen(csv_fname,"w");
+    if (csv_fdUL == NULL) {
+      fprintf(stderr,"Problem opening file %s\n",csv_fname);
+      exit(-1);
+    }
     fprintf(csv_fdUL,"data_all%d=[",mcs);
   }
 
@@ -1270,11 +1278,13 @@ int main(int argc, char **argv)
 
           PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
 
+	  /*
           if(abstx) {
             namepointer_log2 = &flogeren_name;
             namepointer_chMag = &fmageren_name;
             //namepointer_txlev = &ftxlev;
           }
+	  */
 
           start_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
           rx_ulsch(PHY_vars_eNB,
@@ -1285,6 +1295,7 @@ int main(int argc, char **argv)
                    cooperation_flag);
           stop_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
 
+	  /*
           if(abstx) {
             namepointer_chMag = NULL;
 
@@ -1296,8 +1307,7 @@ int main(int argc, char **argv)
               // flagMag = 1;
             }
           }
-
-          ///////
+	  */
 
           start_meas(&PHY_vars_eNB->ulsch_decoding_stats);
           ret= ulsch_decoding(PHY_vars_eNB,
@@ -1816,6 +1826,7 @@ int main(int argc, char **argv)
 
   }//ch realization
 
+  /*
   if(abstx) {
     fperen = fopen(fperen_name,"a+");
     fprintf(fperen,"];\n");
@@ -1829,6 +1840,7 @@ int main(int argc, char **argv)
     fprintf(flogeren,"];\n");
     fclose(flogeren);
   }
+  */
 
   // ftxlev = fopen(ftxlev_name,"a+");
   //fprintf(ftxlev,"];\n");
