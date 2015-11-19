@@ -42,6 +42,22 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+/* name of shared library implementing the radio front end */
+#define OAI_RF_LIBNAME        "liboai_device.so"
+/* name of shared library implementing the transport */
+#define OAI_TP_LIBNAME        "liboai_transpro.so"
+
+/* flags for BBU to determine whether RF front end is local or remote 
+Note: currently lte-softmodem supports either a local RF device or a remote. */
+#define BBU_LOCAL_RF_ENABLED 1
+#define BBU_REMOTE_RF_ENABLED 2
+#define BBU_LOCAL_REMOTE_RF_ENABLED 3
+/*flags for load_lib() used to specify whether a RF device or a transport protocol library is loaded */
+#define TRANSPORT_PROTOCOL 1
+#define RF_DEVICE 2
+
+
+
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
@@ -75,7 +91,7 @@ typedef struct {
   //! Module ID for this configuration
   int Mod_id;
   // device log level
-  int log_level;
+  unsigned int log_level;
   //! number of downlink resource blocks
   int num_rb_dl;
   //! number of samples per frame 
@@ -83,12 +99,15 @@ typedef struct {
   //! the sample rate for both transmit and receive.
   double sample_rate;
   //! number of samples per RX/TX packet (USRP + Ethernet)
-  int samples_per_packet;
+  unsigned int samples_per_packet;
   // delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
   int tx_delay;
   //! adjust the position of the samples after delay when sending   
   unsigned int	tx_forward_nsamps;
-  //! number of RX channels (=RX antennas)
+  //! configurable tx thread lauch delay 
+  int txlaunch_wait;               /* 1 or 0 */
+  int txlaunch_wait_slotcount;
+  //! number of RX channels (=RX antennas)  
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
@@ -114,14 +133,18 @@ typedef struct {
   double tx_bw;
   //! Auto calibration flag
   int autocal[4];
-  //! RRH IP addr for Ethernet interface
-  char *remote_ip;
-  //! RRH port number for Ethernet interface
-  int remote_port;
-  //! my IP addr for Ethernet interface (eNB/BBU, UE)
-  char *my_ip;
-  //! my port number for Ethernet interface (eNB/BBU, UE)
-  int my_port;
+  //! rf devices work with x bits iqs when oai have its own iq format
+  //! the two following parameters are used to convert iqs 
+  int iq_txshift;
+  int iq_rxrescale;
+  //! remote IP/MAC addr for Ethernet interface
+  char *remote_addr;
+  //! remote port number for Ethernet interface
+  unsigned int remote_port;
+  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
+  char *my_addr;
+  //! local port number for Ethernet interface (eNB/BBU, UE)
+  unsigned int my_port;
 
 } openair0_config_t;
 
@@ -134,55 +157,63 @@ typedef struct {
 
 
 
-/*!\brief interface types that apply to modules (RRH_BBU/RRH_UE) created in RRH (rrh_gw.c)
-          and are defined with respect to the RF device that is present in RRH
-          -RRH_BBU modules have two devices, one is by default ETHERNET (will have ETH_IF) and the other one is a
-	  RF device (EXMIMO,USRP,BLADERF) or no device (NONE_IF).
-          -RRH_UE modules have two devices one is by default ETHERNET (will have ETH_IF) 
-	  and the other one by default not present so it will have NONE_IF
+/*!\brief RF device types
  */
 typedef enum {
-  MIN_DEV_TYPE = 0,
-  /*!\brief device is ETH */
-  ETH_IF,
+  MIN_RF_DEV_TYPE = 0,
   /*!\brief device is ExpressMIMO */
-  EXMIMO_IF,
+  EXMIMO_DEV,
   /*!\brief device is USRP*/
-  USRP_IF,
+  USRP_DEV,
   /*!\brief device is BLADE RF*/
-  BLADERF_IF,
+  BLADERF_DEV,
   /*!\brief device is NONE*/
-  NONE_IF,
-  MAX_DEV_TYPE
+  NONE_DEV,
+  MAX_RF_DEV_TYPE
 
 } dev_type_t;
+
+/*!\brief transport protocol types
+ */
+typedef enum {
+  MIN_TRANSP_TYPE = 0,
+  /*!\brief transport protocol ETHERNET */
+  ETHERNET_TP,
+  /*!\brief no transport protocol*/
+  NONE_TP,
+  MAX_TRANSP_TYPE
+
+} transport_type_t;
 
 
 /*!\brief  openair0 device host type */
 typedef enum {
-  MIN_FUNC_TYPE = 0,
+  MIN_HOST_TYPE = 0,
  /*!\brief device functions within a BBU */
-  BBU_FUNC,
+  BBU_HOST,
  /*!\brief device functions within a RRH */
-  RRH_FUNC,
-  MAX_FUNC_TYPE
+  RRH_HOST,
+  MAX_HOST_TYPE
 
-}func_type_t;
+}host_type_t;
 
 struct openair0_device_t {
-  /* Module ID of this device */
+  /*!brief Module ID of this device */
   int Mod_id;
   
-  /* Type of this device */
+  /*!brief Type of this device */
   dev_type_t type;
 
-   /* Type of the device's host (BBU/RRH) */
-  func_type_t func_type;
+  /*!brief Transport protocol type that the device suppports (in case I/Q samples need to be transported) */
+  transport_type_t transp_type;
 
-  /* RF frontend parameters set by application */
+   /*!brief Type of the device's host (BBU/RRH) */
+  host_type_t host_type;
+
+  /*!brief RF frontend parameters set by application */
   openair0_config_t openair0_cfg;
 
-  /* Can be used by driver to hold internal structure*/
+  /*!brief Can be used by driver to hold internal structure*/
   void *priv;
 
   /* Functions API, which are called by the application*/
@@ -263,28 +294,25 @@ struct openair0_device_t {
 
 };
 
+/* type of device init function, implemented in shared lib */
+typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile);
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-/*! \brief Initialize Openair RF target. It returns 0 if OK */
-  int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
+  /*! \brief Initialize openair RF target. It returns 0 if OK */
+  int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);  
+  /*! \brief Initialize transport protocol . It returns 0 if OK */
+  int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg);
   
   //USRP
 /*! \brief Get the current timestamp of USRP */
   openair0_timestamp get_usrp_time(openair0_device *device);
 /*! \brief Set the RX frequency of USRP RF TARGET */
   int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
-  
-//extern
-/*! \brief Initialize Openair ETHERNET target. It returns 0 if OK */
-  int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
-  int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg);
-  int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg);
-  int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg);
-/*@}*/
+
 
 #ifdef __cplusplus
 }

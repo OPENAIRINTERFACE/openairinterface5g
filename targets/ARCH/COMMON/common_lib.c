@@ -37,28 +37,150 @@
  * \warning
  */
 #include <stdio.h>
+#include <strings.h>
+#include <dlfcn.h>
+#include <errno.h>
+#include <string.h>
+
 #include "common_lib.h"
 
+/* 
+   FT: The device interface is implemented in a shared library, the softmodem knows which kind
+   of harware is used by parsing the device name returned when calling the trx_getinfo_func function
+   provided by this shared library
+*/
+int set_device(openair0_device *device) {
 
-int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
+  switch (device->type) {
+    
+  case EXMIMO_DEV:
+    printf("[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
+    return 0;     
+    break;
+  case USRP_DEV:
+    printf("[%s] has loaded USRP device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    return 0;
+    break;
+  case BLADERF_DEV:
+    printf("[%s] has loaded BLADERF device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    return 0;
+    break;
+  case NONE_DEV:
+    printf("[%s] has not loaded a HW device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
+    return 0; 
+    break;    
+  default:
+    printf("[%s] invalid HW device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    return -1;
+    break;
+  }
   
-#ifdef ETHERNET 
-  device->type=ETH_IF; 
-  device->func_type = BBU_FUNC;
-  openair0_dev_init_eth(device, openair0_cfg);
-  printf(" openair0_dev_init_eth ...\n");
-#elif EXMIMO
-  device->type=EXMIMO_IF;
-  openair0_dev_init_exmimo(device, openair0_cfg);
-  printf("openair0_dev_init_exmimo...\n");
-#elif OAI_USRP
-  device->type=USRP_IF;
-  openair0_dev_init_usrp(device, openair0_cfg);
-  printf("openair0_dev_init_usrp ...\n");
-#elif OAI_BLADERF  
-  device->type=BLADERF_IF;
-  openair0_dev_init_bladerf(device, openair0_cfg);	
-  printf(" openair0_dev_init_bladerf ...\n");   
-#endif 
-   
+}
+
+int set_transport(openair0_device *device) {
+
+  switch (device->transp_type) {
+    
+  case ETHERNET_TP:
+    printf("[%s] has loaded ETHERNET trasport protocol.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
+    return 0;     
+    break;
+  case NONE_TP:
+    printf("[%s] has not loaded a transport protocol.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
+    return 0; 
+    break;    
+  default:
+    printf("[%s] invalid transport protocol.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    return -1;
+    break;
+  }
+  
+}
+
+/* FT: looking for the rh interface library and load it */
+int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile, uint8_t flag) {
+  
+  void *lib_handle;
+  char *OAI_RF_LIBNAME;
+  char *OAI_TP_LIBNAME;
+  oai_device_initfunc_t fp ;
+
+  if (device->host_type==BBU_HOST) {
+    OAI_RF_LIBNAME= "/home/guepe/openairinterface5g/cmake_targets/lte_noS1_build_oai/build/liboai_device.so";
+    OAI_TP_LIBNAME= "/home/guepe/openairinterface5g/cmake_targets/lte_noS1_build_oai/build/liboai_transpro.so";
+  } else {
+    OAI_RF_LIBNAME= "liboai_device.so";
+    OAI_TP_LIBNAME= "liboai_transpro.so";
+  }
+    
+    if (flag == RF_DEVICE) {
+      lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
+      if (!lib_handle) {
+	printf( "Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
+	return 0;
+      } 
+      
+      fp = dlsym(lib_handle,"device_init");
+      
+      if (fp != NULL ) {
+	fp(device,openair0_cfg,cfgfile);
+      } else {
+	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
+	return -1;
+      }
+    } else {
+      lib_handle = dlopen(OAI_TP_LIBNAME, RTLD_LAZY);
+      if (!lib_handle) {
+	printf( "Unable to locate %s: transport protocol set to NONE_TP.\n", OAI_TP_LIBNAME);
+	return 0;
+      } 
+      
+      fp = dlsym(lib_handle,"transport_init");
+      
+      if (fp != NULL ) {
+	fp(device,openair0_cfg,cfgfile);
+      } else {
+	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
+	return -1;
+      }
+    } 
+    
+  return 0; 	       
+}
+
+
+
+int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
+  
+  int rc;
+  static char   *cfgfile;
+  uint8_t       flag=RF_DEVICE;
+  /* FT: rewritten for shared library, common, radio head interface implementation */
+  rc=load_lib(device, openair0_cfg, NULL,flag);
+  if ( rc >= 0) {       
+    if ( set_device(device) < 0) {
+      fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
+      return -1;		   
+    }   
+  }
+  
+  return 0;
+}
+
+int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg) {
+  
+  int rc;
+  static char   *cfgfile;
+  uint8_t       flag=TRANSPORT_PROTOCOL;
+
+  /* FT: rewritten for shared library, common, radio head interface implementation */
+  rc=load_lib(device, openair0_cfg, NULL,flag);
+  if ( rc >= 0) {       
+    if ( set_transport(device) < 0) {
+      fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
+      return -1;		   
+    }   
+  }
+  
+  return 0;
 }

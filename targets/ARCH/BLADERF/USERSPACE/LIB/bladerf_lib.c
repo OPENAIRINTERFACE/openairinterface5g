@@ -185,7 +185,7 @@ int trx_brf_set_gains(openair0_device* device) {
 
 }
 
-int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
+int device_init(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile) {
 
   int status;
   int card=0;
@@ -308,6 +308,7 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   printf("BLADERF: Initializing openair0_device\n");
   device->priv           = brf; 
   device->Mod_id         = num_devices++;
+  device->type             = BLADERF_DEV; 
   device->trx_start_func = trx_brf_start;
   device->trx_end_func   = trx_brf_end;
   device->trx_read_func  = trx_brf_read;
@@ -317,6 +318,31 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   device->trx_stop_func        = trx_brf_stop;
   device->trx_set_freq_func    = trx_brf_set_freq;
   device->trx_set_gains_func   = trx_brf_set_gains;
+
+  if(brf->sample_rate==30.72e6) {
+    openair0_cfg->tx_delay = 8;
+    openair0_cfg->tx_forward_nsamps = 175;
+    brf->tx_forward_nsamps  = 175;
+  }
+  if(brf->sample_rate==15.36e6) {
+    openair0_cfg->tx_delay = 5;
+    openair0_cfg->tx_forward_nsamps = 95;
+    brf->tx_forward_nsamps = 95;
+  }
+  if(brf->sample_rate==7.68e6) {
+    openair0_cfg->tx_delay = 8;
+    openair0_cfg->tx_forward_nsamps = 0;
+    brf->tx_forward_nsamps = 0;
+  }
+  if(brf->sample_rate==1.92e6) {
+    openair0_cfg->tx_delay = 8;
+    openair0_cfg->tx_forward_nsamps = 40;
+    brf->tx_forward_nsamps = 40;
+  }
+  
+  openair0_cfg->iq_txshift= 0;
+  openair0_cfg->iq_rxrescale = 15;
+
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
 
   return 0;

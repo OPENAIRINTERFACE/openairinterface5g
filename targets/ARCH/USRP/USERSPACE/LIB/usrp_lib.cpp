@@ -329,8 +329,9 @@ int trx_usrp_reset_stats(openair0_device* device) {
 }
 
 
-int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
-{
+extern "C" {
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg, char *cfgfile) {
+    
   uhd::set_thread_priority_safe(1.0);
   usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
   memset(s, 0, sizeof(usrp_state_t));
@@ -364,7 +365,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
     }
 
-    printf("Found USRP X300\n");
+ printf("Found USRP X300\n");
     s->usrp = uhd::usrp::multi_usrp::make(args);
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
@@ -475,6 +476,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
   std::cout << boost::format("Device timestamp: %f...") % (s->usrp->get_time_now().get_real_secs()) << std::endl;
 
   device->priv = s;
+  device->type             = USRP_DEV; 
   device->trx_start_func = trx_usrp_start;
   device->trx_write_func = trx_usrp_write;
   device->trx_read_func  = trx_usrp_read;
@@ -488,11 +490,37 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:
   // init tx_forward_nsamps based usrp_time_offset ex
-  if(is_equal(s->sample_rate, (double)30.72e6))
+  /*if(is_equal(s->sample_rate, (double)30.72e6))
     s->tx_forward_nsamps  = 176;
   if(is_equal(s->sample_rate, (double)15.36e6))
     s->tx_forward_nsamps = 90;
   if(is_equal(s->sample_rate, (double)7.68e6))
-    s->tx_forward_nsamps = 50;
+    s->tx_forward_nsamps = 50;*/
+/* move device specific parameters from lte-softmodem.c here */
+    if(is_equal(s->sample_rate, (double)30.72e6)) {
+      openair0_cfg->tx_delay = 8;
+      s->tx_forward_nsamps  = 175;
+      openair0_cfg->tx_forward_nsamps  = 175;
+    }
+    if(is_equal(s->sample_rate, (double)15.36e6)) {
+      openair0_cfg->tx_delay = 5;
+      s->tx_forward_nsamps = 95;
+      openair0_cfg->tx_forward_nsamps = 95;
+    }
+    if(is_equal(s->sample_rate, (double)7.68e6)) {
+      openair0_cfg->tx_delay = 5;
+      s->tx_forward_nsamps = 70;
+      openair0_cfg->tx_forward_nsamps = 70;
+    }
+    if(is_equal(s->sample_rate, (double)1.92e6)) {
+      openair0_cfg->tx_delay = 8;
+      s->tx_forward_nsamps = 40;
+      openair0_cfg->tx_forward_nsamps = 40;
+    }
+    openair0_cfg->iq_txshift= 5;
+    openair0_cfg->iq_rxrescale = 15;
+    printf("check params %d:%d",openair0_cfg->tx_forward_nsamps, openair0_cfg->tx_delay);
+   
   return 0;
+}
 }
