@@ -284,7 +284,7 @@ void *rrh_UE_thread(void *arg) {
       tx_buffer_UE[i]=(tmp+4*sizeof(int32_t));  
     }
     
-    printf("Client %s:%d is connected (DL_RB=%d) rt=%d|%d. \n" ,   dev->eth_dev.openair0_cfg.remote_ip,
+    printf("Client %s:%d is connected (DL_RB=%d) rt=%d|%d. \n" ,   dev->eth_dev.openair0_cfg.remote_addr,
 	   dev->eth_dev.openair0_cfg.remote_port,
 	   dev->eth_dev.openair0_cfg.num_rb_dl,
 	   dev->eth_dev.openair0_cfg.rx_num_channels,
