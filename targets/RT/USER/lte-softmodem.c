@@ -361,12 +361,14 @@ int16_t           osa_log_verbosity  = LOG_MED;
 
 
 #ifdef ETHERNET
-char rrh_eNB_ip[20] = "127.0.0.1";
-int rrh_eNB_port = 50000;
-char *rrh_UE_ip = "127.0.0.1";
-int rrh_UE_port = 51000;
+//char rrh_eNB_ip[20] = "127.0.0.1";
+//int rrh_eNB_port = 50000;
+//char *rrh_UE_ip = "127.0.0.1";
+//int rrh_UE_port = 51000;
 #endif
-
+/* flag given in runtime to specify if the RF head is local or remote*/
+uint8_t local_remote_RF;
+ 
 char uecap_xer[1024],uecap_xer_in=0;
 extern void *UE_thread(void *arg);
 extern void init_UE_threads(void);
@@ -430,7 +432,7 @@ void help (void) {
   printf("  -h provides this help message!\n");
   printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
   printf("  -m Set the maximum downlink MCS\n");
-  printf("  -M IP address of RRH\n");
+  printf("  -M Specify whether RF head is local or remote,valid options: (1: local , 2:remote)  \n");
   printf("  -O eNB configuration file (located in targets/PROJECTS/GENERIC-LTE-EPC/CONF\n");
   printf("  -q Enable processing timing measurement of lte softmodem on per subframe basis \n");
   printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
@@ -1818,9 +1820,11 @@ static void* eNB_thread( void* arg )
       // USRP_DEBUG is active
       rt_sleep_ns(1000000);
 #endif
-
+/* FT configurable tx lauch delay (in slots )*/
       if ((tx_launched == 0) &&
-          (rx_pos >= (((2*hw_subframe)+1)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))) {
+	   ((openair0_cfg[card].txlaunch_wait == 0) ||
+	    ((openair0_cfg[card].txlaunch_wait == 1) &&
+	     (rx_pos >= (((2*hw_subframe)+openair0_cfg[card].txlaunch_wait_slotcount)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))))) { 
         tx_launched = 1;
 
         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -2112,9 +2116,7 @@ static void get_options (int argc, char **argv)
      break;
 
     case 'M':
-#ifdef ETHERNET
-      strcpy(rrh_eNB_ip,optarg);
-#endif
+      local_remote_RF=atoi(optarg);
       break;
 
     case 'C':
@@ -2856,8 +2858,8 @@ int main( int argc, char **argv )
       openair0_cfg[card].tx_bw = 10e6;
       openair0_cfg[card].rx_bw = 10e6;
       // from usrp_time_offset
-      openair0_cfg[card].tx_forward_nsamps = 175;
-      openair0_cfg[card].tx_delay = 8;
+      //openair0_cfg[card].tx_forward_nsamps = 175;
+      // openair0_cfg[card].tx_delay = 8;
 #endif
     } else if(frame_parms[0]->N_RB_DL == 50) {
       sample_rate = 15.36e6;
@@ -2868,8 +2870,8 @@ int main( int argc, char **argv )
       openair0_cfg[card].samples_per_frame = 153600;
       openair0_cfg[card].tx_bw = 5e6;
       openair0_cfg[card].rx_bw = 5e6;
-      openair0_cfg[card].tx_forward_nsamps = 95;
-      openair0_cfg[card].tx_delay = 5;
+      //openair0_cfg[card].tx_forward_nsamps = 95;
+      //openair0_cfg[card].tx_delay = 5;
 #endif
     } else if (frame_parms[0]->N_RB_DL == 25) {
       sample_rate = 7.68e6;
@@ -2881,12 +2883,14 @@ int main( int argc, char **argv )
       openair0_cfg[card].rx_bw = 2.5e6;
       openair0_cfg[card].samples_per_packet = 1024;
 #ifdef OAI_USRP
-    openair0_cfg[card].tx_forward_nsamps = 70;
-    openair0_cfg[card].tx_delay = 5;
-#elif OAI_BLADERF
-      openair0_cfg[card].tx_forward_nsamps = 0;
-      openair0_cfg[card].tx_delay = 8;
-#endif 
+
+      openair0_cfg[card].tx_forward_nsamps = 70;
+      openair0_cfg[card].tx_delay = 5;
+#endif
+      //#elif OAI_BLADERF
+      //openair0_cfg[card].tx_forward_nsamps = 0;
+      //openair0_cfg[card].tx_delay = 8;
+      //#endif 
 #endif
     } else if (frame_parms[0]->N_RB_DL == 6) {
       sample_rate = 1.92e6;
@@ -2897,16 +2901,25 @@ int main( int argc, char **argv )
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
       openair0_cfg[card].rx_bw = 1.5e6;
-      openair0_cfg[card].tx_forward_nsamps = 40;
-      openair0_cfg[card].tx_delay = 8;
+      //openair0_cfg[card].tx_forward_nsamps = 40;
+      //openair0_cfg[card].tx_delay = 8;
 #endif
     }
     
 #ifdef ETHERNET
 
-    //calib needed
-    openair0_cfg[card].tx_delay = 0;
+    openair0_cfg[card].remote_addr = "192.168.12.242";
+    //openair0_cfg[card].remote_addr = "127.0.0.1";
+// openair0_cfg[card].remote_addr = "74:d4:35:cc:88:45";
+    openair0_cfg[card].remote_port = 50000;
+    openair0_cfg[card].my_addr = "192.168.12.31";
+    //openair0_cfg[card].my_addr = "127.0.0.1";
+    //openair0_cfg[card].my_addr = "d4:be:d9:22:0a:ac"; 
+    openair0_cfg[card].my_port = 50001; 
+    openair0_cfg[card].tx_delay = 5;
     openair0_cfg[card].tx_forward_nsamps = 0;
+    openair0_cfg[card].txlaunch_wait = 0;
+    openair0_cfg[card].txlaunch_wait_slotcount = 0;
     
     if (frame_parms[0]->N_RB_DL == 6) 
       openair0_cfg[card].samples_per_packet = 256;
@@ -2924,17 +2937,18 @@ int main( int argc, char **argv )
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_tx),
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_rx));
     openair0_cfg[card].Mod_id = 0;
-#ifdef ETHERNET
-
+#ifdef ETHERNET/*do we need to separate ue and enb????*/
+    /*
     if (UE_flag) {
       printf("ETHERNET: Configuring UE ETH for %s:%d\n",rrh_UE_ip,rrh_UE_port);
-      openair0_cfg[card].remote_ip   = &rrh_UE_ip[0];
+      openair0_cfg[card].remote_addr   = &rrh_UE_ip[0];
       openair0_cfg[card].remote_port = rrh_UE_port;
     } else {
       printf("ETHERNET: Configuring eNB ETH for %s:%d\n",rrh_eNB_ip,rrh_eNB_port);
-      openair0_cfg[card].remote_ip   = &rrh_eNB_ip[0];
-      openair0_cfg[card].remote_port = rrh_eNB_port;
+      openair0_cfg[card].remote_addr   =&rrh_eNB_ip[0];
+      openair0_cfg[card].remote_port =rrh_eNB_port;
     }
+    */
 openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
     openair0_cfg[card].sample_rate = sample_rate;
@@ -2988,18 +3002,33 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
 #endif
   }
-
-  openair0.func_type = BBU_FUNC;
+  /* device host type is set*/
+  openair0.host_type = BBU_HOST;
+  /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
+  openair0.type = NONE_DEV;
+  openair0.transp_type = NONE_TP;
   openair0_cfg[0].log_level = glog_level;
 
-  if ((mode!=loop_through_memory) && 
-      (openair0_device_init(&openair0, &openair0_cfg[0]) <0)) {
-    printf("Exiting, cannot initialize device\n");
-    exit(-1);
+  /* BBU can either have local or remote radio heads */
+  if (local_remote_RF == BBU_LOCAL_RF_ENABLED) {  /* radio heads are local so the corresponding device is initiated */
+
+    if ((mode!=loop_through_memory) && 
+	(openair0_device_load(&openair0, &openair0_cfg[0]) <0)) {
+      printf("Exiting, cannot initialize device\n");
+      exit(-1);
+    }
+    else if (mode==loop_through_memory) {    
+    }
+  } else if (local_remote_RF == BBU_REMOTE_RF_ENABLED) {/* radio heads are remote so the trasnsport protocol is initiated */
+    if ((mode!=loop_through_memory) && 
+	(openair0_transport_load(&openair0, &openair0_cfg[0]) <0)) {
+      printf("Exiting, cannot initialize transport protocol\n");
+      exit(-1);
+    }
+    else if (mode==loop_through_memory) {    
+    }
   }
-  else if (mode==loop_through_memory) {    
-  }
- 
+
   printf("Done\n");
 
   mac_xface = malloc(sizeof(MAC_xface));
