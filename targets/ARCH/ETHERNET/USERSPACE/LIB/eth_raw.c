@@ -119,8 +119,8 @@ int eth_socket_init_raw(openair0_device *device) {
  }
  
  /* Construct the Ethernet header */ 
- ether_aton_r(device->openair0_cfg.my_addr, (struct ether_addr *)(&(eh.ether_shost)));
- ether_aton_r(device->openair0_cfg.remote_addr, (struct ether_addr *)(&(eh.ether_dhost)));
+ ether_aton_r(local_mac, (struct ether_addr *)(&(eh.ether_shost)));
+ ether_aton_r(remote_mac, (struct ether_addr *)(&(eh.ether_dhost)));
  eh.ether_type = htons((short)device->openair0_cfg.my_port);
 
  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eh.ether_shost[0],eh.ether_shost[1],eh.ether_shost[2],eh.ether_shost[3],eh.ether_shost[4],eh.ether_shost[5]);

@@ -369,8 +369,8 @@ int16_t           osa_log_verbosity  = LOG_MED;
 
 
 #ifdef ETHERNET
-//char *rrh_UE_ip = "127.0.0.1";
-//int rrh_UE_port = 51000;
+char *rrh_UE_ip = "127.0.0.1";
+int rrh_UE_port = 51000;
 #endif
 /* flag given in runtime to specify if the RF head is local or remote*/
 uint8_t local_remote_RF;
@@ -2977,13 +2977,13 @@ int main( int argc, char **argv )
 
     openair0_cfg[card].remote_addr = "192.168.12.242";
     //openair0_cfg[card].remote_addr = "127.0.0.1";
-// openair0_cfg[card].remote_addr = "74:d4:35:cc:88:45";
+    openair0_cfg[card].remote_addr = "74:d4:35:cc:88:45";
     openair0_cfg[card].remote_port = 50000;
     openair0_cfg[card].my_addr = "192.168.12.31";
     //openair0_cfg[card].my_addr = "127.0.0.1";
-    //openair0_cfg[card].my_addr = "d4:be:d9:22:0a:ac"; 
-    openair0_cfg[card].my_port = 50001; 
-    openair0_cfg[card].tx_delay = 5;
+    openair0_cfg[card].my_addr = "d4:be:d9:22:0a:ac"; 
+    openair0_cfg[card].my_port = 50000; 
+    openair0_cfg[card].tx_delay = 10;
     openair0_cfg[card].tx_forward_nsamps = 0;
     openair0_cfg[card].txlaunch_wait = 0;
     openair0_cfg[card].txlaunch_wait_slotcount = 0;

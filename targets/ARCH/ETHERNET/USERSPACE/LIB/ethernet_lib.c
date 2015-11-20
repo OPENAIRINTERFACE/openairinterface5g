@@ -343,7 +343,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
   int card = 0;
 
   /*hoedcoded!!!!*/
-  eth->flags = ETH_UDP_MODE;
+  eth->flags = ETH_RAW_MODE;
   eth->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
