@@ -174,39 +174,38 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   int ret=0;
   int i=0;
   
-  
-  /***************** get working interface name ***************************/
-  /* /\* convert ascii ip address from config file to network binary format *\/ */
-  /* inet_aton(device->openair0_cfg.my_addr, &ia); */
-  /* /\* look for the interface used, we have its ip address *\/ */
-  /* /\* get info on all our network interfaces *\/ */
-  /* ids = if_nameindex(); */
-  /* /\* loop on these network interfaces *\/ */
-  /* for (i=0; ids[i].if_index != 0 ; i++) { */
-  /*   /\* skip unamed interfaces *\/ */
-  /*   if (ids[i].if_name == NULL) */
-  /*     continue; */
-  /*   /\* get ip address of current network interface *\/  */
-  /*   strcpy(ifr.ifr_name,ids[i].if_name);     */
-  /*   if (-1 == ioctl(eth->sockfd[Mod_id], SIOCGIFADDR, &ifr)) { */
-  /*     printf( " Interface %i: %s isn't configured (no ip addr), skipped\n",ids[i].if_index, ifr.ifr_name) ; */
-  /*     continue;           */
-  /*   } */
-  /*   /\* test if this is the interface to be used *\/ */
-  /*   if ( ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr !=  ia.s_addr) */
-  /*     continue; */
-  /*   /\* store interface name *\/ */
-  /*   if_name = ids[i].if_name;     */
-  /*   break; */
-    
-  /* } */
-  /* if_freenameindex(ids);        */
-  /* if( if_name == NULL) { */
-  /*   printf("Unable to find interface name for %s\n",device->openair0_cfg.my_addr); */
-  /*   return -1; */
-  /*   } */
-  /* eth->if_name[Mod_id]=if_name; */
-
+  if (1==0) {
+    /***************** get working interface name ***************************/
+    /* convert ascii ip address from config file to network binary format */
+    inet_aton(device->openair0_cfg.my_addr, &ia); */
+      /* look for the interface used, we have its ip address get info on all our network interfaces*/ 
+      ids = if_nameindex(); 
+      /* loop on these network interfaces */
+      for (i=0; ids[i].if_index != 0 ; i++) {
+	/* skip unamed interfaces  */
+	if (ids[i].if_name == NULL)
+	  continue; 
+	/* get ip address of current network interface */
+	strcpy(ifr.ifr_name,ids[i].if_name);     
+	if (-1 == ioctl(eth->sockfd[Mod_id], SIOCGIFADDR, &ifr)) { 
+	  printf( " Interface %i: %s isn't configured (no ip addr), skipped\n",ids[i].if_index, ifr.ifr_name);
+	  continue;           
+	} 
+	/* test if this is the interface to be used */
+	if ( ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr !=  ia.s_addr) 
+	  continue; 
+    /* store interface name */
+	if_name = ids[i].if_name;
+     break;
+     
+      } 
+      if_freenameindex(ids); 
+      if( if_name == NULL) { 
+	printf("Unable to find interface name for %s\n",device->openair0_cfg.my_addr); 
+	return -1; 
+      } 
+      eth->if_name[Mod_id]=if_name; 
+  }
   /****************** socket level options ************************/  
   switch(option) {
   case SND_BUF_SIZE:  /* transmit socket buffer size */   
@@ -342,9 +341,9 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
   memset(eth, 0, sizeof(eth_state_t));
   int card = 0;
 
-  /*hoedcoded!!!!*/
+  /*hardcoded!!!!*/
   eth->flags = ETH_RAW_MODE;
-  eth->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); // buffer size = 4096 for sample_len of 1024
+  eth->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); 
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
   device->Mod_id           = num_devices_eth++;
@@ -366,16 +365,13 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
     device->trx_write_func   = trx_eth_write_udp;
     device->trx_read_func    = trx_eth_read_udp;     
   }
-  /*hoedcoded!!!!*/
+  /*hardcoded!!!!*/
   eth->if_name[device->Mod_id] = "eth0";
   device->priv = eth; 	
   openair0_cfg->iq_txshift = 5;
   openair0_cfg->iq_rxrescale = 15;
   memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
-
-  /*iqoffset*/
-  /*keep conf*/
-  /*usrsignal */ 
+ 
   return 0;
 }
 

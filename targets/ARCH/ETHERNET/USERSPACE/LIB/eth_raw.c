@@ -70,12 +70,12 @@ int eth_socket_init_raw(openair0_device *device) {
   int sock_dom=0;
   int sock_type=0;
   int sock_proto=0;  
-
-  if (device->host_type == RRH_HOST ) {
+ 
+  if (device->host_type == RRH_HOST ) {  /* RRH doesn't know remote MAC(will be retrieved from first packet send from BBU) and remote port(don't care) */
     local_mac = device->openair0_cfg.my_addr; 
     local_port = device->openair0_cfg.my_port;    
-    remote_mac = "0:0:0:0:0:0";
-    remote_port = device->openair0_cfg.my_port;    
+    remote_mac = malloc(ETH_ALEN);
+    remote_port = 0;    
     printf("[%s] local MAC addr %s remote MAC addr %s\n","RRH", local_mac,remote_mac);    
   } else {
     local_mac = device->openair0_cfg.my_addr;
