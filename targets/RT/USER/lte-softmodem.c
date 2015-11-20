@@ -970,6 +970,25 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	 phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset++] = 0x00010001;
        }
      }
+
+     if ((((phy_vars_eNB->lte_frame_parms.tdd_config==0) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==1) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==2) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==6)) && 
+	  (subframe==0)) || (subframe==5)) {
+       // turn on tx switch N_TA_offset before
+       //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,phy_vars_eNB->N_TA_offset,slot_offset);
+       for (i=0; i<phy_vars_eNB->N_TA_offset; i++) {
+	 tx_offset = (int)slot_offset+time_offset[aa]+i-phy_vars_eNB->N_TA_offset/2;
+	 if (tx_offset<0)
+	   tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
+	 
+	 if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti))
+	   tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
+	 
+	 phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset] = 0x00000000;
+       }
+     }
     }
   }
 }
@@ -2821,7 +2840,7 @@ int main( int argc, char **argv )
       }
 
 #else
-      //already taken care of in lte-softmodem
+      //already taken care of in lte-softmodem.c
       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
 #endif
 
@@ -2901,7 +2920,12 @@ int main( int argc, char **argv )
       openair0_cfg[card].tx_delay = 8;
 #endif
     }
-    
+
+    if (frame_parms[0]->frame_type==TDD)
+      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
+    else //FDD
+      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+
 #ifdef ETHERNET
 
     //calib needed
@@ -2935,7 +2959,7 @@ int main( int argc, char **argv )
       openair0_cfg[card].remote_ip   = &rrh_eNB_ip[0];
       openair0_cfg[card].remote_port = rrh_eNB_port;
     }
-openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
     openair0_cfg[card].sample_rate = sample_rate;
     openair0_cfg[card].tx_bw = bw;
@@ -3064,7 +3088,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     rf_map[CC_id].card=0;
-    rf_map[CC_id].chain=CC_id;
+    rf_map[CC_id].chain=CC_id+1;
   }
 
   // connect the TX/RX buffers
