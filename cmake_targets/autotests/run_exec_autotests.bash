@@ -407,7 +407,7 @@ for search_expr in "${test_case_array[@]}"
     elif  [ "$class" == "execution" ]; then
         test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" 
     else
-        echo "Unexpected class of test case...Exiting...."
+        echo "Unexpected class of test case...Skipping the test case $name ...."
     fi
 
     done

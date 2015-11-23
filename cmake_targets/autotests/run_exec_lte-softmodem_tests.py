@@ -47,6 +47,7 @@ import datetime
 import getpass
 import math #from time import clock 
 import xml.etree.ElementTree as ET
+import re
 
 import log
 import case01
@@ -58,6 +59,9 @@ import case05
 from  openair import *
 
 import paramiko
+import ssh
+from ssh import SSHSession
+
 
 def write_file(filename, string, mode="w"):
    text_file = open(filename, mode)
@@ -65,40 +69,47 @@ def write_file(filename, string, mode="w"):
    text_file.close()
    
 
-def sftp_module (username, password, hostname, ports, localfile, remotefile, logfile, operation):
-   localD = localfile
-   remoteD = remotefile
+def sftp_module (username, password, hostname, ports, paramList,logfile): 
+   #localD = localfile
+   #remoteD = remotefile
    #fd, paramiko_logfile  = tempfile.mkstemp()
    #res = os.close(fd )
    #paramiko logfile path should not be changed with multiple calls. The logs seem to in first file regardless
-   paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
    error = ""
-   try:
-      res=os.system(' echo > ' + paramiko_logfile)
-      paramiko.util.log_to_file(paramiko_logfile)
-      transport = paramiko.Transport((hostname, ports))
-      transport.connect(username = username, password = password)
-      sftp = paramiko.SFTPClient.from_transport(transport)
-      if operation == "put":
-        sftp.put(remotepath=remoteD, localpath=localD)
-      elif operation == "get":
-        sftp.get(remotepath=remoteD, localpath=localD)
-      else :
-        print "sftp_module: unidentified operation. Exiting now"
-        print "hostname = " + hostname
-        print "ports = " + ports
-        print "localfile = " + localfile
-        print "remotefile = " + remotefile
-        print "logfile = " + logfile
-        print "operation = " + operation
-        sys.exit()
-        sftp.close()
-        transport.close()
-   except Exception, e:
-        error = ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-        error = error + '\n username = ' + username + '\n hostname = ' + hostname + '\n localfile = ' + localfile + '\n remotefile = ' + remotefile + '\n operation = ' + operation + '\nlogfile = ' + logfile + '\n ports = ' + str(ports) + '\n'  
-        error = error + traceback.format_exc()
+   #The lines below are outside exception loop to be sure to terminate the test case if the network connectivity goes down or there is authentication failure
+ 
+
+
+   transport = paramiko.Transport(hostname, ports)
+   transport.connect(username = username, password = password)
+   sftp = paramiko.SFTPClient.from_transport(transport)
    
+
+   #  index =0 
+   for param in paramList:
+      try:
+        operation = param["operation"] 
+        localD = param["localfile"]
+        remoteD = param["remotefile"]
+        if operation == "put":
+          sftp.put(remotepath=remoteD, localpath=localD)
+        elif operation == "get":
+          sftp.get(remotepath=remoteD, localpath=localD)
+        else :
+          print "sftp_module: unidentified operation:<" + operation + "> Exiting now"
+          print "hostname = " + hostname
+          print "ports = " + ports
+          print "localfile = " + localD
+          print "remotefile = " + remoteD
+          print "operation = " + operation
+          sys.exit()
+      except Exception, e:
+         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+         error = error + '\n username = ' + username + '\n hostname = ' + hostname + '\n localfile = ' + localD + '\n remotefile = ' + remoteD + '\n operation = ' + operation + '\nlogfile = ' + logfile + '\n ports = ' + str(ports) + '\n'  
+         error = error + traceback.format_exc()
+
+   sftp.close()
+   transport.close() 
    res = os.system('\n echo \'SFTP Module Log for Machine: <' + hostname + '> starts...\' >> ' + logfile + ' 2>&1 ')
    res = os.system('cat ' + paramiko_logfile + ' >> ' + logfile + ' 2>&1 \n')
    write_file(logfile, error, "a")
@@ -193,11 +204,50 @@ class oaiThread (threading.Thread):
         self.cmd = cmd
         self.sudo = sudo
         self.timeout = timeout
+        self.machineName = machineName
     def run(self):
         print "Starting " + self.name
         result = self.oai.send_recv(self.cmd, self.sudo, self.timeout)
         print "result = " + result
         print "Exiting " + self.name
+
+#This class runs test cases with class oaisim_noS1, compilatation
+class testCaseThread_generic(threading.thread):
+   def __init__(self, threadID, name, oai, machine, logdirOAI5GRepo, oai5GRepoDirRemote, testcasename,oldprogramList, CleanupAluLteBox, username, password, timeout):
+       threading.Thread.__init__(self)
+       self.threaID = threadID
+       self.name = name
+       self.oai = oai
+       self.testcasename = testcasename
+       self.timeout = timeout
+       self.machine = machine
+       self.oai5GRepoDirRemote = oai5GRepoDirRemote
+       self.logdirOAI5GRepo = logdirOAI5GRepo
+       self.username = username
+       self.password = password
+   def run(self):
+     try:
+       mypassword=''
+       #addsudo = 'echo \'' + mypassword + '\' | sudo -S -E '
+       addpass = 'echo \'' + mypassword + '\' | '
+       user = getpass.getuser()
+       print "Starting test case : " + self.testcasename + " On machine " + machineName 
+       cleanOldPrograms(oai, oldprogramList, CleanUpAluLteBox)
+       logdir_local_testcase = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
+       logdir_local_base = logdirOAI5GRepo+'/cmake_targets/autotests/log/'
+       logdir_remote_testcase = oai5GRepoDirRemote + '/cmake_targets/autotests/log' + self.testcasename
+       os.removedirs(logdir_testcase)
+       os.mkdir (logdir_testcase)
+       cmd = "( cd " +  self.oai5GRepoDirRemote + " \n "
+       cmd = cmd + "source oaienv \n"
+       cmd = cmd + "python run_test_case_generic -d " +  self.oai5GRepoDirRemote + " -g " + "\"" + self.testcasename + "\""
+       cmd = cmd + " ) "   
+
+       #Now we copy all the remote 
+       ssh = SSHSession(self.machine , username=username, key_file=None, passsword=password)
+       ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       print "Finishing test case : " + self.testcasename + " On machine " + machineName 
+
 
 def addsudo (cmd, password=""):
   cmd = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
@@ -441,75 +491,116 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOA
     remotefile = logdir_eNB + '/eNB_compile' + '_' + str(run) + '_.log'
     sftp_log = os.path.expandvars(logdir_local_testcase + '/sftp_module.log')
     ports = 22
-    sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList = []
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/eNB_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_eNB + '/eNB_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/eNB_pre_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_eNB + '/eNB_pre_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/eNB_traffic' + '_' + str(run) + '_.log'
     remotefile = logdir_eNB + '/eNB_traffic' + '_' + str(run) + '_.log'
-    sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/eNB_task_out' + '_' + str(run) + '_.log'
     remotefile = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
-    sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
 
+    localfile = logdir_local_testcase + '/test_case_list.xml'
+    remotefile = logdirOAI5GRepo+'/cmake_targets/autotests/test_case_list.xml' 
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    sftp_module (user, password, eNBMachine, ports, paramList, sftp_log)
+    
+    paramList=[]
     localfile = logdir_local_testcase + '/UE_compile' + '_' + str(run) + '_.log'
     remotefile = logdir_UE + '/UE_compile' + '_' + str(run) + '_.log'
-    sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/UE_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_UE + '/UE_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/UE_pre_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_UE + '/UE_pre_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/UE_traffic' + '_' + str(run) + '_.log'
     remotefile = logdir_UE + '/UE_traffic' + '_' + str(run) + '_.log'
-    sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/UE_task_out' + '_' + str(run) + '_.log'
     remotefile = logdir_UE + '/UE_task_out' + '_' + str(run) + '_.log'
-    sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
-
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    sftp_module (user, password, UEMachine, ports, paramList, sftp_log)
+    
+    paramList=[]
     localfile = logdir_local_testcase + '/EPC_compile' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/EPC_compile' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/EPC_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/EPC_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/HSS_compile' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/HSS_compile' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/HSS_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/HSS_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/EPC_pre_exec' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/EPC_pre_exec' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/EPC_traffic' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/EPC_traffic' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
 
     localfile = logdir_local_testcase + '/EPC_task_out' + '_' + str(run) + '_.log'
     remotefile = logdir_EPC + '/EPC_task_out' + '_' + str(run) + '_.log'
-    sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+    sftp_module (user, password, EPCMachine, ports, paramList, sftp_log)
     #We need to close the new ssh session that was created  
     if index_eNBMachine == index_EPCMachine:
         oai_EPC.disconnect()
 
+#This function searches if test case is present in list of test cases that need to be executed by user
+def search_test_case_group(testcasename, testcasegroup):
+    if testcasegroup == '':
+       return True
+    testcaselist = testcasegroup.split()
+    for entry in testcaselist:
+       if entry.find('+') >=0:
+          match = re.search(entry, testcasename)
+          if match:
+             return True
+       else:
+          match = testcasename.find(entry)
+          if match >=0:
+             return True
+    return False
+   
+       
 
 #thread1 = myThread(1, "Thread-1", 1)
 debug = 0
@@ -522,6 +613,7 @@ timeout=2000
 xmlInputFile="./test_case_list.xml"
 NFSResultsDir = '/mnt/sradio'
 cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
+testcasegroup=''
 
 logdir = '/tmp/' + 'OAITestFrameWork-' + getpass.getuser() + '/'
 logdirOAI5GRepo = logdir + 'openairinterface5g/'
@@ -535,15 +627,19 @@ locallogdir = openairdir_local + '/cmake_targets/autotests/log/'
 #Remove  the contents of local log directory
 os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
 
-for arg in sys.argv:
+i=1
+while i < len (sys.argv):
+    arg=sys.argv[i]
     if arg == '-d':
         debug = 1
     elif arg == '-dd':
         debug = 2
     elif arg == '-p' :
         prompt2 = sys.argv[i+1]
+        i = i +1  
     elif arg == '-w' :
         pw = sys.argv[i+1]
+        i = i +1  
     elif arg == '-P' :
         dlsim = 1
     elif arg == '-l' :
@@ -552,6 +648,10 @@ for arg in sys.argv:
         is_compiled = 1
     elif arg == '-t' :
         timeout = sys.argv[i+1]
+        i = i +1  
+    elif arg == '-g' :
+        testcasegroup = sys.argv[i+1].replace("\"","")
+        i = i +1   
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -559,6 +659,9 @@ for arg in sys.argv:
         print "-w:  set the password for ssh to localhost"
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
+        sys.exit()
+    else :
+        print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
         sys.exit()
     i= i + 1     
 
@@ -579,6 +682,10 @@ try:
 except KeyError: 
    print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
    sys.exit(1)
+
+paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
+res=os.system(' echo > ' + paramiko_logfile)
+paramiko.util.log_to_file(paramiko_logfile)
 
 # get the oai object
 host = os.uname()[1]
@@ -719,6 +826,7 @@ print "cpu freq(MHz): " + str(cpu_freq) + "timeout(s): " + str(timeout)
 
 #We now prepare the machines for testing
 #index=0
+threads_init_setup=[]
 for index in oai_list:
   try:
       print "setting up machine: " + MachineList[index]
@@ -746,21 +854,25 @@ for index in oai_list:
       cmd = cmd + ' cd ' + logdir   + '\n'
       cmd = cmd + ' ) > ' +  setuplogfile + ' 2>&1   '
       #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
-      result = oai_list[index].send_recv(cmd, False, 300 )
+      #result = oai_list[index].send_recv(cmd, False, 300 )
       write_file(setup_script, cmd, mode="w")
-      localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
-      remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+      tempThread = oaiThread(index, 'thread_'+str(index), oai_list[index] , cmd, False, 300)
+      threads_init_setup.append(tempThread )
+      tempThread.start()
 
-      sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
-      sftp_module (user, pw, MachineList[index], 22, localfile, remotefile, sftp_log, "get")
+      #localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
+      #remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+
+      #sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+      #sftp_module (user, pw, MachineList[index], 22, localfile, remotefile, sftp_log, "get")
 
 
       #Now we copy test_case_list.xml on the remote machines
-      localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml')
-      remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/test_case_list.xml'
+      #localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml')
+      #remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/test_case_list.xml'
 
-      sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
-      sftp_module (user, pw, MachineList[index], 22, localfile, remotefile, sftp_log, "put")
+      #sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+      #sftp_module (user, pw, MachineList[index], 22, localfile, remotefile, sftp_log, "put")
 
 
       #print oai_list[index].send('rm -fR ' +  logdir)
@@ -785,6 +897,29 @@ for index in oai_list:
       sys.exit(1)
 
 
+#Now we wait for all the threads to complete
+index = 0
+for t in threads_init_setup:
+   t.join()
+   setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+   setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
+   localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
+   remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
+   port = 22
+   
+   paramList=[]
+   sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+   paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
+   #sftp_module (user, pw, MachineList[index], port, localfile, remotefile, sftp_log, "get")
+
+   #Now we copy test_case_list.xml on the remote machines
+   localfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml')
+   remotefile = logdirOAI5GRepo + '/cmake_targets/autotests/test_case_list.xml'
+   paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
+   sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
+   sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
+   index = index+1
+
 #Now we process all the test cases
 
 
@@ -794,28 +929,28 @@ for testcase in testcaseList:
    testcasename = testcase.get('id')
    testcaseclass = testcase.findtext('class',default='')
    desc = testcase.findtext('desc',default='')
-   if testcaseclass == 'lte-softmodem' :
-     if testcasename != '015700':
-     	continue
-     eNBMachine = testcase.findtext('eNB',default='')
-     UEMachine = testcase.findtext('UE',default='')
-     EPCMachine = testcase.findtext('EPC',default='')
-     index_eNBMachine = MachineList.index(eNBMachine)
-     index_UEMachine = MachineList.index(UEMachine)
-     index_EPCMachine = MachineList.index(EPCMachine)
-     print "testcasename = " + testcasename + " class = " + testcaseclass
-     handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, oai_list, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
+   if search_test_case_group(testcasename, testcasegroup) == True:
+     if testcaseclass == 'lte-softmodem' :
+       eNBMachine = testcase.findtext('eNB',default='')
+       UEMachine = testcase.findtext('UE',default='')
+       EPCMachine = testcase.findtext('EPC',default='')
+       index_eNBMachine = MachineList.index(eNBMachine)
+       index_UEMachine = MachineList.index(UEMachine)
+       index_EPCMachine = MachineList.index(EPCMachine)
+       print "testcasename = " + testcasename + " class = " + testcaseclass
+       handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, oai_list, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
 
-   elif testcaseclass == 'compilation' :
-     continue
-     handle_testcaseclass_compilation (testcase)
-   elif testcaseclass == 'execution' :
-     continue
-     handle_testcaseclass_oaisim (testcase)
-   else :
-     print "Unknown test case class: " + testcaseclass
-     sys.exit()
+     elif testcaseclass == 'compilation' :
+       continue
+       handle_testcaseclass_compilation (testcase)
+     elif testcaseclass == 'execution' :
+       continue
+       handle_testcaseclass_oaisim (testcase)
+     else :
+       print "Unknown test case class: " + testcaseclass
+       sys.exit()
 
+print "Exiting the test cases execution now..."
 
 sys.exit()
 
