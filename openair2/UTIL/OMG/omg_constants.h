@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -29,8 +29,8 @@
 
 /**
  * \file omg_constants.h
- * \brief Constants and Enumarations 
- * 
+ * \brief Constants and Enumarations
+ *
  */
 
 // for the function set: change first_job_time accordingly for the two cases empty/non empty job_vector
@@ -40,36 +40,36 @@
 
 
 /*! The available mobility models */
-typedef enum { 
-STATIC=0,  /*!< STATIC mobility model */
-RWP,  /*!< Random Way Point mobility model */
-RWALK, /*!< Random Walk mobility model */
-TRACE,  /*!< Trace-based Mobility description file */
-SUMO,  /*!< SUMO-based mobility model	 */
-STEADY_RWP, /*!steady state RWP*/
-MAX_NUM_MOB_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
-}mobility_types;
+typedef enum {
+  STATIC=0,  /*!< STATIC mobility model */
+  RWP,  /*!< Random Way Point mobility model */
+  RWALK, /*!< Random Walk mobility model */
+  TRACE,  /*!< Trace-based Mobility description file */
+  SUMO,  /*!< SUMO-based mobility model  */
+  STEADY_RWP, /*!steady state RWP*/
+  MAX_NUM_MOB_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
+} mobility_types;
 
 /*
  * this is a sub type of standard RWP (not steady_RWP)
  */
-typedef enum { 
-MIN_RWP_TYPES=0,  /*!< STATIC mobility model */
-RESTIRICTED_RWP,  /*!< Random Way Point mobility model */
-CONNECTED_DOMAIN, /*!< Random Walk mobility model */
-MAX_RWP_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
-}omg_rwp_types;
+typedef enum {
+  MIN_RWP_TYPES=0,  /*!< STATIC mobility model */
+  RESTIRICTED_RWP,  /*!< Random Way Point mobility model */
+  CONNECTED_DOMAIN, /*!< Random Walk mobility model */
+  MAX_RWP_TYPES /*!< The maximum number of mobility models. Used to adjust the length of the #Node_Vector */
+} omg_rwp_types;
 
- //#define RESTIRICTED_RWP 1
- //#define CONNECTED_DOMAIN 2
+//#define RESTIRICTED_RWP 1
+//#define CONNECTED_DOMAIN 2
 
 /*! The available nodes types */
 typedef enum {
-eNB=0, /*!< enhanced Node B  */
-UE, /*!< User Equipement  */
-RELAY,
-MAX_NUM_NODE_TYPES /*!< All the types. Used to perform the same operations to all the types of nodes */
-}node_types;
+  eNB=0, /*!< enhanced Node B  */
+  UE, /*!< User Equipement  */
+  RELAY,
+  MAX_NUM_NODE_TYPES /*!< All the types. Used to perform the same operations to all the types of nodes */
+} node_types;
 
 
 //#define eps 0.00000095367431649629

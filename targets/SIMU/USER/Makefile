@@ -15,14 +15,18 @@ ifeq ($(DEBUG),1)
 CFLAGS += -g -ggdb -DDEBUG_PHY -DDEBUG_MEAS
 CFLAGS += -DRRC_MSG_PRINT
 CFLAGS += -DPDCP_MSG_PRINT
-#CFLAGS += -DTRACE_RLC_UM_PDU
-#CFLAGS += -DTRACE_RLC_AM_PDU
+CFLAGS += -DTRACE_RLC_UM_PDU
+CFLAGS += -DTRACE_RLC_AM_PDU
+else
+CFLAGS += -DTRACE_RLC_UM_PDU
+CFLAGS += -DTRACE_RLC_AM_PDU
 endif 
 
 ifeq ($(MSG_PRINT),1)
 CFLAGS += -DRRC_MSG_PRINT
 CFLAGS += -DPDCP_MSG_PRINT
 endif
+
 
 CFLAGS += -Wpointer-sign
 CFLAGS += -DUSER_MODE -DNB_ANTENNAS_RX=2 -DNB_ANTENNAS_TXRX=2 -DNB_ANTENNAS_TX=2 $(CPUFLAGS) -I/usr/include/X11 #-Wno-packed-bitfield-compat
@@ -146,9 +150,13 @@ endif
 
 
 
-ifeq ($(NAS), 1)
-CFLAGS += -DNAS_NETLINK -DLINUX
+ifeq ($(LINK_ENB_PDCP_TO_IP_DRIVER), 1)
+CFLAGS += -DPDCP_USE_NETLINK -DLINUX
 NAS_FLAG=1
+endif
+
+ifeq ($(LINK_ENB_PDCP_TO_GTPV1U), 1)
+CFLAGS += -DLINK_ENB_PDCP_TO_GTPV1U 
 endif
 
 ifdef TEST_OMG
@@ -257,7 +265,7 @@ endif
 CFLAGS += -DENABLE_VCD_FIFO
 CFLAGS += -DENABLE_NEW_MULTICAST
 ifdef NAS
-CFLAGS += -DENABLE_PDCP_NETLINK_FIFO
+CFLAGS += -DPDCP_USE_NETLINK_QUEUES
 endif
 # CFLAGS += -DENABLE_LOG_FIFO
 
@@ -274,7 +282,7 @@ ifeq ($(OPENAIR2),1)
 OBJ += $(L2_OBJS)
 endif
 
-LFDS_OBJ_DIR		 = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(LFDS_DIR))
+LFDS_OBJ_DIR		 = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(LFDS_DIR))
 LFDS_LIB		 = $(LFDS_OBJ_DIR)/bin/liblfds611.a
 LIBS 			+= $(LFDS_LIB)
 SHARED_DEPENDENCIES 	+= $(LFDS_LIB)
@@ -303,10 +311,10 @@ printvars:
 	@echo Enable PGM: $(PGM_FOUND)
 
 ##UTIL_YAC_C = $(OPENAIR2_TOP)/UTIL/enb_parser.o
-##$(UTIL_LEX_C) = $(subst $(OPENAIR_HOME), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_RRC_MSG_OBJS1))
+##$(UTIL_LEX_C) = $(subst $(OPENAIR_DIR), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_RRC_MSG_OBJS1))
 
 
-OAISIM_COMPILED_OBJECTS = $(subst $(OPENAIR_HOME), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_RRC_MSG_OBJS1))
+OAISIM_COMPILED_OBJECTS = $(subst $(OPENAIR_DIR), $(OBJS_DIR), $(OBJ) $(OAISIM_OBJS) $(ASN1_RRC_MSG_OBJS1))
 
 -include $(ITTI_MESSAGES_XML:.xml=.d)
 -include $(OAISIM_PAD_OBJS:.o=.d)
@@ -321,7 +329,7 @@ endif
 $(OAISIM_COMPILED_OBJECTS): | objsdir
 
 .SECONDEXPANSION:
-$(OAISIM_COMPILED_OBJECTS) $(OAISIM_PAD_OBJS): %.o : $$(subst $(OBJS_DIR), $(OPENAIR_HOME), $$*.c)
+$(OAISIM_COMPILED_OBJECTS) $(OAISIM_PAD_OBJS): %.o : $$(subst $(OBJS_DIR), $(OPENAIR_DIR), $$*.c)
 	@echo Compiling $<
 	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi;
 	@$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) -DPHY_CONTEXT=1 $(INCLUDES) -o $@ $<
@@ -364,21 +372,21 @@ oai_nw_drv:
 oai_nw_drv_clean:
 	(cd $(OPENAIR2_DIR)/NAS/DRIVER/LITE && $(MAKE) clean)
 nasmesh_fix:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE) clean && $(MAKE))
+	(cd $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/RB_TOOL && $(MAKE) clean && $(MAKE))
 	(cd $(OPENAIR2_DIR) && $(MAKE) clean && $(MAKE) nasmesh_netlink_address_fix.ko)
 nasmesh_fix_uninstall:	
 	(sudo rmmod nasmesh.ko)
 nasmesh_fix_install:	
-	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)	
+	(sudo insmod $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/nasmesh.ko)	
 nasmesh_fix_reinstall:
 	(sudo rmmod nasmesh.ko)	
-	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+	(sudo insmod $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/nasmesh.ko)
 nasmesh_nl:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
+	(cd $(OPENAIR2_DIR)/NETWORK_RIVER/MESH/RB_TOOL && $(MAKE))
 	(cd $(OPENAIR2_DIR) && $(MAKE) nasmesh_netlink.ko)
-	(sudo insmod $(OPENAIR2_DIR)/NAS/DRIVER/MESH/nasmesh.ko)
+	(sudo insmod $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/nasmesh.ko)
 rb_tool:
-	(cd $(OPENAIR2_DIR)/NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
+	(cd $(OPENAIR2_DIR)/NETWORK_DRIVER/MESH/RB_TOOL && $(MAKE))
 
 nasmesh_install:
 	(sudo rmmod nasmesh)
@@ -464,6 +472,7 @@ print:
 
 showcflags:
 	@echo oaisim cflags: $(CFLAGS)
+	@echo oaisim includes: $(INCLUDES)
 	@if [ -d $(S1AP_DIR) ]; then $(MAKE) -C $(S1AP_DIR) -f Makefile.eNB showcflags; fi
 	@if [ -d $(X2AP_DIR) ]; then $(MAKE) -C $(X2AP_DIR) -f Makefile.inc showcflags; fi
 

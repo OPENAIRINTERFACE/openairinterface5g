@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -47,10 +47,10 @@ extern "C" {
 /** @defgroup _get_opt Get Opt
  *  @ingroup _fn
  *  @brief Get options of the OCG command, e.g. "OCG -f" and "OCG -h"
- * @{*/ 
-	int get_opt(int argc, char *argv[]);
- /* @}*/
- 
+ * @{*/
+int get_opt(int argc, char *argv[]);
+/* @}*/
+
 #ifdef __cplusplus
 }
 #endif

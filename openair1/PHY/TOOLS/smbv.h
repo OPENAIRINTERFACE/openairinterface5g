@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -49,7 +49,7 @@
 
 #define DEFAULT_SMBV_IP "192.168.12.201"
 #define DEFAULT_SMBV_FNAME "smbv_config_file.smbv"
-#define MYPORT "5025" 
+#define MYPORT "5025"
 #define BUFFER_LENGTH 256
 #define MAX_INST_LENGTH 256
 #define MAX_CONFIG_FRAMES 4
@@ -90,7 +90,7 @@ int smbv_configure_datalist_for_user(const char* fname, uint8_t user, uint8_t *b
 // configures one of maximal 4 users
 int smbv_configure_user(const char* fname, uint8_t user, uint8_t transmission_mode, uint16_t rnti);
 
-// Configures the PDCCH 
+// Configures the PDCCH
 int smbv_configure_pdcch(const char* fname,uint8_t subframe,uint8_t num_pdcch_symbols,uint8_t num_dci);
 
 // Configures the common DCIs SI, RA and PA

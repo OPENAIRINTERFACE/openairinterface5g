@@ -8,7 +8,7 @@
 int lfds611_queue_enqueue( struct lfds611_queue_state *qs, void *user_data )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_queue_element
-    *qe[LFDS611_QUEUE_PAC_SIZE];
+      *qe[LFDS611_QUEUE_PAC_SIZE];
 
   assert( qs != NULL );
   // TRD : user_data can be NULL
@@ -31,7 +31,7 @@ int lfds611_queue_enqueue( struct lfds611_queue_state *qs, void *user_data )
 int lfds611_queue_guaranteed_enqueue( struct lfds611_queue_state *qs, void *user_data )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_queue_element
-    *qe[LFDS611_QUEUE_PAC_SIZE];
+      *qe[LFDS611_QUEUE_PAC_SIZE];
 
   assert( qs != NULL );
   // TRD : user_data can be NULL
@@ -54,11 +54,11 @@ int lfds611_queue_guaranteed_enqueue( struct lfds611_queue_state *qs, void *user
 void lfds611_queue_internal_queue( struct lfds611_queue_state *qs, struct lfds611_queue_element *qe[LFDS611_QUEUE_PAC_SIZE] )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_queue_element
-    *enqueue[LFDS611_QUEUE_PAC_SIZE],
-    *next[LFDS611_QUEUE_PAC_SIZE];
+      *enqueue[LFDS611_QUEUE_PAC_SIZE],
+      *next[LFDS611_QUEUE_PAC_SIZE];
 
   unsigned char
-    cas_result = 0;
+  cas_result = 0;
 
   assert( qs != NULL );
   assert( qe != NULL );
@@ -67,8 +67,7 @@ void lfds611_queue_internal_queue( struct lfds611_queue_state *qs, struct lfds61
 
   LFDS611_BARRIER_LOAD;
 
-  do
-  {
+  do {
     enqueue[LFDS611_QUEUE_POINTER] = qs->enqueue[LFDS611_QUEUE_POINTER];
     enqueue[LFDS611_QUEUE_COUNTER] = qs->enqueue[LFDS611_QUEUE_COUNTER];
 
@@ -81,21 +80,16 @@ void lfds611_queue_internal_queue( struct lfds611_queue_state *qs, struct lfds61
 
     LFDS611_BARRIER_LOAD;
 
-    if( qs->enqueue[LFDS611_QUEUE_POINTER] == enqueue[LFDS611_QUEUE_POINTER] and qs->enqueue[LFDS611_QUEUE_COUNTER] == enqueue[LFDS611_QUEUE_COUNTER] )
-    {
-      if( next[LFDS611_QUEUE_POINTER] == NULL )
-      {
+    if( qs->enqueue[LFDS611_QUEUE_POINTER] == enqueue[LFDS611_QUEUE_POINTER] and qs->enqueue[LFDS611_QUEUE_COUNTER] == enqueue[LFDS611_QUEUE_COUNTER] ) {
+      if( next[LFDS611_QUEUE_POINTER] == NULL ) {
         qe[LFDS611_QUEUE_COUNTER] = next[LFDS611_QUEUE_COUNTER] + 1;
         cas_result = lfds611_abstraction_dcas( (volatile lfds611_atom_t *) enqueue[LFDS611_QUEUE_POINTER]->next, (lfds611_atom_t *) qe, (lfds611_atom_t *) next );
-      }
-      else
-      {
+      } else {
         next[LFDS611_QUEUE_COUNTER] = enqueue[LFDS611_QUEUE_COUNTER] + 1;
         lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->enqueue, (lfds611_atom_t *) next, (lfds611_atom_t *) enqueue );
       }
     }
-  }
-  while( cas_result == 0 );
+  } while( cas_result == 0 );
 
   qe[LFDS611_QUEUE_COUNTER] = enqueue[LFDS611_QUEUE_COUNTER] + 1;
   lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->enqueue, (lfds611_atom_t *) qe, (lfds611_atom_t *) enqueue );
@@ -111,17 +105,17 @@ void lfds611_queue_internal_queue( struct lfds611_queue_state *qs, struct lfds61
 int lfds611_queue_dequeue( struct lfds611_queue_state *qs, void **user_data )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_queue_element
-    *enqueue[LFDS611_QUEUE_PAC_SIZE],
-    *dequeue[LFDS611_QUEUE_PAC_SIZE],
-    *next[LFDS611_QUEUE_PAC_SIZE];
+      *enqueue[LFDS611_QUEUE_PAC_SIZE],
+      *dequeue[LFDS611_QUEUE_PAC_SIZE],
+      *next[LFDS611_QUEUE_PAC_SIZE];
 
   unsigned char
-    cas_result = 0;
+  cas_result = 0;
 
   int
-    rv = 1,
-    state = LFDS611_QUEUE_STATE_UNKNOWN,
-    finished_flag = LOWERED;
+  rv = 1,
+  state = LFDS611_QUEUE_STATE_UNKNOWN,
+  finished_flag = LOWERED;
 
   assert( qs != NULL );
   assert( user_data != NULL );
@@ -130,8 +124,7 @@ int lfds611_queue_dequeue( struct lfds611_queue_state *qs, void **user_data )
 
   LFDS611_BARRIER_LOAD;
 
-  do
-  {
+  do {
     dequeue[LFDS611_QUEUE_POINTER] = qs->dequeue[LFDS611_QUEUE_POINTER];
     dequeue[LFDS611_QUEUE_COUNTER] = qs->dequeue[LFDS611_QUEUE_COUNTER];
 
@@ -147,8 +140,7 @@ int lfds611_queue_dequeue( struct lfds611_queue_state *qs, void **user_data )
 
     LFDS611_BARRIER_LOAD;
 
-    if( dequeue[LFDS611_QUEUE_POINTER] == qs->dequeue[LFDS611_QUEUE_POINTER] and dequeue[LFDS611_QUEUE_COUNTER] == qs->dequeue[LFDS611_QUEUE_COUNTER] )
-    {
+    if( dequeue[LFDS611_QUEUE_POINTER] == qs->dequeue[LFDS611_QUEUE_POINTER] and dequeue[LFDS611_QUEUE_COUNTER] == qs->dequeue[LFDS611_QUEUE_COUNTER] ) {
       if( enqueue[LFDS611_QUEUE_POINTER] == dequeue[LFDS611_QUEUE_POINTER] and next[LFDS611_QUEUE_POINTER] == NULL )
         state = LFDS611_QUEUE_STATE_EMPTY;
 
@@ -158,32 +150,31 @@ int lfds611_queue_dequeue( struct lfds611_queue_state *qs, void **user_data )
       if( enqueue[LFDS611_QUEUE_POINTER] != dequeue[LFDS611_QUEUE_POINTER] )
         state = LFDS611_QUEUE_STATE_ATTEMPT_DELFDS611_QUEUE;
 
-      switch( state )
-      {
-        case LFDS611_QUEUE_STATE_EMPTY:
-          *user_data = NULL;
-          rv = 0;
+      switch( state ) {
+      case LFDS611_QUEUE_STATE_EMPTY:
+        *user_data = NULL;
+        rv = 0;
+        finished_flag = RAISED;
+        break;
+
+      case LFDS611_QUEUE_STATE_ENQUEUE_OUT_OF_PLACE:
+        next[LFDS611_QUEUE_COUNTER] = enqueue[LFDS611_QUEUE_COUNTER] + 1;
+        lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->enqueue, (lfds611_atom_t *) next, (lfds611_atom_t *) enqueue );
+        break;
+
+      case LFDS611_QUEUE_STATE_ATTEMPT_DELFDS611_QUEUE:
+        *user_data = next[LFDS611_QUEUE_POINTER]->user_data;
+
+        next[LFDS611_QUEUE_COUNTER] = dequeue[LFDS611_QUEUE_COUNTER] + 1;
+        cas_result = lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->dequeue, (lfds611_atom_t *) next, (lfds611_atom_t *) dequeue );
+
+        if( cas_result == 1 )
           finished_flag = RAISED;
-        break;
 
-        case LFDS611_QUEUE_STATE_ENQUEUE_OUT_OF_PLACE:
-          next[LFDS611_QUEUE_COUNTER] = enqueue[LFDS611_QUEUE_COUNTER] + 1;
-          lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->enqueue, (lfds611_atom_t *) next, (lfds611_atom_t *) enqueue );
-        break;
-
-        case LFDS611_QUEUE_STATE_ATTEMPT_DELFDS611_QUEUE:
-          *user_data = next[LFDS611_QUEUE_POINTER]->user_data;
-
-          next[LFDS611_QUEUE_COUNTER] = dequeue[LFDS611_QUEUE_COUNTER] + 1;
-          cas_result = lfds611_abstraction_dcas( (volatile lfds611_atom_t *) qs->dequeue, (lfds611_atom_t *) next, (lfds611_atom_t *) dequeue );
-
-          if( cas_result == 1 )
-            finished_flag = RAISED;
         break;
       }
     }
-  }
-  while( finished_flag == LOWERED );
+  } while( finished_flag == LOWERED );
 
   if( cas_result == 1 )
     lfds611_freelist_push( qs->fs, dequeue[LFDS611_QUEUE_POINTER]->fe );

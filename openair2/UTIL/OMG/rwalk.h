@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -31,7 +31,7 @@
  * \file rwalk.h
  * \brief Functions used for the RWALK Model
  * \date 22 May 2011
- * 
+ *
  */
 #ifndef RWALK_H_
 #define RWALK_H_
@@ -47,7 +47,7 @@ int start_rwalk_generator(omg_global_param omg_param_list) ;
 
 /**
  * \fn void place_rwalk_node(NodePtr node)
- * \brief Called by the function start_rwalk_generator(), it generates a random position ((X,Y) coordinates)  for a node and add it to the corresponding Node_Vector_Rwp 
+ * \brief Called by the function start_rwalk_generator(), it generates a random position ((X,Y) coordinates)  for a node and add it to the corresponding Node_Vector_Rwp
  * \param node a pointer of type NodePtr that represents the node to which the random position is assigned
  */
 void place_rwalk_node(node_struct* node) ;
@@ -74,7 +74,7 @@ void move_rwalk_node(pair_struct* pair, double cur_time) ;
 /**
  * \fn void update_rwalk_nodes(double cur_time)
  * \brief Update the positions of the nodes. After comparing the current time to the first job_time, it is decided wether to start
- * \	a new job or to keep the current job 
+ * \  a new job or to keep the current job
  * \param cur_time a variable of type double that represents the current time
  */
 void update_rwalk_nodes(double cur_time) ; // need to implement an out-of-area check as well as a rebound function to stay in the area
@@ -82,8 +82,8 @@ void update_rwalk_nodes(double cur_time) ; // need to implement an out-of-area c
 
 /**
  * \fn void get_rwalk_positions_updated(double cur_time)
- * \brief Compute the positions of the nodes at a given time in case they are moving (intermediate positions). Otherwise, generate a message saying that 
- * 	the nodes are still sleeping
+ * \brief Compute the positions of the nodes at a given time in case they are moving (intermediate positions). Otherwise, generate a message saying that
+ *  the nodes are still sleeping
  * \param cur_time a variable of type double that represents the current time
  */
 void get_rwalk_positions_updated(double cur_time) ;

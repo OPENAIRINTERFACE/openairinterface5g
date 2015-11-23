@@ -1,4 +1,4 @@
-Lusheng Wang and 
+Lusheng Wang and
 /*! \file OCG_call_emu.c
 * \brief Call the emulator
 * \author Lusheng Wang and Navid Nikaein
@@ -20,19 +20,20 @@ Lusheng Wang and
 
 OAI_Emulation oai_emulation;
 
-int call_emu(char dst_dir[DIR_LENGTH_MAX]) {
+int call_emu(char dst_dir[DIR_LENGTH_MAX])
+{
 
 
-	////////// print the configuration 
-	FILE *file;
-	char dst_file[DIR_LENGTH_MAX] = "";
-	strcat(dst_file, dst_dir);
-	strcat(dst_file, "emulation_result.txt");
-	file = fopen(dst_file,"w");
-	//system("../../../openair1/SIMULATION/LTE_PHY_L2/physim --help");
-	
-	fclose(file);
+  ////////// print the configuration
+  FILE *file;
+  char dst_file[DIR_LENGTH_MAX] = "";
+  strcat(dst_file, dst_dir);
+  strcat(dst_file, "emulation_result.txt");
+  file = fopen(dst_file,"w");
+  //system("../../../openair1/SIMULATION/LTE_PHY_L2/physim --help");
 
-	LOG_I(OCG, "Emulation finished\n");
-	return MODULE_OK;
+  fclose(file);
+
+  LOG_I(OCG, "Emulation finished\n");
+  return MODULE_OK;
 }

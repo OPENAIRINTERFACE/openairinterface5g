@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -48,8 +48,8 @@ extern "C" {
 /** @defgroup _call_emu Call Emu
  *  @ingroup _fn
  *  @brief Call the emulator
- * @{*/ 
-	int call_emu(char dst_dir[DIR_LENGTH_MAX]);
+ * @{*/
+int call_emu(char dst_dir[DIR_LENGTH_MAX]);
 /* @}*/
 
 #ifdef __cplusplus

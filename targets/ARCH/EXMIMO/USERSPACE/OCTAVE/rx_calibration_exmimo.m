@@ -162,7 +162,7 @@ N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        plot(ALL_gain,G0(:,:,2),'x-','markersize',10)
        plot(ALL_gain,G0(:,:,3),'s-','markersize',10)
        plot(ALL_gain,G0(:,:,4),'d-','markersize',10)
-       legend('Byp RX0','Med RX0','Max RX0','Byp RX1','Med RX1','Max RX1');
+       legend('Byp RX0','Med RX0','Max RX0','Byp RX1','Med RX1','Max RX1','Byp RX2','Med RX2','Max RX2','Byp RX3','Med RX3','Max RX3');
        title('Gains')
        
        figure(4)
@@ -172,7 +172,7 @@ N0(idx_power,idx_gain,:) = mean(abs(s).^2,1) - abs(mean(s,1)).^2;
        plot(ALL_gain,NF0(:,:,2),'x-','markersize',10)
        plot(ALL_gain,NF0(:,:,3),'s-','markersize',10)
        plot(ALL_gain,NF0(:,:,4),'d-','markersize',10)
-       legend('Byp RX0','Med RX0','Max RX0','Byp RX1','Med RX1','Max RX1');
+       legend('Byp RX0','Med RX0','Max RX0','Byp RX1','Med RX1','Max RX1','Byp RX2','Med RX2','Max RX2','Byp RX3','Med RX3','Max RX3');
        title('Noise Figure')
 
        idx_gain = idx_gain + 1;

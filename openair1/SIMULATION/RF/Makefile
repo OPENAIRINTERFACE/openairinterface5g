@@ -1,4 +1,4 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 OBJS = rf.o ../../PHY/TOOLS/file_output.o ../TOOLS/rangen_double.o
 CFLAGS += -DRF_MAIN -DUSER_MODE -DDEBUG_PHY 
 

@@ -1,17 +1,17 @@
 /**
- **	\file Ajp13Socket.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ ** \file Ajp13Socket.h
+ ** \date  2007-10-05
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010 Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -39,7 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HttpResponse.h"
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 
@@ -48,27 +49,27 @@ class HttpResponse;
 class Ajp13Socket : public AjpBaseSocket, public IHttpServer
 {
 public:
-	Ajp13Socket(ISocketHandler& h);
+  Ajp13Socket(ISocketHandler& h);
 
-	void OnHeader( short id, short len );
-	void OnPacket( const char *buf, size_t sz );
+  void OnHeader( short id, short len );
+  void OnPacket( const char *buf, size_t sz );
 
-	// implements IHttpServer::Respond
-	void Respond(const HttpResponse& res);
+  // implements IHttpServer::Respond
+  void Respond(const HttpResponse& res);
 
-	void OnTransferLimit();
+  void OnTransferLimit();
 
 private:
-	void ReceiveBody( const char *buf, size_t sz );
-	void ReceiveForwardRequest( const char *buf, size_t sz );
-	void ReceiveShutdown( const char *buf, size_t sz );
-	void ReceivePing( const char *buf, size_t sz );
-	void ReceiveCPing( const char *buf, size_t sz );
-	void Execute();
-	//
-	size_t m_body_size_left;
-	HttpRequest m_req;
-	HttpResponse m_res;
+  void ReceiveBody( const char *buf, size_t sz );
+  void ReceiveForwardRequest( const char *buf, size_t sz );
+  void ReceiveShutdown( const char *buf, size_t sz );
+  void ReceivePing( const char *buf, size_t sz );
+  void ReceiveCPing( const char *buf, size_t sz );
+  void Execute();
+  //
+  size_t m_body_size_left;
+  HttpRequest m_req;
+  HttpResponse m_res;
 };
 
 

@@ -1,9 +1,0 @@
-etc/radiusclient-ng/issue
-etc/radiusclient-ng/port-id-map
-etc/radiusclient-ng/radiusclient.conf
-etc/radiusclient-ng/servers
-usr/sbin/radlogin
-usr/sbin/radstatus
-usr/sbin/radacct
-usr/sbin/radexample
-usr/sbin/login.radius

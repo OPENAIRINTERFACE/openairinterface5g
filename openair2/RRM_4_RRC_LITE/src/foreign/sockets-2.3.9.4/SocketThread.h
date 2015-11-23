@@ -8,27 +8,30 @@
 #include "SocketHandler.h"
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class Socket;
 
-/** Detached socket run thread. 
-	\ingroup internal */
+/** Detached socket run thread.
+  \ingroup internal */
 class SocketThread : public Thread
 {
 public:
-	SocketThread(Socket *p);
-	~SocketThread();
+  SocketThread(Socket *p);
+  ~SocketThread();
 
-	void Run();
+  void Run();
 
 private:
-	SocketThread(const SocketThread& s) : m_socket(s.m_socket) {}
-	SocketThread& operator=(const SocketThread& ) { return *this; }
+  SocketThread(const SocketThread& s) : m_socket(s.m_socket) {}
+  SocketThread& operator=(const SocketThread& ) {
+    return *this;
+  }
 
-	SocketHandler m_h;
-	Socket *m_socket;
+  SocketHandler m_h;
+  Socket *m_socket;
 };
 
 #ifdef SOCKETS_NAMESPACE

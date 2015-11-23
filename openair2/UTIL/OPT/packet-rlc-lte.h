@@ -47,41 +47,40 @@
 #define UM_SN_LENGTH_10_BITS 10
 
 /* Info attached to each LTE RLC frame */
-typedef struct rlc_lte_info
-{
-    guint8          rlcMode;
-    guint8          direction;
-    guint8          priority;
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint16         pduLength;
-    guint8          UMSequenceNumberLength;
+typedef struct rlc_lte_info {
+  guint8          rlcMode;
+  guint8          direction;
+  guint8          priority;
+  guint16         ueid;
+  guint16         channelType;
+  guint16         channelId;
+  guint16         pduLength;
+  guint8          UMSequenceNumberLength;
 } rlc_lte_info;
 
 
 typedef struct rlc_lte_tap_info {
-    /* Info from context */
-    guint8          rlcMode;
-    guint8          direction;
-    guint8          priority;
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint16         pduLength;
-    guint8          UMSequenceNumberLength;
+  /* Info from context */
+  guint8          rlcMode;
+  guint8          direction;
+  guint8          priority;
+  guint16         ueid;
+  guint16         channelType;
+  guint16         channelId;
+  guint16         pduLength;
+  guint8          UMSequenceNumberLength;
 
-    nstime_t        time;
-    guint8          loggedInMACFrame;
-    guint16         sequenceNumber;
-    guint8          isResegmented;
-    guint8          isControlPDU;
-    guint16         ACKNo;
-    #define MAX_NACKs 128
-    guint16         noOfNACKs;
-    guint16         NACKs[MAX_NACKs];
+  nstime_t        time;
+  guint8          loggedInMACFrame;
+  guint16         sequenceNumber;
+  guint8          isResegmented;
+  guint8          isControlPDU;
+  guint16         ACKNo;
+#define MAX_NACKs 128
+  guint16         noOfNACKs;
+  guint16         NACKs[MAX_NACKs];
 
-    guint16         missingSNs;
+  guint16         missingSNs;
 } rlc_lte_tap_info;
 
 

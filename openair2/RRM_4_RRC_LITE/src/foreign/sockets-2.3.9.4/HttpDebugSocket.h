@@ -1,15 +1,15 @@
 /** \file HttpDebugSocket.h
- **	\date  2004-09-27
+ ** \date  2004-09-27
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom (grymse@alhem.net)
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -35,33 +35,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "HTTPSocket.h"
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class ISocketHandler;
 
 /** HTTP request "echo" class. This class echoes a http request/body
-with a html formatted page. 
-	\ingroup http */
+with a html formatted page.
+  \ingroup http */
 class HttpDebugSocket : public HTTPSocket
 {
 public:
-	HttpDebugSocket(ISocketHandler&);
-	~HttpDebugSocket();
+  HttpDebugSocket(ISocketHandler&);
+  ~HttpDebugSocket();
 
-	void Init();
+  void Init();
 
-	void OnFirst();
-	void OnHeader(const std::string& key,const std::string& value);
-	void OnHeaderComplete();
-	void OnData(const char *,size_t);
-	void OnDataComplete();
+  void OnFirst();
+  void OnHeader(const std::string& key,const std::string& value);
+  void OnHeaderComplete();
+  void OnData(const char *,size_t);
+  void OnDataComplete();
 
 private:
-	HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor
-	HttpDebugSocket& operator=(const HttpDebugSocket& ) { return *this; } // assignment operator
-	int m_content_length;
-	int m_read_ptr;
+  HttpDebugSocket(const HttpDebugSocket& s) : HTTPSocket(s) {} // copy constructor
+  HttpDebugSocket& operator=(const HttpDebugSocket& ) {
+    return *this;  // assignment operator
+  }
+  int m_content_length;
+  int m_read_ptr;
 };
 
 

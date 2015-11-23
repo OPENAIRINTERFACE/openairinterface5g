@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -39,30 +39,30 @@
 /*
 typedef struct {
 
-	int fd; // socket file descriptor
+  int fd; // socket file descriptor
 
-	int stats;
-	
-	int action;  // add or delete
+  int stats;
 
-	int rb;
-	int cx;
-	int inst;
-	
-	int saddr_ipv4set;
-	int daddr_ipv4set;
-	in_addr_t saddr_ipv4;
-	in_addr_t daddr_ipv4;
+  int action;  // add or delete
 
-	int saddr_ipv6set;
-	int daddr_ipv6set;
-	struct in6_addr saddr_ipv6;
-	struct in6_addr daddr_ipv6;
+  int rb;
+  int cx;
+  int inst;
 
-	int dscp;
-	
+  int saddr_ipv4set;
+  int daddr_ipv4set;
+  in_addr_t saddr_ipv4;
+  in_addr_t daddr_ipv4;
 
-	
+  int saddr_ipv6set;
+  int daddr_ipv6set;
+  struct in6_addr saddr_ipv6;
+  struct in6_addr daddr_ipv6;
+
+  int dscp;
+
+
+
 } rb_config;
 */
 int rb_validate_config_ipv4(int cx, int inst, int rb);

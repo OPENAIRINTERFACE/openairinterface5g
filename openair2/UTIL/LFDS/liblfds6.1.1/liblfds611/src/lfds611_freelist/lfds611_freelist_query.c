@@ -14,18 +14,17 @@ void lfds611_freelist_query( struct lfds611_freelist_state *fs, enum lfds611_fre
 
   LFDS611_BARRIER_LOAD;
 
-  switch( query_type )
-  {
-    case LFDS611_FREELIST_QUERY_ELEMENT_COUNT:
-      assert( query_input == NULL );
+  switch( query_type ) {
+  case LFDS611_FREELIST_QUERY_ELEMENT_COUNT:
+    assert( query_input == NULL );
 
-      *(lfds611_atom_t *) query_output = fs->element_count;
+    *(lfds611_atom_t *) query_output = fs->element_count;
     break;
 
-    case LFDS611_FREELIST_QUERY_VALIDATE:
-      // TRD : query_input can be NULL
+  case LFDS611_FREELIST_QUERY_VALIDATE:
+    // TRD : query_input can be NULL
 
-      lfds611_freelist_internal_validate( fs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output );
+    lfds611_freelist_internal_validate( fs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output );
     break;
   }
 
@@ -40,12 +39,12 @@ void lfds611_freelist_query( struct lfds611_freelist_state *fs, enum lfds611_fre
 void lfds611_freelist_internal_validate( struct lfds611_freelist_state *fs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_freelist_validity )
 {
   struct lfds611_freelist_element
-    *fe,
-    *fe_slow,
-    *fe_fast;
+      *fe,
+      *fe_slow,
+      *fe_fast;
 
   lfds611_atom_t
-    element_count = 0;
+  element_count = 0;
 
   assert( fs != NULL );
   // TRD : vi can be NULL
@@ -73,8 +72,7 @@ void lfds611_freelist_internal_validate( struct lfds611_freelist_state *fs, stru
   */
 
   if( fe_slow != NULL )
-    do
-    {
+    do {
       fe_slow = fe_slow->next[LFDS611_FREELIST_POINTER];
 
       if( fe_fast != NULL )
@@ -82,8 +80,7 @@ void lfds611_freelist_internal_validate( struct lfds611_freelist_state *fs, stru
 
       if( fe_fast != NULL )
         fe_fast = fe_fast->next[LFDS611_FREELIST_POINTER];
-    }
-    while( fe_slow != NULL and fe_fast != fe_slow );
+    } while( fe_slow != NULL and fe_fast != fe_slow );
 
   if( fe_fast != NULL and fe_slow != NULL and fe_fast == fe_slow )
     *lfds611_freelist_validity = LFDS611_VALIDITY_INVALID_LOOP;
@@ -93,12 +90,10 @@ void lfds611_freelist_internal_validate( struct lfds611_freelist_state *fs, stru
            we know we don't have a loop from our earlier check
   */
 
-  if( *lfds611_freelist_validity == LFDS611_VALIDITY_VALID and vi != NULL )
-  {
+  if( *lfds611_freelist_validity == LFDS611_VALIDITY_VALID and vi != NULL ) {
     fe = (struct lfds611_freelist_element *) fs->top[LFDS611_FREELIST_POINTER];
 
-    while( fe != NULL )
-    {
+    while( fe != NULL ) {
       element_count++;
       fe = (struct lfds611_freelist_element *) fe->next[LFDS611_FREELIST_POINTER];
     }

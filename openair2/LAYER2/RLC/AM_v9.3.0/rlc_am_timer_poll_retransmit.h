@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -65,8 +65,8 @@
 
 */
 protected_rlc_am_timer_poll_retransmit(void rlc_am_check_timer_poll_retransmit(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlc_pP));
+    const protocol_ctxt_t* const ctxt_pP,
+    rlc_am_entity_t* const       rlc_pP));
 
 /*! \fn int  rlc_am_is_timer_poll_retransmit_timed_out(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlc_pP)
 * \brief      Boolean function, check if timer Poll-retransmit has timed-out.
@@ -75,8 +75,8 @@ protected_rlc_am_timer_poll_retransmit(void rlc_am_check_timer_poll_retransmit(
 * \return     1 if timer Poll-retransmit has timed-out, else 0.
 */
 protected_rlc_am_timer_poll_retransmit(int  rlc_am_is_timer_poll_retransmit_timed_out(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlc_pP);)
+    const protocol_ctxt_t* const ctxt_pP,
+    rlc_am_entity_t* const       rlc_pP);)
 
 /*! \fn void rlc_am_stop_and_reset_timer_poll_retransmit(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlc_pP)
 * \brief      Stop and reset the timer Poll-retransmit.
@@ -85,8 +85,8 @@ protected_rlc_am_timer_poll_retransmit(int  rlc_am_is_timer_poll_retransmit_time
 
 */
 protected_rlc_am_timer_poll_retransmit(void rlc_am_stop_and_reset_timer_poll_retransmit(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlc_pP);)
+    const protocol_ctxt_t* const ctxt_pP,
+    rlc_am_entity_t* const       rlc_pP);)
 
 /*! \fn void rlc_am_start_timer_poll_retransmit(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlc_pP)
 * \brief      Re-arm (based on RLC AM config parameter) and start timer Poll-retransmit.
@@ -95,8 +95,8 @@ protected_rlc_am_timer_poll_retransmit(void rlc_am_stop_and_reset_timer_poll_ret
 * \param[in]  frame             Frame index
 */
 protected_rlc_am_timer_poll_retransmit(void rlc_am_start_timer_poll_retransmit(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlc_pP);)
+    const protocol_ctxt_t* const ctxt_pP,
+    rlc_am_entity_t* const       rlc_pP);)
 
 /*! \fn void rlc_am_init_timer_poll_retransmit(const protocol_ctxt_t* const ctxt_pP, rlc_am_entity_t* const rlc_pP, const uint32_t time_outP)
 * \brief      Initialize the timer Poll-retransmit with RLC AM time-out config parameter.
@@ -105,8 +105,8 @@ protected_rlc_am_timer_poll_retransmit(void rlc_am_start_timer_poll_retransmit(
 * \param[in]  time_outP         Time-out in frame units.
 */
 protected_rlc_am_timer_poll_retransmit(void rlc_am_init_timer_poll_retransmit(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlc_pP,
-                const uint32_t               time_outP);)
+    const protocol_ctxt_t* const ctxt_pP,
+    rlc_am_entity_t* const       rlc_pP,
+    const uint32_t               time_outP);)
 /** @} */
 #endif

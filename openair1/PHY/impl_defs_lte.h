@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -50,7 +50,7 @@
 #define LTE_SLOTS_PER_FRAME  20
 #define LTE_CE_FILTER_LENGTH 5
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
-#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1) 
+#define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
 #define PBCH_PDU_SIZE 3 //bytes
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
@@ -67,6 +67,8 @@
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
+
+typedef enum {LOCALIZED=0,DISTRIBUTED=1} vrb_t;
 
 /// Enumeration for parameter PHICH-Duration \ref PHICH_CONFIG_COMMON::phich_duration.
 typedef enum {
@@ -166,10 +168,10 @@ typedef struct {
   /// sequence hopping sequence for DRS \note not part of offical UL-ReferenceSignalsPUSCH ASN1 specification.
   uint8_t seqhop[20];
 } UL_REFERENCE_SIGNALS_PUSCH_t;
- 
+
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
 typedef enum {
-  interSubFrame=0, 
+  interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
 
@@ -197,9 +199,9 @@ typedef struct {
   uint16_t betaOffset_CQI_Index;
 } PUSCH_CONFIG_DEDICATED;
 
-/// lola CBA information 
+/// lola CBA information
 typedef struct {
-  /// 
+  ///
   uint16_t betaOffset_CA_Index;
   ///
   uint16_t cShift;
@@ -259,47 +261,47 @@ typedef enum {
 
 /// Enumeration for \ref deltaFList_PUCCH_t::deltaF_PUCCH_Format1.
 typedef enum {
-        deltaF_PUCCH_Format1_deltaF_2  = 0,
-        deltaF_PUCCH_Format1_deltaF0   = 1,
-        deltaF_PUCCH_Format1_deltaF2   = 2
+  deltaF_PUCCH_Format1_deltaF_2  = 0,
+  deltaF_PUCCH_Format1_deltaF0   = 1,
+  deltaF_PUCCH_Format1_deltaF2   = 2
 } deltaF_PUCCH_Format1_t;
 
 /// Enumeration for \ref deltaFList_PUCCH_t::deltaF_PUCCH_Format1b.
 typedef enum {
-        deltaF_PUCCH_Format1b_deltaF1  = 0,
-        deltaF_PUCCH_Format1b_deltaF3  = 1,
-        deltaF_PUCCH_Format1b_deltaF5  = 2
+  deltaF_PUCCH_Format1b_deltaF1  = 0,
+  deltaF_PUCCH_Format1b_deltaF3  = 1,
+  deltaF_PUCCH_Format1b_deltaF5  = 2
 } deltaF_PUCCH_Format1b_t;
 
 /// Enumeration for \ref deltaFList_PUCCH_t::deltaF_PUCCH_Format2.
 typedef enum {
-        deltaF_PUCCH_Format2_deltaF_2  = 0,
-        deltaF_PUCCH_Format2_deltaF0   = 1,
-        deltaF_PUCCH_Format2_deltaF1   = 2,
-        deltaF_PUCCH_Format2_deltaF2   = 3
+  deltaF_PUCCH_Format2_deltaF_2  = 0,
+  deltaF_PUCCH_Format2_deltaF0   = 1,
+  deltaF_PUCCH_Format2_deltaF1   = 2,
+  deltaF_PUCCH_Format2_deltaF2   = 3
 } deltaF_PUCCH_Format2_t;
 
 /// Enumeration for \ref deltaFList_PUCCH_t::deltaF_PUCCH_Format2a.
 typedef enum {
-        deltaF_PUCCH_Format2a_deltaF_2 = 0,
-        deltaF_PUCCH_Format2a_deltaF0  = 1,
-        deltaF_PUCCH_Format2a_deltaF2  = 2
+  deltaF_PUCCH_Format2a_deltaF_2 = 0,
+  deltaF_PUCCH_Format2a_deltaF0  = 1,
+  deltaF_PUCCH_Format2a_deltaF2  = 2
 } deltaF_PUCCH_Format2a_t;
 
 /// Enumeration for \ref deltaFList_PUCCH_t::deltaF_PUCCH_Format2b.
 typedef enum {
-        deltaF_PUCCH_Format2b_deltaF_2 = 0,
-        deltaF_PUCCH_Format2b_deltaF0  = 1,
-        deltaF_PUCCH_Format2b_deltaF2  = 2
+  deltaF_PUCCH_Format2b_deltaF_2 = 0,
+  deltaF_PUCCH_Format2b_deltaF0  = 1,
+  deltaF_PUCCH_Format2b_deltaF2  = 2
 } deltaF_PUCCH_Format2b_t;
 
 /// DeltaFList-PUCCH from 36.331 RRC spec
 typedef struct {
-        deltaF_PUCCH_Format1_t   deltaF_PUCCH_Format1;
-        deltaF_PUCCH_Format1b_t  deltaF_PUCCH_Format1b;
-        deltaF_PUCCH_Format2_t   deltaF_PUCCH_Format2;
-        deltaF_PUCCH_Format2a_t  deltaF_PUCCH_Format2a;
-        deltaF_PUCCH_Format2b_t  deltaF_PUCCH_Format2b;
+  deltaF_PUCCH_Format1_t   deltaF_PUCCH_Format1;
+  deltaF_PUCCH_Format1b_t  deltaF_PUCCH_Format1b;
+  deltaF_PUCCH_Format2_t   deltaF_PUCCH_Format2;
+  deltaF_PUCCH_Format2a_t  deltaF_PUCCH_Format2a;
+  deltaF_PUCCH_Format2b_t  deltaF_PUCCH_Format2b;
 } deltaFList_PUCCH_t;
 
 /// SoundingRS-UL-ConfigDedicated Information Element from 36.331 RRC spec
@@ -355,7 +357,7 @@ typedef enum {
   deltaF1,
   deltaF2,
   deltaF3,
-  deltaF5  
+  deltaF5
 } deltaF_PUCCH_t;
 
 /// UplinkPowerControlCommon Information Element from 36.331 RRC spec \note this structure does not currently make use of \ref deltaFList_PUCCH_t.
@@ -384,15 +386,14 @@ typedef struct {
 
 /// Union for \ref TPC_PDCCH_CONFIG::tpc_Index.
 typedef union {
-    /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). \vr{[1..15]}
-    uint8_t indexOfFormat3;
-    /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). \vr{[1..31]}
-    uint8_t indexOfFormat3A;
+  /// Index of N when DCI format 3 is used. See TS 36.212 (5.3.3.1.6). \vr{[1..15]}
+  uint8_t indexOfFormat3;
+  /// Index of M when DCI format 3A is used. See TS 36.212 (5.3.3.1.7). \vr{[1..31]}
+  uint8_t indexOfFormat3A;
 } TPC_INDEX_t;
 
 /// TPC-PDCCH-Config Information Element from 36.331 RRC spec
-typedef struct
-{
+typedef struct {
   /// RNTI for power control using DCI format 3/3A, see TS 36.212. \vr{[0..65535]}
   uint16_t rnti;
   /// Index of N or M, see TS 36.212 (5.3.3.1.6 and 5.3.3.1.7), where N or M is dependent on the used DCI format (i.e. format 3 or 3a).
@@ -475,21 +476,21 @@ typedef struct {
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
   uint8_t N_RBGS;
-  /// Cell ID                 
+  /// Cell ID
   uint16_t Nid_cell;
   /// MBSFN Area ID
   uint16_t Nid_cell_mbsfn;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// Cyclic Prefix for UL (0=Normal CP, 1=Extended CP)
-  lte_prefix_type_t Ncp_UL;                   
+  lte_prefix_type_t Ncp_UL;
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// Frame type (0 FDD, 1 TDD)
   lte_frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   uint8_t tdd_config;
-  /// TDD S-subframe configuration (0-9) 
+  /// TDD S-subframe configuration (0-9)
   uint8_t tdd_config_S;
   /// indicates if node is a UE (NODE=2) or eNB (PRIMARY_CH=0).
   uint8_t node_id;
@@ -515,9 +516,9 @@ typedef struct {
   uint8_t dual_tx;
   /// flag to indicate SISO transmission
   uint8_t mode1_flag;
-  /// Size of FFT  
+  /// Size of FFT
   uint16_t ofdm_symbol_size;
-  /// log2(Size of FFT)  
+  /// log2(Size of FFT)
   uint8_t log2_symbol_size;
   /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples;
@@ -535,12 +536,6 @@ typedef struct {
   uint8_t nb_antennas_rx;
   /// Number of Transmit antennas in eNodeB
   uint8_t nb_antennas_tx_eNB;
-  /// Pointer to twiddle factors for FFT
-  int16_t *twiddle_fft;
-  ///pointer to twiddle factors for IFFT
-  int16_t *twiddle_ifft;
-  ///pointer to FFT permutation vector
-  uint16_t *rev;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
   /// PUCCH Config Common (from 36-331 RRC spec)
@@ -598,7 +593,7 @@ typedef enum {
   TM9_10=13
 } MIMO_mode_t;
 
-typedef struct{
+typedef struct {
   /// \brief Holds the transmit data in time domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: eNB id [0..2] (hard coded)
@@ -610,7 +605,7 @@ typedef struct{
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: sample [0..]
-  mod_sym_t **txdataF[3];    
+  mod_sym_t **txdataF[3];
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: eNB id [0..2] (hard coded)
@@ -633,7 +628,7 @@ typedef struct{
   uint32_t *sync_corr[3];
 } LTE_eNB_COMMON;
 
-typedef struct{
+typedef struct {
   /// \brief Hold the channel estimates in frequency domain based on SRS.
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: rx antenna id [0..nb_antennas_rx[
@@ -649,7 +644,7 @@ typedef struct{
   int32_t *srs;
 } LTE_eNB_SRS;
 
-typedef struct{
+typedef struct {
   /// \brief Holds the received data in the frequency domain for the allocated RBs in repeated format.
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: rx antenna id [0..nb_antennas_rx[
@@ -778,11 +773,11 @@ typedef struct {
   /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - third index: samples? [0..2*ofdm_symbol_size[
   int32_t **dl_ch_estimates_time[7];
-  /// holds output of the sync correlator  
+  /// holds output of the sync correlator
   int32_t *sync_corr;
   /// estimated frequency offset (in radians) for all subcarriers
   int32_t freq_offset;
-  /// eNb_id user is synched to          
+  /// eNb_id user is synched to
   int32_t eNb_id;
 } LTE_UE_COMMON;
 
@@ -898,7 +893,7 @@ typedef struct {
   /// - second index: ? [0..]
   double **rho;
   /// never used... always send dl_ch_rho_ext instead...
-  double **rho_i;  
+  double **rho_i;
   /// \brief Pointers to llr vectors (2 TBs).
   /// - first index: ? [0..1] (hard coded)
   /// - second index: ? [0..1179743] (hard coded)
@@ -916,8 +911,8 @@ typedef struct {
 
 typedef struct {
   /// \brief Pointers to extracted PDCCH symbols in frequency-domain.
-    /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-    /// - second index: ? [0..168*N_RB_DL[
+  /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - second index: ? [0..168*N_RB_DL[
   int32_t **rxdataF_ext;
   /// \brief Pointers to extracted and compensated PDCCH symbols in frequency-domain.
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
@@ -1013,6 +1008,10 @@ typedef struct {
   /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
   /// second index: ? [0..ofdm_symbol_size*12[
   int16_t *rxsigF[4];
+  /// \brief local buffer to compute prach_ifft (necessary in case of multiple CCs)
+  /// first index: rx antenna [0..3] (hard coded) \note Hard coded array size indexed by \c nb_antennas_rx.
+  /// second index: ? [0..2047] (hard coded)
+  int16_t *prach_ifft[4];
 } LTE_eNB_PRACH;
 
 typedef struct {
@@ -1037,7 +1036,7 @@ typedef struct {
   uint8_t rballoc_sub[50];
   ///Total number of PRBs indicator
   uint8_t pre_nb_available_rbs;
-}MU_MIMO_mode;
+} MU_MIMO_mode;
 
 typedef enum {
   NOT_SYNCHED=0,

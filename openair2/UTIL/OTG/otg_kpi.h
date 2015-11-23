@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file otg_kpi.h functions to compute OTG KPIs
-* \brief desribe function for KPIs computation 
+* \brief desribe function for KPIs computation
 * \author navid nikaein and A. Hafsaoui
 * \date 2012
 * \version 0.1
@@ -40,7 +40,7 @@
 */
 
 #ifndef __OTG_KPI_H__
-#	define __OTG_KPI_H__
+# define __OTG_KPI_H__
 
 
 #include <stdio.h>
@@ -59,26 +59,26 @@ extern unsigned int start_log_jitter;
 * \brief compute the transmitter throughput in bytes per seconds
 * \param[in] Source, destination, application
 * \param[out]
-* \note 
+* \note
 * @ingroup  _otg
 */
 void tx_throughput( int src, int dst, int application);
 
 /*! \fn void rx_goodput( int src, int dst)
 * \brief compute the receiver goodput in bytes per seconds
-* \param[in] Source, destination, application 
-* \param[out] 
-* \note 
+* \param[in] Source, destination, application
+* \param[out]
+* \note
 * @ingroup  _otg
 */
 void rx_goodput( int src, int dst,int application);
 
- 
+
 /*void rx_loss_rate_pkts(int src, int dst, int application)
 * \brief compute the loss rate in bytes at the server bytes
 * \param[in] Source, destination, application
-* \param[out] 
-* \note 
+* \param[out]
+* \note
 * @ingroup  _otg
 */
 void rx_loss_rate_pkts(int src, int dst, int application);
@@ -86,17 +86,17 @@ void rx_loss_rate_pkts(int src, int dst, int application);
 /*void rx_loss_rate_bytes(int src, int dst, int application)
 * \brief compute the loss rate in pkts at the server bytes
 * \param[in] Source, destination, application
-* \param[out] 
-* \note 
+* \param[out]
+* \note
 * @ingroup  _otg
 */
 void rx_loss_rate_bytes(int src, int dst, int application);
 
 /*void kpi_gen(void)
-* \brief compute KPIs after the end of the simulation 
-* \param[in] 
-* \param[out] 
-* \note 
+* \brief compute KPIs after the end of the simulation
+* \param[in]
+* \param[out]
+* \note
 * @ingroup  _otg
 */
 void kpi_gen(void);

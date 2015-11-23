@@ -2,13 +2,13 @@
 * \brief a wrapper for Unified RTAI real-time memory management.
 * \author Florian Kaltenberger
 * \date 2011-04-06
-* \version 0.1 
+* \version 0.1
 * \company Eurecom
 * \email: florian.kaltenberger@eurecom.fr
-* \note 
-* \bug  
-* \warning  
-*/ 
+* \note
+* \bug
+* \warning
+*/
 
 /*
 void* rt_alloc_wrapper(int size);

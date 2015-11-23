@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file otg_config.h main used structures
-* \brief otg structure 
+* \brief otg structure
 * \author  Navid Nikaein and A. Hafsaoui
 * \date 2011 - 2014
 * \version 0.1
@@ -40,7 +40,7 @@
 */
 
 #ifndef __OTG_CONFIG_H__
-#	define __OTG_CONFIG_H__
+# define __OTG_CONFIG_H__
 
 
 /*!\brief It indicates that: the payload and the transport header (not otg header) are copied from static strings (HEADER_STRING and PAYLOAD_STRING) */
@@ -50,10 +50,10 @@
 #define MAX_NUM_TRAFFIC_STATE 4 //  we have 4 state: OFF, PU, ED, PE
 
 /*!\brief Define the max number of application runing in the  same time*/
-#define MAX_NUM_APPLICATION 5 
+#define MAX_NUM_APPLICATION 5
 
 /*!\brief Define the max number of service */
-#define NUMBER_OF_SERVICE_MAX 2 
+#define NUMBER_OF_SERVICE_MAX 2
 
 /*!\brief Define the max number of traffic runing in the  same time - using their ID in the customized traffic*/
 #define MAX_EMU_TRAFFIC 10
@@ -61,22 +61,22 @@
 #define OTG_FLAG_SIZE 3
 #define OTG_FLAG "OTG"
 
-#define IDT_TH 100 
+#define IDT_TH 100
 #define SIZE_COEF 1000
 #define MAXIDT_TIME 1000000 //(1 second = 1000000 microseconds)
 
 
-/*!\brief Define the max size of the TX buffer */ 
+/*!\brief Define the max size of the TX buffer */
 #define MAX_BUFF_TX 10000
- 
-/*!\brief Define the min size of the payload*/ 
+
+/*!\brief Define the min size of the payload*/
 #define PAYLOAD_MIN  1 /*46*/    //http://tools.ietf.org/html/rfc894
 
-/*!\brief Define the min size of the payload, according to the Jumbo frame*/ 
+/*!\brief Define the min size of the payload, according to the Jumbo frame*/
 #ifdef JUMBO_FRAME
- 	#define PAYLOAD_MAX 9000
+#define PAYLOAD_MAX 9000
 #else
-	#define PAYLOAD_MAX 1500 //http://tools.ietf.org/html/rfc894
+#define PAYLOAD_MAX 1500 //http://tools.ietf.org/html/rfc894
 #endif
 
 
@@ -95,16 +95,16 @@
 #define RTP_HEADER 12
 
 /*!\brief Define the max size of the header*/
-#define MAX_HEADER_SIZE  80 
+#define MAX_HEADER_SIZE  80
 
 
 /*!\brief Define the Alphabet string to generate the payload of the packet*/
-#define	ALPHABET_NUM_LETTER "abcdefghijklmnopqrstuvwyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
+#define ALPHABET_NUM_LETTER "abcdefghijklmnopqrstuvwyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
 
-#define	ALPHABET_LETTER "abcdefghijklmnopqrstuvwyzABCDEFGHIGKLMNOPQRSTUVWXZ"
+#define ALPHABET_LETTER "abcdefghijklmnopqrstuvwyzABCDEFGHIGKLMNOPQRSTUVWXZ"
 
 /*!\brief Define the Alphabet string to generate the header of the packet*/
-#define	ALPHABET_NUM "0123456789"
+#define ALPHABET_NUM "0123456789"
 
 /*!\brief Define the static string to generate the header of the packet*/
 //#define HEADER_STRING "5048717272261061594909177115977673656394812939088509638561159848103044447631759621785741859753883189"
@@ -125,7 +125,7 @@
 #define MAX_ACCESS_DELAY 20
 #define TERMINAL_ACCESS_DELAY 1
 
-/*!\brief Latency budget for access domain(unit millisecond)*/ 
+/*!\brief Latency budget for access domain(unit millisecond)*/
 #define MIN_U_PLANE_GW_PROCESSING_DELAY 1
 #define MAX_U_PLANE_GW_PROCESSING_DELAY 4
 #define MIN_U_PLANE_CORE_IP_ACCESS_DELAY 1
@@ -133,7 +133,7 @@
 #define MIN_FW_PROXY_DELAY 1
 #define MAX_FW_PROXY_DELAY 2
 
-/*!\brief Latency budget for core and application domain(unit millisecond)*/  
+/*!\brief Latency budget for core and application domain(unit millisecond)*/
 #define MIN_NETWORK_ACCESS_DELAY 15
 #define MAX_NETWORK_ACCESS_DELAY 150
 #define MIN_SERVICE_ENABLERS_DELAY 300

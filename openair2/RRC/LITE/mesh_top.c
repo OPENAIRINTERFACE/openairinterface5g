@@ -65,40 +65,43 @@ static int   openair_rrc_init_module( void );
 static void  openair_rrc_cleanup_module(void);
 #endif
 
-#ifdef KERNEL2_6 
-static int __init openair_rrc_init_module( void ) 
-#else 
-     int init_module( void ) 
+#ifdef KERNEL2_6
+static int __init openair_rrc_init_module( void )
+#else
+int init_module( void )
 #endif //KERNEL2_6
 {
-    printk("[OPENAIR][RRC][INIT] inserting module\n");
+  printk("[OPENAIR][RRC][INIT] inserting module\n");
 
 
-    Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
-    if(Rrc_xface == NULL){
-      printk("[RRC] FATAL EROOR: Could not allocate memory for Rrc_xface !!!\n");
-      return (-1);
-    }		
-    
-    Mac_rlc_xface=mac_rrc_register(Rrc_xface);
-    if( Mac_rlc_xface == NULL )
-      {
-	printk("[OPENAIR][RRC][INIT] Could not get RRC descriptor\n");
-	return -1;
-      }
-    else
-      printk("[OPENAIR][RRC][INIT] Got RRC descriptor , Rcc_xface %p,Mac_rlc_xface=%p \n",Rrc_xface,Mac_rlc_xface);       
-    if(rrc_init_global_param()==-1){
-      printk("[OPENAIR][RRC][INIT] FATAL ERROR: INIT_GLOBAL_PARAM_NOK\n");
-      return -1;
-    }
-    return 0;
+  Rrc_xface = (RRC_XFACE*)malloc16(sizeof(RRC_XFACE));
+
+  if(Rrc_xface == NULL) {
+    printk("[RRC] FATAL EROOR: Could not allocate memory for Rrc_xface !!!\n");
+    return (-1);
+  }
+
+  Mac_rlc_xface=mac_rrc_register(Rrc_xface);
+
+  if( Mac_rlc_xface == NULL ) {
+    printk("[OPENAIR][RRC][INIT] Could not get RRC descriptor\n");
+    return -1;
+  } else {
+    printk("[OPENAIR][RRC][INIT] Got RRC descriptor , Rcc_xface %p,Mac_rlc_xface=%p \n",Rrc_xface,Mac_rlc_xface);
+  }
+
+  if(rrc_init_global_param()==-1) {
+    printk("[OPENAIR][RRC][INIT] FATAL ERROR: INIT_GLOBAL_PARAM_NOK\n");
+    return -1;
+  }
+
+  return 0;
 }
 
 #ifdef KERNEL2_6
 static void __exit openair_rrc_cleanup_module(void)
 #else
-  void cleanup_module(void)
+void cleanup_module(void)
 #endif //KERNEL2_6
 {
 #ifndef NO_RRM
@@ -107,11 +110,11 @@ static void __exit openair_rrc_cleanup_module(void)
 #endif //NO_RRM
   printk("[OPENAIR][RRC][CLEANUP] cleanup module\n");
   mac_rrc_unregister(Rrc_xface);
-  
+
 }
 
 MODULE_AUTHOR
-  ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Maxime GUILLAUD <maxime.guillaud@eurecom.fr, Hicham ANOUAR <hicham.anouar@eurecom.fr>");
+("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Maxime GUILLAUD <maxime.guillaud@eurecom.fr, Hicham ANOUAR <hicham.anouar@eurecom.fr>");
 MODULE_DESCRIPTION ("openair RRC layer module");
 MODULE_LICENSE ("GPL");
 module_init (openair_rrc_init_module);

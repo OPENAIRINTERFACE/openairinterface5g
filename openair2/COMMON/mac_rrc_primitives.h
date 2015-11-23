@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -111,36 +111,36 @@ typedef enum {
 
 /*! MAC/PHY Measurement Structure*/
 /*! \brief Logical Channel ID structure */
-typedef struct{
+typedef struct {
   unsigned short    Index __attribute__ ((packed));       //QOS CLASS?          /*!< \brief Index of logical channel*/
-}LCHAN_ID;
+} LCHAN_ID;
 
 
-typedef struct{
+typedef struct {
   char Rssi;                        /*!< \brief RSSI (dBm) on physical resources corresponding to logical channel*/
   char Sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];                        /*!< \brief Average SINR (dB) on physical resources corresponding to logical channel*/
   uint8_t Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with
-				      logical channel*/
+              logical channel*/
   unsigned short Bler;              /*!< \brief Average block error rate (times 1000) on transport channel associated with logical channel*/
   uint8_t Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
- uint8_t Qdepth;
- //uint8_t Tx_rate;
- //uint8_t Rx_rate;
-}__attribute__ ((__packed__)) MAC_MEAS_T;
+  uint8_t Qdepth;
+  //uint8_t Tx_rate;
+  //uint8_t Rx_rate;
+} __attribute__ ((__packed__)) MAC_MEAS_T;
 #define MAC_MEAS_T_SIZE sizeof(MAC_MEAS_T)
 
 /*!\brief MAC/RLC Measurement Information
  */
-typedef struct{
+typedef struct {
   char Rssi;                        /*!< \brief RSSI (dBm) on physical resources corresponding to logical channel*/
   char Sinr[NUMBER_OF_MEASUREMENT_SUBBANDS];                        /*!< \brief Average SINR (dB) on physical resources corresponding to logical channel*/
   uint8_t Harq_delay;         /*!< \brief Average number of transmission rounds (times 10) on transport channel associated with
-				      logical channel*/
+              logical channel*/
   unsigned short Bler;              /*!< \brief Average block error rate (times 1000) on transport channel associated with logical channel*/
   uint8_t Spec_eff;           /*!< \brief Actual Spectral efficiency (bits/symbol times 10) of transport channel associated with logical channel*/
   uint8_t  rlc_sdu_buffer_occ;    /*!< \brief RLC SDU buffer occupancy */
   unsigned short rlc_sdu_loss_indicator; /*!< \brief RLC SDU Loss indicator */
-}__attribute__ ((__packed__)) MAC_RLC_MEAS_T;
+} __attribute__ ((__packed__)) MAC_RLC_MEAS_T;
 #define MAC_RLC_MEAS_T_SIZE sizeof(MAC_RLC_MEAS_T)
 
 
@@ -150,12 +150,12 @@ typedef struct{
 /*! MAC/PHY Measurement Averaging Parameters.  These are fixed-point 16-bit representations of the interval [0,1)*/
 
 typedef struct {
-unsigned short Rssi_forgetting_factor;                        /*!< \brief Forgetting factor for RSSI averaging*/
-unsigned short Sinr_forgetting_factor;                        /*!< \brief Forgetting factor for SINR averaging*/
-unsigned short Harq_delay_forgetting_factor;         /*!< \brief Forgetting factor for HARQ delay averaging*/
-unsigned short Bler_forgetting_factor;              /*!< \brief Forgetting factor for block error rate (times 1000) averaging*/
-unsigned short Spec_eff_forgetting_factor;           /*!< \brief Forgetting factor for Spectral efficiency averaging*/
-}__attribute__ ((__packed__))  MAC_AVG_T;
+  unsigned short Rssi_forgetting_factor;                        /*!< \brief Forgetting factor for RSSI averaging*/
+  unsigned short Sinr_forgetting_factor;                        /*!< \brief Forgetting factor for SINR averaging*/
+  unsigned short Harq_delay_forgetting_factor;         /*!< \brief Forgetting factor for HARQ delay averaging*/
+  unsigned short Bler_forgetting_factor;              /*!< \brief Forgetting factor for block error rate (times 1000) averaging*/
+  unsigned short Spec_eff_forgetting_factor;           /*!< \brief Forgetting factor for Spectral efficiency averaging*/
+} __attribute__ ((__packed__))  MAC_AVG_T;
 
 /*!\brief This primitive indicates to RRC that a measurement request is available */
 
@@ -164,7 +164,7 @@ typedef struct {
   unsigned short Process_id;         /*!< \brief Id of MAC measurement process*/
   MAC_MEAS_T Meas;
   char Meas_status;              /*!< \brief Latest set of MAC measurements performed in the current process*/
-}__attribute__ ((__packed__))  MAC_MEAS_IND;
+} __attribute__ ((__packed__))  MAC_MEAS_IND;
 
 #define MAC_MEAS_IND_SIZE sizeof(MAC_MEAS_IND)
 
@@ -174,7 +174,7 @@ typedef struct {
   //LCHAN_ID  Lchan_id;           /*!< \brief Logical Channel ID*/
   //unsigned short       Process_id;         /*!< \brief Id of new MAC measurement process*/
   char     Meas_status;           /*!< \brief Status (0-positive, 1-negative)*/
-}__attribute__ ((__packed__))  MAC_MEAS_CONFIRM;
+} __attribute__ ((__packed__))  MAC_MEAS_CONFIRM;
 
 /*!\brief This primitive parametrizes a MAC measurement process
  */
@@ -185,7 +185,7 @@ typedef struct {
   unsigned int sdu_loss_trigger; /*!< \brief Trigger for RLC SDU losses*/
   unsigned short Rep_amount;    /*!< \brief Number of Measurements for this process, 0 means infinite*/
   unsigned short Rep_interval;  /*!< \brief Reporting interval between successive measurement reports in this process*/
-}__attribute__ ((__packed__))  MAC_RLC_MEAS_DESC;
+} __attribute__ ((__packed__))  MAC_RLC_MEAS_DESC;
 
 
 
@@ -201,10 +201,10 @@ typedef struct {
   unsigned short Rep_amount;    /*!< \brief Number of Measurements for this process, 0 means infinite*/
   unsigned short Rep_interval;  /*!< \brief Reporting interval between successive measurement reports in this process*/
   MAC_MEAS_T Mac_meas;      /*!< \brief Measure structure to be filled by the MAC  */
-}__attribute__ ((__packed__))  MAC_MEAS_REQ;
+} __attribute__ ((__packed__))  MAC_MEAS_REQ;
 #define MAC_MEAS_REQ_SIZE sizeof(MAC_MEAS_REQ)
 
-typedef struct MEAS_REQ_TABLE_ENTRY{
+typedef struct MEAS_REQ_TABLE_ENTRY {
   MAC_MEAS_REQ Mac_meas_req;
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
@@ -214,15 +214,15 @@ typedef struct MEAS_REQ_TABLE_ENTRY{
   //uint8_t Meas_Direction;//???
   struct MEAS_REQ_TABLE_ENTRY *Next_entry;
   struct MEAS_REQ_TABLE_ENTRY *Prev_entry;
-}__attribute__ ((__packed__)) MAC_MEAS_REQ_ENTRY;
+} __attribute__ ((__packed__)) MAC_MEAS_REQ_ENTRY;
 
 
 /*!\brief This primitive parametrizes an RLC measurement process
  */
-typedef struct{
+typedef struct {
   unsigned int bo_forgetting_factor; /*!< \brief Forgetting factor for buffer occupancy averaging*/
   unsigned int sdu_loss_trigger; /*!< \brief Trigger for RLC sdu losses*/
-}__attribute__ ((__packed__))  RLC_MEAS_DESC;
+} __attribute__ ((__packed__))  RLC_MEAS_DESC;
 
 //#define NUM_MEAS_REQ_MAX 100 //from rrm
 
@@ -241,7 +241,7 @@ typedef struct {
   uint8_t  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
   uint8_t  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
   uint8_t  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
-}__attribute__ ((__packed__))  LCHAN_DESC;
+} __attribute__ ((__packed__))  LCHAN_DESC;
 
 #define LCHAN_DESC_SIZE sizeof(LCHAN_DESC)
 
@@ -262,17 +262,17 @@ typedef struct MAC_OUT_OF_SYNC {
 
 /*!\brief This primitive enables RRC to configure a new logical channel description at the MAC layer.
  */
-typedef struct{
+typedef struct {
   LCHAN_ID   Lchan_id;              /*!< \brief Logical Channel ID*/
   //   unsigned short UE_eNB_index; //ID of CH who configued the LC (Need this to identify LC in the UE side)
   uint8_t Lchan_type; // DCCH_LCHAN, DTCH_LCHAN
-   LCHAN_DESC  Lchan_desc[2];  /*!< \brief Logical Channel QoS Descriptor (MAC component) */
-   uint8_t L3_info_type;
-   uint8_t L3_info[16];
-//#ifndef CELLULAR
-   unsigned short UE_eNB_index;
-//#endif
-}__attribute__ ((__packed__))  MAC_CONFIG_REQ;
+  LCHAN_DESC  Lchan_desc[2];  /*!< \brief Logical Channel QoS Descriptor (MAC component) */
+  uint8_t L3_info_type;
+  uint8_t L3_info[16];
+  //#ifndef CELLULAR
+  unsigned short UE_eNB_index;
+  //#endif
+} __attribute__ ((__packed__))  MAC_CONFIG_REQ;
 #define MAC_CONFIG_REQ_SIZE sizeof(MAC_CONFIG_REQ)
 
 
@@ -281,7 +281,7 @@ typedef struct{
 typedef struct {
   LCHAN_ID Lchan_id;        /*!< \brief Logical Channel ID*/
   uint8_t    Config_status;   /*!< \brief Configuration status (0-positive, 1-negative)*/
-}__attribute__ ((__packed__))  MAC_CONFIG_CONFIRM;
+} __attribute__ ((__packed__))  MAC_CONFIG_CONFIRM;
 
 /**@}*/
 
@@ -304,21 +304,21 @@ typedef struct {
   unsigned int Last_report_frame;
   unsigned int Next_check_frame;
   uint8_t Active;
-}__attribute__ ((__packed__)) DEFAULT_UE_MEAS;
+} __attribute__ ((__packed__)) DEFAULT_UE_MEAS;
 #define DEFAULT_UE_MEAS_SIZE sizeof(DEFAULT_UE_MEAS)
 
 typedef struct {  //From RRC
   unsigned short UE_index;
   uint8_t Forg_fact;
   unsigned short Rep_interval;;
-}__attribute__ ((__packed__)) DEFAULT_MEAS_REQ;
+} __attribute__ ((__packed__)) DEFAULT_MEAS_REQ;
 #define DEFAULT_MEAS_REQ_SIZE sizeof(DEFAULT_MEAS_REQ)
 
 typedef struct {  //To RRC
   unsigned short UE_index __attribute__ ((packed));
   char Sinr_meas[NB_CNX_CH+1];
   uint8_t Rb_active[NB_RAB_MAX];
-}__attribute__ ((__packed__)) DEFAULT_MEAS_IND;
+} __attribute__ ((__packed__)) DEFAULT_MEAS_IND;
 #define DEFAULT_MEAS_IND_SIZE sizeof(DEFAULT_MEAS_IND)
 
 
@@ -332,7 +332,7 @@ typedef struct {
   unsigned int Next_check_frame;
   uint8_t Status; //IDLE,NEED_rADIO_CONFIG, RADIO_CONFIG_TX, RADIO_CONFIG_ok
   uint8_t Active;
-}__attribute__ ((__packed__)) DEFAULT_CH_MEAS;
+} __attribute__ ((__packed__)) DEFAULT_CH_MEAS;
 #define DEFAULT_eNB_MEAS_SIZE sizeof(DEFAULT_eNB_MEAS)
 
 
@@ -343,7 +343,7 @@ typedef struct {
 //#include "L3_rrc_defs.h"
 #endif
 
-typedef struct{   //RRC_INTERFACE_FUNCTIONS
+typedef struct {  //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
   uint8_t  eNB_id[NB_MODULES_MAX][NB_CNX_UE];
@@ -363,10 +363,10 @@ typedef struct{   //RRC_INTERFACE_FUNCTIONS
   void (*fn_rrc)  (void);
   uint8_t (*get_rrc_status)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t eNB_index);
   double (*rrc_get_estimated_ue_distance) (module_id_t Mod_id, uint8_t UE_id, uint8_t CC_id, uint8_t loc_type);
-}RRC_XFACE;
+} RRC_XFACE;
 
 
-typedef struct{
+typedef struct {
   //MAC_INTERFACE_FUNCTIONS
   unsigned int frame;
   unsigned short Node_id[NB_MODULES_MAX];
@@ -380,32 +380,33 @@ typedef struct{
   void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char*);
   signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
   int (*rrc_mac_config_req)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t UE_id,uint8_t eNB_index,
-			    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-			    struct PhysicalConfigDedicated *physicalConfigDedicated,
-			    MAC_MainConfig_t *mac_MainConfig,
-			    long logicalChannelIdentity,
-			    LogicalChannelConfig_t *logicalChannelConfig,
-			    MeasGapConfig_t *measGapConfig,
-			    TDD_Config_t *tdd_Config,
-			    uint8_t *SIwindowsize,
-			    uint16_t *SIperiod
- #ifdef Rel10
-			    ,
-			    MBMS_flag_t MBMS_Flag,
-			    struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
-			    MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-			    struct PMCH_InfoList_r9 *pmch_InfoList
+                            RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+                            struct PhysicalConfigDedicated *physicalConfigDedicated,
+                            MAC_MainConfig_t *mac_MainConfig,
+                            long logicalChannelIdentity,
+                            LogicalChannelConfig_t *logicalChannelConfig,
+                            MeasGapConfig_t *measGapConfig,
+                            TDD_Config_t *tdd_Config,
+                            uint8_t *SIwindowsize,
+                            uint16_t *SIperiod
+#ifdef Rel10
+                            ,
+                            MBMS_flag_t MBMS_Flag,
+                            struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
+                            MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
+                            struct PMCH_InfoList_r9 *pmch_InfoList
 #endif
-			    );
+                           );
   unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, char*);
   void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
-  mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP, logical_chan_id_t channel_idP, tb_size_t tb_sizeP);
+  mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
+      logical_chan_id_t channel_idP, tb_size_t tb_sizeP);
   signed int (*rrc_rlc_data_req)(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
   void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t , rb_id_t , sdu_size_t , char* ),
-				void  (*rrc_data_confP) (module_id_t , rb_id_t , mui_t ) ) ;
+                                void  (*rrc_data_confP) (module_id_t , rb_id_t , mui_t ) ) ;
   void (*mrbch_phy_sync_failure) (uint8_t Mod_id, frame_t frame, uint8_t Free_ch_index);
   void (*dl_phy_sync_success) (uint8_t Mod_id, frame_t frame, uint8_t eNB_index);
-}MAC_RLC_XFACE;
+} MAC_RLC_XFACE;
 
 
 #endif

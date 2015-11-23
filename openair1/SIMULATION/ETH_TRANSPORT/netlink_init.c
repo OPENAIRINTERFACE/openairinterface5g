@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -62,59 +62,67 @@ struct msghdr nas_msg_rx;
 
 int netlink_init(void)
 {
-    int ret;
+  int ret;
 
-    nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
-    if (nas_sock_fd == -1) {
-        printf("[NETLINK] Error opening socket %d (%d:%s)\n",nas_sock_fd,errno, strerror(errno));
-//        exit(1);
-    }
-    printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd);
+  nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
 
-#if !defined(ENABLE_PDCP_NETLINK_FIFO)
-    ret = fcntl(nas_sock_fd,F_SETFL,O_NONBLOCK);
-    if (ret == -1) {
-      printf("[NETLINK] Error fcntl (%d:%s)\n",errno, strerror(errno));
-//      exit(1);
-    }
+  if (nas_sock_fd == -1) {
+    printf("[NETLINK] Error opening socket %d (%d:%s)\n",nas_sock_fd,errno, strerror(errno));
+#if defined(LINK_ENB_PDCP_TO_IP_DRIVER)
+    exit(1);
+#endif
+  }
+
+  printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd);
+
+#if !defined(PDCP_USE_NETLINK_QUEUES)
+  ret = fcntl(nas_sock_fd,F_SETFL,O_NONBLOCK);
+
+  if (ret == -1) {
+    printf("[NETLINK] Error fcntl (%d:%s)\n",errno, strerror(errno));
+#if defined(LINK_ENB_PDCP_TO_IP_DRIVER)
+    exit(1);
+#endif
+  }
+
 #endif
 
-    memset(&nas_src_addr, 0, sizeof(nas_src_addr));
-    nas_src_addr.nl_family = AF_NETLINK;
-    nas_src_addr.nl_pid = 1;//getpid();  /* self pid */
-    nas_src_addr.nl_groups = 0;  /* not in mcast groups */
-    ret = bind(nas_sock_fd, (struct sockaddr*)&nas_src_addr, sizeof(nas_src_addr));
+  memset(&nas_src_addr, 0, sizeof(nas_src_addr));
+  nas_src_addr.nl_family = AF_NETLINK;
+  nas_src_addr.nl_pid = 1;//getpid();  /* self pid */
+  nas_src_addr.nl_groups = 0;  /* not in mcast groups */
+  ret = bind(nas_sock_fd, (struct sockaddr*)&nas_src_addr, sizeof(nas_src_addr));
 
 
 
-    memset(&nas_dest_addr, 0, sizeof(nas_dest_addr));
-    nas_dest_addr.nl_family = AF_NETLINK;
-    nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
-    nas_dest_addr.nl_groups = 0; /* unicast */
-  
-    // TX PART
-    nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
-    memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
-    /* Fill the netlink message header */
-    nas_nlh_tx->nlmsg_len = NLMSG_SPACE(NL_MAX_PAYLOAD);
-    nas_nlh_tx->nlmsg_pid = 1;//getpid();  /* self pid */
-    nas_nlh_tx->nlmsg_flags = 0;
-  
-    nas_iov_tx.iov_base = (void *)nas_nlh_tx;
-    nas_iov_tx.iov_len = nas_nlh_tx->nlmsg_len;
-    memset(&nas_msg_tx,0,sizeof(nas_msg_tx));
-    nas_msg_tx.msg_name = (void *)&nas_dest_addr;
-    nas_msg_tx.msg_namelen = sizeof(nas_dest_addr);
-    nas_msg_tx.msg_iov = &nas_iov_tx;
-    nas_msg_tx.msg_iovlen = 1;
-  
-  
-    // RX PART
-    memset(&nas_msg_rx,0,sizeof(nas_msg_rx));
-    nas_msg_rx.msg_name = (void *)&nas_src_addr;
-    nas_msg_rx.msg_namelen = sizeof(nas_src_addr);
-    nas_msg_rx.msg_iov = &nas_iov_rx;
-    nas_msg_rx.msg_iovlen = 1;
+  memset(&nas_dest_addr, 0, sizeof(nas_dest_addr));
+  nas_dest_addr.nl_family = AF_NETLINK;
+  nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
+  nas_dest_addr.nl_groups = 0; /* unicast */
 
-    return(nas_sock_fd);
+  // TX PART
+  nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
+  memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
+  /* Fill the netlink message header */
+  nas_nlh_tx->nlmsg_len = NLMSG_SPACE(NL_MAX_PAYLOAD);
+  nas_nlh_tx->nlmsg_pid = 1;//getpid();  /* self pid */
+  nas_nlh_tx->nlmsg_flags = 0;
+
+  nas_iov_tx.iov_base = (void *)nas_nlh_tx;
+  nas_iov_tx.iov_len = nas_nlh_tx->nlmsg_len;
+  memset(&nas_msg_tx,0,sizeof(nas_msg_tx));
+  nas_msg_tx.msg_name = (void *)&nas_dest_addr;
+  nas_msg_tx.msg_namelen = sizeof(nas_dest_addr);
+  nas_msg_tx.msg_iov = &nas_iov_tx;
+  nas_msg_tx.msg_iovlen = 1;
+
+
+  // RX PART
+  memset(&nas_msg_rx,0,sizeof(nas_msg_rx));
+  nas_msg_rx.msg_name = (void *)&nas_src_addr;
+  nas_msg_rx.msg_namelen = sizeof(nas_src_addr);
+  nas_msg_rx.msg_iov = &nas_iov_rx;
+  nas_msg_rx.msg_iovlen = 1;
+
+  return(nas_sock_fd);
 }

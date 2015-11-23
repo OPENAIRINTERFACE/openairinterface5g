@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -91,10 +91,10 @@ protected_rlc_am_status_report(void        rlc_am_write8_bit_field(uint8_t** dat
 * \param[in]      valueP          Value to write.
 */
 protected_rlc_am_status_report(void        rlc_am_write16_bit_field(
-                uint8_t**      dataP,
-                unsigned int*  bit_posP,
-                signed int     bits_to_writeP,
-                const uint16_t valueP);)
+                                 uint8_t**      dataP,
+                                 unsigned int*  bit_posP,
+                                 signed int     bits_to_writeP,
+                                 const uint16_t valueP);)
 
 /*! \fn signed int rlc_am_get_control_pdu_infos      (rlc_am_pdu_sn_10_t* const headerP, sdu_size_t * const total_sizeP, rlc_am_control_pdu_info_t* const pdu_infoP)
 * \brief      Retrieve control PDU informations from a serialized control PDU.
@@ -103,9 +103,9 @@ protected_rlc_am_status_report(void        rlc_am_write16_bit_field(
 * \param[in,out]  pdu_infoP     Struct containing interpreted PDU control informations.
 */
 protected_rlc_am_status_report( signed int rlc_am_get_control_pdu_infos (
-                rlc_am_pdu_sn_10_t* const        headerP,
-                sdu_size_t * const               total_size_pP,
-                rlc_am_control_pdu_info_t* const pdu_infoP);)
+                                  rlc_am_pdu_sn_10_t* const        headerP,
+                                  sdu_size_t * const               total_size_pP,
+                                  rlc_am_control_pdu_info_t* const pdu_infoP);)
 
 /*! \fn void rlc_am_display_control_pdu_infos(const rlc_am_control_pdu_info_t* const pdu_infoP)
 * \brief      Dump on LOG output the informations contained in the pdu_infoP structure.
@@ -122,11 +122,11 @@ protected_rlc_am_status_report( void rlc_am_display_control_pdu_infos(const rlc_
 * \param[in]  tb_size_in_bytes  Pointer on size of serialized control PDU in bytes.
 */
 protected_rlc_am_status_report( void       rlc_am_receive_process_control_pdu(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t* const        rlc_pP,
-                mem_block_t*  const           tbP,
-                uint8_t**                     first_byte,
-                sdu_size_t * const            tb_size_in_bytes);)
+                                  const protocol_ctxt_t* const  ctxt_pP,
+                                  rlc_am_entity_t* const        rlc_pP,
+                                  mem_block_t*  const           tbP,
+                                  uint8_t**                     first_byte,
+                                  sdu_size_t * const            tb_size_in_bytes);)
 
 /*! \fn int  rlc_am_write_status_pdu(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* const rlc_pP, rlc_am_pdu_sn_10_t* const rlc_am_pdu_sn_10P, rlc_am_control_pdu_info_t* const pdu_infoP)
 * \brief      Remove all marked holes for PDU with sequence number "snP".
@@ -137,10 +137,10 @@ protected_rlc_am_status_report( void       rlc_am_receive_process_control_pdu(
 * \return     The number of bytes that have been written.
 */
 protected_rlc_am_status_report(int  rlc_am_write_status_pdu(
-                const protocol_ctxt_t* const     ctxt_pP,
-                rlc_am_entity_t *const           rlc_pP,
-                rlc_am_pdu_sn_10_t* const        rlc_am_pdu_sn_10P,
-                rlc_am_control_pdu_info_t* const pdu_infoP);)
+                                 const protocol_ctxt_t* const     ctxt_pP,
+                                 rlc_am_entity_t *const           rlc_pP,
+                                 rlc_am_pdu_sn_10_t* const        rlc_am_pdu_sn_10P,
+                                 rlc_am_control_pdu_info_t* const pdu_infoP);)
 
 /*! \fn void        rlc_am_send_status_pdu(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* const rlc_pP)
 * \brief      Send a status PDU based on the receiver buffer content.
@@ -148,7 +148,7 @@ protected_rlc_am_status_report(int  rlc_am_write_status_pdu(
 * \param[in]  rlc_pP           RLC AM protocol instance pointer.
 */
 protected_rlc_am_status_report(void        rlc_am_send_status_pdu(
-                const protocol_ctxt_t* const     ctxt_pP,
-                rlc_am_entity_t *const           rlc_pP);)
+                                 const protocol_ctxt_t* const     ctxt_pP,
+                                 rlc_am_entity_t *const           rlc_pP);)
 /** @} */
 #endif

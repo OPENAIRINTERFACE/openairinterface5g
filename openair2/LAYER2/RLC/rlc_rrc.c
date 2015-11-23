@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -57,13 +57,14 @@
 #include "assertions.h"
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP,
-                                         const SRB_ToAddModList_t   * const srb2add_listP,
-                                         const DRB_ToAddModList_t   * const drb2add_listP,
-                                         const DRB_ToReleaseList_t  * const drb2release_listP
+    const SRB_ToAddModList_t   * const srb2add_listP,
+    const DRB_ToAddModList_t   * const drb2add_listP,
+    const DRB_ToReleaseList_t  * const drb2release_listP
 #if defined(Rel10)
-                                        ,const PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
+    ,const PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP
 #endif
-  ) {
+                                        )
+{
   //-----------------------------------------------------------------------------
   rb_id_t                rb_id           = 0;
   logical_chan_id_t      lc_id           = 0;
@@ -73,7 +74,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
   const SRB_ToAddMod_t  *srb_toaddmod_p  = NULL;
   const DRB_ToAddMod_t  *drb_toaddmod_p  = NULL;
   rlc_union_t           *rlc_union_p     = NULL;
-  hash_key_t             key             = HASHTABLE_QUESTIONABLE_KEY_VALUE;
+  hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 #if defined(Rel10)
   int                        i, j;
@@ -86,730 +87,641 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
 #endif
 
-  LOG_D(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] CONFIG REQ ASN1 \n",
-          ctxt_pP->frame,
-          (ctxt_pP->enb_flag) ? "eNB" : "UE",
-          ctxt_pP->enb_module_id,
-          ctxt_pP->ue_module_id);
+  LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ ASN1 \n",
+        PROTOCOL_CTXT_ARGS(ctxt_pP));
 
 #ifdef OAI_EMU
-    if (ctxt_pP->enb_flag) {
-        AssertFatal ((ctxt_pP->enb_module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too low (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local);
-        AssertFatal ((ctxt_pP->enb_module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too high (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);
-        AssertFatal (ctxt_pP->ue_module_id  < NB_UE_INST,
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-    } else {
-        AssertFatal (ctxt_pP->ue_module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-        AssertFatal (ctxt_pP->ue_module_id  >= oai_emulation.info.first_ue_local,
-            "UE module id is too low (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local);
-    }
+
+  CHECK_CTXT_ARGS(ctxt_pP)
+
 #endif
+
   if (srb2add_listP != NULL) {
-      for (cnt=0;cnt<srb2add_listP->list.count;cnt++) {
-         rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
-         lc_id  = rb_id + 2;
+    for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
+      rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
+      lc_id  = rb_id + 2;
 
-         LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
-          srb_toaddmod_p = srb2add_listP->list.array[cnt];
+      LOG_D(RLC, "Adding SRB %d, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
+      srb_toaddmod_p = srb2add_listP->list.array[cnt];
 
-          if (srb_toaddmod_p->rlc_Config) {
-              switch (srb_toaddmod_p->rlc_Config->present) {
-                  case SRB_ToAddMod__rlc_Config_PR_NOTHING:
-                      break;
-                  case SRB_ToAddMod__rlc_Config_PR_explicitValue:
-                      switch (srb_toaddmod_p->rlc_Config->choice.explicitValue.present) {
-                          case RLC_Config_PR_NOTHING:
-                              break;
-                          case RLC_Config_PR_am:
-                              if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM) != NULL) {
-                                  config_req_rlc_am_asn1 (
-                                                  ctxt_pP,
-                                                  SRB_FLAG_YES,
-                                                  &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
-                                                  rb_id);
-                              } else {
-                                  LOG_E(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] ERROR IN ALLOCATING SRB %d \n",
-                                      ctxt_pP->frame,
-                                      (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                      ctxt_pP->enb_module_id,
-                                      ctxt_pP->ue_module_id,
-                                      rb_id);
-                              }
-                              break;
-                          case RLC_Config_PR_um_Bi_Directional:
-                              if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
-                                  config_req_rlc_um_asn1(
-                                                  ctxt_pP,
-                                                  SRB_FLAG_YES,
-                                                  MBMS_FLAG_NO,
-                                                  UNUSED_PARAM_MBMS_SESSION_ID,
-                                                  UNUSED_PARAM_MBMS_SERVICE_ID,
-                                                  &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
-                                                  &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
-                                                  rb_id);
-                              } else {
-                                  LOG_E(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] ERROR IN ALLOCATING SRB %d \n",
-                                      ctxt_pP->frame,
-                                      (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                      ctxt_pP->enb_module_id,
-                                      ctxt_pP->ue_module_id,
-                                      rb_id);
-                              }
-                              break;
-                          case RLC_Config_PR_um_Uni_Directional_UL:
-                              if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
-                                  config_req_rlc_um_asn1(
-                                                  ctxt_pP,
-                                                  SRB_FLAG_YES,
-                                                  MBMS_FLAG_NO,
-                                                  UNUSED_PARAM_MBMS_SESSION_ID,
-                                                  UNUSED_PARAM_MBMS_SERVICE_ID,
-                                                  &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
-                                                  NULL,
-                                                  rb_id);
-                              } else {
-                                  LOG_E(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] ERROR IN ALLOCATING SRB %d \n",
-                                      ctxt_pP->frame,
-                                      (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                      ctxt_pP->enb_module_id,
-                                      ctxt_pP->ue_module_id,
-                                      rb_id);
-                              }
-                              break;
-                          case RLC_Config_PR_um_Uni_Directional_DL:
-                              if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
-                                  config_req_rlc_um_asn1(
-                                                  ctxt_pP,
-                                                  SRB_FLAG_YES,
-                                                  MBMS_FLAG_NO,
-                                                  UNUSED_PARAM_MBMS_SESSION_ID,
-                                                  UNUSED_PARAM_MBMS_SERVICE_ID,
-                                                  NULL,
-                                                  &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
-                                                  rb_id);
-                              } else {
-                                  LOG_E(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] ERROR IN ALLOCATING SRB %d \n",
-                                      ctxt_pP->frame,
-                                      (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                       ctxt_pP->enb_module_id,
-                                       ctxt_pP->ue_module_id,
-                                       rb_id);
-                              }
-                              break;
+      if (srb_toaddmod_p->rlc_Config) {
+        switch (srb_toaddmod_p->rlc_Config->present) {
+        case SRB_ToAddMod__rlc_Config_PR_NOTHING:
+          break;
 
-                          default:
-                              LOG_E(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] UNKNOWN RLC CONFIG %d \n",
-                                      ctxt_pP->frame,
-                                      (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                      ctxt_pP->enb_module_id,
-                                      ctxt_pP->ue_module_id,
-                                      srb_toaddmod_p->rlc_Config->choice.explicitValue.present);
-                              break;
-                      }
-                      break;
-                  case SRB_ToAddMod__rlc_Config_PR_defaultValue:
+        case SRB_ToAddMod__rlc_Config_PR_explicitValue:
+          switch (srb_toaddmod_p->rlc_Config->choice.explicitValue.present) {
+          case RLC_Config_PR_NOTHING:
+            break;
+
+          case RLC_Config_PR_am:
+            if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM) != NULL) {
+              config_req_rlc_am_asn1 (
+                ctxt_pP,
+                SRB_FLAG_YES,
+                &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.am,
+                rb_id);
+            } else {
+              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                    PROTOCOL_CTXT_ARGS(ctxt_pP),
+                    rb_id);
+            }
+
+            break;
+
+          case RLC_Config_PR_um_Bi_Directional:
+            if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
+              config_req_rlc_um_asn1(
+                ctxt_pP,
+                SRB_FLAG_YES,
+                MBMS_FLAG_NO,
+                UNUSED_PARAM_MBMS_SESSION_ID,
+                UNUSED_PARAM_MBMS_SERVICE_ID,
+                &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.ul_UM_RLC,
+                &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Bi_Directional.dl_UM_RLC,
+                rb_id);
+            } else {
+              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                    PROTOCOL_CTXT_ARGS(ctxt_pP),
+                    rb_id);
+            }
+
+            break;
+
+          case RLC_Config_PR_um_Uni_Directional_UL:
+            if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
+              config_req_rlc_um_asn1(
+                ctxt_pP,
+                SRB_FLAG_YES,
+                MBMS_FLAG_NO,
+                UNUSED_PARAM_MBMS_SESSION_ID,
+                UNUSED_PARAM_MBMS_SERVICE_ID,
+                &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_UL.ul_UM_RLC,
+                NULL,
+                rb_id);
+            } else {
+              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                    PROTOCOL_CTXT_ARGS(ctxt_pP),
+                    rb_id);
+            }
+
+            break;
+
+          case RLC_Config_PR_um_Uni_Directional_DL:
+            if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
+              config_req_rlc_um_asn1(
+                ctxt_pP,
+                SRB_FLAG_YES,
+                MBMS_FLAG_NO,
+                UNUSED_PARAM_MBMS_SESSION_ID,
+                UNUSED_PARAM_MBMS_SERVICE_ID,
+                NULL,
+                &srb_toaddmod_p->rlc_Config->choice.explicitValue.choice.um_Uni_Directional_DL.dl_UM_RLC,
+                rb_id);
+            } else {
+              LOG_E(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                    PROTOCOL_CTXT_ARGS(ctxt_pP),
+                    rb_id);
+            }
+
+            break;
+
+          default:
+            LOG_E(RLC, PROTOCOL_CTXT_FMT" UNKNOWN RLC CONFIG %d \n",
+                  PROTOCOL_CTXT_ARGS(ctxt_pP),
+                  srb_toaddmod_p->rlc_Config->choice.explicitValue.present);
+            break;
+          }
+
+          break;
+
+        case SRB_ToAddMod__rlc_Config_PR_defaultValue:
 #warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
-                    if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
-                        config_req_rlc_um_asn1(
-                                        ctxt_pP,
-                                        SRB_FLAG_YES,
-                                        MBMS_FLAG_NO,
-                                        UNUSED_PARAM_MBMS_SESSION_ID,
-                                        UNUSED_PARAM_MBMS_SERVICE_ID,
-                                        NULL, // TO DO DEFAULT CONFIG
-                                        NULL, // TO DO DEFAULT CONFIG
-                                        rb_id);
-                      } else {
-                          LOG_D(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] ERROR IN ALLOCATING SRB %d \n",
-                                  ctxt_pP->frame,
-                                  (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                                  ctxt_pP->enb_module_id,
-                                  ctxt_pP->ue_module_id,
-                                  rb_id);
-                      }
-                      break;
-                  default:;
-              }
+          if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
+            config_req_rlc_um_asn1(
+              ctxt_pP,
+              SRB_FLAG_YES,
+              MBMS_FLAG_NO,
+              UNUSED_PARAM_MBMS_SESSION_ID,
+              UNUSED_PARAM_MBMS_SERVICE_ID,
+              NULL, // TO DO DEFAULT CONFIG
+              NULL, // TO DO DEFAULT CONFIG
+              rb_id);
+          } else {
+            LOG_D(RLC, PROTOCOL_CTXT_FMT" ERROR IN ALLOCATING SRB %d \n",
+                  PROTOCOL_CTXT_ARGS(ctxt_pP),
+                  rb_id);
           }
+
+          break;
+
+        default:
+          ;
+        }
       }
+    }
   }
+
   if (drb2add_listP != NULL) {
-      for (cnt=0;cnt<drb2add_listP->list.count;cnt++) {
-          drb_toaddmod_p = drb2add_listP->list.array[cnt];
+    for (cnt=0; cnt<drb2add_listP->list.count; cnt++) {
+      drb_toaddmod_p = drb2add_listP->list.array[cnt];
 
-          drb_id = drb_toaddmod_p->drb_Identity;
-          lc_id  = drb_id + 2;
+      drb_id = drb_toaddmod_p->drb_Identity;
+      lc_id  = drb_id + 2;
 
-          LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
+      LOG_D(RLC, "Adding DRB %d, lc_id %d\n",drb_id,lc_id);
 
 
-          if (drb_toaddmod_p->rlc_Config) {
+      if (drb_toaddmod_p->rlc_Config) {
 
-              switch (drb_toaddmod_p->rlc_Config->present) {
-                  case RLC_Config_PR_NOTHING:
-                      break;
-                  case RLC_Config_PR_am:
-                      if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_AM) != NULL) {
-                          config_req_rlc_am_asn1 (
-                                          ctxt_pP,
-                                          SRB_FLAG_NO,
-                                          &drb_toaddmod_p->rlc_Config->choice.am,
-                                          drb_id);
-                      }
-                      break;
-                  case RLC_Config_PR_um_Bi_Directional:
-                      if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
-                          config_req_rlc_um_asn1(
-                                          ctxt_pP,
-                                          SRB_FLAG_NO,
-                                          MBMS_FLAG_NO,
-                                          UNUSED_PARAM_MBMS_SESSION_ID,
-                                          UNUSED_PARAM_MBMS_SERVICE_ID,
-                                          &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
-                                          &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
-                                          drb_id);
-                      }
-                      break;
-                  case RLC_Config_PR_um_Uni_Directional_UL:
-                      if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
-                          config_req_rlc_um_asn1(
-                                          ctxt_pP,
-                                          SRB_FLAG_NO,
-                                          MBMS_FLAG_NO,
-                                          UNUSED_PARAM_MBMS_SESSION_ID,
-                                          UNUSED_PARAM_MBMS_SERVICE_ID,
-                                          &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
-                                          NULL,
-                                          drb_id);
-                      }
-                      break;
-                  case RLC_Config_PR_um_Uni_Directional_DL:
-                      if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
-                          config_req_rlc_um_asn1(
-                                          ctxt_pP,
-                                          SRB_FLAG_NO,
-                                          MBMS_FLAG_NO,
-                                          UNUSED_PARAM_MBMS_SESSION_ID,
-                                          UNUSED_PARAM_MBMS_SERVICE_ID,
-                                          NULL,
-                                          &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
-                                          drb_id);
-                      }
-                      break;
-                  default:
-                      LOG_W(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u][RB %u] unknown drb_toaddmod_p->rlc_Config->present \n",
-                              ctxt_pP->frame,
-                              (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                              ctxt_pP->enb_module_id,
-                              ctxt_pP->ue_module_id,
-                              drb_id);
-              }
+        switch (drb_toaddmod_p->rlc_Config->present) {
+        case RLC_Config_PR_NOTHING:
+          break;
+
+        case RLC_Config_PR_am:
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_AM) != NULL) {
+            config_req_rlc_am_asn1 (
+              ctxt_pP,
+              SRB_FLAG_NO,
+              &drb_toaddmod_p->rlc_Config->choice.am,
+              drb_id);
           }
+
+          break;
+
+        case RLC_Config_PR_um_Bi_Directional:
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
+            config_req_rlc_um_asn1(
+              ctxt_pP,
+              SRB_FLAG_NO,
+              MBMS_FLAG_NO,
+              UNUSED_PARAM_MBMS_SESSION_ID,
+              UNUSED_PARAM_MBMS_SERVICE_ID,
+              &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.ul_UM_RLC,
+              &drb_toaddmod_p->rlc_Config->choice.um_Bi_Directional.dl_UM_RLC,
+              drb_id);
+          }
+
+          break;
+
+        case RLC_Config_PR_um_Uni_Directional_UL:
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
+            config_req_rlc_um_asn1(
+              ctxt_pP,
+              SRB_FLAG_NO,
+              MBMS_FLAG_NO,
+              UNUSED_PARAM_MBMS_SESSION_ID,
+              UNUSED_PARAM_MBMS_SERVICE_ID,
+              &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_UL.ul_UM_RLC,
+              NULL,
+              drb_id);
+          }
+
+          break;
+
+        case RLC_Config_PR_um_Uni_Directional_DL:
+          if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_NO, MBMS_FLAG_NO, drb_id, lc_id, RLC_MODE_UM) != NULL) {
+            config_req_rlc_um_asn1(
+              ctxt_pP,
+              SRB_FLAG_NO,
+              MBMS_FLAG_NO,
+              UNUSED_PARAM_MBMS_SESSION_ID,
+              UNUSED_PARAM_MBMS_SERVICE_ID,
+              NULL,
+              &drb_toaddmod_p->rlc_Config->choice.um_Uni_Directional_DL.dl_UM_RLC,
+              drb_id);
+          }
+
+          break;
+
+        default:
+          LOG_W(RLC, PROTOCOL_CTXT_FMT"[RB %u] unknown drb_toaddmod_p->rlc_Config->present \n",
+                PROTOCOL_CTXT_ARGS(ctxt_pP),
+                drb_id);
+        }
       }
+    }
   }
+
   if (drb2release_listP != NULL) {
-      for (cnt=0;cnt<drb2release_listP->list.count;cnt++) {
-          pdrb_id = drb2release_listP->list.array[cnt];
-          rrc_rlc_remove_rlc(
-                          ctxt_pP,
-                          SRB_FLAG_NO,
-                          MBMS_FLAG_NO,
-                          *pdrb_id);
-      }
+    for (cnt=0; cnt<drb2release_listP->list.count; cnt++) {
+      pdrb_id = drb2release_listP->list.array[cnt];
+      rrc_rlc_remove_rlc(
+        ctxt_pP,
+        SRB_FLAG_NO,
+        MBMS_FLAG_NO,
+        *pdrb_id);
+    }
   }
 
 #if defined(Rel10)
 
   if (pmch_InfoList_r9_pP != NULL) {
-      for (i=0;i<pmch_InfoList_r9_pP->list.count;i++) {
-          mbms_SessionInfoList_r9_p = &(pmch_InfoList_r9_pP->list.array[i]->mbms_SessionInfoList_r9);
-          for (j=0;j<mbms_SessionInfoList_r9_p->list.count;j++) {
-              MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
-              mbms_session_id    = MBMS_SessionInfo_p->sessionId_r9->buf[0];
-              lc_id              = mbms_session_id;
-              mbms_service_id    = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+    for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
+      mbms_SessionInfoList_r9_p = &(pmch_InfoList_r9_pP->list.array[i]->mbms_SessionInfoList_r9);
 
-              // can set the mch_id = i
-              if (ctxt_pP->enb_flag) {
-                rb_id =  (mbms_service_id * maxSessionPerPMCH ) + mbms_session_id;//+ (maxDRB + 3) * MAX_MOBILES_PER_ENB; // 1
-                rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lc_id].service_id                     = mbms_service_id;
-                rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lc_id].session_id                     = mbms_session_id;
+      for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
+        MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
+        mbms_session_id    = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        lc_id              = mbms_session_id;
+        mbms_service_id    = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
 
-                rlc_mbms_enb_set_lcid_by_rb_id(ctxt_pP->enb_module_id,rb_id,lc_id);
-              } else {
-                rb_id =  (mbms_service_id * maxSessionPerPMCH ) + mbms_session_id; // + (maxDRB + 3); // 15
-                rlc_mbms_lcid2service_session_id_ue[ctxt_pP->ue_module_id][lc_id].service_id                    = mbms_service_id;
-                rlc_mbms_lcid2service_session_id_ue[ctxt_pP->ue_module_id][lc_id].session_id                    = mbms_session_id;
-                rlc_mbms_ue_set_lcid_by_rb_id(ctxt_pP->ue_module_id,rb_id,lc_id);
-              }
-              key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, mbms_service_id, mbms_session_id);
+        // can set the mch_id = i
+        if (ctxt_pP->enb_flag) {
+          rb_id =  (mbms_service_id * maxSessionPerPMCH ) + mbms_session_id;//+ (maxDRB + 3) * MAX_MOBILES_PER_ENB; // 1
+          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lc_id].service_id                     = mbms_service_id;
+          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lc_id].session_id                     = mbms_session_id;
+          rlc_mbms_enb_set_lcid_by_rb_id(ctxt_pP->module_id,rb_id,lc_id);
 
-              h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
-              if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
-                  rlc_union_p = rrc_rlc_add_rlc   (
-                                  ctxt_pP,
-                                  SRB_FLAG_NO,
-                                  MBMS_FLAG_YES,
-                                  rb_id,
-                                  lc_id,
-                                  RLC_MODE_UM);
-                  AssertFatal(rlc_union_p != NULL, "ADD MBMS RLC UM FAILED");
-              }
+        } else {
+          rb_id =  (mbms_service_id * maxSessionPerPMCH ) + mbms_session_id; // + (maxDRB + 3); // 15
+          rlc_mbms_lcid2service_session_id_ue[ctxt_pP->module_id][lc_id].service_id                    = mbms_service_id;
+          rlc_mbms_lcid2service_session_id_ue[ctxt_pP->module_id][lc_id].session_id                    = mbms_session_id;
+          rlc_mbms_ue_set_lcid_by_rb_id(ctxt_pP->module_id,rb_id,lc_id);
+        }
 
-              LOG_D(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
-                    ctxt_pP->frame,
-                    (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                    ctxt_pP->enb_module_id,
-                    ctxt_pP->ue_module_id,
-                    lc_id,
-                    rb_id,
-                    mbms_session_id,
-                    mbms_service_id
-                   );
-              dl_um_rlc.sn_FieldLength = SN_FieldLength_size5;
-              dl_um_rlc.t_Reordering   = T_Reordering_ms0;
+        key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->module_id, ctxt_pP->enb_flag, mbms_service_id, mbms_session_id);
 
-              config_req_rlc_um_asn1 (
-                              ctxt_pP,
-                              SRB_FLAG_NO,
-                              MBMS_FLAG_YES,
-                              mbms_session_id,
-                              mbms_service_id,
-                              NULL,
-                              &dl_um_rlc,
-                              rb_id);
-          }
+        h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+
+        if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+          rlc_union_p = rrc_rlc_add_rlc   (
+                          ctxt_pP,
+                          SRB_FLAG_NO,
+                          MBMS_FLAG_YES,
+                          rb_id,
+                          lc_id,
+                          RLC_MODE_UM);
+          AssertFatal(rlc_union_p != NULL, "ADD MBMS RLC UM FAILED");
+        }
+
+        LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ MBMS ASN1 LC ID %u RB ID %u SESSION ID %u SERVICE ID %u\n",
+              PROTOCOL_CTXT_ARGS(ctxt_pP),
+              lc_id,
+              rb_id,
+              mbms_session_id,
+              mbms_service_id
+             );
+        dl_um_rlc.sn_FieldLength = SN_FieldLength_size5;
+        dl_um_rlc.t_Reordering   = T_Reordering_ms0;
+
+        config_req_rlc_um_asn1 (
+          ctxt_pP,
+          SRB_FLAG_NO,
+          MBMS_FLAG_YES,
+          mbms_session_id,
+          mbms_service_id,
+          NULL,
+          &dl_um_rlc,
+          rb_id);
       }
+    }
   }
+
 #endif
 
-  LOG_D(RLC, "[FRAME %5u][%s][RLC_RRC][MOD %u/%u] CONFIG REQ ASN1 END \n",
-         ctxt_pP->frame,
-         (ctxt_pP->enb_flag) ? "eNB" : "UE",
-         ctxt_pP->enb_flag,
-         ctxt_pP->enb_module_id,
-         ctxt_pP->ue_module_id);
+  LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ ASN1 END \n",
+        PROTOCOL_CTXT_ARGS(ctxt_pP));
   return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
 void
 rb_free_rlc_union (
-                void *rlcu_pP)
+  void *rlcu_pP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   rlc_union_t * rlcu_p;
-    if (rlcu_pP) {
-        rlcu_p = (rlc_union_t *)(rlcu_pP);
-        LOG_D(RLC,"%s %p \n",__FUNCTION__,rlcu_pP);
-        switch (rlcu_p->mode) {
-          case RLC_MODE_AM:
-              rlc_am_cleanup(&rlcu_p->rlc.am);
-              break;
-          case RLC_MODE_UM:
-              rlc_um_cleanup(&rlcu_p->rlc.um);
-              break;
-          case RLC_MODE_TM:
-              rlc_tm_cleanup(&rlcu_p->rlc.tm);
-              break;
-          default:
-            LOG_W(RLC,
-                "%s %p unknown RLC type\n",
-                __FUNCTION__,
-                rlcu_pP);
-            break;
-        }
+
+  if (rlcu_pP) {
+    rlcu_p = (rlc_union_t *)(rlcu_pP);
+    LOG_D(RLC,"%s %p \n",__FUNCTION__,rlcu_pP);
+
+    switch (rlcu_p->mode) {
+    case RLC_MODE_AM:
+      rlc_am_cleanup(&rlcu_p->rlc.am);
+      break;
+
+    case RLC_MODE_UM:
+      rlc_um_cleanup(&rlcu_p->rlc.um);
+      break;
+
+    case RLC_MODE_TM:
+      rlc_tm_cleanup(&rlcu_p->rlc.tm);
+      break;
+
+    default:
+      LOG_W(RLC,
+            "%s %p unknown RLC type\n",
+            __FUNCTION__,
+            rlcu_pP);
+      break;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_remove_ue (
-                const protocol_ctxt_t* const ctxt_pP) {
-//-----------------------------------------------------------------------------
-    rb_id_t                rb_id;
+  const protocol_ctxt_t* const ctxt_pP)
+{
+  //-----------------------------------------------------------------------------
+  rb_id_t                rb_id;
 
-    for (rb_id = 1; rb_id <= 2; rb_id++) {
-        rrc_rlc_remove_rlc(ctxt_pP,
-                           SRB_FLAG_YES,
-                           MBMS_FLAG_NO,
-                           rb_id);
-    }
-    for (rb_id = 1; rb_id <= maxDRB; rb_id++) {
-        rrc_rlc_remove_rlc(ctxt_pP,
-                           SRB_FLAG_NO,
-                           MBMS_FLAG_NO,
-                           rb_id);
-    }
-    return RLC_OP_STATUS_OK;
+  for (rb_id = 1; rb_id <= 2; rb_id++) {
+    rrc_rlc_remove_rlc(ctxt_pP,
+                       SRB_FLAG_YES,
+                       MBMS_FLAG_NO,
+                       rb_id);
+  }
+
+  for (rb_id = 1; rb_id <= maxDRB; rb_id++) {
+    rrc_rlc_remove_rlc(ctxt_pP,
+                       SRB_FLAG_NO,
+                       MBMS_FLAG_NO,
+                       rb_id);
+  }
+
+  return RLC_OP_STATUS_OK;
 }
 
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_remove_rlc   (
-                const protocol_ctxt_t* const ctxt_pP,
-                const srb_flag_t  srb_flagP,
-                const MBMS_flag_t MBMS_flagP,
-                const rb_id_t     rb_idP) {
-//-----------------------------------------------------------------------------
-    logical_chan_id_t      lcid            = 0;
-    hash_key_t             key             = HASHTABLE_QUESTIONABLE_KEY_VALUE;
-    hashtable_rc_t         h_rc;
-    rlc_union_t           *rlc_union_p = NULL;
-#ifdef Rel10
-    rlc_mbms_id_t         *mbms_id_p  = NULL;
-#endif
-#ifdef OAI_EMU
-    AssertFatal ((ctxt_pP->enb_module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),
-        "eNB module id is too low (%u/%d)!\n",
-        ctxt_pP->enb_module_id,
-        oai_emulation.info.first_enb_local);
-    AssertFatal (ctxt_pP->enb_module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local),
-        "eNB module id is too high (%u/%d)!\n",
-        ctxt_pP->enb_module_id,
-        oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);
-    if (ctxt_pP->enb_flag) {
-        AssertFatal (ctxt_pP->ue_module_id  < NB_UE_INST,
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-    } else {
-        AssertFatal (ctxt_pP->ue_module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-        AssertFatal (ctxt_pP->ue_module_id  >= oai_emulation.info.first_ue_local,
-            "UE module id is too low (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local);
-    }
-#endif
-
-#ifdef Rel10
-  if (MBMS_flagP == TRUE) {
-      if (ctxt_pP->enb_flag) {
-          lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->enb_module_id,rb_idP);
-          mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid];
-
-          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid].service_id = 0;
-          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid].session_id = 0;
-          rlc_mbms_rbid2lcid_ue[ctxt_pP->enb_module_id][rb_idP] = RLC_LC_UNALLOCATED;
-      } else {
-          lcid = rlc_mbms_ue_get_lcid_by_rb_id(ctxt_pP->ue_module_id,rb_idP);
-          mbms_id_p = &rlc_mbms_lcid2service_session_id_ue[ctxt_pP->ue_module_id][lcid];
-
-          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->ue_module_id][lcid].service_id = 0;
-          rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->ue_module_id][lcid].session_id = 0;
-          rlc_mbms_rbid2lcid_ue[ctxt_pP->ue_module_id][rb_idP] = RLC_LC_UNALLOCATED;
-      }
-      key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
-  } else
-#endif
-  {
-      key = RLC_COLL_KEY_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-  }
-
-
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
-
-    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
-    if (h_rc == HASH_TABLE_OK) {
-        h_rc = hashtable_remove(rlc_coll_p, key);
-        LOG_D(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] RELEASED %s\n",
-            ctxt_pP->frame,
-            (ctxt_pP->enb_flag) ? "eNB" : "UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            (srb_flagP) ? "SRB" : "DRB",
-            rb_idP,
-            (srb_flagP) ? "SRB" : "DRB");
-    } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
-        LOG_D(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] RELEASE : RLC NOT FOUND %s\n",
-            ctxt_pP->frame,
-            (ctxt_pP->enb_flag) ? "eNB" : "UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            (srb_flagP) ? "SRB" : "DRB",
-            rb_idP,
-            (srb_flagP) ? "SRB" : "DRB");
-    } else {
-        LOG_E(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] RELEASE : INTERNAL ERROR %s\n",
-            ctxt_pP->frame,
-            (ctxt_pP->enb_flag) ? "eNB" : "UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            (srb_flagP) ? "SRB" : "DRB",
-            rb_idP,
-            (srb_flagP) ? "SRB" : "DRB");    }
-
-    return RLC_OP_STATUS_OK;
-}
-//-----------------------------------------------------------------------------
-rlc_union_t* rrc_rlc_add_rlc   (
-                const protocol_ctxt_t* const ctxt_pP,
-                const srb_flag_t        srb_flagP,
-                const MBMS_flag_t       MBMS_flagP,
-                const rb_id_t           rb_idP,
-                const logical_chan_id_t chan_idP,
-                const rlc_mode_t        rlc_modeP) {
-//-----------------------------------------------------------------------------
-  hash_key_t             key         = HASHTABLE_QUESTIONABLE_KEY_VALUE;
+  const protocol_ctxt_t* const ctxt_pP,
+  const srb_flag_t  srb_flagP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t     rb_idP)
+{
+  //-----------------------------------------------------------------------------
+  logical_chan_id_t      lcid            = 0;
+  hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
   rlc_union_t           *rlc_union_p = NULL;
 #ifdef Rel10
-    rlc_mbms_id_t         *mbms_id_p  = NULL;
-    logical_chan_id_t      lcid            = 0;
+  rlc_mbms_id_t         *mbms_id_p  = NULL;
 #endif
-
 #ifdef OAI_EMU
-    if (ctxt_pP->enb_flag) {
-        AssertFatal ((ctxt_pP->enb_module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too low (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local);
-        AssertFatal ((ctxt_pP->enb_module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too high (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);
-        AssertFatal (ctxt_pP->ue_module_id  < NB_UE_INST,
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-    } else {
-        AssertFatal (ctxt_pP->ue_module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-        AssertFatal (ctxt_pP->ue_module_id  >= oai_emulation.info.first_ue_local,
-            "UE module id is too low (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local);
-    }
+  CHECK_CTXT_ARGS(ctxt_pP)
+
 #endif
-    if (MBMS_flagP == FALSE) {
-        AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
-        AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
-    }
 
 #ifdef Rel10
+
   if (MBMS_flagP == TRUE) {
-      if (ctxt_pP->enb_flag) {
-          lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->enb_module_id,rb_idP);
-          LOG_I(RLC,
-                  "[Frame %05u] lcid %d = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->enb_module_id %u, rb_idP %u)\n",
-                  ctxt_pP->frame,lcid, ctxt_pP->enb_module_id, rb_idP);
+    if (ctxt_pP->enb_flag) {
+      lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
+      mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid];
+      rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].service_id = 0;
+      rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].session_id = 0;
+      rlc_mbms_rbid2lcid_ue[ctxt_pP->module_id][rb_idP] = RLC_LC_UNALLOCATED;
 
-          mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid];
+    } else {
+      lcid = rlc_mbms_ue_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
+      mbms_id_p = &rlc_mbms_lcid2service_session_id_ue[ctxt_pP->module_id][lcid];
+      rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].service_id = 0;
+      rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].session_id = 0;
+      rlc_mbms_rbid2lcid_ue[ctxt_pP->module_id][rb_idP] = RLC_LC_UNALLOCATED;
+    }
 
-          //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid].service_id = 0;
-          //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->enb_module_id][lcid].session_id = 0;
-          //LG 2014-04-15rlc_mbms_rbid2lcid_eNB[ctxt_pP->enb_module_id][rb_idP] = RLC_LC_UNALLOCATED;
-      } else {
-          lcid = rlc_mbms_ue_get_lcid_by_rb_id(ctxt_pP->ue_module_id,rb_idP);
-          mbms_id_p = &rlc_mbms_lcid2service_session_id_ue[ctxt_pP->ue_module_id][lcid];
-
-          //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->ue_module_id][lcid].service_id = 0;
-          //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->ue_module_id][lcid].session_id = 0;
-          //LG 2014-04-15rlc_mbms_rbid2lcid_ue[ctxt_pP->ue_module_id][rb_idP] = RLC_LC_UNALLOCATED;
-      }
-      key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
+    key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
   } else
 #endif
   {
-      key = RLC_COLL_KEY_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+    key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+  }
+
+
+  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+
+  h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+
+  if (h_rc == HASH_TABLE_OK) {
+    h_rc = hashtable_remove(rlc_coll_p, key);
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASED %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
+          (srb_flagP) ? "SRB" : "DRB",
+          rb_idP,
+          (srb_flagP) ? "SRB" : "DRB");
+  } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
+    LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASE : RLC NOT FOUND %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
+          (srb_flagP) ? "SRB" : "DRB",
+          rb_idP,
+          (srb_flagP) ? "SRB" : "DRB");
+  } else {
+    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] RELEASE : INTERNAL ERROR %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
+          (srb_flagP) ? "SRB" : "DRB",
+          rb_idP,
+          (srb_flagP) ? "SRB" : "DRB");
+  }
+
+  return RLC_OP_STATUS_OK;
+}
+//-----------------------------------------------------------------------------
+rlc_union_t* rrc_rlc_add_rlc   (
+  const protocol_ctxt_t* const ctxt_pP,
+  const srb_flag_t        srb_flagP,
+  const MBMS_flag_t       MBMS_flagP,
+  const rb_id_t           rb_idP,
+  const logical_chan_id_t chan_idP,
+  const rlc_mode_t        rlc_modeP)
+{
+  //-----------------------------------------------------------------------------
+  hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
+  hashtable_rc_t         h_rc;
+  rlc_union_t           *rlc_union_p = NULL;
+#ifdef Rel10
+  rlc_mbms_id_t         *mbms_id_p  = NULL;
+  logical_chan_id_t      lcid            = 0;
+#endif
+
+#ifdef OAI_EMU
+
+  CHECK_CTXT_ARGS(ctxt_pP)
+
+#endif
+
+  if (MBMS_flagP == FALSE) {
+    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    AssertFatal (chan_idP < RLC_MAX_LC, "LC id is too high (%u/%d)!\n", chan_idP, RLC_MAX_LC);
+  }
+
+#ifdef Rel10
+
+  if (MBMS_flagP == TRUE) {
+    if (ctxt_pP->enb_flag) {
+      lcid = rlc_mbms_enb_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
+      mbms_id_p = &rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid];
+      //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].service_id = 0;
+      //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].session_id = 0;
+      //LG 2014-04-15rlc_mbms_rbid2lcid_eNB[ctxt_pP->module_id][rb_idP] = RLC_LC_UNALLOCATED;
+
+    } else {
+      lcid = rlc_mbms_ue_get_lcid_by_rb_id(ctxt_pP->module_id,rb_idP);
+      mbms_id_p = &rlc_mbms_lcid2service_session_id_ue[ctxt_pP->module_id][lcid];
+      //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].service_id = 0;
+      //LG 2014-04-15rlc_mbms_lcid2service_session_id_eNB[ctxt_pP->module_id][lcid].session_id = 0;
+      //LG 2014-04-15rlc_mbms_rbid2lcid_ue[ctxt_pP->module_id][rb_idP] = RLC_LC_UNALLOCATED;
+    }
+
+    key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
+  } else
+#endif
+  {
+    key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
 
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+
   if (h_rc == HASH_TABLE_OK) {
-      LOG_W(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] rrc_rlc_add_rlc , already exist %s\n",
-          ctxt_pP->frame,
-          (ctxt_pP->enb_flag) ? "eNB" : "UE",
-          ctxt_pP->enb_module_id,
-          ctxt_pP->ue_module_id,
+    LOG_W(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc , already exist %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP,
           (srb_flagP) ? "SRB" : "DRB");
-      AssertFatal(rlc_union_p->mode == rlc_modeP, "Error rrc_rlc_add_rlc , already exist but RLC mode differ");
-      return rlc_union_p;
+    AssertFatal(rlc_union_p->mode == rlc_modeP, "Error rrc_rlc_add_rlc , already exist but RLC mode differ");
+    return rlc_union_p;
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
-      rlc_union_p = calloc(1, sizeof(rlc_union_t));
-      h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
-      if (h_rc == HASH_TABLE_OK) {
+    rlc_union_p = calloc(1, sizeof(rlc_union_t));
+    h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
+
+    if (h_rc == HASH_TABLE_OK) {
 #ifdef Rel10
-          if (MBMS_flagP == TRUE) {
-              LOG_I(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u] RLC service id %u session id %u rrc_rlc_add_rlc\n",
-                  ctxt_pP->frame,
-                  (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                  ctxt_pP->enb_module_id,
-                  ctxt_pP->ue_module_id,
-                  mbms_id_p->service_id,
-                  mbms_id_p->session_id);
-          } else
+
+      if (MBMS_flagP == TRUE) {
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" RLC service id %u session id %u rrc_rlc_add_rlc\n",
+              PROTOCOL_CTXT_ARGS(ctxt_pP),
+              mbms_id_p->service_id,
+              mbms_id_p->session_id);
+      } else
 #endif
-          {
-              LOG_I(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] rrc_rlc_add_rlc  %s\n",
-                  ctxt_pP->frame,
-                  (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                  ctxt_pP->enb_module_id,
-                  ctxt_pP->ue_module_id,
-                  (srb_flagP) ? "SRB" : "DRB",
-                  rb_idP,
-                  (srb_flagP) ? "SRB" : "DRB");
-          }
-          rlc_union_p->mode = rlc_modeP;
-          return rlc_union_p;
-      } else {
-          LOG_E(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] rrc_rlc_add_rlc  FAILED %s\n",
-              ctxt_pP->frame,
-              (ctxt_pP->enb_flag) ? "eNB" : "UE",
-              ctxt_pP->enb_module_id,
-              ctxt_pP->ue_module_id,
+      {
+        LOG_I(RLC, PROTOCOL_CTXT_FMT" [%s %u] rrc_rlc_add_rlc  %s\n",
+              PROTOCOL_CTXT_ARGS(ctxt_pP),
               (srb_flagP) ? "SRB" : "DRB",
               rb_idP,
               (srb_flagP) ? "SRB" : "DRB");
-          free(rlc_union_p);
-          rlc_union_p = NULL;
-          return NULL;
       }
+
+      rlc_union_p->mode = rlc_modeP;
+      return rlc_union_p;
+    } else {
+      LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc  FAILED %s\n",
+            PROTOCOL_CTXT_ARGS(ctxt_pP),
+            (srb_flagP) ? "SRB" : "DRB",
+            rb_idP,
+            (srb_flagP) ? "SRB" : "DRB");
+      free(rlc_union_p);
+      rlc_union_p = NULL;
+      return NULL;
+    }
   } else {
-      LOG_E(RLC, "[Frame %05u][%s][RLC_RRC][INST %u/%u][%s %u] rrc_rlc_add_rlc , INTERNAL ERROR %s\n",
-          ctxt_pP->frame,
-          (ctxt_pP->enb_flag) ? "eNB" : "UE",
-          ctxt_pP->enb_module_id,
-          ctxt_pP->ue_module_id,
+    LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc , INTERNAL ERROR %s\n",
+          PROTOCOL_CTXT_ARGS(ctxt_pP),
           (srb_flagP) ? "SRB" : "DRB",
           rb_idP,
           (srb_flagP) ? "SRB" : "DRB");
   }
+
   return NULL;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_config_req   (
-                const protocol_ctxt_t* const ctxt_pP,
-                const srb_flag_t      srb_flagP,
-                const MBMS_flag_t     mbms_flagP,
-                const config_action_t actionP,
-                const rb_id_t         rb_idP,
-                const rlc_info_t      rlc_infoP) {
-//-----------------------------------------------------------------------------
-    rlc_op_status_t status;
+  const protocol_ctxt_t* const ctxt_pP,
+  const srb_flag_t      srb_flagP,
+  const MBMS_flag_t     mbms_flagP,
+  const config_action_t actionP,
+  const rb_id_t         rb_idP,
+  const rlc_info_t      rlc_infoP)
+{
+  //-----------------------------------------------------------------------------
+  rlc_op_status_t status;
 
-    LOG_D(RLC, "[FRAME %05u][%s][RLC][MOD %u/%u] CONFIG_REQ for Rab %u\n",
-            ctxt_pP->frame,
-            (ctxt_pP->enb_flag) ? "eNB" : "UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            rb_idP);
+  LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG_REQ for RAB %u\n",
+        PROTOCOL_CTXT_ARGS(ctxt_pP),
+        rb_idP);
 
 #ifdef OAI_EMU
-    if (ctxt_pP->enb_flag) {
-        AssertFatal ((ctxt_pP->enb_module_id >= oai_emulation.info.first_enb_local) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too low (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local);
-        AssertFatal ((ctxt_pP->enb_module_id < (oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local)) && (oai_emulation.info.nb_enb_local > 0),
-            "eNB module id is too high (%u/%d)!\n",
-            ctxt_pP->enb_module_id,
-            oai_emulation.info.first_enb_local + oai_emulation.info.nb_enb_local);
-        AssertFatal (ctxt_pP->ue_module_id  < NB_UE_INST,
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-    } else {
-        AssertFatal (ctxt_pP->ue_module_id  < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local),
-            "UE module id is too high (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local);
-        AssertFatal (ctxt_pP->ue_module_id  >= oai_emulation.info.first_ue_local,
-            "UE module id is too low (%u/%d)!\n",
-            ctxt_pP->ue_module_id,
-            oai_emulation.info.first_ue_local);
-    }
+
+  CHECK_CTXT_ARGS(ctxt_pP)
+
 #endif
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
-    switch (actionP) {
+  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
 
-        case CONFIG_ACTION_ADD:
-            if (rrc_rlc_add_rlc(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, rb_idP, rlc_infoP.rlc_mode) != NULL) {
-              return RLC_OP_STATUS_INTERNAL_ERROR;
-            }
-            // no break, fall to next case
-        case CONFIG_ACTION_MODIFY:
-            switch (rlc_infoP.rlc_mode) {
-                case RLC_MODE_AM:
-                    LOG_I(RLC, "[Frame %05u][UE][RLC_RRC][INST %u/%u][RB %u] MODIFY RB AM\n",
-                            ctxt_pP->frame,
-                            ctxt_pP->enb_module_id,
-                            ctxt_pP->ue_module_id,
-                            rb_idP);
+  switch (actionP) {
 
-                    config_req_rlc_am(
-                                    ctxt_pP,
-                                    srb_flagP,
-                                    &rlc_infoP.rlc.rlc_am_info,
-                                    rb_idP);
-                    break;
-                case RLC_MODE_UM:
-                    LOG_I(RLC, "[Frame %05u][UE][RLC_RRC][INST %u/%u][RB %u] MODIFY RB UM\n",
-                            ctxt_pP->frame,
-                            ctxt_pP->enb_module_id,
-                            ctxt_pP->ue_module_id,
-                            rb_idP);
-                    config_req_rlc_um(
-                                    ctxt_pP,
-                                    srb_flagP,
-                                    &rlc_infoP.rlc.rlc_um_info,
-                                    rb_idP);
-                    break;
-                case RLC_MODE_TM:
-                    LOG_I(RLC, "[Frame %05u][UE][RLC_RRC][INST %u/%u][RB %u] MODIFY RB TM\n",
-                            ctxt_pP->frame,
-                            ctxt_pP->enb_module_id,
-                            ctxt_pP->ue_module_id,
-                            rb_idP);
-                    config_req_rlc_tm(
-                                    ctxt_pP,
-                                    srb_flagP,
-                                    &rlc_infoP.rlc.rlc_tm_info,
-                                    rb_idP);
-                    break;
-                default:
-                return RLC_OP_STATUS_BAD_PARAMETER;
-            }
-            break;
-
-        case CONFIG_ACTION_REMOVE:
-            return rrc_rlc_remove_rlc(ctxt_pP, srb_flagP, mbms_flagP, rb_idP);
-            break;
-        default:
-            return RLC_OP_STATUS_BAD_PARAMETER;
+  case CONFIG_ACTION_ADD:
+    if (rrc_rlc_add_rlc(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, rb_idP, rlc_infoP.rlc_mode) != NULL) {
+      return RLC_OP_STATUS_INTERNAL_ERROR;
     }
 
-    return RLC_OP_STATUS_OK;
+    // no break, fall to next case
+  case CONFIG_ACTION_MODIFY:
+    switch (rlc_infoP.rlc_mode) {
+    case RLC_MODE_AM:
+      LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB AM\n",
+            PROTOCOL_CTXT_ARGS(ctxt_pP),
+            rb_idP);
+
+      config_req_rlc_am(
+        ctxt_pP,
+        srb_flagP,
+        &rlc_infoP.rlc.rlc_am_info,
+        rb_idP);
+      break;
+
+    case RLC_MODE_UM:
+      LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB UM\n",
+            PROTOCOL_CTXT_ARGS(ctxt_pP),
+            rb_idP);
+      config_req_rlc_um(
+        ctxt_pP,
+        srb_flagP,
+        &rlc_infoP.rlc.rlc_um_info,
+        rb_idP);
+      break;
+
+    case RLC_MODE_TM:
+      LOG_I(RLC, PROTOCOL_CTXT_FMT"[RB %u] MODIFY RB TM\n",
+            PROTOCOL_CTXT_ARGS(ctxt_pP),
+            rb_idP);
+      config_req_rlc_tm(
+        ctxt_pP,
+        srb_flagP,
+        &rlc_infoP.rlc.rlc_tm_info,
+        rb_idP);
+      break;
+
+    default:
+      return RLC_OP_STATUS_BAD_PARAMETER;
+    }
+
+    break;
+
+  case CONFIG_ACTION_REMOVE:
+    return rrc_rlc_remove_rlc(ctxt_pP, srb_flagP, mbms_flagP, rb_idP);
+    break;
+
+  default:
+    return RLC_OP_STATUS_BAD_PARAMETER;
+  }
+
+  return RLC_OP_STATUS_OK;
 }
 //-----------------------------------------------------------------------------
 rlc_op_status_t rrc_rlc_data_req     (
-                const protocol_ctxt_t* const ctxt_pP,
-                const MBMS_flag_t MBMS_flagP,
-                const rb_id_t     rb_idP,
-                const mui_t       muiP,
-                const confirm_t   confirmP,
-                const sdu_size_t  sdu_sizeP,
-                char* sduP) {
-//-----------------------------------------------------------------------------
+  const protocol_ctxt_t* const ctxt_pP,
+  const MBMS_flag_t MBMS_flagP,
+  const rb_id_t     rb_idP,
+  const mui_t       muiP,
+  const confirm_t   confirmP,
+  const sdu_size_t  sdu_sizeP,
+  char* sduP)
+{
+  //-----------------------------------------------------------------------------
   mem_block_t*   sdu;
 
   sdu = get_free_mem_block(sdu_sizeP);
+
   if (sdu != NULL) {
     memcpy (sdu->data, sduP, sdu_sizeP);
     return rlc_data_req(ctxt_pP, SRB_FLAG_YES, MBMS_flagP, rb_idP, muiP, confirmP, sdu_sizeP, sdu);
@@ -819,9 +731,10 @@ rlc_op_status_t rrc_rlc_data_req     (
 }
 
 //-----------------------------------------------------------------------------
-void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP) {
-//-----------------------------------------------------------------------------
-   rlc_rrc_data_ind  = rrc_data_indP;
-   rlc_rrc_data_conf = rrc_data_confP;
+void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP)
+{
+  //-----------------------------------------------------------------------------
+  rlc_rrc_data_ind  = rrc_data_indP;
+  rlc_rrc_data_conf = rrc_data_confP;
 }
 

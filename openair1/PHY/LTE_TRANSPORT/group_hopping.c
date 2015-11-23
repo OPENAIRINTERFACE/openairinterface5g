@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -41,7 +41,8 @@
 
 //#define DEBUG_GROUPHOP 1
 
-void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms) {
+void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
+{
 
   uint8_t ns;
   uint8_t reset=1;
@@ -51,28 +52,33 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms) {
 
   x2 = frame_parms->Nid_cell/30;
 #ifdef DEBUG_GROUPHOP
-      msg("[PHY] GroupHop:");
+  msg("[PHY] GroupHop:");
 #endif
-  for (ns=0;ns<20;ns++) {
+
+  for (ns=0; ns<20; ns++) {
     if (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == 0)
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = fss_pusch%30;
     else {
       if ((ns&3) == 0) {
-	s = lte_gold_generic(&x1,&x2,reset);
-	reset = 0;
+        s = lte_gold_generic(&x1,&x2,reset);
+        reset = 0;
       }
+
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns] = (((uint8_t*)&s)[ns&3]+fss_pusch)%30;
     }
+
 #ifdef DEBUG_GROUPHOP
-      msg("%d.",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns]);
+    msg("%d.",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[ns]);
 #endif
   }
+
 #ifdef DEBUG_GROUPHOP
   msg("\n");
 #endif
 }
 
-void generate_seqhop(LTE_DL_FRAME_PARMS *frame_parms) {
+void generate_seqhop(LTE_DL_FRAME_PARMS *frame_parms)
+{
 
   uint8_t ns,reset=1;
   uint32_t x1, x2, s=0;
@@ -83,24 +89,28 @@ void generate_seqhop(LTE_DL_FRAME_PARMS *frame_parms) {
 
   s = lte_gold_generic(&x1,&x2,reset);
 #ifdef DEBUG_GROUPHOP
-      msg("[PHY] SeqHop:");
+  msg("[PHY] SeqHop:");
 #endif
-  for (ns=0;ns<20;ns++) {
-    if ((frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == 0) && 
-	(frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == 1))
+
+  for (ns=0; ns<20; ns++) {
+    if ((frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled == 0) &&
+        (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled == 1))
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[ns] = (s>>(ns&0x1f))&1;
     else
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[ns] = 0;
+
 #ifdef DEBUG_GROUPHOP
-      msg("%d.",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[ns]);
+    msg("%d.",frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[ns]);
 #endif
   }
+
 #ifdef DEBUG_GROUPHOP
   msg("\n");
 #endif
 }
 
-void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms) {
+void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms)
+{
 
   uint16_t n=0;
   uint8_t reset=1;
@@ -116,12 +126,14 @@ void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms) {
 #ifdef DEBUG_GROUPHOP
   msg("[PHY] nPRS:");
 #endif
-  for (n=0;n<(20*Nsymb_UL);n++) {  //loop over total number of bytes to generate
+
+  for (n=0; n<(20*Nsymb_UL); n++) { //loop over total number of bytes to generate
     if ((n&3) == 0) {
       s = lte_gold_generic(&x1,&x2,reset);
       reset = 0;
       //      printf("n %d : s (%d,%d,%d,%d)\n",n,((uint8_t*)&s)[0],((uint8_t*)&s)[1],((uint8_t*)&s)[2],((uint8_t*)&s)[3]);
     }
+
     if (n == next) {
       frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[ns] = ((uint8_t*)&s)[next&3];
 #ifdef DEBUG_GROUPHOP
@@ -131,12 +143,14 @@ void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms) {
       next+=Nsymb_UL;
     }
   }
+
 #ifdef DEBUG_GROUPHOP
   msg("\n");
 #endif
 }
 
-void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms) {
+void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms)
+{
 
   generate_grouphop(frame_parms);
   generate_seqhop(frame_parms);

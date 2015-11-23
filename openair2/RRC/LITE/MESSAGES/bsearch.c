@@ -31,23 +31,27 @@
  * the same comparison function for both sort() and bsearch().
  */
 void *bsearch(const void *key, const void *base, size_t num, size_t size,
-	      int (*cmp)(const void *key, const void *elt))
+              int (*cmp)(const void *key, const void *elt))
 {
-	int start = 0, end = num - 1, mid, result;
-	if (num == 0)
-		return NULL;
+  int start = 0, end = num - 1, mid, result;
 
-	while (start <= end) {
-		mid = (start + end) / 2;
-		result = cmp(key, base + mid * size);
-		if (result < 0)
-			end = mid - 1;
-		else if (result > 0)
-			start = mid + 1;
-		else
-			return (void *)base + mid * size;
-	}
+  if (num == 0) {
+    return NULL;
+  }
 
-	return NULL;
+  while (start <= end) {
+    mid = (start + end) / 2;
+    result = cmp(key, base + mid * size);
+
+    if (result < 0) {
+      end = mid - 1;
+    } else if (result > 0) {
+      start = mid + 1;
+    } else {
+      return (void *)base + mid * size;
+    }
+  }
+
+  return NULL;
 }
 //EXPORT_SYMBOL(bsearch);

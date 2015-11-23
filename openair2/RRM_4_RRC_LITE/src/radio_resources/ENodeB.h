@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -58,72 +58,73 @@
 using namespace std;
 
 
-class ENodeB  {
-    public:
+class ENodeB
+{
+public:
 
-        ENodeB ():m_id(0u) {};
-        ENodeB (cell_id_t);
-        ~ENodeB ();
+  ENodeB ():m_id(0u) {};
+  ENodeB (cell_id_t);
+  ~ENodeB ();
 
-        friend inline bool operator>( const ENodeB& l, const ENodeB r )
-        {
-            return l.m_id > r.m_id;
-        }
-        friend inline bool operator==( const ENodeB& l, const ENodeB r )
-        {
-            return l.m_id == r.m_id;
-        }
+  friend inline bool operator>( const ENodeB& l, const ENodeB r ) {
+    return l.m_id > r.m_id;
+  }
+  friend inline bool operator==( const ENodeB& l, const ENodeB r ) {
+    return l.m_id == r.m_id;
+  }
 
-        cell_id_t GetId() {return m_id;};
+  cell_id_t GetId() {
+    return m_id;
+  };
 
-        void                            CommitTransaction(transaction_id_t transaction_idP);
-        RadioResourceConfigDedicated_t* GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP);
-        RRM_RRC_Message_t*              GetRRMRRCConfigurationMessage(transaction_id_t transaction_idP);
+  void                            CommitTransaction(transaction_id_t transaction_idP);
+  RadioResourceConfigDedicated_t* GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP);
+  RRM_RRC_Message_t*              GetRRMRRCConfigurationMessage(transaction_id_t transaction_idP);
 
-        RRM_RRC_Message_t* AddUserRequest   (Mobile* mobileP, transaction_id_t transaction_idP);
-        RRM_RRC_Message_t* AddUserConfirm   (Mobile* mobileP, transaction_id_t transaction_idP);
-        RRM_RRC_Message_t* RemoveUserRequest(Mobile* mobileP, transaction_id_t transaction_idP);
-        void               UserReconfigurationComplete(Mobile* mobileP,  transaction_id_t transaction_idP);
-        void RemoveAllDataRadioBearers      (Mobile* mobileP, transaction_id_t transaction_idP);
+  RRM_RRC_Message_t* AddUserRequest   (Mobile* mobileP, transaction_id_t transaction_idP);
+  RRM_RRC_Message_t* AddUserConfirm   (Mobile* mobileP, transaction_id_t transaction_idP);
+  RRM_RRC_Message_t* RemoveUserRequest(Mobile* mobileP, transaction_id_t transaction_idP);
+  void               UserReconfigurationComplete(Mobile* mobileP,  transaction_id_t transaction_idP);
+  void RemoveAllDataRadioBearers      (Mobile* mobileP, transaction_id_t transaction_idP);
 
-        /*void AddDataRadioBearer(Mobile* mobileP,
-                                rb_id_t            radio_bearer_idP,
-                                unsigned short     traffic_class,
-                                unsigned short     delay,
-                                unsigned int       guaranted_bit_rate_uplink,
-                                unsigned int       max_bit_rate_uplink,
-                                unsigned int       guaranted_bit_rate_downlink,
-                                unsigned int       max_bit_rate_downlink,
-                                Transaction*       transactionP);*/
+  /*void AddDataRadioBearer(Mobile* mobileP,
+                          rb_id_t            radio_bearer_idP,
+                          unsigned short     traffic_class,
+                          unsigned short     delay,
+                          unsigned int       guaranted_bit_rate_uplink,
+                          unsigned int       max_bit_rate_uplink,
+                          unsigned int       guaranted_bit_rate_downlink,
+                          unsigned int       max_bit_rate_downlink,
+                          Transaction*       transactionP);*/
 
-        /*void RemoveDataRadioBearer(Mobile* mobileP,
-                                rb_id_t            radio_bearer_idP,
-                                Transaction*       transactionP);*/
+  /*void RemoveDataRadioBearer(Mobile* mobileP,
+                          rb_id_t            radio_bearer_idP,
+                          Transaction*       transactionP);*/
 
-    protected:
-        void AddSignallingRadioBearer1(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
-        void AddSignallingRadioBearer2(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
-        void AddDefaultDataRadioBearer(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
-
-
-        //boost::ptr_map<mobile_id_t ,Mobile > m_mobile_map;
-        //RadioBearer*                         m_radio_bearer_array[MAX_RB_PER_MOBILE][MAX_MOBILE_PER_ENODE_B];
-        cell_id_t                            m_id;
+protected:
+  void AddSignallingRadioBearer1(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
+  void AddSignallingRadioBearer2(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
+  void AddDefaultDataRadioBearer(mobile_id_t mobile_idP, transaction_id_t transaction_idP);
 
 
-        // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
-        MAC_MainConfig_t                      m_mac_main_config;
-        DRB_ToAddMod_t*                       m_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
-        SRB_ToAddMod_t*                       m_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
-        // FOR TRANSACTIONS
-        DRB_Identity_t                        m_pending_drb_to_release[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
-        transaction_id_t                      m_tx_id_pending_drb_to_release[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+  //boost::ptr_map<mobile_id_t ,Mobile > m_mobile_map;
+  //RadioBearer*                         m_radio_bearer_array[MAX_RB_PER_MOBILE][MAX_MOBILE_PER_ENODE_B];
+  cell_id_t                            m_id;
 
-        DRB_ToAddMod_t*                       m_pending_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
-        transaction_id_t                      m_tx_id_pending_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
 
-        SRB_ToAddMod_t*                       m_pending_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
-        transaction_id_t                      m_tx_id_pending_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
+  // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
+  MAC_MainConfig_t                      m_mac_main_config;
+  DRB_ToAddMod_t*                       m_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+  SRB_ToAddMod_t*                       m_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
+  // FOR TRANSACTIONS
+  DRB_Identity_t                        m_pending_drb_to_release[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+  transaction_id_t                      m_tx_id_pending_drb_to_release[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+
+  DRB_ToAddMod_t*                       m_pending_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+  transaction_id_t                      m_tx_id_pending_drb_to_add_mod[MAX_DRB][MAX_MOBILE_PER_ENODE_B];
+
+  SRB_ToAddMod_t*                       m_pending_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
+  transaction_id_t                      m_tx_id_pending_srb_to_add_mod[MAX_SRB][MAX_MOBILE_PER_ENODE_B];
 
 };
 #    endif

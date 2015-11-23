@@ -18,21 +18,21 @@
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/AT_COMMANDS/parser.h"
 
-mapping level_names[] =
-{
-    {"emerg", LOG_EMERG},
-    {"alert", LOG_ALERT},
-    {"crit", LOG_CRIT},
-    {"err", LOG_ERR},
-    {"warn", LOG_WARNING},
-    {"notice", LOG_NOTICE},
-    {"info", LOG_INFO},
-    {"debug", LOG_DEBUG},
-    {"trace", LOG_TRACE},
-    {NULL, -1}
+mapping level_names[] = {
+  {"emerg", LOG_EMERG},
+  {"alert", LOG_ALERT},
+  {"crit", LOG_CRIT},
+  {"err", LOG_ERR},
+  {"warn", LOG_WARNING},
+  {"notice", LOG_NOTICE},
+  {"info", LOG_INFO},
+  {"debug", LOG_DEBUG},
+  {"trace", LOG_TRACE},
+  {NULL, -1}
 };
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   char * g_log_level="trace"; // by default global log level is set to trace
 
   //initialize the log generator

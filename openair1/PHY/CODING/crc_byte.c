@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,22 +14,22 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 /* file: crc_byte.c
    purpose: generate 3GPP LTE CRCs. Byte-oriented implementation of CRC's
    author: raymond.knopp@eurecom.fr
-   date: 21.10.2009 
+   date: 21.10.2009
 
    Original UMTS version by
    P. Humblet
@@ -57,7 +57,7 @@ unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111              
 unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
 /*********************************************************
 
-For initialization && verification purposes, 
+For initialization && verification purposes,
    bit by bit implementation with any polynomial
 
 The first bit is in the MSB of each byte
@@ -67,16 +67,20 @@ unsigned int
 crcbit (unsigned char * inputptr, int octetlen, unsigned int poly)
 {
   unsigned int             i, crc = 0, c;
+
   while (octetlen-- > 0) {
     c = (*inputptr++) << 24;
+
     for (i = 8; i != 0; i--) {
       if ((1 << 31) & (c ^ crc))
         crc = (crc << 1) ^ poly;
       else
         crc <<= 1;
+
       c <<= 1;
     }
   }
+
   return crc;
 }
 
@@ -94,6 +98,7 @@ static unsigned char       crc8Table[256];
 void crcTableInit (void)
 {
   unsigned char              c = 0;
+
   do {
     crc24aTable[c] = crcbit (&c, 1, poly24a);
     crc24bTable[c] = crcbit (&c, 1, poly24b);
@@ -104,7 +109,7 @@ void crcTableInit (void)
 }
 /*********************************************************
 
-Byte by byte implementations, 
+Byte by byte implementations,
 assuming initial byte is 0 padded (in MSB) if necessary
 
 *********************************************************/
@@ -116,12 +121,15 @@ crc24a (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     //    printf("in %x => crc %x\n",crc,*inptr);
     crc = (crc << 8) ^ crc24aTable[(*inptr++) ^ (crc >> 24)];
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ crc24aTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+
   return crc;
 }
 
@@ -132,11 +140,14 @@ unsigned int crc24b (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = (crc << 8) ^ crc24bTable[(*inptr++) ^ (crc >> 24)];
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ crc24bTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+
   return crc;
 }
 
@@ -147,6 +158,7 @@ crc16 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
 
     crc = (crc << 8) ^ (crc16Table[(*inptr++) ^ (crc >> 24)] << 16);
@@ -165,11 +177,14 @@ crc12 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = (crc << 8) ^ (crc12Table[(*inptr++) ^ (crc >> 24)] << 16);
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc12Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+
   return crc;
 }
 
@@ -180,18 +195,21 @@ crc8 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = crc8Table[(*inptr++) ^ (crc >> 24)] << 24;
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+
   return crc;
 }
 
 #ifdef DEBUG_CRC
 /*******************************************************************/
 /**
-   Test code 
+   Test code
 ********************************************************************/
 
 #include <stdio.h>

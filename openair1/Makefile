@@ -3,7 +3,7 @@
 # these flags have to be explicitely exported so that the sub-make is aware of them
 
 
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 ifndef OPENAIR_LTE
 export OPENAIR_LTE=1
 endif

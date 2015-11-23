@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -29,8 +29,8 @@
 
 #ifndef UE_IP_SAP_H
 #define UE_IP_SAP_H
-  typedef unsigned short     OaiNwDrvRadioBearerId_t;
+typedef unsigned short     OaiNwDrvRadioBearerId_t;
 
-  #define UE_IP_PRIMITIVE_MAX_LENGTH        180  // maximum length of a NAS primitive
+#define UE_IP_PRIMITIVE_MAX_LENGTH        180  // maximum length of a NAS primitive
 
 #endif

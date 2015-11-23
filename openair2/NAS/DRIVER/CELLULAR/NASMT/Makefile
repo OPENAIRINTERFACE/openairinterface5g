@@ -1,6 +1,6 @@
 # NAS CELLULAR Driver makefile
 #
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 NAS_UPDIR	:= $(shell /bin/pwd)
 
 ####################################################
@@ -21,8 +21,8 @@ EXTRA_CFLAGS += -DNAS_DRIVER_TYPE_ETHERNET
 endif
 
 
-ifdef NAS_NETLINK
-EXTRA_CFLAGS += -DNAS_NETLINK
+ifdef PDCP_USE_NETLINK
+EXTRA_CFLAGS += -DPDCP_USE_NETLINK
 else
 EXTRA_CFLAGS += $(shell rtai-config --module-cflags) -DRTAI -D__IN_RTAI__ -Wall
 endif
@@ -52,7 +52,7 @@ nascellmt-objs += nasmt_iocontrol.o
 nascellmt-objs += nasmt_classifier.o
 nascellmt-objs += nasmt_tool.o
 nascellmt-objs += nasmt_ascontrol.o
-ifdef NAS_NETLINK
+ifdef PDCP_USE_NETLINK
 nascellmt-objs += nasmt_netlink.o
 endif
 
@@ -61,7 +61,7 @@ endif
 ####################################################
 
 #netlink.ko:
-	#make $(x)$(y) NAS_NETLINK=1 V=1 -C $(KERNEL_DIR) M=`pwd` modules
+	#make $(x)$(y) PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR) M=`pwd` modules
 
 #nasmesh.ko:
 #	make  V=1 -C  $(KERNEL_DIR) M=`pwd` modules

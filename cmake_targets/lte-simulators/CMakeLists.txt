@@ -5,9 +5,11 @@ set(RF_BOARD None)
 set(XFORMS False)
 
 set(DEBUG_PHY False)
-set(MU_RECIEVER Flase)
+set(MU_RECIEVER False)
 set(RANDOM_BF False)
 set(PBS_SIM False)
 set(PERFECT_CE False)
+set(NAS_UE False)
+set(MESSAGE_CHART_GENERATOR False)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)

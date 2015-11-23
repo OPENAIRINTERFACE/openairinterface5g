@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -54,73 +54,71 @@ typedef struct hash_table_element hash_table_element_t;
  * @struct hash_table_element "hashtable.h"
  * @brief stores an hash table element for use in the hash table
  */
-struct hash_table_element
-{
-    /**
-     * store the length in bytes of the key
-     */
-    size_t key_len;
-    /**
-     * stores the length in bytes of the key (only for copy mode)
-     */
-    size_t value_len;
-    /**
-     * pointer to the key 
-     */
-    void * key;
-    /**
-     * pointer to the value
-     */
-    void * value;
-    /**
-     * next chained key for this hash
-     */
-    hash_table_element_t * next;
+struct hash_table_element {
+  /**
+   * store the length in bytes of the key
+   */
+  size_t key_len;
+  /**
+   * stores the length in bytes of the key (only for copy mode)
+   */
+  size_t value_len;
+  /**
+   * pointer to the key
+   */
+  void * key;
+  /**
+   * pointer to the value
+   */
+  void * value;
+  /**
+   * next chained key for this hash
+   */
+  hash_table_element_t * next;
 };
 #define hash_table_element_s sizeof(hash_table_element_t)
 
 /**
  * @enum hash_table_mode defines the mode of operation of hash table
  */
-typedef enum hash_table_mode{
-    /** copy mode here values as well as key is copied */
-    MODE_COPY,
-    /** value reference mode, here ONLY key is copies and value is always referred */
-    MODE_VALUEREF,
-    /** in this mode all keys and values are referred */
-    MODE_ALLREF
+typedef enum hash_table_mode {
+  /** copy mode here values as well as key is copied */
+  MODE_COPY,
+  /** value reference mode, here ONLY key is copies and value is always referred */
+  MODE_VALUEREF,
+  /** in this mode all keys and values are referred */
+  MODE_ALLREF
 } hash_table_mode_t;
 
 /**
  * @struct hash_table "hashtable.h"
  * @brief identifies the hashtable for which operations are to be performed
  */
-typedef struct omg_hash_table_s
-{
-    /**
-     * the hash table array where all values are stored
-     */
-    hash_table_element_t  ** store_house;
+typedef struct omg_hash_table_s {
+  /**
+   * the hash table array where all values are stored
+   */
+  hash_table_element_t  ** store_house;
 
-    /**
-     * mode of the hash table
-     */
-    hash_table_mode_t mode;
+  /**
+   * mode of the hash table
+   */
+  hash_table_mode_t mode;
 
-    /**
-     * number of keys in the hash table
-     */
-    size_t key_count;
+  /**
+   * number of keys in the hash table
+   */
+  size_t key_count;
 
-    /**
-     * number of keys allocated in the hash table
-     */
-    uint16_t key_num;
+  /**
+   * number of keys allocated in the hash table
+   */
+  uint16_t key_num;
 
-    /**
-     * the ratio of key_count / key_num at which the hash table should be expanded
-     */
-    size_t key_ratio;
+  /**
+   * the ratio of key_count / key_num at which the hash table should be expanded
+   */
+  size_t key_ratio;
 
 } omg_hash_table_t;
 #define SIZEOF_HASH_TABLE sizeof(omg_hash_table_t)
@@ -132,7 +130,7 @@ typedef struct omg_hash_table_s
  * @returns hash_table_element_t object when success
  * @returns NULL when no memory
  */
-hash_table_element_t * hash_table_element_new();
+hash_table_element_t * hash_table_element_new(void);
 
 /**
  * Function to delete an hash table element
@@ -145,7 +143,7 @@ void hash_table_element_delete(omg_hash_table_t *, hash_table_element_t *);
  * Function that returns a hash value for a given key and key_len
  * @param key pointer to the key
  * @param key_len length of the key
- * @param max_key max value of the hash to be returned by the function 
+ * @param max_key max value of the hash to be returned by the function
  * @returns hash value belonging to [0, max_key)
  */
 uint16_t hash_table_do_hash(void * key, size_t key_len, uint16_t max_key);
@@ -250,7 +248,7 @@ int hash_table_has_key(omg_hash_table_t *, void *, size_t);
  * Function to return all the keys in a given hash table
  * @param table hash table from which key are to be reterived
  * @param keys a void** pointer where keys are filled in (memory allocated internally and must be freed)
- * @return total number of keys filled in keys 
+ * @return total number of keys filled in keys
  */
 size_t hash_table_get_keys(omg_hash_table_t *, void **);
 
@@ -258,8 +256,8 @@ size_t hash_table_get_keys(omg_hash_table_t *, void **);
  * Function to get all elements (key - value pairs) from the given hash table
  * @param table hash table from which elements have to be retrieved
  * @param elements a pointer to an array of hash_table_element_t pointer (malloced by function)
- * @returns 1 when no memory 
- * @returns count of elements 
+ * @returns 1 when no memory
+ * @returns count of elements
  */
 size_t hash_table_get_elements(omg_hash_table_t *, hash_table_element_t *** );
 

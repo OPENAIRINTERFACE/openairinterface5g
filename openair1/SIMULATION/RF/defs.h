@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -46,60 +46,60 @@
 @param IQ_imb_dB IQ amplitude imbalance in dB
 @param IQ_phase IQ phase imbalance in radians*/
 void rf_rx(double **r_re,
-	   double **r_im,
-	   double **r_re_i1,
-	   double **r_im_i1,
-	   double I0_dB,
-	   unsigned int nb_rx_antennas,
-	   unsigned int length,
-	   double s_time,
-	   double f_off,
-	   double drift,
-	   double noise_figure,
-	   double rx_gain_dB,
-	   int IP3_dBm,
-	   double *initial_phase,
-	   double pn_cutoff,
-	   double pn_amp_dBc,
-	   double IQ_imb_dB,
-	   double IQ_phase); 
+           double **r_im,
+           double **r_re_i1,
+           double **r_im_i1,
+           double I0_dB,
+           unsigned int nb_rx_antennas,
+           unsigned int length,
+           double s_time,
+           double f_off,
+           double drift,
+           double noise_figure,
+           double rx_gain_dB,
+           int IP3_dBm,
+           double *initial_phase,
+           double pn_cutoff,
+           double pn_amp_dBc,
+           double IQ_imb_dB,
+           double IQ_phase);
 
 void rf_rx_simple(double **r_re,
-		  double **r_im,
-		  unsigned int nb_rx_antennas,
-		  unsigned int length,
-		  double s_time,
-		  double rx_gain_dB);
+                  double **r_im,
+                  unsigned int nb_rx_antennas,
+                  unsigned int length,
+                  double s_time,
+                  double rx_gain_dB);
 
 
 void adc(double **r_re,
-	 double **r_im,
-	 unsigned int input_offset,
-	 unsigned int output_offset,
-	 int **output,
-	 unsigned int nb_rx_antennas,
-	 unsigned int length,
-	 unsigned char B);
+         double **r_im,
+         unsigned int input_offset,
+         unsigned int output_offset,
+         int **output,
+         unsigned int nb_rx_antennas,
+         unsigned int length,
+         unsigned char B);
 
 void dac(double **s_re,
-	 double **s_im,
-	 int **input,
-	 unsigned int input_offset,
-	 unsigned int nb_tx_antennas,
-	 unsigned int length,
-	 double amp_dBm,
-	 unsigned char B,
-	 unsigned int meas_length,
-	 unsigned int meas_offset);
+         double **s_im,
+         int **input,
+         unsigned int input_offset,
+         unsigned int nb_tx_antennas,
+         unsigned int length,
+         double amp_dBm,
+         unsigned char B,
+         unsigned int meas_length,
+         unsigned int meas_offset);
 
 double dac_fixed_gain(double **s_re,
-		      double **s_im,
-		      int **input,
-		      unsigned int input_offset,
-		      unsigned int nb_tx_antennas,
-		      unsigned int length,
-		      unsigned int input_offset_meas,
-		      unsigned int length_meas,
-		      unsigned char B,
-		      double gain,
-		      int NB_RE);
+                      double **s_im,
+                      int **input,
+                      unsigned int input_offset,
+                      unsigned int nb_tx_antennas,
+                      unsigned int length,
+                      unsigned int input_offset_meas,
+                      unsigned int length_meas,
+                      unsigned char B,
+                      double gain,
+                      int NB_RE);

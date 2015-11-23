@@ -1,31 +1,31 @@
-/*******************************************************************************
-    OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is
-   included in this distribution in the file called "COPYING". If not,
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
-*******************************************************************************/
+/*
+ * Copyright (c) 2015, EURECOM (www.eurecom.fr)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ */
 /*
 
 Source      commonDef.h
@@ -48,6 +48,9 @@ Description Contains global common definitions
 
 #include <stdint.h>
 #include <stddef.h>
+
+
+#define NAS_UE_ID_FMT "0x%06x"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -80,17 +83,8 @@ Description Contains global common definitions
 -----------------------------------------------------------------------------
 */
 typedef int8_t      SByte_t;    /* 8 bit  signed integer     */
-typedef int8_t      Int8_t;     /* 8 bit  signed integer     */
-typedef int16_t     Int16_t;    /* 16 bit signed integer    */
-typedef int32_t     Int32_t;    /* 32 bit signed integer    */
-typedef int64_t     Int64_t;    /* 64 bit signed integer    */
-
-
 typedef uint8_t     Byte_t;     /* 8 bit unsigned integer   */
-typedef uint8_t     UInt8_t;    /* 8 bit unsigned integer   */
-typedef uint16_t    UInt16_t;   /* 16 bit unsigned integer  */
-typedef uint32_t    UInt32_t;   /* 32 bit unsigned integer  */
-typedef uint64_t    UInt64_t;   /* 64 bit unsigned integer  */
+
 
 /*
 -----------------------------------------------------------------------------
@@ -98,50 +92,76 @@ typedef uint64_t    UInt64_t;   /* 64 bit unsigned integer  */
 -----------------------------------------------------------------------------
 */
 
-typedef UInt8_t     Stat_t;     /* Registration status  */
-typedef UInt16_t    lac_t;      /* Location Area Code   */
-typedef UInt8_t     rac_t;      /* Routing Area Code    */
-typedef UInt16_t    tac_t;      /* Tracking Area Code   */
-typedef UInt32_t    ci_t;       /* Cell Identifier  */
-typedef UInt8_t     AcT_t;      /* Access Technology    */
+typedef uint8_t     Stat_t;     /* Registration status  */
+typedef uint16_t    lac_t;      /* Location Area Code   */
+typedef uint8_t     rac_t;      /* Routing Area Code    */
+typedef uint16_t    tac_t;      /* Tracking Area Code   */
+typedef uint32_t    ci_t;       /* Cell Identifier  */
+typedef uint8_t     AcT_t;      /* Access Technology    */
 
 /*
  * International Mobile Subscriber Identity
  */
 typedef struct {
-    Byte_t length;
-    union {
-        struct {
-            Byte_t digit2:4;
-            Byte_t digit1:4;
-            Byte_t digit4:4;
-            Byte_t digit3:4;
-            Byte_t digit6:4;
-            Byte_t digit5:4;
-            Byte_t digit8:4;
-            Byte_t digit7:4;
-            Byte_t digit10:4;
-            Byte_t digit9:4;
-            Byte_t digit12:4;
-            Byte_t digit11:4;
-            Byte_t digit14:4;
-            Byte_t digit13:4;
+  Byte_t length;
+  union {
+    struct {
+      Byte_t digit2:4;
+      Byte_t digit1:4;
+      Byte_t digit4:4;
+      Byte_t digit3:4;
+      Byte_t digit6:4;
+      Byte_t digit5:4;
+      Byte_t digit8:4;
+      Byte_t digit7:4;
+      Byte_t digit10:4;
+      Byte_t digit9:4;
+      Byte_t digit12:4;
+      Byte_t digit11:4;
+      Byte_t digit14:4;
+      Byte_t digit13:4;
 #define EVEN_PARITY 0
 #define ODD_PARITY  1
-            Byte_t parity:4;
-            Byte_t digit15:4;
-        } num;
+      Byte_t parity:4;
+      Byte_t digit15:4;
+    } num;
 #define IMSI_SIZE   8
-        Byte_t value[IMSI_SIZE];
-    } u;
+    Byte_t value[IMSI_SIZE];
+  } u;
 } imsi_t;
+
+#define NAS_IMSI2STR(iMsI_t_PtR,iMsI_sTr, MaXlEn) \
+        {\
+          int l_offset = 0;\
+          int l_ret    = 0;\
+          l_ret = snprintf(iMsI_sTr + l_offset, MaXlEn - l_offset, "%u%u%u%u%u",\
+	    		  iMsI_t_PtR->u.num.digit1, iMsI_t_PtR->u.num.digit2,\
+	    		  iMsI_t_PtR->u.num.digit3, iMsI_t_PtR->u.num.digit4,\
+	    		  iMsI_t_PtR->u.num.digit5);\
+	      if ((iMsI_t_PtR->u.num.digit6 != 0xf)  && (l_ret > 0)) {\
+	    	l_offset += l_ret;\
+	    	l_ret = snprintf(iMsI_sTr + l_offset, MaXlEn - l_offset,  "%u", iMsI_t_PtR->u.num.digit6);\
+	      }\
+	      if (l_ret > 0) {\
+	    	l_offset += l_ret;\
+	    	l_ret = snprintf(iMsI_sTr + l_offset, MaXlEn - l_offset, "%u%u%u%u%u%u%u%u",\
+	    		  iMsI_t_PtR->u.num.digit7, iMsI_t_PtR->u.num.digit8,\
+	    		  iMsI_t_PtR->u.num.digit9, iMsI_t_PtR->u.num.digit10,\
+	    		  iMsI_t_PtR->u.num.digit11, iMsI_t_PtR->u.num.digit12,\
+	    		  iMsI_t_PtR->u.num.digit13, iMsI_t_PtR->u.num.digit14);\
+	      }\
+	      if ((iMsI_t_PtR->u.num.digit15 != 0xf)   && (l_ret > 0)) {\
+	    	l_offset += l_ret;\
+	    	l_ret = snprintf(iMsI_sTr + l_offset, MaXlEn - l_offset, "%u", iMsI_t_PtR->u.num.digit15);\
+	      }\
+	    }
 
 /*
  * Mobile subscriber dialing number
  */
 typedef struct {
-    Byte_t ext:1;
-    /* Type Of Number           */
+  Byte_t ext:1;
+  /* Type Of Number           */
 #define MSISDN_TON_UNKNOWKN     0b000
 #define MSISDN_TON_INTERNATIONAL    0b001
 #define MSISDN_TON_NATIONAL     0b010
@@ -149,8 +169,8 @@ typedef struct {
 #define MSISDN_TON_SUBCRIBER        0b100
 #define MSISDN_TON_ABBREVIATED      0b110
 #define MSISDN_TON_RESERVED     0b111
-    Byte_t ton:3;
-    /* Numbering Plan Identification    */
+  Byte_t ton:3;
+  /* Numbering Plan Identification    */
 #define MSISDN_NPI_UNKNOWN      0b0000
 #define MSISDN_NPI_ISDN_TELEPHONY   0b0001
 #define MSISDN_NPI_GENERIC      0b0010
@@ -161,13 +181,13 @@ typedef struct {
 #define MSISDN_NPI_ISDN_MOBILE      0b0111
 #define MSISDN_NPI_PRIVATE      0b1110
 #define MSISDN_NPI_RESERVED     0b1111
-    Byte_t npi:4;
-    /* Dialing Number           */
-    struct {
-        Byte_t lsb:4;
-        Byte_t msb:4;
+  Byte_t npi:4;
+  /* Dialing Number           */
+  struct {
+    Byte_t lsb:4;
+    Byte_t msb:4;
 #define MSISDN_DIGIT_SIZE   10
-    } digit[MSISDN_DIGIT_SIZE];
+  } digit[MSISDN_DIGIT_SIZE];
 } msisdn_t;
 
 /*
@@ -180,55 +200,88 @@ typedef imsi_t imei_t;
  * PLMN = BCD encoding (Mobile Country Code + Mobile Network Code)
  */
 typedef struct {
-    Byte_t MCCdigit2:4;
-    Byte_t MCCdigit1:4;
-    Byte_t MNCdigit3:4;
-    Byte_t MCCdigit3:4;
-    Byte_t MNCdigit2:4;
-    Byte_t MNCdigit1:4;
+  Byte_t MCCdigit2:4;
+  Byte_t MCCdigit1:4;
+  Byte_t MNCdigit3:4;
+  Byte_t MCCdigit3:4;
+  Byte_t MNCdigit2:4;
+  Byte_t MNCdigit1:4;
 } plmn_t;
 
 /*
  * Location Area Identification
  */
 typedef struct {
-    plmn_t plmn;    /* <MCC> + <MNC>    */
-    lac_t lac;      /* Location Area Code   */
+  plmn_t plmn;    /* <MCC> + <MNC>    */
+  lac_t lac;      /* Location Area Code   */
 } lai_t;
 
 /*
  * GPRS Routing Area Identification
  */
 typedef struct {
-    plmn_t plmn;    /* <MCC> + <MNC>    */
-    lac_t lac;      /* Location Area Code   */
-    rac_t rac;      /* Routing Area Code    */
+  plmn_t plmn;    /* <MCC> + <MNC>    */
+  lac_t lac;      /* Location Area Code   */
+  rac_t rac;      /* Routing Area Code    */
 } RAI_t;
 
 /*
  * EPS Tracking Area Identification
  */
 typedef struct {
-    plmn_t plmn;    /* <MCC> + <MNC>    */
-    tac_t tac;      /* Tracking Area Code   */
+  plmn_t plmn;    /* <MCC> + <MNC>    */
+  tac_t tac;      /* Tracking Area Code   */
 } tai_t;
 
 /*
  * EPS Globally Unique MME Identity
  */
 typedef struct {
-    plmn_t plmn;    /* <MCC> + <MNC>    */
-    UInt16_t MMEgid;    /* MME group identifier */
-    UInt8_t MMEcode;    /* MME code     */
+  plmn_t plmn;    /* <MCC> + <MNC>    */
+  uint16_t MMEgid;    /* MME group identifier */
+  uint8_t MMEcode;    /* MME code     */
 } gummei_t;
 
 /*
  * EPS Globally Unique Temporary UE Identity
  */
 typedef struct {
-    gummei_t gummei;    /* Globally Unique MME Identity         */
-    UInt32_t m_tmsi;    /* M-Temporary Mobile Subscriber Identity   */
+  gummei_t gummei;    /* Globally Unique MME Identity         */
+  uint32_t m_tmsi;    /* M-Temporary Mobile Subscriber Identity   */
 } GUTI_t;
+#define GUTI2STR(GuTi_PtR, GuTi_StR, MaXlEn) \
+        {\
+          int l_offset = 0;\
+          int l_ret    = 0;\
+          l_ret += snprintf(GuTi_StR + l_offset,MaXlEn-l_offset, "%03u.",\
+	    		  GuTi_PtR->gummei.plmn.MCCdigit3 * 100 +\
+                  GuTi_PtR->gummei.plmn.MCCdigit2 * 10 +\
+                  GuTi_PtR->gummei.plmn.MCCdigit1);\
+          if (l_ret > 0) {\
+        	l_offset += l_ret;\
+          }  else {\
+        	l_offset = MaXlEn;\
+          }\
+          if (GuTi_PtR->gummei.plmn.MNCdigit1 != 0xf) {\
+              l_ret += snprintf(GuTi_StR + l_offset,MaXlEn-l_offset, "%03u|%04x|%02x|%08x",\
+    	    		  GuTi_PtR->gummei.plmn.MNCdigit3 * 100 +\
+                      GuTi_PtR->gummei.plmn.MNCdigit2 * 10 +\
+                      GuTi_PtR->gummei.plmn.MNCdigit1,\
+                      GuTi_PtR->gummei.MMEgid,\
+                      GuTi_PtR->gummei.MMEcode,\
+                      GuTi_PtR->m_tmsi);\
+          } else {\
+              l_ret += snprintf(GuTi_StR + l_offset,MaXlEn-l_offset, "%02u|%04x|%02x|%08x",\
+                      GuTi_PtR->gummei.plmn.MNCdigit2 * 10 +\
+                      GuTi_PtR->gummei.plmn.MNCdigit1,\
+                      GuTi_PtR->gummei.MMEgid,\
+                      GuTi_PtR->gummei.MMEcode,\
+                      GuTi_PtR->m_tmsi);\
+          }\
+	    }
+
+
+
 
 /* Checks PLMN validity */
 #define PLMN_IS_VALID(plmn) (((plmn).MCCdigit1 &    \
@@ -263,14 +316,14 @@ typedef struct {
  * EPS Mobility Management sublayer
  */
 typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
-        const char *, size_t);
+    const char*, size_t);
 
 typedef enum eps_protocol_discriminator_e {
-    /* Protocol discriminator identifier for EPS Mobility Management */
-    EPS_MOBILITY_MANAGEMENT_MESSAGE =   0x7,
+  /* Protocol discriminator identifier for EPS Mobility Management */
+  EPS_MOBILITY_MANAGEMENT_MESSAGE =   0x7,
 
-    /* Protocol discriminator identifier for EPS Session Management */
-    EPS_SESSION_MANAGEMENT_MESSAGE =    0x2,
+  /* Protocol discriminator identifier for EPS Session Management */
+  EPS_SESSION_MANAGEMENT_MESSAGE =    0x2,
 } eps_protocol_discriminator_t;
 
 /****************************************************************************/

@@ -16,30 +16,28 @@
 /***** structures *****/
 #pragma pack( push, LFDS611_ALIGN_DOUBLE_POINTER )
 
-struct lfds611_queue_state
-{
+struct lfds611_queue_state {
   struct lfds611_queue_element
-    *volatile enqueue[LFDS611_QUEUE_PAC_SIZE],
-    *volatile dequeue[LFDS611_QUEUE_PAC_SIZE];
+      *volatile enqueue[LFDS611_QUEUE_PAC_SIZE],
+      *volatile dequeue[LFDS611_QUEUE_PAC_SIZE];
 
   lfds611_atom_t
-    aba_counter;
+  aba_counter;
 
   struct lfds611_freelist_state
-    *fs;
+      *fs;
 };
 
-struct lfds611_queue_element
-{
+struct lfds611_queue_element {
   // TRD : next in a lfds611_queue requires volatile as it is target of CAS
   struct lfds611_queue_element
-    *volatile next[LFDS611_QUEUE_PAC_SIZE];
+      *volatile next[LFDS611_QUEUE_PAC_SIZE];
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   void
-    *user_data;
+  *user_data;
 };
 
 #pragma pack( pop )
@@ -56,5 +54,6 @@ void lfds611_queue_internal_init_element( struct lfds611_queue_state *qs, struct
 
 void lfds611_queue_internal_queue( struct lfds611_queue_state *qs, struct lfds611_queue_element *qe[LFDS611_QUEUE_PAC_SIZE] );
 
-void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity, enum lfds611_data_structure_validity *lfds611_freelist_validity );
+void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity,
+                                      enum lfds611_data_structure_validity *lfds611_freelist_validity );
 

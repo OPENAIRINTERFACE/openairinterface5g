@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -33,80 +33,77 @@
   COMPANY : EURECOM
   EMAIL   : Lionel.Gauthier@eurecom.fr
  ***************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_IN_SDU_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_IN_SDU_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
 
-#define TRACE_RLC_AM_FREE_SDU
+#define TRACE_RLC_AM_FREE_SDU 0
 //-----------------------------------------------------------------------------
 void rlc_am_free_in_sdu(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const        rlcP,
-                const unsigned int            index_in_bufferP)
-//-----------------------------------------------------------------------------
+  const protocol_ctxt_t* const  ctxt_pP,
+  rlc_am_entity_t *const        rlcP,
+  const unsigned int            index_in_bufferP)
 {
-    if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
-        if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
-            free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
-            rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
-            rlcP->nb_sdu_no_segmented -= 1;
-            rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
-        }
-        rlcP->nb_sdu -= 1;
-        memset(&rlcP->input_sdus[index_in_bufferP], 0, sizeof(rlc_am_tx_sdu_management_t));
-        rlcP->input_sdus[index_in_bufferP].flags.transmitted_successfully = 1;
-
-        if (rlcP->current_sdu_index == index_in_bufferP) {
-            rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
-        }
-        while ((rlcP->current_sdu_index != rlcP->next_sdu_index) &&
-            (rlcP->input_sdus[rlcP->current_sdu_index].flags.transmitted_successfully == 1)) {
-            rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
-        }
+  if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
+    if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
+      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
+      rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
+      rlcP->nb_sdu_no_segmented -= 1;
+      rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
     }
-#ifdef TRACE_RLC_AM_FREE_SDU
-    LOG_D(RLC, "[FRAME %05d][%s][RLC_AM][MOD %u/%u][RB %u][FREE SDU] SDU INDEX %03d current_sdu_index=%d next_sdu_index=%d nb_sdu_no_segmented=%d\n",
-          ctxt_pP->frame,
-          (ctxt_pP->enb_flag) ? "eNB" : "UE",
-          ctxt_pP->enb_module_id,
-          ctxt_pP->ue_module_id,
-          rlcP->rb_id,
-          index_in_bufferP,
-          rlcP->current_sdu_index,
-          rlcP->next_sdu_index,
-          rlcP->nb_sdu_no_segmented);
+
+    rlcP->nb_sdu -= 1;
+    memset(&rlcP->input_sdus[index_in_bufferP], 0, sizeof(rlc_am_tx_sdu_management_t));
+    rlcP->input_sdus[index_in_bufferP].flags.transmitted_successfully = 1;
+
+    if (rlcP->current_sdu_index == index_in_bufferP) {
+      rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
+    }
+
+    while ((rlcP->current_sdu_index != rlcP->next_sdu_index) &&
+           (rlcP->input_sdus[rlcP->current_sdu_index].flags.transmitted_successfully == 1)) {
+      rlcP->current_sdu_index = (rlcP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
+    }
+  }
+
+#if TRACE_RLC_AM_FREE_SDU
+  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[FREE SDU] SDU INDEX %03u current_sdu_index=%u next_sdu_index=%u nb_sdu_no_segmented=%u\n",
+        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlcP),
+        index_in_bufferP,
+        rlcP->current_sdu_index,
+        rlcP->next_sdu_index,
+        rlcP->nb_sdu_no_segmented);
 #endif
 }
 // called when segmentation is done
 //-----------------------------------------------------------------------------
 void
 rlc_am_free_in_sdu_data(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t* const       rlcP,
-                const unsigned int           index_in_bufferP)
-//-----------------------------------------------------------------------------
+  const protocol_ctxt_t* const ctxt_pP,
+  rlc_am_entity_t* const       rlcP,
+  const unsigned int           index_in_bufferP)
 {
-    if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
-        if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
-            free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
-            rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
-            rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
-            rlcP->nb_sdu_no_segmented -= 1;
-        }
+  if (index_in_bufferP <= RLC_AM_SDU_CONTROL_BUFFER_SIZE) {
+    if (rlcP->input_sdus[index_in_bufferP].mem_block != NULL) {
+      free_mem_block(rlcP->input_sdus[index_in_bufferP].mem_block);
+      rlcP->input_sdus[index_in_bufferP].mem_block = NULL;
+      rlcP->input_sdus[index_in_bufferP].sdu_remaining_size = 0;
+      rlcP->nb_sdu_no_segmented -= 1;
     }
+  }
 }
 //-----------------------------------------------------------------------------
 signed int
 rlc_am_in_sdu_is_empty(
-                const protocol_ctxt_t* const ctxt_pP,
-                rlc_am_entity_t       *const rlcP)
-//-----------------------------------------------------------------------------
+  const protocol_ctxt_t* const ctxt_pP,
+  rlc_am_entity_t       *const rlcP)
 {
-    if (rlcP->nb_sdu == 0) {
-            return 1;
-    }
-    return 0;
+  if (rlcP->nb_sdu == 0) {
+    return 1;
+  }
+
+  return 0;
 }

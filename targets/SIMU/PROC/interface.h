@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -32,59 +32,59 @@
 
 
 typedef struct {
-      void*           pointer;
-  } memory_reference_t2;
+  void*           pointer;
+} memory_reference_t2;
 
 
 
 typedef struct {
-         memory_reference_t2  mem_ref;
-          }obj_ref_t2;
+  memory_reference_t2  mem_ref;
+} obj_ref_t2;
 
-typedef struct{
+typedef struct {
   obj_ref_t2 *gm;
-}HO;
+} HO;
 
 
 typedef struct {
-void*           pointer;
-int port;
-int Exec_Msg_Flag;
-int node_id;
-int node_role ;
-int next_slot;
-int last_slot;
-int frame;
-int sub_frame;
-int slot;
-int Exec_FLAG;
-int EResp_FLAG;
-int ue_id;
-}s_t;
+  void*           pointer;
+  int port;
+  int Exec_Msg_Flag;
+  int node_id;
+  int node_role ;
+  int next_slot;
+  int last_slot;
+  int frame;
+  int sub_frame;
+  int slot;
+  int Exec_FLAG;
+  int EResp_FLAG;
+  int ue_id;
+} s_t;
 
 HO Instance[3];
 
 
-typedef struct{
-	int thread_id;
-	int eNB_id;
-	int UE_id;
-	double **s_re;
-	double **s_im;
-	double **r_re;
-	double **r_im;
-	double **r_re0;
-	double **r_im0;
-	struct channel_desc_t *eNB2UE;
-	struct channel_desc_t *UE2eNB;
-	struct node_desc_t *enb_data;
-	struct node_desc_t *ue_data;
-	int *next_slot;
-	int *abstraction_flag;
-	struct LTE_DL_FRAME_PARMS *frame_parms;
-	int **tx_data[3];
-	int **rx_data[3];
-}ch_thread;
+typedef struct {
+  int thread_id;
+  int eNB_id;
+  int UE_id;
+  double **s_re;
+  double **s_im;
+  double **r_re;
+  double **r_im;
+  double **r_re0;
+  double **r_im0;
+  struct channel_desc_t *eNB2UE;
+  struct channel_desc_t *UE2eNB;
+  struct node_desc_t *enb_data;
+  struct node_desc_t *ue_data;
+  int *next_slot;
+  int *abstraction_flag;
+  struct LTE_DL_FRAME_PARMS *frame_parms;
+  int **tx_data[3];
+  int **rx_data[3];
+} ch_thread;
 
 
 #define CHANNEL_PORT 37800

@@ -43,29 +43,29 @@
 #define OSA_SNOW3G_H_
 
 typedef struct osa_snow_3g_context_s {
-	uint32_t LFSR_S0;
-	uint32_t LFSR_S1;
-	uint32_t LFSR_S2;
-	uint32_t LFSR_S3;
-	uint32_t LFSR_S4;
-	uint32_t LFSR_S5;
-	uint32_t LFSR_S6;
-	uint32_t LFSR_S7;
-	uint32_t LFSR_S8;
-	uint32_t LFSR_S9;
-	uint32_t LFSR_S10;
-	uint32_t LFSR_S11;
-	uint32_t LFSR_S12;
-	uint32_t LFSR_S13;
-	uint32_t LFSR_S14;
-	uint32_t LFSR_S15;
+  uint32_t LFSR_S0;
+  uint32_t LFSR_S1;
+  uint32_t LFSR_S2;
+  uint32_t LFSR_S3;
+  uint32_t LFSR_S4;
+  uint32_t LFSR_S5;
+  uint32_t LFSR_S6;
+  uint32_t LFSR_S7;
+  uint32_t LFSR_S8;
+  uint32_t LFSR_S9;
+  uint32_t LFSR_S10;
+  uint32_t LFSR_S11;
+  uint32_t LFSR_S12;
+  uint32_t LFSR_S13;
+  uint32_t LFSR_S14;
+  uint32_t LFSR_S15;
 
-	/* FSM : The Finite State Machine has three 32-bit registers R1, R2 and R3.
-	*/
-	uint32_t FSM_R1;
-	uint32_t FSM_R2;
-	uint32_t FSM_R3;
-}osa_snow_3g_context_t;
+  /* FSM : The Finite State Machine has three 32-bit registers R1, R2 and R3.
+  */
+  uint32_t FSM_R1;
+  uint32_t FSM_R2;
+  uint32_t FSM_R3;
+} osa_snow_3g_context_t;
 
 /* Initialization.
 * Input k[4]: Four 32-bit words making up 128-bit key.

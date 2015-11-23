@@ -23,31 +23,29 @@ void internal_display_test_name( char *test_name )
 void internal_display_test_result( unsigned int number_name_dvs_pairs, ... )
 {
   va_list
-    va;
+  va;
 
   int
-    passed_flag = RAISED;
+  passed_flag = RAISED;
 
   unsigned int
-    loop;
+  loop;
 
   char
-    *name;
+  *name;
 
   enum lfds611_data_structure_validity
-    dvs;
+  dvs;
 
   // TRD : number_name_dvs_pairs can be any value in its range
 
   va_start( va, number_name_dvs_pairs );
 
-  for( loop = 0 ; loop < number_name_dvs_pairs ; loop++ )
-  {
+  for( loop = 0 ; loop < number_name_dvs_pairs ; loop++ ) {
     name = va_arg( va, char * );
     dvs = va_arg( va, enum lfds611_data_structure_validity );
 
-    if( dvs != LFDS611_VALIDITY_VALID )
-    {
+    if( dvs != LFDS611_VALIDITY_VALID ) {
       passed_flag = LOWERED;
       break;
     }
@@ -58,14 +56,12 @@ void internal_display_test_result( unsigned int number_name_dvs_pairs, ... )
   if( passed_flag == RAISED )
     puts( "passed" );
 
-  if( passed_flag == LOWERED )
-  {
+  if( passed_flag == LOWERED ) {
     printf( "failed (" );
 
     va_start( va, number_name_dvs_pairs );
 
-    for( loop = 0 ; loop < number_name_dvs_pairs ; loop++ )
-    {
+    for( loop = 0 ; loop < number_name_dvs_pairs ; loop++ ) {
       name = va_arg( va, char * );
       dvs = va_arg( va, enum lfds611_data_structure_validity );
 
@@ -92,28 +88,27 @@ void internal_display_test_result( unsigned int number_name_dvs_pairs, ... )
 void internal_display_lfds611_data_structure_validity( enum lfds611_data_structure_validity dvs )
 {
   char
-    *string = NULL;
+  *string = NULL;
 
-  switch( dvs )
-  {
-    case LFDS611_VALIDITY_VALID:
-      string = "valid";
+  switch( dvs ) {
+  case LFDS611_VALIDITY_VALID:
+    string = "valid";
     break;
 
-    case LFDS611_VALIDITY_INVALID_LOOP:
-      string = "invalid - loop detected";
+  case LFDS611_VALIDITY_INVALID_LOOP:
+    string = "invalid - loop detected";
     break;
 
-    case LFDS611_VALIDITY_INVALID_MISSING_ELEMENTS:
-      string = "invalid - missing elements";
+  case LFDS611_VALIDITY_INVALID_MISSING_ELEMENTS:
+    string = "invalid - missing elements";
     break;
 
-    case LFDS611_VALIDITY_INVALID_ADDITIONAL_ELEMENTS:
-      string = "invalid - additional elements";
+  case LFDS611_VALIDITY_INVALID_ADDITIONAL_ELEMENTS:
+    string = "invalid - additional elements";
     break;
 
-    case LFDS611_VALIDITY_INVALID_TEST_DATA:
-      string = "invalid - invalid test data";
+  case LFDS611_VALIDITY_INVALID_TEST_DATA:
+    string = "invalid - invalid test data";
     break;
   }
 

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -51,12 +51,11 @@
  * @struct Simple struct to hold only few information
  * @brief The entry in each node is a line from the external mobility file
  */
- 
 
 
 
-typedef struct parsed_data
-{
+
+typedef struct parsed_data {
   int vid;
   int gid;
   int type;
@@ -66,7 +65,7 @@ typedef struct parsed_data
   double speed;
   int visit;
   struct parsed_data* next;
-}node_data;
+} node_data;
 
 
 
@@ -75,29 +74,27 @@ typedef struct parsed_data
  * @brief stores an hash table element for use in the hash table
  */
 
- 
-typedef struct container
-{
+
+typedef struct container {
   int flag;
   int gid;
   node_data* next;
   node_data* end;
   struct container* next_c;
-}node_container;
+} node_container;
 
 
 /**
  * @struct hash_table "hashtable.h"
  * @brief identifies the hashtable for which operations are to be performed
  */
- 
-typedef struct hash_table
-{
+
+typedef struct hash_table {
   int key_len;
   int key_count;
   int ratio;
   node_container **data_store;
-}hash_table_t;
+} hash_table_t;
 
 
 
@@ -105,14 +102,13 @@ typedef struct hash_table
  * @struct struct acts as gateway to hashtable
  * @brief holds vehicle id and initial pointer to the head of the linked list in hastable
  */
- 
 
-typedef struct nodeinfo
-{
+
+typedef struct nodeinfo {
   int vid;
   int g_id;
   struct nodeinfo* next;
-}node_info;
+} node_info;
 
 
 
@@ -121,7 +117,7 @@ typedef struct nodeinfo
  * Function that returns a hash value for a given key and key_len
  * @param key pointer to the key
  * @param key_len length of the key
- *f @param max_key max value of the hash to be returned by the function 
+ *f @param max_key max value of the hash to be returned by the function
  * @returns hash value belonging to [0, max_key)
  */
 uint16_t hash (int *key, int len);

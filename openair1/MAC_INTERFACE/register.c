@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -52,35 +52,37 @@ pointer to the macphy_scheduler() routine*/
 
 
 
-void dummy_macphy_scheduler(uint8_t last_slot) 
+void dummy_macphy_scheduler(uint8_t last_slot)
 {
   //if (last_slot == 0)
   //  mac_xface->frame++;
 
-  msg("[OPENAIR][MAC XFACE] in dummy_macphy_scheduler(): MAC no yet registered!\n"); 
+  msg("[OPENAIR][MAC XFACE] in dummy_macphy_scheduler(): MAC no yet registered!\n");
 
   //#ifdef EMOS
-  //	phy_procedures(last_slot);
+  //  phy_procedures(last_slot);
   //#endif
-	
+
 }
 
 void dummy_macphy_setparams(void *params)
 {
-    msg("[OPENAIR][MAC XFACE] dummy_macphy_setparams(): no MAC registered!\n"); 
+  msg("[OPENAIR][MAC XFACE] dummy_macphy_setparams(): no MAC registered!\n");
 }
 
-void dummy_macphy_init(void ) 
+void dummy_macphy_init(void )
 {
-    msg("[OPENAIR][MAC XFACE] dummy_macphy_init(): no MAC registered!\n"); 
+  msg("[OPENAIR][MAC XFACE] dummy_macphy_init(): no MAC registered!\n");
 }
 
-MAC_xface *mac_register(void macphy_scheduler(uint8_t last_slot), void macphy_setparams(void *),void macphy_init(void ),void mrbch_phy_sync_failure(unsigned char,unsigned char),void chbch_phy_sync_success(unsigned char,unsigned char)) {
+MAC_xface *mac_register(void macphy_scheduler(uint8_t last_slot), void macphy_setparams(void *),void macphy_init(void ),void mrbch_phy_sync_failure(unsigned char,unsigned char),
+                        void chbch_phy_sync_success(unsigned char,unsigned char))
+{
 
   if (openair_daq_vars.mac_registered == 0) {
 
     msg("[OPENAIR][MAC XFACE] Registering new MAC interface at %p, scheduler %p, setparams at %p, init at %p\n",
-	mac_xface,macphy_scheduler,macphy_setparams,macphy_init);
+        mac_xface,macphy_scheduler,macphy_setparams,macphy_init);
     mac_xface->macphy_scheduler = macphy_scheduler;
     mac_xface->macphy_setparams = macphy_setparams;
     mac_xface->macphy_init      = macphy_init;
@@ -89,16 +91,16 @@ MAC_xface *mac_register(void macphy_scheduler(uint8_t last_slot), void macphy_se
 #endif
     openair_daq_vars.mac_registered=1;
     return(mac_xface);
-  }
-  else {
+  } else {
     msg("[OPENAIR][MAC XFACE] MAC interface already registered, aborting ...\n");
     return NULL;
   }
-    
+
 
 }
 
-int mac_unregister(MAC_xface *mac_xface_rx) {
+int mac_unregister(MAC_xface *mac_xface_rx)
+{
 
   if (mac_xface_rx == mac_xface) {
     msg("[OPENAIR][MAC XFACE] Unregistering MAC interface\n");
@@ -107,8 +109,7 @@ int mac_unregister(MAC_xface *mac_xface_rx) {
     mac_xface->macphy_init      = dummy_macphy_init;
     openair_daq_vars.mac_registered=0;
     return(0);
-  }
-  else {
+  } else {
     msg("[OPENAIR][MAC XFACE] Not the right interface descriptor pointer!!!, aborting ...\n");
     return (-1);
   }

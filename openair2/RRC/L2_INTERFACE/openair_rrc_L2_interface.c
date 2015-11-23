@@ -21,20 +21,20 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file l2_interface.c
-* \brief layer 2 interface 
+* \brief layer 2 interface
 * \author Navid Nikaein and Raymond Knopp
 * \date 2011
-* \version 1.0 
+* \version 1.0
 * \company Eurecom
-* \email: navid.nikaein@eurecom.fr 
-*/ 
+* \email: navid.nikaein@eurecom.fr
+*/
 
 #ifdef USER_MODE
 #include <fcntl.h>
@@ -85,82 +85,206 @@
 #endif //CELLULAR
 #include "COMMON/mac_rrc_primitives.h"
 #include "openair_rrc_L2_interface.h"
- 
-/********************************************************************************************************************/
-int8_t mac_rrc_data_req(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t nb_tbP,uint8_t *buffer_pP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP, uint8_t mbsfn_sync_areaP){
-/********************************************************************************************************************/
-  return(mac_rrc_lite_data_req(module_idP,frameP,srb_idP,nb_tbP,buffer_pP,eNB_flagP,eNB_indexP,mbsfn_sync_areaP));
-}   
 
-/********************************************************************************************************************/
-int8_t mac_rrc_data_ind(module_id_t module_idP, frame_t frameP, rb_id_t srb_idP, uint8_t *sduP, sdu_size_t sdu_lenP, eNB_flag_t eNB_flagP, uint8_t eNB_indexP,uint8_t mbsfn_sync_area){
-/********************************************************************************************************************/
-  return(mac_rrc_lite_data_ind(module_idP,frameP,srb_idP,sduP,sdu_lenP,eNB_flagP,eNB_indexP,mbsfn_sync_area));
+//------------------------------------------------------------------------------
+int8_t
+mac_rrc_data_req(
+  const module_id_t module_idP,
+  const int         CC_idP,
+  const frame_t     frameP,
+  const rb_id_t     srb_idP,
+  const uint8_t     nb_tbP,
+  uint8_t* const    buffer_pP,
+  const eNB_flag_t  eNB_flagP,
+  const uint8_t     eNB_indexP,
+  const uint8_t     mbsfn_sync_areaP
+)
+//------------------------------------------------------------------------------
+{
+  return(mac_rrc_lite_data_req(
+           module_idP,
+           CC_idP,
+           frameP,
+           srb_idP,
+           nb_tbP,
+           buffer_pP,
+           eNB_flagP,
+           eNB_indexP,
+           mbsfn_sync_areaP)
+        );
 }
 
-/********************************************************************************************************************/
-void rlcrrc_data_ind(const protocol_ctxt_t* const ctxt_pP, rb_id_t srb_idP, sdu_size_t sdu_lenP,uint8_t *buffer_pP){
-/********************************************************************************************************************/
-  rrc_lite_data_ind(ctxt_pP->enb_module_id,
-                    ctxt_pP->ue_module_id,
-                    ctxt_pP->frame,
-                    ctxt_pP->enb_flag,
+//------------------------------------------------------------------------------
+int8_t
+mac_rrc_data_ind(
+  const module_id_t     module_idP,
+  const int             CC_idP,
+  const frame_t         frameP,
+  const sub_frame_t     subframeP,
+  const rnti_t          rntiP,
+  const rb_id_t         srb_idP,
+  const uint8_t        *sduP,
+  const sdu_size_t      sdu_lenP,
+  const eNB_flag_t      eNB_flagP,
+  const mac_enb_index_t eNB_indexP,
+  const uint8_t         mbsfn_sync_area
+)
+//------------------------------------------------------------------------------
+{
+  return(mac_rrc_lite_data_ind(
+           module_idP,
+           CC_idP,
+           frameP,subframeP,
+           rntiP,
+           srb_idP,
+           sduP,
+           sdu_lenP,
+           eNB_flagP,
+           eNB_indexP,
+           mbsfn_sync_area)
+        );
+}
+
+//------------------------------------------------------------------------------
+void
+rlcrrc_data_ind(
+  const protocol_ctxt_t* const ctxt_pP,
+  const rb_id_t                srb_idP,
+  const sdu_size_t             sdu_lenP,
+  const uint8_t  * const       buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  rrc_lite_data_ind(ctxt_pP,
                     srb_idP,
                     sdu_lenP,
                     buffer_pP);
 }
 
-/********************************************************************************************************************/
-uint8_t pdcp_rrc_data_req(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t rb_idP, mui_t muiP, boolean_t confirmP,
-      sdu_size_t sdu_buffer_sizeP, uint8_t* sdu_buffer_pP, uint8_t modeP) {
-  /********************************************************************************************************************/
-  return rrc_lite_data_req (enb_instP, ue_instP, frameP, eNB_flagP, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu_buffer_pP, modeP);
+//------------------------------------------------------------------------------
+uint8_t
+pdcp_rrc_data_req(
+  const protocol_ctxt_t* const ctxt_pP,
+  const rb_id_t                rb_idP,
+  const mui_t                  muiP,
+  const confirm_t              confirmP,
+  const sdu_size_t             sdu_buffer_sizeP,
+  uint8_t* const               sdu_buffer_pP,
+  const pdcp_transmission_mode_t modeP
+)
+//------------------------------------------------------------------------------
+{
+  return rrc_lite_data_req (
+           ctxt_pP,
+           rb_idP,
+           muiP,
+           confirmP,
+           sdu_buffer_sizeP,
+           sdu_buffer_pP,
+           modeP);
 }
 
-/********************************************************************************************************************/
-void pdcp_rrc_data_ind(module_id_t enb_instP, module_id_t ue_instP, frame_t frameP, eNB_flag_t eNB_flagP, rb_id_t srb_idP, sdu_size_t sdu_sizeP,uint8_t *buffer_pP){
-/********************************************************************************************************************/
-  rrc_lite_data_ind(enb_instP, ue_instP,frameP,eNB_flagP,srb_idP,sdu_sizeP,buffer_pP);
+//------------------------------------------------------------------------------
+void
+pdcp_rrc_data_ind(
+  const protocol_ctxt_t* const ctxt_pP,
+  const rb_id_t                srb_idP,
+  const sdu_size_t             sdu_sizeP,
+  uint8_t              * const buffer_pP
+)
+//------------------------------------------------------------------------------
+{
+  rrc_lite_data_ind(
+    ctxt_pP,
+    srb_idP,
+    sdu_sizeP,
+    buffer_pP);
 }
 
-/********************************************************************************************************************/
-void mac_rrc_meas_ind(module_id_t module_idP,MAC_MEAS_REQ_ENTRY *Meas_entry_pP){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+void
+mac_rrc_meas_ind(
+  const module_id_t module_idP,
+  MAC_MEAS_REQ_ENTRY * const Meas_entry_pP
+)
+//------------------------------------------------------------------------------
+{
   //  mac_rrc_meas_ind(module_idP,Meas_entry_pP);
 }
 
-/********************************************************************************************************************/
-void mac_sync_ind(module_id_t module_idP,uint8_t Status){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+void
+mac_sync_ind(
+  const  module_id_t module_idP,
+  const  uint8_t Status
+)
+//------------------------------------------------------------------------------
+{
   mac_lite_sync_ind(module_idP,Status);
 }
 
-/********************************************************************************************************************/
-void mac_in_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_indexP){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+void
+mac_in_sync_ind(
+  const module_id_t module_idP,
+  const frame_t frameP,
+  const uint16_t eNB_indexP
+)
+//------------------------------------------------------------------------------
+{
   rrc_lite_in_sync_ind(module_idP,frameP,eNB_indexP);
 }
 
-/********************************************************************************************************************/
-void mac_out_of_sync_ind(module_id_t module_idP,frame_t frameP, uint16_t eNB_indexP){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+void
+mac_out_of_sync_ind(
+  const module_id_t module_idP,
+  const frame_t frameP,
+  const uint16_t eNB_indexP
+)
+//------------------------------------------------------------------------------
+{
   rrc_lite_out_of_sync_ind(module_idP,frameP,eNB_indexP);
 }
 
-/********************************************************************************************************************/
-int mac_get_rrc_status(module_id_t module_idP,eNB_flag_t eNB_flagP,uint8_t indexP) {
-/********************************************************************************************************************/
-  return mac_get_rrc_lite_status(module_idP, eNB_flagP, indexP);
+//------------------------------------------------------------------------------
+int
+mac_eNB_get_rrc_status(
+  const module_id_t   module_idP,
+  const rnti_t  rntiP
+)
+//------------------------------------------------------------------------------
+{
+  return mac_eNB_get_rrc_lite_status(module_idP, rntiP);
+}
+//------------------------------------------------------------------------------
+int
+mac_UE_get_rrc_status(
+  const module_id_t module_idP,
+  const uint8_t     sig_indexP
+)
+//------------------------------------------------------------------------------
+{
+  return mac_UE_get_rrc_lite_status(module_idP, sig_indexP);
 }
 
-/********************************************************************************************************************/
-char openair_rrc_ue_init(module_id_t module_idP, unsigned char eNB_indexP){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+char
+openair_rrc_ue_init(
+  const module_id_t   module_idP,
+  const unsigned char eNB_indexP
+)
+//------------------------------------------------------------------------------
+{
   return openair_rrc_lite_ue_init(module_idP, eNB_indexP);
 }
 
-/********************************************************************************************************************/
-char openair_rrc_eNB_init(module_id_t module_idP){
-/********************************************************************************************************************/
+//------------------------------------------------------------------------------
+char
+openair_rrc_eNB_init(
+  const module_id_t module_idP
+)
+//------------------------------------------------------------------------------
+{
   return openair_rrc_lite_eNB_init(module_idP);
 }

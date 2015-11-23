@@ -1,4 +1,4 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 OPENAIR2_TOP = ../../..
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 

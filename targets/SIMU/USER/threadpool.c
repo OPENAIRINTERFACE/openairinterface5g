@@ -71,7 +71,8 @@ threadpool_t *threadpool_create(int thread_count)
   if((pool = (threadpool_t *)malloc(sizeof(threadpool_t))) == NULL) {
     goto err;
   }
-// memset	
+
+  // memset
   /* Initialize */
   pool->thread_count = thread_count;
   job_list_init(&(pool->job_queue));
@@ -79,13 +80,14 @@ threadpool_t *threadpool_create(int thread_count)
 
   /* Allocate thread and task queue */
   pool->threads = (pthread_t *)malloc(sizeof (pthread_t) * thread_count);
-  // memset 
+
+  // memset
   /* Initialize mutex and conditional variable first */
   if((pthread_mutex_init(&(pool->lock), NULL) != 0) ||
-     (pthread_mutex_init(&(pool->sync_lock), NULL) != 0) ||
-     (pthread_cond_init(&(pool->notify), NULL) != 0) ||
-     (pthread_cond_init(&(pool->sync_notify), NULL) != 0) ||
-     (pool->threads == NULL)) {
+      (pthread_mutex_init(&(pool->sync_lock), NULL) != 0) ||
+      (pthread_cond_init(&(pool->notify), NULL) != 0) ||
+      (pthread_cond_init(&(pool->sync_notify), NULL) != 0) ||
+      (pool->threads == NULL)) {
     goto err;
   }
 
@@ -102,10 +104,12 @@ threadpool_t *threadpool_create(int thread_count)
 
   return pool;
 
-  err:
+err:
+
   if(pool) {
     threadpool_free(pool);
   }
+
   return NULL;
 }
 
@@ -169,7 +173,7 @@ int threadpool_destroy(threadpool_t *pool)
 
     /* Wake up all worker threads */
     if((pthread_cond_broadcast(&(pool->notify)) != 0) ||
-       (pthread_mutex_unlock(&(pool->lock)) != 0)) {
+        (pthread_mutex_unlock(&(pool->lock)) != 0)) {
       err = threadpool_lock_failure;
       break;
     }
@@ -190,6 +194,7 @@ int threadpool_destroy(threadpool_t *pool)
   if(!err) {
     threadpool_free(pool);
   }
+
   return err;
 }
 
@@ -205,14 +210,15 @@ int threadpool_free(threadpool_t *pool)
     job_list_free (&(pool->job_queue));
 
     /* Because we allocate pool->threads after initializing the
-mutex and condition variable, we're sure they're
-initialized. Let's lock the mutex just in case. */
+    mutex and condition variable, we're sure they're
+    initialized. Let's lock the mutex just in case. */
     pthread_mutex_lock(&(pool->lock));
     pthread_mutex_destroy(&(pool->lock));
     pthread_mutex_destroy(&(pool->sync_lock));
     pthread_cond_destroy(&(pool->notify));
     pthread_cond_destroy(&(pool->sync_notify));
   }
+
   free(pool);
   return 0;
 }
@@ -269,28 +275,36 @@ void *threadpool_thread(void *threadpool)
         update_otg_eNB((job_elt->job).nid, (unsigned int) oai_emulation.info.time_ms);
       else
         update_otg_UE((job_elt->job).nid, (unsigned int) oai_emulation.info.time_ms);
+
       break;
+
     case JT_PDCP://do not forget adding flag enb
       if ((job_elt->job).eNB_flag)
         pdcp_run(frame, 1, 0, (job_elt->job).nid);
       else
         pdcp_run(frame, 0, (job_elt->job).nid, 0);
+
       break;
+
     case JT_PHY_MAC:
       if ((job_elt->job).eNB_flag)
         phy_procedures_eNB_lte ((job_elt->job).last_slot, (job_elt->job).next_slot, PHY_vars_eNB_g[(job_elt->job).nid], abstraction_flag);
       else
         phy_procedures_UE_lte ((job_elt->job).last_slot, (job_elt->job).next_slot, PHY_vars_UE_g[(job_elt->job).nid], 0, abstraction_flag, normal_txrx);
-        ue_data[(job_elt->job).nid]->tx_power_dBm = PHY_vars_UE_g[(job_elt->job).nid]->tx_power_dBm;
+
+      ue_data[(job_elt->job).nid]->tx_power_dBm = PHY_vars_UE_g[(job_elt->job).nid]->tx_power_dBm;
       break;
+
     case JT_INIT_SYNC:
       initial_sync(PHY_vars_UE_g[(job_elt->job).nid],normal_txrx);
       break;
+
     case JT_DL:
       do_DL_sig(signal_buffers_g[(job_elt->job).nid].r_re0,signal_buffers_g[(job_elt->job).nid].r_im0,signal_buffers_g[(job_elt->job).nid].r_re,signal_buffers_g[(job_elt->job).nid].r_im,
                 signal_buffers_g[(job_elt->job).nid].s_re,signal_buffers_g[(job_elt->job).nid].s_im,eNB2UE,enb_data,ue_data,(job_elt->job).next_slot,abstraction_flag,
                 frame_parms,(job_elt->job).nid);
       break;
+
     case JT_UL:
       do_UL_sig(signal_buffers_g[(job_elt->job).nid].r_re0,signal_buffers_g[(job_elt->job).nid].r_im0,signal_buffers_g[(job_elt->job).nid].r_re,signal_buffers_g[(job_elt->job).nid].r_im,
                 signal_buffers_g[(job_elt->job).nid].s_re,signal_buffers_g[(job_elt->job).nid].s_im,UE2eNB,enb_data,ue_data,(job_elt->job).next_slot,abstraction_flag,
@@ -305,8 +319,10 @@ void *threadpool_thread(void *threadpool)
     }
 
     pool->active--;
+
     if ((pool->active <= 0) && ((pool->job_queue).nb_elements == 0)) {
-        pool->active=0;
+      pool->active=0;
+
       if(pthread_cond_signal(&(pool->sync_notify)) != 0) {
         printf("Condition Error \n");
         break;

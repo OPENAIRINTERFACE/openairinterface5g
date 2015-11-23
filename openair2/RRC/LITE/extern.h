@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -32,10 +32,10 @@
 * \brief rrc external vars
 * \author Navid Nikaein and Raymond Knopp
 * \date 2011
-* \version 1.0 
+* \version 1.0
 * \company Eurecom
 * \email: navid.nikaein@eurecom.fr
-*/ 
+*/
 
 #ifndef __OPENAIR_RRC_EXTERN_H__
 #define __OPENAIR_RRC_EXTERN_H__
@@ -55,7 +55,7 @@ extern int S_rrc;
 #else
 #include "LAYER2/MAC/extern.h"
 #ifndef NO_RRM
-extern sock_rrm_t S_rrc; 
+extern sock_rrm_t S_rrc;
 #endif
 #endif
 
@@ -83,7 +83,7 @@ extern unsigned char NB_INST;
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned short NODE_ID[1];
-extern void* bigphys_malloc(int); 
+extern void* bigphys_malloc(int);
 #endif
 
 
@@ -101,7 +101,7 @@ extern uint16_t T310[8];
 extern uint16_t N310[8];
 extern uint16_t N311[8];
 extern uint32_t T304[8];
-extern uint32_t timeToTrigger_ms[16]; 
+extern uint32_t timeToTrigger_ms[16];
 extern float RSRP_meas_mapping[100];
 extern float RSRQ_meas_mapping[33];
 

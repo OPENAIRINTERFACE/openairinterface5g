@@ -1,31 +1,31 @@
-/*******************************************************************************
-    OpenAirInterface 
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Copyright (c) 2015, EURECOM (www.eurecom.fr)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ */
 
 /** @defgroup _intertask_interface_impl_ Intertask Interface Mechanisms
  * Implementation
@@ -62,41 +62,41 @@ typedef unsigned long message_number_t;
 #define MESSAGE_NUMBER_SIZE (sizeof(unsigned long))
 
 typedef enum message_priorities_e {
-    MESSAGE_PRIORITY_MAX       = 100,
-    MESSAGE_PRIORITY_MAX_LEAST = 85,
-    MESSAGE_PRIORITY_MED_PLUS  = 70,
-    MESSAGE_PRIORITY_MED       = 55,
-    MESSAGE_PRIORITY_MED_LEAST = 40,
-    MESSAGE_PRIORITY_MIN_PLUS  = 25,
-    MESSAGE_PRIORITY_MIN       = 10,
+  MESSAGE_PRIORITY_MAX       = 100,
+  MESSAGE_PRIORITY_MAX_LEAST = 85,
+  MESSAGE_PRIORITY_MED_PLUS  = 70,
+  MESSAGE_PRIORITY_MED       = 55,
+  MESSAGE_PRIORITY_MED_LEAST = 40,
+  MESSAGE_PRIORITY_MIN_PLUS  = 25,
+  MESSAGE_PRIORITY_MIN       = 10,
 } message_priorities_t;
 
 typedef struct message_info_s {
-    task_id_t id;
-    message_priorities_t priority;
-    /* Message payload size */
-    MessageHeaderSize size;
-    /* Printable name */
-    const char * const name;
+  task_id_t id;
+  message_priorities_t priority;
+  /* Message payload size */
+  MessageHeaderSize size;
+  /* Printable name */
+  const char * const name;
 } message_info_t;
 
 typedef enum task_priorities_e {
-    TASK_PRIORITY_MAX       = 100,
-    TASK_PRIORITY_MAX_LEAST = 85,
-    TASK_PRIORITY_MED_PLUS  = 70,
-    TASK_PRIORITY_MED       = 55,
-    TASK_PRIORITY_MED_LEAST = 40,
-    TASK_PRIORITY_MIN_PLUS  = 25,
-    TASK_PRIORITY_MIN       = 10,
+  TASK_PRIORITY_MAX       = 100,
+  TASK_PRIORITY_MAX_LEAST = 85,
+  TASK_PRIORITY_MED_PLUS  = 70,
+  TASK_PRIORITY_MED       = 55,
+  TASK_PRIORITY_MED_LEAST = 40,
+  TASK_PRIORITY_MIN_PLUS  = 25,
+  TASK_PRIORITY_MIN       = 10,
 } task_priorities_t;
 
 typedef struct task_info_s {
-    thread_id_t thread;
-    task_id_t   parent_task;
-    task_priorities_t priority;
-    unsigned int queue_size;
-    /* Printable name */
-    const char * const name;
+  thread_id_t thread;
+  task_id_t   parent_task;
+  task_priorities_t priority;
+  unsigned int queue_size;
+  /* Printable name */
+  const char * const name;
 } task_info_t;
 
 /** \brief Update the itti LTE time reference for messages
@@ -205,8 +205,8 @@ const char *itti_get_task_name(task_id_t task_id);
  * @returns NULL in case of failure or newly allocated mesage ref
  **/
 MessageDef *itti_alloc_new_message(
-    task_id_t         origin_task_id,
-    MessagesIds       message_id);
+  task_id_t         origin_task_id,
+  MessagesIds       message_id);
 
 /** \brief Alloc and memset(0) a new itti message.
  * \param origin_task_id Task ID of the sending task
@@ -215,9 +215,9 @@ MessageDef *itti_alloc_new_message(
  * @returns NULL in case of failure or newly allocated mesage ref
  **/
 MessageDef *itti_alloc_new_message_sized(
-    task_id_t         origin_task_id,
-    MessagesIds       message_id,
-    MessageHeaderSize size);
+  task_id_t         origin_task_id,
+  MessagesIds       message_id,
+  MessageHeaderSize size);
 
 /** \brief handle signals and wait for all threads to join when the process complete.
  * This function should be called from the main thread after having created all ITTI tasks.

@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -49,11 +49,15 @@
 
 //#define DEBUG_ULSCH_MODULATION
 
-__m128i dft_in128[4][1200],dft_in128[4][1200],dft_out128[4][1200],dft_out128[4][1200];
-
 #ifndef OFDMA_ULSCH
-void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
+void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
+{
 
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i dft_in128[4][1200],dft_out128[4][1200];
+#elif defined(__arm__)
+  int16x8_t dft_in128[4][1200],dft_out128[4][1200];
+#endif
   uint32_t *dft_in0=(uint32_t*)dft_in128[0],*dft_out0=(uint32_t*)dft_out128[0];
   uint32_t *dft_in1=(uint32_t*)dft_in128[1],*dft_out1=(uint32_t*)dft_out128[1];
   uint32_t *dft_in2=(uint32_t*)dft_in128[2],*dft_out2=(uint32_t*)dft_out128[2];
@@ -63,8 +67,11 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
 
   uint32_t *z0,*z1,*z2,*z3,*z4,*z5,*z6,*z7,*z8,*z9,*z10,*z11;
   uint32_t i,ip;
+#if defined(__x86_64__) || defined(__i386__)
   __m128i norm128;
-
+#elif defined(__arm__)
+  int16x8_t norm128;
+#endif
   //  msg("Doing lte_dft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   d0 = (uint32_t *)d;
@@ -72,7 +79,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
   d2 = d1+Msc_PUSCH;
   d3 = d2+Msc_PUSCH;
   d4 = d3+Msc_PUSCH;
-  d5 = d4+Msc_PUSCH;  
+  d5 = d4+Msc_PUSCH;
   d6 = d5+Msc_PUSCH;
   d7 = d6+Msc_PUSCH;
   d8 = d7+Msc_PUSCH;
@@ -81,7 +88,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
   d11 = d10+Msc_PUSCH;
 
   //  msg("symbol 0 (d0 %p, d %p)\n",d0,d);
-  for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
+  for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
     dft_in0[ip]   =  d0[i];
     dft_in0[ip+1] =  d1[i];
     dft_in0[ip+2] =  d2[i];
@@ -110,178 +117,219 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
 
     /*
     dft12f(&((__m128i *)dft_in0)[0],&((__m128i *)dft_in0)[1],&((__m128i *)dft_in0)[2],&((__m128i *)dft_in0)[3],&((__m128i *)dft_in0)[4],&((__m128i *)dft_in0)[5],&((__m128i *)dft_in0)[6],&((__m128i *)dft_in0)[7],&((__m128i *)dft_in0)[8],&((__m128i *)dft_in0)[9],&((__m128i *)dft_in0)[10],&((__m128i *)dft_in0)[11],
-	  &((__m128i *)dft_out0)[0],&((__m128i *)dft_out0)[1],&((__m128i *)dft_out0)[2],&((__m128i *)dft_out0)[3],&((__m128i *)dft_out0)[4],&((__m128i *)dft_out0)[5],&((__m128i *)dft_out0)[6],&((__m128i *)dft_out0)[7],&((__m128i *)dft_out0)[8],&((__m128i *)dft_out0)[9],&((__m128i *)dft_out0)[10],&((__m128i *)dft_out0)[11]);
+    &((__m128i *)dft_out0)[0],&((__m128i *)dft_out0)[1],&((__m128i *)dft_out0)[2],&((__m128i *)dft_out0)[3],&((__m128i *)dft_out0)[4],&((__m128i *)dft_out0)[5],&((__m128i *)dft_out0)[6],&((__m128i *)dft_out0)[7],&((__m128i *)dft_out0)[8],&((__m128i *)dft_out0)[9],&((__m128i *)dft_out0)[10],&((__m128i *)dft_out0)[11]);
 
     dft12f(&((__m128i *)dft_in1)[0],&((__m128i *)dft_in1)[1],&((__m128i *)dft_in1)[2],&((__m128i *)dft_in1)[3],&((__m128i *)dft_in1)[4],&((__m128i *)dft_in1)[5],&((__m128i *)dft_in1)[6],&((__m128i *)dft_in1)[7],&((__m128i *)dft_in1)[8],&((__m128i *)dft_in1)[9],&((__m128i *)dft_in1)[10],&((__m128i *)dft_in1)[11],
-	  &((__m128i *)dft_out1)[0],&((__m128i *)dft_out1)[1],&((__m128i *)dft_out1)[2],&((__m128i *)dft_out1)[3],&((__m128i *)dft_out1)[4],&((__m128i *)dft_out1)[5],&((__m128i *)dft_out1)[6],&((__m128i *)dft_out1)[7],&((__m128i *)dft_out1)[8],&((__m128i *)dft_out1)[9],&((__m128i *)dft_out1)[10],&((__m128i *)dft_out1)[11]);
+    &((__m128i *)dft_out1)[0],&((__m128i *)dft_out1)[1],&((__m128i *)dft_out1)[2],&((__m128i *)dft_out1)[3],&((__m128i *)dft_out1)[4],&((__m128i *)dft_out1)[5],&((__m128i *)dft_out1)[6],&((__m128i *)dft_out1)[7],&((__m128i *)dft_out1)[8],&((__m128i *)dft_out1)[9],&((__m128i *)dft_out1)[10],&((__m128i *)dft_out1)[11]);
 
     dft12f(&((__m128i *)dft_in2)[0],&((__m128i *)dft_in2)[1],&((__m128i *)dft_in2)[2],&((__m128i *)dft_in2)[3],&((__m128i *)dft_in2)[4],&((__m128i *)dft_in2)[5],&((__m128i *)dft_in2)[6],&((__m128i *)dft_in2)[7],&((__m128i *)dft_in2)[8],&((__m128i *)dft_in2)[9],&((__m128i *)dft_in2)[10],&((__m128i *)dft_in2)[11],
-	  &((__m128i *)dft_out2)[0],&((__m128i *)dft_out2)[1],&((__m128i *)dft_out2)[2],&((__m128i *)dft_out2)[3],&((__m128i *)dft_out2)[4],&((__m128i *)dft_out2)[5],&((__m128i *)dft_out2)[6],&((__m128i *)dft_out2)[7],&((__m128i *)dft_out2)[8],&((__m128i *)dft_out2)[9],&((__m128i *)dft_out2)[10],&((__m128i *)dft_out2)[11]);
+    &((__m128i *)dft_out2)[0],&((__m128i *)dft_out2)[1],&((__m128i *)dft_out2)[2],&((__m128i *)dft_out2)[3],&((__m128i *)dft_out2)[4],&((__m128i *)dft_out2)[5],&((__m128i *)dft_out2)[6],&((__m128i *)dft_out2)[7],&((__m128i *)dft_out2)[8],&((__m128i *)dft_out2)[9],&((__m128i *)dft_out2)[10],&((__m128i *)dft_out2)[11]);
     */
+#if defined(__x86_64__) || defined(__i386__)
     norm128 = _mm_set1_epi16(9459);
-    
-    for (i=0;i<12;i++) {
+#elif defined(__arm__)
+    norm128 = vdupq_n_s16(9459);
+#endif
+    for (i=0; i<12; i++) {
+#if defined(__x86_64__) || defined(__i386__)
       ((__m128i*)dft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out0)[i],norm128),1);
       ((__m128i*)dft_out1)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out1)[i],norm128),1);
       ((__m128i*)dft_out2)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out2)[i],norm128),1);
+#elif defined(__arm__)
+      ((int16x8_t*)dft_out0)[i] = vqdmulhq_s16(((int16x8_t*)dft_out0)[i],norm128);
+      ((int16x8_t*)dft_out1)[i] = vqdmulhq_s16(((int16x8_t*)dft_out1)[i],norm128);
+      ((int16x8_t*)dft_out2)[i] = vqdmulhq_s16(((int16x8_t*)dft_out2)[i],norm128);
+#endif
     }
 
     break;
+
   case 24:
     dft24((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft24((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft24((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break;                  
-  case 36:                  
+    break;
+
+  case 36:
     dft36((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft36((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft36((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break;                  
-  case 48:                  
+    break;
+
+  case 48:
     dft48((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft48((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft48((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break;                  
-  case 60:                  
+    break;
+
+  case 60:
     dft60((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft60((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft60((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break;                  
-  case 72:                  
+    break;
+
+  case 72:
     dft72((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft72((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft72((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break;                  
-  case 96:                  
+    break;
+
+  case 96:
     dft96((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft96((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft96((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 108:
     dft108((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft108((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft108((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 120:
     dft120((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft120((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft120((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 144:
     dft144((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft144((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft144((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 180:
     dft180((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft180((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft180((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 192:
     dft192((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft192((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft192((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 216:
     dft216((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft216((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft216((int16_t*)dft_in2,(int16_t*)dft_out2,1);
-    break; 
+    break;
+
   case 240:
     dft240((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft240((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft240((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 288:
     dft288((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft288((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft288((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 300:
     dft300((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft300((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft300((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 324:
     dft324((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft324((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft324((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 360:
     dft360((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft360((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft360((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 384:
     dft384((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft384((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft384((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 432:
     dft432((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft432((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft432((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 480:
     dft480((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft480((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft480((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 540:
     dft540((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft540((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft540((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 576:
     dft576((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft576((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft576((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 600:
     dft600((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft600((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft600((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 648:
     dft648((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft648((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft648((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 720:
     dft720((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft720((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft720((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 864:
     dft864((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft864((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft864((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 900:
     dft900((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft900((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft900((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 960:
     dft960((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft960((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft960((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 972:
     dft972((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft972((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft972((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 1080:
     dft1080((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft1080((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft1080((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 1152:
     dft1152((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft1152((int16_t*)dft_in1,(int16_t*)dft_out1,1);
     dft1152((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
+
   case 1200:
     dft1200((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft1200((int16_t*)dft_in1,(int16_t*)dft_out1,1);
@@ -294,41 +342,44 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb) {
   z2 = z1+Msc_PUSCH;
   z3 = z2+Msc_PUSCH;
   z4 = z3+Msc_PUSCH;
-  z5 = z4+Msc_PUSCH;  
+  z5 = z4+Msc_PUSCH;
   z6 = z5+Msc_PUSCH;
   z7 = z6+Msc_PUSCH;
   z8 = z7+Msc_PUSCH;
   z9 = z8+Msc_PUSCH;
   z10 = z9+Msc_PUSCH;
   z11 = z10+Msc_PUSCH;
+
   //  msg("symbol0 (dft)\n");
-  for (i=0,ip=0;i<Msc_PUSCH;i++,ip+=4) {
-    z0[i]     = dft_out0[ip]; 
+  for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
+    z0[i]     = dft_out0[ip];
     //    msg("%d,%d,",((short*)&z0[i])[0],((short*)&z0[i])[1]);
-    z1[i]     = dft_out0[ip+1]; 
-    z2[i]     = dft_out0[ip+2]; 
-    z3[i]     = dft_out0[ip+3]; 
-    z4[i]     = dft_out1[ip+0]; 
-    z5[i]     = dft_out1[ip+1]; 
-    z6[i]     = dft_out1[ip+2]; 
-    z7[i]     = dft_out1[ip+3]; 
-    z8[i]     = dft_out2[ip]; 
-    z9[i]     = dft_out2[ip+1]; 
-    z10[i]    = dft_out2[ip+2]; 
-    z11[i]    = dft_out2[ip+3]; 
+    z1[i]     = dft_out0[ip+1];
+    z2[i]     = dft_out0[ip+2];
+    z3[i]     = dft_out0[ip+3];
+    z4[i]     = dft_out1[ip+0];
+    z5[i]     = dft_out1[ip+1];
+    z6[i]     = dft_out1[ip+2];
+    z7[i]     = dft_out1[ip+3];
+    z8[i]     = dft_out2[ip];
+    z9[i]     = dft_out2[ip+1];
+    z10[i]    = dft_out2[ip+2];
+    z11[i]    = dft_out2[ip+3];
     //    msg("out dft%d %d: %d,%d,%d,%d,%d,%d,%d,%d\n",Msc_PUSCH,ip,z0[i],z1[i],z2[i],z3[i],z4[i],z5[i],z6[i],z7[i]);
 
   }
+
   //  msg("\n");
 }
 
 #endif
 void ulsch_modulation(mod_sym_t **txdataF,
-		      short amp,
-		      uint32_t frame,
-		      uint32_t subframe,
-		      LTE_DL_FRAME_PARMS *frame_parms,
-		      LTE_UE_ULSCH_t *ulsch) {
+                      short amp,
+                      uint32_t frame,
+                      uint32_t subframe,
+                      LTE_DL_FRAME_PARMS *frame_parms,
+                      LTE_UE_ULSCH_t *ulsch)
+{
 
   uint8_t qam64_table_offset_re = 0;
   uint8_t qam64_table_offset_im = 0;
@@ -347,7 +398,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   uint16_t first_rb;
   uint16_t nb_rb;
   int G;
-  
+
   uint32_t x1, x2, s=0;
   uint8_t c;
 
@@ -377,7 +428,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
     return;
   }
 
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION, VCD_FUNCTION_IN);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION, VCD_FUNCTION_IN);
 
   Q_m = get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs);
 
@@ -396,27 +447,28 @@ void ulsch_modulation(mod_sym_t **txdataF,
   //msg("ulsch bits: ");
   s = lte_gold_generic(&x1, &x2, 1);
   k=0;
+
   //printf("G %d\n",G);
-  for (i=0;i<(1+(G>>5));i++) {
-    for (j=0;j<32;j++,k++) {
+  for (i=0; i<(1+(G>>5)); i++) {
+    for (j=0; j<32; j++,k++) {
       c = (uint8_t)((s>>j)&1);
 
       if (ulsch->h[k] == PUSCH_x) {
-	//	msg("i %d: PUSCH_x\n",i);
-	ulsch->b_tilde[k] = 1;
+        //  msg("i %d: PUSCH_x\n",i);
+        ulsch->b_tilde[k] = 1;
+      } else if (ulsch->h[k] == PUSCH_y) {
+        //  msg("i %d: PUSCH_y\n",i);
+        ulsch->b_tilde[k] = ulsch->b_tilde[k-1];
+      } else {
+        ulsch->b_tilde[k] = (ulsch->h[k]+c)&1;
+        //  msg("i %d : %d (h %d c %d)\n", (i<<5)+j,ulsch->b_tilde[k],ulsch->h[k],c);
       }
-      else if (ulsch->h[k] == PUSCH_y) {
-	//	msg("i %d: PUSCH_y\n",i);
-	ulsch->b_tilde[k] = ulsch->b_tilde[k-1];
-      }
-      else {
-	ulsch->b_tilde[k] = (ulsch->h[k]+c)&1;  
-	//	msg("i %d : %d (h %d c %d)\n", (i<<5)+j,ulsch->b_tilde[k],ulsch->h[k],c);
-      }
-      
+
     }
+
     s = lte_gold_generic(&x1, &x2, 0);
   }
+
   //msg("\n");
 
 
@@ -429,295 +481,304 @@ void ulsch_modulation(mod_sym_t **txdataF,
 
   if(ulsch->cooperation_flag == 2)
     // For Distributed Alamouti Scheme in Collabrative Communication
-    {
-      for (i=0,j=Q_m;i<Msymb;i+=2,j+=2*Q_m) {
+  {
+    for (i=0,j=Q_m; i<Msymb; i+=2,j+=2*Q_m) {
 
-	switch (Q_m) {
+      switch (Q_m) {
 
-	case 2:
-
-
-	  //UE1, -x1*
-	  ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
-	  ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  //      if (i<Msc_PUSCH)
-	  //	msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
-
-	  // UE1, x0*
-	  ((int16_t*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((int16_t*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
-
-	  break;
-
-	case 4:
+      case 2:
 
 
-	  //UE1,-x1*
-	  qam16_table_offset_re = 0;
-	  qam16_table_offset_im = 0;
+        //UE1, -x1*
+        ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (gain_lin_QPSK) : -gain_lin_QPSK;
+        ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+        //      if (i<Msc_PUSCH)
+        //  msg("input %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
 
-	  if (ulsch->b_tilde[j] == 1)
-	    qam16_table_offset_re+=2;
+        // UE1, x0*
+        ((int16_t*)&ulsch->d[i+1])[0] = (ulsch->b_tilde[j-2] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+        ((int16_t*)&ulsch->d[i+1])[1] = (ulsch->b_tilde[j-1] == 1)? (gain_lin_QPSK) : -gain_lin_QPSK;
 
-	  if (ulsch->b_tilde[j+1] == 1)
-	    qam16_table_offset_im+=2;
-      
-      
+        break;
 
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam16_table_offset_re+=1;
+      case 4:
 
-	  if (ulsch->b_tilde[j+3] == 1)
-	    qam16_table_offset_im+=1;
 
-      
-	  ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        //UE1,-x1*
+        qam16_table_offset_re = 0;
+        qam16_table_offset_im = 0;
 
-	  //UE1,x0*
-	  qam16_table_offset_re = 0;
-	  qam16_table_offset_im = 0;
+        if (ulsch->b_tilde[j] == 1)
+          qam16_table_offset_re+=2;
 
-	  if (ulsch->b_tilde[j-4] == 1)
-	    qam16_table_offset_re+=2;
-
-	  if (ulsch->b_tilde[j-3] == 1)
-	    qam16_table_offset_im+=2;
-      
-      
-	  if (ulsch->b_tilde[j-2] == 1)
-	    qam16_table_offset_re+=1;
-
-	  if (ulsch->b_tilde[j-1] == 1)
-	    qam16_table_offset_im+=1;
-
-      
-	  //	  ((int16_t*)&ulsch->d[i+1])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-	  //	  ((int16_t*)&ulsch->d[i+1])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-	  ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-
-      
-	  break;
-     
-	case 6:
+        if (ulsch->b_tilde[j+1] == 1)
+          qam16_table_offset_im+=2;
 
 
 
-	  //UE1,-x1*FPGA_UE
-	  qam64_table_offset_re = 0;
-	  qam64_table_offset_im = 0;
+        if (ulsch->b_tilde[j+2] == 1)
+          qam16_table_offset_re+=1;
 
-	  if (ulsch->b_tilde[j] == 1)
-	    qam64_table_offset_re+=4;
-      
-	  if (ulsch->b_tilde[j+1] == 1)
-	    qam64_table_offset_im+=4;
-      
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam64_table_offset_re+=2;
-      
-
-	  if (ulsch->b_tilde[j+3] == 1)
-	    qam64_table_offset_im+=2;
-      
-	  if (ulsch->b_tilde[j+4] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  if (ulsch->b_tilde[j+5] == 1)
-	    qam64_table_offset_im+=1;
-      
-      
-	  ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-
-	  //UE1,x0*
-	  qam64_table_offset_re = 0;
-	  qam64_table_offset_im = 0;
-
-	  if (ulsch->b_tilde[j-6] == 1)
-	    qam64_table_offset_re+=4;
-      
-	  if (ulsch->b_tilde[j-5] == 1)
-	    qam64_table_offset_im+=4;
-      
-	  if (ulsch->b_tilde[j-4] == 1)
-	    qam64_table_offset_re+=2;
-      
-
-	  if (ulsch->b_tilde[j-3] == 1)
-	    qam64_table_offset_im+=2;
-      
-	  if (ulsch->b_tilde[j-2] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  if (ulsch->b_tilde[j-1] == 1)
-	    qam64_table_offset_im+=1;
-      
-      
-	  ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
-
-	  break;
-
-	}//switch
-      }//for
-    }//cooperation_flag == 2
-  else
-    {
-      for (i=0,j=0;i<Msymb;i++,j+=Q_m) {
-
-	switch (Q_m) {
-
-	case 2:
-	  // TODO: this has to be updated!!!
-
-	  ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
-	  //        if (i<Msc_PUSCH)
-	  //	  msg("input %d/%d Msc_PUSCH %d (%p): %d,%d\n", i,Msymb,Msc_PUSCH,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
-
-	  break;
-
-	case 4:
-
-	  qam16_table_offset_re = 0;
-	  qam16_table_offset_im = 0;
-
-	  if (ulsch->b_tilde[j] == 1)
-	    qam16_table_offset_re+=2;
-
-	  if (ulsch->b_tilde[j+1] == 1)
-	    qam16_table_offset_im+=2;
-      
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam16_table_offset_re+=1;
-
-	  if (ulsch->b_tilde[j+3] == 1)
-	    qam16_table_offset_im+=1;
-
-      
-	  ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
-	  //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
-	  break;
-     
-	case 6:
+        if (ulsch->b_tilde[j+3] == 1)
+          qam16_table_offset_im+=1;
 
 
-	  qam64_table_offset_re = 0;
-	  qam64_table_offset_im = 0;
+        ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
 
-	  if (ulsch->b_tilde[j] == 1)
-	    qam64_table_offset_re+=4;
-      
-	  if (ulsch->b_tilde[j+1] == 1)
-	    qam64_table_offset_im+=4;
-      
-	  if (ulsch->b_tilde[j+2] == 1)
-	    qam64_table_offset_re+=2;
-      
-	  if (ulsch->b_tilde[j+3] == 1)
-	    qam64_table_offset_im+=2;
-      
-	  if (ulsch->b_tilde[j+4] == 1)
-	    qam64_table_offset_re+=1;
-      
-	  if (ulsch->b_tilde[j+5] == 1)
-	    qam64_table_offset_im+=1;
-      
-      
-	  ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-	  ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+        //UE1,x0*
+        qam16_table_offset_re = 0;
+        qam16_table_offset_im = 0;
 
-	  break;
+        if (ulsch->b_tilde[j-4] == 1)
+          qam16_table_offset_re+=2;
 
-	}
+        if (ulsch->b_tilde[j-3] == 1)
+          qam16_table_offset_im+=2;
+
+
+        if (ulsch->b_tilde[j-2] == 1)
+          qam16_table_offset_re+=1;
+
+        if (ulsch->b_tilde[j-1] == 1)
+          qam16_table_offset_im+=1;
+
+
+        //    ((int16_t*)&ulsch->d[i+1])[0]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        //    ((int16_t*)&ulsch->d[i+1])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+
+
+        break;
+
+      case 6:
+
+
+
+        //UE1,-x1*FPGA_UE
+        qam64_table_offset_re = 0;
+        qam64_table_offset_im = 0;
+
+        if (ulsch->b_tilde[j] == 1)
+          qam64_table_offset_re+=4;
+
+        if (ulsch->b_tilde[j+1] == 1)
+          qam64_table_offset_im+=4;
+
+        if (ulsch->b_tilde[j+2] == 1)
+          qam64_table_offset_re+=2;
+
+
+        if (ulsch->b_tilde[j+3] == 1)
+          qam64_table_offset_im+=2;
+
+        if (ulsch->b_tilde[j+4] == 1)
+          qam64_table_offset_re+=1;
+
+        if (ulsch->b_tilde[j+5] == 1)
+          qam64_table_offset_im+=1;
+
+
+        ((int16_t*)&ulsch->d[i])[0]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+
+        //UE1,x0*
+        qam64_table_offset_re = 0;
+        qam64_table_offset_im = 0;
+
+        if (ulsch->b_tilde[j-6] == 1)
+          qam64_table_offset_re+=4;
+
+        if (ulsch->b_tilde[j-5] == 1)
+          qam64_table_offset_im+=4;
+
+        if (ulsch->b_tilde[j-4] == 1)
+          qam64_table_offset_re+=2;
+
+
+        if (ulsch->b_tilde[j-3] == 1)
+          qam64_table_offset_im+=2;
+
+        if (ulsch->b_tilde[j-2] == 1)
+          qam64_table_offset_re+=1;
+
+        if (ulsch->b_tilde[j-1] == 1)
+          qam64_table_offset_im+=1;
+
+
+        ((int16_t*)&ulsch->d[i+1])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i+1])[1]=-(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+
+        break;
+
+      }//switch
+    }//for
+  }//cooperation_flag == 2
+  else {
+    for (i=0,j=0; i<Msymb; i++,j+=Q_m) {
+
+      switch (Q_m) {
+
+      case 2:
+        // TODO: this has to be updated!!!
+
+        ((int16_t*)&ulsch->d[i])[0] = (ulsch->b_tilde[j] == 1)  ? (-gain_lin_QPSK) : gain_lin_QPSK;
+        ((int16_t*)&ulsch->d[i])[1] = (ulsch->b_tilde[j+1] == 1)? (-gain_lin_QPSK) : gain_lin_QPSK;
+        //        if (i<Msc_PUSCH)
+        //    msg("input %d/%d Msc_PUSCH %d (%p): %d,%d\n", i,Msymb,Msc_PUSCH,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
+
+        break;
+
+      case 4:
+
+        qam16_table_offset_re = 0;
+        qam16_table_offset_im = 0;
+
+        if (ulsch->b_tilde[j] == 1)
+          qam16_table_offset_re+=2;
+
+        if (ulsch->b_tilde[j+1] == 1)
+          qam16_table_offset_im+=2;
+
+        if (ulsch->b_tilde[j+2] == 1)
+          qam16_table_offset_re+=1;
+
+        if (ulsch->b_tilde[j+3] == 1)
+          qam16_table_offset_im+=1;
+
+
+        ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam16_table[qam16_table_offset_im])>>15);
+        //      msg("input(16qam) %d (%p): %d,%d\n", i,&ulsch->d[i],((int16_t*)&ulsch->d[i])[0],((int16_t*)&ulsch->d[i])[1]);
+        break;
+
+      case 6:
+
+
+        qam64_table_offset_re = 0;
+        qam64_table_offset_im = 0;
+
+        if (ulsch->b_tilde[j] == 1)
+          qam64_table_offset_re+=4;
+
+        if (ulsch->b_tilde[j+1] == 1)
+          qam64_table_offset_im+=4;
+
+        if (ulsch->b_tilde[j+2] == 1)
+          qam64_table_offset_re+=2;
+
+        if (ulsch->b_tilde[j+3] == 1)
+          qam64_table_offset_im+=2;
+
+        if (ulsch->b_tilde[j+4] == 1)
+          qam64_table_offset_re+=1;
+
+        if (ulsch->b_tilde[j+5] == 1)
+          qam64_table_offset_im+=1;
+
+
+        ((int16_t*)&ulsch->d[i])[0]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+        ((int16_t*)&ulsch->d[i])[1]=(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+
+        break;
+
       }
-    }// normal symbols 
+    }
+  }// normal symbols
 
 
   // Transform Precoding
 
 #ifdef OFDMA_ULSCH
-  for (i=0;i<Msymb;i++) {
-    ulsch->z[i] = ulsch->d[i]; 
+
+  for (i=0; i<Msymb; i++) {
+    ulsch->z[i] = ulsch->d[i];
   }
-#else  
+
+#else
   dft_lte(ulsch->z,ulsch->d,Msc_PUSCH,ulsch->Nsymb_pusch);
 #endif
 
-DevAssert(txdataF);
+  DevAssert(txdataF);
 
 #ifdef OFDMA_ULSCH
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
+
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
     //    re_offset0++;
   }
+
   //  msg("re_offset0 %d\n",re_offset0);
 
 
-  for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
+  for (j=0,l=0; l<(nsymb-ulsch->srs_active); l++) {
     re_offset = re_offset0;
     symbol_offset = (int)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-        msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    msg("symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
+
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
-	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
+        ((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     // Skip reference symbols
     else {
 
       //      msg("copying %d REs\n",Msc_PUSCH);
-      for (i=0;i<Msc_PUSCH;i++,j++) {
+      for (i=0; i<Msc_PUSCH; i++,j++) {
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
+        msg("re_offset %d (%p): %d,%d\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1]);
 #endif
-	txptr[re_offset++] = ulsch->z[j];
-	if (re_offset==frame_parms->ofdm_symbol_size)
-	  re_offset = 0;                                 
+        txptr[re_offset++] = ulsch->z[j];
+
+        if (re_offset==frame_parms->ofdm_symbol_size)
+          re_offset = 0;
       }
     }
   }
 
 # else  // OFDMA_ULSCH = 0
   re_offset0 = frame_parms->first_carrier_offset + (ulsch->harq_processes[harq_pid]->first_rb*12);
+
   if (re_offset0>frame_parms->ofdm_symbol_size) {
     re_offset0 -= frame_parms->ofdm_symbol_size;
     //    re_offset0++;
   }
+
   //    msg("re_offset0 %d\n",re_offset0);
   //  printf("txdataF %p\n",&txdataF[0][0]);
-  for (j=0,l=0;l<(nsymb-ulsch->srs_active);l++) {
+  for (j=0,l=0; l<(nsymb-ulsch->srs_active); l++) {
     re_offset = re_offset0;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
     msg("ulsch_mod (OFDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
+
     if (((frame_parms->Ncp == 0) && ((l==3) || (l==10)))||
-	((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
+        ((frame_parms->Ncp == 1) && ((l==2) || (l==8)))) {
     }
     // Skip reference symbols
     else {
       //      msg("copying %d REs\n",Msc_PUSCH);
-      for (i=0;i<Msc_PUSCH;i++,j++) {
+      for (i=0; i<Msc_PUSCH; i++,j++) {
 
 #ifdef DEBUG_ULSCH_MODULATION
-	msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1],&txptr[re_offset]);
+        msg("re_offset %d (%p): %d,%d => %p\n", re_offset,&ulsch->z[j],((int16_t*)&ulsch->z[j])[0],((int16_t*)&ulsch->z[j])[1],&txptr[re_offset]);
 #endif //DEBUG_ULSCH_MODULATION
-	txptr[re_offset++] = ulsch->z[j];
+        txptr[re_offset++] = ulsch->z[j];
 
-	if (re_offset==frame_parms->ofdm_symbol_size)
-	  re_offset = 0;                                 
+        if (re_offset==frame_parms->ofdm_symbol_size)
+          re_offset = 0;
       }
     }
   }
+
 #endif
-  vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION, VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ULSCH_MODULATION, VCD_FUNCTION_OUT);
 
 }
 

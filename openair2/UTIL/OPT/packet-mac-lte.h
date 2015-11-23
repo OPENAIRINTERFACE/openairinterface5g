@@ -23,9 +23,9 @@
  *
  * This header file may also be distributed under
  * the terms of the BSD Licence as follows:
- * 
+ *
  * Copyright (C) 2009 Martin Mathieson. All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -34,7 +34,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,130 +72,127 @@
 #endif
 
 typedef enum mac_lte_oob_event {
-    ltemac_send_preamble,
-    ltemac_send_sr,
-    ltemac_sr_failure
+  ltemac_send_preamble,
+  ltemac_send_sr,
+  ltemac_sr_failure
 } mac_lte_oob_event;
 
 typedef enum mac_lte_dl_retx {
-    dl_retx_no,
-    dl_retx_yes,
-    dl_retx_unknown
+  dl_retx_no,
+  dl_retx_yes,
+  dl_retx_unknown
 } mac_lte_dl_retx;
 
 typedef enum mac_lte_crc_status {
-    crc_fail = 0,
-    crc_success = 1,
-    crc_high_code_rate = 2,
-    crc_pdsch_lost = 3,
-    crc_duplicate_nonzero_rv = 4
+  crc_fail = 0,
+  crc_success = 1,
+  crc_high_code_rate = 2,
+  crc_pdsch_lost = 3,
+  crc_duplicate_nonzero_rv = 4
 } mac_lte_crc_status;
 
 /* Context info attached to each LTE MAC frame */
-typedef struct mac_lte_info
-{
-    /* Needed for decode */
-    guint8          radioType;
-    guint8          direction;
-    guint8          rntiType;
+typedef struct mac_lte_info {
+  /* Needed for decode */
+  guint8          radioType;
+  guint8          direction;
+  guint8          rntiType;
 
-    /* Extra info to display */
-    guint16         rnti;
-    guint16         ueid;
+  /* Extra info to display */
+  guint16         rnti;
+  guint16         ueid;
 
-    /* Timing info */
-    guint16         sysframeNumber;
-    guint16         subframeNumber;
+  /* Timing info */
+  guint16         sysframeNumber;
+  guint16         subframeNumber;
 
-    /* Optional field. More interesting for TDD (FDD is always -4 subframeNumber) */
-    gboolean        subframeNumberOfGrantPresent;
-    guint16         subframeNumberOfGrant;
+  /* Optional field. More interesting for TDD (FDD is always -4 subframeNumber) */
+  gboolean        subframeNumberOfGrantPresent;
+  guint16         subframeNumberOfGrant;
 
-    /* Flag set only if doing PHY-level data test - i.e. there may not be a
-       well-formed MAC PDU so just show as raw data */
-    gboolean        isPredefinedData;
+  /* Flag set only if doing PHY-level data test - i.e. there may not be a
+     well-formed MAC PDU so just show as raw data */
+  gboolean        isPredefinedData;
 
-    /* Length of DL PDU or UL grant size in bytes */
-    guint16         length;
+  /* Length of DL PDU or UL grant size in bytes */
+  guint16         length;
 
-    /* UL only.  0=newTx, 1=first-retx, etc */
-    guint8          reTxCount;
-    guint8          isPHICHNACK; /* FALSE=PDCCH retx grant, TRUE=PHICH NACK */
+  /* UL only.  0=newTx, 1=first-retx, etc */
+  guint8          reTxCount;
+  guint8          isPHICHNACK; /* FALSE=PDCCH retx grant, TRUE=PHICH NACK */
 
-    /* UL only.  Indicates if the R10 extendedBSR-Sizes parameter is set */
-    gboolean        isExtendedBSRSizes;
+  /* UL only.  Indicates if the R10 extendedBSR-Sizes parameter is set */
+  gboolean        isExtendedBSRSizes;
 
-    /* DL only.  Status of CRC check */
-    mac_lte_crc_status   crcStatusValid;
+  /* DL only.  Status of CRC check */
+  mac_lte_crc_status   crcStatusValid;
 
-    /* DL only.  Is this known to be a retransmission? */
-    mac_lte_dl_retx dl_retx;
+  /* DL only.  Is this known to be a retransmission? */
+  mac_lte_dl_retx dl_retx;
 
-    /* More Physical layer info (see direction above for which side of union to use) */
-    union {
-        struct mac_lte_ul_phy_info
-        {
-            guint8 present;  /* Remaining UL fields are present and should be displayed */
-            guint8 modulation_type;
-            guint8 tbs_index;
-            guint8 resource_block_length;
-            guint8 resource_block_start;
-            guint8 harq_id;
-            gboolean ndi;
-        } ul_info;
-        struct mac_lte_dl_phy_info
-        {
-            guint8 present; /* Remaining UL fields are present and should be displayed */
-            guint8 dci_format;
-            guint8 resource_allocation_type;
-            guint8 aggregation_level;
-            guint8 mcs_index;
-            guint8 redundancy_version_index;
-            guint8 resource_block_length;
-            mac_lte_crc_status crc_status;
-            guint8 harq_id;
-            gboolean ndi;
-            guint8   transport_block;  /* 1..2 */
-        } dl_info;
-    } detailed_phy_info;
+  /* More Physical layer info (see direction above for which side of union to use) */
+  union {
+    struct mac_lte_ul_phy_info {
+      guint8 present;  /* Remaining UL fields are present and should be displayed */
+      guint8 modulation_type;
+      guint8 tbs_index;
+      guint8 resource_block_length;
+      guint8 resource_block_start;
+      guint8 harq_id;
+      gboolean ndi;
+    } ul_info;
+    struct mac_lte_dl_phy_info {
+      guint8 present; /* Remaining UL fields are present and should be displayed */
+      guint8 dci_format;
+      guint8 resource_allocation_type;
+      guint8 aggregation_level;
+      guint8 mcs_index;
+      guint8 redundancy_version_index;
+      guint8 resource_block_length;
+      mac_lte_crc_status crc_status;
+      guint8 harq_id;
+      gboolean ndi;
+      guint8   transport_block;  /* 1..2 */
+    } dl_info;
+  } detailed_phy_info;
 
-    /* Relating to out-of-band events */
-    /* N.B. dissector will only look to these fields if length is 0... */
-    mac_lte_oob_event  oob_event;
-    guint8             rapid;
-    guint8             rach_attempt_number;
-    #define MAX_SRs 20
-    guint16            number_of_srs;
-    guint16            oob_ueid[MAX_SRs];
-    guint16            oob_rnti[MAX_SRs];
+  /* Relating to out-of-band events */
+  /* N.B. dissector will only look to these fields if length is 0... */
+  mac_lte_oob_event  oob_event;
+  guint8             rapid;
+  guint8             rach_attempt_number;
+#define MAX_SRs 20
+  guint16            number_of_srs;
+  guint16            oob_ueid[MAX_SRs];
+  guint16            oob_rnti[MAX_SRs];
 } mac_lte_info;
 
 /* SR: no need to declare following part: */
 #if 0
 typedef struct mac_lte_tap_info {
-    /* Info from context */
-    guint16  rnti;
-    guint16  ueid;
-    guint8   rntiType;
-    guint8   isPredefinedData;
-    guint8   crcStatusValid;
-    mac_lte_crc_status   crcStatus;
-    guint8   direction;
+  /* Info from context */
+  guint16  rnti;
+  guint16  ueid;
+  guint8   rntiType;
+  guint8   isPredefinedData;
+  guint8   crcStatusValid;
+  mac_lte_crc_status   crcStatus;
+  guint8   direction;
 
-    guint8   isPHYRetx;
-    guint16  ueInTTI;
+  guint8   isPHYRetx;
+  guint16  ueInTTI;
 
-    nstime_t time;
+  nstime_t time;
 
-    /* Number of bytes (which part is used depends upon context settings) */
-    guint32  single_number_of_bytes;
-    guint32  bytes_for_lcid[11];
-    guint32  sdus_for_lcid[11];
-    guint8   number_of_rars;
+  /* Number of bytes (which part is used depends upon context settings) */
+  guint32  single_number_of_bytes;
+  guint32  bytes_for_lcid[11];
+  guint32  sdus_for_lcid[11];
+  guint8   number_of_rars;
 
-    /* Number of padding bytes includes padding subheaders and trailing padding */
-    guint16  padding_bytes;
-    guint16  raw_length;
+  /* Number of padding bytes includes padding subheaders and trailing padding */
+  guint16  padding_bytes;
+  guint16  raw_length;
 } mac_lte_tap_info;
 #endif
 
@@ -226,7 +223,7 @@ typedef struct mac_lte_tap_info {
 
 /* Fixed fields.  This is followed by the following 3 mandatory fields:
    - radioType (1 byte)
-   - direction (1 byte) 
+   - direction (1 byte)
    - rntiType (1 byte)
    (where the allowed values are defined above */
 

@@ -7,9 +7,9 @@
 class RRMUdpSocket : public UdpSocket
 {
 public:
-    RRMUdpSocket(ISocketHandler&,int ibufsz, bool ipv6);
+  RRMUdpSocket(ISocketHandler&,int ibufsz, bool ipv6);
 
-	void OnRawData(const char *,size_t,struct sockaddr *,socklen_t);
+  void OnRawData(const char *,size_t,struct sockaddr *,socklen_t);
 };
 
 

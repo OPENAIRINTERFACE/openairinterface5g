@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -44,6 +44,20 @@
 #include "list.h"
 #include "LAYER2/MAC/extern.h"
 
+/* all function calls are protected by a mutex
+ * to ensure that many threads calling them at
+ * the same time don't mess up.
+ * We might be more clever in the future, it's a
+ * bit overkill.
+ * Commenting this define removes the protection,
+ * so be careful with it.
+ */
+#define MEMBLOCK_BIG_LOCK
+
+#ifdef MEMBLOCK_BIG_LOCK
+static pthread_mutex_t mtex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
 //-----------------------------------------------------------------------------
 //#define DEBUG_MEM_MNGT_FREE
 //#define DEBUG_MEM_MNGT_ALLOC_SIZE
@@ -57,78 +71,105 @@ uint32_t             counters[11] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
  * initialize all ures
  */
 void           *
-pool_buffer_init ()
+pool_buffer_init (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
   uint32_t             index, mb_index, pool_index;
   mem_pool       *memory = (mem_pool *) &mem_block_var;
   int             pool_sizes[14] = { MEM_MNGT_MB0_NB_BLOCKS, MEM_MNGT_MB1_NB_BLOCKS,
-    MEM_MNGT_MB2_NB_BLOCKS, MEM_MNGT_MB3_NB_BLOCKS,
-    MEM_MNGT_MB4_NB_BLOCKS, MEM_MNGT_MB5_NB_BLOCKS,
-    MEM_MNGT_MB6_NB_BLOCKS, MEM_MNGT_MB7_NB_BLOCKS,
-    MEM_MNGT_MB8_NB_BLOCKS, MEM_MNGT_MB9_NB_BLOCKS,
-    MEM_MNGT_MB10_NB_BLOCKS, MEM_MNGT_MB11_NB_BLOCKS,
-    MEM_MNGT_MB12_NB_BLOCKS, MEM_MNGT_MBCOPY_NB_BLOCKS
-  };
+                                     MEM_MNGT_MB2_NB_BLOCKS, MEM_MNGT_MB3_NB_BLOCKS,
+                                     MEM_MNGT_MB4_NB_BLOCKS, MEM_MNGT_MB5_NB_BLOCKS,
+                                     MEM_MNGT_MB6_NB_BLOCKS, MEM_MNGT_MB7_NB_BLOCKS,
+                                     MEM_MNGT_MB8_NB_BLOCKS, MEM_MNGT_MB9_NB_BLOCKS,
+                                     MEM_MNGT_MB10_NB_BLOCKS, MEM_MNGT_MB11_NB_BLOCKS,
+                                     MEM_MNGT_MB12_NB_BLOCKS, MEM_MNGT_MBCOPY_NB_BLOCKS
+                                   };
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
 
   memset (memory, 0, sizeof (mem_pool));
   mb_index = 0;
+
   // LG_TEST
   for (pool_index = 0; pool_index <= MEM_MNGT_POOL_ID_COPY; pool_index++) {
     list_init (&memory->mem_lists[pool_index], "POOL");
+
     for (index = 0; index < pool_sizes[pool_index]; index++) {
       //memory->mem_blocks[mb_index + index].previous = NULL; -> done in memset 0
       //memory->mem_blocks[mb_index + index].next     = NULL; -> done in memset 0
       switch (pool_index) {
-          case 0:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool0[index][0]);
-            break;
-          case 1:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool1[index][0]);
-            break;
-          case 2:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool2[index][0]);
-            break;
-          case 3:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool3[index][0]);
-            break;
-          case 4:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool4[index][0]);
-            break;
-          case 5:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool5[index][0]);
-            break;
-          case 6:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool6[index][0]);
-            break;
-          case 7:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool7[index][0]);
-            break;
-          case 8:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool8[index][0]);
-            break;
-          case 9:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool9[index][0]);
-            break;
-          case 10:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool10[index][0]);
-            break;
-          case 11:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool11[index][0]);
-            break;
-          case 12:
-            memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool12[index][0]);
-            break;
-          default:;
-            memory->mem_blocks[mb_index + index].data = NULL;   // pool copy
+      case 0:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool0[index][0]);
+        break;
+
+      case 1:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool1[index][0]);
+        break;
+
+      case 2:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool2[index][0]);
+        break;
+
+      case 3:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool3[index][0]);
+        break;
+
+      case 4:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool4[index][0]);
+        break;
+
+      case 5:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool5[index][0]);
+        break;
+
+      case 6:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool6[index][0]);
+        break;
+
+      case 7:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool7[index][0]);
+        break;
+
+      case 8:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool8[index][0]);
+        break;
+
+      case 9:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool9[index][0]);
+        break;
+
+      case 10:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool10[index][0]);
+        break;
+
+      case 11:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool11[index][0]);
+        break;
+
+      case 12:
+        memory->mem_blocks[mb_index + index].data = (unsigned char*)&(memory->mem_pool12[index][0]);
+        break;
+
+      default:
+        ;
+        memory->mem_blocks[mb_index + index].data = NULL;   // pool copy
 
       }
+
       memory->mem_blocks[mb_index + index].pool_id = pool_index;
       list_add_tail_eurecom (&memory->mem_blocks[mb_index + index], &memory->mem_lists[pool_index]);
     }
+
     mb_index += pool_sizes[pool_index];
   }
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
   return 0;
 }
 
@@ -136,42 +177,51 @@ pool_buffer_init ()
 void           *
 pool_buffer_clean (void *arg)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   return 0;
 }
 //-----------------------------------------------------------------------------
 void
 free_mem_block (mem_block_t * leP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
 
   if (!(leP)) {
     msg ("[MEM_MNGT][FREE] WARNING FREE NULL MEM_BLOCK\n");
     return;
   }
-  #ifdef DEBUG_MEM_MNGT_FREE
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
+
+#ifdef DEBUG_MEM_MNGT_FREE
   msg ("[MEM_MNGT][FREE] free_mem_block() %p pool: %d\n", leP, leP->pool_id);
-  #endif
-  #ifdef DEBUG_MEM_MNGT_ALLOC
+#endif
+#ifdef DEBUG_MEM_MNGT_ALLOC
   check_free_mem_block (leP);
-  #endif
+#endif
 
   if (leP->pool_id <= MEM_MNGT_POOL_ID_COPY) {
     list_add_tail_eurecom (leP, &mem_block_var.mem_lists[leP->pool_id]);
-    #ifdef DEBUG_MEM_MNGT_ALLOC
+#ifdef DEBUG_MEM_MNGT_ALLOC
     counters[leP->pool_id] -= 1;
-    #endif
+#endif
     leP = NULL;                 // this prevent from freeing the block twice
   } else {
     msg ("[MEM_MNGT][FREE] ERROR free_mem_block() unknown pool_id : %d\n", leP->pool_id);
   }
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
 }
 
 //-----------------------------------------------------------------------------
 mem_block_t      *
-get_free_mem_block (uint16_t sizeP)
+get_free_mem_block (uint32_t sizeP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   mem_block_t      *le = NULL;
   int             pool_selected;
   int             size;
@@ -182,6 +232,11 @@ get_free_mem_block (uint16_t sizeP)
     mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block size requested out of bounds");
     return NULL;
   }
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_lock(&mtex)) abort();
+#endif
+
   size = sizeP >> 6;
   pool_selected = 0;
 
@@ -194,24 +249,36 @@ get_free_mem_block (uint16_t sizeP)
   // if no block is available pick one in an other pool
   do {
     if ((le = list_remove_head (&mem_block_var.mem_lists[pool_selected]))) {
-      #ifdef DEBUG_MEM_MNGT_ALLOC
+#ifdef DEBUG_MEM_MNGT_ALLOC
       counters[pool_selected] += 1;
-      #endif
-      #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
+#endif
+#ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
       msg ("[MEM_MNGT][INFO] ALLOC MEM_BLOCK SIZE %d bytes pool %d (%p)\n", sizeP, pool_selected,le);
-      #endif
+#endif
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
       return le;
     }
-    #ifdef DEBUG_MEM_MNGT_ALLOC
+
+#ifdef DEBUG_MEM_MNGT_ALLOC
     msg ("[MEM_MNGT][ERROR][MINOR] memory pool %d is empty trying next pool alloc count = %d\n", pool_selected, counters[pool_selected]);
-    #ifdef USER_MODE
+#ifdef USER_MODE
     //    display_mem_load ();
     //    check_mem_area ((void *)&mem_block_var);
-    #endif
-    #endif
+#endif
+#endif
   } while (pool_selected++ < 12);
 
+  display_mem_load();
   mac_xface->macphy_exit("[MEM_MNGT][ERROR][FATAL] get_free_mem_block failed");
+
+#ifdef MEMBLOCK_BIG_LOCK
+  if (pthread_mutex_unlock(&mtex)) abort();
+#endif
+
   return NULL;
 };
 
@@ -219,12 +286,16 @@ get_free_mem_block (uint16_t sizeP)
 mem_block_t      *
 get_free_copy_mem_block (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   mem_block_t      *le;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
 
   if ((le = list_remove_head (&mem_block_var.mem_lists[MEM_MNGT_POOL_ID_COPY]))) {
 #ifdef DEBUG_MEM_MNGT_ALLOC_SIZE
-      msg ("[MEM_MNGT][INFO] ALLOC COPY MEM BLOCK (%p)\n",le);
+    msg ("[MEM_MNGT][INFO] ALLOC COPY MEM BLOCK (%p)\n",le);
 #endif
     return le;
   } else {
@@ -243,13 +314,18 @@ get_free_copy_mem_block (void)
 mem_block_t      *
 copy_mem_block (mem_block_t * leP, mem_block_t * destP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
 
   if ((destP != NULL) && (leP != NULL) && (destP->pool_id == MEM_MNGT_POOL_ID_COPY)) {
     destP->data = leP->data;
   } else {
     msg ("[MEM_MNGT][COPY] copy_mem_block() pool dest src or dest is NULL\n");
   }
+
   return destP;
 }
 
@@ -257,7 +333,10 @@ copy_mem_block (mem_block_t * leP, mem_block_t * destP)
 void
 display_mem_load (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
+#ifdef MEMBLOCK_BIG_LOCK
+  /* this function does not need to be protected, do nothing */
+#endif
 
   mem_pool       *memory = (mem_pool *) &mem_block_var;
 
@@ -295,92 +374,134 @@ display_mem_load (void)
 void
 check_mem_area (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   int             index, mb_index;
   mem_pool       *memory = (mem_pool *) &mem_block_var;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  AssertFatal(0, "This function is not handled properly but not used anywhere. FIXME?\n");
+#endif
 
   for (index = 0; index < MEM_MNGT_MB0_NB_BLOCKS; index++) {
     if ((memory->mem_blocks[index].data != (unsigned char*)&(memory->mem_pool0[index][0])) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID0)) {
       msg ("[MEM] ERROR POOL0 block index %d\n", index);
     }
   }
+
   mb_index = MEM_MNGT_MB0_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB1_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool1[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID1)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool1[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID1)) {
       msg ("[MEM] ERROR POOL1 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB1_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB2_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool2[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID2)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool2[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID2)) {
       msg ("[MEM] ERROR POOL2 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB2_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB3_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool3[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID3)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool3[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID3)) {
       msg ("[MEM] ERROR POOL3 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB3_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB4_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool4[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID4)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool4[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID4)) {
       msg ("[MEM] ERROR POOL4 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB4_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB5_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool5[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID5)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool5[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID5)) {
       msg ("[MEM] ERROR POOL5 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB5_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB6_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool6[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID6)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool6[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID6)) {
       msg ("[MEM] ERROR POOL6 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB6_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB7_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool7[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID7)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool7[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID7)) {
       msg ("[MEM] ERROR POOL7 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB7_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB8_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool8[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID8)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool8[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID8)) {
       msg ("[MEM] ERROR POOL8 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB8_NB_BLOCKS;
+
   for (index = 0; index < MEM_MNGT_MB9_NB_BLOCKS; index++) {
-    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool9[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID9)) {
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool9[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID9)) {
       msg ("[MEM] ERROR POOL9 block index %d\n", index);
     }
   }
+
   mb_index += MEM_MNGT_MB9_NB_BLOCKS;
+
   for (index = mb_index; index < MEM_MNGT_MB10_NB_BLOCKS; index++) {
-      if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool10[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID10)) {
-		  msg ("[MEM] ERROR POOL10 block index %d\n", index);
-	  }
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool10[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID10)) {
+      msg ("[MEM] ERROR POOL10 block index %d\n", index);
+    }
   }
+
   mb_index += MEM_MNGT_MB10_NB_BLOCKS;
+
   for (index = mb_index; index < MEM_MNGT_MB11_NB_BLOCKS; index++) {
-      if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool11[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID11)) {
-		  msg ("[MEM] ERROR POOL11 block index %d\n", index);
-	  }
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool11[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID11)) {
+      msg ("[MEM] ERROR POOL11 block index %d\n", index);
+    }
   }
+
   mb_index += MEM_MNGT_MB11_NB_BLOCKS;
+
   for (index = mb_index; index < MEM_MNGT_MB12_NB_BLOCKS; index++) {
-      if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool12[index][0])) && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID12)) {
-		  msg ("[MEM] ERROR POOL12 block index %d\n", index);
-	  }
+    if ((memory->mem_blocks[mb_index + index].data != (unsigned char*)&(memory->mem_pool12[index][0]))
+        && (memory->mem_blocks[mb_index + index].pool_id != MEM_MNGT_POOL_ID12)) {
+      msg ("[MEM] ERROR POOL12 block index %d\n", index);
+    }
   }
+
   mb_index += MEM_MNGT_MB12_NB_BLOCKS;
+
   for (index = mb_index; index < MEM_MNGT_NB_ELEMENTS; index++) {
-	  if ((memory->mem_blocks[index].data != NULL) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID_COPY)) {
-		  msg ("[MEM] ERROR POOL COPY block index %d\n", index);
-	  }
+    if ((memory->mem_blocks[index].data != NULL) && (memory->mem_blocks[index].pool_id != MEM_MNGT_POOL_ID_COPY)) {
+      msg ("[MEM] ERROR POOL COPY block index %d\n", index);
+    }
   }
 }
 
@@ -388,8 +509,13 @@ check_mem_area (void)
 void
 check_free_mem_block (mem_block_t * leP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   ptrdiff_t             block_index;
+
+#ifdef MEMBLOCK_BIG_LOCK
+  /* this function does not SEEM TO need to be protected, do nothing (for the moment) */
+#endif
+
   if ((leP >= mem_block_var.mem_blocks) && (leP <= &mem_block_var.mem_blocks[MEM_MNGT_NB_ELEMENTS-1])) {
     // the pointer is inside the memory region
     block_index = leP - mem_block_var.mem_blocks;
@@ -399,102 +525,127 @@ check_free_mem_block (mem_block_t * leP)
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool0[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID0)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB0_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB1_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool1[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID1)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB1_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB2_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool2[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID2)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB2_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB3_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool3[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID3)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB3_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB4_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool4[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID4)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB4_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB5_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool5[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID5)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB5_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB6_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool6[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID6)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB6_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB7_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool7[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID7)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB7_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB8_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool8[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID8)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB8_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB9_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool9[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID9)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB9_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB10_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool10[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID10)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB10_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB11_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool11[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID11)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
+
     block_index -= MEM_MNGT_MB11_NB_BLOCKS;
 
     if (block_index < MEM_MNGT_MB12_NB_BLOCKS) {
       if ((leP->data != (unsigned char*)mem_block_var.mem_pool12[block_index]) && (leP->pool_id != MEM_MNGT_POOL_ID12)) {
         msg ("[MEM][ERROR][FATAL] free mem block is corrupted\n");
       }
+
       return;
     }
   } else {

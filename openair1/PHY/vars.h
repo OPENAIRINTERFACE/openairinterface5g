@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -30,7 +30,7 @@
 #define __PHY_VARS_H__
 
 #include "PHY/types.h"
-#include "PHY/defs.h" 
+#include "PHY/defs.h"
 
 #ifndef USER_MODE
 unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
@@ -42,22 +42,12 @@ char fmageren_name2[512];
 char* namepointer_log2;
 //PHY_CONFIG *PHY_config;
 
-#include "PHY/TOOLS/twiddle64.h"
-#include "PHY/TOOLS/twiddle128.h"
-#include "PHY/TOOLS/twiddle256.h"
-#include "PHY/TOOLS/twiddle512.h"
-#include "PHY/TOOLS/twiddle1024.h"
-#include "PHY/TOOLS/twiddle2048.h"
-#include "PHY/TOOLS/twiddle4096.h"
-#include "PHY/TOOLS/twiddle8192.h"
-#include "PHY/TOOLS/twiddle32768.h"
 
-#ifdef OPENAIR_LTE
 #include "PHY/LTE_REFSIG/primary_synch.h"
 int16_t *primary_synch0_time;
 int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
-#endif
+
 
 #include "PHY/CODING/vars.h"
 
@@ -67,25 +57,18 @@ PHY_VARS_eNB ***PHY_vars_eNB_g;
 PHY_VARS_RN **PHY_vars_RN_g;
 LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
-short *twiddle_ifft,*twiddle_fft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
-
-#ifndef OPENAIR_LTE
-CHBCH_RX_t rx_mode = ML;
-#endif //OPENAIR_LTE
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
 
-#ifdef OPENAIR_LTE
+
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 #include "PHY/LTE_TRANSPORT/vars.h"
-#endif
 
-#include "PHY/CODING/scrambler.h"
 
-#ifdef USER_MODE
+
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
-#endif
+
 
 #ifndef OPENAIR2
 unsigned char NB_eNB_INST=0;
@@ -114,23 +97,24 @@ double MI_map_16qam[3][197];
 double MI_map_64qam[3][227];
 
 // here the first index is for transmission mode 1, 2, 5 and 6 whereas the second index is for the 16 sinr vaues corresponding to 16 CQIs
-double sinr_to_cqi[4][16]={ {-2.5051, -2.5051, -1.7451, -0.3655, 1.0812, 2.4012, 3.6849, 6.6754, 8.3885, 8.7970, 12.0437, 14.4709, 15.7281,  17.2424,  17.2424, 17.2424},
+double sinr_to_cqi[4][16]= { {-2.5051, -2.5051, -1.7451, -0.3655, 1.0812, 2.4012, 3.6849, 6.6754, 8.3885, 8.7970, 12.0437, 14.4709, 15.7281,  17.2424,  17.2424, 17.2424},
   {-2.2360, -2.2360, -1.3919, -0.0218, 1.5319,  2.9574,  4.3234, 6.3387, 8.9879, 9.5096, 12.6609, 14.0116, 16.4984, 18.1572, 18.1572, 18.1572},
   {-1, -1.0000, -0.4198, -0.0140, 1.0362,  2.3520, 3.5793, 6.1136, 8.4836, 9.0858, 12.4723, 13.9128, 16.2054, 17.7392, 17.7392, 17.7392},
-  { -4.1057, -4.1057, -3.3768, -2.2916, -1.1392, 0.1236, 1.2849, 3.1933, 5.9298, 6.4052, 9.6245, 10.9414, 13.5166, 14.9545, 14.9545, 14.9545} };
+  { -4.1057, -4.1057, -3.3768, -2.2916, -1.1392, 0.1236, 1.2849, 3.1933, 5.9298, 6.4052, 9.6245, 10.9414, 13.5166, 14.9545, 14.9545, 14.9545}
+};
 
 //int cqi_to_mcs[16]={0, 0, 1, 3, 5, 7, 9, 13, 15, 16, 20, 23, 25, 27, 27, 27};
-int cqi_to_mcs[16]={0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 28};
+int cqi_to_mcs[16]= {0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 28};
 
 //for SNR to MI conversion 7 th order Polynomial coeff
-double q_qam16[8]={3.21151853033897e-10,5.55435952230651e-09,-2.30760065362117e-07,-6.25587743817859e-06,4.62251036452795e-06,0.00224150813158937,0.0393723140344367,0.245486379182639};
-double q_qpsk[8]={1.94491167814437e-09,8.40494123817774e-08,4.75527131198034e-07,-2.48946285301621e-05,-0.000347614016158364,0.00209252225437100,0.0742986115462510,0.488297879889425};
-double q_qam64[8]={2.25934026232206e-11,-1.45992206328306e-10,-3.70861183071900e-08,-1.22206071019319e-06,6.49115500399637e-06,0.00129828997837433,0.0259669554914859,0.166602901214898};
+double q_qam16[8]= {3.21151853033897e-10,5.55435952230651e-09,-2.30760065362117e-07,-6.25587743817859e-06,4.62251036452795e-06,0.00224150813158937,0.0393723140344367,0.245486379182639};
+double q_qpsk[8]= {1.94491167814437e-09,8.40494123817774e-08,4.75527131198034e-07,-2.48946285301621e-05,-0.000347614016158364,0.00209252225437100,0.0742986115462510,0.488297879889425};
+double q_qam64[8]= {2.25934026232206e-11,-1.45992206328306e-10,-3.70861183071900e-08,-1.22206071019319e-06,6.49115500399637e-06,0.00129828997837433,0.0259669554914859,0.166602901214898};
 
 //for MI to SNR conversion 7 th order Polynomial coeff
 double p_qpsk[8]= {5982.42405670359,-21568.1135917693,31293.9987036905,-23394.6795043871,9608.34750585489,-2158.15802349899,267.731968719036,-20.6145324295965};
-double p_qam16[8]={7862.12690694170,-28510.3207048338,41542.2150287122,-31088.3036957379,12690.1982361016,-2785.66604739984,326.595462489375,-18.9911849872089};
-double p_qam64[8]={8832.57933013696,-32119.1802555952,46914.2578990397,-35163.8150557183,14343.7419388853,-3126.61025510092,360.954930562237,-18.0358548533343};
+double p_qam16[8]= {7862.12690694170,-28510.3207048338,41542.2150287122,-31088.3036957379,12690.1982361016,-2785.66604739984,326.595462489375,-18.9911849872089};
+double p_qam64[8]= {8832.57933013696,-32119.1802555952,46914.2578990397,-35163.8150557183,14343.7419388853,-3126.61025510092,360.954930562237,-18.0358548533343};
 
 // ideal CE MIESM
 

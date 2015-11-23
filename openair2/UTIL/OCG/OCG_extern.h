@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -37,12 +37,12 @@ extern char src_file[]; /*!< \brief USER_XML_FOLDER/user_name.file_date.xml or D
 extern char dst_dir[]; /*!< \brief user_name/file_date/ */
 extern int copy_or_move; /*!< \brief indicating if the current emulation is with a local XML or an XML generated from the web portal */
 extern int file_detected; /*!< \brief indicate whether a new file is detected */
-/* @}*/ 
+/* @}*/
 
 /** @defgroup _oks OCG Module State Indicators
  *  @ingroup _OCG
  *  @brief Indicate whether a module has processed successfully
- * @{*/ 
+ * @{*/
 extern int get_opt_OK; /*!< \brief value: -9999, -1, 0 or 1 */
 extern int detect_file_OK; /*!< \brief value: -9999, -1 or 0 */
 extern int parse_filename_OK; /*!< \brief value: -9999, -1 or 0 */

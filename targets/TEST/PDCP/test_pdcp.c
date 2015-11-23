@@ -12,39 +12,39 @@
 #include "test_pdcp.h"
 
 /*
- * These are the PDCP entities that will be utilised 
+ * These are the PDCP entities that will be utilised
  * throughout the test
  *
- * For pdcp_data_req() and pdcp_data_ind() these 
+ * For pdcp_data_req() and pdcp_data_ind() these
  * are passed and used
  */
 pdcp_t pdcp_array[2];
 
 /*
- * TX list is the one we use to receive PDUs created by pdcp_data_req() and 
+ * TX list is the one we use to receive PDUs created by pdcp_data_req() and
  * RX list is the one we use to pass these PDUs to pdcp_data_ind(). In test_pdcp_data_req()
- * method every PDU created by pdcp_data_req() are first validated and then added to RX 
+ * method every PDU created by pdcp_data_req() are first validated and then added to RX
  * list after it's removed from TX list
  */
 list_t test_pdu_tx_list;
 list_t test_pdu_rx_list;
 
 /*
- * This is used by a number of methods to determine how 
+ * This is used by a number of methods to determine how
  * many times a packet should be generated/a test run
  */
 #define NUMBER_OF_TEST_PACKETS 10000
 /*
- * This is determined by the size of Sequence Number 
+ * This is determined by the size of Sequence Number
  * field and used to check sequence number synchronisation
  */
 #define WINDOW_SIZE 4096       // 12-bit SN
 
 /*
- * Test configuration is STATEFUL. If you want to run DATA_REQUEST after TX_WINDOW 
+ * Test configuration is STATEFUL. If you want to run DATA_REQUEST after TX_WINDOW
  * then you have to reset/reinitialize PDCP entity state!
- * 
- *  TEST_RX_AND_TX_WINDOW Tests TX window code by repetitively asking for new TX 
+ *
+ *  TEST_RX_AND_TX_WINDOW Tests TX window code by repetitively asking for new TX
  *                        sequence numbers without generating any packets
  *                        And tests RX window code by supplying sequenced RX sequence
  *                        numbers and asking RX window code to validate, without
@@ -52,10 +52,10 @@ list_t test_pdu_rx_list;
  */
 #define TEST_RX_AND_TX_WINDOW 0
 /*
- * TEST_PDCP_DATA_REQUEST_AND_INDICATION Tests pdcp_data_req() method by repetitively asking it 
- *                                       to create a PDCP PDU out of supplied SDU and parsing 
+ * TEST_PDCP_DATA_REQUEST_AND_INDICATION Tests pdcp_data_req() method by repetitively asking it
+ *                                       to create a PDCP PDU out of supplied SDU and parsing
  *                                       particular fields of relevant PDU lateron
- *                                       Afterwards, those PDUs created by pdcp_data_req() are 
+ *                                       Afterwards, those PDUs created by pdcp_data_req() are
  *                                       passed to pdcp_data_ind()
  */
 #define TEST_PDCP_DATA_REQUEST_AND_INDICATION 1
@@ -66,7 +66,8 @@ list_t test_pdu_rx_list;
 #define DUMMY_BUFFER ((unsigned char*)"123456789")
 #define DUMMY_BUFFER_SIZE 10
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   unsigned char index = 0;
   unsigned char test_result = 0;
 
@@ -96,6 +97,7 @@ int main(int argc, char **argv) {
   }
 
 #if TEST_RX_AND_TX_WINDOW
+
   /* Test TX window */
   if (test_tx_window() == FALSE)
     test_result = 1;
@@ -103,9 +105,11 @@ int main(int argc, char **argv) {
   /* Test RX window */
   if (test_rx_window() == FALSE)
     test_result = 1;
+
 #endif
 
 #if TEST_PDCP_DATA_REQUEST_AND_INDICATION
+
   /* Test pdcp_data_req() method in pdcp.c */
   if (test_pdcp_data_req() == FALSE)
     test_result = 1;
@@ -113,6 +117,7 @@ int main(int argc, char **argv) {
   /* Test pdcp_data_ind() method in pdcp.c */
   if (test_pdcp_data_ind() == FALSE)
     test_result = 1;
+
 #endif
 
   if (test_result) {
@@ -148,12 +153,13 @@ BOOL init_pdcp_entity(pdcp_t *pdcp_entity)
   return TRUE;
 }
 
-BOOL test_tx_window()
+BOOL test_tx_window(void)
 {
   unsigned long index = 0;
 
   for (index = 0; index < NUMBER_OF_TEST_PACKETS; ++index) {
     u16 pseudo_tx_sn = pdcp_get_next_tx_seq_number(&pdcp_array[0]);
+
     if (pseudo_tx_sn == index % WINDOW_SIZE)
       msg("TX packet # %07lu seq # %04d hfn # %04d\n", index, pseudo_tx_sn, pdcp_array[0].tx_hfn);
     else {
@@ -165,12 +171,13 @@ BOOL test_tx_window()
   return TRUE;
 }
 
-BOOL test_rx_window()
+BOOL test_rx_window(void)
 {
   unsigned long index = 0;
 
   for (index = 0; index < NUMBER_OF_TEST_PACKETS; ++index) {
     u16 pseudo_rx_sn = (index == 0) ? 0 : index % WINDOW_SIZE;
+
     if (pdcp_is_rx_seq_number_valid(pseudo_rx_sn, &pdcp_array[1]) == TRUE) {
       msg("RX packet # %07lu seq # %04d last-submitted # %04d hfn # %04d\n", \
           index, pdcp_array[1].next_pdcp_rx_sn, pdcp_array[1].last_submitted_pdcp_rx_sn, pdcp_array[1].rx_hfn);
@@ -183,7 +190,7 @@ BOOL test_rx_window()
   return TRUE;
 }
 
-BOOL test_pdcp_data_req()
+BOOL test_pdcp_data_req(void)
 {
   unsigned char* pdcp_test_pdu_buffer = NULL;
   unsigned char pdcp_test_pdu_buffer_size = DUMMY_BUFFER_SIZE + PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
@@ -193,6 +200,7 @@ BOOL test_pdcp_data_req()
    * Create an unsigned char buffer out of mem_block_t
    */
   pdcp_test_pdu_buffer = (unsigned char*) calloc(1, pdcp_test_pdu_buffer_size);
+
   if (pdcp_test_pdu_buffer == NULL) {
     msg("Cannot allocate a buffer for test!\n");
     return FALSE;
@@ -216,19 +224,21 @@ BOOL test_pdcp_data_req()
       msg("[TEST] Starting to dissect PDU created by PDCP...\n");
 
       /*
-       * XXX mem_block_t doesn't hold buffer size, how do we keep the size 
+       * XXX mem_block_t doesn't hold buffer size, how do we keep the size
        * information if we pass mem_block_ts via a linked list?
        */
 #if 0
+
       if (pdcp_test_pdu_buffer_size == 0 || pdcp_test_pdu_buffer == NULL) {
         msg("[TEST] PDU created by pdcp_data_req() is invalid!\n");
         return FALSE;
       }
+
 #endif
 
       /*
        * Serialize incoming mem_block_t into an unsigned character array
-       * and add removed PDU to RX list in order to use it in the next test 
+       * and add removed PDU to RX list in order to use it in the next test
        * (test_pdcp_data_ind())
        */
       mem_block_t* pdcp_test_pdu = list_remove_head(&test_pdu_tx_list);
@@ -236,7 +246,7 @@ BOOL test_pdcp_data_req()
       list_add_tail_eurecom(pdcp_test_pdu, &test_pdu_rx_list);
 
       /*
-       * Verify that this is a data packet by checking 
+       * Verify that this is a data packet by checking
        * if the first bit is 0x00 (PDCP_DATA_PDU)
        */
       if (pdcp_test_pdu_buffer[0] & 0x80) {
@@ -278,18 +288,18 @@ BOOL test_pdcp_data_req()
   return TRUE;
 }
 
-BOOL test_pdcp_data_ind()
+BOOL test_pdcp_data_ind(void)
 {
   /*
-   * This is the list that pdcp_data_ind() takes to put pdcp_data_ind_header_t 
+   * This is the list that pdcp_data_ind() takes to put pdcp_data_ind_header_t
    * packets after it receives/validates PDUs and preprends them with pdcp_data_ind_header_t
-   * structure. Here, after this list is filled by pdcp_data_ind() we parse/validate 
+   * structure. Here, after this list is filled by pdcp_data_ind() we parse/validate
    * every single element in the list
    */
   list_t test_pdu_indication_list;
   mem_block_t* test_sdu = NULL;
   /*
-   * pdcp_data_req() method prepended PDU header in front of DUMMY_BUFFER so 
+   * pdcp_data_req() method prepended PDU header in front of DUMMY_BUFFER so
    * the size should be 12 bytes
    */
   unsigned char test_sdu_size = PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE + DUMMY_BUFFER_SIZE;
@@ -342,7 +352,7 @@ BOOL test_pdcp_data_ind()
         msg("[TEST] Radio bearer ID is correct\n");
       } else {
         msg("[TEST] Radio bearer ID is not correct! (expected: 0, parsed: %d)\n", indication_header->rb_id);
-	return FALSE;
+        return FALSE;
       }
 
       /*
@@ -352,9 +362,9 @@ BOOL test_pdcp_data_ind()
         msg("[TEST] SDU size is correct\n");
       } else {
         msg("[TEST] SDU size is not correct! (expected: %d, parsed: %d)\n", DUMMY_BUFFER_SIZE, indication_header->data_size);
-	return FALSE;
+        return FALSE;
       }
- 
+
       /*
        * XXX Verify `indication_header->inst` when you know what it is
        */

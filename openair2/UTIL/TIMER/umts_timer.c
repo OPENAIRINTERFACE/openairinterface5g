@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -48,14 +48,16 @@
 void
 umts_timer_check_time_out (list2_t * atimer_listP, uint32_t current_frame_tick_millisecondsP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   struct timer_unit *timer;
   mem_block_t      *mem_unit;
   uint8_t              time_out = 255;
   mem_unit = atimer_listP->head;
+
   // do it simple now.
   while ((mem_unit) && (time_out)) {
     timer = (struct timer_unit *) (mem_unit->data);
+
     if ((current_frame_tick_millisecondsP - timer->frame_tick_start) >= timer->frame_time_out) {
 
       mem_unit = list2_remove_head (atimer_listP);
@@ -73,7 +75,7 @@ umts_timer_check_time_out (list2_t * atimer_listP, uint32_t current_frame_tick_m
 void
 umts_timer_delete_timer (list2_t * atimer_listP, void *timer_idP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   mem_block_t      *mem_unit;
   mem_unit = atimer_listP->head;
 
@@ -83,6 +85,7 @@ umts_timer_delete_timer (list2_t * atimer_listP, void *timer_idP)
       free_mem_block (mem_unit);
       return;
     }
+
     mem_unit = mem_unit->next;
   }
 }
@@ -91,7 +94,7 @@ umts_timer_delete_timer (list2_t * atimer_listP, void *timer_idP)
 mem_block_t      *
 umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), void *protocolP, void *timer_idP, uint32_t frame_time_outP, uint32_t current_frame_tick_millisecondsP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   struct mem_block_t *mb;
   struct timer_unit *timer;
   mem_block_t      *mem_unit;
@@ -107,13 +110,16 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
 
   // insert the timer in list in ascending order
   mem_unit = atimer_listP->head;
+
   while ((mem_unit) && (!inserted)) {
     timer = (struct timer_unit *) (mem_unit->data);
 
     remaining_time = timer->frame_time_out - current_frame_tick_millisecondsP + timer->frame_tick_start;
+
     // not timed out
     if ((remaining_time > 0) && (frame_time_outP < remaining_time)) {
       inserted = 255;
+
       if (mem_unit == atimer_listP->head) {
 #ifdef DEBUG_TIMER
         msg ("[TIMER][CREATION] added timer_id %p at head time out %d current time %d proc %p \n", timer_idP, frame_time_outP, current_frame_tick_millisecondsP, *procP);
@@ -132,12 +138,14 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
       mem_unit = mem_unit->next;
     }
   }
+
   if (!inserted) {
 #ifdef DEBUG_TIMER
     msg ("[TIMER][CREATION] added timer_id %p at tail time out %d current time %d proc %p \n", timer_idP, frame_time_outP, current_frame_tick_millisecondsP, *procP);
 #endif
     list2_add_tail (mb, atimer_listP);
   }
+
   return mb;
 }
 
@@ -145,7 +153,7 @@ umts_add_timer_list_up (list2_t * atimer_listP, void (*procP) (void *, void *), 
 void
 umts_stop_all_timers (list2_t * atimer_listP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   list2_free (atimer_listP);
 }
 
@@ -153,13 +161,15 @@ umts_stop_all_timers (list2_t * atimer_listP)
 void
 umts_stop_all_timers_except (list2_t * atimer_listP, void (*procP) (void *, void *))
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   struct timer_unit *timer;
   mem_block_t      *mem_unit;
   mem_block_t      *mem_unit_to_delete;
   mem_unit = atimer_listP->head;
+
   while ((mem_unit)) {
     timer = (struct timer_unit *) (mem_unit->data);
+
     if (timer->proc != procP) {
       mem_unit_to_delete = mem_unit;
       mem_unit = mem_unit->next;

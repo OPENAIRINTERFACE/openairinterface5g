@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_AM_MODULE
-#define RLC_AM_TEST_C
-#define RLC_C
+#define RLC_AM_MODULE 1
+#define RLC_AM_TEST_C 1
+#define RLC_C 1
 
 #include <execinfo.h>
 #include <stdio.h>
@@ -86,44 +86,44 @@ static int  g_send_id_read_index[2];
 static uint8_t g_buffer[32];
 static int8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier ministre est de plus en plus décrié pour son incompétence. La tension politique et dans l'opinion publique est encore montée d'un cran au Japon, sur fond d'inquiétantes nouvelles, avec du plutonium détecté dans le sol autour de la centrale de Fukushima. Le premier ministre Naoto Kan a solennellement déclaré que son gouvernement était «en état d'alerte maximum». Tout en reconnaissant que la situation restait «imprévisible». Ce volontarisme affiché par le premier ministre - que Nicolas Sarkozy rencontrera demain lors d'une visite au Japon - ne l'a pas empêché d'être la cible de violentes critiques de la part de parlementaires sur sa gestion de la crise. Attaqué sur le manque de transparence, il a assuré qu'il rendait publiques toutes les informations en sa possession. Un député de l'opposition, Yosuke Isozaki, a aussi reproché à Naoto Kan de ne pas avoir ordonné l'évacuation des populations dans la zone comprise entre 20 et 30 km autour de la centrale. «Peut-il y avoir quelque chose de plus irresponsable que cela ?», a-t-il lancé. Pour l'heure, la zone d'évacuation est limitée à un rayon de 20 km, seul le confinement étant recommandé pour les 10 km suivants. Sur ce sujet, les autorités japonaises ont été fragilisées mardi par les déclarations de Greenpeace, affirmant que ses experts avaient détecté une radioactivité dangereuse à 40 km de la centrale. L'organisation écologiste a appelé à une extension de la zone d'évacuation, exhortant Tokyo à «cesser de privilégier la politique aux dépens de la science». L'Agence japonaise de sûreté nucléaire a balayé ces critiques.",
 
-"La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
+                           "La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
 
-"La pâquerette",
-" (Bellis perennis)",
-" est une plante vivace des prés,",
-" des pelouses,",
-" des bords de chemins et des prairies,",
-"haute de dix à",
-" vingt centimètres",
-", de la",
-" famille des",
-" Astéracées",
-", dont",
-" les",
-" fleurs",
-" naissent",
-" sur",
-" des",
-" inflorescences",
-" appelées",
-" capitules",
-" : celles",
-" du pourtour",
-", que l'on",
-" croit à",
-" tort",
-" être",
-" des pétales",
-", appelées",
-" fleurs ligulées",
-", parce qu'elles",
-" ont la forme d'une languette, ou demi-fleurons, sont",
-" des fleurs femelles,",
-" dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes,",
-" appelées ",
-"fleurs tubuleuses",
-", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
-};
+                           "La pâquerette",
+                           " (Bellis perennis)",
+                           " est une plante vivace des prés,",
+                           " des pelouses,",
+                           " des bords de chemins et des prairies,",
+                           "haute de dix à",
+                           " vingt centimètres",
+                           ", de la",
+                           " famille des",
+                           " Astéracées",
+                           ", dont",
+                           " les",
+                           " fleurs",
+                           " naissent",
+                           " sur",
+                           " des",
+                           " inflorescences",
+                           " appelées",
+                           " capitules",
+                           " : celles",
+                           " du pourtour",
+                           ", que l'on",
+                           " croit à",
+                           " tort",
+                           " être",
+                           " des pétales",
+                           ", appelées",
+                           " fleurs ligulées",
+                           ", parce qu'elles",
+                           " ont la forme d'une languette, ou demi-fleurons, sont",
+                           " des fleurs femelles,",
+                           " dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes,",
+                           " appelées ",
+                           "fleurs tubuleuses",
+                           ", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
+                          };
 
 /*  Returns the x-y size of the terminal  */
 
@@ -131,81 +131,97 @@ static int8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier m
 void rlc_am_v9_3_0_test_windows()
 //-----------------------------------------------------------------------------
 {
-   rlc_am_entity_t am1;
-   rlc_am_entity_t am2;
-   unsigned int    i;
-   unsigned int    j;
+  rlc_am_entity_t am1;
+  rlc_am_entity_t am2;
+  unsigned int    i;
+  unsigned int    j;
 
-   rlc_am_init(&am1, g_frame);
-   rlc_am_init(&am2, g_frame);
+  rlc_am_init(&am1, g_frame);
+  rlc_am_init(&am2, g_frame);
 
-   // TX window with vt_ms > vt_a
-   for (j = 0; j < RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j++) {
-       am1.vt_a = j;
-       am1.vt_s = j;
-       am1.vt_ms = (am1.vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
-       for (i = 0 ; i < am1.vt_a; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) == 0);
-       }
-       for (i = j ; i < am1.vt_ms; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) > 0);
-       }
-       for (i = am1.vt_ms ; i <= 0xFFFF; i ++) {
-           //printf("assert(rlc_am_in_tx_window(&am1, %d) == 0)) vt(s)=%d vt(ms)=%d\n", i, am1.vt_s, am1.vt_ms);
-           assert(rlc_am_in_tx_window(&am1, i) == 0);
-       }
-   }
-   // TX window with vt_ms < vt_a
-   for (j = RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j < RLC_AM_SN_MODULO; j++) {
-       am1.vt_a = j;
-       am1.vt_s = j;
-       am1.vt_ms = (am1.vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
-       for (i = 0 ; i < am1.vt_ms; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) > 0);
-       }
-       for (i = j ; i < am1.vt_a; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) == 0);
-       }
-       for (i = am1.vt_a ; i < RLC_AM_SN_MODULO; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) > 0);
-       }
-       for (i = RLC_AM_SN_MODULO ; i < 0xFFFF; i ++) {
-           assert(rlc_am_in_tx_window(&am1, i) == 0);
-       }
-   }
+  // TX window with vt_ms > vt_a
+  for (j = 0; j < RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j++) {
+    am1.vt_a = j;
+    am1.vt_s = j;
+    am1.vt_ms = (am1.vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
 
-   // RX window with vr_mr > vr_r
-   for (j = 0; j < RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j++) {
-       am1.vr_r = j;
-       am1.vr_mr = (am1.vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
-       for (i = 0 ; i < am1.vr_r; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) == 0);
-       }
-       for (i = j ; i < am1.vr_mr; i ++) {
-           //printf("assert(rlc_am_in_rx_window(&am1, %d) == 0)) vr(r)=%d vr(mr)=%d\n", i, am1.vr_r, am1.vr_mr);
-           assert(rlc_am_in_rx_window(&am1, i) > 0);
-       }
-       for (i = am1.vr_mr ; i <= 0xFFFF; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) == 0);
-       }
-   }
-   // RX window with vr_mr < vr_r
-   for (j = RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j < RLC_AM_SN_MODULO; j++) {
-       am1.vr_r = j;
-       am1.vr_mr = (am1.vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
-       for (i = 0 ; i < am1.vr_mr; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) > 0);
-       }
-       for (i = j ; i < am1.vr_r; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) == 0);
-       }
-       for (i = am1.vr_r ; i < RLC_AM_SN_MODULO; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) > 0);
-       }
-       for (i = RLC_AM_SN_MODULO ; i < 0xFFFF; i ++) {
-           assert(rlc_am_in_rx_window(&am1, i) == 0);
-       }
-   }
+    for (i = 0 ; i < am1.vt_a; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) == 0);
+    }
+
+    for (i = j ; i < am1.vt_ms; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) > 0);
+    }
+
+    for (i = am1.vt_ms ; i <= 0xFFFF; i ++) {
+      //printf("assert(rlc_am_in_tx_window(&am1, %d) == 0)) vt(s)=%d vt(ms)=%d\n", i, am1.vt_s, am1.vt_ms);
+      assert(rlc_am_in_tx_window(&am1, i) == 0);
+    }
+  }
+
+  // TX window with vt_ms < vt_a
+  for (j = RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j < RLC_AM_SN_MODULO; j++) {
+    am1.vt_a = j;
+    am1.vt_s = j;
+    am1.vt_ms = (am1.vt_a + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
+
+    for (i = 0 ; i < am1.vt_ms; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) > 0);
+    }
+
+    for (i = j ; i < am1.vt_a; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) == 0);
+    }
+
+    for (i = am1.vt_a ; i < RLC_AM_SN_MODULO; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) > 0);
+    }
+
+    for (i = RLC_AM_SN_MODULO ; i < 0xFFFF; i ++) {
+      assert(rlc_am_in_tx_window(&am1, i) == 0);
+    }
+  }
+
+  // RX window with vr_mr > vr_r
+  for (j = 0; j < RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j++) {
+    am1.vr_r = j;
+    am1.vr_mr = (am1.vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
+
+    for (i = 0 ; i < am1.vr_r; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) == 0);
+    }
+
+    for (i = j ; i < am1.vr_mr; i ++) {
+      //printf("assert(rlc_am_in_rx_window(&am1, %d) == 0)) vr(r)=%d vr(mr)=%d\n", i, am1.vr_r, am1.vr_mr);
+      assert(rlc_am_in_rx_window(&am1, i) > 0);
+    }
+
+    for (i = am1.vr_mr ; i <= 0xFFFF; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) == 0);
+    }
+  }
+
+  // RX window with vr_mr < vr_r
+  for (j = RLC_AM_SN_MODULO-RLC_AM_WINDOW_SIZE; j < RLC_AM_SN_MODULO; j++) {
+    am1.vr_r = j;
+    am1.vr_mr = (am1.vr_r + RLC_AM_WINDOW_SIZE) & RLC_AM_SN_MASK;
+
+    for (i = 0 ; i < am1.vr_mr; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) > 0);
+    }
+
+    for (i = j ; i < am1.vr_r; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) == 0);
+    }
+
+    for (i = am1.vr_r ; i < RLC_AM_SN_MODULO; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) > 0);
+    }
+
+    for (i = RLC_AM_SN_MODULO ; i < 0xFFFF; i ++) {
+      assert(rlc_am_in_rx_window(&am1, i) == 0);
+    }
+  }
 
 }
 //-----------------------------------------------------------------------------
@@ -491,14 +507,16 @@ void rlc_am_v9_3_0_test_read_write_bit_field()
 void rlc_am_v9_3_0_test_reset_sdus()
 //-----------------------------------------------------------------------------
 {
-    int i, j;
-    for (j = 0; j < 2; j++) {
-        for (i = 0; i < TEST_MAX_SEND_SDU; i++) {
-           g_send_sdu_ids[i][j]= -1;
-        }
-        g_send_id_write_index[j] = 0;
-        g_send_id_read_index[j]  = 0;
+  int i, j;
+
+  for (j = 0; j < 2; j++) {
+    for (i = 0; i < TEST_MAX_SEND_SDU; i++) {
+      g_send_sdu_ids[i][j]= -1;
     }
+
+    g_send_id_write_index[j] = 0;
+    g_send_id_read_index[j]  = 0;
+  }
 }
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP)
@@ -508,26 +526,27 @@ void rlc_am_v9_3_0_test_send_sdu(rlc_am_entity_t *am_txP, int sdu_indexP)
   sdu = get_free_mem_block (strlen(g_sdus[sdu_indexP]) + 1 + sizeof (struct rlc_am_data_req_alloc));
 
   if (sdu != NULL) {
-      // PROCESS OF COMPRESSION HERE:
-      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",g_frame,am_txP->module_id, am_txP->rb_id, sdu_indexP, strlen(g_sdus[sdu_indexP]) + 1);
-      memset (sdu->data, 0, sizeof (struct rlc_am_data_req_alloc));
-      strcpy (&sdu->data[sizeof (struct rlc_am_data_req_alloc)],g_sdus[sdu_indexP]);
+    // PROCESS OF COMPRESSION HERE:
+    printf("[FRAME %05d][RLC][MOD %02d][RB %02d] TX SDU %d %04d bytes\n",g_frame,am_txP->module_id, am_txP->rb_id, sdu_indexP, strlen(g_sdus[sdu_indexP]) + 1);
+    memset (sdu->data, 0, sizeof (struct rlc_am_data_req_alloc));
+    strcpy (&sdu->data[sizeof (struct rlc_am_data_req_alloc)],g_sdus[sdu_indexP]);
 
-      ((struct rlc_am_data_req *) (sdu->data))->data_size = strlen(g_sdus[sdu_indexP])+ 1;
-      ((struct rlc_am_data_req *) (sdu->data))->conf = 1;
-      ((struct rlc_am_data_req *) (sdu->data))->mui  = g_mui++;
-      ((struct rlc_am_data_req *) (sdu->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
-      rlc_am_data_req(am_txP, g_frame, sdu);
+    ((struct rlc_am_data_req *) (sdu->data))->data_size = strlen(g_sdus[sdu_indexP])+ 1;
+    ((struct rlc_am_data_req *) (sdu->data))->conf = 1;
+    ((struct rlc_am_data_req *) (sdu->data))->mui  = g_mui++;
+    ((struct rlc_am_data_req *) (sdu->data))->data_offset = sizeof (struct rlc_am_data_req_alloc);
+    rlc_am_data_req(am_txP, g_frame, sdu);
 
-      g_send_sdu_ids[g_send_id_write_index[am_txP->rb_id]++][am_txP->rb_id] = sdu_indexP;
-      assert(g_send_id_write_index[am_txP->rb_id] < TEST_MAX_SEND_SDU);
+    g_send_sdu_ids[g_send_id_write_index[am_txP->rb_id]++][am_txP->rb_id] = sdu_indexP;
+    assert(g_send_id_write_index[am_txP->rb_id] < TEST_MAX_SEND_SDU);
   } else {
     printf("Out of memory error\n");
     exit(-1);
   }
 }
 //-----------------------------------------------------------------------------
-void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP) //-----------------------------------------------------------------------------
+void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP,
+                                      int* dropped_tx_packetsP) //-----------------------------------------------------------------------------
 {
 
 
@@ -536,42 +555,48 @@ void rlc_am_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
   unsigned int tb_size;
 
   data_indP->no_tb = 0;
+
   while (data_requestP->data.nb_elements > 0) {
     tb_src = list_remove_head (&data_requestP->data);
+
     if (tb_src != NULL) {
-        tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
-        printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
-                   ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
-                   tb_size, sizeof (mac_rlc_max_rx_header_size_t));
+      tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
+      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
+             ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
+             tb_size, sizeof (mac_rlc_max_rx_header_size_t));
 
-        *tx_packetsP = *tx_packetsP + 1;
-        if (*drop_countP == 0) {
-            tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
-            if (tb_dst != NULL) {
-                ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
-                ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
-                ((struct mac_tb_ind *) (tb_dst->data))->size             = tb_size;
-                ((struct mac_tb_ind *) (tb_dst->data))->error_indication = 0;
+      *tx_packetsP = *tx_packetsP + 1;
 
-                memcpy(((struct mac_tb_ind *) (tb_dst->data))->data_ptr,
-                    &((struct mac_tb_req *) (tb_src->data))->data_ptr[0],
-                    tb_size);
+      if (*drop_countP == 0) {
+        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
 
-                list_add_tail_eurecom(tb_dst, &data_indP->data);
-                data_indP->no_tb  += 1;
-            } else {
-               printf("Out of memory error\n");
-               exit(-1);
-            }
+        if (tb_dst != NULL) {
+          ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
+          ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
+          ((struct mac_tb_ind *) (tb_dst->data))->size             = tb_size;
+          ((struct mac_tb_ind *) (tb_dst->data))->error_indication = 0;
+
+          memcpy(((struct mac_tb_ind *) (tb_dst->data))->data_ptr,
+                 &((struct mac_tb_req *) (tb_src->data))->data_ptr[0],
+                 tb_size);
+
+          list_add_tail_eurecom(tb_dst, &data_indP->data);
+          data_indP->no_tb  += 1;
         } else {
-            printf("[RLC-LOOP] DROPPING 1 TB\n");
-            *drop_countP = *drop_countP - 1;
-            *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
+          printf("Out of memory error\n");
+          exit(-1);
         }
-        free_mem_block(tb_src);
-        if (data_indP->no_tb > 0) {
-            printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
-        }
+      } else {
+        printf("[RLC-LOOP] DROPPING 1 TB\n");
+        *drop_countP = *drop_countP - 1;
+        *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
+      }
+
+      free_mem_block(tb_src);
+
+      if (data_indP->no_tb > 0) {
+        printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
+      }
     }
   }
 }
@@ -623,42 +648,46 @@ void rlc_am_v9_3_0_test_exchange_pdus(rlc_am_entity_t *am_txP,
 void rlc_am_v9_3_0_test_data_conf(module_id_t module_idP, rb_id_t rb_idP, mui_t muiP, rlc_tx_status_t statusP)
 //-----------------------------------------------------------------------------
 {
-    if (statusP == RLC_SDU_CONFIRM_YES) {
-        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM SEND SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
-    } else {
-        printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM LOST SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
-    }
+  if (statusP == RLC_SDU_CONFIRM_YES) {
+    printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM SEND SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
+  } else {
+    printf("[FRAME %05d][RLC][MOD %02d][RB %02d]  CONFIRM LOST SDU MUI %05d\n",g_frame,module_idP, rb_idP, muiP);
+  }
 }
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_data_ind (module_id_t module_idP, rb_id_t rb_idP, sdu_size_t sizeP, mem_block_t *sduP)
 //-----------------------------------------------------------------------------
 {
-    int i;
-    for (i = 0; i < 37; i++) {
-        if (strcmp(g_sdus[i], sduP->data) == 0) {
-            printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",g_frame,module_idP, rb_idP, i, sizeP);
-            assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
-            assert(g_send_id_write_index[rb_idP^1] > g_send_id_read_index[rb_idP]);
+  int i;
 
-            if (g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] != i) {
+  for (i = 0; i < 37; i++) {
+    if (strcmp(g_sdus[i], sduP->data) == 0) {
+      printf("[FRAME %05d][RLC][MOD %02d][RB %02d] RX SDU %d %04d bytes\n",g_frame,module_idP, rb_idP, i, sizeP);
+      assert(TEST_MAX_SEND_SDU > g_send_id_read_index[rb_idP]);
+      assert(g_send_id_write_index[rb_idP^1] > g_send_id_read_index[rb_idP]);
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-2, g_send_sdu_ids[g_send_id_read_index[rb_idP]-2][rb_idP^1]);
+      if (g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] != i) {
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-1, g_send_sdu_ids[g_send_id_read_index[rb_idP]-1][rb_idP^1]);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-2,
+               g_send_sdu_ids[g_send_id_read_index[rb_idP]-2][rb_idP^1]);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP]-1,
+               g_send_sdu_ids[g_send_id_read_index[rb_idP]-1][rb_idP^1]);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP],
+               g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1]);
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_sdu_ids[%d] = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1]);
+        printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_id_read_index = %d sdu sent = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], i);
+      }
 
-                printf("[FRAME %05d][RLC][MOD %d][RB %d][DATA-IND] g_send_id_read_index = %d sdu sent = %d\n",g_frame,module_idP, rb_idP,  g_send_id_read_index[rb_idP], i);
-            }
-            assert(g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] == i);
-            g_send_id_read_index[rb_idP] += 1;
-            free_mem_block(sduP);
-            return;
-        }
+      assert(g_send_sdu_ids[g_send_id_read_index[rb_idP]][rb_idP^1] == i);
+      g_send_id_read_index[rb_idP] += 1;
+      free_mem_block(sduP);
+      return;
     }
-    printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
-    free_mem_block(sduP);
-    assert(1==2);
+  }
+
+  printf("[FRAME %05d][RLC][MOD %d][RB %d] RX UNKNOWN SDU %04d bytes\n",g_frame,module_idP, rb_idP,  sizeP);
+  free_mem_block(sduP);
+  assert(1==2);
 }
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_tx_rx()
@@ -707,34 +736,38 @@ void rlc_am_v9_3_0_test_tx_rx()
   rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
   assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
-    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 1: END OF SIMPLE TEST SEVERAL SDUs IN PDU\n\n\n\n");
+  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 1: END OF SIMPLE TEST SEVERAL SDUs IN PDU\n\n\n\n");
 
-    rlc_am_v9_3_0_test_reset_sdus();
-    // RANDOM TESTS
-    for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-12; i++) {
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
-        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
-        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
-        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
-        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 3);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 4);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 5);
-        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 6);
-        for (i = 0; i < 50; i++) {
-            rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 200, 200);
-        }
-        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+  rlc_am_v9_3_0_test_reset_sdus();
+
+  // RANDOM TESTS
+  for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-12; i++) {
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 8000, 200);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 1);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 2);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 3);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 4);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 5);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, 6);
+
+    for (i = 0; i < 50; i++) {
+      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 200, 200);
     }
-    rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
-    rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
+
     assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
-    printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 1: END OF TEST SEVERAL SDUs IN PDU\n\n\n\n");
+  }
+
+  rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
+  rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
+  assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+  printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 1: END OF TEST SEVERAL SDUs IN PDU\n\n\n\n");
 #endif
 #ifdef TEST2
   srand (0);
@@ -806,10 +839,12 @@ void rlc_am_v9_3_0_test_tx_rx()
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 57, 200);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 58, 200);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 59, 200);
+
   //rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 60, 200); if uncomment: error because too many segments of SDU
   for (i = 0; i < 24; i++) {
-      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 2000, 200);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 2000, 200);
   }
+
   rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
   assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
@@ -859,17 +894,21 @@ void rlc_am_v9_3_0_test_tx_rx()
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
-  for (i = 0; i < 30; i++)
-      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 500, 200);
+
+  for (i = 0; i < 30; i++) {
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 500, 200);
+  }
 
   // Purge
   for (i = 0; i < 24; i++) {
-      rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
-      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
   }
+
   for (i = 0; i < 100; i++) {
-      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 300, 200);
   }
+
   rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
   assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
@@ -878,12 +917,15 @@ void rlc_am_v9_3_0_test_tx_rx()
 #ifdef TEST4
   srand (0);
   rlc_am_v9_3_0_test_reset_sdus();
+
   for (i = 2 ; i < 37 ; i++) {
-      rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
   }
+
   for (i = 2 ; i < 37 ; i++) {
-      rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
+    rlc_am_v9_3_0_test_send_sdu(&g_am_tx, i);
   }
+
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 30, 100);
   g_drop_tx = 4;
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 100, 100);
@@ -927,8 +969,9 @@ void rlc_am_v9_3_0_test_tx_rx()
   rlc_am_configure(&g_am_tx, g_frame, max_retx_threshold, poll_pdu, poll_byte, t_poll_retransmit, t_reordering, t_status_prohibit);
 
   for (i = 0 ; i < 50 ; i++) {
-      rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 100, 100);
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 100, 100);
   }
+
   //exit(0);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 400, 100);
   rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 400, 100);
@@ -974,145 +1017,180 @@ void rlc_am_v9_3_0_test_tx_rx()
 #ifdef TEST5
   srand (0);
   rlc_am_v9_3_0_test_reset_sdus();
+
   // RANDOM TESTS
   for (i = 0; g_send_id_write_index < TEST_MAX_SEND_SDU-1; i++) {
-  //for (i = 0; g_send_id_write_index < 434; i++) {
-      printf("AM.TX SDU %d\n", g_am_tx.nb_sdu);
-      if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 16)) {
-          g_random_sdu = rand() % 37;
-          rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
-      }
-      //g_random_nb_frames   = (rand() % 2) + 1;
-      g_random_nb_frames   = 1;
-      for (j = 0; j < g_random_nb_frames; j++) {
-          g_random_tx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
-          g_random_rx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
-          rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
-      }
-  }
-  rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
-  rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
-  printf("g_send_id_read_index %d g_send_id_write_index %d\n", g_send_id_read_index[1], g_send_id_write_index[0]);
-  for (j = 0; j < 100; j++) {
+    //for (i = 0; g_send_id_write_index < 434; i++) {
+    printf("AM.TX SDU %d\n", g_am_tx.nb_sdu);
+
+    if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 16)) {
+      g_random_sdu = rand() % 37;
+      rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
+    }
+
+    //g_random_nb_frames   = (rand() % 2) + 1;
+    g_random_nb_frames   = 1;
+
+    for (j = 0; j < g_random_nb_frames; j++) {
       g_random_tx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
       g_random_rx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
       rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+    }
   }
+
+  rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
+  rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
+  printf("g_send_id_read_index %d g_send_id_write_index %d\n", g_send_id_read_index[1], g_send_id_write_index[0]);
+
+  for (j = 0; j < 100; j++) {
+    g_random_tx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
+    g_random_rx_pdu_size = rand() % RLC_SDU_MAX_SIZE;
+    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+  }
+
   rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
   rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
   assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
   printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 5: END OF TEST RANDOM TX ONLY  WITH NO ERRORS ON PHY LAYER\n\n\n\n");
 #endif
-    for (r = 0; r < 128; r++) {
-        srand (r);
+
+  for (r = 0; r < 128; r++) {
+    srand (r);
 #ifdef TEST6
 
-        for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
-            for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
-                g_tx_packets = 0;
-                g_dropped_tx_packets = 0;
-                g_rx_packets = 0;
-                g_dropped_rx_packets = 0;
-                rlc_am_v9_3_0_test_reset_sdus();
-                // RANDOM TESTS
-                for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-                    printf("AM.TX SDU %d\n", g_am_tx.nb_sdu);
-                    if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-                        g_random_sdu = rand() % 37;
-                        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
-                    }
-                    g_random_nb_frames   = (rand() % 10) + 1;
-                    //g_random_nb_frames   = 1;
-                    for (j = 0; j < g_random_nb_frames; j++) {
-                        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
-                    }
-                    int dropped = (rand() % 3);
-                    if ((dropped == 0) && (g_tx_packets > 0)){
-                        if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
-                            g_drop_tx = 1;
-                        }
-                    }
-                    dropped = (rand() % 3);
-                    if ((dropped == 0) && (g_rx_packets > 0)){
-                        if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
-                            g_drop_rx = 1;
-                        }
-                    }
-                }
-                for (j = 0; j < 400; j++) {
-                    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 500, 500);
-                }
-                printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 6: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d) TX ONLY WITH ERRORS ON PHY LAYER:\n\n\n\n",r, g_target_tx_error_rate, g_target_rx_error_rate);
-                rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
-                rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
-                assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
-                printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate, (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
+    for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
+      for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
+        g_tx_packets = 0;
+        g_dropped_tx_packets = 0;
+        g_rx_packets = 0;
+        g_dropped_rx_packets = 0;
+        rlc_am_v9_3_0_test_reset_sdus();
+
+        // RANDOM TESTS
+        for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+          printf("AM.TX SDU %d\n", g_am_tx.nb_sdu);
+
+          if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+            g_random_sdu = rand() % 37;
+            rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
+          }
+
+          g_random_nb_frames   = (rand() % 10) + 1;
+
+          //g_random_nb_frames   = 1;
+          for (j = 0; j < g_random_nb_frames; j++) {
+            g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+          }
+
+          int dropped = (rand() % 3);
+
+          if ((dropped == 0) && (g_tx_packets > 0)) {
+            if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
+              g_drop_tx = 1;
             }
+          }
+
+          dropped = (rand() % 3);
+
+          if ((dropped == 0) && (g_rx_packets > 0)) {
+            if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
+              g_drop_rx = 1;
+            }
+          }
         }
+
+        for (j = 0; j < 400; j++) {
+          rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, 500, 500);
+        }
+
+        printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 6: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d) TX ONLY WITH ERRORS ON PHY LAYER:\n\n\n\n",
+               r, g_target_tx_error_rate, g_target_rx_error_rate);
+        rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
+        rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+        printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate,
+               (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
+      }
+    }
+
 #endif
 #ifdef TEST7
-        for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
-            for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
-                g_tx_packets = 0;
-                g_dropped_tx_packets = 0;
-                g_rx_packets = 0;
-                g_dropped_rx_packets = 0;
-                rlc_am_v9_3_0_test_reset_sdus();
-                for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
-                    if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-                        g_random_sdu = rand() % 37;
-                        rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
-                        if (g_am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-                            g_random_sdu = rand() % 37;
-                            rlc_am_v9_3_0_test_send_sdu(&g_am_rx, g_random_sdu);
-                        } else {
-                            i = i-1;
-                        }
-                    } else {
-                        if (g_am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
-                            g_random_sdu = rand() % 37;
-                            rlc_am_v9_3_0_test_send_sdu(&g_am_rx, g_random_sdu);
-                        } else {
-                            i = i-1;
-                        }
-                    }
-                    g_random_nb_frames   = rand() % 4;
-                    for (j = 0; j < g_random_nb_frames; j++) {
-                        g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                        g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                        rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
-                    }
-                    int dropped = (rand() % 3);
-                    if ((dropped == 0) && (g_tx_packets > 0)){
-                        if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
-                            g_drop_tx = 1;
-                        }
-                    }
-                    dropped = (rand() % 3);
-                    if ((dropped == 0) && (g_rx_packets > 0)){
-                        if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
-                            g_drop_rx = 1;
-                        }
-                    }
-                }
-                for (j = 0; j < 100; j++) {
-                    g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
-                    rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
-                }
-                printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",r, g_target_tx_error_rate, g_target_rx_error_rate);
-                rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
-                rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
-                assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
-                assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
-                printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate, (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
 
+    for (g_target_tx_error_rate = 0; g_target_tx_error_rate < TARGET_MAX_TX_ERROR_RATE; g_target_tx_error_rate++) {
+      for (g_target_rx_error_rate = 0; g_target_rx_error_rate < TARGET_MAX_RX_ERROR_RATE; g_target_rx_error_rate++) {
+        g_tx_packets = 0;
+        g_dropped_tx_packets = 0;
+        g_rx_packets = 0;
+        g_dropped_rx_packets = 0;
+        rlc_am_v9_3_0_test_reset_sdus();
+
+        for (i = g_send_id_write_index[0]; g_send_id_write_index[0] < TEST_MAX_SEND_SDU-1; i++) {
+          if (g_am_tx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+            g_random_sdu = rand() % 37;
+            rlc_am_v9_3_0_test_send_sdu(&g_am_tx, g_random_sdu);
+
+            if (g_am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+              g_random_sdu = rand() % 37;
+              rlc_am_v9_3_0_test_send_sdu(&g_am_rx, g_random_sdu);
+            } else {
+              i = i-1;
             }
+          } else {
+            if (g_am_rx.nb_sdu < (RLC_AM_SDU_CONTROL_BUFFER_SIZE - 2)) {
+              g_random_sdu = rand() % 37;
+              rlc_am_v9_3_0_test_send_sdu(&g_am_rx, g_random_sdu);
+            } else {
+              i = i-1;
+            }
+          }
+
+          g_random_nb_frames   = rand() % 4;
+
+          for (j = 0; j < g_random_nb_frames; j++) {
+            g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+            rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+          }
+
+          int dropped = (rand() % 3);
+
+          if ((dropped == 0) && (g_tx_packets > 0)) {
+            if ((((g_dropped_tx_packets + 1)*100) / g_tx_packets) <= g_target_tx_error_rate) {
+              g_drop_tx = 1;
+            }
+          }
+
+          dropped = (rand() % 3);
+
+          if ((dropped == 0) && (g_rx_packets > 0)) {
+            if ((((g_dropped_rx_packets + 1)*100) / g_rx_packets) <= g_target_rx_error_rate) {
+              g_drop_rx = 1;
+            }
+          }
         }
-#endif
+
+        for (j = 0; j < 100; j++) {
+          g_random_tx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+          g_random_rx_pdu_size = (rand() % RLC_SDU_MAX_SIZE)  / ((rand () % 4)+1);
+          rlc_am_v9_3_0_test_exchange_pdus(&g_am_tx, &g_am_rx, g_random_tx_pdu_size, g_random_rx_pdu_size);
+        }
+
+        printf("\n\n\n\n\n\n-----------------------------------------------------------------------------------------rlc_am_v9_3_0_test 7: END OF TEST RANDOM (SEED=%d BLER TX=%d BLER RX=%d ) TX RX WITH ERRORS ON PHY LAYER:\n\n\n\n",
+               r, g_target_tx_error_rate, g_target_rx_error_rate);
+        rlc_am_rx_list_display(&g_am_tx, "RLC-AM TX:");
+        rlc_am_rx_list_display(&g_am_rx, "RLC-AM RX:");
+        assert (g_send_id_read_index[1] == g_send_id_write_index[0]);
+        assert (g_send_id_read_index[0] == g_send_id_write_index[1]);
+        printf("REAL BLER TX=%d (TARGET=%d) BLER RX=%d (TARGET=%d) \n",(g_dropped_tx_packets*100)/g_tx_packets, g_target_tx_error_rate,
+               (g_dropped_rx_packets*100)/g_rx_packets, g_target_rx_error_rate);
+
+      }
     }
+
+#endif
+  }
 }
 //-----------------------------------------------------------------------------
 void rlc_am_v9_3_0_test_print_trace (void)
@@ -1128,8 +1206,9 @@ void rlc_am_v9_3_0_test_print_trace (void)
 
   printf ("Obtained %d stack frames.\n", size);
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     printf ("%s\n", strings[i]);
+  }
 
   free (strings);
 }
@@ -1138,21 +1217,21 @@ void rlc_am_v9_3_0_test_print_trace (void)
 void rlc_am_v9_3_0_test(void)
 //-----------------------------------------------------------------------------
 {
-//     initscr();
-//     cbreak();
-//     keypad(stdscr, TRUE);
+  //     initscr();
+  //     cbreak();
+  //     keypad(stdscr, TRUE);
 
 
 
-    // under test
-    pool_buffer_init();
-    set_comp_log(RLC, LOG_ERR, LOG_MED, 1);
+  // under test
+  pool_buffer_init();
+  set_comp_log(RLC, LOG_ERR, LOG_MED, 1);
 
-    rlc_am_v9_3_0_test_tx_rx();
+  rlc_am_v9_3_0_test_tx_rx();
 
-    // already tested
-    rlc_am_v9_3_0_test_windows();
-    rlc_am_v9_3_0_test_read_write_bit_field();
-    printf("rlc_am_v9_3_0_test: END OF TESTS\n");
-    exit(0);
+  // already tested
+  rlc_am_v9_3_0_test_windows();
+  rlc_am_v9_3_0_test_read_write_bit_field();
+  printf("rlc_am_v9_3_0_test: END OF TESTS\n");
+  exit(0);
 }

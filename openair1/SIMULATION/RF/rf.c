@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -33,7 +33,7 @@
 
 //#include "PHY/defs.h"
 #include "SIMULATION/TOOLS/defs.h"
- 
+
 /*
 extern void randominit(void);
 extern double gaussdouble(double,double);
@@ -48,26 +48,27 @@ extern int write_output(const char *,const char *,void *,int,int,char);
 
 //#define DEBUG_RF 1
 
-  //free(input_data);
+//free(input_data);
 void rf_rx(double **r_re,
-	   double **r_im,
-	   double **r_re_i1,
-	   double **r_im_i1,
-	   double I0_dB,
-	   unsigned int nb_rx_antennas,
-	   unsigned int length,
-	   double s_time,
-	   double f_off,
-	   double drift,
-	   double noise_figure,
-	   double rx_gain_dB,
-	   int IP3_dBm,
-	   double *initial_phase,
-	   double pn_cutoff,
-	   double pn_amp_dBc,
-	   double IQ_imb_dB,
-	   double IQ_phase) {
- 
+           double **r_im,
+           double **r_re_i1,
+           double **r_im_i1,
+           double I0_dB,
+           unsigned int nb_rx_antennas,
+           unsigned int length,
+           double s_time,
+           double f_off,
+           double drift,
+           double noise_figure,
+           double rx_gain_dB,
+           int IP3_dBm,
+           double *initial_phase,
+           double pn_cutoff,
+           double pn_amp_dBc,
+           double IQ_imb_dB,
+           double IQ_phase)
+{
+
   double phase       = *initial_phase;
   double phase2      = *initial_phase;
   double phase_inc   = 2*M_PI*f_off*s_time*1e-9;
@@ -94,12 +95,12 @@ void rf_rx(double **r_re,
   int i,a,have_interference=0;
 
 
-  if (pn_amp_dBc > -20.0){
+  if (pn_amp_dBc > -20.0) {
     printf("rf.c: Illegal pn_amp_dBc %f\n",pn_amp_dBc);
     exit(-1);
   }
 
-  if ((pn_cutoff > 1e6) || (pn_cutoff<1e3)){
+  if ((pn_cutoff > 1e6) || (pn_cutoff<1e3)) {
     printf("rf.c: Illegal pn_cutoff %f\n",pn_cutoff);
     exit(-1);
   }
@@ -129,7 +130,7 @@ void rf_rx(double **r_re,
 #endif
 
   /*
-  for (i=0;i<nb_rx_antennas;i++) 
+  for (i=0;i<nb_rx_antennas;i++)
     if (noise_figure[i] < 1.0) {
       printf("rf.c: Illegal noise_figure %d %f\n",i,noise_figure[i]);
       exit(-1);
@@ -149,14 +150,14 @@ void rf_rx(double **r_re,
   if ((r_re_i1) && (r_im_i1) )
     have_interference=1;
 
-  for (i=0;i<length;i++) {
+  for (i=0; i<length; i++) {
 
-    
-    for (a=0;a<nb_rx_antennas;a++) {
+
+    for (a=0; a<nb_rx_antennas; a++) {
 
       if (have_interference==1) {
-	r_re[a][i] = r_re[a][i] + (I0 * r_re_i1[a][i]);
-	r_im[a][i] = r_im[a][i] + (I0 * r_im_i1[a][i]);
+        r_re[a][i] = r_re[a][i] + (I0 * r_re_i1[a][i]);
+        r_im[a][i] = r_im[a][i] + (I0 * r_im_i1[a][i]);
       }
 
       // Amplify by receiver gain and apply 3rd order non-linearity
@@ -200,18 +201,19 @@ void rf_rx(double **r_re,
     y_n1 = p_noise;
     y_n2 = y_n1;
     p_noise = pn_a0*x_n + 2*pn_a0*x_n1 + pn_a0*x_n2 - pn_b1*y_n1 - pn_b2*y_n2;
- 
+
     //    pn[i] = p_noise;
   }
 }
 
 void rf_rx_simple(double **r_re,
-		  double **r_im,
-		  unsigned int nb_rx_antennas,
-		  unsigned int length,
-		  double s_time,
-		  double rx_gain_dB) {
-  
+                  double **r_im,
+                  unsigned int nb_rx_antennas,
+                  unsigned int length,
+                  double s_time,
+                  double rx_gain_dB)
+{
+
   int i,a;
   double rx_gain_lin = pow(10.0,.05*rx_gain_dB);
   //double rx_gain_lin = 1.0;
@@ -226,8 +228,8 @@ void rf_rx_simple(double **r_re,
   printf("rx_gain = %f dB(%f)\n",rx_gain_dB,rx_gain_lin);
 #endif
 
-  for (i=0;i<length;i++) {
-    for (a=0;a<nb_rx_antennas;a++) {
+  for (i=0; i<length; i++) {
+    for (a=0; a<nb_rx_antennas; a++) {
       // Amplify by receiver gain and apply 3rd order non-linearity
       r_re[a][i] = rx_gain_lin*(r_re[a][i] + sqrt(.5*N0W)*gaussdouble(0.0,1.0));
       r_im[a][i] = rx_gain_lin*(r_im[a][i] + sqrt(.5*N0W)*gaussdouble(0.0,1.0));
@@ -235,15 +237,16 @@ void rf_rx_simple(double **r_re,
   }
 }
 
- 
+
 #ifdef RF_MAIN
 #define INPUT_dBm -70.0
 
-int QPSK[4]={AMP_OVER_SQRT2|(AMP_OVER_SQRT2<<16),AMP_OVER_SQRT2|((65536-AMP_OVER_SQRT2)<<16),((65536-AMP_OVER_SQRT2)<<16)|AMP_OVER_SQRT2,((65536-AMP_OVER_SQRT2)<<16)|(65536-AMP_OVER_SQRT2)};
-int QPSK2[4]={AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),((65536-AMP_OVER_2)<<16)|AMP_OVER_2,((65536-AMP_OVER_2)<<16)|(65536-AMP_OVER_2)};
+int QPSK[4]= {AMP_OVER_SQRT2|(AMP_OVER_SQRT2<<16),AMP_OVER_SQRT2|((65536-AMP_OVER_SQRT2)<<16),((65536-AMP_OVER_SQRT2)<<16)|AMP_OVER_SQRT2,((65536-AMP_OVER_SQRT2)<<16)|(65536-AMP_OVER_SQRT2)};
+int QPSK2[4]= {AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),((65536-AMP_OVER_2)<<16)|AMP_OVER_2,((65536-AMP_OVER_2)<<16)|(65536-AMP_OVER_2)};
 
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
 
   // Fill input vector with complex sinusoid
 
@@ -258,7 +261,7 @@ int main(int argc, char* argv[]) {
 
   uint32_t **input = malloc(nb_antennas*sizeof(uint32_t*));
   uint32_t **output = malloc(nb_antennas*sizeof(uint32_t*));
-  
+
   double **s_re = malloc(nb_antennas*sizeof (double *));
   double **s_im = malloc(nb_antennas*sizeof (double *));
   double **r_re = malloc(nb_antennas*sizeof (double *));
@@ -271,66 +274,66 @@ int main(int argc, char* argv[]) {
   set_taus_seed(0);
 
   channel = new_channel_desc_scm(nb_antennas,
-				 nb_antennas,
-				 AWGN,
-				 7.68e6,
-				 0,
-				 0,
-				 path_loss_dB);
+                                 nb_antennas,
+                                 AWGN,
+                                 7.68e6,
+                                 0,
+                                 0,
+                                 path_loss_dB);
 
-  for (i=0;i<nb_antennas;i++) {
+  for (i=0; i<nb_antennas; i++) {
     s_re[i] = (double *)malloc(length * sizeof (double ));
     s_im[i] = (double *)malloc(length * sizeof (double ));
     r_re[i] = (double *)malloc(length * sizeof (double ));
     r_im[i] = (double *)malloc(length * sizeof (double ));
     input[i] = (uint32_t*)malloc(length * sizeof(uint32_t));
     output[i] = (uint32_t*)malloc(length * sizeof(uint32_t));
-  }    
+  }
 
-  for (i=0;i<nb_antennas;i++) {
+  for (i=0; i<nb_antennas; i++) {
     // generate a random QPSK signal
-    for (j=0;j<length/2;j++) {
+    for (j=0; j<length/2; j++) {
       input[i][j] = QPSK[taus()&3];
     }
   }
-  
+
   tx_pwr = dac_fixed_gain(s_re,
-			  s_im,
-			  input,
-			  0,
-			  nb_antennas,
-			  length,
-			  0,
-			  512,
-			  14,
-			  15.0);
+                          s_im,
+                          input,
+                          0,
+                          nb_antennas,
+                          length,
+                          0,
+                          512,
+                          14,
+                          15.0);
 
   multipath_channel(channel,s_re,s_im,r_re,r_im,
-		    length,0);
-  
+                    length,0);
+
   rf_rx_simple(r_re,
-	       r_im,
-	       nb_antennas,
-	       length,
-	       1.0/7.68e6 * 1e9,// sampling time (ns)
-	       rx_gain_dB - 66.227);
+               r_im,
+               nb_antennas,
+               length,
+               1.0/7.68e6 * 1e9,// sampling time (ns)
+               rx_gain_dB - 66.227);
 
   /*
   rf_rx(r_re,
-	r_im,
-	nb_antennas,
-	length,
-	1.0/6.5e6 * 1e9,// sampling time (ns)
-	1000.0  ,          //freq offset (Hz)
-	0.0,            //drift (Hz) NOT YET IMPLEMENTED
-	nf,             //noise_figure NOT YET IMPLEMENTED
-	-INPUT_dBm,           //rx_gain (dB)
-	200,            // IP3_dBm (dBm)
-	&ip,            // initial phase
-	30.0e3,         // pn_cutoff (kHz)
-	-500.0,          // pn_amp (dBc)
-	-0.0,              // IQ imbalance (dB),
-	0.0);           // IQ phase imbalance (rad)
+  r_im,
+  nb_antennas,
+  length,
+  1.0/6.5e6 * 1e9,// sampling time (ns)
+  1000.0  ,          //freq offset (Hz)
+  0.0,            //drift (Hz) NOT YET IMPLEMENTED
+  nf,             //noise_figure NOT YET IMPLEMENTED
+  -INPUT_dBm,           //rx_gain (dB)
+  200,            // IP3_dBm (dBm)
+  &ip,            // initial phase
+  30.0e3,         // pn_cutoff (kHz)
+  -500.0,          // pn_amp (dBc)
+  -0.0,              // IQ imbalance (dB),
+  0.0);           // IQ phase imbalance (rad)
   */
 
   adc(r_re,
@@ -341,7 +344,7 @@ int main(int argc, char* argv[]) {
       nb_antennas,
       length,
       12);
-  
+
   write_output("s_im.m","s_im",s_im[0],length,1,7);
   write_output("s_re.m","s_re",s_re[0],length,1,7);
   write_output("r_im.m","r_im",r_im[0],length,1,7);

@@ -14,32 +14,32 @@ void lfds611_stack_query( struct lfds611_stack_state *ss, enum lfds611_stack_que
 
   LFDS611_BARRIER_LOAD;
 
-  switch( query_type )
-  {
-    case LFDS611_STACK_QUERY_ELEMENT_COUNT:
-      assert( query_input == NULL );
+  switch( query_type ) {
+  case LFDS611_STACK_QUERY_ELEMENT_COUNT:
+    assert( query_input == NULL );
 
-      lfds611_freelist_query( ss->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, query_output );
+    lfds611_freelist_query( ss->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, query_output );
     break;
 
-    case LFDS611_STACK_QUERY_VALIDATE:
-      // TRD : query_input can be NULL
+  case LFDS611_STACK_QUERY_VALIDATE:
+    // TRD : query_input can be NULL
 
-      /* TRD : the validation info passed in is for the stack
-               it indicates the minimum and maximum number of elements
-               which should be present
+    /* TRD : the validation info passed in is for the stack
+             it indicates the minimum and maximum number of elements
+             which should be present
 
-               we need to validate the freelist
-               and validate the stack
+             we need to validate the freelist
+             and validate the stack
 
-               we cannot know the min/max for the freelist, given only
-               the min/max for the stack
-      */
+             we cannot know the min/max for the freelist, given only
+             the min/max for the stack
+    */
 
-      lfds611_freelist_query( ss->fs, LFDS611_FREELIST_QUERY_VALIDATE, NULL, (enum lfds611_data_structure_validity *) query_output );
+    lfds611_freelist_query( ss->fs, LFDS611_FREELIST_QUERY_VALIDATE, NULL, (enum lfds611_data_structure_validity *) query_output );
 
-      if( *(enum lfds611_data_structure_validity *) query_output == LFDS611_VALIDITY_VALID )
-        lfds611_stack_internal_validate( ss, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output, ((enum lfds611_data_structure_validity *) query_output)+1 );
+    if( *(enum lfds611_data_structure_validity *) query_output == LFDS611_VALIDITY_VALID )
+      lfds611_stack_internal_validate( ss, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output, ((enum lfds611_data_structure_validity *) query_output)+1 );
+
     break;
   }
 
@@ -51,19 +51,20 @@ void lfds611_stack_query( struct lfds611_stack_state *ss, enum lfds611_stack_que
 
 
 /****************************************************************************/
-void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *stack_validity, enum lfds611_data_structure_validity *freelist_validity )
+void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *stack_validity,
+                                      enum lfds611_data_structure_validity *freelist_validity )
 {
   struct lfds611_stack_element
-    *se,
-    *se_slow,
-    *se_fast;
+      *se,
+      *se_slow,
+      *se_fast;
 
   lfds611_atom_t
-    element_count = 0,
-    total_elements;
+  element_count = 0,
+  total_elements;
 
   struct lfds611_validation_info
-    freelist_vi;
+      freelist_vi;
 
   assert( ss != NULL );
   // TRD : vi can be NULL
@@ -91,8 +92,7 @@ void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfd
   */
 
   if( se_slow != NULL )
-    do
-    {
+    do {
       se_slow = se_slow->next[LFDS611_STACK_POINTER];
 
       if( se_fast != NULL )
@@ -100,8 +100,7 @@ void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfd
 
       if( se_fast != NULL )
         se_fast = se_fast->next[LFDS611_STACK_POINTER];
-    }
-    while( se_slow != NULL and se_fast != se_slow );
+    } while( se_slow != NULL and se_fast != se_slow );
 
   if( se_fast != NULL and se_slow != NULL and se_fast == se_slow )
     *stack_validity = LFDS611_VALIDITY_INVALID_LOOP;
@@ -111,12 +110,10 @@ void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfd
            we know we don't have a loop from our earlier check
   */
 
-  if( *stack_validity == LFDS611_VALIDITY_VALID and vi != NULL )
-  {
+  if( *stack_validity == LFDS611_VALIDITY_VALID and vi != NULL ) {
     se = (struct lfds611_stack_element *) ss->top[LFDS611_STACK_POINTER];
 
-    while( se != NULL )
-    {
+    while( se != NULL ) {
       element_count++;
       se = (struct lfds611_stack_element *) se->next[LFDS611_STACK_POINTER];
     }
@@ -140,8 +137,7 @@ void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfd
            freelist
   */
 
-  if( vi != NULL )
-  {
+  if( vi != NULL ) {
     lfds611_freelist_query( ss->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, (void *) &total_elements );
 
     freelist_vi.min_elements = total_elements - vi->max_elements;

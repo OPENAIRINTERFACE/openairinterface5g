@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,20 +14,20 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
- #ifndef __DEFS_H__
+
+#ifndef __DEFS_H__
 #define __DEFS_H__
 
 #include <asm/io.h>
@@ -64,9 +64,9 @@
 /*   Prototypes                                   */
 /*------------------------------------------------*/
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,35)
-long openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg); 
+long openair_device_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 #else
-int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg); 
+int openair_device_ioctl(struct inode *inode,struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
 int openair_device_open    (struct inode *inode,struct file *filp);
 int openair_device_release (struct inode *inode,struct file *filp);

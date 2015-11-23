@@ -1,0 +1,137 @@
+#!/bin/bash
+
+function main()
+{
+mkdir -p $1
+cd $1
+shift
+
+#if this script is called with only 2 arguments (so 1 here after the shift), it's for RRC
+#(there may be a better way...)
+if [ $# -eq 1 ]; then
+
+#asn1c does not work well with extension groups, we need the following fix:
+# replace [[ by '<name> SEQUENCE {'
+#     and ]] by '} OPTIONAL'
+#<name> is ext<N> with N starting from 1 and incremented at each new [[ ]] just
+#following another [[ ]]
+#
+#this is what the following C program does
+
+echo generate asnfix.c
+
+cat << EOF > asnfix.c
+/* transforms:
+ * '[[' to 'name SEQUENCE {'
+ * ']]' to '} OPTIONAL'
+ * name is ext1, ext2, ..., for each [[ at the same level
+ * levels are delimited by { and }
+ * -- to end of line is a comment and unprocessed
+ * nested [[ ]] not handled
+ * { and } must be balanced
+ * [[ and ]] can be whatever, every combination is valid
+ */
+#include <stdio.h>
+#include <stdlib.h>
+
+void level(int toplevel)
+{
+  int c;
+  int next_name = 1;
+
+  while (1) {
+    c = getchar();
+next:
+    if (c == EOF) { if (toplevel) break; abort(); }
+
+    if (c == '-') {
+      c = getchar();
+      if (c != '-') { putchar('-'); goto next; }
+      putchar(c); putchar(c);
+      while (1) {
+        c = getchar(); if (c == EOF) abort();
+        putchar(c);
+        if (c == '\n') break;
+      }
+      continue;
+    }
+
+    if (c == '[') {
+      c = getchar();
+      if (c != '[') { putchar('['); goto next; }
+      printf("ext%d SEQUENCE {", next_name);
+      next_name++;
+      continue;
+    }
+
+    if (c == ']') {
+      c = getchar();
+      if (c != ']') { putchar(']'); goto next; }
+      printf("} OPTIONAL");
+      continue;
+    }
+
+    putchar(c);
+    if (c == '}') { if (toplevel) abort(); break; }
+    if (c == '{') level(0);
+  }
+}
+
+int main(void)
+{
+  level(1);
+  fflush(stdout);
+  return 0;
+}
+EOF
+
+echo compile asnfix.c
+
+gcc -Wall -o asnfix asnfix.c
+
+echo run asnfix on $1
+
+./asnfix < $1 > fixed_grammar.asn
+
+rm -f asnfix asnfix.c
+
+echo done with asnfix
+
+echo running asn1c
+
+asn1c -gen-PER -fcompound-names fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+
+rm -f fixed_grammar.asn
+
+echo asn1c done
+
+else
+
+asn1c -gen-PER -fcompound-names $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+
+fi
+
+awk ' 
+  BEGIN { 
+     print "#ifndef __ASN1_CONSTANTS_H__"
+     print "#define __ASN1_CONSTANTS_H__"
+  }  
+  /INTEGER ::=/ { 
+     gsub("INTEGER ::=","")
+     gsub("--","//")
+     gsub("-1","_minus_1")
+     gsub("-","_")
+     printf("#define %s\n",$0)
+  } 
+  /::=.*INTEGER.*[(]/ {
+     nb_fields=split($0,val,"[:=().]+");
+     gsub("-","_",val[1]);
+     printf("#define min_val_%s %s\n",val[1],val[nb_fields-2]);
+     printf("#define max_val_%s %s\n",val[1],val[nb_fields-1]);
+  }
+  END {
+     print "#endif ";
+  } ' $1  > asn1_constants.h
+}
+
+main "$@"

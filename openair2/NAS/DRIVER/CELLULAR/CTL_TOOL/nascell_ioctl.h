@@ -21,11 +21,11 @@
 //#include <linux/netdevice.h>
 
 //#include <graal_constant.h>
-//#define GRAAL_STATE_IDLE 			0
-//#define GRAAL_STATE_CONNECTED			1
-//#define GRAAL_STATE_ESTABLISHMENT_REQUEST	2
-//#define GRAAL_STATE_ESTABLISHMENT_FAILURE	3
-//#define GRAAL_STATE_RELEASE_FAILURE		4
+//#define GRAAL_STATE_IDLE      0
+//#define GRAAL_STATE_CONNECTED     1
+//#define GRAAL_STATE_ESTABLISHMENT_REQUEST 2
+//#define GRAAL_STATE_ESTABLISHMENT_FAILURE 3
+//#define GRAAL_STATE_RELEASE_FAILURE   4
 
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;

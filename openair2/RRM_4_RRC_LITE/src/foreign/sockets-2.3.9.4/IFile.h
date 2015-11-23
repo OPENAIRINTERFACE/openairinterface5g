@@ -1,16 +1,16 @@
 /** \file IFile.h
- **	\date  2005-04-25
- **	\author grymse@alhem.net
+ ** \date  2005-04-25
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -36,33 +36,34 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 /** \defgroup file File handling */
-/** Pure virtual file I/O interface. 
-	\ingroup file */
+/** Pure virtual file I/O interface.
+  \ingroup file */
 class IFile
 {
 public:
-	virtual ~IFile() {}
+  virtual ~IFile() {}
 
-	virtual bool fopen(const std::string&, const std::string&) = 0;
-	virtual void fclose() const = 0;
+  virtual bool fopen(const std::string&, const std::string&) = 0;
+  virtual void fclose() const = 0;
 
-	virtual size_t fread(char *, size_t, size_t) const = 0;
-	virtual size_t fwrite(const char *, size_t, size_t) = 0;
+  virtual size_t fread(char *, size_t, size_t) const = 0;
+  virtual size_t fwrite(const char *, size_t, size_t) = 0;
 
-	virtual char *fgets(char *, int) const = 0;
-	virtual void fprintf(const char *format, ...) = 0;
+  virtual char *fgets(char *, int) const = 0;
+  virtual void fprintf(const char *format, ...) = 0;
 
-	virtual off_t size() const = 0;
-	virtual bool eof() const = 0;
+  virtual off_t size() const = 0;
+  virtual bool eof() const = 0;
 
-	virtual void reset_read() const = 0;
-	virtual void reset_write() = 0;
+  virtual void reset_read() const = 0;
+  virtual void reset_write() = 0;
 
-	virtual const std::string& Path() const = 0;
+  virtual const std::string& Path() const = 0;
 };
 
 

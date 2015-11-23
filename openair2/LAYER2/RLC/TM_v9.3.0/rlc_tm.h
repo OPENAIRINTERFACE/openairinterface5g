@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -64,6 +64,10 @@
 #        include "mem_block.h"
 #        include "rlc_tm_init.h"
 
+#define PROTOCOL_RLC_TM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_TM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
+          (rLC_Pp->is_data_plane) ? "DRB TM" : "SRB TM",\
+          rLC_Pp->rb_id
 
 
 /*! \fn void rlc_tm_send_sdu (
@@ -79,11 +83,11 @@
 * \param[in]  length_in_bitsP     Length of SDU in bits.
 */
 private_rlc_tm(void rlc_tm_send_sdu (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlc_pP,
-                const boolean_t         error_indicationP,
-                uint8_t * const         srcP,
-                const sdu_size_t        length_in_bitsP);)
+                 const protocol_ctxt_t* const  ctxt_pP,
+                 rlc_tm_entity_t * const rlc_pP,
+                 const boolean_t         error_indicationP,
+                 uint8_t * const         srcP,
+                 const sdu_size_t        length_in_bitsP);)
 
 /*! \fn void rlc_tm_no_segment (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Schedule a SDU to be transmited by lower layers.
@@ -91,8 +95,8 @@ private_rlc_tm(void rlc_tm_send_sdu (
 * \param[in]  rlcP                RLC TM protocol instance pointer.
 */
 private_rlc_tm(void rlc_tm_no_segment (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t *const rlcP);)
+                 const protocol_ctxt_t* const  ctxt_pP,
+                 rlc_tm_entity_t *const rlcP);)
 
 /*! \fn void rlc_tm_rx (const protocol_ctxt_t* const  ctxt_pP,void *const rlcP, struct mac_data_ind data_indP)
 * \brief    Process the received PDUs from lower layer.
@@ -101,9 +105,9 @@ private_rlc_tm(void rlc_tm_no_segment (
 * \param[in]  data_indP                 PDUs from MAC.
 */
 private_rlc_tm( void     rlc_tm_rx (
-                const protocol_ctxt_t* const  ctxt_pP,
-                void *const rlcP,
-                struct mac_data_ind data_indP);)
+                  const protocol_ctxt_t* const  ctxt_pP,
+                  void *const rlcP,
+                  struct mac_data_ind data_indP);)
 
 
 /*! \fn struct mac_status_resp rlc_tm_mac_status_indication (const protocol_ctxt_t* const  ctxt_pP, void * const rlcP, const uint16_t tbs_sizeP, struct mac_status_ind tx_statusP)
@@ -115,10 +119,10 @@ private_rlc_tm( void     rlc_tm_rx (
 * \return     The maximum number of bytes that can be served by RLC instance to MAC.
 */
 public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (
-                const protocol_ctxt_t* const  ctxt_pP,
-                void * const rlcP,
-                const uint16_t tb_sizeP,
-                struct mac_status_ind tx_statusP);)
+                 const protocol_ctxt_t* const  ctxt_pP,
+                 void * const rlcP,
+                 const uint16_t tb_sizeP,
+                 struct mac_status_ind tx_statusP);)
 
 
 /*! \fn struct mac_data_req rlc_tm_mac_data_request (const protocol_ctxt_t* const  ctxt_pP, void * const rlcP)
@@ -128,8 +132,8 @@ public_rlc_tm( struct mac_status_resp rlc_tm_mac_status_indication (
 * \return     A PDU of the previously requested number of bytes, and the updated maximum number of bytes that can be served by RLC instance to MAC for next RLC transmission.
 */
 public_rlc_tm( struct mac_data_req  rlc_tm_mac_data_request (
-                const protocol_ctxt_t* const  ctxt_pP,
-                void * const rlcP);)
+                 const protocol_ctxt_t* const  ctxt_pP,
+                 void * const rlcP);)
 
 
 /*! \fn void     rlc_tm_mac_data_indication (const protocol_ctxt_t* const  ctxt_pP,void * const rlcP, struct mac_data_ind data_indP)
@@ -139,9 +143,9 @@ public_rlc_tm( struct mac_data_req  rlc_tm_mac_data_request (
 * \param[in]  data_indP                 PDUs from MAC.
 */
 public_rlc_tm( void rlc_tm_mac_data_indication (
-                const protocol_ctxt_t* const  ctxt_pP,
-                void * const rlcP,
-                struct mac_data_ind data_indP);)
+                 const protocol_ctxt_t* const  ctxt_pP,
+                 void * const rlcP,
+                 struct mac_data_ind data_indP);)
 
 
 /*! \fn void     rlc_tm_data_req (const protocol_ctxt_t* const  ctxt_pP,void * const rlcP, mem_block_t * const sduP)
@@ -151,9 +155,9 @@ public_rlc_tm( void rlc_tm_mac_data_indication (
 * \param[in]  sduP                      SDU. (A struct rlc_tm_data_req is mapped on sduP->data.)
 */
 public_rlc_tm(    void     rlc_tm_data_req (
-                const protocol_ctxt_t* const  ctxt_pP,
-                void * const rlcP,
-                mem_block_t * const sduP);)
+                    const protocol_ctxt_t* const  ctxt_pP,
+                    void * const rlcP,
+                    mem_block_t * const sduP);)
 
 /** @} */
 #    endif

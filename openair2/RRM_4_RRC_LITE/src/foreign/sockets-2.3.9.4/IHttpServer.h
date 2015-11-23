@@ -1,17 +1,17 @@
 /**
- **	\file IHttpServer.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ ** \file IHttpServer.h
+ ** \date  2007-10-05
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -34,7 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define _SOCKETS_IHttpServer_H
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 
@@ -44,17 +45,17 @@ class HttpResponse;
 class IHttpServer
 {
 public:
-	virtual ~IHttpServer() {}
+  virtual ~IHttpServer() {}
 
-	/** Complete request has been received and parsed. Send response
-	    using the Respond() method. */
-	virtual void OnExec(const HttpRequest& req) = 0;
+  /** Complete request has been received and parsed. Send response
+      using the Respond() method. */
+  virtual void OnExec(const HttpRequest& req) = 0;
 
-	/** Send response. */
-	virtual void Respond(const HttpResponse& res) = 0;
+  /** Send response. */
+  virtual void Respond(const HttpResponse& res) = 0;
 
-	/** Called when the body part of the response has been sent. */
-	virtual void OnResponseComplete() = 0;
+  /** Called when the body part of the response has been sent. */
+  virtual void OnResponseComplete() = 0;
 };
 
 

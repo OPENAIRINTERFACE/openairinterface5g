@@ -2,225 +2,203 @@
 #pragma pack( push, LFDS611_ALIGN_DOUBLE_POINTER )
 
 /***** abstraction tests *****/
-struct abstraction_test_cas_state
-{
+struct abstraction_test_cas_state {
   volatile lfds611_atom_t
-    *shared_counter;
+  *shared_counter;
 
   lfds611_atom_t
-    local_counter;
+  local_counter;
 };
 
-struct abstraction_test_dcas_state
-{
+struct abstraction_test_dcas_state {
   volatile lfds611_atom_t
-    *shared_counter;
+  *shared_counter;
 
   lfds611_atom_t
-    local_counter;
+  local_counter;
 };
 
 /***** freelist tests *****/
-struct freelist_test_popping_state
-{
+struct freelist_test_popping_state {
   struct lfds611_freelist_state
-    *fs,
-    *fs_thread_local;
+      *fs,
+      *fs_thread_local;
 };
 
-struct freelist_test_pushing_state
-{
+struct freelist_test_pushing_state {
   lfds611_atom_t
-    *count,
-    thread_number;
+  *count,
+  thread_number;
 
   struct lfds611_freelist_state
-    *source_fs,
-    *fs;
+      *source_fs,
+      *fs;
 };
 
-struct freelist_test_popping_and_pushing_state
-{
+struct freelist_test_popping_and_pushing_state {
   struct lfds611_freelist_state
-    *local_fs,
-    *fs;
+      *local_fs,
+      *fs;
 };
 
-struct freelist_test_counter_and_thread_number
-{
+struct freelist_test_counter_and_thread_number {
   lfds611_atom_t
-    thread_number;
+  thread_number;
 
   unsigned long long int
-    counter;
+  counter;
 };
 
 /***** queue tests *****/
-struct queue_test_enqueuing_state
-{
+struct queue_test_enqueuing_state {
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   lfds611_atom_t
-    counter;
+  counter;
 };
 
-struct queue_test_dequeuing_state
-{
+struct queue_test_dequeuing_state {
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   int
-    error_flag;
+  error_flag;
 };
 
-struct queue_test_enqueuing_and_dequeuing_state
-{
+struct queue_test_enqueuing_and_dequeuing_state {
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   lfds611_atom_t
-    counter,
-    thread_number,
-    *per_thread_counters;
+  counter,
+  thread_number,
+  *per_thread_counters;
 
   unsigned int
-    cpu_count;
+  cpu_count;
 
   int
-    error_flag;
+  error_flag;
 };
 
-struct queue_test_rapid_enqueuing_and_dequeuing_state
-{
+struct queue_test_rapid_enqueuing_and_dequeuing_state {
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   lfds611_atom_t
-    counter;
+  counter;
 };
 
 /***** ringbuffer tests *****/
-struct ringbuffer_test_reading_state
-{
+struct ringbuffer_test_reading_state {
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   int
-    error_flag;
+  error_flag;
 
   lfds611_atom_t
-    read_count;
+  read_count;
 };
 
-struct ringbuffer_test_writing_state
-{
+struct ringbuffer_test_writing_state {
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   lfds611_atom_t
-    write_count;
+  write_count;
 };
 
-struct ringbuffer_test_reading_and_writing_state
-{
+struct ringbuffer_test_reading_and_writing_state {
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   lfds611_atom_t
-    counter,
-    *per_thread_counters;
+  counter,
+  *per_thread_counters;
 
   unsigned int
-    cpu_count;
+  cpu_count;
 
   int
-    error_flag;
+  error_flag;
 };
 
 /***** slist tests *****/
-struct slist_test_state
-{
+struct slist_test_state {
   struct lfds611_slist_state
-    *ss;
+      *ss;
 
   size_t
-    create_count,
-    delete_count;
+  create_count,
+  delete_count;
 
   lfds611_atom_t
-    thread_and_count;
+  thread_and_count;
 };
 
 /***** stack tests *****/
-struct stack_test_popping_state
-{
+struct stack_test_popping_state {
   struct lfds611_stack_state
-    *ss,
-    *ss_thread_local;
+      *ss,
+      *ss_thread_local;
 };
 
-struct stack_test_pushing_state
-{
+struct stack_test_pushing_state {
   lfds611_atom_t
-    thread_number;
+  thread_number;
 
   struct lfds611_stack_state
-    *ss;
+      *ss;
 };
 
-struct stack_test_popping_and_pushing_state
-{
+struct stack_test_popping_and_pushing_state {
   struct lfds611_stack_state
-    *local_ss,
-    *ss;
+      *local_ss,
+      *ss;
 };
 
-struct stack_test_counter_and_thread_number
-{
+struct stack_test_counter_and_thread_number {
   lfds611_atom_t
-    thread_number,
-    counter;
+  thread_number,
+  counter;
 };
 
 /***** freelist benchmarks *****/
-struct lfds611_freelist_benchmark
-{
+struct lfds611_freelist_benchmark {
   struct lfds611_freelist_state
-    *fs;
+      *fs;
 
   lfds611_atom_t
-    operation_count;
+  operation_count;
 };
 
 /***** queue benchmarks *****/
-struct lfds611_queue_benchmark
-{
+struct lfds611_queue_benchmark {
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   lfds611_atom_t
-    operation_count;
+  operation_count;
 };
 
 /***** ringbuffer benchmarks *****/
-struct lfds611_ringbuffer_benchmark
-{
+struct lfds611_ringbuffer_benchmark {
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   lfds611_atom_t
-    operation_count;
+  operation_count;
 };
 
 /***** stack benchmarks *****/
-struct lfds611_stack_benchmark
-{
+struct lfds611_stack_benchmark {
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   lfds611_atom_t
-    operation_count;
+  operation_count;
 };
 
 #pragma pack( pop )

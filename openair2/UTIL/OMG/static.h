@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -31,7 +31,7 @@
  * \file static.h
  * \brief Prototypes of the functions used for the STATIC model
  * \date 22 May 2011
- * 
+ *
  */
 
 #ifndef STATIC_H_
@@ -41,7 +41,7 @@
 
 /**
  * \fn void start_static_generator(omg_global_param omg_param_list)
- * \brief Start the STATIC model by setting the initial position of each node 
+ * \brief Start the STATIC model by setting the initial position of each node
  * \param omg_param_list a structure that contains the main parameters needed to establish the random positions distribution
  */
 void start_static_generator(omg_global_param omg_param_list);
@@ -49,7 +49,7 @@ void start_static_generator(omg_global_param omg_param_list);
 
 /**
  \fn void place_static_node(NodePtr node)
- * \brief Generates a random position ((X,Y) coordinates) and assign it to the node passed as argument. This latter node is then added to the Node_Vector[STATIC] 
+ * \brief Generates a random position ((X,Y) coordinates) and assign it to the node passed as argument. This latter node is then added to the Node_Vector[STATIC]
  * \param node a pointer of type NodePtr that represents the node to which the random position is assigned
  */
 void place_static_node(node_struct* node);

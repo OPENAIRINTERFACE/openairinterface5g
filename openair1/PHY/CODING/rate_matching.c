@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -41,12 +41,13 @@ unsigned int ps0, ps1, ps2, pb;
 
 //----------------------------------------------
 //
-/*!\brief Tausworthe Uniform Random Generator.  This is based on the hardware implementation described in 
+/*!\brief Tausworthe Uniform Random Generator.  This is based on the hardware implementation described in
   Lee et al, "A Hardware Gaussian Noise Generator Usign the Box-Muller Method and its Error Analysis," IEEE Trans. on Computers, 2006.
 */
 //
 
-static inline void pset_taus_seed(unsigned int off) {
+static inline void pset_taus_seed(unsigned int off)
+{
 
 
   ps0 = (unsigned int)0x1e23d852 + (off<<4);
@@ -55,7 +56,8 @@ static inline void pset_taus_seed(unsigned int off) {
 
 }
 
-static inline unsigned int ptaus(void) {
+static inline unsigned int ptaus(void)
+{
 
   pb = (((ps0 << 13) ^ ps0) >> 19);
   ps0 = (((ps0 & 0xFFFFFFFE) << 12)^  pb);
@@ -67,11 +69,12 @@ static inline unsigned int ptaus(void) {
 }
 
 
-int rate_matching(unsigned int N_coded, 
-		  unsigned int N_input, 
-		  unsigned char *inPtr,
-		  unsigned char N_bps,
-		  unsigned int off){
+int rate_matching(unsigned int N_coded,
+                  unsigned int N_input,
+                  unsigned char *inPtr,
+                  unsigned char N_bps,
+                  unsigned int off)
+{
 
 
   unsigned int i,j,U,Umod,rep_flag=0;
@@ -87,12 +90,12 @@ int rate_matching(unsigned int N_coded,
   }
 
   //initialize all bits as transmitted
-  for (i=0;i<N_input;i++)
+  for (i=0; i<N_input; i++)
     inPtr[i] |= 0x80;
 
   // No go puncture the bits that should be removed
   i=0;
-  
+
   N_coded2 = N_coded/N_bps;
   pset_taus_seed(off);
   N_input2 = N_input/N_bps;
@@ -113,43 +116,46 @@ int rate_matching(unsigned int N_coded,
 #endif
 
   Mod_input2 = (1<<(1+log2_approx(N_input2)))-1;
-  
+
   while (i < N_punctured) {
     // generate N_punctured random positions in the input vector
     do { // generate a modulo-N_input2 random variable
       U = ptaus();
       Umod = U&Mod_input2;
+
       //      printf("i %d, N_punctured %d U %u Umod %d Iptr[Umod] %x\n",i,N_punctured,U,Umod,inPtr[Umod]);
-    // check if the bit is already punctured/repeated, if so skip it and generate another RV 
+      // check if the bit is already punctured/repeated, if so skip it and generate another RV
       if ((Umod < N_input2) && (((inPtr[Umod]&0x80) == 0)||((inPtr[Umod]&0xc0) == 0xc0)))
-	Umod=N_input2;
+        Umod=N_input2;
 
     } while (Umod>=N_input2);
-      
-    for (j=0;j<N_bps;j++) {            // loop over symbol bits
+
+    for (j=0; j<N_bps; j++) {          // loop over symbol bits
       if (rep_flag == 0)
-	inPtr[Umod + (j*N_input2)] &= 0x7f; // clear MSB to indicate bit is punctured
+        inPtr[Umod + (j*N_input2)] &= 0x7f; // clear MSB to indicate bit is punctured
       else
-	inPtr[Umod + (j*N_input2)] |= 0xc0; // set MSB-1 to indicate bit is repeated
+        inPtr[Umod + (j*N_input2)] |= 0xc0; // set MSB-1 to indicate bit is repeated
 
     }
 
-    /*    
-#ifdef USER_MODE
-#ifdef DEBUG_PHY
+    /*
+    #ifdef USER_MODE
+    #ifdef DEBUG_PHY
     printf("rate_matching : i= %d, U = %d\n",i,Umod);
-#endif
-#endif
+    #endif
+    #endif
     */
     i++;
   }
+
   return(0);
 }
 
-int rate_matching_lte(unsigned int N_coded, 
-		      unsigned int N_input, 
-		      unsigned char *inPtr,
-		      unsigned int off){
+int rate_matching_lte(unsigned int N_coded,
+                      unsigned int N_input,
+                      unsigned char *inPtr,
+                      unsigned int off)
+{
 
 
   unsigned int i,U,Umod,rep_flag=0;
@@ -165,12 +171,12 @@ int rate_matching_lte(unsigned int N_coded,
   }
 
   //initialize all bits as transmitted
-  for (i=0;i<N_input;i++)
+  for (i=0; i<N_input; i++)
     inPtr[i] |= 0x80;
 
   // No go puncture the bits that should be removed
   i=0;
-  
+
 
   pset_taus_seed(off);
 
@@ -184,50 +190,55 @@ int rate_matching_lte(unsigned int N_coded,
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
   printf("rate_matching : N_coded %d, N_input %d\n",N_coded,N_input);
+
   if (rep_flag)
     printf("rate_matching : N_repeated = %d\n",N_punctured);
   else
     printf("rate_matching : N_punctured = %d\n",N_punctured);
+
   printf("rate_matching : code rate = %f\n",(double)N_input/(double)N_coded/3.0);
 #endif
 #endif
 
   Mod_input = (1<<(1+log2_approx(N_input)))-1;
-  
+
   while (i < N_punctured) {
     // generate N_punctured random positions in the input vector
     do { // generate a modulo-N_input2 random variable
       U = ptaus();
       Umod = U&Mod_input;
+
       //      printf("i %d, N_punctured %d U %u Umod %d Iptr[Umod] %x\n",i,N_punctured,U,Umod,inPtr[Umod]);
-    // check if the bit is already punctured/repeated, if so skip it and generate another RV 
+      // check if the bit is already punctured/repeated, if so skip it and generate another RV
       if ((Umod < N_input) && (((inPtr[Umod]&0x80) == 0)||((inPtr[Umod]&0xc0) == 0xc0)))
-	Umod=N_input;
+        Umod=N_input;
 
     } while (Umod>=N_input);
-      
+
     if (rep_flag == 0)
       inPtr[Umod] &= 0x7f; // clear MSB to indicate bit is punctured
     else
       inPtr[Umod] |= 0xc0; // set MSB-1 to indicate bit is repeated
 
-  
+
     /*
-#ifdef USER_MODE
-#ifdef DEBUG_PHY
+    #ifdef USER_MODE
+    #ifdef DEBUG_PHY
     printf("rate_matching : i= %d, U = %d\n",i,Umod);
-#endif
-#endif
+    #endif
+    #endif
     */
     i++;
   }
+
   return(0);
 }
 
 
 
 #ifdef MAIN
-void main(int argc,char **argv) {
+void main(int argc,char **argv)
+{
 
   unsigned char input[1024];
 
@@ -235,6 +246,7 @@ void main(int argc,char **argv) {
     printf("Provide an input\n");
     exit(-1);
   }
+
   memset(input,0,1024);
 
   rate_matching(4*157,4*256,input,atoi(argv[1]),0);

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -32,7 +32,7 @@ Authors:  Navid NIKAIEN
 Company: EURECOM
 Emails:
 *This file include all defined structures & function headers of this module
-This header file must be included */ 
+This header file must be included */
 /**
  * Include bloc
  * */
@@ -64,19 +64,21 @@ This header file must be included */
 #endif
 
 typedef enum trace_mode_e {
-    OPT_WIRESHARK,
-    OPT_PCAP,
-    OPT_TSHARK,
-    OPT_NONE
+  OPT_WIRESHARK,
+  OPT_PCAP,
+  OPT_TSHARK,
+  OPT_NONE
 } trace_mode_t;
 
 typedef enum radio_type_e {
-    RADIO_TYPE_FDD = 1,
-    RADIO_TYPE_TDD = 2,
-    RADIO_TYPE_MAX
+  RADIO_TYPE_FDD = 1,
+  RADIO_TYPE_TDD = 2,
+  RADIO_TYPE_MAX
 } radio_type_t;
 
 extern trace_mode_t opt_type;
+extern char in_ip[40];
+extern char in_path[100];
 
 /**
  * function def
@@ -90,6 +92,7 @@ int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p);
 
 void terminate_opt(void);
 
+extern int opt_enabled;
 //double *timing_analyzer(int index, int direction );
 
 #endif /* OPT_H_ */

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -34,10 +34,11 @@
 #include "extern.h"
 
 
-void init_transport_channels(unsigned char transmission_mode) {
+void init_transport_channels(unsigned char transmission_mode)
+{
 
   // init DCI structures for testing
-  
+
   UL_alloc_pdu.type    = 0;
   UL_alloc_pdu.hopping = 0;
   UL_alloc_pdu.rballoc = UL_RB_ALLOC;
@@ -45,7 +46,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   UL_alloc_pdu.ndi     = 1;
   UL_alloc_pdu.TPC     = 0;
   UL_alloc_pdu.cqi_req = 1;
-  
+
   /*
   BCCH_alloc_pdu.type               = 1;
   BCCH_alloc_pdu.vrb_type           = 0;
@@ -103,7 +104,7 @@ void init_transport_channels(unsigned char transmission_mode) {
   RA_alloc_pdu_fdd.harq_pid = 0;
   RA_alloc_pdu_fdd.TPC      = 1;
 
-  
+
   DLSCH_alloc_pdu1.rballoc          = 0xf;
   DLSCH_alloc_pdu1.TPC              = 0;
   DLSCH_alloc_pdu1.dai              = 0;
@@ -112,11 +113,13 @@ void init_transport_channels(unsigned char transmission_mode) {
   DLSCH_alloc_pdu1.mcs1             = 4;
   DLSCH_alloc_pdu1.ndi1             = 1;
   DLSCH_alloc_pdu1.rv1              = 0;
+
   // Forget second codeword
-  if (transmission_mode == 6)
+  if (transmission_mode == 6) {
     DLSCH_alloc_pdu1.tpmi           = 5;  // PUSCH_PRECODING0
-  else
+  } else {
     DLSCH_alloc_pdu1.tpmi             = 0;
+  }
 
   DLSCH_alloc_pdu2.rah              = 0;
   DLSCH_alloc_pdu2.rballoc          = DLSCH_RB_ALLOC;
@@ -127,10 +130,11 @@ void init_transport_channels(unsigned char transmission_mode) {
   DLSCH_alloc_pdu2.mcs1             = 4;
   DLSCH_alloc_pdu2.ndi1             = 1;
   DLSCH_alloc_pdu2.rv1              = 0;
+
   // Forget second codeword
-  if (transmission_mode == 6)
+  if (transmission_mode == 6) {
     DLSCH_alloc_pdu2.tpmi           = 5;  // PUSCH_PRECODING0
-  else
+  } else {
     DLSCH_alloc_pdu2.tpmi             = 0;
-  
+  }
 }

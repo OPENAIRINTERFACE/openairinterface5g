@@ -2,13 +2,13 @@
 * \brief a wrapper for Unified RTAI real-time memory management.
 * \author Florian Kaltenberger
 * \date 2011-04-06
-* \version 0.1 
+* \version 0.1
 * \company Eurecom
 * \email: florian.kaltenberger@eurecom.fr
-* \note 
-* \bug  
-* \warning  
-*/ 
+* \note
+* \bug
+* \warning
+*/
 
 #include <asm/io.h>
 #include <asm/bitops.h>
@@ -53,7 +53,7 @@ void* rt_alloc_wrapper(int size) {
   }
 
   printk("rt_mem.c: allocated %d bytes for name %ld at %p\n",size,name,tmp_ptr+1);
-	
+
   tmp_ptr[0] = name;
   name++;
 
@@ -88,29 +88,31 @@ void* rt_realloc_wrapper(void* oldptr, int size) {
     memcpy(newptr,oldptr,size);
     rt_free_wrapper(oldptr);
   }
-  
+
   return newptr;
 }
 */
 
-void* rt_realloc(void* oldptr, int size) {
+void* rt_realloc(void* oldptr, int size)
+{
 
   void* newptr;
 
   printk("rt_mem.c: reallocating %p with %d bytes\n",oldptr,size);
 
-  if (oldptr==NULL)
+  if (oldptr==NULL) {
     newptr = rt_malloc(size);
-  else {
+  } else {
     newptr = rt_malloc(size);
     memcpy(newptr,oldptr,size);
     rt_free(oldptr);
   }
-  
+
   return newptr;
 }
 
-void* rt_calloc(int nmemb, int size) {
+void* rt_calloc(int nmemb, int size)
+{
 
   void* newptr;
 
@@ -118,6 +120,6 @@ void* rt_calloc(int nmemb, int size) {
 
   newptr = rt_malloc(nmemb*size);
   memset(newptr,0,nmemb*size);
-  
+
   return newptr;
 }

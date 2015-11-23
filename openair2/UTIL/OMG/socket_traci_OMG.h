@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -52,7 +52,7 @@
 
 int sock, portno, msgLength;
 struct hostent *host;
-struct sockaddr_in server_addr;  
+struct sockaddr_in server_addr;
 
 /**
  * Global parameters defined in storage_traci_OMG.h
@@ -72,7 +72,7 @@ int connection_(char *, int);
 /**
  * \fn sendExact(int);
  * \brief Pack the data from storage to buf and write to socket
- * \param Accepts command length 
+ * \param Accepts command length
  */
 void sendExact(int);
 
@@ -80,14 +80,14 @@ void sendExact(int);
  * \fn  recieveExact(void);
  * \brief Pack the data to storage from buf after reading from socket
  * Returns storage pointer
- */     
+ */
 storage* receiveExact(void);
 
 
 /**
  * \fn  close_connection(void);
- * \brief close socket connection 
- */       
+ * \brief close socket connection
+ */
 void close_connection(void);
 
-#endif 
+#endif

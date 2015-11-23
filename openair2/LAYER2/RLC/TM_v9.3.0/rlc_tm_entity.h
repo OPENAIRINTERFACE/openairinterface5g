@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -47,8 +47,6 @@
 * \brief Structure containing a RLC TM instance protocol variables, allocation variables, buffers and other miscellaneous variables.
 */
 typedef struct rlc_tm_entity {
-  //module_id_t          enb_module_id;      /*!< \brief eNB Virtualization index for this protocol instance, meaningful if is_enb is set. */
-  //module_id_t          ue_module_id;       /*!< \brief UE Virtualization index for this protocol instance, meaningful if is_enb is set. */
   boolean_t            allocation;         /*!< \brief Boolean for rlc_tm_entity_t struct allocation. */
   rlc_protocol_state_t protocol_state;     /*!< \brief Protocol state, can be RLC_NULL_STATE, RLC_DATA_TRANSFER_READY_STATE, RLC_LOCAL_SUSPEND_STATE. */
   boolean_t            is_uplink_downlink; /*!< \brief Is this instance is a transmitter, a receiver or both? */

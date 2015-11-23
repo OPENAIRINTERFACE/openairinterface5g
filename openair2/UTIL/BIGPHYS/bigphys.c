@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -31,7 +31,7 @@
 #include "linux/module.h"
 
 #ifdef BIGPHYSAREA
-#ifdef ARCH_64 
+#ifdef ARCH_64
 char *bigphys_ptr,*bigphys_current;
 #else //ARCH_64
 unsigned int bigphys_ptr,bigphys_current;
@@ -39,9 +39,10 @@ unsigned int bigphys_ptr,bigphys_current;
 
 // return pointer to memory in big physical area aligned to 16 bytes
 
-void* bigphys_malloc(int n) {
+void* bigphys_malloc(int n)
+{
 
-  
+
 
   int n2 = n + ((16-(n%16))%16);
 #ifdef ARCH_64
@@ -58,7 +59,7 @@ void* bigphys_malloc(int n) {
   bigphys_old = bigphys_current;
   bigphys_current += n2;
 
-#ifdef ARCH_64 
+#ifdef ARCH_64
   printk("[BIGPHYSAREA] Allocated Memory top now @ %p\n",bigphys_current);
   return ((void *)(bigphys_old));
 #else //ARCH_64
@@ -71,4 +72,4 @@ EXPORT_SYMBOL(bigphys_malloc);
 #endif
 
 
- 
+

@@ -22,7 +22,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -176,7 +176,7 @@ build_vbox_vm_mme() {
     VBoxManage storagectl $UUID --name "SATA Controller" --add sata --controller IntelAhci --sataportcount 4 --hostiocache off --bootable on
     VBoxManage storageattach $UUID --storagectl "SATA Controller" --type hdd --port 0 --device 0 --medium "$DEFAULT_VIRTUAL_BOX_VM_PATH"/"$MME_VM_NAME"/"$MME_VM_NAME".vdi
   
-    bash_exec "VBoxManage sharedfolder add $MME_VM_NAME --name $TRUNK_SHARED_FOLDER_NAME --hostpath $OPENAIR_HOME"                                          
+    bash_exec "VBoxManage sharedfolder add $MME_VM_NAME --name $TRUNK_SHARED_FOLDER_NAME --hostpath $OPENAIR_DIR"                                          
 }
 
 build_vbox_vm_hss() {

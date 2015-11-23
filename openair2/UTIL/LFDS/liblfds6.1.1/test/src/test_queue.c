@@ -27,29 +27,29 @@ void test_lfds611_queue( void )
 void queue_test_enqueuing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   struct queue_test_enqueuing_state
-    *qtes;
+      *qtes;
 
   lfds611_atom_t
-    user_data,
-    thread,
-    count,
-    *per_thread_counters;
+  user_data,
+  thread,
+  count,
+  *per_thread_counters;
 
   struct lfds611_validation_info
-    vi = { 1000000, 1000000 };
+      vi = { 1000000, 1000000 };
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   /* TRD : create an empty queue with 1,000,000 elements in its freelist
            then run one thread per CPU
@@ -70,8 +70,7 @@ void queue_test_enqueuing( void )
 
   qtes = malloc( sizeof(struct queue_test_enqueuing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (qtes+loop)->qs = qs;
     (qtes+loop)->counter = (lfds611_atom_t) loop << (sizeof(lfds611_atom_t)*8-8);
   }
@@ -101,13 +100,11 @@ void queue_test_enqueuing( void )
   for( loop = 0 ; loop < cpu_count ; loop++ )
     *(per_thread_counters+loop) = 0;
 
-  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and lfds611_queue_dequeue(qs, (void *) &user_data) )
-  {
+  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and lfds611_queue_dequeue(qs, (void *) &user_data) ) {
     thread = user_data >> (sizeof(lfds611_atom_t)*8-8);
     count = (user_data << 8) >> 8;
 
-    if( thread >= cpu_count )
-    {
+    if( thread >= cpu_count ) {
       dvs[0] = LFDS611_VALIDITY_INVALID_TEST_DATA;
       break;
     }
@@ -139,7 +136,7 @@ void queue_test_enqueuing( void )
 thread_return_t CALLING_CONVENTION queue_test_internal_thread_simple_enqueuer( void *queue_test_enqueuing_state )
 {
   struct queue_test_enqueuing_state
-    *qtes;
+      *qtes;
 
   assert( queue_test_enqueuing_state != NULL );
 
@@ -161,23 +158,23 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_simple_enqueuer( v
 void queue_test_dequeuing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   struct queue_test_dequeuing_state
-    *qtds;
+      *qtds;
 
   struct lfds611_validation_info
-    vi = { 0, 0 };
+      vi = { 0, 0 };
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   /* TRD : create a queue with 1,000,000 elements
 
@@ -202,8 +199,7 @@ void queue_test_dequeuing( void )
 
   qtds = malloc( sizeof(struct queue_test_dequeuing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (qtds+loop)->qs = qs;
     (qtds+loop)->error_flag = LOWERED;
   }
@@ -243,11 +239,11 @@ void queue_test_dequeuing( void )
 thread_return_t CALLING_CONVENTION queue_test_internal_thread_simple_dequeuer( void *queue_test_dequeuing_state )
 {
   struct queue_test_dequeuing_state
-    *qtds;
+      *qtds;
 
   lfds611_atom_t
-    *prev_user_data,
-    *user_data;
+  *prev_user_data,
+  *user_data;
 
   assert( queue_test_dequeuing_state != NULL );
 
@@ -257,8 +253,7 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_simple_dequeuer( v
 
   lfds611_queue_dequeue( qtds->qs, (void *) &prev_user_data );
 
-  while( lfds611_queue_dequeue(qtds->qs, (void *) &user_data) )
-  {
+  while( lfds611_queue_dequeue(qtds->qs, (void *) &user_data) ) {
     if( user_data <= prev_user_data )
       qtds->error_flag = RAISED;
 
@@ -276,24 +271,24 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_simple_dequeuer( v
 void queue_test_enqueuing_and_dequeuing( void )
 {
   unsigned int
-    loop,
-    subloop,
-    cpu_count;
+  loop,
+  subloop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   struct queue_test_enqueuing_and_dequeuing_state
-    *qteds;
+      *qteds;
 
   struct lfds611_validation_info
-    vi = { 0, 0 };
+      vi = { 0, 0 };
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   internal_display_test_name( "Enqueuing and dequeuing (10 seconds)" );
 
@@ -303,8 +298,7 @@ void queue_test_enqueuing_and_dequeuing( void )
 
   qteds = malloc( sizeof(struct queue_test_enqueuing_and_dequeuing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (qteds+loop)->qs = qs;
     (qteds+loop)->thread_number = loop;
     (qteds+loop)->counter = (lfds611_atom_t) loop << (sizeof(lfds611_atom_t)*8-8);
@@ -352,15 +346,15 @@ void queue_test_enqueuing_and_dequeuing( void )
 thread_return_t CALLING_CONVENTION queue_test_internal_thread_enqueuer_and_dequeuer( void *queue_test_enqueuing_and_dequeuing_state )
 {
   struct queue_test_enqueuing_and_dequeuing_state
-    *qteds;
+      *qteds;
 
   time_t
-    start_time;
+  start_time;
 
   lfds611_atom_t
-    thread,
-    count,
-    user_data;
+  thread,
+  count,
+  user_data;
 
   assert( queue_test_enqueuing_and_dequeuing_state != NULL );
 
@@ -370,8 +364,7 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_enqueuer_and_deque
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_queue_enqueue( qteds->qs, (void *) (qteds->counter++) );
     lfds611_queue_dequeue( qteds->qs, (void *) &user_data );
 
@@ -380,8 +373,7 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_enqueuer_and_deque
 
     if( thread >= qteds->cpu_count )
       qteds->error_flag = RAISED;
-    else
-    {
+    else {
       if( count < qteds->per_thread_counters[thread] )
         qteds->error_flag = RAISED;
 
@@ -401,29 +393,29 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_enqueuer_and_deque
 void queue_test_rapid_enqueuing_and_dequeuing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_queue_state
-    *qs;
+      *qs;
 
   struct queue_test_rapid_enqueuing_and_dequeuing_state
-    *qtreds;
+      *qtreds;
 
   struct lfds611_validation_info
-    vi = { 50000, 50000 };
+      vi = { 50000, 50000 };
 
   lfds611_atom_t
-    user_data,
-    thread,
-    count,
-    *per_thread_counters;
+  user_data,
+  thread,
+  count,
+  *per_thread_counters;
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   internal_display_test_name( "Rapid enqueuing and dequeuing (10 seconds)" );
 
@@ -436,8 +428,7 @@ void queue_test_rapid_enqueuing_and_dequeuing( void )
 
   qtreds = malloc( sizeof(struct queue_test_rapid_enqueuing_and_dequeuing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (qtreds+loop)->qs = qs;
     (qtreds+loop)->counter = (lfds611_atom_t) loop << (sizeof(lfds611_atom_t)*8-8);
   }
@@ -460,13 +451,11 @@ void queue_test_rapid_enqueuing_and_dequeuing( void )
   for( loop = 0 ; loop < cpu_count ; loop++ )
     *(per_thread_counters+loop) = 0;
 
-  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and lfds611_queue_dequeue(qs, (void *) &user_data) )
-  {
+  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and lfds611_queue_dequeue(qs, (void *) &user_data) ) {
     thread = user_data >> (sizeof(lfds611_atom_t)*8-8);
     count = (user_data << 8) >> 8;
 
-    if( thread >= cpu_count )
-    {
+    if( thread >= cpu_count ) {
       dvs[0] = LFDS611_VALIDITY_INVALID_TEST_DATA;
       break;
     }
@@ -500,13 +489,13 @@ void queue_test_rapid_enqueuing_and_dequeuing( void )
 thread_return_t CALLING_CONVENTION queue_test_internal_thread_rapid_enqueuer_and_dequeuer( void *queue_test_rapid_enqueuing_and_dequeuing_state )
 {
   struct queue_test_rapid_enqueuing_and_dequeuing_state
-    *qtreds;
+      *qtreds;
 
   time_t
-    start_time;
+  start_time;
 
   lfds611_atom_t
-    user_data;
+  user_data;
 
   assert( queue_test_rapid_enqueuing_and_dequeuing_state != NULL );
 
@@ -516,8 +505,7 @@ thread_return_t CALLING_CONVENTION queue_test_internal_thread_rapid_enqueuer_and
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_queue_enqueue( qtreds->qs, (void *) (qtreds->counter++) );
     lfds611_queue_dequeue( qtreds->qs, (void *) &user_data );
   }

@@ -17,15 +17,15 @@
  * /homes/demiray/workspace/openair4G/trunk/openair2/LAYER2/PDCP_v10.1.0/pdcp.c:270: undefined reference to `pdcp_fifo_read_input_sdus'
  * /homes/demiray/workspace/openair4G/trunk/openair2/LAYER2/PDCP_v10.1.0/pdcp.c:273: undefined reference to `pdcp_fifo_flush_sdus'
  */
-int pdcp_fifo_flush_sdus () { return 0; }
-int pdcp_fifo_read_input_sdus_remaining_bytes () { return 0; }
-int pdcp_fifo_read_input_sdus () { return 0; }
+int pdcp_fifo_flush_sdus (void) { return 0; }
+int pdcp_fifo_read_input_sdus_remaining_bytes (void) { return 0; }
+int pdcp_fifo_read_input_sdus (void) { return 0; }
 
 BOOL init_pdcp_entity(pdcp_t *pdcp_entity);
-BOOL test_tx_window();
-BOOL test_rx_window();
-BOOL test_pdcp_data_req();
-BOOL test_pdcp_data_ind();
+BOOL test_tx_window(void);
+BOOL test_rx_window(void);
+BOOL test_pdcp_data_req(void);
+BOOL test_pdcp_data_ind(void);
 
 /*
  * PDCP methods that are going to be utilised throughout the test

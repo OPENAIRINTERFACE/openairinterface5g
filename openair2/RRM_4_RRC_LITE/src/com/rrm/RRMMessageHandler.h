@@ -11,9 +11,10 @@
 #    include "platform.h"
 
 
-class RRMMessageHandler {
+class RRMMessageHandler
+{
 public:
-    static RRMMessageHandler *Instance ();
+  static RRMMessageHandler *Instance ();
   void            NotifyRxData (const char *in_bufferP,size_t size_dataP,struct sockaddr *sa_fromP,socklen_t sa_lenP);
   void            Send2Peer (Message *);
   void            Send2Peer(std::string ip_dest_strP, int port_destP, const char *in_bufferP, size_t size_dataP);
@@ -22,7 +23,7 @@ public:
   ~RRMMessageHandler ();
 
 private:
-    RRMMessageHandler ();
+  RRMMessageHandler ();
 
   SocketHandler     *m_socket_handler;
   RRMUdpSocket      *m_socket;

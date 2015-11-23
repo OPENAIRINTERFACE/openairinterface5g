@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -33,7 +33,7 @@
 * \date 2014
 * \version 0.1
 * \company EURECOM
-* \email: 
+* \email:
 * \note
 * \warning
 */
@@ -59,28 +59,29 @@ void
 create_new_table (int node_type)
 {
   int i;
+
   if(table==NULL)
     table = (hash_table_t **) calloc (MAX_NUM_NODE_TYPES, sizeof (hash_table_t*));
 
-    table[node_type]=(hash_table_t *) calloc (MAX_NUM_NODE_TYPES, sizeof (hash_table_t));
+  table[node_type]=(hash_table_t *) calloc (MAX_NUM_NODE_TYPES, sizeof (hash_table_t));
 
-  if (table == NULL || table[node_type]==NULL)
-    {
-      LOG_E (OMG, "--------table creation failed--------\n");
-      exit (-1);
-    }
+  if (table == NULL || table[node_type]==NULL) {
+    LOG_E (OMG, "--------table creation failed--------\n");
+    exit (-1);
+  }
+
   table[node_type]->key_len = LEN;
   table[node_type]->key_count = 0;
   table[node_type]->ratio = RATIO;
 
   table[node_type]->data_store =
     (node_container **) calloc (LEN, sizeof (node_container *));
-  if (table[node_type]->data_store == NULL)
-    {
-      free (table[node_type]);
-      LOG_E (OMG, "table creation failed \n");
-      exit (-1);
-    }
+
+  if (table[node_type]->data_store == NULL) {
+    free (table[node_type]);
+    LOG_E (OMG, "table creation failed \n");
+    exit (-1);
+  }
 
   //for (i = 0; i < LEN; i++)
   // table->data_store[i] = NULL;
@@ -101,80 +102,76 @@ create_new_table (int node_type)
  */
 void
 hash_table_add (hash_table_t * t_table, node_data * node,
-		node_container * value)
+                node_container * value)
 {
   hash_table_t *my_table = t_table;
   node_data *new_node = node;
   int key = new_node->gid;
   int hash_val = hash (&key, my_table->key_len);
 
-//resize check
+  //resize check
 
-  if (value == NULL)
-    {				//create new container for this node
+  if (value == NULL) {
+    //create new container for this node
 
-      my_table->key_count++;
+    my_table->key_count++;
 
-      node_container *new_c =
-	(node_container *) calloc (1, sizeof (node_container));
+    node_container *new_c =
+      (node_container *) calloc (1, sizeof (node_container));
 
-      if (!new_c)
-	{
-	  LOG_E (OMG, "node block creation failed\n");
-	  exit (-1);
-	}
-
-      new_c->gid = new_node->gid;
-      new_c->next = new_node;
-      new_c->end = new_c->next;
-      new_c->next_c = NULL;
-
-      if (my_table->data_store[hash_val] == NULL)
-	       my_table->data_store[hash_val] = new_c;
-      else
-	{
-	  node_container *temp1, *save;
-	  temp1 = my_table->data_store[hash_val];
-	  while (temp1 != NULL)
-	    {
-	      save = temp1;
-	      temp1 = temp1->next_c;
-	    }
-	  save->next_c = new_c;
-	}
-
+    if (!new_c) {
+      LOG_E (OMG, "node block creation failed\n");
+      exit (-1);
     }
-  else
-    {
-      node_container *my_c = value;
-      //put node data according to time
-      if (my_c->gid == new_node->gid)
-	{
-	  if (my_c->next->time > new_node->time)
-	    {
-	      new_node->next = my_c->next;
-	      my_c->next = new_node;
-	      return;
-	    }
 
-	  if (my_c->end->time <= new_node->time)
-	    {
-	      my_c->end->next = new_node;
-	      my_c->end = new_node;
-	      return;
-	    }
+    new_c->gid = new_node->gid;
+    new_c->next = new_node;
+    new_c->end = new_c->next;
+    new_c->next_c = NULL;
 
-	  node_data *temp = my_c->next;
-	  node_data *ptr = temp->next;
-	  while (ptr != NULL && ptr->time <= new_node->time)
-	    {
-	      temp = ptr;
-	      ptr = ptr->next;
-	    }
-	  temp->next = new_node;
-	  new_node->next = ptr;
-	}
+    if (my_table->data_store[hash_val] == NULL)
+      my_table->data_store[hash_val] = new_c;
+    else {
+      node_container *temp1, *save;
+      temp1 = my_table->data_store[hash_val];
+
+      while (temp1 != NULL) {
+        save = temp1;
+        temp1 = temp1->next_c;
+      }
+
+      save->next_c = new_c;
     }
+
+  } else {
+    node_container *my_c = value;
+
+    //put node data according to time
+    if (my_c->gid == new_node->gid) {
+      if (my_c->next->time > new_node->time) {
+        new_node->next = my_c->next;
+        my_c->next = new_node;
+        return;
+      }
+
+      if (my_c->end->time <= new_node->time) {
+        my_c->end->next = new_node;
+        my_c->end = new_node;
+        return;
+      }
+
+      node_data *temp = my_c->next;
+      node_data *ptr = temp->next;
+
+      while (ptr != NULL && ptr->time <= new_node->time) {
+        temp = ptr;
+        ptr = ptr->next;
+      }
+
+      temp->next = new_node;
+      new_node->next = ptr;
+    }
+  }
 
 
 }
@@ -193,17 +190,18 @@ hash_table_lookup (hash_table_t * table, int id)
   hash_table_t *my_table = table;
   int key = id;
   int hash_value_of_id = hash (&key, my_table->key_len);
+
   if (my_table->data_store[hash_value_of_id] == NULL)
     return NULL;
 
   node_container *temp = my_table->data_store[hash_value_of_id];
 
-  while (temp != NULL)
-    {
-      if (temp->gid == id)
-	break;
-      temp = temp->next_c;
-    }
+  while (temp != NULL) {
+    if (temp->gid == id)
+      break;
+
+    temp = temp->next_c;
+  }
 
   return temp;
 }
@@ -223,13 +221,14 @@ uint16_t
 hash (int *key, int len)
 {
   uint16_t *ptr = (uint16_t *) key;
-  uint16_t hash = 0xbabe;	// WHY NOT
+  uint16_t hash = 0xbabe; // WHY NOT
   size_t i = 0;
-  for (; i < (sizeof (key) / 2); i++)
-    {
-      hash ^= (i << 4 ^ *ptr << 8 ^ *ptr);
-      ptr++;
-    }
+
+  for (; i < (sizeof (key) / 2); i++) {
+    hash ^= (i << 4 ^ *ptr << 8 ^ *ptr);
+    ptr++;
+  }
+
   hash = hash % len;
   return hash;
 }
@@ -246,5 +245,5 @@ hash (int *key, int len)
 int
 hash_table_resize ()
 {
-
+  return 0; // FIXME
 }

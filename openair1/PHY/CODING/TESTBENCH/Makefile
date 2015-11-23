@@ -1,6 +1,6 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 
-COMMON_UTILS_DIR = $(OPENAIR_HOME)/common/utils
+COMMON_UTILS_DIR = $(OPENAIR_DIR)/common/utils
 TOP_DIR = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)

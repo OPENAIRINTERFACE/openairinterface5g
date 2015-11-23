@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -68,7 +68,8 @@
 
 
 private_rrc_enb_ral(  int rrc_enb_ral_delete_all_thresholds_type        (unsigned int mod_idP, ral_link_param_type_t *param_type_pP);)
-private_rrc_enb_ral(  int rrc_enb_ral_delete_threshold                  (unsigned int mod_idP, ral_link_param_type_t *param_type_pP, ral_threshold_t *threshold_pP);)
+private_rrc_enb_ral(  int rrc_enb_ral_delete_threshold                  (unsigned int mod_idP, ral_link_param_type_t* param_type_pP,
+                        ral_threshold_t* threshold_pP);)
 protected_rrc_enb_ral(int rrc_enb_ral_handle_configure_threshold_request(unsigned int mod_idP, MessageDef *msg_pP);)
 
 #endif

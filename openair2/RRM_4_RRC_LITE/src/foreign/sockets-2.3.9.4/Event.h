@@ -1,16 +1,16 @@
 /** \file Event.h
- **	\date  2005-12-07
- **	\author grymse@alhem.net
+ ** \date  2005-12-07
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -40,34 +40,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "EventTime.h"
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 
 class IEventOwner;
 
 /** Store information about a timer event.
-	\ingroup timer */
+  \ingroup timer */
 class Event
 {
 public:
-	Event(IEventOwner *,long sec,long usec,unsigned long data = 0);
-	~Event();
+  Event(IEventOwner *,long sec,long usec,unsigned long data = 0);
+  ~Event();
 
-	bool operator<(Event&);
-	long GetID() const;
-	const EventTime& GetTime() const;
-	IEventOwner *GetFrom() const;
-	unsigned long Data() const;
+  bool operator<(Event&);
+  long GetID() const;
+  const EventTime& GetTime() const;
+  IEventOwner *GetFrom() const;
+  unsigned long Data() const;
 
 private:
-	Event(const Event& ) {} // copy constructor
-	Event& operator=(const Event& ) { return *this; } // assignment operator
-	IEventOwner *m_from;
-	unsigned long m_data;
-	EventTime m_time;
-	static long m_unique_id;
-	long m_id;
+  Event(const Event& ) {} // copy constructor
+  Event& operator=(const Event& ) {
+    return *this;  // assignment operator
+  }
+  IEventOwner *m_from;
+  unsigned long m_data;
+  EventTime m_time;
+  static long m_unique_id;
+  long m_id;
 };
 
 

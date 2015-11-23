@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -53,14 +53,15 @@
 #define RRC_MAC_MCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_mcch_data_ind
 
 // Some constants from "LAYER2/MAC/defs.h"
-#define BCCH_SDU_SIZE                           (128)
-#define CCCH_SDU_SIZE                           (128)
-#define MCCH_SDU_SIZE                           (128)
+#define BCCH_SDU_SIZE                           (512)
+#define CCCH_SDU_SIZE                           (512)
+#define MCCH_SDU_SIZE                           (512)
 
 //-------------------------------------------------------------------------------------------//
 // Messages between RRC and MAC layers
 typedef struct RrcMacInSyncInd_s {
   uint32_t  frame;
+  uint8_t   sub_frame;
   uint16_t  enb_index;
 } RrcMacInSyncInd;
 
@@ -75,6 +76,7 @@ typedef struct RrcMacBcchDataReq_s {
 
 typedef struct RrcMacBcchDataInd_s {
   uint32_t  frame;
+  uint8_t   sub_frame;
   uint32_t  sdu_size;
   uint8_t   sdu[BCCH_SDU_SIZE];
   uint8_t   enb_index;
@@ -94,10 +96,13 @@ typedef struct RrcMacCcchDataCnf_s {
 } RrcMacCcchDataCnf;
 
 typedef struct RrcMacCcchDataInd_s {
-    uint32_t  frame;
-    uint32_t  sdu_size;
-    uint8_t   sdu[CCCH_SDU_SIZE];
-    uint8_t   enb_index;
+  uint32_t  frame;
+  uint8_t   sub_frame;
+  uint16_t  rnti;
+  uint32_t  sdu_size;
+  uint8_t   sdu[CCCH_SDU_SIZE];
+  uint8_t   enb_index;
+  int       CC_id;
 } RrcMacCcchDataInd;
 
 typedef struct RrcMacMcchDataReq_s {
@@ -110,6 +115,7 @@ typedef struct RrcMacMcchDataReq_s {
 
 typedef struct RrcMacMcchDataInd_s {
   uint32_t  frame;
+  uint8_t   sub_frame;
   uint32_t  sdu_size;
   uint8_t   sdu[MCCH_SDU_SIZE];
   uint8_t   enb_index;

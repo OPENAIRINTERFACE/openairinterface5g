@@ -1,0 +1,61 @@
+#!/bin/bash
+
+################################################################################
+#   OpenAirInterface
+#   Copyright(c) 1999 - 2015 Eurecom
+#
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with OpenAirInterface.The full GNU General Public License is
+#    included in this distribution in the file called "COPYING". If not,
+#    see <http://www.gnu.org/licenses/>.
+#
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+#
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+#
+################################################################################
+# file init_nas_nos1
+# brief loads the nasmesh module and sets up the radio bearers (used to provide ip interface without S1 interface)
+# author Florian Kaltenberger
+#
+#######################################
+
+load_module() {
+  mod_name=${1##*/}
+  mod_name=${mod_name%.*}
+  if awk "/$mod_name/ {found=1 ;exit} END {if (found!=1) exit 1}" /proc/modules
+    then
+      echo "module $mod_name already loaded: I remove it first"
+      sudo rmmod $mod_name
+  fi
+  echo loading $mod_name
+  sudo insmod $1
+}
+
+load_module $OPENAIR_DIR/targets/bin/nasmesh.ko
+
+if [ "$1" = "eNB" ]; then 
+     echo "bring up oai0 interface for enb"
+     sudo ifconfig oai0 10.0.1.1 netmask 255.255.255.0 broadcast 10.0.1.255
+     $OPENAIR_DIR/targets/bin/rb_tool -a -c0 -i0 -z0 -s 10.0.1.1 -t 10.0.1.9 -r 1
+else
+    if [ "$1" = "UE" ]; then 
+       echo "bring up oai0 interface for UE"
+       sudo ifconfig oai0 10.0.1.9 netmask 255.255.255.0 broadcast 10.0.1.255
+       $OPENAIR_DIR/targets/bin/rb_tool -a -c0 -i0 -z0 -s 10.0.1.9 -t 10.0.1.1 -r 1
+    fi
+fi  

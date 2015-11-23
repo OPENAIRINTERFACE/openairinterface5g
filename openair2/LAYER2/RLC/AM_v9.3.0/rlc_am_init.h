@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -69,12 +69,12 @@
 * \brief Structure containing RLC AM configuration parameters.
 */
 typedef volatile struct {
-    uint16_t max_retx_threshold;  /*!< \brief Maximum number of retransmissions for one RLC AM PDU. */
-    uint16_t poll_pdu;            /*!< \brief Generate a status each poll_pdu pdu sent. */
-    uint16_t poll_byte;           /*!< \brief Generate a status each time poll_byte bytes have been sent. */
-    uint32_t t_poll_retransmit;   /*!< \brief t-PollRetransmit timer initial value. */
-    uint32_t t_reordering;        /*!< \brief t-Reordering timer initial value. */
-    uint32_t t_status_prohibit;   /*!< \brief t-StatusProhibit timer initial value. */
+  uint16_t max_retx_threshold;  /*!< \brief Maximum number of retransmissions for one RLC AM PDU. */
+  uint16_t poll_pdu;            /*!< \brief Generate a status each poll_pdu pdu sent. */
+  uint16_t poll_byte;           /*!< \brief Generate a status each time poll_byte bytes have been sent. */
+  uint32_t t_poll_retransmit;   /*!< \brief t-PollRetransmit timer initial value. */
+  uint32_t t_reordering;        /*!< \brief t-Reordering timer initial value. */
+  uint32_t t_status_prohibit;   /*!< \brief t-StatusProhibit timer initial value. */
 } rlc_am_info_t;
 
 //-----------------------------------------------------------------------------
@@ -104,13 +104,13 @@ AMD PDU.
 * \param[in]  t_status_prohibitP        This timer is used by the receiving side of an AM RLC entity in order to prohibit transmission of a STATUS PDU, value in frames.
 */
 public_rlc_am_init( void rlc_am_configure(const protocol_ctxt_t* const ctxtP,
-                                          rlc_am_entity_t * const rlc_pP,
-                                          const uint16_t max_retx_thresholdP,
-                                          const uint16_t poll_pduP,
-                                          const uint16_t poll_byteP,
-                                          const uint32_t t_poll_retransmitP,
-                                          const uint32_t t_reorderingP,
-                                          const uint32_t t_status_prohibitP);)
+                    rlc_am_entity_t * const rlc_pP,
+                    const uint16_t max_retx_thresholdP,
+                    const uint16_t poll_pduP,
+                    const uint16_t poll_byteP,
+                    const uint32_t t_poll_retransmitP,
+                    const uint32_t t_reorderingP,
+                    const uint32_t t_status_prohibitP);)
 
 /*! \fn void rlc_am_set_debug_infos(const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP, const srb_flag_t srb_flagP, const rb_id_t rb_idP)
 * \brief    Set informations that will be displayed in traces, helping the debug process.

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -60,7 +60,7 @@ typedef volatile struct {
   int             timer_mrw;
   int             missing_pdu_indicator;
   uint32_t             pdu_size;
-//      int                                 in_sequence_delivery; // not implemented
+  //      int                                 in_sequence_delivery; // not implemented
   uint8_t              max_rst;
   uint8_t              max_dat;
   uint16_t             poll_pdu;
@@ -187,7 +187,7 @@ typedef volatile struct {
 } RRM_VARS;
 
 #        else
-      /* NODE_RG */
+/* NODE_RG */
 typedef volatile struct {
   MT_CONFIG       mt_config[MAX_MANAGED_RG_PER_MOBILE];
 
@@ -195,7 +195,7 @@ typedef volatile struct {
 
 } RRM_VARS;
 #        endif
-       /* NODE_RG */
+/* NODE_RG */
 //typedef   MT_CONFIG MAIN_MOBILE ;
 //typedef   RG_CONFIG MAIN_RADIO_GATEWAY;
 

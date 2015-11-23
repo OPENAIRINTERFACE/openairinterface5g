@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -85,11 +85,42 @@
 #endif
 
 
+#define PROTOCOL_RLC_AM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u]"
+#define PROTOCOL_RLC_AM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
+          (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
+          rLC_Pp->rb_id
 
-#define RB_AM_FMT "[%s %02u]"
-#define RB_AM_ARGS(RLC_Pp) \
-        (RLC_Pp->is_data_plane == TRUE) ? "DRB AM":"SRB AM", \
-        RLC_Pp->rb_id
+#define PROTOCOL_RLC_AM_MSC_FMT "[RNTI %"PRIx16" %s %02u]"
+#define PROTOCOL_RLC_AM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
+        CTXT_Pp->rnti,\
+          (rLC_Pp->is_data_plane) ? "DRB AM" : "SRB AM",\
+          rLC_Pp->rb_id
+
+
+#if defined(TRACE_RLC_MUTEX)
+#define RLC_AM_MUTEX_LOCK(mUTEX, cTXT, rLC) \
+	do {\
+      int pmtl_rc = pthread_mutex_trylock(mUTEX);\
+	  if (pmtl_rc != 0){\
+        if (pmtl_rc == EBUSY) {\
+          MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
+                       "0 "PROTOCOL_RLC_AM_MSC_FMT" Warning try lock %s busy",\
+                       PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
+                       #mUTEX);\
+          pthread_mutex_lock(mUTEX);\
+        } else {\
+            MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
+            		"0 "PROTOCOL_RLC_AM_MSC_FMT" Error try lock %s %d",\
+                    PROTOCOL_RLC_AM_MSC_ARGS(cTXT,rLC),\
+                    #mUTEX, pmtl_rc);\
+        }\
+      }\
+	} while (0);
+#else
+#define RLC_AM_MUTEX_LOCK(mUTEX, cTXT, rLC) pthread_mutex_lock(mUTEX)
+#endif
+
+#define RLC_AM_MUTEX_UNLOCK(mUTEX) pthread_mutex_unlock(mUTEX)
 
 /*! \fn void     rlc_am_release (const protocol_ctxt_t* const ctxtP, rlc_am_entity_t * const rlc_pP)
 * \brief    Empty function, TO DO.

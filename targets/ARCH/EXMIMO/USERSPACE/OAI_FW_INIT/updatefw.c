@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,19 +14,19 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
+
 /*
     C Header file <updatefw.h> for updatefw tool.
 
@@ -89,25 +89,52 @@ struct option updatefw_longopts[LONGOPTIONS_NB+1] = {
 void show_usage(char* pgname) {
   unsigned int i;
   fprintf(stderr, "  %s : Tool to update firmware of Cardbus-MIMO-1/Leon3 card through the PCI interface,\n", pgname);
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, " that is, even without using the Xilinx parallel cable. The tool performs sequentially\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, " the 5 following operations:\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "       1) Ask card driver to reboot (optionally)\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "       2) Ask card driver to transfer .text section\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "       3) Ask card driver to transfer .data section\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "       4) Ask card driver to clear .bss section\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "       5) Ask card driver to have Leon processor set stack-pointer\n");
-  fprintf(stderr, "    "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "    ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "          and jump to firmware entry.\n");
   fprintf(stderr, "Usage:\n");
   fprintf(stderr, "  %s [-f|--firmware 'filename'] [-s|--stackptr value] [-b|--forcereboot]\n",pgname);
-  fprintf(stderr, "   "); for (i=0;i<strlen(pgname);i++) fprintf(stderr, " ");
+  fprintf(stderr, "   ");
+
+  for (i=0; i<strlen(pgname); i++) fprintf(stderr, " ");
+
   fprintf(stderr, "[-v|-vv|-vvv|-vvvv] [-h|--help] [-p|--pretend]\n\n");
   fprintf(stderr, "  [-f|--firmware ]     Mandatory option, to set the name of the executable file\n");
   fprintf(stderr, "                       of the firmware to update the remote card with.\n");
@@ -127,10 +154,12 @@ void show_usage(char* pgname) {
 int get_elf_header(Elf32_Ehdr* p_Elf32_hdr, FILE* p_file) {
   int nbread;
   nbread = fread(p_Elf32_hdr, sizeof(elf_Ehdr), 1, p_file);
+
   if (nbread != 1) {
     fprintf(stderr, "Error : while reading ELF header (fread() returned %d)\n", nbread);
     exit(-1);
   }
+
   invert2(p_Elf32_hdr->e_type);            /* $$$$KMK: bad code !!! Endianess dependant ! */
   invert2(p_Elf32_hdr->e_machine);
   invert4(p_Elf32_hdr->e_version);
@@ -145,11 +174,11 @@ int get_elf_header(Elf32_Ehdr* p_Elf32_hdr, FILE* p_file) {
   invert2(p_Elf32_hdr->e_shnum);
   invert2(p_Elf32_hdr->e_shstrndx);
   return (p_Elf32_hdr->e_type == ET_EXEC)
-          && (p_Elf32_hdr->e_machine == EM_SPARC)
-          && (p_Elf32_hdr->e_version == EV_CURRENT)
-          && (p_Elf32_hdr->e_ident[EI_CLASS] == ELFCLASS32)
-          && (p_Elf32_hdr->e_ident[EI_DATA] == ELFDATA2MSB)
-          && (p_Elf32_hdr->e_ident[EI_VERSION] == EV_CURRENT);
+         && (p_Elf32_hdr->e_machine == EM_SPARC)
+         && (p_Elf32_hdr->e_version == EV_CURRENT)
+         && (p_Elf32_hdr->e_ident[EI_CLASS] == ELFCLASS32)
+         && (p_Elf32_hdr->e_ident[EI_DATA] == ELFDATA2MSB)
+         && (p_Elf32_hdr->e_ident[EI_VERSION] == EV_CURRENT);
 }
 
 int get_elf_section_header(Elf32_Shdr* p_Elf32_Shdr, FILE* p_file, unsigned int section_ndx) {
@@ -159,10 +188,12 @@ int get_elf_section_header(Elf32_Shdr* p_Elf32_Shdr, FILE* p_file, unsigned int 
   /* set file pointer to the position of the section header section_ndx */
   // seekrst = fseek(p_file, (long), 0);
   nbread = fread(p_Elf32_Shdr, sizeof(elf_Shdr), 1, p_file);
+
   if (nbread != 1) {
     fprintf(stderr, "Error : while reading elf section header (fread() returned %d)\n", nbread);
     exit(-1);
   }
+
   invert4(p_Elf32_Shdr->sh_name);            /* $$$$KMK: bad code !!! Endianess dependant ! */
   invert4(p_Elf32_Shdr->sh_type);
   invert4(p_Elf32_Shdr->sh_flags);
@@ -189,9 +220,11 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
 
   for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
     get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
+
     if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, section_name)) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
         printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
+
       /* Check that section size is a multiple of 4 bytes. */
       if (elf_Shdr.sh_size % 4) {
         fprintf(stderr, "Error: section %s has a non-multiple-of-4-bytes size (%d).\n",
@@ -202,8 +235,10 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         printf("Info: ok, section %s has size %d bytes (multiple of 4 bytes).\n",
                SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
       }
+
       /* Dynamically allocate a chunk of memory to store the section into. */
       section_content = (char*)malloc(elf_Shdr.sh_size);
+
       if (!section_content) {
         fprintf(stderr, "Error: could not dynamically allocate %d bytes for section %s.\n",
                 elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
@@ -213,10 +248,12 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         printf("Info: ok, dynamically allocated a %d bytes buffer for section %s.\n",
                elf_Shdr.sh_size, SecNameStnTable + elf_Shdr.sh_name);
       }
+
       /* Position the file cursor at the begining of proper section. */
       fseek(p_elfimage, (long)(elf_Shdr.sh_offset), 0);
       /* Copy the section's content into this temporary buffer. */
       nbread = fread(section_content, elf_Shdr.sh_size, 1, p_elfimage);
+
       if (nbread != 1) {
         fprintf(stderr, "Error: could not read %d bytes from ELF file into dynamic buffer.\n", elf_Shdr.sh_size);
         free(section_content);
@@ -226,9 +263,11 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         printf("Info: ok, copied content of section %s into dynamic buffer (%d bytes copied).\n",
                SecNameStnTable + elf_Shdr.sh_name, elf_Shdr.sh_size);
       }
+
       /* Open the special device file. */
       if (!pflag) {
         ifile = open(DEVICE_NAME, ACCESS_MODE, 0);
+
         if (ifile<0) {
           fprintf(stderr, "Error: could not open %s (open() returned %d, errno=%u)\n", DEVICE_NAME, ifile, errno);
           free(section_content);
@@ -237,6 +276,7 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
           printf("Info: ok, successfully opened %s.\n", DEVICE_NAME);
         }
+
         /* Collect control data for ioctl. */
         ioctl_params[0] = UPDATE_FIRMWARE_TRANSFER_BLOCK;
         ioctl_params[1] = elf_Shdr.sh_addr;
@@ -246,6 +286,7 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
         //invert4(ioctl_params[2]);
         /* Call ioctl driver */
         ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
+
         if (ioctlretval) {
           fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
           close(ifile);
@@ -256,8 +297,10 @@ void find_and_transfer_section(char* section_name, unsigned int verboselevel) {
           printf("Info: ok, successful ioctl on %s for section %s.\n",
                  DEVICE_NAME, SecNameStnTable + elf_Shdr.sh_name);
         }
+
         close(ifile);
       } /* pflag */
+
       free(section_content);
     } /* section_name */
   } /* for secnb */
@@ -271,12 +314,15 @@ void find_and_clear_section_bss(unsigned int verboselevel) {
 
   for (secnb = 0 ; secnb < elf_Ehdr.e_shnum; secnb++) {
     get_elf_section_header(&elf_Shdr, p_elfimage, secnb);
+
     if (!strcmp(SecNameStnTable + elf_Shdr.sh_name, ".bss")) {
       if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
         printf("Info: ok, found section %s (as section nb. %d)\n", SecNameStnTable + elf_Shdr.sh_name, secnb);
+
       /* Open the special device file. */
       if (!pflag) {
         ifile = open(DEVICE_NAME, ACCESS_MODE, 0);
+
         if (ifile<0) {
           fprintf(stderr, "Error: could not open %s (open() returned %d, errno=%u)\n", DEVICE_NAME, ifile, errno);
           fclose(p_elfimage);
@@ -284,6 +330,7 @@ void find_and_clear_section_bss(unsigned int verboselevel) {
         } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
           printf("Info: ok, successfully opened %s.\n", DEVICE_NAME);
         }
+
         /* Collect control data for ioctl. */
         ioctl_params[0] = UPDATE_FIRMWARE_CLEAR_BSS;
         ioctl_params[1] = elf_Shdr.sh_addr;
@@ -292,6 +339,7 @@ void find_and_clear_section_bss(unsigned int verboselevel) {
         //invert4(ioctl_params[2]);
         /* Call ioctl driver */
         ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
+
         if (ioctlretval) {
           fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
           close(ifile);
@@ -301,6 +349,7 @@ void find_and_clear_section_bss(unsigned int verboselevel) {
           printf("Info: ok, successful ioctl on %s for section %s.\n",
                  DEVICE_NAME, SecNameStnTable + elf_Shdr.sh_name);
         }
+
         close(ifile);
       } /* pflag */
     } /* section_name */
@@ -331,35 +380,46 @@ int main(int argc, char** argv) {
   while ((getoptret = getopt_long_only (argc, argv, "f:vhpns:b", updatefw_longopts, &indexptr)) != -1)
     switch (getoptret) {
       /* Without-argument options */
-      case 0: /* means that the option just sets a flag. Nothing has to be done,
+    case 0: /* means that the option just sets a flag. Nothing has to be done,
                  since getopt_long already sets the flag. */
-        break;
+      break;
+
       /* With-argument options & equivalent short options */
-      case 'v':
-        verboselevel++;
-        break;
-      case 'h': /* short switch -h was used */
-        helpflag = SWITCH_IS_ON;
-        break;
-      case 'p': /* short switch -p was used */
-        pflag = SWITCH_IS_ON;
-        break;
-      case 'n': /* short switch -n was used */
-        noexecflag = SWITCH_IS_ON;
-        break;
-      case 'f': /* short switch -f was used */
-        fflag = SWITCH_IS_ON; p_str_fwn = optarg;
-        break;
-      case 's': /* short switch -s was used */
-        sflag = SWITCH_IS_ON; p_str_stkptr = optarg;
-        break;
-      case 'b': /* short switch -b was used */
-        rebootflag = SWITCH_IS_ON;
-        break;
-      default:
-        erroroption = TRUE;
-        break;
+    case 'v':
+      verboselevel++;
+      break;
+
+    case 'h': /* short switch -h was used */
+      helpflag = SWITCH_IS_ON;
+      break;
+
+    case 'p': /* short switch -p was used */
+      pflag = SWITCH_IS_ON;
+      break;
+
+    case 'n': /* short switch -n was used */
+      noexecflag = SWITCH_IS_ON;
+      break;
+
+    case 'f': /* short switch -f was used */
+      fflag = SWITCH_IS_ON;
+      p_str_fwn = optarg;
+      break;
+
+    case 's': /* short switch -s was used */
+      sflag = SWITCH_IS_ON;
+      p_str_stkptr = optarg;
+      break;
+
+    case 'b': /* short switch -b was used */
+      rebootflag = SWITCH_IS_ON;
+      break;
+
+    default:
+      erroroption = TRUE;
+      break;
     };
+
   /* End of while */
 
   /********************************
@@ -370,38 +430,44 @@ int main(int argc, char** argv) {
     fprintf(stderr, "%s: Misuse (--help to show usage)\n", argv[0]);
     exit(-1);
   }
+
   /* Let print the help if it has been explicitly asked for */
   if (helpflag == SWITCH_IS_ON) {
     show_usage(argv[0]);
     exit(0);
   }
+
   /* Check that mandatory firmware option was specified */
   if (fflag != SWITCH_IS_ON) {
     fprintf(stderr, "%s: missing mandatory [-f|--firmware] option (--help to show usage).\n", argv[0]);
     exit(-1);
   }
+
   /* Check that mandatory stack pointer option was specified */
   if (sflag != SWITCH_IS_ON) {
     fprintf(stderr, "%s: missing mandatory [-s|--stackptr] option (--help to show usage).\n", argv[0]);
     exit(-1);
   }
+
   /* Check consistency of stack pointer value. */
   /* 1/2 - The address must start with the 2 characters '0x' and be exactly 10 characters long. */
   if ((strncmp(p_str_stkptr, "0x", 2)) || (strlen(p_str_stkptr) != 10)) { /* 10 is for 0x + 8 hex digits. */
     fprintf(stderr, "%s: Invalid value to [s|--stackptr] option (--help to show usage).\n", argv[0]);
     exit(-1);
   }
+
   /* 2/2 - The address must only be made of hexadecimal digits. */
   for (i=0,c=p_str_stkptr+2; i < 8 ; i++,c++) {
     if (!
-         (   ((*c >= '0') && (*c <= '9'))
-          || ((*c >= 'a') && (*c <= 'f'))
-          || ((*c >= 'A') && (*c <= 'F'))
-         )
-        ) {
+        (   ((*c >= '0') && (*c <= '9'))
+            || ((*c >= 'a') && (*c <= 'f'))
+            || ((*c >= 'A') && (*c <= 'F'))
+        )
+       ) {
       fprintf(stderr, "%s: Invalid value to [s|--stackptr] option (--help to show usage).\n", argv[0]);
       exit(-1);
     }
+
     /* Transcode string hexadecinmal value into binary value */
     if ((*c <= '9') && (*c >= '0'))
       stackpointer |= (*c - '0') << 28-(i*4);
@@ -410,21 +476,26 @@ int main(int argc, char** argv) {
     else if ((*c <= 'f') && (*c >= 'a'))
       stackpointer |= ((*c - 'a') + 10) << 28-(i*4);
   }
+
   /* Open firmware file in READ_ONLY mode. */
   filename = p_str_fwn;
   p_elfimage = fopen(filename, READ_FILE_MODE);
+
   if (p_elfimage == NULL) {
     fprintf(stderr, "Error : could not open file <%s> in %s mode.\n", filename, READ_FILE_MODE);
     exit(-1);
   }
+
   if (verboselevel >= VERBOSE_LEVEL_ACCESS_FILES)
     printf("Info: using file <%s> (successfully opened in %s mode).\n", filename, READ_FILE_MODE);
+
   /* Read elf binary image file */
   /* Get informations from header file */
   if (!(get_elf_header(&elf_Ehdr, p_elfimage))) {
     fprintf(stderr, "Error : file doesn't match expected format.\n");
     exit(-1);
   }
+
   if (verboselevel >= VERBOSE_LEVEL_ACCESS_FILES)
     printf("Info: ok, file matches expected format.\n");
 
@@ -436,13 +507,15 @@ int main(int argc, char** argv) {
   fseek(p_elfimage, (long)(elf_Shdr.sh_offset), 0);
   StringSec_pos = ftell(p_elfimage);
   StringSec_size = elf_Shdr.sh_size;
+
   /* copy the string table into global variable */
   if (StringSec_size > MAX_SIZE_STRING_TABLE) {
     fprintf(stderr, "Error: section name string table too big (%d > %d);"
-                    " increase max. allowed value in source code and recompile\n",
+            " increase max. allowed value in source code and recompile\n",
             StringSec_size, MAX_SIZE_STRING_TABLE);
     exit(-1);
   }
+
   fread(SecNameStnTable, 1, StringSec_size, p_elfimage);
 
   /* Action 1: force reboot (if option was specified) */
@@ -452,8 +525,10 @@ int main(int argc, char** argv) {
     else
       printf("Info: squeezed action #1 (forcing reboot of Leon).\n");
   }
+
   if ((rebootflag == SWITCH_IS_ON) && (!pflag)) {
     ifile = open(DEVICE_NAME, ACCESS_MODE, 0);
+
     if (ifile<0) {
       fprintf(stderr, "Error: could not open %s (open() returned %d, errno=%u).\n", DEVICE_NAME, ifile, errno);
       fclose(p_elfimage);
@@ -461,9 +536,11 @@ int main(int argc, char** argv) {
     } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
       printf("Info: ok, successfully opened %s.\n", DEVICE_NAME);
     }
+
     ioctl_params[0] = UPDATE_FIRMWARE_FORCE_REBOOT;
     /* Call ioctl driver */
     ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
+
     if (ioctlretval) {
       fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
       close(ifile);
@@ -472,6 +549,7 @@ int main(int argc, char** argv) {
     } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
       printf("Info: ok, successful ioctl on %s to force reboot.\n", DEVICE_NAME);
     }
+
     /* If the card received the boot order, then
          1) The firmware who handled the order must have cleared the BOOT_GOK bit
             before rebooting ;
@@ -483,49 +561,65 @@ int main(int argc, char** argv) {
        ever not to reboot cleanly. If the loop was to not end, user can simply
        gives up the update-firmware operation by issuing a Ctrl-C. */
     ioctl_params[0] = UPDATE_FIRMWARE_TEST_GOK;
+
     /* Call ioctl driver */
     if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS)
       printf("Info: waiting for GOK bit (as acknowledge of reboot command) - May take a few seconds...\n");
+
     ioctl_test_gok = 0;
+
     do {
       ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
       ioctl_test_gok++;
       sleep(1); /* sleep 1 second */
+
       if (!(ioctl_test_gok % 10))
         printf("Warning: card does not seem to have rebooted cleanly (no GOK bit). Still trying ([Ctrl-C] to abort).\n");
     } while (ioctlretval);
+
     if (verboselevel >= VERBOSE_LEVEL_IOCTL)
       printf("Info: ok, card set again GOK bit (after %u seconds).\n", ioctl_test_gok);
+
     close(ifile);
   } /* rebootflag && pflag */
+
   if ((verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) && (rebootflag == SWITCH_IS_ON))
     printf("Info: action #1 done.\n");
 
   /* Action 2: Find the .text section */
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #2 (Transfer .text section).\n");
+
   find_and_transfer_section(".text", verboselevel);
   sleep(1);
+
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #2 done.\n");
 
   /* Action 3 : Find the .data section */
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #3 (Transfer .data section).\n");
+
   find_and_transfer_section(".data", verboselevel);
   sleep(1);
+
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #3 done.\n");
 
   /* Action 4 : Find the .bss  section */
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #4 (Clear .bss section).\n");
+
   find_and_clear_section_bss(verboselevel);
   sleep(1);
+
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #4 done.\n");
 
   /* Action 5 : Find the entry address */
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: entering action #5 (Jump to firmware/set stack-pointer).\n");
+
   if (verboselevel >= VERBOSE_LEVEL_SECTION_DETAILS)
     printf("Info: Firmware entry point = 0x%08x, setting stack pointer = 0x%08x.\n", elf_Ehdr.e_entry, stackpointer);
+
   /* Open the special device file. */
   if (!pflag) {
     ifile = open(DEVICE_NAME, ACCESS_MODE, 0);
+
     if (ifile<0) {
       fprintf(stderr, "Error: could not open %s (open() returned %d, errno=%u).\n", DEVICE_NAME, ifile, errno);
       fclose(p_elfimage);
@@ -533,15 +627,18 @@ int main(int argc, char** argv) {
     } else if (verboselevel >= VERBOSE_LEVEL_IOCTL) {
       printf("Info: ok, successfully opened %s.\n", DEVICE_NAME);
     }
+
     /* Collect control data for ioctl. */
     ioctl_params[0] = UPDATE_FIRMWARE_START_EXECUTION;
     ioctl_params[1] = elf_Ehdr.e_entry;
     ioctl_params[2] = stackpointer;
+
     //invert4(ioctl_params[1]);
     //invert4(ioctl_params[2]);
     /* Call ioctl driver */
     if ( noexecflag == SWITCH_IS_OFF ) {
       ioctlretval = ioctl(ifile, openair_UPDATE_FIRMWARE, ioctl_params);
+
       if (ioctlretval) {
         fprintf(stderr, "Error: ioctl on %s failed.\n", DEVICE_NAME);
         close(ifile);
@@ -551,13 +648,16 @@ int main(int argc, char** argv) {
         printf("Info: ok, successful ioctl on %s for stack-pointer setting/firmware-execution.\n", DEVICE_NAME);
       }
     }
+
     close(ifile);
   } /* pflag */
+
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #5 done.\n");
-  
+
   fclose(p_elfimage);
 
   /* Did we pretend ? */
   if (pflag) printf("Nothing done.\n");
+
   exit(0);
 }

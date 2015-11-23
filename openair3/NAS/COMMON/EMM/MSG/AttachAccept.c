@@ -1,0 +1,373 @@
+/*
+ * Copyright (c) 2015, EURECOM (www.eurecom.fr)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
+
+#include "TLVEncoder.h"
+#include "TLVDecoder.h"
+#include "AttachAccept.h"
+
+int decode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint32_t len)
+{
+  uint32_t decoded = 0;
+  int decoded_result = 0;
+
+  // Check if we got a NULL pointer and if buffer length is >= minimum length expected for the message.
+  CHECK_PDU_POINTER_AND_LENGTH_DECODER(buffer, ATTACH_ACCEPT_MINIMUM_LENGTH, len);
+
+  /* Decoding mandatory fields */
+  if ((decoded_result = decode_u8_eps_attach_result(&attach_accept->epsattachresult, 0, *(buffer + decoded), len - decoded)) < 0)
+    return decoded_result;
+
+  decoded++;
+
+  if ((decoded_result = decode_gprs_timer(&attach_accept->t3412value, 0, buffer + decoded, len - decoded)) < 0)
+    return decoded_result;
+  else
+    decoded += decoded_result;
+
+  if ((decoded_result = decode_tracking_area_identity_list(&attach_accept->tailist, 0, buffer + decoded, len - decoded)) < 0)
+    return decoded_result;
+  else
+    decoded += decoded_result;
+
+  if ((decoded_result = decode_esm_message_container(&attach_accept->esmmessagecontainer, 0, buffer + decoded, len - decoded)) < 0)
+    return decoded_result;
+  else
+    decoded += decoded_result;
+
+  /* Decoding optional fields */
+  while(len - decoded > 0) {
+    uint8_t ieiDecoded = *(buffer + decoded);
+
+    /* Type | value iei are below 0x80 so just return the first 4 bits */
+    if (ieiDecoded >= 0x80)
+      ieiDecoded = ieiDecoded & 0xf0;
+
+    switch(ieiDecoded) {
+    case ATTACH_ACCEPT_GUTI_IEI:
+      if ((decoded_result =
+             decode_eps_mobile_identity(&attach_accept->guti,
+                                        ATTACH_ACCEPT_GUTI_IEI, buffer + decoded, len - decoded))
+          <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_GUTI_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_IEI:
+      if ((decoded_result =
+             decode_location_area_identification(&attach_accept->locationareaidentification,
+                 ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_IEI, buffer +
+                 decoded, len - decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_MS_IDENTITY_IEI:
+      if ((decoded_result =
+             decode_mobile_identity(&attach_accept->msidentity,
+                                    ATTACH_ACCEPT_MS_IDENTITY_IEI, buffer + decoded, len -
+                                    decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_MS_IDENTITY_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_EMM_CAUSE_IEI:
+      if ((decoded_result = decode_emm_cause(&attach_accept->emmcause,
+                                             ATTACH_ACCEPT_EMM_CAUSE_IEI, buffer + decoded, len -
+                                             decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_EMM_CAUSE_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_T3402_VALUE_IEI:
+      if ((decoded_result =
+             decode_gprs_timer(&attach_accept->t3402value,
+                               ATTACH_ACCEPT_T3402_VALUE_IEI, buffer + decoded, len -
+                               decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_T3402_VALUE_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_T3423_VALUE_IEI:
+      if ((decoded_result =
+             decode_gprs_timer(&attach_accept->t3423value,
+                               ATTACH_ACCEPT_T3423_VALUE_IEI, buffer + decoded, len -
+                               decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_T3423_VALUE_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_EQUIVALENT_PLMNS_IEI:
+      if ((decoded_result =
+             decode_plmn_list(&attach_accept->equivalentplmns,
+                              ATTACH_ACCEPT_EQUIVALENT_PLMNS_IEI, buffer + decoded, len -
+                              decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_EQUIVALENT_PLMNS_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_IEI:
+      if ((decoded_result =
+             decode_emergency_number_list(&attach_accept->emergencynumberlist,
+                                          ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_IEI, buffer + decoded,
+                                          len - decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_IEI:
+      if ((decoded_result =
+             decode_eps_network_feature_support(&attach_accept->epsnetworkfeaturesupport,
+                 ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_IEI, buffer +
+                 decoded, len - decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_PRESENT;
+      break;
+
+    case ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_IEI:
+      if ((decoded_result =
+             decode_additional_update_result(&attach_accept->additionalupdateresult,
+                                             ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_IEI, buffer +
+                                             decoded, len - decoded)) <= 0)
+        return decoded_result;
+
+      decoded += decoded_result;
+      /* Set corresponding mask to 1 in presencemask */
+      attach_accept->presencemask |= ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_PRESENT;
+      break;
+
+    default:
+      errorCodeDecoder = TLV_DECODE_UNEXPECTED_IEI;
+      return TLV_DECODE_UNEXPECTED_IEI;
+    }
+  }
+
+  return decoded;
+}
+
+int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint32_t len)
+{
+  int encoded = 0;
+  int encode_result = 0;
+
+  LOG_FUNC_IN;
+
+  /* Checking IEI and pointer */
+  CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, ATTACH_ACCEPT_MINIMUM_LENGTH, len);
+
+  *(buffer + encoded) = (encode_u8_eps_attach_result(&attach_accept->epsattachresult) & 0x0f);
+  encoded++;
+#warning "LG TEST override t3412value"
+  attach_accept->t3412value.unit = GPRS_TIMER_UNIT_360S;
+  attach_accept->t3412value.timervalue = 10;
+
+  if ((encode_result = encode_gprs_timer(&attach_accept->t3412value, 0, buffer
+                                         + encoded, len - encoded)) < 0) {        //Return in case of error
+    LOG_TRACE(WARNING, "Failed encode_gprs_timer");
+    LOG_FUNC_RETURN(encode_result);
+  } else
+    encoded += encode_result;
+
+  if ((encode_result =
+         encode_tracking_area_identity_list(&attach_accept->tailist, 0, buffer
+             + encoded, len - encoded)) < 0) {       //Return in case of error
+    LOG_TRACE(WARNING, "Failed encode_tracking_area_identity_list");
+    LOG_FUNC_RETURN(encode_result);
+  } else
+    encoded += encode_result;
+
+  if ((encode_result =
+         encode_esm_message_container(&attach_accept->esmmessagecontainer, 0,
+                                      buffer + encoded, len - encoded)) < 0) {       //Return in case of error
+    LOG_TRACE(WARNING, "Failed encode_esm_message_container");
+    LOG_FUNC_RETURN(encode_result);
+  } else
+    encoded += encode_result;
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_GUTI_PRESENT)
+      == ATTACH_ACCEPT_GUTI_PRESENT) {
+    if ((encode_result = encode_eps_mobile_identity(&attach_accept->guti,
+                         ATTACH_ACCEPT_GUTI_IEI, buffer + encoded, len - encoded)) < 0) {
+      // Return in case of error
+      LOG_TRACE(WARNING, "Failed encode_eps_mobile_identity");
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_PRESENT)
+      == ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_PRESENT) {
+    if ((encode_result =
+           encode_location_area_identification(&attach_accept->locationareaidentification,
+               ATTACH_ACCEPT_LOCATION_AREA_IDENTIFICATION_IEI, buffer + encoded,
+               len - encoded)) < 0) {
+      LOG_TRACE(WARNING, "Failed encode_location_area_identification");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_MS_IDENTITY_PRESENT)
+      == ATTACH_ACCEPT_MS_IDENTITY_PRESENT) {
+    if ((encode_result = encode_mobile_identity(&attach_accept->msidentity,
+                         ATTACH_ACCEPT_MS_IDENTITY_IEI, buffer + encoded, len - encoded)) <
+        0) {
+      LOG_TRACE(WARNING, "Failed encode_mobile_identity");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_EMM_CAUSE_PRESENT)
+      == ATTACH_ACCEPT_EMM_CAUSE_PRESENT) {
+    if ((encode_result = encode_emm_cause(&attach_accept->emmcause,
+                                          ATTACH_ACCEPT_EMM_CAUSE_IEI, buffer + encoded, len - encoded)) <
+        0) {
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+#warning "LG TEST override t3402value"
+  attach_accept->presencemask |= ATTACH_ACCEPT_T3402_VALUE_PRESENT;
+  attach_accept->t3402value.unit = GPRS_TIMER_UNIT_60S;
+  attach_accept->t3402value.timervalue = 12;
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_T3402_VALUE_PRESENT)
+      == ATTACH_ACCEPT_T3402_VALUE_PRESENT) {
+    if ((encode_result = encode_gprs_timer(&attach_accept->t3402value,
+                                           ATTACH_ACCEPT_T3402_VALUE_IEI, buffer + encoded, len - encoded)) <
+        0) {
+      LOG_TRACE(WARNING, "Failed encode_gprs_timer");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_T3423_VALUE_PRESENT)
+      == ATTACH_ACCEPT_T3423_VALUE_PRESENT) {
+    if ((encode_result = encode_gprs_timer(&attach_accept->t3423value,
+                                           ATTACH_ACCEPT_T3423_VALUE_IEI, buffer + encoded, len - encoded)) <
+        0) {
+      LOG_TRACE(WARNING, "Failed encode_gprs_timer");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_EQUIVALENT_PLMNS_PRESENT)
+      == ATTACH_ACCEPT_EQUIVALENT_PLMNS_PRESENT) {
+    if ((encode_result = encode_plmn_list(&attach_accept->equivalentplmns,
+                                          ATTACH_ACCEPT_EQUIVALENT_PLMNS_IEI, buffer + encoded, len -
+                                          encoded)) < 0) {
+      LOG_TRACE(WARNING, "Failed encode_plmn_list");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_PRESENT)
+      == ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_PRESENT) {
+    if ((encode_result =
+           encode_emergency_number_list(&attach_accept->emergencynumberlist,
+                                        ATTACH_ACCEPT_EMERGENCY_NUMBER_LIST_IEI, buffer + encoded, len -
+                                        encoded)) < 0) {
+      LOG_TRACE(WARNING, "Failed encode_emergency_number_list");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_PRESENT)
+      == ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_PRESENT) {
+    if ((encode_result =
+           encode_eps_network_feature_support(&attach_accept->epsnetworkfeaturesupport,
+               ATTACH_ACCEPT_EPS_NETWORK_FEATURE_SUPPORT_IEI, buffer + encoded,
+               len - encoded)) < 0) {
+      LOG_TRACE(WARNING, "Failed encode_eps_network_feature_support");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  if ((attach_accept->presencemask & ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_PRESENT)
+      == ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_PRESENT) {
+    if ((encode_result =
+           encode_additional_update_result(&attach_accept->additionalupdateresult,
+                                           ATTACH_ACCEPT_ADDITIONAL_UPDATE_RESULT_IEI, buffer + encoded, len
+                                           - encoded)) < 0) {
+      LOG_TRACE(WARNING, "Failed encode_additional_update_result");
+      // Return in case of error
+      LOG_FUNC_RETURN(encode_result);
+    } else
+      encoded += encode_result;
+  }
+
+  LOG_FUNC_RETURN(encoded);
+}
+

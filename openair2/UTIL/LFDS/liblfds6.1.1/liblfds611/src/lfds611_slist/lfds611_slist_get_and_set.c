@@ -8,7 +8,7 @@
 int lfds611_slist_get_user_data_from_element( struct lfds611_slist_element *se, void **user_data )
 {
   int
-    rv = 1;
+  rv = 1;
 
   assert( se != NULL );
   assert( user_data != NULL );
@@ -31,11 +31,11 @@ int lfds611_slist_get_user_data_from_element( struct lfds611_slist_element *se, 
 int lfds611_slist_set_user_data_in_element( struct lfds611_slist_element *se, void *user_data )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) void
-    *user_data_and_flags[2],
-    *new_user_data_and_flags[2];
+  *user_data_and_flags[2],
+  *new_user_data_and_flags[2];
 
   int
-    rv = 1;
+  rv = 1;
 
   assert( se != NULL );
   // TRD : user_data can be NULL
@@ -47,12 +47,10 @@ int lfds611_slist_set_user_data_in_element( struct lfds611_slist_element *se, vo
 
   new_user_data_and_flags[LFDS611_SLIST_USER_DATA] = user_data;
 
-  do
-  {
+  do {
     new_user_data_and_flags[LFDS611_SLIST_FLAGS] = user_data_and_flags[LFDS611_SLIST_FLAGS];
-  }
-  while( !((lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] & LFDS611_SLIST_FLAG_DELETED) and
-         0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) se->user_data_and_flags, (lfds611_atom_t *) new_user_data_and_flags, (lfds611_atom_t *) user_data_and_flags) );
+  } while( !((lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] & LFDS611_SLIST_FLAG_DELETED) and
+           0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) se->user_data_and_flags, (lfds611_atom_t *) new_user_data_and_flags, (lfds611_atom_t *) user_data_and_flags) );
 
   if( (lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] & LFDS611_SLIST_FLAG_DELETED )
     rv = 0;

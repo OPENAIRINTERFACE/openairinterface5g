@@ -21,20 +21,20 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file vars.hles
-* \brief rrc variables 
+* \brief rrc variables
 * \author Raymond Knopp and Navid Nikaein
 * \date 2013
-* \version 1.0 
+* \version 1.0
 * \company Eurecom
 * \email: navid.nikaein@eurecom.fr
-*/ 
+*/
 
 
 #ifndef __OPENAIR_RRC_VARS_H__
@@ -57,7 +57,7 @@ int S_rrc= RRC2RRM_FIFO;
 #include "LAYER2/MAC/extern.h"
 #ifndef NO_RRM
 sock_rrm_t S_rrc;
-#endif 
+#endif
 #endif
 
 #ifndef NO_RRM
@@ -77,27 +77,29 @@ long logicalChannelGroup0 = 0;
 long  logicalChannelSR_Mask_r9=0;
 
 struct LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
-							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-							      0,
-							      &logicalChannelGroup0};
+         LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+         0,
+         &logicalChannelGroup0
+};
 struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
-							      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
-							      0,
-							      &logicalChannelGroup0};
+         LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+         0,
+         &logicalChannelGroup0
+};
 
 
 // These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
 LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {&LCSRB1
 #ifdef Rel10
-								  ,
-								  &logicalChannelSR_Mask_r9
+                                                                  ,
+                                                                  &logicalChannelSR_Mask_r9
 #endif
                                                                  };
 
 LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {&LCSRB2
 #ifdef Rel10
-								 ,
-								 &logicalChannelSR_Mask_r9
+                                                                 ,
+                                                                 &logicalChannelSR_Mask_r9
 #endif
                                                                 };
 
@@ -109,7 +111,7 @@ LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DT
 MAC_MEAS_T BCCH_MEAS_TRIGGER,CCCH_MEAS_TRIGGER,DCCH_MEAS_TRIGGER,DTCH_MEAS_TRIGGER;
 MAC_AVG_T BCCH_MEAS_AVG, CCCH_MEAS_AVG,DCCH_MEAS_AVG, DTCH_MEAS_AVG;
 
-// timers 
+// timers
 uint16_t T300[8] = {100,200,300,400,600,1000,1500,2000};
 uint16_t T310[8] = {0,50,100,200,500,1000,2000};
 uint16_t N310[8] = {1,2,3,4,6,8,10,20};
@@ -121,142 +123,142 @@ uint32_t timeToTrigger_ms[16] = {0,40,64,80,100,128,160,256,320,480,512,640,1024
 
 /* 36.133 Section 9.1.4 RSRP Measurement Report Mapping, Table: 9.1.4-1 */
 float RSRP_meas_mapping[98] = {
-		-140,
-		-139,
-		-138,
-		-137,
-		-136,
-		-135,
-		-134,
-		-133,
-		-132,
-		-131,
-		-130,
-		-129,
-		-128,
-		-127,
-		-126,
-		-125,
-		-124,
-		-123,
-		-122,
-		-121,
-		-120,
-		-119,
-		-118,
-		-117,
-		-116,
-		-115,
-		-114,
-		-113,
-		-112,
-		-111,
-		-110,
-		-109,
-		-108,
-		-107,
-		-106,
-		-105,
-		-104,
-		-103,
-		-102,
-		-101,
-		-100,
-		-99,
-		-98,
-		-97,
-		-96,
-		-95,
-		-94,
-		-93,
-		-92,
-		-91,
-		-90,
-		-89,
-		-88,
-		-87,
-		-86,
-		-85,
-		-84,
-		-83,
-		-82,
-		-81,
-		-80,
-		-79,
-		-78,
-		-77,
-		-76,
-		-75,
-		-74,
-		-73,
-		-72,
-		-71,
-		-70,
-		-69,
-		-68,
-		-67,
-		-66,
-		-65,
-		-64,
-		-63,
-		-62,
-		-61,
-		-60,
-		-59,
-		-58,
-		-57,
-		-56,
-		-55,
-		-54,
-		-53,
-		-52,
-		-51,
-		-50,
-		-49,
-		-48,
-		-47,
-		-46,
-		-45,
-		-44,
-		-43
+  -140,
+  -139,
+  -138,
+  -137,
+  -136,
+  -135,
+  -134,
+  -133,
+  -132,
+  -131,
+  -130,
+  -129,
+  -128,
+  -127,
+  -126,
+  -125,
+  -124,
+  -123,
+  -122,
+  -121,
+  -120,
+  -119,
+  -118,
+  -117,
+  -116,
+  -115,
+  -114,
+  -113,
+  -112,
+  -111,
+  -110,
+  -109,
+  -108,
+  -107,
+  -106,
+  -105,
+  -104,
+  -103,
+  -102,
+  -101,
+  -100,
+  -99,
+  -98,
+  -97,
+  -96,
+  -95,
+  -94,
+  -93,
+  -92,
+  -91,
+  -90,
+  -89,
+  -88,
+  -87,
+  -86,
+  -85,
+  -84,
+  -83,
+  -82,
+  -81,
+  -80,
+  -79,
+  -78,
+  -77,
+  -76,
+  -75,
+  -74,
+  -73,
+  -72,
+  -71,
+  -70,
+  -69,
+  -68,
+  -67,
+  -66,
+  -65,
+  -64,
+  -63,
+  -62,
+  -61,
+  -60,
+  -59,
+  -58,
+  -57,
+  -56,
+  -55,
+  -54,
+  -53,
+  -52,
+  -51,
+  -50,
+  -49,
+  -48,
+  -47,
+  -46,
+  -45,
+  -44,
+  -43
 };
 
 float RSRQ_meas_mapping[35] = {
-	-19,
-	-18.5,
-	-18,
-	-17.5,
-	-17,
-	-16.5,
-	-16,
-	-15.5,
-	-15,
-	-14.5,
-	-14,
-	-13.5,
-	-13,
-	-12.5,
-	-12,
-	-11.5,
-	-11,
-	-10.5,
-	-10,
-	-9.5,
-	-9,
-	-8.5,
-	-8,
-	-7.5,
-	-7,
-	-6.5,
-	-6,
-	-5.5,
-	-5,
-	-4.5,
-	-4,
-	-3.5,
-	-3,
-	-2.5,
-	-2
+  -19,
+  -18.5,
+  -18,
+  -17.5,
+  -17,
+  -16.5,
+  -16,
+  -15.5,
+  -15,
+  -14.5,
+  -14,
+  -13.5,
+  -13,
+  -12.5,
+  -12,
+  -11.5,
+  -11,
+  -10.5,
+  -10,
+  -9.5,
+  -9,
+  -8.5,
+  -8,
+  -7.5,
+  -7,
+  -6.5,
+  -6,
+  -5.5,
+  -5,
+  -4.5,
+  -4,
+  -3.5,
+  -3,
+  -2.5,
+  -2
 };
 
 #endif

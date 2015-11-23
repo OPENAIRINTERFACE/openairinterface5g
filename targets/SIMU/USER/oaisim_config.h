@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -32,13 +32,13 @@
 * \brief configure an emulation
 * \author navid nikaein & Lusheng Wang
 * \date 2006-2010
-* \version 4.0 
+* \version 4.0
 * \company Eurecom
 * \email: openair_tech@eurecom.fr
-* \note this a note 
-* \bug 	this is a bug
+* \note this a note
+* \bug  this is a bug
 * \warning  this is a warning
-*/ 
+*/
 
 //-----------------------------------begin group-----------------------------
 /** @defgroup _oaisim The sturcture of OAISIM
@@ -49,7 +49,7 @@ The current sturcture of oaisim is shown by the figure.
 
 
  * @{*/
- 
+
 /* @}*/
 
 #include "UTIL/LOG/log_if.h"
@@ -66,14 +66,14 @@ The current sturcture of oaisim is shown by the figure.
 /** @defgroup _init_oai Initial oaisim
  *  @ingroup _fn
  *  @brief Initialize all the parameters before start an emulation
- * @{*/ 
-	void init_oai_emulation(void);
+ * @{*/
+void init_oai_emulation(void);
 /* @}*/
 
 /** @defgroup _config_oaisim All the configurations for an emulation
  *  @ingroup _fn
  *  @brief This is the function that calls all the other configuration functions
- * @{*/ 
+ * @{*/
 void oaisim_config(void);
 /* @}*/
 
@@ -81,7 +81,7 @@ void oaisim_config(void);
 /** @defgroup _config_module Configuration functions for various modules
  *  @ingroup _fn
  *  @brief There are the functions to configure different various modules in the emulator
- * @{*/ 
+ * @{*/
 int olg_config(void);
 int ocg_config_env(void);
 int ocg_config_omg(void);

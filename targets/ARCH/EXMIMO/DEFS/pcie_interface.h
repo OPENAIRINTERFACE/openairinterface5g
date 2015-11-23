@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,43 +14,43 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
- /** pcie_interface.h
 
-    Interface definitions to handle communication between PC (kernel driver & SDR application) and Leon3
+/** pcie_interface.h
 
-    - commands from PC->Leon and Leon->PC passed through CONTROL1 register (or new: FIFOs)
-    - structure for passing initial (shared PC memory) buffer pointers
-    - #defines for buffer sizes
-    
-    This is now the CENTRAL header file for all structs and defines that are
-    requires on both LEON and Kernel and PC Application
-            
-    Changelog:
-    01.12.2012: Fix: RXEN and TXEN were swapped
-                New rf_mode flag: use DMAMODE_RX and DMAMODE_TX to selectively enable DMA transfers (only used on ExpressMIMO2)
-                                  use RXOUTSW to close Lime baseband RXout switch between RFFE and ADC
-    09.01.2013: Renamed exmimo_rf_t.mbox --> .p_mbox to indicate this is a pointer to the mbox and not the mbox itself
-    15.01.2013: added command (EXMIMO_GET_SYSTEMID) and structure (exmimo_system_id_t)
-                to get system ID and bitstream and software versions on PC
-    22.01.2013: Moved structures into pcie/pcie_interface.h to have all these spread-out definitions in a single place
+   Interface definitions to handle communication between PC (kernel driver & SDR application) and Leon3
 
-    Author: Matthias Ihmig <matthias.ihmig@mytum.de>, 2012
-            Raymond Knopp <raymond.knopp@eurecom.fr>
-            Riadh Ghaddab <riadh.ghaddab@eurecom.fr>
- */
+   - commands from PC->Leon and Leon->PC passed through CONTROL1 register (or new: FIFOs)
+   - structure for passing initial (shared PC memory) buffer pointers
+   - #defines for buffer sizes
+
+   This is now the CENTRAL header file for all structs and defines that are
+   requires on both LEON and Kernel and PC Application
+
+   Changelog:
+   01.12.2012: Fix: RXEN and TXEN were swapped
+               New rf_mode flag: use DMAMODE_RX and DMAMODE_TX to selectively enable DMA transfers (only used on ExpressMIMO2)
+                                 use RXOUTSW to close Lime baseband RXout switch between RFFE and ADC
+   09.01.2013: Renamed exmimo_rf_t.mbox --> .p_mbox to indicate this is a pointer to the mbox and not the mbox itself
+   15.01.2013: added command (EXMIMO_GET_SYSTEMID) and structure (exmimo_system_id_t)
+               to get system ID and bitstream and software versions on PC
+   22.01.2013: Moved structures into pcie/pcie_interface.h to have all these spread-out definitions in a single place
+
+   Author: Matthias Ihmig <matthias.ihmig@mytum.de>, 2012
+           Raymond Knopp <raymond.knopp@eurecom.fr>
+           Riadh Ghaddab <riadh.ghaddab@eurecom.fr>
+*/
 
 #ifndef PCIE_INTERFACE_H
 #define PCIE_INTERFACE_H
@@ -80,7 +80,7 @@
 
 /*
  * Commands exchanged between PC <--> LEON
- * 
+ *
  * Idle/Ready: EXMIMO_NOP
  */
 #define EXMIMO_NOP                  0x9999
@@ -134,32 +134,30 @@
 // structures for communication between ExMIMO and kernel
 // -----------------------------------------------------------
 
-/* 
+/*
  * struct exmimo_system_id_t:
  *   Contains information on the bitstream, filled by Leon,
  *   based on data stored in an APB block on FPGA (TODO)
- * 
+ *
  * struct exmimo_id_t:
  *   Compound structure, also includes information
  *   from PCI configuration space (board_)
  */
-typedef struct
-{
-    uint32_t bitstream_id;
-    uint32_t bitstream_build_date;
-    uint32_t software_id;
-    uint32_t software_build_date;
-    uint32_t dsp_bitstream_id;
-    uint32_t dsp_bitstream_build_date;
+typedef struct {
+  uint32_t bitstream_id;
+  uint32_t bitstream_build_date;
+  uint32_t software_id;
+  uint32_t software_build_date;
+  uint32_t dsp_bitstream_id;
+  uint32_t dsp_bitstream_build_date;
 } exmimo_system_id_t;
 
-typedef struct
-{
-    exmimo_system_id_t system_id;
-    uint32_t board_vendor;
-    uint32_t board_exmimoversion;
-    uint32_t board_hwrev;
-    uint32_t board_swrev;
+typedef struct {
+  exmimo_system_id_t system_id;
+  uint32_t board_vendor;
+  uint32_t board_exmimoversion;
+  uint32_t board_hwrev;
+  uint32_t board_swrev;
 } exmimo_id_t;
 
 
@@ -219,7 +217,7 @@ typedef struct
 #define LNAMASK     (3<<12)
 #define LNADIS       0
 #define LNA1ON      (1<<12)
-#define LNA2ON      (2<<12) 
+#define LNA2ON      (2<<12)
 #define LNA3ON      (3<<12)
 
 #define LNAGAINMASK (3<<14)
@@ -259,45 +257,44 @@ typedef struct
 #define RXLOIMASK  (63<<12)
 #define RXLOQMASK  (63<<18)
 
-typedef struct
-{
+typedef struct {
   uint32_t do_autocal[MAX_ANTENNAS];
   uint32_t rf_freq_rx[MAX_ANTENNAS];
   uint32_t rf_freq_tx[MAX_ANTENNAS];
-  
+
   // TX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
   uint32_t tx_gain[MAX_ANTENNAS][2];
-  
+
   // RX Gain [Chain0..3][0=LIME Gain, 1=currently ignored]
   uint32_t rx_gain[MAX_ANTENNAS][2];
-  
+
   //LIME RF modes
   // 21    | 20:19 | 18:16 |15:14  | 13:12|11:8 |  7    |6:3  |2      |1   |0   |
   // TXBYP | RXBYP | RF/BB |LNAMode| LNA  |RXLPF|RXLPFen|TXLPF|TXLPFen|TXen|RXen|
   uint32_t rf_mode[MAX_ANTENNAS];
-  
+
   // LIME LO Calibration Constants
   // | RXLOQ | RXLOI | TXLOQ | TXLOI |
   // | 23:18 | 17:12 | 11:6  | 5:0   |
   uint32_t rf_local[MAX_ANTENNAS];
-  
+
   // LIME RX DC OFFSET
   // | RXDCQ | RXDCI |
   // | 15:8  | 7:0   |
   uint32_t rf_rxdc[MAX_ANTENNAS];
-  
+
   // LIME VCO Calibration Constants
   // | RXVCOCAP | TXVCOCAP |
   // | 11:6     | 5:0      |
   uint32_t rf_vcocal[MAX_ANTENNAS];
-  
+
   // External RF Frontend, as used on ExpressMIMO-2
   uint32_t rffe_gain_txlow[MAX_ANTENNAS];
   uint32_t rffe_gain_txhigh[MAX_ANTENNAS];
   uint32_t rffe_gain_rxfinal[MAX_ANTENNAS];
   uint32_t rffe_gain_rxlow[MAX_ANTENNAS];
   uint32_t rffe_band_mode[MAX_ANTENNAS];
-  
+
 } exmimo_rf_t;
 
 
@@ -340,28 +337,26 @@ typedef enum {
   BW20
 } exmimo_bw_t;
 
-typedef struct
-{
+typedef struct {
   uint32_t multicard_syncmode;
-  
+
   uint32_t eNB_flag;
-  
+
   uint32_t tdd_config;
-  
+
   uint32_t frame_length;          // e.g. 76800
   uint32_t frame_start;           // e.g. 18
   uint32_t adac_buffer_period;    // e.g. 2048
   uint32_t adac_intr_period;      // e.g. 1024
-  
+
   uint32_t switch_offset[4];      // sample offsets (relative to start of frame) used to control the RX/TX switch in TDD mode
   uint32_t resampling_factor[4];     // 0=>1, 1=>2, 2=>4, applied equally to each chain and TX/RX
 } exmimo_framing_t;
 
 
-typedef struct
-{
-    exmimo_rf_t rf;
-    exmimo_framing_t framing;
+typedef struct {
+  exmimo_rf_t rf;
+  exmimo_framing_t framing;
 } exmimo_config_t;
 
 
@@ -371,44 +366,42 @@ typedef struct
  * between Leon, Kernel and Userspace
  */
 
-/* 
+/*
  * struct exmimo_pci_interface_bot_t:
  *   Main structure to exchange physical(DMA) pointers between kernel and Leon
  */
-typedef struct
-{
-    uint32_t firmware_block_ptr;
-    uint32_t printk_buffer_ptr;
+typedef struct {
+  uint32_t firmware_block_ptr;
+  uint32_t printk_buffer_ptr;
 
-    uint32_t exmimo_config_ptr;
-    uint32_t exmimo_id_ptr;
+  uint32_t exmimo_config_ptr;
+  uint32_t exmimo_id_ptr;
 
-    // rxcnt / txcnt: stores the current ring buffer position indicators (formerly mbox)
-    // - increment by one for every 512 samples (512 DW)
-    // - currently wraps at 150 (0..149) to cover 1 LTE frame in the buffer
-    // - in current sdr LEON code: only rxcnt_ptr[0] is used
-    uint32_t rxcnt_ptr[MAX_ANTENNAS];    // points to uint32_t RX ring buffer position for each antenna
-    uint32_t txcnt_ptr[MAX_ANTENNAS];    // points to uint32_t TX ring buffer position for each antenna
-    uint32_t adc_head[MAX_ANTENNAS];     // address of start of ADC (RX) buffer in PC memory
-    uint32_t dac_head[MAX_ANTENNAS];     // address of start of DAC (TX) buffer in PC memory
+  // rxcnt / txcnt: stores the current ring buffer position indicators (formerly mbox)
+  // - increment by one for every 512 samples (512 DW)
+  // - currently wraps at 150 (0..149) to cover 1 LTE frame in the buffer
+  // - in current sdr LEON code: only rxcnt_ptr[0] is used
+  uint32_t rxcnt_ptr[MAX_ANTENNAS];    // points to uint32_t RX ring buffer position for each antenna
+  uint32_t txcnt_ptr[MAX_ANTENNAS];    // points to uint32_t TX ring buffer position for each antenna
+  uint32_t adc_head[MAX_ANTENNAS];     // address of start of ADC (RX) buffer in PC memory
+  uint32_t dac_head[MAX_ANTENNAS];     // address of start of DAC (TX) buffer in PC memory
 
 #ifdef NOINIT
-    uint32_t dummy[13];      // used only in simulation for Modelsim memcopy tests
+  uint32_t dummy[13];      // used only in simulation for Modelsim memcopy tests
 #endif
 } exmimo_pci_interface_bot_t;
 /*
  * Equivalent structure to exmimo_pci_interface_bot, which keeps type-specific virtual pointers
  */
-typedef struct
-{
-    char *firmware_block_ptr;
-    char *printk_buffer_ptr;
-    exmimo_config_t *exmimo_config_ptr;
-    exmimo_id_t *exmimo_id_ptr;
-    uint32_t *rxcnt_ptr[MAX_ANTENNAS];    // points to uint32_t RX ring buffer position for each antenna
-    uint32_t *txcnt_ptr[MAX_ANTENNAS];    // points to uint32_t TX ring buffer position for each antenna
-    uint32_t *adc_head[MAX_ANTENNAS];     // address of start of ADC (RX) buffer in PC memory
-    uint32_t *dac_head[MAX_ANTENNAS];     // address of start of DAC (TX) buffer in PC memory
+typedef struct {
+  char *firmware_block_ptr;
+  char *printk_buffer_ptr;
+  exmimo_config_t *exmimo_config_ptr;
+  exmimo_id_t *exmimo_id_ptr;
+  uint32_t *rxcnt_ptr[MAX_ANTENNAS];    // points to uint32_t RX ring buffer position for each antenna
+  uint32_t *txcnt_ptr[MAX_ANTENNAS];    // points to uint32_t TX ring buffer position for each antenna
+  uint32_t *adc_head[MAX_ANTENNAS];     // address of start of ADC (RX) buffer in PC memory
+  uint32_t *dac_head[MAX_ANTENNAS];     // address of start of DAC (TX) buffer in PC memory
 } exmimo_pci_interface_bot_virtual_t;
 
 #endif

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "omg.h" 
+#include "omg.h"
 
 //#include "TraCIConstants.h"
 #include "storage_traci_OMG.h"
@@ -76,15 +76,15 @@ int handshake(char *,int);
 
 /**
  * \fn extractCommandStatus(storage *, unsigned char , char *)
- * \brief Validates the RESPONSE recieved by SUMO 
- * \param Accepts storage pointer where data is read and stored, command ID for which response is recieved, description 
+ * \brief Validates the RESPONSE recieved by SUMO
+ * \param Accepts storage pointer where data is read and stored, command ID for which response is recieved, description
  */
 int extractCommandStatus(storage *, unsigned char , char *);
 
 /**
  * \fn commandSimulationStep(double)
  * \brief Advances the SUMO Simulation
- * \param Accepts number of steps or seconds SUMO should Simulate 
+ * \param Accepts number of steps or seconds SUMO should Simulate
  */
 void commandSimulationStep(double);
 
@@ -96,7 +96,7 @@ void commandClose(void);
 
 /**
  * \fn commandGetVehicleVariable(char *vehID, int varID)
- * \brief Gets the position position and speed info  
+ * \brief Gets the position position and speed info
  * \param Accepts vehicle ID and variable ID, here variable ID is the comaand type
  */
 void commandGetVehicleVariable(char *vehID, int varID);
@@ -137,5 +137,5 @@ void GetSpeed(node_struct* node, char * sumo_id);
 void GetPosition(node_struct* node, char * sumo_id);
 
 
-#endif 
+#endif
 

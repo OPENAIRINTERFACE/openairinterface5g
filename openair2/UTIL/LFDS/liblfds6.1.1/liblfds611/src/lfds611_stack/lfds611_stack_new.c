@@ -8,26 +8,23 @@
 int lfds611_stack_new( struct lfds611_stack_state **ss, lfds611_atom_t number_elements )
 {
   int
-    rv = 0;
+  rv = 0;
 
   assert( ss != NULL );
   // TRD : number_elements can be any value in its range
 
   *ss = (struct lfds611_stack_state *) lfds611_liblfds_aligned_malloc( sizeof(struct lfds611_stack_state), LFDS611_ALIGN_DOUBLE_POINTER );
 
-  if( *ss != NULL )
-  {
+  if( *ss != NULL ) {
     // TRD : the size of the lfds611_freelist is the size of the lfds611_stack
     lfds611_freelist_new( &(*ss)->fs, number_elements, lfds611_stack_internal_freelist_init_function, NULL );
 
-    if( (*ss)->fs == NULL )
-    {
+    if( (*ss)->fs == NULL ) {
       lfds611_liblfds_aligned_free( *ss );
       *ss = NULL;
     }
 
-    if( (*ss)->fs != NULL )
-    {
+    if( (*ss)->fs != NULL ) {
       (*ss)->top[LFDS611_STACK_POINTER] = NULL;
       (*ss)->top[LFDS611_STACK_COUNTER] = 0;
       (*ss)->aba_counter = 0;
@@ -68,7 +65,7 @@ void lfds611_stack_use( struct lfds611_stack_state *ss )
 int lfds611_stack_internal_freelist_init_function( void **user_data, void *user_state )
 {
   int
-    rv = 0;
+  rv = 0;
 
   assert( user_data != NULL );
   assert( user_state == NULL );
@@ -91,7 +88,7 @@ int lfds611_stack_internal_freelist_init_function( void **user_data, void *user_
 void lfds611_stack_internal_new_element_from_freelist( struct lfds611_stack_state *ss, struct lfds611_stack_element *se[LFDS611_STACK_PAC_SIZE], void *user_data )
 {
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   assert( ss != NULL );
   assert( se != NULL );
@@ -116,7 +113,7 @@ void lfds611_stack_internal_new_element_from_freelist( struct lfds611_stack_stat
 void lfds611_stack_internal_new_element( struct lfds611_stack_state *ss, struct lfds611_stack_element *se[LFDS611_STACK_PAC_SIZE], void *user_data )
 {
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   assert( ss != NULL );
   assert( se != NULL );

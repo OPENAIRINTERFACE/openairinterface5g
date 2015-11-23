@@ -1,16 +1,16 @@
 /** \file Base64.h
- **	\date  2004-02-13
- **	\author grymse@alhem.net
+ ** \date  2004-02-13
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2004-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -41,36 +41,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class IFile;
 
 /** \defgroup util Utilities */
 
-/** Base64 encode/decode. 
-	\ingroup util */
+/** Base64 encode/decode.
+  \ingroup util */
 class Base64
 {
 public:
-	Base64();
+  Base64();
 
-	void encode(FILE *, std::string& , bool add_crlf = true);
-	void encode(IFile *, std::string& , bool add_crlf = true);
-	void encode(const std::string&, std::string& , bool add_crlf = true);
-	void encode(const char *, size_t, std::string& , bool add_crlf = true);
-	void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);
+  void encode(FILE *, std::string& , bool add_crlf = true);
+  void encode(IFile *, std::string& , bool add_crlf = true);
+  void encode(const std::string&, std::string& , bool add_crlf = true);
+  void encode(const char *, size_t, std::string& , bool add_crlf = true);
+  void encode(const unsigned char *, size_t, std::string& , bool add_crlf = true);
 
-	void decode(const std::string&, std::string& );
-	void decode(const std::string&, unsigned char *, size_t&);
+  void decode(const std::string&, std::string& );
+  void decode(const std::string&, unsigned char *, size_t&);
 
-	size_t decode_length(const std::string& );
+  size_t decode_length(const std::string& );
 
 private:
-	Base64(const Base64& ) {}
-	Base64& operator=(const Base64& ) { return *this; }
-static	const char *bstr;
-static	const char rstr[128];
+  Base64(const Base64& ) {}
+  Base64& operator=(const Base64& ) {
+    return *this;
+  }
+  static  const char *bstr;
+  static  const char rstr[128];
 };
 
 

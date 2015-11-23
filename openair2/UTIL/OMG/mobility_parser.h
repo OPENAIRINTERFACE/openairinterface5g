@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -50,7 +50,7 @@
  * @param need mobility file to be given
  */
 
-void parse_data (char *trace_file, int node_type);	// mobility file need to be given here, add in omg_param_list, get it from there
+void parse_data (char *trace_file, int node_type);  // mobility file need to be given here, add in omg_param_list, get it from there
 
 /**
  * function builds a linked list which holds vehicle id and its mapping pointer to

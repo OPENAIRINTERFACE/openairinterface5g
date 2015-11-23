@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,144 +14,139 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
- #include "em1_drv.h"
+
+#include "em1_drv.h"
 
 void em1_unlock_user_page(struct em1_page_s *ep)
 {
-	if (ep->addr != 0)
-	{
-//		printk(KERN_DEBUG "unlocking user read page");
-		page_cache_release(ep->page);
-		ep->addr = 0;
-	}
+  if (ep->addr != 0) {
+    //    printk(KERN_DEBUG "unlocking user read page");
+    page_cache_release(ep->page);
+    ep->addr = 0;
+  }
 }
 
 int em1_lock_user_page(struct em1_page_s *ep, uintptr_t addr, int direction)
 {
-	int res;
+  int res;
 
-	if (ep->addr == addr)
-		return 0;
+  if (ep->addr == addr)
+    return 0;
 
-	em1_unlock_user_page(ep);
+  em1_unlock_user_page(ep);
 
-//	printk(KERN_DEBUG "locking user page for addr %p", addr);
+  //  printk(KERN_DEBUG "locking user page for addr %p", addr);
 
-        down_read(&current->mm->mmap_sem);
-        res = get_user_pages(current, current->mm, addr & ~(PAGE_SIZE-1),
-			     1, direction == DMA_FROM_DEVICE,
-			     0, /* don't force */ &ep->page, NULL);
-        up_read(&current->mm->mmap_sem);
+  down_read(&current->mm->mmap_sem);
+  res = get_user_pages(current, current->mm, addr & ~(PAGE_SIZE-1),
+                       1, direction == DMA_FROM_DEVICE,
+                       0, /* don't force */ &ep->page, NULL);
+  up_read(&current->mm->mmap_sem);
 
-	if (res != 1) {
-		printk(KERN_ERR "exmimo1: get_user_pages error");
-		return -EFAULT;
-	}
+  if (res != 1) {
+    printk(KERN_ERR "exmimo1: get_user_pages error");
+    return -EFAULT;
+  }
 
-	ep->addr = addr;
+  ep->addr = addr;
 
-	return 0;
+  return 0;
 }
 
 static ssize_t em1_dma_access(struct em1_file_s *fpv, char __user *buf,
-			      size_t size, int direction, int opcode)
+                              size_t size, int direction, int opcode)
 {
-	DECLARE_WAITQUEUE(wait, current);
-	struct em1_private_s *pv = fpv->pv;
-	uint32_t cmd[4];
-	uintptr_t addr = (uintptr_t)buf;
-	uintptr_t end = (uintptr_t)buf + size - 1;
-	struct em1_page_s *page;
-	int fres = -ERESTARTSYS;
-	uint16_t dma_this;
+  DECLARE_WAITQUEUE(wait, current);
+  struct em1_private_s *pv = fpv->pv;
+  uint32_t cmd[4];
+  uintptr_t addr = (uintptr_t)buf;
+  uintptr_t end = (uintptr_t)buf + size - 1;
+  struct em1_page_s *page;
+  int fres = -ERESTARTSYS;
+  uint16_t dma_this;
 
-	/* check single page span */
-	if ((addr & ~(PAGE_SIZE-1)) != (end & ~(PAGE_SIZE-1)))
-		return -EINVAL;
+  /* check single page span */
+  if ((addr & ~(PAGE_SIZE-1)) != (end & ~(PAGE_SIZE-1)))
+    return -EINVAL;
 
-	if (!access_ok(direction == DMA_FROM_DEVICE ? VERIFY_WRITE : VERIFY_READ, buf, size))
-		return -EFAULT;
+  if (!access_ok(direction == DMA_FROM_DEVICE ? VERIFY_WRITE : VERIFY_READ, buf, size))
+    return -EFAULT;
 
-	page = direction == DMA_FROM_DEVICE ? &fpv->read : &fpv->write;
+  page = direction == DMA_FROM_DEVICE ? &fpv->read : &fpv->write;
 
-	if (em1_lock_user_page(page, addr, direction))
-		return -EFAULT;
+  if (em1_lock_user_page(page, addr, direction))
+    return -EFAULT;
 
-	addr = dma_map_page(pv->dev, page->page, 0, PAGE_SIZE, direction);
+  addr = dma_map_page(pv->dev, page->page, 0, PAGE_SIZE, direction);
 
-	/* prepare command for em1 */
-	cmd[0] = opcode | 3;
-	cmd[1] = sizeof(addr) > 4 ? (uint32_t)(addr >> 32) : 0;
-	cmd[2] = (uint32_t)addr;
-	cmd[3] = size;
+  /* prepare command for em1 */
+  cmd[0] = opcode | 3;
+  cmd[1] = sizeof(addr) > 4 ? (uint32_t)(addr >> 32) : 0;
+  cmd[2] = (uint32_t)addr;
+  cmd[3] = size;
 
-	if (!em1_user_op_enter(pv, &wait, &pv->rq_wait_fifo_w,
-			       EM1_BUSY_FIFO_W, TASK_INTERRUPTIBLE))
-	{
-		/* send command */
-		fres = em1_fifo_write(pv, cmd, 4);
-		pv->busy &= ~EM1_BUSY_FIFO_W;
-		dma_this = ++pv->dma_started;
-	}
+  if (!em1_user_op_enter(pv, &wait, &pv->rq_wait_fifo_w,
+                         EM1_BUSY_FIFO_W, TASK_INTERRUPTIBLE)) {
+    /* send command */
+    fres = em1_fifo_write(pv, cmd, 4);
+    pv->busy &= ~EM1_BUSY_FIFO_W;
+    dma_this = ++pv->dma_started;
+  }
 
-	em1_user_op_leave(pv, &wait, &pv->rq_wait_fifo_w);
+  em1_user_op_leave(pv, &wait, &pv->rq_wait_fifo_w);
 
-//	printk(KERN_DEBUG "exmimo1: dma fifo write %i, addr %x", fres, addr);
+  //  printk(KERN_DEBUG "exmimo1: dma fifo write %i, addr %x", fres, addr);
 
-	if (!fres)
-	{
-		if (!em1_user_op_enter(pv, &wait, &pv->rq_wait_dma,
-				       EM1_BUSY_DMA, TASK_UNINTERRUPTIBLE))
-		{
-//			printk(KERN_DEBUG "wait dma");
+  if (!fres) {
+    if (!em1_user_op_enter(pv, &wait, &pv->rq_wait_dma,
+                           EM1_BUSY_DMA, TASK_UNINTERRUPTIBLE)) {
+      //      printk(KERN_DEBUG "wait dma");
 
-			/* wait for DMA end irq */
-			while ((int16_t)(dma_this - pv->dma_done) > 0)
-			{
-				set_current_state(TASK_UNINTERRUPTIBLE);
-				spin_unlock_irq(&pv->lock);
-				schedule();
-				spin_lock_irq(&pv->lock);
-			}
+      /* wait for DMA end irq */
+      while ((int16_t)(dma_this - pv->dma_done) > 0) {
+        set_current_state(TASK_UNINTERRUPTIBLE);
+        spin_unlock_irq(&pv->lock);
+        schedule();
+        spin_lock_irq(&pv->lock);
+      }
 
-			pv->busy &= ~EM1_BUSY_DMA;
-			fres = size;
-		}
+      pv->busy &= ~EM1_BUSY_DMA;
+      fres = size;
+    }
 
-		em1_user_op_leave(pv, &wait, &pv->rq_wait_dma);
-	}
+    em1_user_op_leave(pv, &wait, &pv->rq_wait_dma);
+  }
 
-	dma_unmap_page(pv->dev, addr, PAGE_SIZE, direction);
+  dma_unmap_page(pv->dev, addr, PAGE_SIZE, direction);
 
-	if (direction == DMA_FROM_DEVICE)
-		SetPageDirty(page->page);
+  if (direction == DMA_FROM_DEVICE)
+    SetPageDirty(page->page);
 
-	return fres;
+  return fres;
 }
 
 ssize_t em1_write(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
 {
-	return em1_dma_access(file->private_data, (char*)buf, size,
-			      DMA_TO_DEVICE, EM1_CMD_OP_DMA_PC2EM1);
+  return em1_dma_access(file->private_data, (char*)buf, size,
+                        DMA_TO_DEVICE, EM1_CMD_OP_DMA_PC2EM1);
 }
 
 ssize_t em1_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
 {
-	return em1_dma_access(file->private_data, buf, size,
-			      DMA_FROM_DEVICE, EM1_CMD_OP_DMA_EM12PC);
+  return em1_dma_access(file->private_data, buf, size,
+                        DMA_FROM_DEVICE, EM1_CMD_OP_DMA_EM12PC);
 }
 
 /*

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -38,7 +38,9 @@
 #define PHY_MESSAGES_TYPES_H_
 
 #include "PHY/impl_defs_lte.h"
-#include "ral_messages_types.h"
+#if ENABLE_RAL
+#include "ral_messages_types.h" //LG: MIH moved from repository/trunk to repository/extras
+#endif
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 #define PHY_CONFIGURATION_REQ(mSGpTR)       (mSGpTR)->ittiMsg.phy_configuration_req
@@ -69,10 +71,10 @@ typedef int8_t      Rsrp;
 typedef int8_t      Rsrq;
 
 typedef struct CellInfo_s {
-    Earfcn      earfcn;
-    PhyCellId   cell_id;
-    Rsrp        rsrp;
-    Rsrq        rsrq;
+  Earfcn      earfcn;
+  PhyCellId   cell_id;
+  Rsrp        rsrp;
+  Rsrq        rsrq;
 } CellInfo;
 
 //-------------------------------------------------------------------------------------------//
@@ -93,39 +95,45 @@ typedef struct PhyDeactivateReq_s {
 } PhyDeactivateReq;
 
 typedef struct PhyFindCellReq_s {
-//#   if defined(ENABLE_RAL)
-    ral_transaction_id_t    transaction_id;
-//#   endif
-    Earfcn                  earfcn_start;
-    Earfcn                  earfcn_end;
+#   if ENABLE_RAL
+  ral_transaction_id_t    transaction_id;
+#   endif
+  Earfcn                  earfcn_start;
+  Earfcn                  earfcn_end;
 } PhyFindCellReq;
 
 typedef struct PhyFindNextCellReq_s {
 } PhyFindNextCellReq;
 
 typedef struct PhyMeasThresholdReq_s {
-    ral_transaction_id_t    transaction_id;
-    ral_link_cfg_param_t    cfg_param;
+#   if ENABLE_RAL
+  ral_transaction_id_t    transaction_id;
+  ral_link_cfg_param_t    cfg_param;
+#endif
 } PhyMeasThresholdReq;
 
 typedef struct PhyMeasReportInd_s {
-    ral_threshold_t         threshold;
-    ral_link_param_t        link_param;
+#   if ENABLE_RAL
+  ral_threshold_t         threshold;
+  ral_link_param_t        link_param;
+#endif
 } PhyMeasReportInd;
 
 // UE: PHY -> RRC messages
 typedef struct PhyFindCellInd_s {
-//#   if defined(ENABLE_RAL)
-    ral_transaction_id_t    transaction_id;
-//#   endif
-   uint8_t                  cell_nb;
-   CellInfo                 cells[MAX_REPORTED_CELL];
+#   if ENABLE_RAL
+  ral_transaction_id_t    transaction_id;
+#   endif
+  uint8_t                  cell_nb;
+  CellInfo                 cells[MAX_REPORTED_CELL];
 } PhyFindCellInd;
 
 typedef struct PhyMeasThresholdConf_s {
-    ral_transaction_id_t    transaction_id;
-    ral_status_t            status;
-    uint8_t                 num_link_cfg_params;
-    ral_link_cfg_status_t   cfg_status[RAL_MAX_LINK_CFG_PARAMS];
-}PhyMeasThresholdConf;
+#   if ENABLE_RAL
+  ral_transaction_id_t    transaction_id;
+  ral_status_t            status;
+  uint8_t                 num_link_cfg_params;
+  ral_link_cfg_status_t   cfg_status[RAL_MAX_LINK_CFG_PARAMS];
+#endif
+} PhyMeasThresholdConf;
 #endif /* PHY_MESSAGES_TYPES_H_ */

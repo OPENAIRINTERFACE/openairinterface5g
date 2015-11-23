@@ -65,8 +65,8 @@
 
 struct cx_entity;
 
-struct rb_entity{
-//  uint16_t default_rab;
+struct rb_entity {
+  //  uint16_t default_rab;
   uint32_t   cnxid;
   nasRadioBearerId_t rab_id;  //ue_rbId
   nasRadioBearerId_t rg_rbId;
@@ -80,24 +80,24 @@ struct rb_entity{
   uint8_t result;
   uint8_t retry;
   uint32_t countimer;
-//for MBMS
+  //for MBMS
   uint16_t serviceId;
   uint16_t sessionId;
   uint16_t duration;
   uint8_t  mcast_address[16];
-//
+  //
   struct rb_entity *next;
 };
 
-struct classifier_entity{
+struct classifier_entity {
   uint32_t classref;               // classifier identity
   uint8_t version;                 // IP version 4 or 6
-  union{
+  union {
     struct in6_addr ipv6;
     uint32_t ipv4;
   } saddr;                    // IP source address
   uint8_t splen;                   // IP prefix size
-  union{
+  union {
     struct in6_addr ipv6;
     uint32_t ipv4;
   } daddr;                    // IP destination address
@@ -112,7 +112,7 @@ struct classifier_entity{
 };
 
 
-struct cx_entity{
+struct cx_entity {
   int sap[NAS_SAPI_CX_MAX];
   uint8_t state;                     // state of the connection
   nasLocalConnectionRef_t lcr;  // Local connection reference
@@ -151,7 +151,7 @@ struct cx_entity{
 //};
 //
 
-struct nas_priv{
+struct nas_priv {
   int irq;
   int rx_flags;
   struct timer_list timer;
@@ -186,11 +186,11 @@ struct nas_priv{
 
 struct ipversion {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
-         uint8_t    reserved:4,
-                 version:4;
+  uint8_t    reserved:4,
+             version:4;
 #else
-         uint8_t    version:4,
-                 reserved:4;
+  uint8_t    version:4,
+             reserved:4;
 #endif
 };
 

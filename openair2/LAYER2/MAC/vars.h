@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -47,18 +47,19 @@
 #include "PHY_INTERFACE/defs.h"
 #include "COMMON/mac_rrc_primitives.h"
 
-const uint32_t BSR_TABLE[BSR_TABLE_SIZE]={0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
-			       105,125,146,171,200,234,274,321,376,440,515,603,706,826,967,1132,
-			       1326,1552,1817,2127,2490,2915,3413,3995,4677,5467,6411,7505,8787,10287,12043,14099,
-			       16507,19325,22624,26487,31009,36304,42502,49759,58255,68201,79846,93479,109439, 128125,150000, 300000};
+const uint32_t BSR_TABLE[BSR_TABLE_SIZE]= {0,10,12,14,17,19,22,26,31,36,42,49,57,67,78,91,
+                                           105,125,146,171,200,234,274,321,376,440,515,603,706,826,967,1132,
+                                           1326,1552,1817,2127,2490,2915,3413,3995,4677,5467,6411,7505,8787,10287,12043,14099,
+                                           16507,19325,22624,26487,31009,36304,42502,49759,58255,68201,79846,93479,109439, 128125,150000, 300000
+                                          };
 
 //uint32_t EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
 
 uint32_t RRC_CONNECTION_FLAG;
 
-UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX]; 
-eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX]; 
+UE_MAC_INST *UE_mac_inst; //[NB_MODULE_MAX];
+eNB_MAC_INST *eNB_mac_inst; //[NB_MODULE_MAX];
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 /// Primary component carrier index of eNB
@@ -66,8 +67,8 @@ int pCC_id[NUMBER_OF_eNB_MAX];
 
 
 
-eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
-eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
+eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
+eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
 /*
 #ifndef USER_MODE

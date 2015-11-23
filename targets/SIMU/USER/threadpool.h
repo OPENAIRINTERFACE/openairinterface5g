@@ -48,24 +48,24 @@ struct threadpool_t {
   pthread_mutex_t lock; // used to get / put a job in the queue, protect job_queue
   pthread_mutex_t sync_lock; // used when there is a dependancy between two consecutive jobs, protect active
   pthread_cond_t notify; // wakup threads
-  pthread_cond_t sync_notify; // last worker sends this 
+  pthread_cond_t sync_notify; // last worker sends this
   pthread_t *threads;
   Job_List job_queue;
   int thread_count;
   int count; // ????
   int shutdown; // end of sim/emu
-  int started; // total number of thread started , after init: started == count 
+  int started; // total number of thread started , after init: started == count
   int active; // num active threads
 };
 
 typedef struct threadpool_t threadpool_t;
 
 typedef enum {
-    threadpool_invalid = -1,
-    threadpool_lock_failure = -2,
-    threadpool_queue_full = -3,
-    threadpool_shutdown = -4,
-    threadpool_thread_failure = -5
+  threadpool_invalid = -1,
+  threadpool_lock_failure = -2,
+  threadpool_queue_full = -3,
+  threadpool_shutdown = -4,
+  threadpool_thread_failure = -5
 } threadpool_error_t;
 
 /**

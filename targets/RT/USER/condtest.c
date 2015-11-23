@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -65,44 +65,49 @@ static void *fun0(void *arg)
 
   rt_make_hard_real_time();
 
-  while (cnt1 < THRESHOLD)
-    {
-      rt_sem_wait(mutex);
-      rt_printk("fun0: Hello World %d, instance_cnt %d!\n",cnt1,instance_cnt);
-      while (instance_cnt<0)
-        {
-          ret = rt_cond_wait(cond, mutex);
-          if (ret != 0)
-            {
-              rt_printk("error in rt_cond_wait, code %d\n",ret);
-              switch (ret)
-                {
-                case RTE_PERM:
-                  rt_printk("error RTE_PERM %d\n",ret);
-                  break;
-                case RTE_UNBLKD:
-                  rt_printk("error RTE_UNBLKD %d\n",ret);
-                  break;
-                case RTE_OBJREM:
-                  rt_printk("error RTE_OBJREM %d\n",ret);
-                  break;
-                default:
-                  rt_printk("unknown error code %d\n",ret);
-                  break;
-                }
-              break;
-            }
+  while (cnt1 < THRESHOLD) {
+    rt_sem_wait(mutex);
+    rt_printk("fun0: Hello World %d, instance_cnt %d!\n",cnt1,instance_cnt);
+
+    while (instance_cnt<0) {
+      ret = rt_cond_wait(cond, mutex);
+
+      if (ret != 0) {
+        rt_printk("error in rt_cond_wait, code %d\n",ret);
+
+        switch (ret) {
+        case RTE_PERM:
+          rt_printk("error RTE_PERM %d\n",ret);
+          break;
+
+        case RTE_UNBLKD:
+          rt_printk("error RTE_UNBLKD %d\n",ret);
+          break;
+
+        case RTE_OBJREM:
+          rt_printk("error RTE_OBJREM %d\n",ret);
+          break;
+
+        default:
+          rt_printk("unknown error code %d\n",ret);
+          break;
         }
-      rt_sem_signal(mutex);
 
-      // do some work here
-      cnt1++;
-
-      rt_sem_wait(mutex);
-      instance_cnt--;
-      rt_sem_signal(mutex);
-
+        break;
+      }
     }
+
+    rt_sem_signal(mutex);
+
+    // do some work here
+    cnt1++;
+
+    rt_sem_wait(mutex);
+    instance_cnt--;
+    rt_sem_signal(mutex);
+
+  }
+
   // makes task soft real time
   rt_make_soft_real_time();
 
@@ -134,10 +139,12 @@ int main(void)
 
   printf("Init mutex and cond.\n");
   mutex = rt_sem_init(nam2num("MUTEX"), 1);
+
   if (mutex==0)
     printf("Error init mutex\n");
 
   cond = rt_cond_init(nam2num("CONDITION"));
+
   if (cond==0)
     printf("Error init cond\n");
 
@@ -146,25 +153,23 @@ int main(void)
 
   //rt_sleep(PERIOD);
 
-  while (cnt < THRESHOLD)
-    {
-      rt_task_wait_period();
-      rt_printk("main: Hello World %d!\n",cnt);
-      rt_sem_wait(mutex); //now the mutex should have value 0
-      if (instance_cnt==0)
-        {
-          rt_sem_signal(mutex); //now the mutex should have vaule 1
-          rt_printk("worker thread busy!\n");
-        }
-      else
-        {
-          instance_cnt++;
-          rt_cond_signal(cond);
-          rt_sem_signal(mutex); //now the mutex should have vaule 1
-          rt_printk("signaling worker thread to start!\n");
-        }
-      cnt++;
+  while (cnt < THRESHOLD) {
+    rt_task_wait_period();
+    rt_printk("main: Hello World %d!\n",cnt);
+    rt_sem_wait(mutex); //now the mutex should have value 0
+
+    if (instance_cnt==0) {
+      rt_sem_signal(mutex); //now the mutex should have vaule 1
+      rt_printk("worker thread busy!\n");
+    } else {
+      instance_cnt++;
+      rt_cond_signal(cond);
+      rt_sem_signal(mutex); //now the mutex should have vaule 1
+      rt_printk("signaling worker thread to start!\n");
     }
+
+    cnt++;
+  }
 
   // wait for end of program
   printf("TYPE <ENTER> TO TERMINATE\n");

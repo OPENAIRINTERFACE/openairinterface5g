@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -40,7 +40,7 @@
 #include "MobilityControlInfo.h"
 #ifdef Rel10
 #include "SCellToAddMod-r10.h"
-#endif 
+#endif
 #else
 
 /**
@@ -120,11 +120,11 @@ void phy_config_mib(LTE_DL_FRAME_PARMS *lte_frame_parms,
 @param Mod_id Instance ID of eNB
 @param CC_id Component Carrier index
 @param tdd_Config TDD UL/DL and S-subframe configurations
-@param SIwindowsize Size of a SI window in frames where repetitions of a unique System Information message block is repeated 
+@param SIwindowsize Size of a SI window in frames where repetitions of a unique System Information message block is repeated
 @param SIperiod Periodicity of System Information Messages (in multiples of a frame)*/
 void phy_config_sib1_eNB(module_id_t    Mod_id,
                          int CC_id,
-			 TDD_Config_t  *tdd_Config,
+                         TDD_Config_t  *tdd_Config,
                          uint8_t           SIwindowsize,
                          uint16_t            SIperiod);
 
@@ -134,11 +134,11 @@ void phy_config_sib1_eNB(module_id_t    Mod_id,
 @param CC_id Component Carrier index
 @param CH_index Index of eNB for this configuration
 @param tdd_Config TDD UL/DL and S-subframe configurations
-@param SIwindowsize Size of a SI window in frames where repetitions of a unique System Information message block is repeated 
+@param SIwindowsize Size of a SI window in frames where repetitions of a unique System Information message block is repeated
 @param SIperiod Periodicity of System Information Messages (in multiples of a frame)*/
 void phy_config_sib1_ue(module_id_t   Mod_id,
                         int CC_id,
-			uint8_t          CH_index,
+                        uint8_t          CH_index,
                         TDD_Config_t *tdd_Config,
                         uint8_t          SIwindowsize,
                         uint16_t           SIperiod);
@@ -146,12 +146,12 @@ void phy_config_sib1_ue(module_id_t   Mod_id,
 
 /*!
   \fn void phy_config_sib2_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
-			RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-			ARFCN_ValueEUTRA_t *ul_CArrierFreq,
-		        long *ul_Bandwidth,
-			AdditionalSpectrumEmission_t additionalSpectrumEmission,
-			struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList)
-  \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of SIB2 (at UE).  
+      RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
+      ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+            long *ul_Bandwidth,
+      AdditionalSpectrumEmission_t additionalSpectrumEmission,
+      struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList)
+  \brief Configure LTE_DL_FRAME_PARMS with components derived after reception of SIB2 (at UE).
   @param Mod_id Instance id
   @param CC_id
   @param CH_index Index of CH to which UE is connected
@@ -164,7 +164,7 @@ void phy_config_sib1_ue(module_id_t   Mod_id,
  */
 void phy_config_sib2_ue(module_id_t                     Mod_id,
                         int                         CC_id,
-			uint8_t                         CH_index,
+                        uint8_t                         CH_index,
                         RadioResourceConfigCommonSIB_t  *radioResourceConfigCommon,
                         ARFCN_ValueEUTRA_t              *ul_CArrierFreq,
                         long                            *ul_Bandwidth,
@@ -172,10 +172,10 @@ void phy_config_sib2_ue(module_id_t                     Mod_id,
                         struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList);
 
 
-/*! 
+/*!
   \fn phy_config_afterHO_ue
   \brief Configure Common PHY parameters from mobilityControlInfo
-  @param Mod_id 
+  @param Mod_id
   @param CC_id
   @param eNB_index
   @param mobilityControlInfo pointer to the mobility control information for handover
@@ -183,17 +183,17 @@ void phy_config_sib2_ue(module_id_t                     Mod_id,
  */
 void phy_config_afterHO_ue(module_id_t Mod_id,
                            uint8_t CC_id,
-			   uint8_t eNB_index,
+                           uint8_t eNB_index,
                            MobilityControlInfo_t *mobilityControlInfo,
                            uint8_t ho_failed);
 /*!
   \fn void phy_config_sib2_eNB(module_id_t Mod_id,
                                RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-			       ARFCN_ValueEUTRA_t *ul_CArrierFreq,
-			       long *ul_Bandwidth,
-			       AdditionalSpectrumEmission_t additionalSpectrumEmission,
-			       struct MBSFN_SubframeConfigList	*mbsfn_SubframeConfigList)
-  \brief Configure LTE_DL_FRAME_PARMS with components of SIB2 (at eNB).  
+             ARFCN_ValueEUTRA_t *ul_CArrierFreq,
+             long *ul_Bandwidth,
+             AdditionalSpectrumEmission_t additionalSpectrumEmission,
+             struct MBSFN_SubframeConfigList  *mbsfn_SubframeConfigList)
+  \brief Configure LTE_DL_FRAME_PARMS with components of SIB2 (at eNB).
   @param Mod_id Instance id
   @param Mod_id Component Carrier index
   @param radioResourceConfigCommon Radio Configuration from SIB2
@@ -204,7 +204,7 @@ void phy_config_afterHO_ue(module_id_t Mod_id,
  */
 void phy_config_sib2_eNB(module_id_t                            Mod_id,
                          int                                CC_id,
-			 RadioResourceConfigCommonSIB_t         *radioResourceConfigCommon,
+                         RadioResourceConfigCommonSIB_t         *radioResourceConfigCommon,
                          ARFCN_ValueEUTRA_t                     *ul_CArrierFreq,
                          long                                   *ul_Bandwidth,
                          AdditionalSpectrumEmission_t           *additionalSpectrumEmission,
@@ -213,7 +213,7 @@ void phy_config_sib2_eNB(module_id_t                            Mod_id,
 
 /*!
 \fn void phy_config_dedicated_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t CH_index,
- 			         struct PhysicalConfigDedicated *physicalConfigDedicated)
+               struct PhysicalConfigDedicated *physicalConfigDedicated)
 \brief Configure UE dedicated parameters.
 \details Invoked upon reception of RRCConnectionSetup or RRCConnectionReconfiguration from eNB.
 @param Mod_id Instance ID for eNB
@@ -224,7 +224,7 @@ void phy_config_sib2_eNB(module_id_t                            Mod_id,
  */
 void phy_config_dedicated_ue(module_id_t Mod_id,
                              int CC_id,
-			     uint8_t CH_index,
+                             uint8_t CH_index,
                              struct PhysicalConfigDedicated *physicalConfigDedicated);
 
 
@@ -251,7 +251,7 @@ void phy_config_sib13_ue(module_id_t Mod_id,
 @param mbsfn_AreaId_r9 MBSFN-Area Id
  */
 void phy_config_sib13_eNB(module_id_t Mod_id,
-			  int CC_id,
+                          int CC_id,
                           int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9);
 
@@ -260,7 +260,7 @@ void phy_config_sib13_eNB(module_id_t Mod_id,
 @param Mod_id Instance ID for eNB
 @param CC_id Component Carrier Index
 @param eNB_flag flag indicating whether the nodeis eNB (1) or UE (0)
-@param index index of the node 
+@param index index of the node
 @param cba_rnti rnti for the cba transmission
 @param num_active_cba_groups num active cba group
  */
@@ -275,7 +275,7 @@ void  phy_config_cba_rnti (module_id_t Mod_id,int CC_id,eNB_flag_t eNB_flag, uin
  */
 void phy_config_meas_ue(module_id_t Mod_id,
                         uint8_t CC_id,
-			uint8_t eNB_index,
+                        uint8_t eNB_index,
                         uint8_t n_adj_cells,
                         uint32_t *adj_cell_id);
 
@@ -291,7 +291,7 @@ void phy_config_meas_ue(module_id_t Mod_id,
  */
 void phy_config_dedicated_eNB(module_id_t Mod_id,
                               int CC_id,
-			      rnti_t rnti,
+                              rnti_t rnti,
                               struct PhysicalConfigDedicated *physicalConfigDedicated);
 
 /*!
@@ -303,7 +303,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB);
 
 /*
   \fn int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb)
-\brief Allocate and Initialize the PHY variables relevant to the LTE implementation. 
+\brief Allocate and Initialize the PHY variables relevant to the LTE implementation.
 @param phy_vars_eNb pointer to LTE parameter structure for the eNb
  */
 int phy_init_secsys_eNB(PHY_VARS_eNB *phy_vars_eNb);
@@ -315,21 +315,21 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms);
 
 #ifdef Rel10
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
-				   uint8_t eNB_index,
-				   SCellToAddMod_r10_t *sCellToAddMod_r10, 
-				   int CC_id);
+                                   uint8_t eNB_index,
+                                   SCellToAddMod_r10_t *sCellToAddMod_r10,
+                                   int CC_id);
 
 void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
-				    uint16_t rnti,
-				    SCellToAddMod_r10_t *sCellToAddMod_r10, 
-				    int CC_id);
+                                    uint16_t rnti,
+                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
+                                    int CC_id);
 
-#endif 
+#endif
 #endif
 
 
 /*! !\fn void phy_cleanup(void)
-\brief Cleanup the PHY variables*/ 
+\brief Cleanup the PHY variables*/
 void phy_cleanup(void);
 
 #ifdef OPENAIR_LTE

@@ -1,7 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-set(XFORMS False )
-set(RRC_ASN1_VERSION "Rel10")
-set(ENABLE_VCD_FIFO False )
-set(RF_BOARD "EXMIMO")
-set(PACKAGE_NAME "lte-softmodem")
-include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)

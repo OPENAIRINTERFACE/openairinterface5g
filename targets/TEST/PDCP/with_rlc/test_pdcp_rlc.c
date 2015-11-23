@@ -43,44 +43,44 @@ static int  g_send_id_write_index[2];
 static int  g_send_id_read_index[2];
 static s8_t *g_sdus[] = {"En dépit de son volontarisme affiché, le premier ministre est de plus en plus décrié pour son incompétence. La tension politique et dans l'opinion publique est encore montée d'un cran au Japon, sur fond d'inquiétantes nouvelles, avec du plutonium détecté dans le sol autour de la centrale de Fukushima. Le premier ministre Naoto Kan a solennellement déclaré que son gouvernement était «en état d'alerte maximum». Tout en reconnaissant que la situation restait «imprévisible». Ce volontarisme affiché par le premier ministre - que Nicolas Sarkozy rencontrera demain lors d'une visite au Japon - ne l'a pas empêché d'être la cible de violentes critiques de la part de parlementaires sur sa gestion de la crise. Attaqué sur le manque de transparence, il a assuré qu'il rendait publiques toutes les informations en sa possession. Un député de l'opposition, Yosuke Isozaki, a aussi reproché à Naoto Kan de ne pas avoir ordonné l'évacuation des populations dans la zone comprise entre 20 et 30 km autour de la centrale. «Peut-il y avoir quelque chose de plus irresponsable que cela ?», a-t-il lancé. Pour l'heure, la zone d'évacuation est limitée à un rayon de 20 km, seul le confinement étant recommandé pour les 10 km suivants. Sur ce sujet, les autorités japonaises ont été fragilisées mardi par les déclarations de Greenpeace, affirmant que ses experts avaient détecté une radioactivité dangereuse à 40 km de la centrale. L'organisation écologiste a appelé à une extension de la zone d'évacuation, exhortant Tokyo à «cesser de privilégier la politique aux dépens de la science». L'Agence japonaise de sûreté nucléaire a balayé ces critiques.",
 
-"La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
+                         "La pâquerette (Bellis perennis) est une plante vivace des prés, des pelouses, des bords de chemins et des prairies, haute de dix à vingt centimètres, de la famille des Astéracées, dont les fleurs naissent sur des inflorescences appelées capitules : celles du pourtour, que l'on croit à tort être des pétales, appelées fleurs ligulées, parce qu'elles ont la forme d'une languette, ou demi-fleurons, sont des fleurs femelles, dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes, appelées fleurs tubuleuses, parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites. Ainsi, contrairement à l'opinion populaire, ce qu'on appelle une « fleur » de pâquerette n'est en réalité pas « une » fleur mais un capitule portant des fleurs très nombreuses.Leurs fruits s'envolent grâce au vent et dégagent des odeurs qui attirent les insectes.Une variété muricole peut pousser sur des murs humides verticaux.Les pâquerettes sont des fleurs rustiques et très communes en Europe, sur les gazons, les prairies, les chemins et les zones d'herbe rase.Elles ont la particularité, comme certaines autres fleurs de plantes herbacées, de se fermer la nuit et de s'ouvrir le matin pour s'épanouir au soleil ; elles peuvent aussi se fermer pendant les averses, voire un peu avant, ce qui permet dans les campagnes de prédire la pluie légèrement à l'avance.",
 
-"La pâquerette",
-" (Bellis perennis)",
-" est une plante vivace des prés,",
-" des pelouses,",
-" des bords de chemins et des prairies,",
-"haute de dix à",
-" vingt centimètres",
-", de la",
-" famille des",
-" Astéracées",
-", dont",
-" les",
-" fleurs",
-" naissent",
-" sur",
-" des",
-" inflorescences",
-" appelées",
-" capitules",
-" : celles",
-" du pourtour",
-", que l'on",
-" croit à",
-" tort",
-" être",
-" des pétales",
-", appelées",
-" fleurs ligulées",
-", parce qu'elles",
-" ont la forme d'une languette, ou demi-fleurons, sont",
-" des fleurs femelles,",
-" dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes,",
-" appelées ",
-"fleurs tubuleuses",
-", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
-};
+                         "La pâquerette",
+                         " (Bellis perennis)",
+                         " est une plante vivace des prés,",
+                         " des pelouses,",
+                         " des bords de chemins et des prairies,",
+                         "haute de dix à",
+                         " vingt centimètres",
+                         ", de la",
+                         " famille des",
+                         " Astéracées",
+                         ", dont",
+                         " les",
+                         " fleurs",
+                         " naissent",
+                         " sur",
+                         " des",
+                         " inflorescences",
+                         " appelées",
+                         " capitules",
+                         " : celles",
+                         " du pourtour",
+                         ", que l'on",
+                         " croit à",
+                         " tort",
+                         " être",
+                         " des pétales",
+                         ", appelées",
+                         " fleurs ligulées",
+                         ", parce qu'elles",
+                         " ont la forme d'une languette, ou demi-fleurons, sont",
+                         " des fleurs femelles,",
+                         " dont la couleur varie du blanc au rose plus ou moins prononcé ; celles du centre, jaunes,",
+                         " appelées ",
+                         "fleurs tubuleuses",
+                         ", parce que leur corolle forme un tube, ou fleurons, sont hermaphrodites."
+                        };
 
 
 
@@ -93,49 +93,55 @@ BOOL init_pdcp_entity(pdcp_t *pdcp_entity);
 //-----------------------------------------------------------------------------
 void pdcp_rlc_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct mac_data_req *data_requestP, int* drop_countP, int *tx_packetsP, int* dropped_tx_packetsP) //-----------------------------------------------------------------------------
 {
-    mem_block_t* tb_src;
-    mem_block_t* tb_dst;
-    unsigned int tb_size;
+  mem_block_t* tb_src;
+  mem_block_t* tb_dst;
+  unsigned int tb_size;
 
-    data_indP->no_tb = 0;
-    while (data_requestP->data.nb_elements > 0) {
-        tb_src = list_remove_head (&data_requestP->data);
-        if (tb_src != NULL) {
-            tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
-            printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
-            ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
-            tb_size, sizeof (mac_rlc_max_rx_header_size_t));
+  data_indP->no_tb = 0;
 
-            *tx_packetsP = *tx_packetsP + 1;
-            if (*drop_countP == 0) {
-                tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
-                if (tb_dst != NULL) {
-                    ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
-                    ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
-                    ((struct mac_tb_ind *) (tb_dst->data))->size             = tb_size;
-                    ((struct mac_tb_ind *) (tb_dst->data))->error_indication = 0;
+  while (data_requestP->data.nb_elements > 0) {
+    tb_src = list_remove_head (&data_requestP->data);
 
-                    memcpy(((struct mac_tb_ind *) (tb_dst->data))->data_ptr,
-                           &((struct mac_tb_req *) (tb_src->data))->data_ptr[0],
-                           tb_size);
+    if (tb_src != NULL) {
+      tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
+      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
+             ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
+             tb_size, sizeof (mac_rlc_max_rx_header_size_t));
 
-                           list_add_tail_eurecom(tb_dst, &data_indP->data);
-                           data_indP->no_tb  += 1;
-                } else {
-                    printf("Out of memory error\n");
-                    exit(-1);
-                }
-            } else {
-                printf("[RLC-LOOP] DROPPING 1 TB\n");
-                *drop_countP = *drop_countP - 1;
-                *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
-            }
-            free_mem_block(tb_src);
-            if (data_indP->no_tb > 0) {
-                printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
-            }
+      *tx_packetsP = *tx_packetsP + 1;
+
+      if (*drop_countP == 0) {
+        tb_dst  = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_size);
+
+        if (tb_dst != NULL) {
+          ((struct mac_tb_ind *) (tb_dst->data))->first_bit        = 0;
+          ((struct mac_tb_ind *) (tb_dst->data))->data_ptr         = &tb_dst->data[sizeof (mac_rlc_max_rx_header_size_t)];
+          ((struct mac_tb_ind *) (tb_dst->data))->size             = tb_size;
+          ((struct mac_tb_ind *) (tb_dst->data))->error_indication = 0;
+
+          memcpy(((struct mac_tb_ind *) (tb_dst->data))->data_ptr,
+                 &((struct mac_tb_req *) (tb_src->data))->data_ptr[0],
+                 tb_size);
+
+          list_add_tail_eurecom(tb_dst, &data_indP->data);
+          data_indP->no_tb  += 1;
+        } else {
+          printf("Out of memory error\n");
+          exit(-1);
         }
+      } else {
+        printf("[RLC-LOOP] DROPPING 1 TB\n");
+        *drop_countP = *drop_countP - 1;
+        *dropped_tx_packetsP = *dropped_tx_packetsP + 1;
+      }
+
+      free_mem_block(tb_src);
+
+      if (data_indP->no_tb > 0) {
+        printf("[RLC-LOOP] Exchange %d TBs\n",data_indP->no_tb);
+      }
     }
+  }
 }
 //-----------------------------------------------------------------------------
 void pdcp_rlc_test_exchange_pdus(rlc_um_entity_t *um_txP,
@@ -144,48 +150,48 @@ void pdcp_rlc_test_exchange_pdus(rlc_um_entity_t *um_txP,
                                  u16_t           bytes_rxP)
 //-----------------------------------------------------------------------------
 {
-    struct mac_data_req    data_request_tx;
-    struct mac_data_req    data_request_rx;
-    struct mac_data_ind    data_ind_tx;
-    struct mac_data_ind    data_ind_rx;
-    struct mac_status_ind  tx_status;
-    struct mac_status_resp mac_rlc_status_resp_tx;
-    struct mac_status_resp mac_rlc_status_resp_rx;
+  struct mac_data_req    data_request_tx;
+  struct mac_data_req    data_request_rx;
+  struct mac_data_ind    data_ind_tx;
+  struct mac_data_ind    data_ind_rx;
+  struct mac_status_ind  tx_status;
+  struct mac_status_resp mac_rlc_status_resp_tx;
+  struct mac_status_resp mac_rlc_status_resp_rx;
 
 
-    memset(&data_request_tx, 0, sizeof(struct mac_data_req));
-    memset(&data_request_rx, 0, sizeof(struct mac_data_req));
-    memset(&data_ind_tx,     0, sizeof(struct mac_data_ind));
-    memset(&data_ind_rx,     0, sizeof(struct mac_data_ind));
-    memset(&tx_status,       0, sizeof(struct mac_status_ind));
-    memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
-    memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
+  memset(&data_request_tx, 0, sizeof(struct mac_data_req));
+  memset(&data_request_rx, 0, sizeof(struct mac_data_req));
+  memset(&data_ind_tx,     0, sizeof(struct mac_data_ind));
+  memset(&data_ind_rx,     0, sizeof(struct mac_data_ind));
+  memset(&tx_status,       0, sizeof(struct mac_status_ind));
+  memset(&mac_rlc_status_resp_tx, 0, sizeof(struct mac_status_resp));
+  memset(&mac_rlc_status_resp_rx, 0, sizeof(struct mac_status_resp));
 
-    mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, bytes_txP, tx_status);
-    data_request_tx        = rlc_um_mac_data_request(um_txP);
-    mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, bytes_rxP, tx_status);
-    data_request_rx        = rlc_um_mac_data_request(um_rxP);
+  mac_rlc_status_resp_tx = rlc_um_mac_status_indication(um_txP, bytes_txP, tx_status);
+  data_request_tx        = rlc_um_mac_data_request(um_txP);
+  mac_rlc_status_resp_rx = rlc_um_mac_status_indication(um_rxP, bytes_rxP, tx_status);
+  data_request_rx        = rlc_um_mac_data_request(um_rxP);
 
 
-    pdcp_rlc_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
-    pdcp_rlc_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
-    rlc_um_mac_data_indication(um_rxP, data_ind_rx);
-    rlc_um_mac_data_indication(um_txP, data_ind_tx);
-    mac_xface->frame += 1;
+  pdcp_rlc_test_mac_rlc_loop(&data_ind_rx, &data_request_tx, &g_drop_tx, &g_tx_packets, &g_dropped_tx_packets);
+  pdcp_rlc_test_mac_rlc_loop(&data_ind_tx, &data_request_rx, &g_drop_rx, &g_rx_packets, &g_dropped_rx_packets);
+  rlc_um_mac_data_indication(um_rxP, data_ind_rx);
+  rlc_um_mac_data_indication(um_txP, data_ind_tx);
+  mac_xface->frame += 1;
 
-    //rlc_um_tx_buffer_display(um_txP,NULL);
-    //assert(um_txP->t_status_prohibit.time_out != 1);
-    //assert(um_rxP->t_status_prohibit.time_out != 1);
-    //assert(!((um_txP->vt_a == 954) && (um_txP->vt_us == 53)));
-    //assert(mac_xface->frame <= 151);
-    //check_mem_area(NULL);
-    //display_mem_load();
+  //rlc_um_tx_buffer_display(um_txP,NULL);
+  //assert(um_txP->t_status_prohibit.time_out != 1);
+  //assert(um_rxP->t_status_prohibit.time_out != 1);
+  //assert(!((um_txP->vt_a == 954) && (um_txP->vt_us == 53)));
+  //assert(mac_xface->frame <= 151);
+  //check_mem_area(NULL);
+  //display_mem_load();
 }
 //-----------------------------------------------------------------------------
 void pdcp_rlc_test_send_sdu(module_id_t module_idP, rb_id_t rab_idP, int sdu_indexP)
 //-----------------------------------------------------------------------------
 {
-    pdcp_data_req(module_idP, rab_idP, strlen(g_sdus[sdu_indexP]) + 1, g_sdus[sdu_indexP]);
+  pdcp_data_req(module_idP, rab_idP, strlen(g_sdus[sdu_indexP]) + 1, g_sdus[sdu_indexP]);
 }
 //-----------------------------------------------------------------------------
 int main(int argc, char **argv)

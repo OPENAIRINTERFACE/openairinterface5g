@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -37,7 +37,7 @@
 */
 
 /*! \brief gold sequenquence generator
-\param x1 
+\param x1
 \param x2 this should be set to c_init if reset=1
 \param reset resets the generator
 \return 32 bits of the gold sequence
@@ -55,7 +55,7 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL UE-specific reference signals for antenna ports 7..14.
 @param frame_parms LTE DL Frame parameters
 @param lte_gold_uespec_table pointer to table where sequences are stored
-@param Nid_cell Cell Id (to compute sequences for local and adjacent cells) 
+@param Nid_cell Cell Id (to compute sequences for local and adjacent cells)
 @param n_idDMRS Scrambling identity for TM10*/
 void lte_gold_ue_spec(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_uespec_table[2][20][2][21],uint16_t Nid_cell, uint16_t *n_idDMRS);
 
@@ -73,11 +73,11 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
 
 
 int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
-		     mod_sym_t *output,
-		     short amp,
-		     unsigned char Ns,
-		     unsigned char l,
-		     unsigned char p);
+                     mod_sym_t *output,
+                     short amp,
+                     unsigned char Ns,
+                     unsigned char l,
+                     unsigned char p);
 
 /*! \brief This function generates the UE-specific reference signal sequence (36-211, Sec 6.10.3.2)
 @param phy_vars_eNB Pointer to eNB variables
@@ -88,24 +88,24 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 @param SS_flag Flag to indicate special subframe
 */
 int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
-		   uint8_t UE_id,
-		   mod_sym_t *output,
-		   short amp,
-		   uint8_t Ns,
-		   uint8_t p,
-		   int SS_flag );
+                   uint8_t UE_id,
+                   mod_sym_t *output,
+                   short amp,
+                   uint8_t Ns,
+                   uint8_t p,
+                   int SS_flag );
 
 /*! \brief This function generates the MBSFN reference signal sequence (36-211, Sec 6.10.1.2)
 @param phy_vars_eNB Pointer to eNB variables
 @param output Output vector for OFDM symbol (Frequency Domain)
 @param amp Q15 amplitude
 @param Ns Slot number (0..19)
-@param l symbol (0,1,2) 
+@param l symbol (0,1,2)
 */
 int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
-		 short amp,
-		 int subframe,
-		 unsigned char l);
+                 short amp,
+                 int subframe,
+                 unsigned char l);
 
 
 /*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
@@ -117,16 +117,16 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 @param p antenna intex
 */
 int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
-			uint8_t eNB_offset,
-			int *output,
-			unsigned char Ns,
-			unsigned char l,
-			unsigned char p);
+                        uint8_t eNB_offset,
+                        int *output,
+                        unsigned char Ns,
+                        unsigned char l,
+                        unsigned char p);
 
 int lte_dl_mbsfn_rx(PHY_VARS_UE *phy_vars_ue,
-		    int *output,
-		    int subframe,
-		    unsigned char l);
+                    int *output,
+                    int subframe,
+                    unsigned char l);
 
 
 
@@ -140,7 +140,7 @@ void free_ul_ref_sigs(void);
 \brief This function generate the sounding reference symbol (SRS) for the uplink. The SRS is always transmitted in the last symbol of the slot and uses the full bandwidth. This function makes the following simplifications wrt LTE Rel.8:
  1) the SRS in OpenAir is quantized to a QPSK sequence.
  2) no group hopping, no sequence hopping
- 3) u = N_id_cell%30, v=0, alpha=0, 
+ 3) u = N_id_cell%30, v=0, alpha=0,
  4) Msc_RS = 300, k_0=0
 @param txdataF pointer to the frequency domain TX signal
 @param amp amplitudte of the transmit signal (irrelevant for #ifdef IFFT_FPGA)
@@ -149,9 +149,9 @@ void free_ul_ref_sigs(void);
 */
 
 int lte_generate_srs(mod_sym_t **txdataF,
-		     short amp,
-		     LTE_DL_FRAME_PARMS *frame_parms,
-		     unsigned int sub_frame_offset);
+                     short amp,
+                     LTE_DL_FRAME_PARMS *frame_parms,
+                     unsigned int sub_frame_offset);
 
 
 #endif

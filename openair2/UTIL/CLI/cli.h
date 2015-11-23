@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -49,13 +49,13 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <sys/socket.h>
-#include <sys/types.h>    
+#include <sys/types.h>
 
-//#include <readline/readline.h>  
-//#include <readline/history.h> 
+//#include <readline/readline.h>
+//#include <readline/history.h>
 
 typedef struct {
-  
+
   int port;
   int sfd; //server fd
   int cfd; // client fd
@@ -64,11 +64,11 @@ typedef struct {
   int debug_paused;
   char promptchar;
   char prompt[200];
-  //	char user_name[200];
-  int exit;	
+  //  char user_name[200];
+  int exit;
   /*end*/
-  
-}cli_config;
+
+} cli_config;
 
 
 typedef struct {
@@ -77,7 +77,7 @@ typedef struct {
   void *data;
   int (*func)(char*);
   int (*help)(char*);
-  char *doc;			/* Documentation for this function.  */
+  char *doc;      /* Documentation for this function.  */
 } command;
 
 
@@ -128,10 +128,12 @@ char g_sid[MAX_SID];
 int com_help (char * arg);
 int com_exit (char *arg);
 
-int prompt(char *arg),prompt_usage(void), info(char *arg);
+int prompt(char *arg);
+int prompt_usage(char *);
+int info(char *arg);
 
 int start(char *arg), set(char *arg);
-int start_usage(void), set_usage(void);
+int start_usage(char *), set_usage(char *);
 
 /* Forward declarations. */
 char *stripwhite (char *string);

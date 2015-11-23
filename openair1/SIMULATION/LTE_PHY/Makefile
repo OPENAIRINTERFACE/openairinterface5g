@@ -1,6 +1,6 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 
-COMMON_UTILS_DIR = $(OPENAIR_HOME)/common/utils
+COMMON_UTILS_DIR = $(OPENAIR_DIR)/common/utils
 TOP_DIR = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
 OPENAIR2_TOP = $(OPENAIR2_DIR)
@@ -110,7 +110,7 @@ CFLAGS += $(L2_incl) -I$(ASN1_MSG_INC) -I$(TOP_DIR) -I$(OPENAIR2_DIR) -I$(OPENAI
 #LAYER2_OBJ += $(OPENAIR2_DIR)/LAYER2/MAC/rar_tools.o
 #LAYER2_OBJ = $(OPENAIR2_DIR)/LAYER2/MAC/lte_transport_init.o
 
-OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) 
+OBJ = $(PHY_OBJS) $(SIMULATION_OBJS) $(TOOLS_OBJS) $(SCHED_OBJS) $(LAYER2_OBJ) $(LOG_OBJS) $(ITTI_DIR)/backtrace.o
 ifdef GPIB
 OBJ += LTE_Configuration.o
 endif

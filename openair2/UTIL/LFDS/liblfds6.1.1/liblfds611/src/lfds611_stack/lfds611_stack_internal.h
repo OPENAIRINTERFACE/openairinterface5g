@@ -11,29 +11,27 @@
 /***** structures *****/
 #pragma pack( push, LFDS611_ALIGN_DOUBLE_POINTER )
 
-struct lfds611_stack_state
-{
+struct lfds611_stack_state {
   // TRD : must come first for alignment
   struct lfds611_stack_element
-    *volatile top[LFDS611_STACK_PAC_SIZE];
+      *volatile top[LFDS611_STACK_PAC_SIZE];
 
   lfds611_atom_t
-    aba_counter;
+  aba_counter;
 
   struct lfds611_freelist_state
-    *fs;
+      *fs;
 };
 
-struct lfds611_stack_element
-{
+struct lfds611_stack_element {
   struct lfds611_stack_element
-    *next[LFDS611_STACK_PAC_SIZE];
+      *next[LFDS611_STACK_PAC_SIZE];
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   void
-    *user_data;
+  *user_data;
 };
 
 #pragma pack( pop )
@@ -48,5 +46,6 @@ void lfds611_stack_internal_init_element( struct lfds611_stack_state *ss, struct
 
 void lfds611_stack_internal_push( struct lfds611_stack_state *ss, struct lfds611_stack_element *se[LFDS611_STACK_PAC_SIZE] );
 
-void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *stack_validity, enum lfds611_data_structure_validity *freelist_validity );
+void lfds611_stack_internal_validate( struct lfds611_stack_state *ss, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *stack_validity,
+                                      enum lfds611_data_structure_validity *freelist_validity );
 

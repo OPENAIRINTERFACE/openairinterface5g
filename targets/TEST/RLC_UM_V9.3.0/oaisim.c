@@ -20,7 +20,8 @@
 
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
   logInit();
   mac_xface = malloc(sizeof(MAC_xface));
   rlc_um_v9_3_0_test();

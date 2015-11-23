@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -39,6 +39,9 @@
 #ifndef __MEM_BLOCK_H__
 #    define __MEM_BLOCK_H__
 
+#ifdef USER_MODE
+#include <stdint.h>
+#endif
 #ifdef MEM_BLOCK_C
 #    define public_mem_block(x) x
 #    define private_mem_block(x) x
@@ -48,12 +51,12 @@
 #endif
 //-----------------------------------------------------------------------------
 
-typedef struct mem_block_t{
+typedef struct mem_block_t {
   struct mem_block_t *next;
   struct mem_block_t *previous;
   unsigned char pool_id;
   unsigned char *data;
-}mem_block_t;
+} mem_block_t;
 #include "UTIL/LISTS/list.h"
 
 //-----------------------------------------------------------------------------
@@ -61,7 +64,7 @@ typedef struct mem_block_t{
 public_mem_block(void        *pool_buffer_init (void);)
 public_mem_block(void        *pool_buffer_clean (void *arg);)
 public_mem_block(void         free_mem_block (mem_block_t * leP);)
-public_mem_block(mem_block_t *get_free_mem_block (unsigned short sizeP);)
+public_mem_block(mem_block_t* get_free_mem_block (uint32_t sizeP);)
 public_mem_block(mem_block_t *get_free_copy_mem_block (void);)
 public_mem_block(mem_block_t *get_free_copy_mem_block_up (void);)
 public_mem_block(mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * destP);)
@@ -82,42 +85,42 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #endif
 // definition of the size of the allocated memory area
 #    define MEM_MNGT_MB0_BLOCK_SIZE     64
-                                        // 64
+// 64
 #    define MEM_MNGT_MB0_NB_BLOCKS      4096 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID0           0
 
 #    define MEM_MNGT_MB1_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*2
-                                                                // 128
+// 128
 #    define MEM_MNGT_MB1_NB_BLOCKS      4096 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID1           1
 
 #    define MEM_MNGT_MB2_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*4
-                                                                // 256
+// 256
 #    define MEM_MNGT_MB2_NB_BLOCKS      2048 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID2           2
 
 #    define MEM_MNGT_MB3_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*8
-                                                                // 512
+// 512
 #    define MEM_MNGT_MB3_NB_BLOCKS      2048 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID3           3
 
 #    define MEM_MNGT_MB4_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*16
-                                                                // 1024
+// 1024
 #    define MEM_MNGT_MB4_NB_BLOCKS      1024 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID4           4
 
 #    define MEM_MNGT_MB5_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*32
-                                                                // 2048
+// 2048
 #    define MEM_MNGT_MB5_NB_BLOCKS      1024 * MEM_SCALE // LG WAS 1024
 #    define MEM_MNGT_POOL_ID5           5
 
 #    define MEM_MNGT_MB6_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*64
-                                                                // 4096
+// 4096
 #    define MEM_MNGT_MB6_NB_BLOCKS      1024 * MEM_SCALE  // LG WAS 256
 #    define MEM_MNGT_POOL_ID6           6
 
 #    define MEM_MNGT_MB7_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*128
-                                                                // 8192
+// 8192
 #    define MEM_MNGT_MB7_NB_BLOCKS      64* MEM_SCALE   // LG WAS 32
 #    define MEM_MNGT_POOL_ID7           7
 
@@ -127,27 +130,27 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    define MEM_MNGT_MB8_NB_BLOCKS      256 * MEM_SCALE
 #else
 #    define MEM_MNGT_MB8_NB_BLOCKS      16 * MEM_SCALE
-                                                                // 16384
+// 16384
 #endif
 #    define MEM_MNGT_POOL_ID8           8
 
 #    define MEM_MNGT_MB9_BLOCK_SIZE     MEM_MNGT_MB0_BLOCK_SIZE*512
-                                                                // 32768
+// 32768
 #    define MEM_MNGT_MB9_NB_BLOCKS      8 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID9           9
 
 #    define MEM_MNGT_MB10_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*1024
-                                                                // 65536
+// 65536
 #    define MEM_MNGT_MB10_NB_BLOCKS     0 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID10          10
 
 #    define MEM_MNGT_MB11_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*2048
-                                                                // 131072
+// 131072
 #    define MEM_MNGT_MB11_NB_BLOCKS     0 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID11          11
 
 #    define MEM_MNGT_MB12_BLOCK_SIZE    MEM_MNGT_MB0_BLOCK_SIZE*4096
-                                                                // 262144
+// 262144
 #    define MEM_MNGT_MB12_NB_BLOCKS     32 * MEM_SCALE
 #    define MEM_MNGT_POOL_ID12          12
 

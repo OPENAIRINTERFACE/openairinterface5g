@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -59,8 +59,8 @@ extern eNB_MAC_INST *eNB_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern uint8_t Is_rrc_registered;
 
-extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
-extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8 
+extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
+extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][NUMBER_OF_UE_MAX]; // eNBxUE = 8x8
 
 
 
@@ -80,7 +80,7 @@ extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned char NB_RN_INST;
 extern unsigned short NODE_ID[1];
-extern void* bigphys_malloc(int); 
+extern void* bigphys_malloc(int);
 #else
 extern EMULATION_VARS *Emul_vars;
 #endif //PHY_EMUL

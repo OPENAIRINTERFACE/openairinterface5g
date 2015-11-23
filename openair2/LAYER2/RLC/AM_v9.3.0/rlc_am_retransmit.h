@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -67,11 +67,11 @@
 * \note It may appear a new hole in the retransmission buffer depending on the segment offset informations. Depending on the state of the retransmission buffer, negative confirmation can be sent to higher layers about the drop by the RLC AM instance of a particular SDU.
 */
 protected_rlc_am_retransmit(void         rlc_am_nack_pdu (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP,
-                const sdu_size_t so_startP,
-                const sdu_size_t so_endP);)
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t *const rlcP,
+                              const rlc_sn_t snP,
+                              const sdu_size_t so_startP,
+                              const sdu_size_t so_endP);)
 
 /*! \fn void rlc_am_ack_pdu (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
@@ -81,9 +81,9 @@ protected_rlc_am_retransmit(void         rlc_am_nack_pdu (
 * \note                    Depending on the state of the retransmission buffer, positive confirmation can be sent to higher layers about the receiving by the peer RLC AM instance of a particular SDU.
 */
 protected_rlc_am_retransmit(void         rlc_am_ack_pdu (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP);)
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t *const rlcP,
+                              const rlc_sn_t snP);)
 
 /*! \fn mem_block_t* rlc_am_retransmit_get_copy (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *rlcP, rlc_sn_t snP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
@@ -93,9 +93,9 @@ protected_rlc_am_retransmit(void         rlc_am_ack_pdu (
 * \return                  A copy of the PDU having sequence number equal to parameter snP.
 */
 protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP));
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t *const rlcP,
+                              const rlc_sn_t snP));
 
 /*! \fn mem_block_t* rlc_am_retransmit_get_subsegment (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *rlcP,rlc_sn_t snP, sdu_size_t *sizeP)
 * \brief      The RLC AM PDU which have the sequence number snP is marked ACKed.
@@ -106,10 +106,10 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_copy (
 * \return                  A copy of a segment of the PDU having sequence number equal to parameter snP.
 */
 protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP,
-                sdu_size_t *const sizeP));
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t *const rlcP,
+                              const rlc_sn_t snP,
+                              sdu_size_t *const sizeP));
 
 /*! \fn void rlc_am_retransmit_any_pdu(const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t* rlcP)
 * \brief      Retransmit any PDU in order to unblock peer entity, if no suitable PDU is found (depending on requested MAC size) to be retransmitted, then try to retransmit a subsegment of any PDU.
@@ -117,8 +117,8 @@ protected_rlc_am_retransmit(mem_block_t* rlc_am_retransmit_get_subsegment (
 * \param[in]  rlcP         RLC AM protocol instance pointer.
 */
 protected_rlc_am_retransmit(void rlc_am_retransmit_any_pdu(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t* const rlcP);)
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t* const rlcP);)
 
 /*! \fn void rlc_am_tx_buffer_display (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t* rlcP,  char* message_pP)
 * \brief      Display the dump of the retransmission buffer.
@@ -127,8 +127,8 @@ protected_rlc_am_retransmit(void rlc_am_retransmit_any_pdu(
 * \param[in]  message_pP     Message to be displayed along with the display of the dump of the retransmission buffer.
 */
 protected_rlc_am_retransmit(void rlc_am_tx_buffer_display (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t* const rlcP,
-                char* const message_pP);)
+                              const protocol_ctxt_t* const  ctxt_pP,
+                              rlc_am_entity_t* const rlcP,
+                              char* const message_pP);)
 /** @} */
 #    endif

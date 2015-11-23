@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -38,39 +38,40 @@
 
 using namespace std;
 
-class Transaction  {
-    public:
-        //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
+class Transaction
+{
+public:
+  //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
 
-        Transaction ():m_id(0u) {};
-        Transaction (transaction_id_t);
-        Transaction (transaction_id_t , tcpip::Storage& , packet_size_t );
-        ~Transaction ();
+  Transaction ():m_id(0u) {};
+  Transaction (transaction_id_t);
+  Transaction (transaction_id_t , tcpip::Storage& , packet_size_t );
+  ~Transaction ();
 
-        void AddCommand (Command*);
-        friend inline bool operator>( const Transaction& l, const Transaction r )
-        {
-            return l.m_id > r.m_id;
-        }
-        friend inline bool operator==( const Transaction& l, const Transaction r )
-        {
-            return l.m_id == r.m_id;
-        }
-
-
-        void Commit() {};
-        void Rollback() {};
-        transaction_id_t GetId() {return m_id;};
+  void AddCommand (Command*);
+  friend inline bool operator>( const Transaction& l, const Transaction r ) {
+    return l.m_id > r.m_id;
+  }
+  friend inline bool operator==( const Transaction& l, const Transaction r ) {
+    return l.m_id == r.m_id;
+  }
 
 
-        std::string ToString();
+  void Commit() {};
+  void Rollback() {};
+  transaction_id_t GetId() {
+    return m_id;
+  };
 
-        void Serialize(unsigned char* packetP);
-        packet_size_t Size() const;
 
-    protected:
-        transaction_id_t   m_id;
-        vector<Command*> m_commands_vector;
+  std::string ToString();
+
+  void Serialize(unsigned char* packetP);
+  packet_size_t Size() const;
+
+protected:
+  transaction_id_t   m_id;
+  vector<Command*> m_commands_vector;
 };
 #    endif
 

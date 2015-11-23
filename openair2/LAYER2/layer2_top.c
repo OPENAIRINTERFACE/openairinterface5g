@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -88,10 +88,11 @@ extern MAC_xface *mac_xface;
 extern int mac_top_init();
 extern int mac_init_global_param(void);
 extern int pdcp_module_init(void);
-extern void pdcp_module_cleanup(void);  
+extern void pdcp_module_cleanup(void);
 
 /*------------------------------------------------*/
-void w3g4free_mac_init(void) {
+void w3g4free_mac_init(void)
+{
 
   int ret;
 
@@ -108,8 +109,8 @@ void w3g4free_mac_init(void) {
 #ifndef USER_MODE
   printk("[OPENAIR][MAC][TOP] INIT DONE.\n");
 #endif//USER_MODE
-  
-  
+
+
 
 }
 /*------------------------------------------------*/
@@ -126,54 +127,54 @@ static int   openair_mac_init_module( void );
 static void  openair_mac_cleanup_module(void);
 #endif
 
-#ifdef KERNEL2_6 
-static int __init openair_mac_init_module( void ) 
-#else 
-     int init_module( void ) 
+#ifdef KERNEL2_6
+static int __init openair_mac_init_module( void )
+#else
+int init_module( void )
 #endif //KERNEL2_6
 {
-    printk("[OPENAIR][MAC][INIT] inserting module\n");
+  printk("[OPENAIR][MAC][INIT] inserting module\n");
 
-    //    mac_init_global_param();
+  //    mac_init_global_param();
 
-    mac_xface=mac_register(macphy_scheduler,NULL,w3g4free_mac_init,mrbch_phy_sync_failure,chbch_phy_sync_success);
-    if( mac_xface == NULL )
-      {
-	printk("[OPENAIR][MAC][INIT] Could not get MAC descriptor\n");
-	return -1;
-      }
-    else {
-      printk("[OPENAIR][MAC][INIT] Got MAC descriptor \n");
-      if(mac_init_global_param()==-1) {
-	mac_unregister(mac_xface);
-         return -1; 
-      }
-    }       
-    if (pdcp_module_init()!=0) {
+  mac_xface=mac_register(macphy_scheduler,NULL,w3g4free_mac_init,mrbch_phy_sync_failure,chbch_phy_sync_success);
+
+  if( mac_xface == NULL ) {
+    printk("[OPENAIR][MAC][INIT] Could not get MAC descriptor\n");
+    return -1;
+  } else {
+    printk("[OPENAIR][MAC][INIT] Got MAC descriptor \n");
+
+    if(mac_init_global_param()==-1) {
       mac_unregister(mac_xface);
-      return(-1);
+      return -1;
     }
-    else{
-      printk("[OPENAIR][MAC][INIT] PDCP INIT OK\n");
-    }
+  }
+
+  if (pdcp_module_init()!=0) {
+    mac_unregister(mac_xface);
+    return(-1);
+  } else {
+    printk("[OPENAIR][MAC][INIT] PDCP INIT OK\n");
+  }
 
 
-    return 0;
+  return 0;
 }
 
 #ifdef KERNEL2_6
 static void __exit openair_mac_cleanup_module(void)
 #else
-  void cleanup_module(void)
+void cleanup_module(void)
 #endif //KERNEL2_6
 {
   printk("[OPENAIR][MAC][CLEANUP] cleanup module\n");
   mac_unregister(mac_xface);
-  pdcp_module_cleanup();  
+  pdcp_module_cleanup();
 }
 
 MODULE_AUTHOR
-  ("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Maxime GUILLAUD <maxime.guillaud@eurecom.fr, Hicham ANOUAR <hicham.anouar@eurecom.fr>");
+("Lionel GAUTHIER <lionel.gauthier@eurecom.fr>, Raymond KNOPP <raymond.knopp@eurecom.fr>, Aawatif MENOUNI <aawatif.menouni@eurecom.fr>,Dominique NUSSBAUM <dominique.nussbaum@eurecom.fr>, Michelle WETTERWALD <michelle.wetterwald@eurecom.fr>, Maxime GUILLAUD <maxime.guillaud@eurecom.fr, Hicham ANOUAR <hicham.anouar@eurecom.fr>");
 MODULE_DESCRIPTION ("openair MAC layer module");
 MODULE_LICENSE ("GPL");
 module_init (openair_mac_init_module);

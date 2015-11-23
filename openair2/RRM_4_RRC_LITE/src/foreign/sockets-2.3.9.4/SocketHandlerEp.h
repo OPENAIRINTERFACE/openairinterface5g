@@ -1,16 +1,16 @@
 /** \file SocketHandlerEp.h
- **	\date  2010-02-13
- **	\author grymse@alhem.net
+ ** \date  2010-02-13
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -40,48 +40,49 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif // LINUX
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class SocketHandlerEp : public SocketHandler
 {
 public:
-	/** SocketHandler constructor.
-		\param log Optional log class pointer */
-	SocketHandlerEp(StdLog *log = NULL);
+  /** SocketHandler constructor.
+    \param log Optional log class pointer */
+  SocketHandlerEp(StdLog *log = NULL);
 
-	/** SocketHandler threadsafe constructor.
-		\param mutex Externally declared mutex variable
-		\param log Optional log class pointer */
-	SocketHandlerEp(IMutex& mutex,StdLog *log = NULL);
+  /** SocketHandler threadsafe constructor.
+    \param mutex Externally declared mutex variable
+    \param log Optional log class pointer */
+  SocketHandlerEp(IMutex& mutex,StdLog *log = NULL);
 
-	SocketHandlerEp(IMutex&, ISocketHandler& parent, StdLog * = NULL);
+  SocketHandlerEp(IMutex&, ISocketHandler& parent, StdLog * = NULL);
 
-	~SocketHandlerEp();
+  ~SocketHandlerEp();
 
-	ISocketHandler *Create(StdLog * = NULL);
-	ISocketHandler *Create(IMutex&, ISocketHandler&, StdLog * = NULL);
+  ISocketHandler *Create(StdLog * = NULL);
+  ISocketHandler *Create(IMutex&, ISocketHandler&, StdLog * = NULL);
 
 #ifdef LINUX
 
-	/** Set read/write/exception file descriptor sets (fd_set). */
-	void ISocketHandler_Add(Socket *,bool bRead,bool bWrite);
-	void ISocketHandler_Mod(Socket *,bool bRead,bool bWrite);
-	void ISocketHandler_Del(Socket *);
+  /** Set read/write/exception file descriptor sets (fd_set). */
+  void ISocketHandler_Add(Socket *,bool bRead,bool bWrite);
+  void ISocketHandler_Mod(Socket *,bool bRead,bool bWrite);
+  void ISocketHandler_Del(Socket *);
 
-	size_t MaxCount() {
-		return 10000; // %!
-	}
+  size_t MaxCount() {
+    return 10000; // %!
+  }
 
 protected:
-	/** Actual call to select() */
-	int ISocketHandler_Select(struct timeval *);
+  /** Actual call to select() */
+  int ISocketHandler_Select(struct timeval *);
 #endif // LINUX
 
 private:
-	int m_epoll; ///< epoll file descriptor
+  int m_epoll; ///< epoll file descriptor
 #ifdef LINUX
-	struct epoll_event m_events[MAX_EVENTS_EP_WAIT];
+  struct epoll_event m_events[MAX_EVENTS_EP_WAIT];
 
 #endif // LINUX
 

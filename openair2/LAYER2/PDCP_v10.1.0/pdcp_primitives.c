@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -53,12 +53,13 @@ uint8_t pdcp_get_dc_filed(unsigned char* pdu_buffer)
 {
   uint8_t dc = 0x00;
 
-  if (pdu_buffer == NULL)
+  if (pdu_buffer == NULL) {
     return 0;
+  }
 
   dc = (uint8_t)pdu_buffer[0] & 0xF0; // Reset D/C field
-  dc >>= 8;
-  
+  dc >>= 8; // FIXME this is broken!!! returns 0 all the time
+
   return dc;
 }
 
@@ -73,8 +74,9 @@ uint16_t pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer)
 {
   uint16_t sequence_number = 0x00;
 
-  if (pdu_buffer == NULL)
+  if (pdu_buffer == NULL) {
     return 0;
+  }
 
   /*
    * First octet carries the first 4 bits of SN (see 6.2.3)
@@ -98,8 +100,9 @@ uint16_t pdcp_get_sequence_number_of_pdu_with_long_sn(unsigned char* pdu_buffer)
  */
 uint8_t pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
 {
-  if (pdu_buffer == NULL)
+  if (pdu_buffer == NULL) {
     return 0;
+  }
 
   /*
    * First octet carries all 7 bits of SN (see 6.2.4)
@@ -115,13 +118,14 @@ uint8_t pdcp_get_sequence_number_of_pdu_with_short_sn(unsigned char* pdu_buffer)
  */
 uint8_t pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer)
 {
-  if (pdu_buffer == NULL)
+  if (pdu_buffer == NULL) {
     return 0;
+  }
 
   /*
    * First octet carries all 5 bits of SN (see 6.2.4)
    */
-  return (uint8_t)pdu_buffer[0] & 0x1F; 
+  return (uint8_t)pdu_buffer[0] & 0x1F;
 }
 /*
  * Fills the incoming buffer with the fields of the header for srb sn
@@ -130,17 +134,18 @@ uint8_t pdcp_get_sequence_number_of_pdu_with_SRB_sn(unsigned char* pdu_buffer)
  * @return TRUE on success, FALSE otherwise
  */
 boolean_t pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char* pdu_buffer, \
-     pdcp_control_plane_data_pdu_header* pdu)
+    pdcp_control_plane_data_pdu_header* pdu)
 {
-  if (pdu_buffer == NULL || pdu == NULL)
+  if (pdu_buffer == NULL || pdu == NULL) {
     return FALSE;
+  }
 
   /*
    * Fill the Sequence Number field
    */
   uint8_t sequence_number = pdu->sn;
   pdu_buffer[0] = sequence_number & 0x1F; // 5bit sn
- 
+
   return TRUE;
 }
 
@@ -151,10 +156,11 @@ boolean_t pdcp_serialize_control_plane_data_pdu_with_SRB_sn_buffer(unsigned char
  * @return TRUE on success, FALSE otherwise
  */
 boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* pdu_buffer, \
-     pdcp_user_plane_data_pdu_header_with_long_sn* pdu)
+    pdcp_user_plane_data_pdu_header_with_long_sn* pdu)
 {
-  if (pdu_buffer == NULL || pdu == NULL)
+  if (pdu_buffer == NULL || pdu == NULL) {
     return FALSE;
+  }
 
   /*
    * Fill the Sequence Number field
@@ -183,10 +189,11 @@ boolean_t pdcp_serialize_user_plane_data_pdu_with_long_sn_buffer(unsigned char* 
  * @return TRUE on success, FALSE otherwise
  */
 boolean_t pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_buffer, \
-     uint8_t bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu)
+    uint8_t bitmap[512], pdcp_control_pdu_for_pdcp_status_report* pdu)
 {
-  if (pdu_buffer == NULL || pdu == NULL)
+  if (pdu_buffer == NULL || pdu == NULL) {
     return FALSE;
+  }
 
   /*
    * Data or Control field and PDU type (already 0x00, noop)
@@ -199,7 +206,7 @@ boolean_t pdcp_serialize_control_pdu_for_pdcp_status_report(unsigned char* pdu_b
    * Fill `First Missing PDU SN' field
    */
   pdu_buffer[0] |= ((pdu->first_missing_sn >> 8) & 0xFF);
-  pdu_buffer[1] |= (pdu->first_missing_sn && 0xFF);
+  pdu_buffer[1] |= (pdu->first_missing_sn & 0xFF);
 
   /*
    * Append `bitmap'

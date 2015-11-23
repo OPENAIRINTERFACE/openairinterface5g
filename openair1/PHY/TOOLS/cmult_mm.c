@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,26 +14,26 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 #include "defs.h"
 
-int mult_cpx_matrix_h(short *x1[2][2], 
-		      short *x2[2][2], 
-		      short *y[2][2], 
-		      unsigned int N, 
-		      unsigned short output_shift,
-		      short hermitian)
+int mult_cpx_matrix_h(short *x1[2][2],
+                      short *x2[2][2],
+                      short *y[2][2],
+                      unsigned int N,
+                      unsigned short output_shift,
+                      short hermitian)
 {
 
   if (hermitian) {
@@ -46,8 +46,7 @@ int mult_cpx_matrix_h(short *x1[2][2],
     mult_cpx_vector_h(x2[1][1],x1[0][1],y[0][1],N,output_shift,1);
     mult_cpx_vector_h(x2[1][0],x1[1][0],y[1][1],N,output_shift,1);
     mult_cpx_vector_h(x2[1][1],x1[1][1],y[1][1],N,output_shift,1);
-  } 
-  else {
+  } else {
     // this computes x1*x2^H and stores it in y
     mult_cpx_vector_h(x1[0][0],x2[0][0],y[0][0],N,output_shift,1);
     mult_cpx_vector_h(x1[0][1],x2[0][1],y[0][0],N,output_shift,1);
@@ -60,11 +59,11 @@ int mult_cpx_matrix_h(short *x1[2][2],
   }
 }
 
-int mult_cpx_matrix_vector(int *x1[2][2], 
-			   int *x2[2], 
-			   int *y[2], 
-			   unsigned int N, 
-			   unsigned short output_shift)
+int mult_cpx_matrix_vector(int *x1[2][2],
+                           int *x2[2],
+                           int *y[2],
+                           unsigned int N,
+                           unsigned short output_shift)
 {
 
   Zero_Buffer(y[0],N*8);
@@ -85,7 +84,7 @@ int mult_cpx_matrix_vector(int *x1[2][2],
 #ifdef MAIN_MM
 #include <stdio.h>
 #include <stdlib.h>
-main () 
+main ()
 {
   short x1_00[256] __attribute__((aligned(16)));
   short x1_10[256] __attribute__((aligned(16)));
@@ -109,22 +108,24 @@ main ()
   x2[1] = (int*)x2_1;
   y[0] = (int*)y_0;
   y[1] = (int*)y_1;
- 
-  for(m=0;m<2;m++){
-    for(n=0;n<2;n++){
-      for(i=0;i<256;i+=4) {
-	((short*)x1[m][n])[i] = ((short) rand())/4;
-	((short*)x1[m][n])[i+1] = ((short) rand())/4;
-	((short*)x1[m][n])[i+2] = -((short*)x1[m][n])[i+1];
-	((short*)x1[m][n])[i+3] = ((short*)x1[m][n])[i];
+
+  for(m=0; m<2; m++) {
+    for(n=0; n<2; n++) {
+      for(i=0; i<256; i+=4) {
+        ((short*)x1[m][n])[i] = ((short) rand())/4;
+        ((short*)x1[m][n])[i+1] = ((short) rand())/4;
+        ((short*)x1[m][n])[i+2] = -((short*)x1[m][n])[i+1];
+        ((short*)x1[m][n])[i+3] = ((short*)x1[m][n])[i];
       }
     }
-    for(i=0;i<256;i+=4) {
+
+    for(i=0; i<256; i+=4) {
       ((short*)x2[m])[i] = ((short) rand())/4;
       ((short*)x2[m])[i+1] = ((short) rand())/4;
       ((short*)x2[m])[i+2] = ((short*)x2[m])[i];
       ((short*)x2[m])[i+3] = ((short*)x2[m])[i+1];
     }
+
     Zero_Buffer(y[m],512);
   }
 
@@ -168,30 +169,31 @@ main ()
   x1[1][0] = (int*)input;
   x1[1][1] = (int*)input;
 
-  x2[0] = (int*)input2; 
-  x2[1] = (int*)input2; 
+  x2[0] = (int*)input2;
+  x2[1] = (int*)input2;
 
-  y[0] = (int*)output; 
-  y[1] = (int*)output2; 
+  y[0] = (int*)output;
+  y[1] = (int*)output2;
   */
 
   mult_cpx_matrix_vector(x1,x2,y,64,15);
 
   //mult_cpx_vector_add32(x2[0],x1[0][0],y[0],64);
 
-  for (i=0;i<128;i+=2)
+  for (i=0; i<128; i+=2)
     printf("i=%d, x1 = [%d+1i*%d %d+1i*%d; %d+1i*%d %d+1i*%d]; x2 = [%d+1i*%d; %d+1i*%d]; y = [%d+1i*%d; %d+1i*%d]; y_m= round(x1*x2./pow2(15)); y-y_m \n",
-	   i,
-	   ((short*)x1[0][0])[2*i],  ((short*)x1[0][0])[2*i+2],
-	   ((short*)x1[0][1])[2*i],  ((short*)x1[0][1])[2*i+2],
-	   ((short*)x1[1][0])[2*i],  ((short*)x1[1][0])[2*i+2],
-	   ((short*)x1[1][1])[2*i],  ((short*)x1[1][1])[2*i+2],
-	   ((short*)x2[0])[2*i],  ((short*)x2[0])[2*i+1],
-	   ((short*)x2[1])[2*i],  ((short*)x2[1])[2*i+1],
-	   ((short*)y[0])[2*i],  ((short*)y[0])[2*i+1],
-	   ((short*)y[1])[2*i],  ((short*)y[1])[2*i+1]);
-	   //((int*)y[0])[i],  ((int*)y[0])[i+1],
-	   //((int*)y[1])[i],  ((int*)y[1])[i+1]);
+           i,
+           ((short*)x1[0][0])[2*i],  ((short*)x1[0][0])[2*i+2],
+           ((short*)x1[0][1])[2*i],  ((short*)x1[0][1])[2*i+2],
+           ((short*)x1[1][0])[2*i],  ((short*)x1[1][0])[2*i+2],
+           ((short*)x1[1][1])[2*i],  ((short*)x1[1][1])[2*i+2],
+           ((short*)x2[0])[2*i],  ((short*)x2[0])[2*i+1],
+           ((short*)x2[1])[2*i],  ((short*)x2[1])[2*i+1],
+           ((short*)y[0])[2*i],  ((short*)y[0])[2*i+1],
+           ((short*)y[1])[2*i],  ((short*)y[1])[2*i+1]);
+
+  //((int*)y[0])[i],  ((int*)y[0])[i+1],
+  //((int*)y[1])[i],  ((int*)y[1])[i+1]);
 
 }
 

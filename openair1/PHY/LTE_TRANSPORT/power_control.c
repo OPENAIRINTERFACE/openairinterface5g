@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -33,7 +33,7 @@
 
 /*
 double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
-		      { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};
+          { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};
 */
 					  
 double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
@@ -41,9 +41,10 @@ double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
 
 double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by higher layers
 
-double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated) {
+double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated)
+{
   return(pa_values[pdsch_config_dedicated->p_a]);
-} 
+}
 
 double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
                        LTE_eNB_DLSCH_t *dlsch_eNB,int dl_power_off, uint8_t n_antenna_port){		    	
@@ -61,19 +62,20 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));	
 	
   dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
-	
-#ifdef DEBUG_PC	
-  printf("sqrt_rho_a(eNB):%d\n",dlsch_eNB->sqrt_rho_a);	
+
+#ifdef DEBUG_PC
+  printf("sqrt_rho_a(eNB):%d\n",dlsch_eNB->sqrt_rho_a);
 #endif
-	
-  return(rho_a_dB);		
+
+  return(rho_a_dB);
 }
 
 double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
                        PDSCH_CONFIG_COMMON *pdsch_config_common,
                        uint8_t n_antenna_port,
                        LTE_eNB_DLSCH_t *dlsch_eNB,
-		       int dl_power_off){
+                       int dl_power_off)
+{
 
   double rho_a_dB, rho_b_dB;
   double sqrt_rho_b_lin;
@@ -85,18 +87,18 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   else
     rho_b_dB= ratioPB[0][pdsch_config_common->p_b] + rho_a_dB;
 
-  sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));     
-	
+  sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));
+
   dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
-#ifdef DEBUG_PC			
+#ifdef DEBUG_PC
   printf("sqrt_rho_b(eNB):%d\n",dlsch_eNB->sqrt_rho_b);
-#endif	
-  return(rho_b_dB);	
+#endif
+  return(rho_b_dB);
 }
 
 
-double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,  
+double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                       LTE_UE_DLSCH_t *dlsch_ue,
                       unsigned char dl_power_off, 
 		      uint8_t n_antenna_port
@@ -117,19 +119,20 @@ double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));	
 	
   dlsch_ue->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
-	
-#ifdef DEBUG_PC	
-  printf("sqrt_rho_a(ue):%d\n",dlsch_ue->sqrt_rho_a);	
+
+#ifdef DEBUG_PC
+  printf("sqrt_rho_a(ue):%d\n",dlsch_ue->sqrt_rho_a);
 #endif
-	
-  return(rho_a_dB);		
+
+  return(rho_a_dB);
 }
 
 double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
                       PDSCH_CONFIG_COMMON *pdsch_config_common,
                       uint8_t n_antenna_port,
                       LTE_UE_DLSCH_t *dlsch_ue,
-                      unsigned char dl_power_off){
+                      unsigned char dl_power_off)
+{
 
   double rho_a_dB, rho_b_dB;
   double sqrt_rho_b_lin;
@@ -141,14 +144,14 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   else
     rho_b_dB= ratioPB[0][pdsch_config_common->p_b] + rho_a_dB;
 
-  sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));	
-	
+  sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));
+
   dlsch_ue->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
-#ifdef DEBUG_PC			
+#ifdef DEBUG_PC
   printf("sqrt_rho_b(ue):%d\n",dlsch_ue->sqrt_rho_b);
-#endif	
-  return(rho_b_dB);	
+#endif
+  return(rho_b_dB);
 }
 
 

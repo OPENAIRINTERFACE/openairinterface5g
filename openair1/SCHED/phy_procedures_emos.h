@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -61,13 +61,13 @@ struct fifo_dump_emos_struct_UE {
   // RX
   uint64_t              timestamp;              //! Timestamp of the receiver
   unsigned int     frame_tx;               //! Framenumber of the TX (encoded in the BCH)
-  unsigned int     frame_rx;               //! Framenumber of the RX 
+  unsigned int     frame_rx;               //! Framenumber of the RX
   UE_MODE_t        UE_mode;
   PHY_MEASUREMENTS PHY_measurements;       //! Structure holding all PHY measurements (one for every slot)
   unsigned int     pbch_errors;                        /// Total number of errors on PBCH
   unsigned int     pbch_errors_last;                   /// Total number of errors on PBCH 100 frames ago
   unsigned int     pbch_errors_conseq;                 /// Total number of consecutive errors on PBCH
-  unsigned int     pbch_fer;                           /// PBCH FER (in percent) 
+  unsigned int     pbch_fer;                           /// PBCH FER (in percent)
   unsigned int     dlsch_errors;                       /// Total number of error on the DLSCH (data)
   unsigned int     dlsch_errors_last;
   unsigned int     dlsch_received;

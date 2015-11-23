@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -32,11 +32,12 @@
 //#define DEBUG_FEP
 
 int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
-		LTE_eNB_COMMON *eNB_common_vars,
-		unsigned char l,
-		unsigned char Ns,
-		unsigned char eNB_id,
-		int no_prefix) {
+                LTE_eNB_COMMON *eNB_common_vars,
+                unsigned char l,
+                unsigned char Ns,
+                unsigned char eNB_id,
+                int no_prefix)
+{
 #ifdef DEBUG_FEP
   char fname[40], vname[40];
 #endif
@@ -44,7 +45,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char symbol = l+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
-  //  unsigned int subframe_offset; 
+  //  unsigned int subframe_offset;
   unsigned int slot_offset;
 
   void (*dft)(int16_t *,int16_t *, int);
@@ -53,18 +54,23 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   case 7:
     dft = dft128;
     break;
+
   case 8:
     dft = dft256;
     break;
+
   case 9:
     dft = dft512;
     break;
+
   case 10:
     dft = dft1024;
     break;
+
   case 11:
     dft = dft2048;
     break;
+
   default:
     dft = dft512;
     break;
@@ -73,8 +79,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   if (no_prefix) {
     //    subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
     slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns%2);
-  }
-  else {
+  } else {
     //    subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
     slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
   }
@@ -83,6 +88,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
     LOG_E(PHY,"slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);
   }
+
   if (Ns<0 || Ns>=20) {
     LOG_E(PHY,"slot_fep: Ns must be between 0 and 19\n");
     return(-1);
@@ -92,35 +98,34 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
   LOG_D(PHY,"slot_fep: Ns %d offset %d, symbol %d, nb_prefix_samples %d\n",Ns,slot_offset,symbol, nb_prefix_samples);
 #endif
 
-  for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+  for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 
     if (l==0) {
 
       dft(
-#ifndef OFDMA_ULSCH	     
-	  (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
-							       nb_prefix_samples0],
-#else
-	  (int16_t *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
-							nb_prefix_samples0],
-#endif
-	  (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
-    }
-    else {
-	  dft(
 #ifndef OFDMA_ULSCH
-	      (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+        (int16_t *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+            nb_prefix_samples0],
 #else
-	      (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+        (int16_t *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+            nb_prefix_samples0],
 #endif
-							    (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) + 
-							    (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
-	      (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+        (int16_t *)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
+    } else {
+      dft(
+#ifndef OFDMA_ULSCH
+        (short *)&eNB_common_vars->rxdata_7_5kHz[eNB_id][aa][slot_offset +
+#else
+        (short *)&eNB_common_vars->rxdata[eNB_id][aa][((frame_parms->samples_per_tti>>1)*Ns) +
+#endif
+            (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
+            (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1)],
+        (short*)&eNB_common_vars->rxdataF[eNB_id][aa][frame_parms->ofdm_symbol_size*symbol],1);
     }
   }
 
 #ifdef DEBUG_FEP
-    LOG_D(PHY,"slot_fep: done\n");
+  LOG_D(PHY,"slot_fep: done\n");
 #endif
   return(0);
 }

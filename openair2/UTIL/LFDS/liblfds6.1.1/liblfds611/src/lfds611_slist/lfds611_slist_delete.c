@@ -22,11 +22,11 @@ void lfds611_slist_delete( struct lfds611_slist_state *ss )
 int lfds611_slist_logically_delete_element( struct lfds611_slist_state *ss, struct lfds611_slist_element *se )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) void
-    *volatile user_data_and_flags[2],
-    *volatile new_user_data_and_flags[2];
+  *volatile user_data_and_flags[2],
+  *volatile new_user_data_and_flags[2];
 
   unsigned char
-    cas_rv = 0;
+  cas_rv = 0;
 
   assert( ss != NULL );
   assert( se != NULL );
@@ -36,12 +36,11 @@ int lfds611_slist_logically_delete_element( struct lfds611_slist_state *ss, stru
   user_data_and_flags[LFDS611_SLIST_USER_DATA] = se->user_data_and_flags[LFDS611_SLIST_USER_DATA];
   user_data_and_flags[LFDS611_SLIST_FLAGS] = se->user_data_and_flags[LFDS611_SLIST_FLAGS];
 
-  do
-  {
+  do {
     new_user_data_and_flags[LFDS611_SLIST_USER_DATA] = user_data_and_flags[LFDS611_SLIST_USER_DATA];
     new_user_data_and_flags[LFDS611_SLIST_FLAGS] = (void *) ((lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] | LFDS611_SLIST_FLAG_DELETED);
-  }
-  while( !((lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] & LFDS611_SLIST_FLAG_DELETED) and 0 == (cas_rv = lfds611_abstraction_dcas((volatile lfds611_atom_t *) se->user_data_and_flags, (lfds611_atom_t *) new_user_data_and_flags, (lfds611_atom_t *) user_data_and_flags)) );
+  } while( !((lfds611_atom_t) user_data_and_flags[LFDS611_SLIST_FLAGS] & LFDS611_SLIST_FLAG_DELETED)
+           and 0 == (cas_rv = lfds611_abstraction_dcas((volatile lfds611_atom_t *) se->user_data_and_flags, (lfds611_atom_t *) new_user_data_and_flags, (lfds611_atom_t *) user_data_and_flags)) );
 
   if( cas_rv == 1 )
     if( ss->user_data_delete_function != NULL )
@@ -58,15 +57,14 @@ int lfds611_slist_logically_delete_element( struct lfds611_slist_state *ss, stru
 void lfds611_slist_single_threaded_physically_delete_all_elements( struct lfds611_slist_state *ss )
 {
   struct lfds611_slist_element
-    *volatile se,
-    *volatile se_temp;
+      *volatile se,
+      *volatile se_temp;
 
   LFDS611_BARRIER_LOAD;
 
   se = ss->head;
 
-  while( se != NULL )
-  {
+  while( se != NULL ) {
     // TRD : if a non-deleted element and there is a delete function, call the delete function
     if( ss->user_data_delete_function != NULL )
       ss->user_data_delete_function( (void *) se->user_data_and_flags[LFDS611_SLIST_USER_DATA], ss->user_state );

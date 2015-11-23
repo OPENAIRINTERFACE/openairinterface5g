@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -39,17 +39,17 @@ static inline
 void kdf(const uint8_t *s, const uint32_t s_length, const uint8_t *key,
          const uint32_t key_length, uint8_t **out, uint32_t out_length)
 {
-    struct hmac_sha256_ctx ctx;
+  struct hmac_sha256_ctx ctx;
 
-    uint8_t *buffer;
+  uint8_t *buffer;
 
-    buffer = malloc(sizeof(uint8_t) * out_length);
+  buffer = malloc(sizeof(uint8_t) * out_length);
 
-    hmac_sha256_set_key(&ctx, key_length, key);
-    hmac_sha256_update(&ctx, s_length, s);
-    hmac_sha256_digest(&ctx, out_length, buffer);
+  hmac_sha256_set_key(&ctx, key_length, key);
+  hmac_sha256_update(&ctx, s_length, s);
+  hmac_sha256_digest(&ctx, out_length, buffer);
 
-    *out = buffer;
+  *out = buffer;
 }
 
 /*!
@@ -69,40 +69,41 @@ void kdf(const uint8_t *s, const uint32_t s_length, const uint8_t *key,
 int derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
-    uint8_t string[7];
+  uint8_t string[7];
 
-    /* FC */
-    string[0] = FC_ALG_KEY_DER;
+  /* FC */
+  string[0] = FC_ALG_KEY_DER;
 
-    /* P0 = algorithm type distinguisher */
-    string[1] = (uint8_t)(alg_type & 0xFF);
+  /* P0 = algorithm type distinguisher */
+  string[1] = (uint8_t)(alg_type & 0xFF);
 
-    /* L0 = length(P0) = 1 */
-    string[2] = 0x00;
-    string[3] = 0x01;
+  /* L0 = length(P0) = 1 */
+  string[2] = 0x00;
+  string[3] = 0x01;
 
-    /* P1 */
-    string[4] = alg_id;
+  /* P1 */
+  string[4] = alg_id;
 
-    /* L1 = length(P1) = 1 */
-    string[5] = 0x00;
-    string[6] = 0x01;
+  /* L1 = length(P1) = 1 */
+  string[5] = 0x00;
+  string[6] = 0x01;
 
 #if defined(SECU_DEBUG)
-    {
-        int i;
-        char payload[6 * sizeof(string) + 1];
-        int  index = 0;
+  {
+    int i;
+    char payload[6 * sizeof(string) + 1];
+    int  index = 0;
 
-        for (i = 0; i < sizeof(string); i++)
-            index += sprintf(&payload[index], "0x%02x ", string[i]);
-        LOG_D(OSA, "Key deriver input string: %s\n", payload);
-    }
+    for (i = 0; i < sizeof(string); i++)
+      index += sprintf(&payload[index], "0x%02x ", string[i]);
+
+    LOG_D(OSA, "Key deriver input string: %s\n", payload);
+  }
 #endif
 
-    kdf(string, 7, key, 32, out, 32);
+  kdf(string, 7, key, 32, out, 32);
 
-    return 0;
+  return 0;
 }
 /*
 int derive_keNB(const uint8_t key[32], const uint32_t nas_count, uint8_t **keNB)

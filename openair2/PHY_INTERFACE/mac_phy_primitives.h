@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -41,7 +41,7 @@ ________________________________________________________________*/
 #include "../LAYER2/MAC/defs.h"
 
 
-/**@defgroup _mac_phy_primitives_ MAC Layer Primitives for Communications with PHY 
+/**@defgroup _mac_phy_primitives_ MAC Layer Primitives for Communications with PHY
  *@ingroup w3g4f_mac_layer_
  *@{
 
@@ -49,17 +49,17 @@ This subclause describes the primitives for communications between the MAC and P
 
 The primitives for dynamic MAC-PHY PDU exchange (Transport channel interface) are:
 
-- MACPHY_DATA_REQ: transfers or requests a PDU from PHY.  The data is passed along with the dynamic PHY transmission 
+- MACPHY_DATA_REQ: transfers or requests a PDU from PHY.  The data is passed along with the dynamic PHY transmission
 format (coding and modulation, time/freq/space resource allocation)
 
 - MACPHY_DATA_IND: Function call (by PHY) to deliver a new PDU and corresponding measurements to MAC.  This implicitly confirms the MACPHY_DATA_REQ by
 filling the fields of the request (TX or RX) with the data and measurements.
 
-One primitive is used for semi-static configuration (during logical channel establishment) 
+One primitive is used for semi-static configuration (during logical channel establishment)
 relaying the puncturing/repetition patterns for HARQ:
 
 - MACPHY_CONFIG_SACH_HARQ_REQ (still to be defined...)
- 
+
 The primitive for static (re)configuration is:
 - MACPHY_CONFIG_REQ : This primitive transports the initial configuration during the setup phase of equipment, both for CH and UE.
 Static configuration is used during the initialization phase of the equipment.  For a CH, it is done prior to any communication.  For a UE, some
@@ -70,7 +70,7 @@ structures may be set after receiving configuration information from the network
 
 
 /*! \brief MACPHY-DATA-REQ_RX structure is used to request transfer a new PDU from PHY corresponding to a particular transport channel*/
-typedef struct { 
+typedef struct {
   int crc_status[MAX_NUMBER_TB_PER_LCHAN];                   /*!< This field indicates the CRC status of the PDU upon reception from PHY*/
   unsigned char num_tb;                /*!< This field indicates the number of transport blocks to be received*/
   unsigned short tb_size_bytes;        /*!< This field indicates the number of bytes per transpor block*/
@@ -90,12 +90,12 @@ typedef struct {
 
 
 /*! \brief MACPHY-DATA-REQ_TX structure is used to transfer a new PDU to PHY corresponding to a particular transport channel*/
-typedef struct { 
+typedef struct {
   unsigned char num_tb;             /*!< This field indicates the number of transport blocks to be received*/
   unsigned short tb_size_bytes;     /*!< This field indicates the number of bytes per transpor block*/
   unsigned int Active_process_map;   /*!< HARQ indicator for active processes*/
   unsigned int New_process_map;      /*!< HARQ indicator for new processes*/
-  //  unsigned char round_indices_tx;     
+  //  unsigned char round_indices_tx;
   union {
     CHBCH_PDU   *Chbch_pdu;      /*!< pointer to CHBCH data */
     DL_SACH_PDU DL_sach_pdu;    /*!< pointer to DL_SACH data*/
@@ -103,7 +103,7 @@ typedef struct {
     RACH_PDU Rach_pdu;  //H.A   /*!< pointer to RACH data */
     MRBCH_PDU   *Mrbch_pdu;     /*!< pointer to MRBCH data */
   } Pdu;
-}MACPHY_DATA_REQ_TX;
+} MACPHY_DATA_REQ_TX;
 
 /*! \brief MACPHY-DATA-REQ primitive is used to transfer a new PDU to PHY corresponding to a particular transport channel*/
 typedef struct {
@@ -116,7 +116,7 @@ typedef struct {
     MACPHY_DATA_REQ_RX Req_rx;            /*!< This field contains the request corresponding to an RX resource*/
     MACPHY_DATA_REQ_TX Req_tx;            /*!< This field contains the request corresponding to a TX resource*/
   } Dir;
-}MACPHY_DATA_REQ;
+} MACPHY_DATA_REQ;
 
 /*!\fn void macphy_data_ind(unsigned char Mod_id,MACPHY_DATA_REQ_RX *Req_rx,unsigned char Pdu_type,unsigned short Index);
 \brief MACPHY_DATA_IND function call.  Called by PHY to upload PDU and measurements in response to a MACPHY_DATA_REQ_RX.
@@ -126,9 +126,9 @@ typedef struct {
 @param Index CH Index for CH, UEid for UE
 */
 void macphy_data_ind(unsigned char Mod_id,
-		     MACPHY_DATA_REQ_RX *Req_rx,
-		     unsigned char Pdu_type,
-		     unsigned short Index);
+                     MACPHY_DATA_REQ_RX *Req_rx,
+                     unsigned char Pdu_type,
+                     unsigned short Index);
 
 /*! \brief MACPHY-CONFIG-REQ primitive is used to configure a new instance of OpenAirInterface (static configuration) during initialization*/
 typedef struct {
@@ -163,14 +163,14 @@ typedef struct {
 #define PDU_TYPE_KEY 1
 #define PHY_RESOURCES_KEY 2
 
-typedef struct Macphy_req_entry_key{
+typedef struct Macphy_req_entry_key {
   unsigned char Key_type;
-  union{
+  union {
     LCHAN_ID *Lchan_id;  //SACH, EMULATION
     unsigned char Pdu_type;//CHBCH, RACH, EMULATION
     PHY_RESOURCES Phy_resources;//REAL PHY
-  }Key;
-}MACPHY_REQ_ENTRY_KEY;
+  } Key;
+} MACPHY_REQ_ENTRY_KEY;
 
 /** @ingroup _PHY_TRANSPORT_CHANNEL_PROCEDURES_
  * @{
@@ -216,10 +216,10 @@ typedef struct Rx_Phy_Pdu{                              //H.A
   }RX_PHY_PDU;*/
 
 
-typedef struct GRANTED_LCHAN_TABLE_ENTRY{
+typedef struct GRANTED_LCHAN_TABLE_ENTRY {
   PHY_RESOURCES *Phy_resources;
   LCHAN_ID Lchan_id;
-}GRANTED_LCHAN_TABLE_ENTRY;
+} GRANTED_LCHAN_TABLE_ENTRY;
 
 void clear_macphy_data_req(uint8_t);
 //void clean_macphy_interface(void);

@@ -21,7 +21,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -224,6 +224,11 @@ fi
             echo "setting xforms to: $XFORMS"
             shift;
             ;;
+       -p | --wireshark)
+	  WIRESHARK=1
+	  echo "enabling Wireshark interface to $WIRESHARK"
+          shift;
+          ;;
        -z | --defaults)
             echo "setting all parameters to: default"
             rm -rf ./.lock_oaibuild
@@ -296,7 +301,7 @@ cecho "OPENAIR_HOME    = $OPENAIR_HOME" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
-cecho "OPENAIRCN_DIR   = $OPENAIRCN_DIR" $green
+cecho "OPENAIR3_DIR   = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 
 
@@ -304,7 +309,7 @@ echo "OPENAIR_HOME    = $OPENAIR_HOME" >>  bin/${oai_build_date}
 echo "OPENAIR1_DIR    = $OPENAIR1_DIR"  >>  bin/${oai_build_date}
 echo "OPENAIR2_DIR    = $OPENAIR2_DIR"  >>  bin/${oai_build_date}
 echo "OPENAIR3_DIR    = $OPENAIR3_DIR"  >>  bin/${oai_build_date}
-echo "OPENAIRCN_DIR   = $OPENAIRCN_DIR"  >>  bin/${oai_build_date}
+echo "OPENAIR3_DIR   = $OPENAIR3_DIR"  >>  bin/${oai_build_date}
 echo "OPENAIR_TARGETS = $OPENAIR_TARGETS"  >>  bin/${oai_build_date}
 
 
@@ -332,8 +337,9 @@ build_enb(){
     OAISIM_DIRECTIVES="DEBUG=$DEBUG XFORMS=$XFORMS "
     
     if [ $ENB_S1 -eq 1 ]; then 
-        SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES USE_MME=R10 ENABLE_ITTI=1 LINK_PDCP_TO_GTPV1U=1  SECU=1 "
-        OAISIM_DIRECTIVES="$OAISIM_DIRECTIVES USE_MME=R10 ENABLE_ITTI=1 LINK_PDCP_TO_GTPV1U=1  SECU=1 "
+        SOFTMODEM_DIRECTIVES="$SOFTMODEM_DIRECTIVES USE_MME=R10 ENABLE_ITTI=1 LINK_ENB_PDCP_TO_GTPV1U=1  SECU=1 "
+        #OAISIM_DIRECTIVES="$OAISIM_DIRECTIVES USE_MME=R10 ENABLE_ITTI=1 LINK_ENB_PDCP_TO_GTPV1U=1  SECU=1 "
+	OAISIM_DIRECTIVES="$OAISIM_DIRECTIVES ENABLE_ITTI=1 LINK_ENB_PDCP_TO_GTPV1U=1  SECU=1 "
     fi 
     
     if [ $DEBUG -eq 0 ]; then 
@@ -601,7 +607,7 @@ build_epc(){
         echo_success "target epc built and installed in the bin directory"
         echo "target epc built and installed in the bin directory"  >>  bin/${oai_build_date}
         cp -f $CONFIG_FILE  $OPENAIR_TARGETS/bin
-        cp -f $OPENAIRCN_DIR/objs/UTILS/CONF/s6a.conf  $OPENAIR_TARGETS/bin/epc_s6a.conf
+        cp -f $OPENAIR3_DIR/objs/UTILS/CONF/s6a.conf  $OPENAIR_TARGETS/bin/epc_s6a.conf
     fi
 }
 
@@ -642,10 +648,10 @@ build_hss(){
 ######################################
   
     TEMP_FILE=`tempfile`
-    cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss_fd.conf | grep -w "Identity" | tr -d " " | tr -d ";" > $TEMP_FILE
-    cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_user" | tr -d " " | tr -d ";" >> $TEMP_FILE
-    cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_pass" | tr -d " " | tr -d ";" >> $TEMP_FILE
-    cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_db" | tr -d " " | tr -d ";" >> $TEMP_FILE
+    cat $OPENAIR3_DIR/OPENAIRHSS/conf/hss_fd.conf | grep -w "Identity" | tr -d " " | tr -d ";" > $TEMP_FILE
+    cat $OPENAIR3_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_user" | tr -d " " | tr -d ";" >> $TEMP_FILE
+    cat $OPENAIR3_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_pass" | tr -d " " | tr -d ";" >> $TEMP_FILE
+    cat $OPENAIR3_DIR/OPENAIRHSS/conf/hss.conf    | grep -w "MYSQL_db" | tr -d " " | tr -d ";" >> $TEMP_FILE
     source $TEMP_FILE
     rm -f  $TEMP_FILE
 
@@ -658,7 +664,7 @@ build_hss(){
     NEW_HOSTNAME=`hostname -s`
     if [ "x$HSS_HOSTNAME" != "x$NEW_HOSTNAME" ]; then
        echo_warning "Changing identity of HSS from <$HSS_HOSTNAME.$HSS_REALM> to <$NEW_HOSTNAME.$HSS_REALM>"
-       sed -ibak "s/$HSS_HOSTNAME/$NEW_HOSTNAME/"  $OPENAIRCN_DIR/OPENAIRHSS/conf/hss_fd.conf 
+       sed -ibak "s/$HSS_HOSTNAME/$NEW_HOSTNAME/"  $OPENAIR3_DIR/OPENAIRHSS/conf/hss_fd.conf 
     fi
     check_hss_s6a_certificate $HSS_REALM
     
@@ -736,6 +742,9 @@ if [ $RUN -ne 0 ]; then
                     $SUDO chmod 777 $OPENAIR_TARGETS/RT/USER/init_exmimo2.sh
                     $SUDO $OPENAIR_TARGETS/RT/USER/init_exmimo2.sh
                 fi
+		if [ $WIRESHARK -eq 1 ]; then 
+		    EXE_ARGUMENTS="$EXE_ARGUMENTS -W"
+		fi 
                 echo "############# running ltesoftmodem #############"
                 if [ $RUN_GDB -eq 0 ]; then 
                     $SUDO $OPENAIR_TARGETS/bin/lte-softmodem  `echo $EXE_ARGUMENTS`
@@ -756,20 +765,22 @@ if [ $RUN -ne 0 ]; then
                     # prepare NAS for UE
                     if [ ! -f .ue.nvram ]; then
                         echo_success "generate .ue_emm.nvram .ue.nvram"
-                        $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
+                        $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
                     fi
 
                     if [ ! -f .usim.nvram ]; then
                         echo_success "generate .usim.nvram"
-                        $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
+                        $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
                     fi
-                    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --print
-                    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --print
+                    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print
+                    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --print
 
                     insmod  $OPENAIR2_DIR/NETWORK_DRIVER/UE_IP/ue_ip.ko
                     
                 fi
-                
+                if [ $WIRESHARK -eq 1 ]; then 
+		    EXE_ARGUMENTS="$EXE_ARGUMENTS -P wireshark"
+		fi 
                 if [ $RUN_GDB -eq 0 ]; then 
                     $SUDO exec $OPENAIR_TARGETS/bin/oaisim  `echo $EXE_ARGUMENTS`
                 else
@@ -802,7 +813,7 @@ if [ $RUN -ne 0 ]; then
         
         'HSS')
             echo "############# running HSS #############"
-            cd $OPENAIRCN_DIR/OPENAIRHSS/objs
+            cd $OPENAIR3_DIR/OPENAIRHSS/objs
             if [ $RUN_GDB -eq 0 ]; then
                 $SUDO exec ./openair-hss -c ./conf/hss.conf
             else

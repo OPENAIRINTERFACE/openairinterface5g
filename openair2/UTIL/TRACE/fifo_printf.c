@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -48,7 +48,10 @@
 
 #ifndef FIFO_PRINTF
 //-----------------------------------------------------------------------------
-int fifo_printf_null (const char *fmt, ...) {return 0;}
+int fifo_printf_null (const char *fmt, ...)
+{
+  return 0;
+}
 #else
 static uint8_t       fifo_printed_l1[FIFO_PRINTF_MAX_STRING_SIZE];
 static uint8_t       fifo_printed_l2[FIFO_PRINTF_MAX_STRING_SIZE];
@@ -56,7 +59,7 @@ static uint8_t       fifo_printed_l2[FIFO_PRINTF_MAX_STRING_SIZE];
 void
 fifo_printf_init (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   printk ("[TRACE] INIT\n");
   rtf_create (FIFO_PRINTF_L1_NO, FIFO_PRINTF_SIZE);
   rtf_create (FIFO_PRINTF_L2_NO, FIFO_PRINTF_SIZE);
@@ -66,7 +69,7 @@ fifo_printf_init (void)
 void
 fifo_printf_clean_up (void)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   rtf_destroy (FIFO_PRINTF_L1_NO);
   rtf_destroy (FIFO_PRINTF_L2_NO);
 }
@@ -75,7 +78,7 @@ fifo_printf_clean_up (void)
 int
 fifo_printf (const char *fmt, ...)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   int             i;
   va_list         args;
 
@@ -89,9 +92,11 @@ fifo_printf (const char *fmt, ...)
     if (i > FIFO_PRINTF_MAX_STRING_SIZE) {
       rt_printk ("[WCDMA] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
     }
+
     if (i <= 0) {
       return 0;
     }
+
     rtf_put (FIFO_PRINTF_L1_NO, fifo_printed_l1, i);
 
     return i;
@@ -105,9 +110,11 @@ fifo_printf (const char *fmt, ...)
     if (i > FIFO_PRINTF_MAX_STRING_SIZE) {
       rt_printk ("[WCDMA] FIFO_PRINTF WROTE OUTSIDE ITS MEMORY BOUNDARY : ERRORS WILL OCCUR\n");
     }
+
     if (i <= 0) {
       return 0;
     }
+
     rtf_put (FIFO_PRINTF_L2_NO, fifo_printed_l2, i);
 
     return i;

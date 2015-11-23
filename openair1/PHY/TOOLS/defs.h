@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -43,35 +43,30 @@
 
 //defined in rtai_math.h
 #ifndef _RTAI_MATH_H
-struct complex
-{
+struct complex {
   double x;
   double y;
 };
 #endif
 
-struct complexf
-{
+struct complexf {
   float r;
   float i;
 };
 
-struct complex16
-{
+struct complex16 {
   int16_t r;
-  int16_t i;	
+  int16_t i;
 };
 
-struct complex32
-{
+struct complex32 {
   int32_t r;
   int32_t i;
 };
 
-#ifndef EXPRESSMIMO_TARGET
 /*!\fn void multadd_real_vector_complex_scalar(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N)
 This function performs componentwise multiplication and accumulation of a complex scalar and a real vector.
-@param x Vector input (Q1.15)  
+@param x Vector input (Q1.15)
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
 @param y Output (Q1.15) in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param N Length of x WARNING: N>=8
@@ -79,14 +74,14 @@ This function performs componentwise multiplication and accumulation of a comple
 The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
 */
 void multadd_real_vector_complex_scalar(int16_t *x,
-					int16_t *alpha,
-					int16_t *y,
-					uint32_t N
-					);
+                                        int16_t *alpha,
+                                        int16_t *y,
+                                        uint32_t N
+                                       );
 
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
-@param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ... 
+@param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ...
 @param alpha Scalar input (Q1.15) in the format  |Re0|
 @param y Output (Q1.15) in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param zero_flag Set output (y) to zero prior to accumulation
@@ -95,10 +90,10 @@ This function performs componentwise multiplication and accumulation of a real s
 The function implemented is : \f$\mathbf{y} = y + \alpha\mathbf{x}\f$
 */
 void multadd_complex_vector_real_scalar(int16_t *x,
-					int16_t alpha,
-					int16_t *y,
-					uint8_t zero_flag,
-					uint32_t N);
+                                        int16_t alpha,
+                                        int16_t *y,
+                                        uint8_t zero_flag,
+                                        uint32_t N);
 
 
 /*!\fn int32_t mult_cpx_vector(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift)
@@ -107,16 +102,16 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-@param N  Length of Vector WARNING: N must be a multiple of 8 (4x loop unrolling and two complex multiplies per cycle) 
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param N  Length of Vector WARNING: N must be a multiple of 8 (4x loop unrolling and two complex multiplies per cycle)
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 
 The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 int32_t mult_cpx_vector(int16_t *x1,
-		    int16_t *x2,
-		    int16_t *y,
-		    uint32_t N,
-		    int32_t output_shift);
+                        int16_t *x2,
+                        int16_t *y,
+                        uint32_t N,
+                        int32_t output_shift);
 
 /*!\fn int32_t mult_cpx_vector_norep(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors with normal formatted output.
@@ -124,16 +119,16 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
-@param N  Length of Vector WARNING: N must be a multiple of 8 (4x loop unrolling and two complex multiplies per cycle) 
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param N  Length of Vector WARNING: N must be a multiple of 8 (4x loop unrolling and two complex multiplies per cycle)
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 
 The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 int32_t mult_cpx_vector_norep(int16_t *x1,
-			  int16_t *x2,
-			  int16_t *y,
-			  uint32_t N,
-			  int32_t output_shift);
+                              int16_t *x2,
+                              int16_t *y,
+                              uint32_t N,
+                              int32_t output_shift);
 
 
 /*!\fn int32_t mult_cpx_vector_norep2(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift)
@@ -142,28 +137,28 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 @param x1 Input 1 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
-@param N  Length of Vector WARNING: N must be a multiple of 8 (no unrolling and two complex multiplies per cycle) 
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param N  Length of Vector WARNING: N must be a multiple of 8 (no unrolling and two complex multiplies per cycle)
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 
 The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 int32_t mult_cpx_vector_norep2(int16_t *x1,
-			   int16_t *x2,
-			   int16_t *y,
-			   uint32_t N,
-			   int32_t output_shift);
- 
+                               int16_t *x2,
+                               int16_t *y,
+                               uint32_t N,
+                               int32_t output_shift);
+
 int32_t mult_cpx_vector_norep_conj(int16_t *x1,
-			       int16_t *x2,
-			       int16_t *y,
-			       uint32_t N,
-			       int32_t output_shift);
+                                   int16_t *x2,
+                                   int16_t *y,
+                                   uint32_t N,
+                                   int32_t output_shift);
 
 int32_t mult_cpx_vector_norep_conj2(int16_t *x1,
-				int16_t *x2,
-				int16_t *y,
-				uint32_t N,
-				int32_t output_shift);
+                                    int16_t *x2,
+                                    int16_t *y,
+                                    uint32_t N,
+                                    int32_t output_shift);
 
 /*!\fn int32_t mult_cpx_vector2(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors.
@@ -172,15 +167,15 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 @param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param N  Length of Vector WARNING: N must be a multiple of 2 (2 complex multiplies per cycle)
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 
 The function implemented is : \f$\mathbf{y} = \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 int32_t mult_cpx_vector2(int16_t *x1,
-		     int16_t *x2,
-		     int16_t *y,
-		     uint32_t N,
-		     int32_t output_shift);
+                         int16_t *x2,
+                         int16_t *y,
+                         uint32_t N,
+                         int32_t output_shift);
 
 /*!\fn int32_t mult_cpx_vector_add(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift)
 This function performs optimized componentwise multiplication of two Q1.15 vectors. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -189,51 +184,51 @@ This function performs optimized componentwise multiplication of two Q1.15 vecto
 @param x2 Input 2 in the format  |Re0 -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param N  Length of Vector WARNING: N>=4
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 
 The function implemented is : \f$\mathbf{y} += \mathbf{x_1}\odot\mathbf{x_2}\f$
 */
 
 int32_t mult_cpx_vector_add(int16_t *x1,
-			int16_t *x2,
-			int16_t *y,
-			uint32_t N,
-			int32_t output_shift);
+                            int16_t *x2,
+                            int16_t *y,
+                            uint32_t N,
+                            int32_t output_shift);
 
 
 int32_t mult_cpx_vector_h_add32(int16_t *x1,
-			    int16_t *x2,
-			    int16_t *y,
-			    uint32_t N,
-			    int16_t sign);
+                                int16_t *x2,
+                                int16_t *y,
+                                uint32_t N,
+                                int16_t sign);
 
 int32_t mult_cpx_vector_add32(int16_t *x1,
-			  int16_t *x2,
-			  int16_t *y,
-			  uint32_t N);
+                              int16_t *x2,
+                              int16_t *y,
+                              uint32_t N);
 
 int32_t mult_vector32(int16_t *x1,
-		  int16_t *x2,
-		  int16_t *y,
-		  uint32_t N);
+                      int16_t *x2,
+                      int16_t *y,
+                      uint32_t N);
 
 int32_t mult_vector32_scalar(int16_t *x1,
-			 int32_t x2,
-			 int16_t *y,
-			 uint32_t N);
+                             int32_t x2,
+                             int16_t *y,
+                             uint32_t N);
 
 int32_t mult_cpx_vector32_conj(int16_t *x,
-			   int16_t *y,
-			   uint32_t N);
+                               int16_t *y,
+                               uint32_t N);
 
 int32_t mult_cpx_vector32_real(int16_t *x1,
-			   int16_t *x2,
-			   int16_t *y,
-			   uint32_t N);
+                               int16_t *x2,
+                               int16_t *y,
+                               uint32_t N);
 
 int32_t shift_and_pack(int16_t *y,
-		   uint32_t N,
-		   int32_t output_shift);
+                       uint32_t N,
+                       int32_t output_shift);
 
 /*!\fn int32_t mult_cpx_vector_h(int16_t *x1,int16_t *x2,int16_t *y,uint32_t N,int32_t output_shift,int16_t sign)
 This function performs optimized componentwise multiplication of the vector x1 with the conjugate of the vector x2. The output IS ADDED TO y. WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -242,17 +237,17 @@ This function performs optimized componentwise multiplication of the vector x1 w
 @param x2 Input 2 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1) Im(N-1) Re(N-1) Im(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param N  Length of Vector (complex samples) WARNING: N>=4
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 @param sign +1..add, -1..substract
 
 The function implemented is : \f$\mathbf{y} = \mathbf{y} + \mathbf{x_1}\odot\mathbf{x_2}^*\f$
 */
 int32_t mult_cpx_vector_h(int16_t *x1,
-		      int16_t *x2,
-		      int16_t *y,
-		      uint32_t N,
-		      int32_t output_shift,
-		      int16_t sign);
+                          int16_t *x2,
+                          int16_t *y,
+                          uint32_t N,
+                          int32_t output_shift,
+                          int16_t sign);
 
 /*!\fn int32_t mult_cpx_matrix_h(int16_t *x1[2][2],int16_t *x2[2][2],int16_t *y[2][2],uint32_t N,uint16_t output_shift,int16_t hermitian)
 This function performs optimized componentwise matrix multiplication of the 2x2 matrices x1 with the 2x2 matrices x2. The output IS ADDED TO y (i.e. make sure y is initilized correctly). WARNING: make sure that output_shift is set to the right value, so that the result of the multiplication has the comma at the same place as y.
@@ -261,15 +256,15 @@ This function performs optimized componentwise matrix multiplication of the 2x2 
 @param x2 Input 2 in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1) Im(N-1) Re(N-1) Im(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
 @param N  Length of Vector (complex samples) WARNING: N>=4
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 @param hermitian if !=0 the hermitian transpose is returned (i.e. A^H*B instead of A*B^H)
 */
 int32_t mult_cpx_matrix_h(int16_t *x1[2][2],
-		    int16_t *x2[2][2],
-		    int16_t *y[2][2],
-		    uint32_t N,
-		    uint16_t output_shift,
-		    int16_t hermitian);
+                          int16_t *x2[2][2],
+                          int16_t *y[2][2],
+                          uint32_t N,
+                          uint16_t output_shift,
+                          int16_t hermitian);
 
 
 /*!\fn int32_t mult_cpx_matrix_vector(int32_t *x1[2][2],int32_t *x2[2],int32_t *y[2],uint32_t N,uint16_t output_shift)
@@ -279,13 +274,13 @@ This function performs optimized componentwise matrix-vector multiplication of t
 @param x2 Input 2 in the format  |Re0  -Im0 Im0 Re0|,......,|Re(N-1) -Im(N-1) Im(N-1) Re(N-1)|
 @param y  Output in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)| WARNING: y must be different for x2
 @param N  Length of Vector (complex samples) WARNING: N>=4
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!! 
+@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
 */
 int32_t mult_cpx_matrix_vector(int32_t *x1[2][2],
-		    int32_t *x2[2],
-		    int32_t *y[2],
-		    uint32_t N,
-		    uint16_t output_shift);
+                               int32_t *x2[2],
+                               int32_t *y[2],
+                               uint32_t N,
+                               uint16_t output_shift);
 
 /*!\fn void init_fft(uint16_t size,uint8_t logsize,uint16_t *rev)
 \brief Initialize the FFT engine for a given size
@@ -295,8 +290,8 @@ int32_t mult_cpx_matrix_vector(int32_t *x1[2][2],
 */
 
 void init_fft(uint16_t size,
-	      uint8_t logsize,
-	      uint16_t *rev);
+              uint8_t logsize,
+              uint16_t *rev);
 
 /*!\fn void fft(int16_t *x,int16_t *y,int16_t *twiddle,uint16_t *rev,uint8_t log2size,uint8_t scale,uint8_t input_fmt)
 This function performs optimized fixed-point radix-2 FFT/IFFT.
@@ -308,76 +303,42 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
 @param scale Total number of shifts (should be log2size/2 for normalized FFT)
 @param input_fmt (0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
 */
-void fft(int16_t *x,
-	 int16_t *y,
-	 int16_t *twiddle,
-	 uint16_t *rev,
-	 uint8_t log2size,
-	 uint8_t scale,
-	 uint8_t input_fmt
-	 );
-
-void ifft1536(int16_t *sigF,int16_t *sig);
-
-void ifft6144(int16_t *sigF,int16_t *sig);
-
-void ifft12288(int16_t *sigF,int16_t *sig);
-
-void ifft18432(int16_t *sigF,int16_t *sig);
-
-void ifft3072(int16_t *sigF,int16_t *sig);
-
-void ifft24576(int16_t *sigF,int16_t *sig);
-
-void fft1536(int16_t *sigF,int16_t *sig);
-
-void fft6144(int16_t *sigF,int16_t *sig);
-
-void fft12288(int16_t *sigF,int16_t *sig);
-
-void fft18432(int16_t *sigF,int16_t *sig);
-
-void fft3072(int16_t *sigF,int16_t *sig);
-
-void fft24576(int16_t *sigF,int16_t *sig);
-
-
-/*!\fn int rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift, uint8_t format)
-This function performs componentwise multiplication of a vector with a complex scalar.
-@param x Vector input (Q1.15)  in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-@param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
-@param y Output (Q1.15) in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-@param N Length of x WARNING: N>=4
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
-@param format Format 0 indicates that alpha is in shuffled format during multiply (Re -Im Im Re), whereas 1 indicates that input is in this format (i.e. a matched filter)
-
-The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
+/*void fft(int16_t *x,
+         int16_t *y,
+         int16_t *twiddle,
+         uint16_t *rev,
+         uint8_t log2size,
+         uint8_t scale,
+         uint8_t input_fmt
+        );
 */
-int32_t rotate_cpx_vector(int16_t *x,
-		      int16_t *alpha,
-		      int16_t *y,
-		      uint32_t N,
-		      uint16_t output_shift,
-		      uint8_t format);
 
-/*!\fn int32_t rotate_cpx_vector2(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift,uint8_t format)
-This function performs componentwise multiplication of a vector with a complex scalar.
-@param x Vector input (Q1.15)  in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-@param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
-@param y Output (Q1.15) in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
-@param N Length of x WARNING: N must be multiple of 2 (the routine performs two complex multiplies per cycle)
-@param output_shift Number of bits to shift output down to Q1.15 (should be 15 for Q1.15 inputs) WARNING: log2_amp>0 can cause overflow!!
-@param format Format 0 indicates that alpha is in shuffled format during multiply (Re -Im Im Re), whereas 1 indicates that input is in this format (i.e. a matched filter)
-The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
-*/
-int32_t rotate_cpx_vector2(int16_t *x,
-		       int16_t *alpha,
-		       int16_t *y,
-		       uint32_t N,
-		       uint16_t output_shift,
-		       uint8_t format);
+void idft1536(int16_t *sigF,int16_t *sig);
 
-/*!\fn int32_t rotate_cpx_vector_norep(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)
+void idft6144(int16_t *sigF,int16_t *sig);
+
+void idft12288(int16_t *sigF,int16_t *sig);
+
+void idft18432(int16_t *sigF,int16_t *sig);
+
+void idft3072(int16_t *sigF,int16_t *sig);
+
+void idft24576(int16_t *sigF,int16_t *sig);
+
+void dft1536(int16_t *sigF,int16_t *sig);
+
+void dft6144(int16_t *sigF,int16_t *sig);
+
+void dft12288(int16_t *sigF,int16_t *sig);
+
+void dft18432(int16_t *sigF,int16_t *sig);
+
+void dft3072(int16_t *sigF,int16_t *sig);
+
+void dft24576(int16_t *sigF,int16_t *sig);
+
+
+/*!\fn int32_t rotate_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N,uint16_t output_shift)
 This function performs componentwise multiplication of a vector with a complex scalar.
 @param x Vector input (Q1.15)  in the format  |Re0  Im0|,......,|Re(N-1) Im(N-1)|
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
@@ -387,70 +348,70 @@ This function performs componentwise multiplication of a vector with a complex s
 
 The function implemented is : \f$\mathbf{y} = \alpha\mathbf{x}\f$
 */
-int32_t rotate_cpx_vector_norep(int16_t *x,
-			       int16_t *alpha,
-			       int16_t *y,
-			       uint32_t N,
-			       uint16_t output_shift);
+int32_t rotate_cpx_vector(int16_t *x,
+                          int16_t *alpha,
+                          int16_t *y,
+                          uint32_t N,
+                          uint16_t output_shift);
 
 
 
 /*!\fn int32_t add_cpx_vector(int16_t *x,int16_t *alpha,int16_t *y,uint32_t N)
 This function performs componentwise addition of a vector with a complex scalar.
-@param x Vector input (Q1.15)  in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+@param x Vector input (Q1.15)  in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
 @param alpha Scalar input (Q1.15) in the format  |Re0 Im0|
-@param y Output (Q1.15) in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
+@param y Output (Q1.15) in the format  |Re0  Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
 @param N Length of x WARNING: N>=4
 
 The function implemented is : \f$\mathbf{y} = \alpha + \mathbf{x}\f$
 */
 int32_t add_cpx_vector(int16_t *x,
-		   int16_t *alpha,
-		   int16_t *y,
-		   uint32_t N);
+                       int16_t *alpha,
+                       int16_t *y,
+                       uint32_t N);
 
 int32_t add_cpx_vector32(int16_t *x,
-		      int16_t *y,
-		      int16_t *z,
-		      uint32_t N);
+                         int16_t *y,
+                         int16_t *z,
+                         uint32_t N);
 
 int32_t add_real_vector64(int16_t *x,
-		      int16_t *y,
-		      int16_t *z,
-		      uint32_t N);
+                          int16_t *y,
+                          int16_t *z,
+                          uint32_t N);
 
 int32_t sub_real_vector64(int16_t *x,
-		      int16_t* y,
-		      int16_t *z,
-		      uint32_t N);
+                          int16_t* y,
+                          int16_t *z,
+                          uint32_t N);
 
 int32_t add_real_vector64_scalar(int16_t *x,
-			     long long int a, 
-			     int16_t *y,
-			     uint32_t N);
+                                 long long int a,
+                                 int16_t *y,
+                                 uint32_t N);
 
 /*!\fn int32_t add_vector16(int16_t *x,int16_t *y,int16_t *z,uint32_t N)
 This function performs componentwise addition of two vectors with Q1.15 components.
-@param x Vector input (Q1.15)  
-@param y Scalar input (Q1.15) 
-@param z Scalar output (Q1.15) 
+@param x Vector input (Q1.15)
+@param y Scalar input (Q1.15)
+@param z Scalar output (Q1.15)
 @param N Length of x WARNING: N must be a multiple of 32
 
 The function implemented is : \f$\mathbf{z} = \mathbf{x} + \mathbf{y}\f$
 */
 int32_t add_vector16(int16_t *x,
-		 int16_t *y,
-		 int16_t *z,
-		 uint32_t N);
+                     int16_t *y,
+                     int16_t *z,
+                     uint32_t N);
 
 int32_t add_vector16_64(int16_t *x,
-		    int16_t *y,
-		    int16_t *z,
-		    uint32_t N);
+                        int16_t *y,
+                        int16_t *z,
+                        uint32_t N);
 
 int32_t complex_conjugate(int16_t *x1,
-		      int16_t *y,
-		      uint32_t N);
+                          int16_t *y,
+                          uint32_t N);
 
 void bit8_txmux(int32_t length,int32_t offset);
 
@@ -461,7 +422,7 @@ void bit8_rxdemux(int32_t length,int32_t offset);
 \brief Write output file from signal data
 @param fname output file name
 @param vname  output vector name (for MATLAB/OCTAVE)
-@param data   point to data 
+@param data   point to data
 @param length length of data vector to output
 @param dec    decimation level
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
@@ -509,7 +470,7 @@ int16_t invSqrt(int16_t x);
 uint32_t angle(struct complex16 perrror);
 
 /*!\fn int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
-				uint32_t last_pilot, int32_t ignore_prefix);
+        uint32_t last_pilot, int32_t ignore_prefix);
 Compensate the phase rotation of the RF. WARNING: This function is currently unused. It has not been tested!
 @param pilot_type indicates whether it is a CHBCH (=0) or a SCH (=1) pilot
 @param initial_pilot index of the first pilot (which serves as reference)
@@ -518,20 +479,6 @@ Compensate the phase rotation of the RF. WARNING: This function is currently unu
 
 */
 
-#else // EXPRESSMIMO_TARGET
-
-#define fft(x,y,twiddle,rev,log2size,scale,input_fmt) \
-(((twiddle)==0) ? \
- (fft(1<<(log2size),((unsigned long*)(x)),((unsigned long*)(y)))) : \
- (ifft(1<<(log2size),((unsigned long*)(x)),((unsigned long*)(y)))))
-
-#define mult_cpx_vector(x1,x2,y,N,os)  component_wise_product(N,(unsigned long *)(x1),(unsigned long *)(x2),(unsigned long *)(y))
-
-#define mult_cpx_vector2(x1,x2,y,N,os)  component_wise_product(N,(unsigned long *)(x1),(unsigned long *)(x2),(unsigned long *)(y))
-
-#define add_vector16(x,y,z,N) component_wise_addition(N,(unsigned long*)(x),(unsigned long*)(y),(unsigned long*)(z)) 
-
-#endif // EXPRESSMIMO_TARGET
 
 int8_t dB_fixed(uint32_t x);
 
@@ -540,7 +487,7 @@ int8_t dB_fixed2(uint32_t x,uint32_t y);
 int16_t dB_fixed_times10(uint32_t x);
 
 int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
-				uint32_t last_pilot, int32_t ignore_prefix);
+                                    uint32_t last_pilot, int32_t ignore_prefix);
 
 /*!\fn void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out);
 This function is used by the EMOS to compensate the phase rotation of the RF. It has been designed for symbols of type CHSCH or SCH, but cannot be used for the data channels.
@@ -554,9 +501,9 @@ This function is used by the EMOS to compensate the phase rotation of the RF. It
 void phy_phase_compensation (int16_t *ref_sch, int16_t *tgt_sch, int16_t *out_sym, int32_t ignore_prefix, int32_t aa, struct complex16 *perror_out );
 
 int32_t dot_product(int16_t *x,
-		int16_t *y,
-		uint32_t N, //must be a multiple of 8
-		uint8_t output_shift);
+                    int16_t *y,
+                    uint32_t N, //must be a multiple of 8
+                    uint8_t output_shift);
 
 void dft12(int16_t *x,int16_t *y);
 void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -598,13 +545,17 @@ void dft256(int16_t *x,int16_t *y,int scale);
 void dft512(int16_t *x,int16_t *y,int scale);
 void dft1024(int16_t *x,int16_t *y,int scale);
 void dft2048(int16_t *x,int16_t *y,int scale);
+void dft4096(int16_t *x,int16_t *y,int scale);
+void dft8192(int16_t *x,int16_t *y,int scale);
 void idft64(int16_t *x,int16_t *y,int scale);
 void idft128(int16_t *x,int16_t *y,int scale);
 void idft256(int16_t *x,int16_t *y,int scale);
 void idft512(int16_t *x,int16_t *y,int scale);
 void idft1024(int16_t *x,int16_t *y,int scale);
 void idft2048(int16_t *x,int16_t *y,int scale);
-/** @} */ 
+void idft4096(int16_t *x,int16_t *y,int scale);
+void idft8192(int16_t *x,int16_t *y,int scale);
+/** @} */
 
 
 double interp(double x, double *xs, double *ys, int count);

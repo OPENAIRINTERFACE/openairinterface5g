@@ -7,7 +7,7 @@
 # You can modify the below as well, but probably
 # won't need to.
 
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 #UPDIR	:= /homes/mwett/rh_mw/RHODOS
 COMMON_DIR = $(OPENAIR2_DIR)/COMMON
 RRC_CELL_DIR = $(OPENAIR2_DIR)/RRC/CELLULAR

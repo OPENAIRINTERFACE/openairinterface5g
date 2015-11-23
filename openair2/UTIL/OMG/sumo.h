@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -42,7 +42,7 @@
 #define SUMO_H_
 
 #include "omg.h"
-#include "id_manager.h" 
+#include "id_manager.h"
 #include <stdio.h>
 
 #define MIN_SUMO_STEP 100  // 100ms is the smallest allowed SUMO update step
@@ -57,7 +57,7 @@ IDManagerPtr id_manager;
 node_list* active_nodes;
 
 /*! A global variable keeping track of the last update time of SUMO, to be used to get the update interval when update_sumo_nodes(cur_time) is called */
-double last_update_time; 
+double last_update_time;
 
 /**
  * \fn void start_sumo_generator(omg_global_param omg_param_list)
@@ -114,7 +114,7 @@ bool desactivate_and_unmap(char *sumo_id);
 
 /**
  * \fn bool activate_and_map(void)
- * \brief activated an OAI node as a SUMO node entered in SUMO; Conceptually, this represents adding a communication device (OAI) to a SUMO node; 
+ * \brief activated an OAI node as a SUMO node entered in SUMO; Conceptually, this represents adding a communication device (OAI) to a SUMO node;
  * It will find the first inactive OAI node, activates it and add the sumo mapping;
  * \param sumo_id the string representing the SUMO ID of the OAI node;
  * \return true in case of success; false if the maximum of OAI node has been reached

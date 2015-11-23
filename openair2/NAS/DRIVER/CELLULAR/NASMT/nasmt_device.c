@@ -35,12 +35,12 @@
 * \email: michelle.wetterwald@eurecom.fr, raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr,  lionel.gauthier@eurecom.fr
 */
 /*******************************************************************************/
-#ifndef NAS_NETLINK
+#ifndef PDCP_USE_NETLINK
 #ifdef RTAI
 #include "rtai_posix.h"
 #define RTAI_IRQ 30 //try to get this irq with RTAI
 #endif // RTAI
-#endif // NAS_NETLINK
+#endif // PDCP_USE_NETLINK
 //:::::::::::::::::::::::::::::::::::::::;;
 #include "nasmt_variables.h"
 #include "nasmt_proto.h"
@@ -72,8 +72,8 @@ struct net_device *gdev;
 struct nas_priv *gpriv;
 //int bytes_wrote;
 //int bytes_read;
-uint8_t NAS_NULL_IMEI[14]={0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00};
-uint8_t NAS_RG_IMEI[14]={0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x01};
+uint8_t NAS_NULL_IMEI[14]= {0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00};
+uint8_t NAS_RG_IMEI[14]= {0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ,0x00, 0x00, 0x01};
 
 // TEMP
 //uint8_t nas_IMEI[14];
@@ -81,18 +81,19 @@ static unsigned char nas_IMEI[14];
 static int m_arg=0;
 
 
-#ifdef NAS_NETLINK
+#ifdef PDCP_USE_NETLINK
 extern void nasmt_netlink_release(void);
 extern int nasmt_netlink_init(void);
 #endif
 extern void nasmt_ASCTL_timer(unsigned long data);
- 
 
-#ifndef NAS_NETLINK
+
+#ifndef PDCP_USE_NETLINK
 //---------------------------------------------------------------------------
 //void nasmt_interrupt(void){
-void *nasmt_interrupt(void){
-//---------------------------------------------------------------------------
+void *nasmt_interrupt(void)
+{
+  //---------------------------------------------------------------------------
   uint8_t cxi;
   char *buffer = NULL;
 #ifdef NAS_DEBUG_INTERRUPT
@@ -112,43 +113,48 @@ void *nasmt_interrupt(void){
 
 //---------------------------------------------------------------------------
 // Called by ifconfig when the device is activated by ifconfig
-int nasmt_open(struct net_device *dev){
-//---------------------------------------------------------------------------
+int nasmt_open(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_open: begin\n");
 
   gpriv=netdev_priv(dev);
 
   // Address has already been set at init
-#ifndef NAS_NETLINK
-  if (gpriv->irq==-EBUSY){
+#ifndef PDCP_USE_NETLINK
+
+  if (gpriv->irq==-EBUSY) {
     printk("nasmt_open: irq failure\n");
     return -EBUSY;
   }
+
 #endif //NETLINK
 
-// next lines prevent compilation of the driver with kernel version under 2.6.29
-// ATTENTION !!!!!! NASMT is not usable with these versions
+  // next lines prevent compilation of the driver with kernel version under 2.6.29
+  // ATTENTION !!!!!! NASMT is not usable with these versions
 
   if(!netif_queue_stopped(dev))
     netif_start_queue(dev);
   else
     netif_wake_queue(dev);
-//
+
+  //
   init_timer(&gpriv->timer);
   (gpriv->timer).expires=jiffies+NAS_TIMER_TICK;
   (gpriv->timer).data=0L;
   (gpriv->timer).function=nasmt_ASCTL_timer;
   // ??LITE comments: add_timer(&gpriv->timer);
   add_timer(&gpriv->timer);
-//
+  //
   printk("nasmt_open: name = %s, end\n", dev->name);
   return 0;
 }
 
 //---------------------------------------------------------------------------
 // Called by ifconfig when the device is desactivated by ifconfig
-int nasmt_stop(struct net_device *dev){
-//---------------------------------------------------------------------------
+int nasmt_stop(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
   struct nas_priv *priv = netdev_priv(dev);
   printk("nasmt_stop: begin\n");
   del_timer(&priv->timer);
@@ -159,27 +165,30 @@ int nasmt_stop(struct net_device *dev){
 }
 
 //---------------------------------------------------------------------------
-void nasmt_teardown(struct net_device *dev){
-//---------------------------------------------------------------------------
+void nasmt_teardown(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
   int cxi;
-  #ifndef NAS_NETLINK
+#ifndef PDCP_USE_NETLINK
   struct nas_priv *priv = netdev_priv(dev);
-  #endif //NAS_NETLINK
+#endif //PDCP_USE_NETLINK
 
   printk("nasmt_teardown: begin\n");
-//  priv=(struct nas_priv *)(gdev.priv);
+  //  priv=(struct nas_priv *)(gdev.priv);
 
   if (dev) {
-    #ifndef NAS_NETLINK
-    if (priv->irq!=-EBUSY){
+#ifndef PDCP_USE_NETLINK
+
+    if (priv->irq!=-EBUSY) {
       *pt_nas_ue_irq=-1;
       rt_free_srq(priv->irq);
     }
-    #endif //NAS_NETLINK
 
-    #ifdef NAS_NETLINK
+#endif //PDCP_USE_NETLINK
+
+#ifdef PDCP_USE_NETLINK
     nasmt_netlink_release();
-    #endif //NAS_NETLINK
+#endif //PDCP_USE_NETLINK
     //  for (sapi=0; sapi<NAS_SAPI_MAX; ++sapi)
     //    close(priv->sap[sapi]);
     nasmt_CLASS_flush_rclassifier();
@@ -190,75 +199,84 @@ void nasmt_teardown(struct net_device *dev){
     // close(priv->cx[cxi].sap[sapi]);
   } // check dev
   else {
-      printk("nasmt_teardown: Device is null\n");
+    printk("nasmt_teardown: Device is null\n");
   }
 
   printk("nasmt_teardown: end\n");
 }
 
 //---------------------------------------------------------------------------
-int nasmt_set_config(struct net_device *dev, struct ifmap *map){
-//---------------------------------------------------------------------------
+int nasmt_set_config(struct net_device *dev, struct ifmap *map)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_set_config: begin\n");
+
   if (dev->flags & IFF_UP)
     return -EBUSY;
-  if (map->base_addr != dev->base_addr)
-  {
+
+  if (map->base_addr != dev->base_addr) {
     printk(KERN_WARNING "nasmt_set_config: Can't change I/O address\n");
     return -EOPNOTSUPP;
   }
+
   if (map->irq != dev->irq)
     dev->irq = map->irq;
+
   printk("nasmt_set_config: end\n");
   return 0;
 }
 
 //---------------------------------------------------------------------------
 //
-int nasmt_hard_start_xmit(struct sk_buff *skb, struct net_device *dev){
-//---------------------------------------------------------------------------
-// Start debug information
-  #ifdef NAS_DEBUG_DEVICE
+int nasmt_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
+  // Start debug information
+#ifdef NAS_DEBUG_DEVICE
   printk("nasmt_hard_start_xmit: begin\n");
-  #endif
-  if ((!skb)||(!dev)){
-     printk("nasmt_hard_start_xmit - input parameter skb or dev is NULL \n");
+#endif
+
+  if ((!skb)||(!dev)) {
+    printk("nasmt_hard_start_xmit - input parameter skb or dev is NULL \n");
     return -1;
   }
+
   // End debug information
 
   netif_stop_queue(dev);
   dev->trans_start = jiffies;
-  #ifdef NAS_DEBUG_SEND_DETAIL
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasmt_hard_start_xmit: step 1\n");
-  #endif
+#endif
   nasmt_CLASS_send(skb);
-  #ifdef NAS_DEBUG_SEND_DETAIL
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasmt_hard_start_xmit: step 2\n");
-  #endif
+#endif
   dev_kfree_skb(skb);
-  #ifdef NAS_DEBUG_SEND_DETAIL
+#ifdef NAS_DEBUG_SEND_DETAIL
   printk("nasmt_hard_start_xmit: step 3\n");
-  #endif
+#endif
   netif_wake_queue(dev);
-  #ifdef NAS_DEBUG_DEVICE
+#ifdef NAS_DEBUG_DEVICE
   printk("nasmt_hard_start_xmit: end\n");
-  #endif
+#endif
   return 0;
 }
 
 //---------------------------------------------------------------------------
-struct net_device_stats *nasmt_get_stats(struct net_device *dev){
-//---------------------------------------------------------------------------
-//  return &((struct nas_priv *)dev->priv)->stats;
+struct net_device_stats *nasmt_get_stats(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
+  //  return &((struct nas_priv *)dev->priv)->stats;
   struct nas_priv *npriv = netdev_priv(dev);
   return &npriv->stats;
 }
 
 //---------------------------------------------------------------------------
 // New function from LITE DRIVER
-int nasmt_set_mac_address(struct net_device *dev, void *mac) {
-//---------------------------------------------------------------------------
+int nasmt_set_mac_address(struct net_device *dev, void *mac)
+{
+  //---------------------------------------------------------------------------
   struct sockaddr *addr = mac;
   printk("nasmt_set_mac_address: begin\n");
   memcpy(dev->dev_addr, addr->sa_data, dev->addr_len);
@@ -267,18 +285,22 @@ int nasmt_set_mac_address(struct net_device *dev, void *mac) {
 
 
 //---------------------------------------------------------------------------
-int nasmt_change_mtu(struct net_device *dev, int mtu){
-//---------------------------------------------------------------------------
+int nasmt_change_mtu(struct net_device *dev, int mtu)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_change_mtu: begin\n");
+
   if ((mtu<50) || (mtu>1500))
-//  if ((mtu<1280) || (mtu>1500))
+    //  if ((mtu<1280) || (mtu>1500))
     return -EINVAL;
+
   dev->mtu = mtu;
   return 0;
 }
 
 //---------------------------------------------------------------------------
-int nasmt_change_rx_flags(struct net_device *dev, int flags){
+int nasmt_change_rx_flags(struct net_device *dev, int flags)
+{
   //---------------------------------------------------------------------------
   //struct nas_priv *priv =  netdev_priv(dev);
   printk("nasmt_change_rx_flags %08X\n", flags);
@@ -287,8 +309,9 @@ int nasmt_change_rx_flags(struct net_device *dev, int flags){
 }
 
 //---------------------------------------------------------------------------
-void nasmt_tx_timeout(struct net_device *dev){
-//---------------------------------------------------------------------------
+void nasmt_tx_timeout(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
   /* Transmitter timeout, serious problems. */
   printk("nasmt_tx_timeout: begin\n");
   //((struct nas_priv *)(dev->priv))->stats.tx_errors++;
@@ -301,41 +324,42 @@ void nasmt_tx_timeout(struct net_device *dev){
 //---------------------------------------------------------------------------
 // Define pointers for the module
 static const struct net_device_ops nasmt_netdev_ops = {
-// ?? nasmt_interrupt
-//
-    .ndo_open               = nasmt_open,
-    .ndo_stop               = nasmt_stop,
-    .ndo_start_xmit         = nasmt_hard_start_xmit,
-    .ndo_validate_addr      = NULL,
-    .ndo_get_stats          = nasmt_get_stats,
-//#ifdef  KERNEL_VERSION_GREATER_THAN_32
-//    .ndo_set_multicast_list = NULL,
-    .ndo_set_mac_address    = nasmt_set_mac_address,
-    .ndo_set_config         = nasmt_set_config,
-    .ndo_do_ioctl           = nasmt_CTL_ioctl,
-    .ndo_change_mtu         = nasmt_change_mtu,
-    .ndo_tx_timeout         = nasmt_tx_timeout,
-    .ndo_change_rx_flags    = nasmt_change_rx_flags,
-//#endif
+  // ?? nasmt_interrupt
+  //
+  .ndo_open               = nasmt_open,
+  .ndo_stop               = nasmt_stop,
+  .ndo_start_xmit         = nasmt_hard_start_xmit,
+  .ndo_validate_addr      = NULL,
+  .ndo_get_stats          = nasmt_get_stats,
+  //#ifdef  KERNEL_VERSION_GREATER_THAN_32
+  //    .ndo_set_multicast_list = NULL,
+  .ndo_set_mac_address    = nasmt_set_mac_address,
+  .ndo_set_config         = nasmt_set_config,
+  .ndo_do_ioctl           = nasmt_CTL_ioctl,
+  .ndo_change_mtu         = nasmt_change_mtu,
+  .ndo_tx_timeout         = nasmt_tx_timeout,
+  .ndo_change_rx_flags    = nasmt_change_rx_flags,
+  //#endif
 };
 //---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
 // Initialisation of the network device
-void nasmt_init(struct net_device *dev){
-//---------------------------------------------------------------------------
+void nasmt_init(struct net_device *dev)
+{
+  //---------------------------------------------------------------------------
   uint8_t cxi, dscpi;
 
   printk("nasmt_init: begin\n");
 
-  if (dev){
+  if (dev) {
     gpriv=netdev_priv(dev);
     memset(gpriv, 0, sizeof(struct nas_priv));
-// Initialize function pointers
+    // Initialize function pointers
     dev->netdev_ops = &nasmt_netdev_ops;
 
 #ifndef NAS_DRIVER_TYPE_ETHERNET
- //  Update driver properties
+    //  Update driver properties
     dev->type = ARPHRD_EURUMTS;
     dev->features = NETIF_F_NO_CSUM;
     dev->hard_header_len = 0;
@@ -360,29 +384,30 @@ void nasmt_init(struct net_device *dev){
     ether_setup(dev);
 #endif
 
-//
-// Initialize private structure
-  gpriv->rx_flags = NAS_RESET_RX_FLAGS;
+    //
+    // Initialize private structure
+    gpriv->rx_flags = NAS_RESET_RX_FLAGS;
 
-  gpriv->sap[NAS_GC_SAPI] = RRC_DEVICE_GC;
-  gpriv->sap[NAS_NT_SAPI] = RRC_DEVICE_NT;
-  gpriv->cx[0].sap[NAS_DC_INPUT_SAPI] = RRC_DEVICE_DC_INPUT0;
-  gpriv->cx[0].sap[NAS_DC_OUTPUT_SAPI] = RRC_DEVICE_DC_OUTPUT0;
+    gpriv->sap[NAS_GC_SAPI] = RRC_DEVICE_GC;
+    gpriv->sap[NAS_NT_SAPI] = RRC_DEVICE_NT;
+    gpriv->cx[0].sap[NAS_DC_INPUT_SAPI] = RRC_DEVICE_DC_INPUT0;
+    gpriv->cx[0].sap[NAS_DC_OUTPUT_SAPI] = RRC_DEVICE_DC_OUTPUT0;
 
-  //gpriv->sap[NAS_CO_INPUT_SAPI] = QOS_DEVICE_CONVERSATIONAL_INPUT;
-  //gpriv->sap[NAS_CO_OUTPUT_SAPI] = QOS_DEVICE_CONVERSATIONAL_OUTPUT;
-  gpriv->sap[NAS_DRB_INPUT_SAPI]  = PDCP2NAS_FIFO;//QOS_DEVICE_CONVERSATIONAL_INPUT;
-  gpriv->sap[NAS_DRB_OUTPUT_SAPI] = NAS2PDCP_FIFO;//QOS_DEVICE_STREAMING_INPUT;
+    //gpriv->sap[NAS_CO_INPUT_SAPI] = QOS_DEVICE_CONVERSATIONAL_INPUT;
+    //gpriv->sap[NAS_CO_OUTPUT_SAPI] = QOS_DEVICE_CONVERSATIONAL_OUTPUT;
+    gpriv->sap[NAS_DRB_INPUT_SAPI]  = PDCP2PDCP_USE_RT_FIFO;//QOS_DEVICE_CONVERSATIONAL_INPUT;
+    gpriv->sap[NAS_DRB_OUTPUT_SAPI] = NAS2PDCP_FIFO;//QOS_DEVICE_STREAMING_INPUT;
 
-  gpriv->retry_limit = NAS_RETRY_LIMIT_DEFAULT;
-  gpriv->timer_establishment = NAS_TIMER_ESTABLISHMENT_DEFAULT;
-  gpriv->timer_release = NAS_TIMER_RELEASE_DEFAULT;
+    gpriv->retry_limit = NAS_RETRY_LIMIT_DEFAULT;
+    gpriv->timer_establishment = NAS_TIMER_ESTABLISHMENT_DEFAULT;
+    gpriv->timer_release = NAS_TIMER_RELEASE_DEFAULT;
 
-  for (dscpi=0; dscpi<NAS_DSCP_MAX; ++dscpi)
+    for (dscpi=0; dscpi<NAS_DSCP_MAX; ++dscpi)
       gpriv->rclassifier[dscpi] = NULL;
-  gpriv->nrclassifier = 0;
-//
-  cxi=0;
+
+    gpriv->nrclassifier = 0;
+    //
+    cxi=0;
 #ifdef NAS_DEBUG_DEVICE
     printk("nasmt_init: init classifiers, state and timer for MT %u\n", cxi);
 #endif
@@ -392,36 +417,40 @@ void nasmt_init(struct net_device *dev){
     gpriv->cx[cxi].lcr = cxi;
     gpriv->cx[cxi].rb = NULL;
     gpriv->cx[cxi].num_rb = 0;
+
     // initialisation of the classifiers
-    for (dscpi=0; dscpi<NAS_DSCP_MAX; ++dscpi){
+    for (dscpi=0; dscpi<NAS_DSCP_MAX; ++dscpi) {
       gpriv->cx[cxi].sclassifier[dscpi]=NULL;
     }
+
     gpriv->cx[cxi].nsclassifier=0;
     // initialisation of the IP address
     nasmt_TOOL_imei2iid(NAS_NULL_IMEI, (uint8_t *)gpriv->cx[cxi].iid6);
     gpriv->cx[cxi].iid4=0;
-//
+    //
     spin_lock_init(&gpriv->lock);
     printk("nasmt_init: init IMEI to IID\n");
 
-    #ifdef NAS_DRIVER_TYPE_ETHERNET
+#ifdef NAS_DRIVER_TYPE_ETHERNET
     nasmt_TOOL_eth_imei2iid(nas_IMEI, dev->dev_addr ,(uint8_t *)gpriv->cx[0].iid6, dev->addr_len);
-    #else
+#else
     nasmt_TOOL_imei2iid(nas_IMEI, dev->dev_addr);// IMEI to device address (for stateless autoconfiguration address)
     nasmt_TOOL_imei2iid(nas_IMEI, (uint8_t *)gpriv->cx[0].iid6);
-    #endif
+#endif
 
     nasmt_ASCTL_init();
   } else {
     printk("\n\nnasmt_init: ERROR, Device is NULL!!\n");
   }
+
   printk("nasmt_init: end\n");
   return;
 }
 
 //---------------------------------------------------------------------------
-int init_module (void) {
-//---------------------------------------------------------------------------
+int init_module (void)
+{
+  //---------------------------------------------------------------------------
   int err;
   int inst = 0;
   int index;
@@ -432,24 +461,28 @@ int init_module (void) {
 
   // check IMEI parameter
   printk("number of IMEI parameters %d, IMEI ", m_arg);
+
   for (index = 0; index < m_arg;  index++) {
-      printk("%02X ", nas_IMEI[index]);
+    printk("%02X ", nas_IMEI[index]);
   }
+
   printk("\n");
 
 
-  #ifndef NAS_NETLINK
+#ifndef PDCP_USE_NETLINK
+
   // Initialize parameters shared with RRC (done first to avoid going further)
-  if (pt_nas_ue_irq==NULL){
+  if (pt_nas_ue_irq==NULL) {
     printk("init_module: shared irq parameter not initialised\n");
     err =  -EBUSY;
     printk("init_module: returning %d \n\n", err);
     return err;
   }
-  printk("init_module: pt_nas_ue_irq valid \n");
-  #endif
 
-  // Allocate device structure 
+  printk("init_module: pt_nas_ue_irq valid \n");
+#endif
+
+  // Allocate device structure
   sprintf(devicename,"oai%d",inst);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
   gdev = alloc_netdev(sizeof(struct nas_priv), devicename, nasmt_init);
@@ -457,45 +490,53 @@ int init_module (void) {
   gdev = alloc_netdev(sizeof(struct nas_priv), devicename, NET_NAME_PREDICTABLE, nasmt_init);
 #endif
   priv = netdev_priv(gdev);
-////
-  #ifndef NAS_NETLINK
+  ////
+#ifndef PDCP_USE_NETLINK
   priv->irq=rt_request_srq(0, nasmt_interrupt, NULL);
-  if (priv->irq == -EBUSY || priv->irq == -EINVAL){
+
+  if (priv->irq == -EBUSY || priv->irq == -EINVAL) {
     printk("\n init_module: No interrupt resource available\n");
-    if (gdev){
+
+    if (gdev) {
       free_netdev(gdev);
       printk("init_module: free_netdev ..\n");
     }
+
     return -EBUSY;
-  }
-  else
+  } else
     printk("init_module: Interrupt %d, ret = %d \n", priv->irq , ret);
 
-  if (pt_nas_ue_irq==NULL){
+  if (pt_nas_ue_irq==NULL) {
     printk("init_module: shared irq parameter has been reset\n");
-  }else{
+  } else {
     *pt_nas_ue_irq=priv->irq;
   }
-  #endif
 
-  #ifdef NAS_NETLINK
+#endif
+
+#ifdef PDCP_USE_NETLINK
+
   if ((err=nasmt_netlink_init()) == -1)
     printk("init_module: NETLINK failed\n");
+
   printk("init_module: NETLINK INIT successful\n");
-  #endif //NETLINK
-//
+#endif //NETLINK
+  //
   err= register_netdev(gdev);
-  if (err){
+
+  if (err) {
     printk("init_module: error %i registering device %s\n", err, gdev->name);
-  }else{
+  } else {
     printk("init_module: registering device %s, ifindex = %d\n\n",gdev->name, gdev->ifindex);
   }
+
   return err;
 }
 
 //---------------------------------------------------------------------------
-void cleanup_module(void){
-//---------------------------------------------------------------------------
+void cleanup_module(void)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_cleanup_module: begin\n");
   unregister_netdev(gdev);
   nasmt_teardown(gdev);

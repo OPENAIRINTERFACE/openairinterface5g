@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -39,7 +39,8 @@
 #define F2 10
 
 // 4-bit quantizer
-char quantize4bit(double D,double x) {
+char quantize4bit(double D,double x)
+{
 
   double qxd;
 
@@ -55,11 +56,13 @@ char quantize4bit(double D,double x) {
 }
 
 // 3-bit quantizer
-char quantize3bit(double D,double x) {
+char quantize3bit(double D,double x)
+{
 
   double qxd;
 
   qxd = floor(x/D);
+
   if (qxd <= -4)
     qxd = -4;
   else if (qxd > 3)
@@ -74,11 +77,12 @@ static char channel_output[2*MAX_BLOCK_LENGTH]__attribute__ ((aligned(16)));
 static unsigned char decoded_output[MAX_BLOCK_LENGTH/8];
 
 int test_viterbi(double sigma,
-		 unsigned int block_length, //in bytes (including crc)
-		 unsigned char crc_len, //in bytes
-		 unsigned int ntrials,
-		 unsigned int *errors,
-		 unsigned int *crc_misses) {
+                 unsigned int block_length, //in bytes (including crc)
+                 unsigned char crc_len, //in bytes
+                 unsigned int ntrials,
+                 unsigned int *errors,
+                 unsigned int *crc_misses)
+{
 
   unsigned char test_input[block_length+1];
   //_declspec(align(16))  char channel_output[512];
@@ -101,72 +105,78 @@ int test_viterbi(double sigma,
   //init viterbi
   ccodedot11_init();
   ccodedot11_init_inv();
-  
+
   phy_generate_viterbi_tables();
 
   while (trial++ < ntrials) {
 
-    for (i=0;i<block_length-crc_len;i++) {
-      
+    for (i=0; i<block_length-crc_len; i++) {
+
       test_input[i] = (unsigned char)(taus()&0xff);
     }
-    
+
     switch (crc_len) {
-      
+
     case 1:
       crc = crc8(test_input,
-		 (block_length-1)<<3)>>24;
+                 (block_length-1)<<3)>>24;
       break;
+
     case 2:
       crc = crc16(test_input,
-		  (block_length-2)<<3)>>16;
+                  (block_length-2)<<3)>>16;
       break;
+
     case 3:
       crc = crc24(test_input,
-		  (block_length-4)<<3)>>8;
+                  (block_length-4)<<3)>>8;
       break;
+
     default:
       break;
-      
+
     }
-    
+
     if (crc_len > 0)
       *(unsigned int*)(&test_input[block_length-4]) = crc;
-    
-    
+
+
     // encode
-    ccodedot11_encode(block_length, 
-		      test_input, 
-		      output,
-		      0);
-    
+    ccodedot11_encode(block_length,
+                      test_input,
+                      output,
+                      0);
+
     // channel
-    for (i = 0; i < (2*8*block_length); i++){
+    for (i = 0; i < (2*8*block_length); i++) {
       //    printf("output[%d]=%d\n",i,output[i]);
       channel_output[i] = quantize4bit(sigma/4.0,2.0*output[i] - 1.0 + sigma*gaussdouble(0.0,1.0));
       //    printf("Position %d : %d\n",i,channel_output[i]);
     }
-    
+
     // decode
     memset(decoded_output,0,block_length);
     phy_viterbi_dot11_sse2(channel_output,decoded_output,8*block_length);
-    
+
 
     // crc check
     switch (crc_len) {
-      
+
     case 1:
       crc_rx = crc8(decoded_output,
-		 (block_length-1)<<3)>>24;
+                    (block_length-1)<<3)>>24;
       break;
+
     case 2:
       crc_rx = crc16(decoded_output,
-		  (block_length-2)<<3)>>16;
+                     (block_length-2)<<3)>>16;
       break;
+
     case 3:
       crc_rx = crc24(decoded_output,
-		  (block_length-4)<<3)>>8;
+                     (block_length-4)<<3)>>8;
       break;
+
     default:
       break;
     }
@@ -176,20 +186,20 @@ int test_viterbi(double sigma,
 
     ret = (crc_dec!=crc_rx);
     *crc_misses = *crc_misses+ret;
-    
+
     /*
     if (ret)
       printf("trial %d, crc=%x, crc_dec=%x, crc_rx = %x\n",trial, crc,crc_dec,crc_rx);
     */
 
-    for (i=0;i<block_length-1;i++)
+    for (i=0; i<block_length-1; i++)
       if (decoded_output[i] != test_input[i]) {
-	//printf("Iteration %d, error at %d, %x != %x\n",trial,i,decoded_output[i],test_input[i]);
-	*errors = (*errors) + 1;
-	break;
+        //printf("Iteration %d, error at %d, %x != %x\n",trial,i,decoded_output[i],test_input[i]);
+        *errors = (*errors) + 1;
+        break;
       }
 
-    
+
   }
 
 
@@ -200,7 +210,8 @@ int test_viterbi(double sigma,
 
 #define NTRIALS 100000
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
   int ret;
   unsigned int errors,crc_misses;
@@ -213,29 +224,30 @@ int main(int argc, char *argv[]) {
 
   randominit();
   set_taus_seed();
-  
+
   crcTableInit();
 
   printf("EbN0, sigma, BER, FER\n");
-  
-  for (SNR=0;SNR<10;SNR++) {
+
+  for (SNR=0; SNR<10; SNR++) {
 
     sigma = sqrt(1.0/pow(10,SNR/10.0));
 
     ret = test_viterbi(sigma,   // noise standard deviation
-		       block_length,   // block length bytes
-		       crc_len,    // crc length (24-bit)
-		       NTRIALS,
-		       &errors,
-		       &crc_misses);
+                       block_length,   // block length bytes
+                       crc_len,    // crc length (24-bit)
+                       NTRIALS,
+                       &errors,
+                       &crc_misses);
 
 
     printf("%f, %f, %f, %f\n", SNR, sigma, ((double) errors)/(NTRIALS), (double)crc_misses/NTRIALS);
-    
+
     //if (ret>=0)
     //  printf("Errors %d (%f), CRC Misses %d (%f)\n",errors,(double)errors/NTRIALS,crc_misses,(double)crc_misses/NTRIALS);
-    
+
   }
+
   return(0);
 }
 

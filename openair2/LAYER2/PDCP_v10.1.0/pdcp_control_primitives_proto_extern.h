@@ -21,13 +21,13 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 /***************************************************************************
-                          	pdcp_control_primitives_proto_extern.h
+                            pdcp_control_primitives_proto_extern.h
                              -------------------
     begin                : Mon Dec 10 2001
     email                : Lionel.Gauthier@eurecom.fr

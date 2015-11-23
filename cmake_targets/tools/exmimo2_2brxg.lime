@@ -1,0 +1,10 @@
+# this file contains the calibration values to compute the RSSI
+# we can use three different gain stages (high, low, med) as well as a gain factor for fine tuning
+# the three lines in this file gives the total rx gain in dB for the three gain stages if the rx gain is set to 30dB
+# this is for Express MIMO2 without any additional RF frontend
+# high gain
+128 128 128 126
+# med gain
+122 123 123 120
+# low gain (byp)
+116 117 116 116

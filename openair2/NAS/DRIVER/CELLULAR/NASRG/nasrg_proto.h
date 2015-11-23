@@ -72,7 +72,7 @@ void nasrg_COMMON_receive(uint16_t bytes_read, uint16_t payload_length, void *da
 void nasrg_COMMON_QOS_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
 void nasrg_COMMON_QOS_send_test_netlink(struct sk_buff *skb);
 void nasrg_COMMON_del_send(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc);
-#ifndef NAS_NETLINK
+#ifndef PDCP_USE_NETLINK
 void nasrg_COMMON_QOS_receive(struct cx_entity *cx);
 #else
 void nasrg_COMMON_QOS_receive(struct nlmsghdr *nlh);

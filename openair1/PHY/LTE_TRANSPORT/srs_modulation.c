@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -42,76 +42,84 @@
 #include "UTIL/LOG/log.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
-				   {32,16,8,4},
-				   {24,4,4,4},
-				   {20,4,4,4},
-				   {16,4,4,4},
-				   {12,4,4,4},
-				   {8,4,4,4},
-				   {4,4,4,4}};
+  {32,16,8,4},
+  {24,4,4,4},
+  {20,4,4,4},
+  {16,4,4,4},
+  {12,4,4,4},
+  {8,4,4,4},
+  {4,4,4,4}
+};
 
 unsigned short msrsb_41_60[8][4] = {{48,24,12,4},
-				    {48,16,8,4},
-				    {40,20,4,4},
-				    {36,12,4,4},
-				    {32,16,8,4},
-				    {24,4,4,4},
-				    {20,4,4,4},
-				    {16,4,4,4}};
+  {48,16,8,4},
+  {40,20,4,4},
+  {36,12,4,4},
+  {32,16,8,4},
+  {24,4,4,4},
+  {20,4,4,4},
+  {16,4,4,4}
+};
 
 unsigned short msrsb_61_80[8][4] = {{72,24,12,4},
-				    {64,32,16,4},
-				    {60,20,4,4},
-				    {48,24,12,4},
-				    {48,16,8,4},
-				    {40,20,4,4},
-				    {36,12,4,4},
-				    {32,16,8,4}};
+  {64,32,16,4},
+  {60,20,4,4},
+  {48,24,12,4},
+  {48,16,8,4},
+  {40,20,4,4},
+  {36,12,4,4},
+  {32,16,8,4}
+};
 
 unsigned short msrsb_81_110[8][4] = {{96,48,24,4},
-				     {96,32,16,4},
-				     {80,40,20,4},
-				     {72,24,12,4},
-				     {64,32,16,4},
-				     {60,20,4,4},
-				     {48,24,12,4},
-				     {48,16,8,4}};
+  {96,32,16,4},
+  {80,40,20,4},
+  {72,24,12,4},
+  {64,32,16,4},
+  {60,20,4,4},
+  {48,24,12,4},
+  {48,16,8,4}
+};
 
 unsigned short Nb_6_40[8][4] = {{36,12,4,4},
-				{32,16,8,4},
-				{24,4,4,4},
-				{20,4,4,4},
-				{16,4,4,4},
-				{12,4,4,4},
-				{8,4,4,4},
-				{4,4,4,4}};
+  {32,16,8,4},
+  {24,4,4,4},
+  {20,4,4,4},
+  {16,4,4,4},
+  {12,4,4,4},
+  {8,4,4,4},
+  {4,4,4,4}
+};
 
 unsigned short Nb_41_60[8][4] = {{48,24,12,4},
-				 {48,16,8,4},
-				 {40,20,4,4},
-				 {36,12,4,4},
-				 {32,16,8,4},
-				 {24,4,4,4},
-				 {20,4,4,4},
-				 {16,4,4,4}};
+  {48,16,8,4},
+  {40,20,4,4},
+  {36,12,4,4},
+  {32,16,8,4},
+  {24,4,4,4},
+  {20,4,4,4},
+  {16,4,4,4}
+};
 
 unsigned short Nb_61_80[8][4] = {{72,24,12,4},
-				 {64,32,16,4},
-				 {60,20,4,4},
-				 {48,24,12,4},
-				 {48,16,8,4},
-				 {40,20,4,4},
-				 {36,12,4,4},
-				 {32,16,8,4}};
+  {64,32,16,4},
+  {60,20,4,4},
+  {48,24,12,4},
+  {48,16,8,4},
+  {40,20,4,4},
+  {36,12,4,4},
+  {32,16,8,4}
+};
 
 unsigned short Nb_81_110[8][4] = {{96,48,24,4},
-				  {96,32,16,4},
-				  {80,40,20,4},
-				  {72,24,12,4},
-				  {64,32,16,4},
-				  {60,20,4,4},
-				  {48,24,12,4},
-				  {48,16,8,4}};
+  {96,32,16,4},
+  {80,40,20,4},
+  {72,24,12,4},
+  {64,32,16,4},
+  {60,20,4,4},
+  {48,24,12,4},
+  {48,16,8,4}
+};
 
 unsigned short transmission_offset_tdd[16] = {2,6,10,18,14,22,26,30,70,74,194,326,586,210};
 
@@ -122,9 +130,10 @@ int compareints (const void * a, const void * b)
 
 
 int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
-		    uint8_t eNB_id,
-		    int16_t amp,
-		    uint32_t subframe) {
+                        uint8_t eNB_id,
+                        int16_t amp,
+                        uint32_t subframe)
+{
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
   SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id];
@@ -145,18 +154,15 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
     msrs0 = msrsb_6_40[Csrs][0];
     msrsb = msrsb_6_40[Csrs][Bsrs];
     Nb    = Nb_6_40[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL < 61) {
+  } else if (frame_parms->N_RB_UL < 61) {
     msrs0 = msrsb_41_60[Csrs][0];
     msrsb = msrsb_41_60[Csrs][Bsrs];
     Nb    = Nb_41_60[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL < 81) {
+  } else if (frame_parms->N_RB_UL < 81) {
     msrs0 = msrsb_61_80[Csrs][0];
     msrsb = msrsb_61_80[Csrs][Bsrs];
     Nb    = Nb_61_80[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL <111) {
+  } else if (frame_parms->N_RB_UL <111) {
     msrs0 = msrsb_81_110[Csrs][0];
     msrsb = msrsb_81_110[Csrs][Bsrs];
     Nb    = Nb_81_110[Csrs][Bsrs];
@@ -166,7 +172,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
   k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
   nb  = (4*n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=Bsrs;b++) {
+  for (b=0; b<=Bsrs; b++) {
     k0 += 2*nb*Msc_RS;
   }
 
@@ -177,13 +183,16 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef USER_MODE
   Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
+
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
     msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+
 #else //stdlib not availiable in RTAI
+
   if (Msc_RS==216)
     Msc_RS_idx = 12;
   else if (Msc_RS==144)
@@ -192,65 +201,74 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
     msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
     return(-1);
   }
+
 #endif
 
 #ifdef DEBUG_SRS
   msg("generate_srs_tx: Msc_RS = %d, Msc_RS_idx = %d\n",Msc_RS, Msc_RS_idx);
 #endif
 
-  T_SFC = (Ssrs<=7 ? 5 : 10); 
+  T_SFC = (Ssrs<=7 ? 5 : 10);
+
   if ((1<<(subframe%T_SFC))&transmission_offset_tdd[Ssrs]) {
 
 #ifndef IFFT_FPGA_UE
-  carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
-  //msg("carrier_pos = %d\n",carrier_pos);
-  
-  subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
-  symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+    carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
+    //msg("carrier_pos = %d\n",carrier_pos);
 
-  for (k=0;k<Msc_RS;k++) {
-    ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
-    ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
-    carrier_pos+=2;
-    if (carrier_pos >= frame_parms->ofdm_symbol_size)
-      carrier_pos=1;
-  }
+    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->ofdm_symbol_size;
+    symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->ofdm_symbol_size;
+
+    for (k=0; k<Msc_RS; k++) {
+      ((short*) txdataF)[2*(symbol_offset + carrier_pos)]   = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][k<<1])>>15);
+      ((short*) txdataF)[2*(symbol_offset + carrier_pos)+1] = (short) (((int32_t) amp * (int32_t) ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1])>>15);
+      carrier_pos+=2;
+
+      if (carrier_pos >= frame_parms->ofdm_symbol_size)
+        carrier_pos=1;
+    }
+
 #else
-  carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
-  //msg("carrier_pos = %d\n",carrier_pos);
+    carrier_pos = (frame_parms->N_RB_UL*12/2 + k0) % (frame_parms->N_RB_UL*12);
+    //msg("carrier_pos = %d\n",carrier_pos);
 
-  subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
-  symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
+    subframe_offset = subframe*frame_parms->symbols_per_tti*frame_parms->N_RB_UL*12;
+    symbol_offset = subframe_offset+(frame_parms->symbols_per_tti-1)*frame_parms->N_RB_UL*12;
 
-  for (k=0;k<Msc_RS;k++) {
-    if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) 
-      txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 4;
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0)) 
-      txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 2;
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) 
-      txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 3;
-    else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0)) 
-      txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 1;
+    for (k=0; k<Msc_RS; k++) {
+      if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0))
+        txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 4;
+      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0))
+        txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 2;
+      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0))
+        txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 3;
+      else if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] < 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] < 0))
+        txdataF[symbol_offset+carrier_pos] = (mod_sym_t) 1;
 
-    carrier_pos+=2;
-    if (carrier_pos >= frame_parms->N_RB_UL*12)
-      carrier_pos=0;
-  }
+      carrier_pos+=2;
+
+      if (carrier_pos >= frame_parms->N_RB_UL*12)
+        carrier_pos=0;
+    }
+
 #endif
-  //  write_output("srs_txF.m","srstxF",&txdataF[symbol_offset],512,1,1);
+    //  write_output("srs_txF.m","srstxF",&txdataF[symbol_offset],512,1,1);
   }
+
   return(0);
 }
 
-int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,uint8_t subframe) {
+int generate_srs_tx_emul(PHY_VARS_UE *phy_vars_ue,uint8_t subframe)
+{
 
   LOG_D(PHY,"[UE] generate_srs_tx_emul for subframe %d\n",subframe);
-  return(0); 
+  return(0);
 }
 
 int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
-		    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,		    
-		    int *txdataF) {
+                    SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated,
+                    int *txdataF)
+{
 
   uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos;
   uint16_t *Msc_idx_ptr;
@@ -264,18 +282,15 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     msrs0 = msrsb_6_40[Csrs][0];
     msrsb = msrsb_6_40[Csrs][Bsrs];
     Nb    = Nb_6_40[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL < 61) {
+  } else if (frame_parms->N_RB_UL < 61) {
     msrs0 = msrsb_41_60[Csrs][0];
     msrsb = msrsb_41_60[Csrs][Bsrs];
     Nb    = Nb_41_60[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL < 81) {
+  } else if (frame_parms->N_RB_UL < 81) {
     msrs0 = msrsb_61_80[Csrs][0];
     msrsb = msrsb_61_80[Csrs][Bsrs];
     Nb    = Nb_61_80[Csrs][Bsrs];
-  }
-  else if (frame_parms->N_RB_UL <111) {
+  } else if (frame_parms->N_RB_UL <111) {
     msrs0 = msrsb_81_110[Csrs][0];
     msrsb = msrsb_81_110[Csrs][Bsrs];
     Nb    = Nb_81_110[Csrs][Bsrs];
@@ -285,7 +300,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
   k0 = (((frame_parms->N_RB_UL>>1)-(msrs0>>1))*12) + kTC;
   nb  = (4*n_RRC/msrsb)%Nb;
 
-  for (b=0;b<=Bsrs;b++) {
+  for (b=0; b<=Bsrs; b++) {
     k0 += 2*nb*Msc_RS;
   }
 
@@ -296,13 +311,16 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 
 #ifdef USER_MODE
   Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
+
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;
   else {
     msg("generate_srs: index for Msc_RS=%d not found\n",Msc_RS);
     return(-1);
   }
+
 #else //stdlib not availiable in RTAI
+
   if (Msc_RS==216)
     Msc_RS_idx = 12;
   else if (Msc_RS==144)
@@ -311,6 +329,7 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
     msg("generate_srs: index for Msc_RS=%d not implemented\n",Msc_RS);
     return(-1);
   }
+
 #endif
 
 #ifdef DEBUG_SRS
@@ -319,15 +338,17 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 
   carrier_pos = (frame_parms->first_carrier_offset + k0) % frame_parms->ofdm_symbol_size;
 
-  for (k=0;k<Msc_RS;k++) {
+  for (k=0; k<Msc_RS; k++) {
     ((short*) txdataF)[carrier_pos<<2]   = ul_ref_sigs_rx[0][0][Msc_RS_idx][k<<2];
     ((short*) txdataF)[(carrier_pos<<2)+1] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+1];
     ((short*) txdataF)[(carrier_pos<<2)+2] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+2];
     ((short*) txdataF)[(carrier_pos<<2)+3] = ul_ref_sigs_rx[0][0][Msc_RS_idx][(k<<2)+3];
     carrier_pos+=2;
-    if (carrier_pos >= frame_parms->ofdm_symbol_size) 
+
+    if (carrier_pos >= frame_parms->ofdm_symbol_size)
       carrier_pos=1;
   }
+
   /*
   for (k=0;k<Msc_RS;k++) {
     if ((ul_ref_sigs[0][0][Msc_RS_idx][k<<1] >= 0) && (ul_ref_sigs[0][0][Msc_RS_idx][(k<<1)+1] >= 0)) {
@@ -367,7 +388,8 @@ int generate_srs_rx(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 #ifdef MAIN
-main() {
+main()
+{
 
 
 }

@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,30 +14,33 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 #include "defs.h"
+#include "log.h"
 
-int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
+int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
+{
 
   uint8_t log2_osf;
+
+  LOG_I(PHY,"Initializing frame parms for N_RB_DL %d, Ncp %d, osf %d\n",frame_parms->N_RB_DL,frame_parms->Ncp,osf);
 
   if (frame_parms->Ncp==1) {
     frame_parms->nb_prefix_samples0=512;
     frame_parms->nb_prefix_samples = 512;
     frame_parms->symbols_per_tti = 12;
-  }
-  else {
+  } else {
     frame_parms->nb_prefix_samples0 = 160;
     frame_parms->nb_prefix_samples = 144;
     frame_parms->symbols_per_tti = 14;
@@ -47,18 +50,23 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
   case 1:
     log2_osf = 0;
     break;
+
   case 2:
     log2_osf = 1;
     break;
+
   case 4:
     log2_osf = 2;
     break;
+
   case 8:
     log2_osf = 3;
     break;
+
   case 16:
     log2_osf = 4;
     break;
+
   default:
     msg("Illegal oversampling %d\n",osf);
     return(-1);
@@ -70,6 +78,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
       msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
+
     frame_parms->ofdm_symbol_size = 2048;
     frame_parms->log2_symbol_size = 11;
     frame_parms->samples_per_tti = 30720;
@@ -77,35 +86,42 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
     frame_parms->N_RBGS = 4;
     frame_parms->N_RBG = 25;
     break;
+
   case 50:
     if (osf>1) {
       msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
+
     frame_parms->ofdm_symbol_size = 1024*osf;
     frame_parms->log2_symbol_size = 10+log2_osf;
     frame_parms->samples_per_tti = 15360*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300; 
+    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300;
     frame_parms->nb_prefix_samples>>=(1-log2_osf);
     frame_parms->nb_prefix_samples0>>=(1-log2_osf);
     frame_parms->N_RBGS = 3;
     frame_parms->N_RBG = 17;
-   break;
+    break;
+
   case 25:
     if (osf>2) {
       msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
+
     frame_parms->ofdm_symbol_size = 512*osf;
-    
+
     frame_parms->log2_symbol_size = 9+log2_osf;
     frame_parms->samples_per_tti = 7680*osf;
-    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150; 
+    frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150;
     frame_parms->nb_prefix_samples>>=(2-log2_osf);
     frame_parms->nb_prefix_samples0>>=(2-log2_osf);
     frame_parms->N_RBGS = 2;
     frame_parms->N_RBG = 13;
+
+
     break;
+
   case 15:
     frame_parms->ofdm_symbol_size = 256*osf;
     frame_parms->log2_symbol_size = 8+log2_osf;
@@ -116,6 +132,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
     frame_parms->N_RBGS = 2;
     frame_parms->N_RBG = 8;
     break;
+
   case 6:
     frame_parms->ofdm_symbol_size = 128*osf;
     frame_parms->log2_symbol_size = 7+log2_osf;
@@ -132,6 +149,8 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf) {
     return(-1);
     break;
   }
+
+  printf("lte_parms.c: Setting N_RB_DL to %d, ofdm_symbol_size %d\n",frame_parms->N_RB_DL, frame_parms->ofdm_symbol_size);
 
   //  frame_parms->tdd_config=3;
   return(0);

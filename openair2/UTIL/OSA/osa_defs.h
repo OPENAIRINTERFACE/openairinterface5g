@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -52,11 +52,11 @@
 #define SECU_DIRECTION_DOWNLINK 1
 
 typedef enum {
-    NAS_ENC_ALG = 0x01,
-    NAS_INT_ALG = 0x02,
-    RRC_ENC_ALG = 0x03,
-    RRC_INT_ALG = 0x04,
-    UP_ENC_ALG  = 0x05
+  NAS_ENC_ALG = 0x01,
+  NAS_INT_ALG = 0x02,
+  RRC_ENC_ALG = 0x03,
+  RRC_INT_ALG = 0x04,
+  UP_ENC_ALG  = 0x05
 } algorithm_type_dist_t;
 
 //int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t **keNB);
@@ -81,14 +81,14 @@ int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
     derive_key(UP_INT_ALG, aLGiD, kEY, kNAS)
 
 typedef struct {
-    uint8_t  *key;
-    uint32_t  key_length;
-    uint32_t  count;
-    uint8_t   bearer;
-    uint8_t   direction;
-    uint8_t  *message;
-    /* length in bits */
-    uint32_t  blength;
+  uint8_t  *key;
+  uint32_t  key_length;
+  uint32_t  count;
+  uint8_t   bearer;
+  uint8_t   direction;
+  uint8_t  *message;
+  /* length in bits */
+  uint32_t  blength;
 } stream_cipher_t;
 
 /*!

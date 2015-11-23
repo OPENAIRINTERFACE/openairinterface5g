@@ -8,7 +8,7 @@
 void lfds611_queue_delete( struct lfds611_queue_state *qs, void (*user_data_delete_function)(void *user_data, void *user_state), void *user_state )
 {
   void
-    *user_data;
+  *user_data;
 
   assert( qs != NULL );
   // TRD : user_data_delete_function can be NULL

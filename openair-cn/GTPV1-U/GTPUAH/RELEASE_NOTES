@@ -1,7 +1,0 @@
-
-Known issues in GTPU v1.0
--------------------------
-
-1. Does not implement the "Transport" action.
-2. Does not handle segmented GTPu packets.
-

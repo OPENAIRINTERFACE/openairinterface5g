@@ -121,7 +121,7 @@ NAS=1
 endif
 
 ifeq ($(NAS),1)
-CFLAGS += -DNAS_NETLINK -DLINUX
+CFLAGS += -DPDCP_USE_NETLINK -DLINUX
 OBJ += $(NAS_OBJS)
 endif
 

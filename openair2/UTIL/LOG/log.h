@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -85,37 +85,37 @@ extern "C" {
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
 #ifndef LOG_EMERG
-#	define	LOG_EMERG	0	/*!< \brief system is unusable */
+# define  LOG_EMERG 0 /*!< \brief system is unusable */
 #endif
 #ifndef LOG_ALERT
-#	define	LOG_ALERT	1	/*!< \brief action must be taken immediately */
+# define  LOG_ALERT 1 /*!< \brief action must be taken immediately */
 #endif
 #ifndef LOG_CRIT
-#	define	LOG_CRIT	2	/*!< \brief critical conditions */
+# define  LOG_CRIT  2 /*!< \brief critical conditions */
 #endif
 #ifndef LOG_ERR
-#	define	LOG_ERR		3	/*!< \brief error conditions */
+# define  LOG_ERR   3 /*!< \brief error conditions */
 #endif
 #ifndef LOG_WARNING
-#	define	LOG_WARNING	4	/*!< \brief warning conditions */
+# define  LOG_WARNING 4 /*!< \brief warning conditions */
 #endif
 #ifndef LOG_NOTICE
-#	define	LOG_NOTICE	5	/*!< \brief normal but significant condition */
+# define  LOG_NOTICE  5 /*!< \brief normal but significant condition */
 #endif
 #ifndef LOG_INFO
-#	define	LOG_INFO	6	/*!< \brief informational */
+# define  LOG_INFO  6 /*!< \brief informational */
 #endif
 #ifndef LOG_DEBUG
-#	define	LOG_DEBUG	7	/*!< \brief debug-level messages */
+# define  LOG_DEBUG 7 /*!< \brief debug-level messages */
 #endif
 #ifndef LOG_FILE
-#	define	LOG_FILE        8	/*!< \brief message sequence chart -level  */
+# define  LOG_FILE        8 /*!< \brief message sequence chart -level  */
 #endif
 #ifndef LOG_TRACE
-#	define	LOG_TRACE	9	/*!< \brief trace-level messages */
+# define  LOG_TRACE 9 /*!< \brief trace-level messages */
 #endif
 
-#define NUM_LOG_LEVEL  10	/*!< \brief the number of message levels users have with LOG */
+#define NUM_LOG_LEVEL  10 /*!< \brief the number of message levels users have with LOG */
 /* @}*/
 
 
@@ -124,7 +124,7 @@ extern "C" {
  *  @brief Macro used to call tr_log_full_ex with file, function and line information
  * @{*/
 #ifdef USER_MODE
-  //#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
+//#define logIt(component, level, format, args...) do {logRecord(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args);} while(0);
 #ifdef LOG_NO_THREAD
 #define logIt(component, level, format, args...) logRecord_mt(__FILE__, __FUNCTION__, __LINE__, component, level, format, ##args)
 #else //default
@@ -175,9 +175,9 @@ extern "C" {
  *  @ingroup _macro
  *  @brief Macro of some useful functions defined by LOG
  * @{*/
-#define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0)	/*!< \brief Macro to log a message with severity DEBUG when entering a function */
-#define LOG_EXIT(c) do {LOG_T(c,"Exiting\n"); return;}while(0)	/*!< \brief Macro to log a message with severity TRACE when exiting a function */
-#define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)	/*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
+#define LOG_ENTER(c) do {LOG_T(c, "Entering\n");}while(0) /*!< \brief Macro to log a message with severity DEBUG when entering a function */
+#define LOG_EXIT(c) do {LOG_T(c,"Exiting\n"); return;}while(0)  /*!< \brief Macro to log a message with severity TRACE when exiting a function */
+#define LOG_RETURN(c,x) do {uint32_t __rv;__rv=(unsigned int)(x);LOG_T(c,"Returning %08x\n", __rv);return((typeof(x))__rv);}while(0)  /*!< \brief Macro to log a function exit, including integer value, then to return a value to the calling function */
 /* @}*/
 
 
@@ -189,12 +189,12 @@ extern "C" {
 /* .log_format = 0x13 uncolored standard messages
  * .log_format = 0x93 colored standard messages */
 
-#define LOG_RED "\033[1;31m"	/*!< \brief VT100 sequence for bold red foreground */
-#define LOG_GREEN "\033[32m"	/*!< \brief VT100 sequence for green foreground */
+#define LOG_RED "\033[1;31m"  /*!< \brief VT100 sequence for bold red foreground */
+#define LOG_GREEN "\033[32m"  /*!< \brief VT100 sequence for green foreground */
 #define LOG_ORANGE "\033[93m"   /*!< \brief VT100 sequence for orange foreground */
-#define LOG_BLUE "\033[34m"	/*!< \brief VT100 sequence for blue foreground */
-#define LOG_CYBL "\033[40;36m"	/*!< \brief VT100 sequence for cyan foreground on black background */
-#define LOG_RESET "\033[0m"	/*!< \brief VT100 sequence for reset (black) foreground */
+#define LOG_BLUE "\033[34m" /*!< \brief VT100 sequence for blue foreground */
+#define LOG_CYBL "\033[40;36m"  /*!< \brief VT100 sequence for cyan foreground on black background */
+#define LOG_RESET "\033[0m" /*!< \brief VT100 sequence for reset (black) foreground */
 /* @}*/
 
 
@@ -205,10 +205,10 @@ extern "C" {
 #define LOG_LOCAL      0x01
 #define LOG_REMOTE     0x02
 
-#define FLAG_COLOR     0x001	/*!< \brief defaults */
-#define FLAG_PID       0x002	/*!< \brief defaults */
+#define FLAG_COLOR     0x001  /*!< \brief defaults */
+#define FLAG_PID       0x002  /*!< \brief defaults */
 #define FLAG_COMP      0x004
-#define FLAG_THREAD    0x008	/*!< \brief all : 255/511 */
+#define FLAG_THREAD    0x008  /*!< \brief all : 255/511 */
 #define FLAG_LEVEL     0x010
 #define FLAG_FUNCT     0x020
 #define FLAG_FILE_LINE 0x040
@@ -220,84 +220,87 @@ extern "C" {
 #define LOG_HIGH        0x35
 #define LOG_FULL        0x75
 
-#define OAI_OK 0		/*!< \brief all ok */
-#define OAI_ERR 1		/*!< \brief generic error */
-#define OAI_ERR_READ_ONLY 2	/*!< \brief tried to write to read-only item */
-#define OAI_ERR_NOTFOUND 3	/*!< \brief something wasn't found */
+#define OAI_OK 0    /*!< \brief all ok */
+#define OAI_ERR 1   /*!< \brief generic error */
+#define OAI_ERR_READ_ONLY 2 /*!< \brief tried to write to read-only item */
+#define OAI_ERR_NOTFOUND 3  /*!< \brief something wasn't found */
 /* @}*/
 
 
-//static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN};	/*!< \brief Optional start-format strings for highlighting */
+//static char *log_level_highlight_start[] = {LOG_RED, LOG_RED, LOG_RED, LOG_RED, LOG_BLUE, "", "", "", LOG_GREEN}; /*!< \brief Optional start-format strings for highlighting */
 
-//static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};	/*!< \brief Optional end-format strings for highlighting */
+//static char *log_level_highlight_end[]   = {LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, LOG_RESET, "", "", "", LOG_RESET};  /*!< \brief Optional end-format strings for highlighting */
 
 typedef enum {
-    MIN_LOG_COMPONENTS = 0,
-    PHY = MIN_LOG_COMPONENTS,
-    MAC,
-    EMU,
-    OCG,
-    OMG,
-    OPT,
-    OTG,
-    OTG_LATENCY,
-    OTG_LATENCY_BG,
-    OTG_GP,
-    OTG_GP_BG,
-    OTG_JITTER,
-    RLC,
-    PDCP,
-    RRC,
-    NAS,
-    PERF,
-    OIP,
-    CLI,
-    MSC,
-    OCM,
-    UDP_,
-    GTPU,
-    SPGW,
-    S1AP,
-    SCTP,
-    HW,
-    OSA,
-    RAL_ENB,
-    RAL_UE,
-    ENB_APP,
-    TMR,
-    USIM,
-    LOCALIZE,
-    MAX_LOG_COMPONENTS,
-} comp_name_t;
+  MIN_LOG_COMPONENTS = 0,
+  PHY = MIN_LOG_COMPONENTS,
+  MAC,
+  EMU,
+  OCG,
+  OMG,
+  OPT,
+  OTG,
+  OTG_LATENCY,
+  OTG_LATENCY_BG,
+  OTG_GP,
+  OTG_GP_BG,
+  OTG_JITTER,
+  RLC,
+  PDCP,
+  RRC,
+  NAS,
+  PERF,
+  OIP,
+  CLI,
+  MSC,
+  OCM,
+  UDP_,
+  GTPU,
+  SPGW,
+  S1AP,
+  SCTP,
+  HW,
+  OSA,
+  RAL_ENB,
+  RAL_UE,
+  ENB_APP,
+  TMR,
+  USIM,
+  LOCALIZE,
+  RRH,
+  X2AP,
+  MAX_LOG_COMPONENTS,
+}
+comp_name_t;
 
-  //#define msg printf
+//#define msg printf
 
 typedef struct {
-    char *name;	/*!< \brief string name of item */
-    int value;	/*!< \brief integer value of mapping */
+  char *name; /*!< \brief string name of item */
+  int value;  /*!< \brief integer value of mapping */
 } mapping;
 
 
 typedef struct  {
-    const char *name;
-    int         level;
-    int         flag;
-    int         interval;
-    int         fd;
-    int         filelog;
-    char       *filelog_name;
+  const char *name;
+  int         level;
+  int         flag;
+  int         interval;
+  int         fd;
+  int         filelog;
+  char       *filelog_name;
 
-    /* SR: make the log buffer component relative */
-    char        log_buffer[MAX_LOG_TOTAL];
-}log_component_t;
+  /* SR: make the log buffer component relative */
+  char        log_buffer[MAX_LOG_TOTAL];
+} log_component_t;
 
 typedef struct  {
-    unsigned int remote_ip;
-    unsigned int audit_ip;
-    int  remote_level;
-    int  facility;
-    int  audit_facility;
-    int  format;
+  unsigned int remote_ip;
+  unsigned int audit_ip;
+  int  remote_level;
+  int  facility;
+  int  audit_facility;
+  int  format;
 } log_config_t;
 
 
@@ -319,7 +322,7 @@ typedef struct LOG_params {
   int line;
   int comp;
   int level;
-  char *format;
+  const char *format;
   char l_buff_info [MAX_LOG_INFO];
   int len;
 } LOG_params;
@@ -334,6 +337,7 @@ typedef enum log_instance_type_e {
 
 void log_set_instance_type (log_instance_type_t instance);
 #endif
+int logInit (void);
 
 /*--- INCLUDES ---------------------------------------------------------------*/
 #    include "log_if.h"

@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 /*! \file main.c
  * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp 
+ * \author  Navid Nikaein and Raymond Knopp
  * \date 2010 - 2014
  * \version 1.0
  * \email: navid.nikaein@eurecom.fr
@@ -71,48 +71,54 @@
 #include "SCHED/defs.h"
 
 void dl_phy_sync_success(module_id_t   module_idP,
-    frame_t       frameP,
-    unsigned char eNB_index,
-    uint8_t            first_sync){  //init as MR
+                         frame_t       frameP,
+                         unsigned char eNB_index,
+                         uint8_t            first_sync)   //init as MR
+{
   LOG_D(MAC,"[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n", module_idP, frameP, eNB_index);
 #if ! defined(ENABLE_USE_MME)
+
   if (first_sync==1) {
-      layer2_init_UE(module_idP);
-      openair_rrc_ue_init(module_idP,eNB_index);
-  }
-  else
+    layer2_init_UE(module_idP);
+    openair_rrc_ue_init(module_idP,eNB_index);
+  } else
 #endif
   {
-      mac_in_sync_ind(module_idP,frameP,eNB_index);
+    mac_in_sync_ind(module_idP,frameP,eNB_index);
   }
 
 }
 
-void mrbch_phy_sync_failure(module_id_t module_idP, frame_t frameP, uint8_t free_eNB_index){//init as CH
+void mrbch_phy_sync_failure(module_id_t module_idP, frame_t frameP, uint8_t free_eNB_index) //init as CH
+{
 
   LOG_I(MAC,"[eNB %d] Frame %d: PHY Sync failure \n",module_idP,frameP);
   layer2_init_eNB(module_idP, free_eNB_index);
   openair_rrc_eNB_init(module_idP);
 }
 
-char layer2_init_eNB(module_id_t module_idP, unsigned char eNB_index){
+char layer2_init_eNB(module_id_t module_idP, unsigned char eNB_index)
+{
 
   return 0;
 
 }
 
-char layer2_init_UE(module_id_t module_idP){
+char layer2_init_UE(module_id_t module_idP)
+{
 
   return 0;
 }
 
-void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_index){
+void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_index)
+{
 
   //  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frameP, eNB_index);
 }
 
 
-int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active){
+int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active)
+{
 
   module_id_t    Mod_id,i,j;
   RA_TEMPLATE *RA_template;
@@ -123,74 +129,82 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
   UE_list_t *UE_list;
 
   LOG_I(MAC,"[MAIN] Init function start:Nb_UE_INST=%d\n",NB_UE_INST);
+
   if (NB_UE_INST>0) {
-      UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
-      if (UE_mac_inst == NULL) {
-          LOG_C(MAC,"[MAIN] Can't ALLOCATE %d Bytes for %d UE_MAC_INST with size %d \n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,sizeof(UE_MAC_INST));
-          mac_xface->macphy_exit("[MAC][MAIN] not enough memory for UEs \n");
-      }
-      LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+    UE_mac_inst = (UE_MAC_INST*)malloc16(NB_UE_INST*sizeof(UE_MAC_INST));
 
-      bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
-      for(i=0;i<NB_UE_INST; i++)
-        ue_init_mac(i);
+    if (UE_mac_inst == NULL) {
+      LOG_C(MAC,"[MAIN] Can't ALLOCATE %d Bytes for %d UE_MAC_INST with size %d \n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,sizeof(UE_MAC_INST));
+      mac_xface->macphy_exit("[MAC][MAIN] not enough memory for UEs \n");
+    }
 
-  }
-  else 
+    LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d UE_MAC_INST @ %p\n",NB_UE_INST*sizeof(UE_MAC_INST),NB_UE_INST,UE_mac_inst);
+
+    bzero(UE_mac_inst,NB_UE_INST*sizeof(UE_MAC_INST));
+
+    for(i=0; i<NB_UE_INST; i++) {
+      ue_init_mac(i);
+    }
+  } else {
     UE_mac_inst = NULL;
+  }
 
   LOG_I(MAC,"[MAIN] Init function start:Nb_eNB_INST=%d\n",NB_eNB_INST);
+
   if (NB_eNB_INST>0) {
-      eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
-      if (eNB_mac_inst == NULL){
-          LOG_D(MAC,"[MAIN] can't ALLOCATE %d Bytes for %d eNB_MAC_INST with size %d \n",NB_eNB_INST*sizeof(eNB_MAC_INST*),NB_eNB_INST,sizeof(eNB_MAC_INST));
-          mac_xface->macphy_exit("[MAC][MAIN] not enough memory for eNB \n");
-      }
-      else{
-	LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
-	bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
-      }
-  }
-  else
+    eNB_mac_inst = (eNB_MAC_INST*)malloc16(NB_eNB_INST*sizeof(eNB_MAC_INST));
+
+    if (eNB_mac_inst == NULL) {
+      LOG_D(MAC,"[MAIN] can't ALLOCATE %d Bytes for %d eNB_MAC_INST with size %d \n",NB_eNB_INST*sizeof(eNB_MAC_INST*),NB_eNB_INST,sizeof(eNB_MAC_INST));
+      mac_xface->macphy_exit("[MAC][MAIN] not enough memory for eNB \n");
+    } else {
+      LOG_D(MAC,"[MAIN] ALLOCATE %d Bytes for %d eNB_MAC_INST @ %p\n",sizeof(eNB_MAC_INST),NB_eNB_INST,eNB_mac_inst);
+      bzero(eNB_mac_inst,NB_eNB_INST*sizeof(eNB_MAC_INST));
+    }
+  } else {
     eNB_mac_inst = NULL;
+  }
 
   // Initialize Linked-List for Active UEs
-  for(Mod_id=0;Mod_id<NB_eNB_INST;Mod_id++){
+  for(Mod_id=0; Mod_id<NB_eNB_INST; Mod_id++) {
     UE_list = &eNB_mac_inst[Mod_id].UE_list;
 
     UE_list->num_UEs=0;
     UE_list->head=-1;
-    UE_list->head_ul=-1; 
+    UE_list->head_ul=-1;
     UE_list->avail=0;
-    for (list_el=0;list_el<NUMBER_OF_UE_MAX-1;list_el++) {
+
+    for (list_el=0; list_el<NUMBER_OF_UE_MAX-1; list_el++) {
       UE_list->next[list_el]=list_el+1;
       UE_list->next_ul[list_el]=list_el+1;
     }
+
     UE_list->next[list_el]=-1;
     UE_list->next_ul[list_el]=-1;
-    
+
 #ifdef PHY_EMUL
     Mac_rlc_xface->Is_cluster_head[Mod_id]=2;//0: MR, 1: CH, 2: not CH neither MR
 #endif
-      /*#ifdef Rel10
+    /*#ifdef Rel10
     int n;
     for (n=0;n<4096;n++)
-      eNB_mac_inst[Mod_id].MCH_pdu.payload[n] = taus();
+    eNB_mac_inst[Mod_id].MCH_pdu.payload[n] = taus();
     //    Mac_rlc_xface->Node_id[Mod_id]=NODE_ID[Mod_id];
     #endif*/
   }
+
   //  Mac_rlc_xface->frame=Mac_rlc_xface->frame;
 
 
-  if (Is_rrc_registered == 1){
-      LOG_I(MAC,"[MAIN] calling RRC\n");
+  if (Is_rrc_registered == 1) {
+    LOG_I(MAC,"[MAIN] calling RRC\n");
 #ifndef CELLULAR //nothing to be done yet for cellular
-      openair_rrc_top_init(eMBMS_active, uecap_xer, cba_group_active,HO_active);
+    openair_rrc_top_init(eMBMS_active, uecap_xer, cba_group_active,HO_active);
 #endif
+  } else {
+    LOG_I(MAC,"[MAIN] Running without an RRC\n");
   }
-  else {
-      LOG_I(MAC,"[MAIN] Running without an RRC\n");
-  }
+
 #ifndef USER_MODE
 #ifndef PHY_EMUL
   LOG_I(MAC,"[MAIN] add openair2 proc\n");
@@ -202,99 +216,109 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
 
   // Set up DCIs for TDD 5MHz Config 1..6
 
-  for (i=0;i<NB_eNB_INST;i++) 
-    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-      LOG_D(MAC,"[MAIN][eNB %d] initializing RA_template\n",i);
+  for (i=0; i<NB_eNB_INST; i++)
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      LOG_D(MAC,"[MAIN][eNB %d] CC_id %d initializing RA_template\n",i, CC_id);
       LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", i);
 
       RA_template = (RA_TEMPLATE *)&eNB_mac_inst[i].common_channels[CC_id].RA_template[0];
-      for (j=0;j<NB_RA_PROC_MAX;j++) {
-          if (mac_xface->lte_frame_parms->frame_type == TDD) {
-              switch (mac_xface->lte_frame_parms->N_RB_DL) {
-              case 6:
-                size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-                size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-                size_bits1 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-                size_bits2 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-                break;
-              case 25:
-                size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-                size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
-                size_bits1 = sizeof_DCI1A_5MHz_TDD_1_6_t;
-                size_bits2 = sizeof_DCI1A_5MHz_TDD_1_6_t;
-                break;
-              case 50:
-                size_bytes1 = sizeof(DCI1A_10MHz_TDD_1_6_t);
-                size_bytes2 = sizeof(DCI1A_10MHz_TDD_1_6_t);
-                size_bits1 = sizeof_DCI1A_10MHz_TDD_1_6_t;
-                size_bits2 = sizeof_DCI1A_10MHz_TDD_1_6_t;
-                break;
-              case 100:
-                size_bytes1 = sizeof(DCI1A_20MHz_TDD_1_6_t);
-                size_bytes2 = sizeof(DCI1A_20MHz_TDD_1_6_t);
-                size_bits1 = sizeof_DCI1A_20MHz_TDD_1_6_t;
-                size_bits2 = sizeof_DCI1A_20MHz_TDD_1_6_t;
-                break;
-              default:
-                size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-                size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
-                size_bits1 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-                size_bits2 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-                break;
-              }
 
-          }
-          else {
-              switch (mac_xface->lte_frame_parms->N_RB_DL) {
-              case 6:
-                size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
-                size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
-                size_bits1 = sizeof_DCI1A_1_5MHz_FDD_t;
-                size_bits2 = sizeof_DCI1A_1_5MHz_FDD_t;
-                break;
-              case 25:
-                size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
-                size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
-                size_bits1 = sizeof_DCI1A_5MHz_FDD_t;
-                size_bits2 = sizeof_DCI1A_5MHz_FDD_t;
-                break;
-              case 50:
-                size_bytes1 = sizeof(DCI1A_10MHz_FDD_t);
-                size_bytes2 = sizeof(DCI1A_10MHz_FDD_t);
-                size_bits1 = sizeof_DCI1A_10MHz_FDD_t;
-                size_bits2 = sizeof_DCI1A_10MHz_FDD_t;
-                break;
-              case 100:
-                size_bytes1 = sizeof(DCI1A_20MHz_FDD_t);
-                size_bytes2 = sizeof(DCI1A_20MHz_FDD_t);
-                size_bits1 = sizeof_DCI1A_20MHz_FDD_t;
-                size_bits2 = sizeof_DCI1A_20MHz_FDD_t;
-                break;
-              default:
-                size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
-                size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
-                size_bits1 = sizeof_DCI1A_1_5MHz_FDD_t;
-                size_bits2 = sizeof_DCI1A_1_5MHz_FDD_t;
-                break;
-              }
-          }
-          memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,size_bytes1);
-          memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,size_bytes2);
-          RA_template[j].RA_dci_size_bytes1 = size_bytes1;
-          RA_template[j].RA_dci_size_bytes2 = size_bytes2;
-          RA_template[j].RA_dci_size_bits1  = size_bits1;
-          RA_template[j].RA_dci_size_bits2  = size_bits2;
+      for (j=0; j<NB_RA_PROC_MAX; j++) {
+        if (mac_xface->lte_frame_parms->frame_type == TDD) {
+          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+          case 6:
+            size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+            size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+            size_bits1 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+            size_bits2 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+            break;
 
-          RA_template[j].RA_dci_fmt1        = format1A;
-          RA_template[j].RA_dci_fmt2        = format1A;
+          case 25:
+            size_bytes1 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+            size_bytes2 = sizeof(DCI1A_5MHz_TDD_1_6_t);
+            size_bits1 = sizeof_DCI1A_5MHz_TDD_1_6_t;
+            size_bits2 = sizeof_DCI1A_5MHz_TDD_1_6_t;
+            break;
+
+          case 50:
+            size_bytes1 = sizeof(DCI1A_10MHz_TDD_1_6_t);
+            size_bytes2 = sizeof(DCI1A_10MHz_TDD_1_6_t);
+            size_bits1 = sizeof_DCI1A_10MHz_TDD_1_6_t;
+            size_bits2 = sizeof_DCI1A_10MHz_TDD_1_6_t;
+            break;
+
+          case 100:
+            size_bytes1 = sizeof(DCI1A_20MHz_TDD_1_6_t);
+            size_bytes2 = sizeof(DCI1A_20MHz_TDD_1_6_t);
+            size_bits1 = sizeof_DCI1A_20MHz_TDD_1_6_t;
+            size_bits2 = sizeof_DCI1A_20MHz_TDD_1_6_t;
+            break;
+
+          default:
+            size_bytes1 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+            size_bytes2 = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+            size_bits1 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+            size_bits2 = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
+            break;
+          }
+
+        } else {
+          switch (mac_xface->lte_frame_parms->N_RB_DL) {
+          case 6:
+            size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
+            size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
+            size_bits1 = sizeof_DCI1A_1_5MHz_FDD_t;
+            size_bits2 = sizeof_DCI1A_1_5MHz_FDD_t;
+            break;
+
+          case 25:
+            size_bytes1 = sizeof(DCI1A_5MHz_FDD_t);
+            size_bytes2 = sizeof(DCI1A_5MHz_FDD_t);
+            size_bits1 = sizeof_DCI1A_5MHz_FDD_t;
+            size_bits2 = sizeof_DCI1A_5MHz_FDD_t;
+            break;
+
+          case 50:
+            size_bytes1 = sizeof(DCI1A_10MHz_FDD_t);
+            size_bytes2 = sizeof(DCI1A_10MHz_FDD_t);
+            size_bits1 = sizeof_DCI1A_10MHz_FDD_t;
+            size_bits2 = sizeof_DCI1A_10MHz_FDD_t;
+            break;
+
+          case 100:
+            size_bytes1 = sizeof(DCI1A_20MHz_FDD_t);
+            size_bytes2 = sizeof(DCI1A_20MHz_FDD_t);
+            size_bits1 = sizeof_DCI1A_20MHz_FDD_t;
+            size_bits2 = sizeof_DCI1A_20MHz_FDD_t;
+            break;
+
+          default:
+            size_bytes1 = sizeof(DCI1A_1_5MHz_FDD_t);
+            size_bytes2 = sizeof(DCI1A_1_5MHz_FDD_t);
+            size_bits1 = sizeof_DCI1A_1_5MHz_FDD_t;
+            size_bits2 = sizeof_DCI1A_1_5MHz_FDD_t;
+            break;
+          }
+        }
+
+        memcpy((void *)&RA_template[j].RA_alloc_pdu1[0],(void *)&RA_alloc_pdu,size_bytes1);
+        memcpy((void *)&RA_template[j].RA_alloc_pdu2[0],(void *)&DLSCH_alloc_pdu1A,size_bytes2);
+        RA_template[j].RA_dci_size_bytes1 = size_bytes1;
+        RA_template[j].RA_dci_size_bytes2 = size_bytes2;
+        RA_template[j].RA_dci_size_bits1  = size_bits1;
+        RA_template[j].RA_dci_size_bits2  = size_bits2;
+
+        RA_template[j].RA_dci_fmt1        = format1A;
+        RA_template[j].RA_dci_fmt2        = format1A;
       }
 
       memset (&eNB_mac_inst[i].eNB_stats,0,sizeof(eNB_STATS));
       UE_template = (UE_TEMPLATE *)&eNB_mac_inst[i].UE_list.UE_template[CC_id][0];
-      for (j=0;j<NUMBER_OF_UE_MAX;j++) {
-          UE_template[j].rnti=0;
-          // initiallize the eNB to UE statistics
-          memset (&eNB_mac_inst[i].UE_list.eNB_UE_stats[CC_id][j],0,sizeof(eNB_UE_STATS));
+
+      for (j=0; j<NUMBER_OF_UE_MAX; j++) {
+        UE_template[j].rnti=0;
+        // initiallize the eNB to UE statistics
+        memset (&eNB_mac_inst[i].UE_list.eNB_UE_stats[CC_id][j],0,sizeof(eNB_UE_STATS));
       }
     }
 
@@ -306,18 +330,21 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
 
   srand (time(NULL));
 
-  for(j=0;j<NB_eNB_INST;j++)
-    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++){
+  for(j=0; j<NB_eNB_INST; j++)
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       eNB_mac_inst[j][CC_id].sbmap_conf.first_subframe=0;
       eNB_mac_inst[j][CC_id].sbmap_conf.periodicity=10;
       eNB_mac_inst[j][CC_id].sbmap_conf.sb_size=SB_size;
       eNB_mac_inst[j][CC_id].sbmap_conf.nb_active_sb=1;
-      for(i=0;i<NUMBER_OF_SUBBANDS;i++)
+
+      for(i=0; i<NUMBER_OF_SUBBANDS; i++) {
         eNB_mac_inst[j][CC_id].sbmap_conf.sbmap[i]=1;
+      }
 
       eNB_mac_inst[j][CC_id].sbmap_conf.sbmap[rand()%NUMBER_OF_SUBBANDS]=0;
 
-  }
+    }
+
 #endif
   //end ALU's algo
 
@@ -328,23 +355,25 @@ int mac_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, ui
 }
 
 
-int mac_init_global_param(void){
+int mac_init_global_param(void)
+{
 
 
   Mac_rlc_xface = NULL;
   LOG_I(MAC,"[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-  if (rlc_module_init()!=0)
+  if (rlc_module_init()!=0) {
     return(-1);
+  }
 
   LOG_I(MAC,"[MAIN] RLC_MODULE_INIT OK, malloc16 for mac_rlc_xface...\n");
 
   Mac_rlc_xface = (MAC_RLC_XFACE*)malloc16(sizeof(MAC_RLC_XFACE));
   bzero(Mac_rlc_xface,sizeof(MAC_RLC_XFACE));
 
-  if(Mac_rlc_xface == NULL){
-      LOG_E(MAC,"[MAIN] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
-      return (-1);
+  if(Mac_rlc_xface == NULL) {
+    LOG_E(MAC,"[MAIN] FATAL EROOR: Could not allocate memory for Mac_rlc_xface !!!\n");
+    return (-1);
 
   }
 
@@ -389,19 +418,26 @@ int mac_init_global_param(void){
 }
 
 
-void mac_top_cleanup(void){
+void mac_top_cleanup(void)
+{
 
 #ifndef USER_MODE
   pdcp_module_cleanup ();
 #endif
-  if (NB_UE_INST>0)
+
+  if (NB_UE_INST>0) {
     free (UE_mac_inst);
-  if (NB_eNB_INST>0)
+  }
+
+  if (NB_eNB_INST>0) {
     free(eNB_mac_inst);
+  }
+
   free( Mac_rlc_xface);
 }
 
-int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active) {
+int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,uint8_t cba_group_active, uint8_t HO_active)
+{
 
 
 
@@ -432,7 +468,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
-//  mac_xface->get_SB_size               = Get_SB_size;
+  //  mac_xface->get_SB_size               = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
   mac_xface->Msg1_transmitted          = Msg1_tx;
@@ -486,10 +522,10 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
 #endif
 #ifdef CBA
   mac_xface->phy_config_cba_rnti         = phy_config_cba_rnti ;
-#endif 
+#endif
   mac_xface->estimate_ue_tx_power        = estimate_ue_tx_power;
   mac_xface->phy_config_meas_ue          = phy_config_meas_ue;
-  mac_xface->phy_reset_ue		 = phy_reset_ue;
+  mac_xface->phy_reset_ue    = phy_reset_ue;
 
   mac_xface->phy_config_dedicated_eNB    = phy_config_dedicated_eNB;
   mac_xface->phy_config_dedicated_ue     = phy_config_dedicated_ue;
@@ -498,13 +534,17 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->get_mu_mimo_mode           = get_mu_mimo_mode;
 
   mac_xface->get_hundred_times_delta_TF = get_hundred_times_delta_IF_mac;
-  mac_xface->get_target_ul_rx_power     = get_target_ul_rx_power;
+  mac_xface->get_target_pusch_rx_power     = get_target_pusch_rx_power;
+  mac_xface->get_target_pucch_rx_power     = get_target_pucch_rx_power;
+
+  mac_xface->get_prach_prb_offset       = get_prach_prb_offset;
+  mac_xface->is_prach_subframe          = is_prach_subframe;
 
 #ifdef Rel10
   mac_xface->get_mch_sdu                 = get_mch_sdu;
   mac_xface->phy_config_dedicated_scell_eNB= phy_config_dedicated_scell_eNB;
   mac_xface->phy_config_dedicated_scell_ue= phy_config_dedicated_scell_ue;
-  
+
 #endif
 
   mac_xface->get_PHR = get_PHR;

@@ -48,8 +48,9 @@ struct rrc_rrm_measure_ctl control;
 
 //-----------------------------------------------------------------------------
 // Open FIFOs for RG RRC SAPs
-void nasrg_rrm_fifos_init (void){
-//-----------------------------------------------------------------------------
+void nasrg_rrm_fifos_init (void)
+{
+  //-----------------------------------------------------------------------------
   int write_flag = O_WRONLY | O_NONBLOCK | O_NDELAY;
   int read_flag = O_RDONLY | O_NONBLOCK | O_NDELAY;
 
@@ -60,6 +61,7 @@ void nasrg_rrm_fifos_init (void){
     fflush(stdout);
     sleep (1);
   }
+
   while ((rrc_rg_rrm_out_fifo = open (RRM_OUTPUT_SAPI, read_flag)) < 0) {
     printf ("%s returned value %d\n", RRM_OUTPUT_SAPI, rrc_rg_rrm_out_fifo);
     fflush(stdout);
@@ -71,8 +73,9 @@ void nasrg_rrm_fifos_init (void){
 }
 
 //-------------------------------------------------------------------
-void rrm_connection_response (void){
-//-------------------------------------------------------------------
+void rrm_connection_response (void)
+{
+  //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   connection_response response;
   int count=0;
@@ -89,16 +92,18 @@ void rrm_connection_response (void){
   count = write(rrc_rg_rrm_in_fifo, (uint8_t *) & rpc_mess, sizeof (rpc_message));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) & response, sizeof (connection_response));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) sim_data, strlen (sim_data));
+
   if (count > 0) {
     printf ("RRM message sent successfully on RRM FIFO, length: %d\n", count);
-    } else {
+  } else {
     printf ("RRM FIFO transmit failed");
-    }
+  }
 }
 
 //-------------------------------------------------------------------
-void rrm_add_user_response (char *rcve_buffer){
-//-------------------------------------------------------------------
+void rrm_add_user_response (char *rcve_buffer)
+{
+  //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   add_user_response response;
   add_user_request *request;
@@ -119,16 +124,18 @@ void rrm_add_user_response (char *rcve_buffer){
   count = write(rrc_rg_rrm_in_fifo, (uint8_t *) & rpc_mess, sizeof (rpc_message));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) & response, sizeof (add_user_response));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) sim_data, strlen (sim_data));
+
   if (count > 0) {
     printf ("RRM message sent successfully on RRM FIFO, length: %d\n", count);
-    } else {
+  } else {
     printf ("RRM FIFO transmit failed");
-    }
+  }
 }
 
 //-------------------------------------------------------------------
-void rrm_remove_user_response (char *rcve_buffer){
-//-------------------------------------------------------------------
+void rrm_remove_user_response (char *rcve_buffer)
+{
+  //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   remove_user_response response;
   remove_user_request *request;
@@ -149,12 +156,14 @@ void rrm_remove_user_response (char *rcve_buffer){
   count = write(rrc_rg_rrm_in_fifo, (uint8_t *) & rpc_mess, sizeof (rpc_message));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) & response, sizeof (remove_user_response));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) sim_data, strlen (sim_data));
+
   if (count > 0) {
     printf ("RRM message sent successfully on RRM FIFO, length: %d\n", count);
-    } else {
+  } else {
     printf ("RRM FIFO transmit failed");
-    }
-  /* Not sure it is really needed here 
+  }
+
+  /* Not sure it is really needed here
   usleep (5000); //wait 5ms
   // stop q measurement for MT
   nasrg_meas_q_release (UE_Id, &control);
@@ -163,8 +172,9 @@ void rrm_remove_user_response (char *rcve_buffer){
 }
 
 //-------------------------------------------------------------------
-void rrm_add_radio_access_bearer_response (char *rcve_buffer){
-//-------------------------------------------------------------------
+void rrm_add_radio_access_bearer_response (char *rcve_buffer)
+{
+  //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   add_radio_access_bearer_response response;
   add_radio_access_bearer_request *request;
@@ -185,16 +195,18 @@ void rrm_add_radio_access_bearer_response (char *rcve_buffer){
   count = write(rrc_rg_rrm_in_fifo, (uint8_t *) & rpc_mess, sizeof (rpc_message));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) & response, sizeof (add_radio_access_bearer_response));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) sim_data, strlen (sim_data));
+
   if (count > 0) {
     printf ("RRM message sent successfully on RRM FIFO, length: %d\n", count);
-    } else {
+  } else {
     printf ("RRM FIFO transmit failed");
-    }
+  }
 }
 
 //-------------------------------------------------------------------
-void rrm_add_measurement_request (char *rcve_buffer){
-//-------------------------------------------------------------------
+void rrm_add_measurement_request (char *rcve_buffer)
+{
+  //-------------------------------------------------------------------
   add_radio_access_bearer_confirm *confirm;
 
   confirm = (add_radio_access_bearer_confirm *)rcve_buffer;
@@ -210,8 +222,9 @@ void rrm_add_measurement_request (char *rcve_buffer){
 
 
 //-------------------------------------------------------------------
-void rrm_remove_radio_access_bearer_response (char *rcve_buffer){
-//-------------------------------------------------------------------
+void rrm_remove_radio_access_bearer_response (char *rcve_buffer)
+{
+  //-------------------------------------------------------------------
   rpc_message     rpc_mess;
   remove_radio_access_bearer_response response;
   remove_radio_access_bearer_request *request;
@@ -232,11 +245,13 @@ void rrm_remove_radio_access_bearer_response (char *rcve_buffer){
   count = write(rrc_rg_rrm_in_fifo, (uint8_t *) & rpc_mess, sizeof (rpc_message));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) & response, sizeof (remove_radio_access_bearer_response));
   count += write(rrc_rg_rrm_in_fifo, (uint8_t *) sim_data, strlen (sim_data));
+
   if (count > 0) {
     printf ("RRM message sent successfully on RRM FIFO, length: %d\n", count);
-    } else {
+  } else {
     printf ("RRM FIFO transmit failed");
-    }
+  }
+
   usleep (20000); //wait 5ms
   // stop q measurement for MT
   nasrg_meas_q_release (request->user_id, &control);
@@ -246,8 +261,9 @@ void rrm_remove_radio_access_bearer_response (char *rcve_buffer){
 
 //-----------------------------------------------------------------------------
 // Check if anything in RRC FIFO and send it to RRM
-void nasrg_rrm_from_rrc_read (void){
-//-----------------------------------------------------------------------------
+void nasrg_rrm_from_rrc_read (void)
+{
+  //-----------------------------------------------------------------------------
   char rcve_buffer[RRM_MSG_MAX_LENGTH];
   int  rpc_header_size=0;
   int  count = 0;
@@ -260,70 +276,81 @@ void nasrg_rrm_from_rrc_read (void){
 
   if ((count = read (rrc_rg_rrm_out_fifo, rcve_buffer, rpc_header_size)) > 0) {
     //printf("\n RRM FIFO %d, bytes count %d", rrc_rg_rrm_out_fifo, count);
-    #ifdef DEBUG_RRC_RRM_INTF
+#ifdef DEBUG_RRC_RRM_INTF
     printf ("\n [DEBUG]Message Received in RRM FIFO %d , length %d, type %d \n", rrc_rg_rrm_out_fifo, rrc_rrm_mess->length, rrc_rrm_mess->type);
-    #endif
+#endif
     //get the rest of the primitive
     count += read (rrc_rg_rrm_out_fifo, &(rcve_buffer[rpc_header_size]), rrc_rrm_mess->length );
 
-  switch (rrc_rrm_mess->type) {
+    switch (rrc_rrm_mess->type) {
     case RPC_CONNECTION_REQUEST:
       printf ("\n[CELL-RRM]Received RPC_CONNECTION_REQUEST, length %d\n", rrc_rrm_mess->length);
       rrm_connection_response();
       break;
+
     case RPC_ADD_USER_REQUEST:
       printf ("\n[CELL-RRM]Received RPC_ADD_USER_REQUEST, length %d\n", rrc_rrm_mess->length);
       rrm_add_user_response(&(rcve_buffer[rpc_header_size]));
       break;
+
     case RPC_REMOVE_USER_REQUEST:
       printf ("\n[CELL-RRM]Received RPC_REMOVE_USER_REQUEST, length %d\n", rrc_rrm_mess->length);
       rrm_remove_user_response(&(rcve_buffer[rpc_header_size]));
       break;
+
     case RPC_ADD_RADIO_ACCESS_BEARER_REQUEST:
       printf ("\n[CELL-RRM]Received RPC_ADD_RADIO_ACCESS_BEARER_REQUEST, length %d\n", rrc_rrm_mess->length);
       rrm_add_radio_access_bearer_response(&(rcve_buffer[rpc_header_size]));
       break;
+
     case RPC_REMOVE_RADIO_ACCESS_BEARER_REQUEST:
       printf ("\n[CELL-RRM]Received RPC_REMOVE_RADIO_ACCESS_BEARER_REQUEST, length %d\n", rrc_rrm_mess->length);
       rrm_remove_radio_access_bearer_response(&(rcve_buffer[rpc_header_size]));
       break;
+
     case RPC_ADD_USER_CONFIRM:
       printf ("\n[CELL-RRM]Received RPC RPC_ADD_USER_CONFIRM , length %d\n", rrc_rrm_mess->length);
       break;
+
     case RPC_ADD_RADIO_ACCESS_BEARER_CONFIRM:
       printf ("\n[CELL-RRM]Received RPC RPC_ADD_RADIO_ACCESS_BEARER_CONFIRM , length %d\n", rrc_rrm_mess->length);
       //rrm_add_measurement_request(&(rcve_buffer[rpc_header_size]));
       break;
+
     case RPC_L1_MEASUREMENT_RG_INTERNAL_REPORT:
     case RPC_L1_MEASUREMENT_RG_QUALITY_REPORT:
     case RPC_L1_MEASUREMENT_RG_TRAFFIC_VOLUME_REPORT:
-       rrc_rrm_meas_payload = (char *)rcve_buffer +12; //12 = rpc_header + equipment_id
-       //nas_rg_print_buffer (rrc_rrm_meas_payload, rrc_rrm_mess->length);
-       nasrg_print_bs_meas_report (rrc_rrm_meas_payload,rrc_rrm_mess->type);
+      rrc_rrm_meas_payload = (char *)rcve_buffer +12; //12 = rpc_header + equipment_id
+      //nas_rg_print_buffer (rrc_rrm_meas_payload, rrc_rrm_mess->length);
+      nasrg_print_bs_meas_report (rrc_rrm_meas_payload,rrc_rrm_mess->type);
       break;
+
     case RPC_L1_MEASUREMENT_MT_INTERNAL_REPORT:
     case RPC_L1_MEASUREMENT_MT_QUALITY_REPORT:
     case RPC_L1_MEASUREMENT_MT_TRAFFIC_VOLUME_REPORT:
     case RPC_L1_MEASUREMENT_MT_INTRA_FREQUENCY_REPORT:
-       rrc_rrm_meas_payload = (char *)rcve_buffer +12; //12 = rpc_header + equipment_id
-       //nas_rg_print_buffer (rrc_rrm_meas_payload, rrc_rrm_mess->length);
-       nasrg_print_meas_report (rrc_rrm_meas_payload,rrc_rrm_mess->type);
+      rrc_rrm_meas_payload = (char *)rcve_buffer +12; //12 = rpc_header + equipment_id
+      //nas_rg_print_buffer (rrc_rrm_meas_payload, rrc_rrm_mess->length);
+      nasrg_print_meas_report (rrc_rrm_meas_payload,rrc_rrm_mess->type);
       break;
+
     default:
       break;
     }
+
     fflush(stdout);
   }
 }
 
 
 //-----------------------------------------------------------------------------
-int main (int argc, char **argv){
-//-----------------------------------------------------------------------------
+int main (int argc, char **argv)
+{
+  //-----------------------------------------------------------------------------
   int time = 0;
-//     int rc, sd_rrm;
-//     fd_set readfds;
-//     struct timeval tv;
+  //     int rc, sd_rrm;
+  //     fd_set readfds;
+  //     struct timeval tv;
   tXmit_id =0;
   nasrg_rrm_fifos_init ();
   printf ("[RRM] RRM FIFOs ready\n");

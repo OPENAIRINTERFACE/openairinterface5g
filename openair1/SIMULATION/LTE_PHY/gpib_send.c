@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -32,28 +32,27 @@
 #include"gpib_send.h"
 void gpib_send(unsigned int gpib_board, unsigned int gpib_device, char *command_string )
 {
-unsigned short addlist[2] ={gpib_device, NOADDR};
-SendIFC(gpib_board);
+  unsigned short addlist[2] = {gpib_device, NOADDR};
+  SendIFC(gpib_board);
 
-//Enable all on GPIB bus
-EnableRemote(gpib_board, addlist);
+  //Enable all on GPIB bus
+  EnableRemote(gpib_board, addlist);
 
 
-if(ibsta & ERR)
-{
-printf("gpib_send: Instrument enable failed! \n");
-}
+  if(ibsta & ERR) {
+    printf("gpib_send: Instrument enable failed! \n");
+  }
 
-//Send Control Commandss
-Send(gpib_board, gpib_device, command_string, strlen(command_string), NLend);
+  //Send Control Commandss
+  Send(gpib_board, gpib_device, command_string, strlen(command_string), NLend);
 
-if(ibsta & ERR)
-{
+  if(ibsta & ERR) {
 
-printf("gpib_send: Send failed! \n");
+    printf("gpib_send: Send failed! \n");
 
-}
-printf("%s \n",command_string);
+  }
+
+  printf("%s \n",command_string);
 
 }
 

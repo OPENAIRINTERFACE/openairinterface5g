@@ -1,4 +1,4 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 
 TOP_DIR      = $(OPENAIR1_DIR)
 OPENAIR1_TOP = $(OPENAIR1_DIR)
@@ -48,7 +48,7 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-#CFLAGS += -DNAS_NETLINK -DLINUX
+#CFLAGS += -DPDCP_USE_NETLINK -DLINUX
 #NAS_FLAG=1
 
 #require kernel patch for oai driver to enable address autoconfiguration (IPv6 only)

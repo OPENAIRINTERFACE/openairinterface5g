@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -44,6 +44,7 @@
 #include "PHY/extern.h" //for PHY_vars
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "msc.h"
 
 #define OPENAIR_THREAD_STACK_SIZE    8192
 #define OPENAIR_THREAD_PRIORITY        255
@@ -59,51 +60,54 @@ int             pdcp_instance_cnt;
 
 static void *pdcp_thread_main(void* param);
 
-static void *pdcp_thread_main(void* param) {
+static void *pdcp_thread_main(void* param)
+{
   uint8_t eNB_flag = !UE_flag;
 
   LOG_I(PDCP,"This is pdcp_thread eNB_flag = %d\n",eNB_flag);
+  MSC_START_USE();
 
   while (!oai_exit) {
 
-      if (pthread_mutex_lock(&pdcp_mutex) != 0) {
-          LOG_E(PDCP,"Error locking mutex.\n");
-      }
-      else {
-          while (pdcp_instance_cnt < 0) {
-              pthread_cond_wait(&pdcp_cond,&pdcp_mutex);
-          }
-          if (pthread_mutex_unlock(&pdcp_mutex) != 0) {
-              LOG_E(PDCP,"Error unlocking mutex.\n");
-          }
+    if (pthread_mutex_lock(&pdcp_mutex) != 0) {
+      LOG_E(PDCP,"Error locking mutex.\n");
+    } else {
+      while (pdcp_instance_cnt < 0) {
+        pthread_cond_wait(&pdcp_cond,&pdcp_mutex);
       }
 
-      if (oai_exit) break;
+      if (pthread_mutex_unlock(&pdcp_mutex) != 0) {
+        LOG_E(PDCP,"Error unlocking mutex.\n");
+      }
+    }
 
-      if (eNB_flag) {
-          pdcp_run(PHY_vars_eNB_g[0]->frame, eNB_flag, PHY_vars_eNB_g[0]->Mod_id, 0);
-          LOG_D(PDCP,"Calling pdcp_run (eNB) for frame %d\n",PHY_vars_eNB_g[0]->frame);
-      }
-      else  {
-          pdcp_run(PHY_vars_UE_g[0]->frame, eNB_flag, 0, PHY_vars_UE_g[0]->Mod_id);
-          LOG_D(PDCP,"Calling pdcp_run (UE) for frame %d\n",PHY_vars_UE_g[0]->frame);
-      }
+    if (oai_exit) break;
 
-      if (pthread_mutex_lock(&pdcp_mutex) != 0) {
-          LOG_E(PDCP,"Error locking mutex.\n");
+    if (eNB_flag) {
+      pdcp_run(PHY_vars_eNB_g[0]->frame, eNB_flag, PHY_vars_eNB_g[0]->Mod_id, 0);
+      LOG_D(PDCP,"Calling pdcp_run (eNB) for frame %d\n",PHY_vars_eNB_g[0]->frame);
+    } else  {
+      pdcp_run(PHY_vars_UE_g[0]->frame, eNB_flag, 0, PHY_vars_UE_g[0]->Mod_id);
+      LOG_D(PDCP,"Calling pdcp_run (UE) for frame %d\n",PHY_vars_UE_g[0]->frame);
+    }
+
+    if (pthread_mutex_lock(&pdcp_mutex) != 0) {
+      LOG_E(PDCP,"Error locking mutex.\n");
+    } else {
+      pdcp_instance_cnt--;
+
+      if (pthread_mutex_unlock(&pdcp_mutex) != 0) {
+        LOG_E(PDCP,"Error unlocking mutex.\n");
       }
-      else {
-          pdcp_instance_cnt--;
-          if (pthread_mutex_unlock(&pdcp_mutex) != 0) {
-              LOG_E(PDCP,"Error unlocking mutex.\n");
-          }
-      }
+    }
   }
+
   return(NULL);
 }
 
 
-int init_pdcp_thread(void) {
+int init_pdcp_thread(void)
+{
 
   int    error_code;
   struct sched_param p;
@@ -123,31 +127,35 @@ int init_pdcp_thread(void) {
   pdcp_instance_cnt = -1;
   LOG_I(PDCP,"Allocating PDCP thread\n");
   error_code = pthread_create(&pdcp_thread,
-      &pdcp_thread_attr,
-      pdcp_thread_main,
-      (void*)NULL);
+                              &pdcp_thread_attr,
+                              pdcp_thread_main,
+                              (void*)NULL);
 
   if (error_code!= 0) {
-      LOG_I(PDCP,"Could not allocate PDCP thread, error %d\n",error_code);
-      return(error_code);
+    LOG_I(PDCP,"Could not allocate PDCP thread, error %d\n",error_code);
+    return(error_code);
+  } else {
+    LOG_I(PDCP,"Allocate PDCP thread successful\n");
+    pthread_setname_np( pdcp_thread, "PDCP" );
   }
-  else {
-      LOG_I(PDCP,"Allocate PDCP thread successful\n");
-  }
+
   return(0);
 }
 
 
-void cleanup_pdcp_thread(void) {
+void cleanup_pdcp_thread(void)
+{
   void *status_p = NULL;
 
   LOG_I(PDCP,"Scheduling PDCP thread to exit\n");
 
   pdcp_instance_cnt = 0;
-  if (pthread_cond_signal(&pdcp_cond) != 0)
+
+  if (pthread_cond_signal(&pdcp_cond) != 0) {
     LOG_I(PDCP,"ERROR pthread_cond_signal\n");
-  else
+  } else {
     LOG_I(PDCP,"Signalled PDCP thread to exit\n");
+  }
 
   pthread_join(pdcp_thread,&status_p);
   LOG_I(PDCP,"PDCP thread exited\n");

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -48,10 +48,10 @@ extern "C" {
 /** @defgroup _config_mobi Config Mobigen
  *  @ingroup _fn
  *  @brief Generate configuration XML for mobigen
- * @{*/ 
-	int config_mobi(char mobigen_filename[FILENAME_LENGTH_MAX], char filename[FILENAME_LENGTH_MAX]);
- /* @}*/
- 
+ * @{*/
+int config_mobi(char mobigen_filename[FILENAME_LENGTH_MAX], char filename[FILENAME_LENGTH_MAX]);
+/* @}*/
+
 #ifdef __cplusplus
 }
 #endif

@@ -35,7 +35,7 @@ endwhile
 labels=[labels; strcat("-@;",s,";") ];    # add the last string (Aggregate-Flow)
 
 if nargin>1
-   mask=intersection(str2num(arg_list{2}),1:size(labels,1));
+   mask=intersect(str2num(arg_list{2}),1:size(labels,1));
 else
    mask=1:size(labels,1);
 endif
@@ -48,8 +48,8 @@ endif
 # read data 
 data=fscanf(f,"%f",[size(labels,1)+1,Inf])';
 
-temp=split(strrep(inputf,"\\","/"),"/");
-outputf=split(deblank(temp(size(temp,1),:)),".");
+temp=char(strsplit(strrep(inputf,"\\","/"),"/"));
+outputf=char(strsplit(deblank(temp(size(temp,1),:)),"."));
 ylbl=outputf(1,:);
 
 #ylbl(1,1)=toupper(ylbl(1,1));

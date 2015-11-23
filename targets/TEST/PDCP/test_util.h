@@ -11,7 +11,7 @@
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 
 /*
- * Prints binary representation of given octet prepending 
+ * Prints binary representation of given octet prepending
  * passed log message
  *
  * @param Octet as an unsigned character
@@ -31,6 +31,7 @@ void print_binary_representation(unsigned char* message, unsigned char byte)
 
     mask /= 2;
   }
+
   printf("\n");
 }
 
@@ -45,9 +46,11 @@ void print_byte_stream(char* message, unsigned char* buffer, unsigned long size)
   unsigned long index = 0lu;
 
   printf("%s", message);
+
   for (index = 0; index < size; ++index) {
     msg("%x ", buffer[index]);
   }
+
   msg("\n");
 }
 

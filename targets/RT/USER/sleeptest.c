@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -92,13 +92,12 @@ void signal_handler(int sig)
   if (sig==SIGSEGV) {
     // get void*'s for all entries on the stack
     size = backtrace(array, 10);
-    
+
     // print out all the frames to stderr
     fprintf(stderr, "Error: signal %d:\n", sig);
     backtrace_symbols_fd(array, size, 2);
     exit(-1);
-  }
-  else {
+  } else {
     oai_exit=1;
   }
 }
@@ -135,8 +134,10 @@ static void *eNB_thread(void *arg)
 #ifndef TIMER_ONESHOT_MODE
   now = rt_get_time();
   ret = rt_task_make_periodic(task, now, nano2count(DAQ_PERIOD));
+
   if (ret!=0)
     printf("Problem with periodic timer\n");
+
 #endif
 #endif
 
@@ -151,36 +152,42 @@ static void *eNB_thread(void *arg)
   timing_info.time_avg = 0;
   timing_info.n_samples = 0;
 
-  while (!oai_exit)
-    {
-      time_in = rt_get_time_ns();
+  while (!oai_exit) {
+    time_in = rt_get_time_ns();
 #ifdef TIMER_ONESHOT_MODE
-      ret = rt_sleep_ns(DAQ_PERIOD);
-      if (ret)
-	printf("eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame,time_in,ret);
+    ret = rt_sleep_ns(DAQ_PERIOD);
+
+    if (ret)
+      printf("eNB Frame %d, time %llu: rt_sleep_ns returned %d\n",frame,time_in,ret);
+
 #else
-      rt_task_wait_period();
+    rt_task_wait_period();
 #endif
-      time_diff = rt_get_time_ns() - time_in;
+    time_diff = rt_get_time_ns() - time_in;
 
-      if (time_diff > timing_info.time_max)
-	timing_info.time_max = time_diff;
-      if (time_diff < timing_info.time_min)
-	timing_info.time_min = time_diff;
-      timing_info.time_avg = (timing_info.time_avg*timing_info.n_samples + time_diff)/(timing_info.n_samples+1);
-      timing_info.n_samples++;
+    if (time_diff > timing_info.time_max)
+      timing_info.time_max = time_diff;
 
-      last_slot = (slot)%LTE_SLOTS_PER_FRAME;
-      if (last_slot <0)
-        last_slot+=20;
-      next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
-      
-      slot++;
-      if (slot==20) {
-        slot=0;
-        frame++;
-      }
+    if (time_diff < timing_info.time_min)
+      timing_info.time_min = time_diff;
+
+    timing_info.time_avg = (timing_info.time_avg*timing_info.n_samples + time_diff)/(timing_info.n_samples+1);
+    timing_info.n_samples++;
+
+    last_slot = (slot)%LTE_SLOTS_PER_FRAME;
+
+    if (last_slot <0)
+      last_slot+=20;
+
+    next_slot = (slot+3)%LTE_SLOTS_PER_FRAME;
+
+    slot++;
+
+    if (slot==20) {
+      slot=0;
+      frame++;
     }
+  }
 
   printf("eNB_thread: finished, ran %d times.\n",frame);
 
@@ -197,7 +204,8 @@ static void *eNB_thread(void *arg)
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
 #ifdef RTAI
   RT_TASK *task;
@@ -236,13 +244,13 @@ int main(int argc, char **argv) {
   printf("Init mutex\n");
   //mutex = rt_get_adr(nam2num("MUTEX"));
   mutex = rt_sem_init(nam2num("MUTEX"), 1);
-  if (mutex==0)
-    {
-      printf("Error init mutex\n");
-      exit(-1);
-    }
-  else
+
+  if (mutex==0) {
+    printf("Error init mutex\n");
+    exit(-1);
+  } else
     printf("mutex=%p\n",mutex);
+
 #endif
 
   rt_sleep_ns(10*FRAME_PERIOD);
@@ -257,37 +265,40 @@ int main(int argc, char **argv) {
 #endif
 
 #ifdef RTAI
-    thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
+  thread0 = rt_thread_create(eNB_thread, NULL, 100000000);
 #else
-    error_code = pthread_create(&thread0, &attr_dlsch_threads, eNB_thread, NULL);
-    if (error_code!= 0) {
-      printf("[lte-softmodem.c] Could not allocate eNB_thread, error %d\n",error_code);
-      return(error_code);
-    }
-    else {
-      printf("[lte-softmodem.c] Allocate eNB_thread successful\n");
-    }
+  error_code = pthread_create(&thread0, &attr_dlsch_threads, eNB_thread, NULL);
+
+  if (error_code!= 0) {
+    printf("[lte-softmodem.c] Could not allocate eNB_thread, error %d\n",error_code);
+    return(error_code);
+  } else {
+    printf("[lte-softmodem.c] Allocate eNB_thread successful\n");
+  }
+
 #endif
-    printf("eNB threads created\n");
-  
+  printf("eNB threads created\n");
+
 
 
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
+
   //getchar();
   while (oai_exit==0) {
 
-    printf("eNB Frame %d, hw_slot %d (time %llu): period %llu, sleep time (avg/min/max/samples) %llu / %llu / %llu / %d, ratio %f\n",frame,slot,rt_get_time_ns(),DAQ_PERIOD,timing_info.time_avg,timing_info.time_min,timing_info.time_max,timing_info.n_samples,(double)timing_info.time_avg/DAQ_PERIOD);
- 
+    printf("eNB Frame %d, hw_slot %d (time %llu): period %llu, sleep time (avg/min/max/samples) %llu / %llu / %llu / %d, ratio %f\n",frame,slot,rt_get_time_ns(),DAQ_PERIOD,timing_info.time_avg,
+           timing_info.time_min,timing_info.time_max,timing_info.n_samples,(double)timing_info.time_avg/DAQ_PERIOD);
+
 
     rt_sleep_ns(100*FRAME_PERIOD);
   }
 
   // stop threads
 #ifdef RTAI
-    rt_thread_join(thread0); 
+  rt_thread_join(thread0);
 #else
-    pthread_join(thread0,&status); 
+  pthread_join(thread0,&status);
 #endif
 
 #ifdef RTAI

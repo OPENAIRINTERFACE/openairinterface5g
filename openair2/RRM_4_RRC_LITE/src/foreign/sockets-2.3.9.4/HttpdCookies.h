@@ -4,11 +4,11 @@
 Copyright (C) 2003-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -36,7 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 
@@ -47,39 +48,41 @@ namespace SOCKETS_NAMESPACE {
 //! Retrieve and manage cookies during a cgi call.
 class HTTPSocket;
 
-/** HTTP Cookie parse/container class. 
+/** HTTP Cookie parse/container class.
 \sa HttpdSocket
-\sa HttpdForm 
+\sa HttpdForm
 \ingroup webserver */
-class HttpdCookies 
+class HttpdCookies
 {
-	/** list of key/value structs. */
-	typedef std::list<std::pair<std::string, std::string> > cookie_v;
+  /** list of key/value structs. */
+  typedef std::list<std::pair<std::string, std::string> > cookie_v;
 
 public:
-	HttpdCookies();
-	HttpdCookies(const std::string& query_string);
-	~HttpdCookies();
+  HttpdCookies();
+  HttpdCookies(const std::string& query_string);
+  ~HttpdCookies();
 
-	void add(const std::string& s);
+  void add(const std::string& s);
 
-	bool getvalue(const std::string&,std::string&) const;
-	void replacevalue(const std::string& ,const std::string& );
-	void replacevalue(const std::string& ,long);
-	void replacevalue(const std::string& ,int);
-	size_t getlength(const std::string& ) const;
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,const std::string& v);
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,long v);
-	void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,int v);
-	const std::string& expiredatetime() const;
+  bool getvalue(const std::string&,std::string&) const;
+  void replacevalue(const std::string& ,const std::string& );
+  void replacevalue(const std::string& ,long);
+  void replacevalue(const std::string& ,int);
+  size_t getlength(const std::string& ) const;
+  void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,const std::string& v);
+  void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,long v);
+  void setcookie(HTTPSocket *,const std::string& d,const std::string& p,const std::string& c,int v);
+  const std::string& expiredatetime() const;
 
-	cookie_v& GetHttpdCookies() { return m_cookies; }
+  cookie_v& GetHttpdCookies() {
+    return m_cookies;
+  }
 
-	void Reset();
+  void Reset();
 
 private:
-	cookie_v m_cookies;
-	mutable std::string m_date;
+  cookie_v m_cookies;
+  mutable std::string m_date;
 };
 
 

@@ -14,18 +14,17 @@ void lfds611_queue_query( struct lfds611_queue_state *qs, enum lfds611_queue_que
   // TRD : query_input can be NULL
   assert( query_output != NULL );
 
-  switch( query_type )
-  {
-    case LFDS611_QUEUE_QUERY_ELEMENT_COUNT:
-      assert( query_input == NULL );
+  switch( query_type ) {
+  case LFDS611_QUEUE_QUERY_ELEMENT_COUNT:
+    assert( query_input == NULL );
 
-      lfds611_freelist_query( qs->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, query_output );
+    lfds611_freelist_query( qs->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, query_output );
     break;
 
-    case LFDS611_QUEUE_QUERY_VALIDATE:
-      // TRD : query_input can be NULL
+  case LFDS611_QUEUE_QUERY_VALIDATE:
+    // TRD : query_input can be NULL
 
-      lfds611_queue_internal_validate( qs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output, ((enum lfds611_data_structure_validity *) query_output)+1 );
+    lfds611_queue_internal_validate( qs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output, ((enum lfds611_data_structure_validity *) query_output)+1 );
     break;
   }
 
@@ -39,19 +38,20 @@ void lfds611_queue_query( struct lfds611_queue_state *qs, enum lfds611_queue_que
 
 
 /****************************************************************************/
-void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity, enum lfds611_data_structure_validity *lfds611_freelist_validity )
+void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity,
+                                      enum lfds611_data_structure_validity *lfds611_freelist_validity )
 {
   struct lfds611_queue_element
-    *qe,
-    *qe_slow,
-    *qe_fast;
+      *qe,
+      *qe_slow,
+      *qe_fast;
 
   lfds611_atom_t
-    element_count = 0,
-    total_elements;
+  element_count = 0,
+  total_elements;
 
   struct lfds611_validation_info
-    lfds611_freelist_vi;
+      lfds611_freelist_vi;
 
   assert( qs != NULL );
   // TRD : vi can be NULL
@@ -82,8 +82,7 @@ void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfd
   */
 
   if( qe_slow != NULL )
-    do
-    {
+    do {
       qe_slow = qe_slow->next[LFDS611_QUEUE_POINTER];
 
       if( qe_fast != NULL )
@@ -91,8 +90,7 @@ void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfd
 
       if( qe_fast != NULL )
         qe_fast = qe_fast->next[LFDS611_QUEUE_POINTER];
-    }
-    while( qe_slow != NULL and qe_fast != qe_slow );
+    } while( qe_slow != NULL and qe_fast != qe_slow );
 
   if( qe_fast != NULL and qe_slow != NULL and qe_fast == qe_slow )
     *lfds611_queue_validity = LFDS611_VALIDITY_INVALID_LOOP;
@@ -102,12 +100,10 @@ void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfd
            we know we don't have a loop from our earlier check
   */
 
-  if( *lfds611_queue_validity == LFDS611_VALIDITY_VALID and vi != NULL )
-  {
+  if( *lfds611_queue_validity == LFDS611_VALIDITY_VALID and vi != NULL ) {
     qe = (struct lfds611_queue_element *) qs->dequeue[LFDS611_QUEUE_POINTER];
 
-    while( qe != NULL )
-    {
+    while( qe != NULL ) {
       element_count++;
       qe = (struct lfds611_queue_element *) qe->next[LFDS611_QUEUE_POINTER];
     }
@@ -134,8 +130,7 @@ void lfds611_queue_internal_validate( struct lfds611_queue_state *qs, struct lfd
            lfds611_freelist
   */
 
-  if( vi != NULL )
-  {
+  if( vi != NULL ) {
     lfds611_freelist_query( qs->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, (void *) &total_elements );
 
     /* TRD : remember there is a dummy element in the lfds611_queue */

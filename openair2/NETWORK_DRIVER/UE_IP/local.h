@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -32,7 +32,7 @@
     email                : navid.nikaein@eurecom.fr
                           lionel.gauthier@eurecom.fr,
                            knopp@eurecom.fr
-			
+
  ***************************************************************************/
 
 #ifndef UE_IP_LOCAL_H
@@ -75,19 +75,19 @@ typedef struct ue_ip_priv_s {
   uint32_t                   timer_release;
   struct sock               *nl_sk;
   uint8_t                    nlmsg[UE_IP_PRIMITIVE_MAX_LENGTH+sizeof(struct nlmsghdr)];
-  uint8_t                    xbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // transmition buffer
+  uint8_t                    xbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // transmission buffer
   uint8_t                    rbuffer[UE_IP_PRIMITIVE_MAX_LENGTH]; // reception buffer
 } ue_ip_priv_t;
 
 typedef struct ipversion_s {
 #if defined(__LITTLE_ENDIAN_BITFIELD)
   uint8_t    reserved:4,
-          version:4;
+             version:4;
 #else
   uint8_t    version:4,
-          reserved:4;
+             reserved:4;
 #endif
-}ipversion_t;
+} ipversion_t;
 
 
 typedef struct pdcp_data_req_header_s {

@@ -8,7 +8,7 @@
 struct lfds611_freelist_element *lfds611_freelist_pop( struct lfds611_freelist_state *fs, struct lfds611_freelist_element **fe )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_freelist_element
-    *fe_local[LFDS611_FREELIST_PAC_SIZE];
+      *fe_local[LFDS611_FREELIST_PAC_SIZE];
 
   assert( fs != NULL );
   assert( fe != NULL );
@@ -22,15 +22,12 @@ struct lfds611_freelist_element *lfds611_freelist_pop( struct lfds611_freelist_s
            (this happens of course after the CAS itself has occurred inside lfds611_abstraction_dcas)
   */
 
-  do
-  {
-    if( fe_local[LFDS611_FREELIST_POINTER] == NULL )
-    {
+  do {
+    if( fe_local[LFDS611_FREELIST_POINTER] == NULL ) {
       *fe = NULL;
       return( *fe );
     }
-  }
-  while( 0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) fs->top, (lfds611_atom_t *) fe_local[LFDS611_FREELIST_POINTER]->next, (lfds611_atom_t *) fe_local) );
+  } while( 0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) fs->top, (lfds611_atom_t *) fe_local[LFDS611_FREELIST_POINTER]->next, (lfds611_atom_t *) fe_local) );
 
   *fe = (struct lfds611_freelist_element *) fe_local[LFDS611_FREELIST_POINTER];
 
@@ -60,8 +57,8 @@ struct lfds611_freelist_element *lfds611_freelist_guaranteed_pop( struct lfds611
 void lfds611_freelist_push( struct lfds611_freelist_state *fs, struct lfds611_freelist_element *fe )
 {
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) struct lfds611_freelist_element
-    *fe_local[LFDS611_FREELIST_PAC_SIZE],
-    *original_fe_next[LFDS611_FREELIST_PAC_SIZE];
+      *fe_local[LFDS611_FREELIST_PAC_SIZE],
+      *original_fe_next[LFDS611_FREELIST_PAC_SIZE];
 
   assert( fs != NULL );
   assert( fe != NULL );
@@ -80,12 +77,10 @@ void lfds611_freelist_push( struct lfds611_freelist_state *fs, struct lfds611_fr
            up-to-date version of the head of the lfds611_freelist
   */
 
-  do
-  {
+  do {
     fe_local[LFDS611_FREELIST_POINTER]->next[LFDS611_FREELIST_POINTER] = original_fe_next[LFDS611_FREELIST_POINTER];
     fe_local[LFDS611_FREELIST_POINTER]->next[LFDS611_FREELIST_COUNTER] = original_fe_next[LFDS611_FREELIST_COUNTER];
-  }
-  while( 0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) fs->top, (lfds611_atom_t *) fe_local, (lfds611_atom_t *) original_fe_next) );
+  } while( 0 == lfds611_abstraction_dcas((volatile lfds611_atom_t *) fs->top, (lfds611_atom_t *) fe_local, (lfds611_atom_t *) original_fe_next) );
 
   return;
 }

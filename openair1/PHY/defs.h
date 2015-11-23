@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -51,7 +51,7 @@
 # define msg mexPrintf
 #else
 # ifdef OPENAIR2
-#   if defined(ENABLE_RAL)
+#   if ENABLE_RAL
 #     include "collection/hashtable/hashtable.h"
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
@@ -63,38 +63,33 @@
 # endif
 #endif
 //use msg in the real-time thread context
-#define msg_nrt printf   
+#define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
-#ifdef EXPRESSMIMO_TARGET
-#define malloc16(x) malloc(x)
-#else //EXPRESSMIMO_TARGET
+#ifdef __AVX2__
+#define malloc16(x) memalign(32,x)
+#else
 #define malloc16(x) memalign(16,x)
-#endif //EXPRESSMIMO_TARGET
+#endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
 #define bigmalloc16 malloc16
 #define openair_free(y,x) free((y))
 #define PAGE_SIZE 4096
 
-#ifdef EXPRESSMIMO_TARGET
-    //! \brief Allocate \c size bytes of memory on the heap and zero it afterwards.
-    //! If no more memory is available, this function will terminate the program with an assertion error.
-    static inline void* malloc16_clear( size_t size ) {
-        void* ptr = malloc(size);
-        DevAssert(ptr);
-        memset( ptr, 0, size );
-        return ptr;
-    }
-#else //EXPRESSMIMO_TARGET
-    //! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
-    //! If no more memory is available, this function will terminate the program with an assertion error.
-    static inline void* malloc16_clear( size_t size ) {
-        void* ptr = memalign(16, size);
-        DevAssert(ptr);
-        memset( ptr, 0, size );
-        return ptr;
-    }
-#endif //EXPRESSMIMO_TARGET
+//! \brief Allocate \c size bytes of memory on the heap with alignment 16 and zero it afterwards.
+//! If no more memory is available, this function will terminate the program with an assertion error.
+static inline void* malloc16_clear( size_t size )
+{
+#ifdef __AVX2__
+  void* ptr = memalign(32, size);
+#else
+  void* ptr = memalign(16, size);
+#endif
+  DevAssert(ptr);
+  memset( ptr, 0, size );
+  return ptr;
+}
+
 
 
 #define PAGE_MASK 0xfffff000
@@ -117,10 +112,6 @@
 /// suppress compiler warning for unused arguments
 #define UNUSED(x) (void)x;
 
-#ifdef EXPRESSMIMO_TARGET
-#define Zero_Buffer(x,y) Zero_Buffer_nommx(x,y)
-#endif //EXPRESSMiMO_TARGET
- 
 
 #include "spec_defs_top.h"
 #include "impl_defs_top.h"
@@ -144,9 +135,9 @@
 
 #define NB_BANDS_MAX 8
 
-typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5} runmode_t;
+typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
 
-enum transmission_access_mode{
+enum transmission_access_mode {
   NO_ACCESS=0,
   POSTPONED_ACCESS,
   CANCELED_ACCESS,
@@ -162,33 +153,35 @@ typedef struct UE_SCAN_INFO_s {
   int32_t freq_offset_Hz[3][10];
 } UE_SCAN_INFO_t;
 
-#if defined(ENABLE_RAL)
-  typedef struct ral_threshold_phy_s {
-      SLIST_ENTRY(ral_threshold_phy_s) ral_thresholds;
-      ral_threshold_t                  threshold;
-      ral_th_action_t                  th_action;
-      ral_link_param_t                 link_param;
-      long                             timer_id;
-  }ral_threshold_phy_t;
+#if ENABLE_RAL
+typedef struct ral_threshold_phy_s {
+  SLIST_ENTRY(ral_threshold_phy_s) ral_thresholds;
+  ral_threshold_t                  threshold;
+  ral_th_action_t                  th_action;
+  ral_link_param_t                 link_param;
+  long                             timer_id;
+} ral_threshold_phy_t;
 #endif
 
 /// Context data structure for eNB subframe processing
 typedef struct {
- /// Component Carrier index
+  /// Component Carrier index
   uint8_t              CC_id;
   /// subframe index
   int subframe;
-  /// subframe to act upon for transmission 
+  /// subframe to act upon for transmission
   int subframe_tx;
-  /// subframe to act upon for reception 
+  /// subframe to act upon for reception
   int subframe_rx;
-  /// frame to act upon for transmission 
+  /// frame to act upon for transmission
   int frame_tx;
-  /// frame to act upon for reception 
+  /// frame to act upon for reception
   int frame_rx;
-  /// instance count for tx processing thread
+  /// \brief Instance count for tx processing thread.
+  /// \internal This variable is protected by \ref mutex_tx.
   int instance_cnt_tx;
-  /// instance count for rx processing thread
+  /// \brief Instance count for rx processing thread.
+  /// \internal This variable is protected by \ref mutex_rx.
   int instance_cnt_rx;
   /// pthread structure for tx processing thread
   pthread_t pthread_tx;
@@ -204,16 +197,20 @@ typedef struct {
   pthread_mutex_t mutex_rx;
 } eNB_proc_t;
 
-/// Top-level PHY Data Structure for eNB 
-typedef struct PHY_VARS_eNB_s{
+//! \brief Number of eNB TX and RX threads.
+//! This number must be equal to the number of LTE subframes (10). Each thread is responsible for a single subframe.
+#define NUM_ENB_THREADS 10
+
+/// Top-level PHY Data Structure for eNB
+typedef struct PHY_VARS_eNB_s {
   /// Module ID indicator for this instance
   module_id_t          Mod_id;
   uint8_t              CC_id;
-  eNB_proc_t           proc[10];
+  eNB_proc_t           proc[NUM_ENB_THREADS];
   uint8_t              local_flag;
   uint32_t             rx_total_gain_eNB_dB;
   LTE_DL_FRAME_PARMS   lte_frame_parms;
-  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables 
+  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables
   LTE_eNB_COMMON       lte_eNB_common_vars;
   LTE_eNB_SRS          lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PBCH         lte_eNB_pbch;
@@ -235,10 +232,10 @@ typedef struct PHY_VARS_eNB_s{
 
   /// UE-specific reference symbols (p=7...14), TM 8/9/10
   uint32_t         lte_gold_uespec_table[2][20][2][21];
-  
+
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_table[10][3][42];
-  
+
   uint32_t X_u[64][839];
 
   uint8_t pbch_pdu[4]; //PBCH_PDU_SIZE
@@ -247,7 +244,7 @@ typedef struct PHY_VARS_eNB_s{
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
 
-  uint32_t max_peak_val; 
+  uint32_t max_peak_val;
   int max_eNB_id, max_sync_pos;
 
   int              N_TA_offset; ///timing offset used in TDD
@@ -256,7 +253,7 @@ typedef struct PHY_VARS_eNB_s{
   /// first index: ? [0..N_RB_DL*12[
   double *sinr_dB;
 
- /// N0 (used for abstraction)
+  /// N0 (used for abstraction)
   double N0;
 
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
@@ -311,11 +308,11 @@ typedef struct PHY_VARS_eNB_s{
 
   /// cba_last successful reception for each group, used for collision detection
   uint8_t cba_last_reception[4];
-  
+
   // Pointers for active physicalConfigDedicated to be applied in current subframe
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
-  
+
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
@@ -336,17 +333,17 @@ typedef struct PHY_VARS_eNB_s{
   uint32_t total_dlsch_bitrate;
   uint32_t total_transmitted_bits;
   uint32_t total_system_throughput;
-  
+
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   /*
   time_stats_t phy_proc_sf[10]; // for each subframe
-  time_stats_t phy_proc_tx_sf[10]; 
+  time_stats_t phy_proc_tx_sf[10];
   time_stats_t phy_proc_rx_sf[10];
   */
   time_stats_t rx_prach;
-  
+
   time_stats_t ofdm_mod_stats;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
@@ -373,13 +370,18 @@ typedef struct PHY_VARS_eNB_s{
   time_stats_t ulsch_tc_ext_stats;
   time_stats_t ulsch_tc_intl1_stats;
   time_stats_t ulsch_tc_intl2_stats;
-  
+
 #ifdef LOCALIZATION
   /// time state for localization
   time_stats_t localization_stats;
-#endif 
-  
-#if defined(ENABLE_RAL)
+#endif
+
+  int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
+  int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
+  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][10*1024];
+
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
@@ -396,9 +398,8 @@ typedef enum {
 } rx_gain_t;
 */
 
-/// Top-level PHY Data Structure for UE 
-typedef struct
-{
+/// Top-level PHY Data Structure for UE
+typedef struct {
   /// \brief Module ID indicator for this instance
   uint8_t Mod_id;
   /// \brief Component carrier ID for this PHY instance
@@ -408,25 +409,31 @@ typedef struct
   runmode_t mode;
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
+  /// \brief Indicator that UE should perform coarse scanning around carrier
+  int UE_scan_carrier;
   /// \brief Indicator that UE is synchronized to an eNB
   int is_synchronized;
   /// \brief Instance count of TX processing thread (-1 means ready, 0 means busy)
   int instance_cnt_tx;
   /// \brief Instance count of RX processing thread (-1 means ready, 0 means busy)
   int instance_cnt_rx;
-  /// \brief Instance cound of initial synchronization thread (-1 means ready, 0 means busy)
+  /// \brief Instance count of initial synchronization thread (-1 means ready, 0 means busy).
+  /// Protected by mutex \ref mutex_synch and condition \ref cond_synch.
   int instance_cnt_synch;
   /// \brief Condition variable for TX processing thread
   pthread_cond_t cond_tx;
   /// \brief Condition variable for RX processing thread
   pthread_cond_t cond_rx;
-  /// \brief Condition variable for initial synchronization thread
+  /// \brief Condition variable for initial synchronization thread.
+  /// The corresponding mutex is \ref mutex_synch.
   pthread_cond_t cond_synch;
   /// \brief Mutex for TX processing thread
   pthread_mutex_t mutex_tx;
   /// \brief Mutex for RX processing thread
   pthread_mutex_t mutex_rx;
-  /// \brief Mutex for initial synchronization thread
+  /// \brief Mutex for initial synchronization thread.
+  /// Used to protect \ref instance_cnt_synch.
+  /// \sa cond_synch
   pthread_mutex_t mutex_synch;
   /// \brief Pthread structure for RX processing thread
   pthread_t       thread_rx;
@@ -490,7 +497,6 @@ typedef struct
   uint8_t               pucch_payload[22];
 
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
-  int8_t               g_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
   /// cell-specific reference symbols
   uint32_t lte_gold_table[7][20][2][14];
 
@@ -499,7 +505,7 @@ typedef struct
 
   /// mbsfn reference symbols
   uint32_t lte_gold_mbsfn_table[10][3][42];
-  
+
   uint32_t X_u[64][839];
 
   uint32_t high_speed_flag;
@@ -555,21 +561,21 @@ typedef struct
   int              timing_advance; ///timing advance signalled from eNB
   int              N_TA_offset; ///timing offset used in TDD
   /// Flag to tell if UE is secondary user (cognitive mode)
-  unsigned char    is_secondary_ue; 
+  unsigned char    is_secondary_ue;
   /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
-  unsigned char    has_valid_precoder; 
+  unsigned char    has_valid_precoder;
   /// hold the precoder for NULL beam to the primary eNB
   int              **ul_precoder_S_UE;
   /// holds the maximum channel/precoder coefficient
-  char             log2_maxp; 
+  char             log2_maxp;
 
   /// Flag to initialize averaging of PHY measurements
-  int init_averaging; 
+  int init_averaging;
 
   /// \brief sinr for all subcarriers of the current link (used only for abstraction).
   /// - first index: ? [0..12*N_RB_DL[
   double *sinr_dB;
-  
+
   /// \brief sinr for all subcarriers of first symbol for the CQI Calculation.
   /// - first index: ? [0..12*N_RB_DL[
   double *sinr_CQI_dB;
@@ -579,13 +585,13 @@ typedef struct
 
   /// N0 (used for abstraction)
   double N0;
-  
+
   /// PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
   /// PUSCH Varaibles
   PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
- 
+
   /// PUSCH contention-based access vars
   PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
@@ -613,11 +619,11 @@ typedef struct
 
   /// Transmission mode per eNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
- 
+
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
-  
+
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;
   time_stats_t ulsch_modulation_stats;
@@ -650,8 +656,8 @@ typedef struct
   time_stats_t dlsch_tc_intl1_stats;
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
-  
-#if defined(ENABLE_RAL)
+
+#if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
@@ -663,13 +669,13 @@ typedef struct {
   /// Module ID indicator for this instance
   uint8_t Mod_id;
   uint32_t frame;
-  // phy_vars_eNB 
-  // phy_vars ue 
+  // phy_vars_eNB
+  // phy_vars ue
   // cuurently only used to store and forward the PMCH
   uint8_t mch_avtive[10];
   uint8_t sync_area[10]; // num SF
   LTE_UE_DLSCH_t   *dlsch_rn_MCH[10];
-   
+
 } PHY_VARS_RN;
 
 #include "PHY/INIT/defs.h"

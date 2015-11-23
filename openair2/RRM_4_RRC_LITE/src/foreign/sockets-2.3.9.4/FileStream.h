@@ -1,17 +1,17 @@
 /**
- **	\file FileStream.h
- **	\date  2008-12-20
- **	\author grymse@alhem.net
+ ** \file FileStream.h
+ ** \date  2008-12-20
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -36,7 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "IStream.h"
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class IFile;
@@ -44,14 +45,14 @@ class IFile;
 class FileStream : public IStream
 {
 public:
-	FileStream(IFile& file);
+  FileStream(IFile& file);
 
-	size_t IStreamRead(char *buf, size_t max_sz);
+  size_t IStreamRead(char *buf, size_t max_sz);
 
-	void IStreamWrite(const char *buf, size_t sz);
+  void IStreamWrite(const char *buf, size_t sz);
 
 private:
-	IFile& m_file;
+  IFile& m_file;
 };
 
 #ifdef SOCKETS_NAMESPACE

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -47,10 +47,10 @@
 
 /*! \fn server_socket_tcp_ip4()
 * \brief this function allow to run a server dedicated to IP v4 and TCP traffic .
-* \param[in] 
-* \param[out]  
-* \return void 
-* \note 
+* \param[in]
+* \param[out]
+* \return void
+* \note
 * @ingroup  _otg
 */
 void server_socket_tcp_ip4();

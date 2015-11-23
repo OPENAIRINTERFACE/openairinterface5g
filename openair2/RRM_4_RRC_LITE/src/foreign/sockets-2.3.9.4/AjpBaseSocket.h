@@ -1,17 +1,17 @@
 /**
- **	\file AjpBaseSocket.h
- **	\date  2007-10-05
- **	\author grymse@alhem.net
+ ** \file AjpBaseSocket.h
+ ** \date  2007-10-05
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -39,51 +39,52 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class AjpBaseSocket : public TcpSocket
 {
-	class Initializer
-	{
-	public:
-		Initializer();
-		virtual ~Initializer() {}
+  class Initializer
+  {
+  public:
+    Initializer();
+    virtual ~Initializer() {}
 
-		std::map<int, std::string> Method;
-		std::map<int, std::string> Header;
-		std::map<int, std::string> Attribute;
+    std::map<int, std::string> Method;
+    std::map<int, std::string> Header;
+    std::map<int, std::string> Attribute;
 
-		Utility::ncmap<int> ResponseHeader;
+    Utility::ncmap<int> ResponseHeader;
 
-	};
+  };
 
 public:
-	AjpBaseSocket(ISocketHandler& h);
+  AjpBaseSocket(ISocketHandler& h);
 
-	void OnRawData(const char *buf, size_t sz);
+  void OnRawData(const char *buf, size_t sz);
 
-	virtual void OnHeader( short id, short len ) = 0;
-	virtual void OnPacket( const char *buf, size_t sz ) = 0;
+  virtual void OnHeader( short id, short len ) = 0;
+  virtual void OnPacket( const char *buf, size_t sz ) = 0;
 
 protected:
-	unsigned char get_byte(const char *buf, int& ptr);
-	bool get_boolean(const char *buf, int& ptr);
-	short get_integer(const char *buf, int& ptr);
-	std::string get_string(const char *buf, int& ptr);
+  unsigned char get_byte(const char *buf, int& ptr);
+  bool get_boolean(const char *buf, int& ptr);
+  short get_integer(const char *buf, int& ptr);
+  std::string get_string(const char *buf, int& ptr);
 
-	void put_byte(char *buf, int& ptr, unsigned char zz);
-	void put_boolean(char *buf, int& ptr, bool zz);
-	void put_integer(char *buf, int& ptr, short zz);
-	void put_string(char *buf, int& ptr, const std::string& zz);
+  void put_byte(char *buf, int& ptr, unsigned char zz);
+  void put_boolean(char *buf, int& ptr, bool zz);
+  void put_integer(char *buf, int& ptr, short zz);
+  void put_string(char *buf, int& ptr, const std::string& zz);
 
-	static Initializer Init;
+  static Initializer Init;
 
 private:
-	int m_state;
-	int m_length;
-	int m_ptr;
-	char m_message[8192];
+  int m_state;
+  int m_length;
+  int m_ptr;
+  char m_message[8192];
 };
 
 

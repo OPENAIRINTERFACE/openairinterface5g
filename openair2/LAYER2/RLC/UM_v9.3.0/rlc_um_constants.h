@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -54,12 +54,12 @@
 #        define RLC_UM_SN_5_BITS_MASK                       0x1F
 /** UM_Window_Size = 16 when a 5 bit SN is configured. */
 #        define RLC_UM_WINDOW_SIZE_SN_5_BITS                16
-         // This constant is used by the receiving UM RLC entity to define SNs of those
-         // UMD PDUs that can be received without causing an advancement of the
-         // receiving window. UM_Window_Size = 16 when a 5 bit SN is configured,
-         // UM_Window_Size = 512 when a 10 bit SN is configured and UM_Window_Size = 0
-         // when the receiving UM RLC entity is configured for MCCH or MTCH.
-         // li field (values shifted 1 bit left)
+// This constant is used by the receiving UM RLC entity to define SNs of those
+// UMD PDUs that can be received without causing an advancement of the
+// receiving window. UM_Window_Size = 16 when a 5 bit SN is configured,
+// UM_Window_Size = 512 when a 10 bit SN is configured and UM_Window_Size = 0
+// when the receiving UM RLC entity is configured for MCCH or MTCH.
+// li field (values shifted 1 bit left)
 #        define RLC_UM_SEGMENT_NB_MAX_LI_PER_PDU            24
 //----------------------------------------------------------
 // Events defined for state model of the acknowledged mode entity

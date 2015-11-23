@@ -1,0 +1,75 @@
+#!/bin/bash
+################################################################################
+#   OpenAirInterface
+#   Copyright(c) 1999 - 2014 Eurecom
+#
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) anylater version.
+#
+#
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with OpenAirInterface.The full GNU General Public License is
+#    included in this distribution in the file called "COPYING". If not,
+#    see <http://www.gnu.org/licenses/>.
+#
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+#
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+#
+################################################################################
+# file indent_source_code
+# brief
+# author Lionel Gauthier
+# company Eurecom
+# email: lionel.gauthier@eurecom.fr
+#
+################################
+# include helper functions
+################################
+THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
+source $THIS_SCRIPT_PATH/build_helper
+
+function main()
+{
+  local MAX_CODE_LENGTH=200
+  local INDENT_SPACES=2          
+set_openair_env
+
+
+  # remove trailing white spaces
+  #find $OPENAIR_DIR/openair1   -type f \( -name '*.c' -o -name '*.h' \) -exec sed --in-place 's/[[:space:]]\+$//' {} \+
+  #find $OPENAIR_DIR/openair2   -type f \( -name '*.c' -o -name '*.h' \) -exec sed --in-place 's/[[:space:]]\+$//' {} \+
+  #find $OPENAIR_DIR/openair3   -type f \( -name '*.c' -o -name '*.h' \) -exec sed --in-place 's/[[:space:]]\+$//' {} \+
+  #find $OPENAIR_DIR/openair3 -type f \( -name '*.c' -o -name '*.h' \) -exec sed --in-place 's/[[:space:]]\+$//' {} \+
+  #find $OPENAIR_DIR/targets    -type f \( -name '*.c' -o -name '*.h' \) -exec sed --in-place 's/[[:space:]]\+$//' {} \+
+
+# Style google not available on 14.04
+
+  exit 0 
+  # will use indent
+  command -v astyle >/dev/null 2>&1 || { echo >&2 "astyle required but it's not installed."; sudo apt-get install astyle; }
+  astyle  --recursive --convert-tabs --indent=spaces=$INDENT_SPACES --style=kr  --indent-col1-comments --max-code-length=$MAX_CODE_LENGTH \
+   $OPENAIR_DIR/openair1/*.h \
+   $OPENAIR_DIR/openair1/*.c \
+   $OPENAIR_DIR/openair2/*.h \
+   $OPENAIR_DIR/openair2/*.c \
+   $OPENAIR_DIR/openair3/*.h \
+   $OPENAIR_DIR/openair3/*.c \
+   $OPENAIR_DIR/openair3/*.h \
+   $OPENAIR_DIR/openair3/*.c \
+   $OPENAIR_DIR/targets/*.h \
+   $OPENAIR_DIR/targets/*.c 
+}
+
+
+main "$@"

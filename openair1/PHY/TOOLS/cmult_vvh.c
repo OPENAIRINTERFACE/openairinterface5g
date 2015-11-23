@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,30 +14,29 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 #include "defs.h"
 
-#ifndef EXPRESSMIMO_TARGET
-static  __m128i shift __attribute__ ((aligned(16))); 
+static  __m128i shift __attribute__ ((aligned(16)));
 
 
-int mult_cpx_vector_h(short *x1, 
-		      short *x2, 
-		      short *y, 
-		      unsigned int N, 
-		      unsigned short output_shift,
-		      short sign)
+int mult_cpx_vector_h(short *x1,
+                      short *x2,
+                      short *y,
+                      unsigned int N,
+                      unsigned short output_shift,
+                      short sign)
 {
   // Multiply elementwise the complex vector x1 with the complex conjugate of the complex vecotr x2 of N elements and adds it to the vector y.
   // x1       - input 1    in the format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -61,9 +60,9 @@ int mult_cpx_vector_h(short *x1,
   short *temps;
   int *tempd;
 
-  __m128i *x1_128; 
-  __m128i *x2_128; 
-  __m128i *y_128; 
+  __m128i *x1_128;
+  __m128i *x2_128;
+  __m128i *y_128;
   __m128i mask;
 
   __m128i temp;
@@ -79,9 +78,8 @@ int mult_cpx_vector_h(short *x1,
     mask = (__m128i) _mm_set_epi16 (1,-1,1,1,1,-1,1,1);
 
   // we compute 2*4 cpx multiply for each loop
-  for(i=0;i<(N>>3);i++)
-  {
-    
+  for(i=0; i<(N>>3); i++) {
+
     //    printf("i=%d\n",i);
 
     // unroll 1
@@ -192,11 +190,11 @@ int mult_cpx_vector_h(short *x1,
 }
 
 
-int mult_cpx_vector_h_add32(short *x1, 
-		      short *x2, 
-		      short *y, 
-		      unsigned int N, 
-		      short sign)
+int mult_cpx_vector_h_add32(short *x1,
+                            short *x2,
+                            short *y,
+                            unsigned int N,
+                            short sign)
 {
   // Multiply elementwise the complex vector x1 with the complex conjugate of the complex vecotr x2 of N elements and adds it to the vector y.
   // x1       - input 1    in 16bit format  |Re0  Im0 Re0 Im0|,......,|Re(N-1)  Im(N-1) Re(N-1) Im(N-1)|
@@ -218,9 +216,9 @@ int mult_cpx_vector_h_add32(short *x1,
   short *temps;
   int *tempd;
 
-  __m128i *x1_128; 
-  __m128i *x2_128; 
-  __m128i *y_128; 
+  __m128i *x1_128;
+  __m128i *x2_128;
+  __m128i *y_128;
   __m128i mask;
 
   __m128i temp;
@@ -235,9 +233,8 @@ int mult_cpx_vector_h_add32(short *x1,
     mask = (__m128i) _mm_set_epi16 (1,-1,1,1,1,-1,1,1);
 
   // we compute 2*4 cpx multiply for each loop
-  for(i=0;i<(N>>3);i++)
-  {
-    
+  for(i=0; i<(N>>3); i++) {
+
     m1 = x1_128[0];
     m2 = x2_128[0];
 
@@ -247,7 +244,7 @@ int mult_cpx_vector_h_add32(short *x1,
     m2 = _mm_shufflehi_epi16(m2,_MM_SHUFFLE(0,1,3,2));
     m2 = _mm_mullo_epi16(m2, mask);
 
-    m0 = _mm_madd_epi16(m1,m2);         // 1- compute x1[0]*x2[0], result is 32bit 
+    m0 = _mm_madd_epi16(m1,m2);         // 1- compute x1[0]*x2[0], result is 32bit
 
     y_128[0] = _mm_add_epi32(m0,y_128[0]);
 
@@ -259,7 +256,7 @@ int mult_cpx_vector_h_add32(short *x1,
     m2 = _mm_shufflehi_epi16(m2,_MM_SHUFFLE(0,1,3,2));
     m2 = _mm_mullo_epi16(m2, mask);
 
-    m0 = _mm_madd_epi16(m1,m2); 
+    m0 = _mm_madd_epi16(m1,m2);
 
     y_128[1] = _mm_add_epi32(m0,y_128[1]);
 
@@ -271,7 +268,7 @@ int mult_cpx_vector_h_add32(short *x1,
     m2 = _mm_shufflehi_epi16(m2,_MM_SHUFFLE(0,1,3,2));
     m2 = _mm_mullo_epi16(m2, mask);
 
-    m0 = _mm_madd_epi16(m1,m2); 
+    m0 = _mm_madd_epi16(m1,m2);
 
     y_128[2] = _mm_add_epi32(m0,y_128[2]);
 
@@ -284,7 +281,7 @@ int mult_cpx_vector_h_add32(short *x1,
     m2 = _mm_shufflehi_epi16(m2,_MM_SHUFFLE(0,1,3,2));
     m2 = _mm_mullo_epi16(m2, mask);
 
-    m0 = _mm_madd_epi16(m1,m2); 
+    m0 = _mm_madd_epi16(m1,m2);
 
     y_128[3] = _mm_add_epi32(m0,y_128[3]);
 
@@ -304,77 +301,66 @@ int mult_cpx_vector_h_add32(short *x1,
 #ifdef MAIN
 #define L 16
 
-main () {
+main ()
+{
 
-short input[256] __attribute__((aligned(16)));
-short input2[256] __attribute__((aligned(16)));
-short output[256] __attribute__((aligned(16)));
+  short input[256] __attribute__((aligned(16)));
+  short input2[256] __attribute__((aligned(16)));
+  short output[256] __attribute__((aligned(16)));
 
- int i;
+  int i;
 
- Zero_Buffer(output,256*2);
- 
- for (i=0;i<16;i+=2)
-   printf("output[%d] = %d + %d i\n",i,output[i],output[i+1]);
+  Zero_Buffer(output,256*2);
 
- input[0] = 100;
- input[1] = 200;
- input[2] = 100;
- input[3] = 200;
- input[4] = 1234;
- input[5] = -1234;
- input[6] = 1234;
- input[7] = -1234;
- input[8] = 100;
- input[9] = 200;
- input[10] = 100;
- input[11] = 200;
- input[12] = 1000;
- input[13] = 2000;
- input[14] = 1000;
- input[15] = 2000;
+  for (i=0; i<16; i+=2)
+    printf("output[%d] = %d + %d i\n",i,output[i],output[i+1]);
 
- input2[0] = 1;
- input2[1] = 2;
- input2[2] = 1;
- input2[3] = 2;
- input2[4] = 10;
- input2[5] = 20;
- input2[6] = 10;
- input2[7] = 20;
- input2[8] = 1;
- input2[9] = 2;
- input2[10] = 1;
- input2[11] = 2;
- input2[12] = 1000;
- input2[13] = 2000;
- input2[14] = 1000;
- input2[15] = 2000;
+  input[0] = 100;
+  input[1] = 200;
+  input[2] = 100;
+  input[3] = 200;
+  input[4] = 1234;
+  input[5] = -1234;
+  input[6] = 1234;
+  input[7] = -1234;
+  input[8] = 100;
+  input[9] = 200;
+  input[10] = 100;
+  input[11] = 200;
+  input[12] = 1000;
+  input[13] = 2000;
+  input[14] = 1000;
+  input[15] = 2000;
 
- 
+  input2[0] = 1;
+  input2[1] = 2;
+  input2[2] = 1;
+  input2[3] = 2;
+  input2[4] = 10;
+  input2[5] = 20;
+  input2[6] = 10;
+  input2[7] = 20;
+  input2[8] = 1;
+  input2[9] = 2;
+  input2[10] = 1;
+  input2[11] = 2;
+  input2[12] = 1000;
+  input2[13] = 2000;
+  input2[14] = 1000;
+  input2[15] = 2000;
+
+
   mult_cpx_vector_h(input2,input2,output,8,0,1);
 
-  for (i=0;i<16;i+=2)
+  for (i=0; i<16; i+=2)
     printf("output[%d] = %d + %d i\n",i,output[i],output[i+1]);
 
   Zero_Buffer(output,256*2);
   mult_cpx_vector_h(input2,input2,output,8,0,-1);
 
-  for (i=0;i<16;i+=2)
+  for (i=0; i<16; i+=2)
     printf("output[%d] = %d + %d i\n",i,output[i],output[i+1]);
 
 }
 
 #endif //MAIN
-
-#else //EXPRESSMIMO_TARGET
-int mult_cpx_vector_h(short *x1, 
-		      short *x2, 
-		      short *y, 
-		      unsigned int N, 
-		      unsigned short output_shift,
-		      short sign)
-{
-
-}
-#endif //EXPRESSMIMO_TARGET

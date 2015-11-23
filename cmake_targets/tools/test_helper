@@ -1,0 +1,77 @@
+# source this file in a bash
+
+XUNIT_TESTSUITE_START=0
+XUNIT_START=0
+XUNIT_TOTAL=0
+XUNIT_FAILED=0
+XUNIT_SUCCESS=0
+XUNIT_TESTCASES_XML=""
+
+## Call this at the start of a testcase. 
+# \sa xUnit_fail()
+# \sa xUnit_success()
+xUnit_start() {
+  XUNIT_START=$(date +%s.%N)
+  if [ $XUNIT_TESTSUITE_START == 0 ]; then
+    # very first call: start of a testsuite
+    XUNIT_TESTSUITE_START=$XUNIT_START
+  fi
+}
+
+## Call this after the testcase finished with a failure.
+# \sa xUnit_success()
+# \pre xUnit_start() must have been called before
+# \param $1 classname
+# \param $2 testcase name
+# \param $3 testcase result
+# \param $4 run index
+xUnit_fail() {
+  class=$1
+  test_case=$2
+  result=$3
+  run_index=$4
+  currtime=$(date +%s.%N)
+  time=$(echo "$currtime - $XUNIT_START" | bc -l)
+  xml="<testcase classname='$class' name='$test_case' run='$run_index' time='$time' RESULT='$result'></testcase>"
+  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
+  XUNIT_FAILED=$((XUNIT_FAILED+1))
+}
+
+## Call this after the testcase finished successfully.
+# \sa xUnit_fail()
+# \pre xUnit_start() must have been called before
+# \param $1 classname
+# \param $2 testcase name
+# \param $3 testcase result
+# \param $4 run index
+xUnit_success() {
+  class=$1
+  test_case=$2
+  result=$3
+  run_index=$4
+  currtime=$(date +%s.%N)
+  time=$(echo "$currtime - $XUNIT_START" | bc -l)
+  xml="<testcase classname='$class' name='$test_case' run='$run_index' time='$time' RESULT='$result'></testcase>"
+  XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
+  XUNIT_SUCCESS=$((XUNIT_SUCCESS+1))
+}
+
+## Call this after all testcases have been completed.
+# This functions writes out the test report.
+# \param $1 filename
+xUnit_write() {
+  filename=$1
+  tests=$((XUNIT_FAILED+XUNIT_SUCCESS))
+  timestamp=$(date --iso-8601=seconds)
+  time=$(echo "$currtime - $XUNIT_TESTSUITE_START" | bc -l)
+  xml_header="<testsuites><testsuite errors='0' failures='$XUNIT_FAILED' hostname='$(hostname)' name='OAI' skipped='0' tests='$tests' time='$time' timestamp='$timestamp'>"
+  echo $xml_header > $filename
+  echo -e $XUNIT_TESTCASES_XML >> $filename
+  echo "</testsuite></testsuites>" >> $filename
+  XUNIT_TESTSUITE_START=0
+  XUNIT_START=0
+  XUNIT_TOTAL=0
+  XUNIT_FAILED=0
+  XUNIT_SUCCESS=0
+  XUNIT_TESTCASES_XML=""
+}

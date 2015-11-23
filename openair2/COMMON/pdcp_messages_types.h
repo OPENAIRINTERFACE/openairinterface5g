@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -53,7 +53,8 @@ typedef struct RrcDcchDataReq_s {
   uint32_t sdu_size;
   uint8_t *sdu_p;
   uint8_t mode;
-  uint8_t ue_index;
+  uint16_t     rnti;
+  uint8_t      module_id;
   uint8_t eNB_index;
 } RrcDcchDataReq;
 
@@ -62,8 +63,9 @@ typedef struct RrcDcchDataInd_s {
   uint8_t dcch_index;
   uint32_t sdu_size;
   uint8_t *sdu_p;
-  uint8_t ue_index;
-  uint8_t eNB_index;
+  uint16_t     rnti;
+  uint8_t      module_id;
+  uint8_t      eNB_index; // LG: needed in UE
 } RrcDcchDataInd;
 
 #endif /* PDCP_MESSAGES_TYPES_H_ */

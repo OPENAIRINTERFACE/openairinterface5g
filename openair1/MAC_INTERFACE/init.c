@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -42,7 +42,7 @@ ________________________________________________________________*/
 int mac_init(void)
 {
   int i;
-  
+
 #ifndef USER_MODE
   // mac_xface->macphy_init();
   mac_xface->macphy_exit = openair_sched_exit;
@@ -51,9 +51,9 @@ int mac_init(void)
 #endif
 
   /* this is done in cbmimo1_fileops
-#ifdef OPENAIR2
+  #ifdef OPENAIR2
   mac_xface->macphy_init();
-#endif //OPENAIR2
+  #endif //OPENAIR2
   */
 
   return(1);
@@ -64,7 +64,8 @@ void mac_cleanup(void)
 
 }
 
-void mac_resynch(void) {
+void mac_resynch(void)
+{
 
 }
 

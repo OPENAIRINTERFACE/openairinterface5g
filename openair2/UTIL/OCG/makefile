@@ -1,4 +1,4 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 LIB = -lxml2
 
 TOP_DIR      = ../..
@@ -18,8 +18,8 @@ ifdef DEBUG_PHY
 CFLAGS += -DDEBUG_PHY
 endif
 
-ifdef NAS_NETLINK
-CFLAGS += -DNAS_NETLINK -DLINUX -DDEBUG_CONTROL
+ifdef PDCP_USE_NETLINK
+CFLAGS += -DPDCP_USE_NETLINK -DLINUX -DDEBUG_CONTROL
 endif
 
 CFLAGS += -DPHY_ABSTRACTION

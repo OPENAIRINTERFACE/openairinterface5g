@@ -14,12 +14,12 @@ void lfds611_ringbuffer_query( struct lfds611_ringbuffer_state *rs, enum lfds611
   // TRD : query_input can be NULL
   assert( query_output != NULL );
 
-  switch( query_type )
-  {
-    case LFDS611_RINGBUFFER_QUERY_VALIDATE:
-      // TRD : query_input can be NULL
+  switch( query_type ) {
+  case LFDS611_RINGBUFFER_QUERY_VALIDATE:
+    // TRD : query_input can be NULL
 
-      lfds611_ringbuffer_internal_validate( rs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output, ((enum lfds611_data_structure_validity *) query_output)+2 );
+    lfds611_ringbuffer_internal_validate( rs, (struct lfds611_validation_info *) query_input, (enum lfds611_data_structure_validity *) query_output,
+                                          ((enum lfds611_data_structure_validity *) query_output)+2 );
     break;
   }
 
@@ -33,7 +33,8 @@ void lfds611_ringbuffer_query( struct lfds611_ringbuffer_state *rs, enum lfds611
 
 
 /****************************************************************************/
-void lfds611_ringbuffer_internal_validate( struct lfds611_ringbuffer_state *rs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity, enum lfds611_data_structure_validity *lfds611_freelist_validity )
+void lfds611_ringbuffer_internal_validate( struct lfds611_ringbuffer_state *rs, struct lfds611_validation_info *vi, enum lfds611_data_structure_validity *lfds611_queue_validity,
+    enum lfds611_data_structure_validity *lfds611_freelist_validity )
 {
   assert( rs != NULL );
   // TRD : vi can be NULL
@@ -42,13 +43,12 @@ void lfds611_ringbuffer_internal_validate( struct lfds611_ringbuffer_state *rs, 
 
   lfds611_queue_query( rs->qs, LFDS611_QUEUE_QUERY_VALIDATE, vi, lfds611_queue_validity );
 
-  if( vi != NULL )
-  {
+  if( vi != NULL ) {
     struct lfds611_validation_info
-      lfds611_freelist_vi;
+        lfds611_freelist_vi;
 
     lfds611_atom_t
-      total_elements;
+    total_elements;
 
     lfds611_freelist_query( rs->fs, LFDS611_FREELIST_QUERY_ELEMENT_COUNT, NULL, (void *) &total_elements );
     lfds611_freelist_vi.min_elements = total_elements - vi->max_elements;

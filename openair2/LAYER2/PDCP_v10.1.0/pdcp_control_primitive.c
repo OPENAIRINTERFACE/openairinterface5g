@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -32,8 +32,8 @@
     begin                : Mon Dec 10 2001
     email                : Lionel.Gauthier@eurecom.fr
                              -------------------
-		description
-		This file contains the functions used for configuration of pdcp
+    description
+    This file contains the functions used for configuration of pdcp
 
  ***************************************************************************/
 #include "rtos_header.h"
@@ -48,7 +48,7 @@
 void
 configure_pdcp_req (struct pdcp_entity *pdcpP, void *rlcP, uint8_t rlc_sap_typeP, uint8_t header_compression_typeP)
 {
-//-----------------------------------------------------------------------------
+  //-----------------------------------------------------------------------------
   mem_block      *mb;
 
   mb = get_free_mem_block (sizeof (struct cpdcp_primitive));

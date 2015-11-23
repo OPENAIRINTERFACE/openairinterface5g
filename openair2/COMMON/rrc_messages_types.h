@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -85,20 +85,20 @@ typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
 
 //-------------------------------------------------------------------------------------------//
-typedef struct RrcStateInd_s{
-    Rrc_State_t     state;
-    Rrc_Sub_State_t sub_state;
+typedef struct RrcStateInd_s {
+  Rrc_State_t     state;
+  Rrc_Sub_State_t sub_state;
 } RrcStateInd;
 
 // eNB: ENB_APP -> RRC messages
 typedef struct RrcConfigurationReq_s {
-    uint32_t            cell_identity;
+  uint32_t            cell_identity;
 
-    uint16_t            tac;
+  uint16_t            tac;
 
-    uint16_t            mcc;
-    uint16_t            mnc;
-    uint8_t             mnc_digit_length;
+  uint16_t            mcc;
+  uint16_t            mnc;
+  uint8_t             mnc_digit_length;
 
   /*
     paging_drx_t        default_drx;
@@ -119,55 +119,55 @@ typedef struct RrcConfigurationReq_s {
 
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
-  int	                  nb_antennas_tx[MAX_NUM_CCs];   
-  int                     nb_antennas_rx[MAX_NUM_CCs];   
-  long                    prach_root[MAX_NUM_CCs];   
-  long                    prach_config_index[MAX_NUM_CCs]; 
-  BOOLEAN_t               prach_high_speed[MAX_NUM_CCs]; 
-  long                    prach_zero_correlation[MAX_NUM_CCs]; 
-  long                    prach_freq_offset[MAX_NUM_CCs]; 
-  long                    pucch_delta_shift[MAX_NUM_CCs]; 
-  long                    pucch_nRB_CQI[MAX_NUM_CCs]; 
+  int                   nb_antennas_tx[MAX_NUM_CCs];
+  int                     nb_antennas_rx[MAX_NUM_CCs];
+  long                    prach_root[MAX_NUM_CCs];
+  long                    prach_config_index[MAX_NUM_CCs];
+  BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];
+  long                    prach_zero_correlation[MAX_NUM_CCs];
+  long                    prach_freq_offset[MAX_NUM_CCs];
+  long                    pucch_delta_shift[MAX_NUM_CCs];
+  long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#ifndef Rel10 
-  long                    pucch_n1_AN[MAX_NUM_CCs]; 
+#ifndef Rel10
+  long                    pucch_n1_AN[MAX_NUM_CCs];
 #endif
-  long                    pdsch_referenceSignalPower[MAX_NUM_CCs]; 
-  long                    pdsch_p_b[MAX_NUM_CCs]; 
+  long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
+  long                    pdsch_p_b[MAX_NUM_CCs];
   long                    pusch_n_SB[MAX_NUM_CCs];
   long                    pusch_hoppingMode[MAX_NUM_CCs];
   long                    pusch_hoppingOffset[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_enable64QAM[MAX_NUM_CCs]; 
-  BOOLEAN_t               pusch_groupHoppingEnabled[MAX_NUM_CCs]; 
-  long                    pusch_groupAssignment[MAX_NUM_CCs]; 
-  BOOLEAN_t               pusch_sequenceHoppingEnabled[MAX_NUM_CCs]; 
-  long                    pusch_nDMRS1[MAX_NUM_CCs]; 
-  long                    phich_duration[MAX_NUM_CCs]; 
-  long                    phich_resource[MAX_NUM_CCs]; 
-  BOOLEAN_t               srs_enable[MAX_NUM_CCs]; 
-  long                    srs_BandwidthConfig[MAX_NUM_CCs]; 
-  long                    srs_SubframeConfig[MAX_NUM_CCs]; 
-  BOOLEAN_t               srs_ackNackST[MAX_NUM_CCs]; 
-  BOOLEAN_t               srs_MaxUpPts[MAX_NUM_CCs]; 
-  long                    pusch_p0_Nominal[MAX_NUM_CCs]; 
-  long                    pusch_alpha[MAX_NUM_CCs]; 
-  long                    pucch_p0_Nominal[MAX_NUM_CCs]; 
-  long                    msg3_delta_Preamble[MAX_NUM_CCs]; 
+  BOOLEAN_t               pusch_enable64QAM[MAX_NUM_CCs];
+  BOOLEAN_t               pusch_groupHoppingEnabled[MAX_NUM_CCs];
+  long                    pusch_groupAssignment[MAX_NUM_CCs];
+  BOOLEAN_t               pusch_sequenceHoppingEnabled[MAX_NUM_CCs];
+  long                    pusch_nDMRS1[MAX_NUM_CCs];
+  long                    phich_duration[MAX_NUM_CCs];
+  long                    phich_resource[MAX_NUM_CCs];
+  BOOLEAN_t               srs_enable[MAX_NUM_CCs];
+  long                    srs_BandwidthConfig[MAX_NUM_CCs];
+  long                    srs_SubframeConfig[MAX_NUM_CCs];
+  BOOLEAN_t               srs_ackNackST[MAX_NUM_CCs];
+  BOOLEAN_t               srs_MaxUpPts[MAX_NUM_CCs];
+  long                    pusch_p0_Nominal[MAX_NUM_CCs];
+  long                    pusch_alpha[MAX_NUM_CCs];
+  long                    pucch_p0_Nominal[MAX_NUM_CCs];
+  long                    msg3_delta_Preamble[MAX_NUM_CCs];
   long                    ul_CyclicPrefixLength[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1[MAX_NUM_CCs]; 
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b[MAX_NUM_CCs]; 
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2[MAX_NUM_CCs]; 
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a[MAX_NUM_CCs]; 
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b[MAX_NUM_CCs]; 
-  long                    rach_numberOfRA_Preambles[MAX_NUM_CCs]; 
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b[MAX_NUM_CCs];
+  long                    rach_numberOfRA_Preambles[MAX_NUM_CCs];
   BOOLEAN_t               rach_preamblesGroupAConfig[MAX_NUM_CCs];
-  long	                  rach_sizeOfRA_PreamblesGroupA[MAX_NUM_CCs];
-  long	                  rach_messageSizeGroupA[MAX_NUM_CCs];
-  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB	                  rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
-  long                    rach_powerRampingStep[MAX_NUM_CCs]; 
-  long                    rach_preambleInitialReceivedTargetPower[MAX_NUM_CCs]; 
-  long                    rach_preambleTransMax[MAX_NUM_CCs]; 
-  long                    rach_raResponseWindowSize[MAX_NUM_CCs]; 
+  long                    rach_sizeOfRA_PreamblesGroupA[MAX_NUM_CCs];
+  long                    rach_messageSizeGroupA[MAX_NUM_CCs];
+  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
+  long                    rach_powerRampingStep[MAX_NUM_CCs];
+  long                    rach_preambleInitialReceivedTargetPower[MAX_NUM_CCs];
+  long                    rach_preambleTransMax[MAX_NUM_CCs];
+  long                    rach_raResponseWindowSize[MAX_NUM_CCs];
   long                    rach_macContentionResolutionTimer[MAX_NUM_CCs];
   long                    rach_maxHARQ_Msg3Tx[MAX_NUM_CCs];
   long                    bcch_modificationPeriodCoeff[MAX_NUM_CCs];
@@ -179,7 +179,7 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
-  
+
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages

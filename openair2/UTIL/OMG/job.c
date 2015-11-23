@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -32,7 +32,7 @@
 * \date 2014
 * \version 0.1
 * \company Eurecom
-* \email: 
+* \email:
 * \note
 * \warning
 */
@@ -52,12 +52,11 @@ add_job (pair_struct * job, job_list * job_vector)
   entry->pair = job;
   entry->next = NULL;
 
-  if (job_vector != NULL)
-    {
+  if (job_vector != NULL) {
 
-      tmp = job_vector;
-      tmp->next = entry;
-    }
+    tmp = job_vector;
+    tmp->next = entry;
+  }
 
   return entry;
 
@@ -74,20 +73,17 @@ addjob (pair_struct * job, job_list * job_vector)
   entry->pair = job;
   entry->next = NULL;
 
-  if (job_vector == NULL)
-    {
-      return entry;
-    }
-  else
-    {
-      tmp = job_vector;
-      while (tmp->next != NULL)
-	{
-	  tmp = tmp->next;
-	}
+  if (job_vector == NULL) {
+    return entry;
+  } else {
+    tmp = job_vector;
 
-      tmp->next = entry;
+    while (tmp->next != NULL) {
+      tmp = tmp->next;
     }
+
+    tmp->next = entry;
+  }
 
   return job_vector;
 
@@ -100,26 +96,23 @@ display_job_list (double curr_t, job_list * job_vector)
 {
 
   job_list *tmp = job_vector;
-  if (tmp == NULL)
-    {
-      LOG_D (OMG, "Empty Job_list\n");
+
+  if (tmp == NULL) {
+    LOG_D (OMG, "Empty Job_list\n");
+  } else {
+    //LOG_D(OMG, "first_Job_time in Job_Vector %f\n", Job_Vector->pair->a);
+    while (tmp != NULL) {
+      if ((tmp->pair != NULL) /*&& tmp->pair->b->id==0 */ )
+        //LOG_D(OMG, "%.2f %.2f \n",tmp->pair->b->x_pos, tmp->pair->b->y_pos);
+        LOG_D (OMG, "%.2f  %d %d %.2f %.2f  %.2f\n", curr_t, tmp->pair->b->id,tmp->pair->b->gid,
+               tmp->pair->b->x_pos, tmp->pair->b->y_pos,
+               tmp->pair->b->mob->speed);
+
+
+      tmp = tmp->next;
+
     }
-  else
-    {
-      //LOG_D(OMG, "first_Job_time in Job_Vector %f\n", Job_Vector->pair->a);
-      while (tmp != NULL)
-	{
-	  if ((tmp->pair != NULL) /*&& tmp->pair->b->id==0 */ )
-	    //LOG_D(OMG, "%.2f %.2f \n",tmp->pair->b->x_pos, tmp->pair->b->y_pos);
-	    LOG_D (OMG, "%.2f  %d %d %.2f %.2f  %.2f\n", curr_t, tmp->pair->b->id,tmp->pair->b->gid,
-		   tmp->pair->b->x_pos, tmp->pair->b->y_pos,
-		   tmp->pair->b->mob->speed);
-
-
-	  tmp = tmp->next;
-
-	}
-    }
+  }
 }
 
 //average nodes speed for each mobility type
@@ -128,23 +121,21 @@ nodes_avgspeed (job_list * job_vector)
 {
   job_list *tmp = job_vector;
   unsigned int avg = 0, cnt = 0;
-  if (tmp == NULL)
-    {
-      LOG_D (OMG, "Empty Job_list\n");
-      return 0;
+
+  if (tmp == NULL) {
+    LOG_D (OMG, "Empty Job_list\n");
+    return 0;
+  } else {
+    while (tmp != NULL) {
+      if ((tmp->pair != NULL)) {
+        avg += tmp->pair->b->mob->speed;
+        cnt++;
+      }
+
+      tmp = tmp->next;
     }
-  else
-    {
-      while (tmp != NULL)
-	{
-	  if ((tmp->pair != NULL))
-	    {
-	      avg += tmp->pair->b->mob->speed;
-	      cnt++;
-	    }
-	  tmp = tmp->next;
-	}
-    }
+  }
+
   return avg / cnt;
 }
 
@@ -154,27 +145,29 @@ job_list_sort (job_list * list, job_list * end)
 {
 
   job_list *pivot, *tmp, *next, *before, *after;
-  if (list != end && list->next != end)
-    {
 
-      pivot = list;
-      before = pivot;
-      after = end;
-      for (tmp = list->next; tmp != end; tmp = next)
-	{
-	  next = tmp->next;
-	  if (tmp->pair->next_event_t > pivot->pair->next_event_t)
-	    tmp->next = after, after = tmp;
-	  else
-	    tmp->next = before, before = tmp;
-	}
+  if (list != end && list->next != end) {
 
-      before = job_list_sort (before, pivot);
-      after = job_list_sort (after, end);
+    pivot = list;
+    before = pivot;
+    after = end;
 
-      pivot->next = after;
-      return before;
+    for (tmp = list->next; tmp != end; tmp = next) {
+      next = tmp->next;
+
+      if (tmp->pair->next_event_t > pivot->pair->next_event_t)
+        tmp->next = after, after = tmp;
+      else
+        tmp->next = before, before = tmp;
     }
+
+    before = job_list_sort (before, pivot);
+    after = job_list_sort (after, end);
+
+    pivot->next = after;
+    return before;
+  }
+
   return list;
 }
 
@@ -193,22 +186,23 @@ remove_job (job_list * list, int nid, int node_type)
 
   current = list;
   previous = NULL;
-  while (current != NULL)
-    {
-      if (current->pair->b->id == nid && current->pair->b->type == node_type)
-	{
-	  if (current == list || previous == NULL)
-	    list = current->next;
-	  else
-	    previous->next = current->next;
 
-	  free (current);
-	  break;
+  while (current != NULL) {
+    if (current->pair->b->id == nid && current->pair->b->type == node_type) {
+      if (current == list || previous == NULL)
+        list = current->next;
+      else
+        previous->next = current->next;
 
-	}
-      previous = current;
-      current = current->next;
+      free (current);
+      break;
+
     }
+
+    previous = current;
+    current = current->next;
+  }
+
   return list;
 
 }

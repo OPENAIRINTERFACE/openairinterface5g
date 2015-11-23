@@ -39,7 +39,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include <rtai_lxrt.h> 
+#include <rtai_lxrt.h>
 #include <rtai_sem.h>
 #include <rtai_msg.h>
 
@@ -65,11 +65,11 @@ enum ieee80211_band {
 };
 
 struct ieee80211p_rx_status {
-  short	data_len;	//frame data length in bytes
-  char	rssi; 		//received power in dBm
-  char	rate; 		//reveived data rate in units of 100 kbps
+  short data_len; //frame data length in bytes
+  char  rssi;     //received power in dBm
+  char  rate;     //reveived data rate in units of 100 kbps
   enum ieee80211_band band;
-  char	flags; 		//RX flags
+  char  flags;    //RX flags
 }; /* struct ieee80211p_rx_status */
 
 extern uint32_t *txdata[2],*rxdata[2];
@@ -96,7 +96,8 @@ int tx_sdu_active = 0;
 int tx_sdu_length = 0;
 char rxsdu[2000];
 
-void *tx_thread(void *arg) {
+void *tx_thread(void *arg)
+{
 
   int fd=*((int*)arg);
   RT_TASK *task;
@@ -104,25 +105,26 @@ void *tx_thread(void *arg) {
   int i;
   char dummy_data[10];
 
-  
+
   if (fd > 0) {
-  
-    ret = netlink_send(fd,NLCMD_INIT,10,&dummy_data[0]);		
+
+    ret = netlink_send(fd,NLCMD_INIT,10,&dummy_data[0]);
 
     printf("tx_thread starting, fd %d\n",fd);
 
     task = rt_task_init_schmod(nam2num("TASK1"), 0, 0, 0, SCHED_FIFO, 0xF);
     mlockall(MCL_CURRENT | MCL_FUTURE);
-  //  rt_make_hard_real_time();
-  
+    //  rt_make_hard_real_time();
+
     while (!oai_exit) {
-      
+
       if (tx_sdu_active == 1)
-	printf("tx_thread: waiting (MBOX %d)\n",((unsigned int*)DAQ_MBOX)[0]);
-      
+        printf("tx_thread: waiting (MBOX %d)\n",((unsigned int*)DAQ_MBOX)[0]);
+
       while(((volatile int)tx_sdu_active) != 0) {
-	rt_sleep(nano2count(66666));
+        rt_sleep(nano2count(66666));
       }
+
       printf("tx_thread: calling netlink\n");
       ret = netlink_recv(fd,rxsdu);
       tx_sdu_active = 1;
@@ -130,25 +132,24 @@ void *tx_thread(void *arg) {
 
       /*
       if (ret > 0) {
-	
-	printf("received TX SDU: ");
-	for (i=0;i<ret;i++) {	
-	  printf("%02hhx ",rxsdu[i]);	
-	}
-	
-	printf("\n");
-	
+
+      printf("received TX SDU: ");
+      for (i=0;i<ret;i++) {
+      printf("%02hhx ",rxsdu[i]);
+      }
+
+      printf("\n");
+
       }
       */
-      
+
     }
-  }
-  else {
+  } else {
     printf("tx_thread: no netlink\n");
   }
 
   printf("tx_thread exiting\n");
-  
+
   return(0);
 }
 
@@ -166,14 +167,14 @@ int dot11_netlink_init() {
   int ret;
   int i;
   char txdata[10];
-  
+
   fd = netlink_init();
-  
+
   if (fd < 0) {
     return -1;
   }
-  
-  ret = netlink_send(fd,NLCMD_INIT,10,&txdata[0]);		
+
+  ret = netlink_send(fd,NLCMD_INIT,10,&txdata[0]);
 
 
 

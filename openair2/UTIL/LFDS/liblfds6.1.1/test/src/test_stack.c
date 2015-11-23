@@ -27,24 +27,24 @@ void test_lfds611_stack( void )
 void stack_test_internal_popping( void )
 {
   unsigned int
-    loop,
-    *found_count,
-    cpu_count;
+  loop,
+  *found_count,
+  cpu_count;
 
   lfds611_atom_t
-    count;
+  count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   enum lfds611_data_structure_validity
-    dvs = LFDS611_VALIDITY_VALID;
+  dvs = LFDS611_VALIDITY_VALID;
 
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   struct stack_test_popping_state
-    *stps;
+      *stps;
 
   /* TRD : we create a stack with 1,000,000 elements
 
@@ -73,8 +73,8 @@ void stack_test_internal_popping( void )
     lfds611_stack_push( ss, (void *) (lfds611_atom_t) loop );
 
   stps = malloc( sizeof(struct stack_test_popping_state) * cpu_count );
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (stps+loop)->ss = ss;
     lfds611_stack_new( &(stps+loop)->ss_thread_local, 1000000 );
   }
@@ -91,6 +91,7 @@ void stack_test_internal_popping( void )
 
   // TRD : now we check the thread-local stacks
   found_count = malloc( sizeof(unsigned int) * 1000000 );
+
   for( loop = 0 ; loop < 1000000 ; loop++ )
     *(found_count+loop) = 0;
 
@@ -98,8 +99,7 @@ void stack_test_internal_popping( void )
     while( lfds611_stack_pop((stps+loop)->ss_thread_local, (void **) &count) )
       (*(found_count+count))++;
 
-  for( loop = 0 ; loop < 1000000 and dvs == LFDS611_VALIDITY_VALID ; loop++ )
-  {
+  for( loop = 0 ; loop < 1000000 and dvs == LFDS611_VALIDITY_VALID ; loop++ ) {
     if( *(found_count+loop) == 0 )
       dvs = LFDS611_VALIDITY_INVALID_MISSING_ELEMENTS;
 
@@ -109,8 +109,10 @@ void stack_test_internal_popping( void )
 
   // TRD : cleanup
   free( found_count );
+
   for( loop = 0 ; loop < cpu_count ; loop++ )
     lfds611_stack_delete( (stps+loop)->ss_thread_local, NULL, NULL );
+
   free( stps );
   lfds611_stack_delete( ss, NULL, NULL );
 
@@ -128,10 +130,10 @@ void stack_test_internal_popping( void )
 thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping( void *stack_test_popping_state )
 {
   struct stack_test_popping_state
-    *stps;
+      *stps;
 
   lfds611_atom_t
-    count;
+  count;
 
   assert( stack_test_popping_state != NULL );
 
@@ -153,29 +155,29 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping( void *sta
 void stack_test_internal_pushing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   struct stack_test_pushing_state
-    *stps;
+      *stps;
 
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   lfds611_atom_t
-    user_data,
-    thread,
-    count,
-    *per_thread_counters;
+  user_data,
+  thread,
+  count,
+  *per_thread_counters;
 
   struct lfds611_validation_info
-    vi = { 1000000, 1000000 };
+      vi = { 1000000, 1000000 };
 
   /* TRD : we create a stack with 1,000,000 elements
 
@@ -204,8 +206,7 @@ void stack_test_internal_pushing( void )
   // TRD : the main stack
   lfds611_stack_new( &ss, 1000000 );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (stps+loop)->thread_number = (lfds611_atom_t) loop;
     (stps+loop)->ss = ss;
   }
@@ -228,13 +229,11 @@ void stack_test_internal_pushing( void )
 
   lfds611_stack_query( ss, LFDS611_STACK_QUERY_VALIDATE, &vi, (void *) dvs );
 
-  while( dvs[0] == LFDS611_VALIDITY_VALID and lfds611_stack_pop(ss, (void **) &user_data) )
-  {
+  while( dvs[0] == LFDS611_VALIDITY_VALID and lfds611_stack_pop(ss, (void **) &user_data) ) {
     thread = user_data >> (sizeof(lfds611_atom_t)*8-8);
     count = (user_data << 8) >> 8;
 
-    if( thread >= cpu_count )
-    {
+    if( thread >= cpu_count ) {
       dvs[0] = LFDS611_VALIDITY_INVALID_TEST_DATA;
       break;
     }
@@ -267,10 +266,10 @@ void stack_test_internal_pushing( void )
 thread_return_t CALLING_CONVENTION stack_test_internal_thread_pushing( void *stack_test_pushing_state )
 {
   struct stack_test_pushing_state
-    *stps;
+      *stps;
 
   lfds611_atom_t
-    counter = 0;
+  counter = 0;
 
   assert( stack_test_pushing_state != NULL );
 
@@ -292,24 +291,24 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_pushing( void *sta
 void stack_test_internal_popping_and_pushing( void )
 {
   unsigned int
-    loop,
-    subloop,
-    cpu_count;
+  loop,
+  subloop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   struct stack_test_popping_and_pushing_state
-    *stpps;
+      *stpps;
 
   struct lfds611_validation_info
-    vi;
+      vi;
 
   /* TRD : we have two threads per CPU
            the threads loop for ten seconds
@@ -335,8 +334,7 @@ void stack_test_internal_popping_and_pushing( void )
 
   stpps = malloc( sizeof(struct stack_test_popping_and_pushing_state) * cpu_count * 2 );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (stpps+loop)->ss = ss;
     lfds611_stack_new( &(stpps+loop)->local_ss, 100000 );
 
@@ -350,8 +348,7 @@ void stack_test_internal_popping_and_pushing( void )
 
   thread_handles = malloc( sizeof(thread_state_t) * cpu_count * 2 );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     abstraction_thread_start( &thread_handles[loop], loop, stack_test_internal_thread_popping_and_pushing_start_popping, stpps+loop );
     abstraction_thread_start( &thread_handles[loop+cpu_count], loop, stack_test_internal_thread_popping_and_pushing_start_pushing, stpps+loop+cpu_count );
   }
@@ -387,16 +384,16 @@ void stack_test_internal_popping_and_pushing( void )
 thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushing_start_popping( void *stack_test_popping_and_pushing_state )
 {
   struct stack_test_popping_and_pushing_state
-    *stpps;
+      *stpps;
 
   void
-    *user_data;
+  *user_data;
 
   time_t
-    start_time;
+  start_time;
 
   unsigned int
-    count;
+  count;
 
   assert( stack_test_popping_and_pushing_state != NULL );
 
@@ -407,13 +404,11 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushin
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     count = 0;
 
     while( count < 100000 )
-      if( lfds611_stack_pop(stpps->ss, &user_data) )
-      {
+      if( lfds611_stack_pop(stpps->ss, &user_data) ) {
         lfds611_stack_push( stpps->local_ss, user_data );
         count++;
       }
@@ -434,16 +429,16 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushin
 thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushing_start_pushing( void *stack_test_popping_and_pushing_state )
 {
   struct stack_test_popping_and_pushing_state
-    *stpps;
+      *stpps;
 
   void
-    *user_data;
+  *user_data;
 
   time_t
-    start_time;
+  start_time;
 
   unsigned int
-    count;
+  count;
 
   assert( stack_test_popping_and_pushing_state != NULL );
 
@@ -454,8 +449,7 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushin
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     // TRD : return our local stack to the main stack
     while( lfds611_stack_pop(stpps->local_ss, &user_data) )
       lfds611_stack_push( stpps->ss, user_data );
@@ -463,8 +457,7 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushin
     count = 0;
 
     while( count < 100000 )
-      if( lfds611_stack_pop(stpps->ss, &user_data) )
-      {
+      if( lfds611_stack_pop(stpps->ss, &user_data) ) {
         lfds611_stack_push( stpps->local_ss, user_data );
         count++;
       }
@@ -485,20 +478,20 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_popping_and_pushin
 void stack_test_internal_rapid_popping_and_pushing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   struct lfds611_validation_info
-    vi;
+      vi;
 
   enum lfds611_data_structure_validity
-    dvs[2];
+  dvs[2];
 
   /* TRD : in these tests there is a fundamental antagonism between
            how much checking/memory clean up that we do and the
@@ -563,13 +556,13 @@ void stack_test_internal_rapid_popping_and_pushing( void )
 thread_return_t CALLING_CONVENTION stack_test_internal_thread_rapid_popping_and_pushing( void *stack_state )
 {
   struct lfds611_stack_state
-    *ss;
+      *ss;
 
   void
-    *user_data = NULL;
+  *user_data = NULL;
 
   time_t
-    start_time;
+  start_time;
 
   assert( stack_state != NULL );
 
@@ -579,8 +572,7 @@ thread_return_t CALLING_CONVENTION stack_test_internal_thread_rapid_popping_and_
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_stack_push( ss, user_data );
     lfds611_stack_pop( ss, &user_data );
   }

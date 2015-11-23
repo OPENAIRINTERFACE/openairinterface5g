@@ -21,98 +21,86 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-#define RLC_TM_MODULE
-#define RLC_TM_INIT_C
+#define RLC_TM_MODULE 1
+#define RLC_TM_INIT_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_tm.h"
 #include "LAYER2/MAC/extern.h"
 //-----------------------------------------------------------------------------
 void config_req_rlc_tm (
-                const protocol_ctxt_t* const  ctxt_pP,
-                const srb_flag_t  srb_flagP,
-                const rlc_tm_info_t * const config_tmP,
-                const rb_id_t     rb_idP
-                )
+  const protocol_ctxt_t* const  ctxt_pP,
+  const srb_flag_t  srb_flagP,
+  const rlc_tm_info_t * const config_tmP,
+  const rb_id_t     rb_idP
+)
 {
-//-----------------------------------------------------------------------------
-    rlc_union_t     *rlc_union_p  = NULL;
-    rlc_tm_entity_t *rlc_p        = NULL;
-    hash_key_t       key          = RLC_COLL_KEY_VALUE(ctxt_pP->enb_module_id, ctxt_pP->ue_module_id, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-    hashtable_rc_t   h_rc;
+  rlc_union_t     *rlc_union_p  = NULL;
+  rlc_tm_entity_t *rlc_p        = NULL;
+  hash_key_t       key          = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+  hashtable_rc_t   h_rc;
 
-    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
-    if (h_rc == HASH_TABLE_OK) {
-        rlc_p = &rlc_union_p->rlc.tm;
-        LOG_D(RLC, "[FRAME %05d][%s][RRC][MOD %u/%u][][--- CONFIG_REQ (is_uplink_downlink=%d) --->][RLC_TM][MOD %u/%u][RB %u]\n",
-            ctxt_pP->frame,
-            ( ctxt_pP->enb_flag > 0) ? "eNB":"UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            config_tmP->is_uplink_downlink,
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            rb_idP);
+  h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
-        rlc_tm_init(ctxt_pP, rlc_p);
-        rlc_p->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
-        rlc_tm_set_debug_infos(ctxt_pP, rlc_p, rb_idP, srb_flagP);
-        rlc_tm_configure(ctxt_pP, rlc_p, config_tmP->is_uplink_downlink);
-    } else {
-        LOG_E(RLC, "[FRAME %05d][%s][RRC][MOD %u/%u][][--- CONFIG_REQ  --->][RLC_TM][MOD %u/%u][RB %u], RLC NOT FOUND\n",
-            ctxt_pP->frame,
-            ( ctxt_pP->enb_flag > 0) ? "eNB":"UE",
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            ctxt_pP->enb_module_id,
-            ctxt_pP->ue_module_id,
-            rb_idP);
-    }
+  if (h_rc == HASH_TABLE_OK) {
+    rlc_p = &rlc_union_p->rlc.tm;
+    LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ (is_uplink_downlink=%d) RB %u\n",
+          PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
+          config_tmP->is_uplink_downlink,
+          rb_idP);
+
+    rlc_tm_init(ctxt_pP, rlc_p);
+    rlc_p->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
+    rlc_tm_set_debug_infos(ctxt_pP, rlc_p, rb_idP, srb_flagP);
+    rlc_tm_configure(ctxt_pP, rlc_p, config_tmP->is_uplink_downlink);
+  } else {
+    LOG_E(RLC, PROTOCOL_RLC_TM_CTXT_FMT" CONFIG_REQ RB %u RLC NOT FOUND\n",
+          PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
+          rb_idP);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void rlc_tm_init (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP
-                )
+  const protocol_ctxt_t* const  ctxt_pP,
+  rlc_tm_entity_t * const rlcP
+)
 {
-//-----------------------------------------------------------------------------
-    int saved_allocation = rlcP->allocation;
-    memset (rlcP, 0, sizeof (struct rlc_tm_entity));
-    rlcP->allocation = saved_allocation;
-    // TX SIDE
-    list_init (&rlcP->pdus_to_mac_layer, NULL);
+  int saved_allocation = rlcP->allocation;
+  memset (rlcP, 0, sizeof (struct rlc_tm_entity));
+  rlcP->allocation = saved_allocation;
+  // TX SIDE
+  list_init (&rlcP->pdus_to_mac_layer, NULL);
 
-    rlcP->protocol_state    = RLC_NULL_STATE;
-    rlcP->nb_sdu            = 0;
-    rlcP->next_sdu_index    = 0;
-    rlcP->current_sdu_index = 0;
+  rlcP->protocol_state    = RLC_NULL_STATE;
+  rlcP->nb_sdu            = 0;
+  rlcP->next_sdu_index    = 0;
+  rlcP->current_sdu_index = 0;
 
-    rlcP->output_sdu_size_to_write = 0;
-    rlcP->buffer_occupancy  = 0;
+  rlcP->output_sdu_size_to_write = 0;
+  rlcP->buffer_occupancy  = 0;
 
-    // SPARE : not 3GPP
-    rlcP->size_input_sdus_buffer = 16;
+  // SPARE : not 3GPP
+  rlcP->size_input_sdus_buffer = 16;
 
-    if ((rlcP->input_sdus_alloc == NULL) && (rlcP->size_input_sdus_buffer > 0)) {
-        rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *));
-        rlcP->input_sdus = (mem_block_t **) (rlcP->input_sdus_alloc->data);
-        memset (rlcP->input_sdus, 0, rlcP->size_input_sdus_buffer * sizeof (void *));
-    }
+  if ((rlcP->input_sdus_alloc == NULL) && (rlcP->size_input_sdus_buffer > 0)) {
+    rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *));
+    rlcP->input_sdus = (mem_block_t **) (rlcP->input_sdus_alloc->data);
+    memset (rlcP->input_sdus, 0, rlcP->size_input_sdus_buffer * sizeof (void *));
+  }
 }
 
 //-----------------------------------------------------------------------------
 void
 rlc_tm_reset_state_variables (
-                const protocol_ctxt_t* const  ctxt_pP,
-                struct rlc_tm_entity * const rlcP
-                )
+  const protocol_ctxt_t* const  ctxt_pP,
+  struct rlc_tm_entity * const rlcP
+)
 {
-//-----------------------------------------------------------------------------
   rlcP->output_sdu_size_to_write = 0;
   rlcP->buffer_occupancy = 0;
   rlcP->nb_sdu = 0;
@@ -122,63 +110,54 @@ rlc_tm_reset_state_variables (
 //-----------------------------------------------------------------------------
 void
 rlc_tm_cleanup (
-                rlc_tm_entity_t * const rlcP
-                )
+  rlc_tm_entity_t * const rlcP
+)
 {
-    //-----------------------------------------------------------------------------
-    int             index;
-    // TX SIDE
-    list_free (&rlcP->pdus_to_mac_layer);
+  int             index;
+  // TX SIDE
+  list_free (&rlcP->pdus_to_mac_layer);
 
-    if (rlcP->input_sdus_alloc) {
-        for (index = 0; index < rlcP->size_input_sdus_buffer; index++) {
-            if (rlcP->input_sdus[index]) {
-                free_mem_block (rlcP->input_sdus[index]);
-            }
-        }
-        free_mem_block (rlcP->input_sdus_alloc);
-        rlcP->input_sdus_alloc = NULL;
+  if (rlcP->input_sdus_alloc) {
+    for (index = 0; index < rlcP->size_input_sdus_buffer; index++) {
+      if (rlcP->input_sdus[index]) {
+        free_mem_block (rlcP->input_sdus[index]);
+      }
     }
-    // RX SIDE
-    if ((rlcP->output_sdu_in_construction)) {
-        free_mem_block (rlcP->output_sdu_in_construction);
-    }
-    memset(rlcP, 0, sizeof(rlc_tm_entity_t));
+
+    free_mem_block (rlcP->input_sdus_alloc);
+    rlcP->input_sdus_alloc = NULL;
+  }
+
+  // RX SIDE
+  if ((rlcP->output_sdu_in_construction)) {
+    free_mem_block (rlcP->output_sdu_in_construction);
+  }
+
+  memset(rlcP, 0, sizeof(rlc_tm_entity_t));
 }
 
 //-----------------------------------------------------------------------------
 void rlc_tm_configure(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP,
-                const boolean_t is_uplink_downlinkP)
+  const protocol_ctxt_t* const  ctxt_pP,
+  rlc_tm_entity_t * const rlcP,
+  const boolean_t is_uplink_downlinkP)
 {
-    //-----------------------------------------------------------------------------
-    rlcP->is_uplink_downlink = is_uplink_downlinkP;
-    rlc_tm_reset_state_variables (ctxt_pP, rlcP);
+  rlcP->is_uplink_downlink = is_uplink_downlinkP;
+  rlc_tm_reset_state_variables (ctxt_pP, rlcP);
 }
 
 //-----------------------------------------------------------------------------
 void rlc_tm_set_debug_infos(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP,
-                const srb_flag_t  srb_flagP,
-                const rb_id_t     rb_idP)
-//-----------------------------------------------------------------------------
+  const protocol_ctxt_t* const  ctxt_pP,
+  rlc_tm_entity_t * const rlcP,
+  const srb_flag_t  srb_flagP,
+  const rb_id_t     rb_idP)
 {
-    msg ("[FRAME %05d][%s][RLC_TM][MOD %02u/%02u][RB %u][SET DEBUG INFOS] rb_id %d srb_flag %d\n",
-          ctxt_pP->frame,
-          (ctxt_pP->enb_flag) ? "eNB" : "UE",
-          ctxt_pP->enb_module_id,
-          ctxt_pP->ue_module_id,
-          rb_idP,
-          rb_idP,
-          srb_flagP);
+  rlcP->rb_id     = rb_idP;
 
-
-    rlcP->rb_id     = rb_idP;
-    if (srb_flagP) {
-        rlcP->is_data_plane = 0;
-    } else {
-        rlcP->is_data_plane = 1;
-    }
+  if (srb_flagP) {
+    rlcP->is_data_plane = 0;
+  } else {
+    rlcP->is_data_plane = 1;
+  }
 }

@@ -1,17 +1,17 @@
 /**
- **	\file Semaphore.h
- **	\date  2007-04-13
- **	\author grymse@alhem.net
+ ** \file Semaphore.h
+ ** \date  2007-04-13
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -48,7 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 #ifdef _WIN32
@@ -58,32 +59,34 @@ typedef unsigned int value_t;
 #endif
 
 /** pthread semaphore wrapper.
-	\ingroup threading */
+  \ingroup threading */
 class Semaphore
 {
 public:
-	Semaphore(value_t start_val = 0);
-	~Semaphore();
+  Semaphore(value_t start_val = 0);
+  ~Semaphore();
 
-	/** \return 0 if successful */
-	int Post();
-	/** Wait for Post
-	    \return 0 if successful */
-	int Wait();
+  /** \return 0 if successful */
+  int Post();
+  /** Wait for Post
+      \return 0 if successful */
+  int Wait();
 
-	/** Not implemented for win32 */
-	int TryWait();
+  /** Not implemented for win32 */
+  int TryWait();
 
-	/** Not implemented for win32 */
-	int GetValue(int&);
+  /** Not implemented for win32 */
+  int GetValue(int&);
 
 private:
-	Semaphore(const Semaphore& ) {} // copy constructor
-	Semaphore& operator=(const Semaphore& ) { return *this; } // assignment operator
+  Semaphore(const Semaphore& ) {} // copy constructor
+  Semaphore& operator=(const Semaphore& ) {
+    return *this;  // assignment operator
+  }
 #ifdef _WIN32
-	HANDLE m_handle;
+  HANDLE m_handle;
 #else
-	sem_t m_sem;
+  sem_t m_sem;
 #endif
 };
 

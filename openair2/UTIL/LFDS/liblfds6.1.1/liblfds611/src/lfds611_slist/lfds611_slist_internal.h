@@ -11,14 +11,13 @@
 /***** structures *****/
 #pragma pack( push, LFDS611_ALIGN_SINGLE_POINTER )
 
-struct lfds611_slist_state
-{
+struct lfds611_slist_state {
   struct lfds611_slist_element
-    *volatile head;
+      *volatile head;
 
   void
-    (*user_data_delete_function)( void *user_data, void *user_state ),
-    *user_state;
+  (*user_data_delete_function)( void *user_data, void *user_state ),
+  *user_state;
 };
 
 #pragma pack( pop )
@@ -33,14 +32,13 @@ struct lfds611_slist_state
          accordingly, I've moved user_data_and_flags first
 */
 
-struct lfds611_slist_element
-{
+struct lfds611_slist_element {
   void
-    *volatile user_data_and_flags[2];
+  *volatile user_data_and_flags[2];
 
   // TRD : requires volatile as is target of CAS
   struct lfds611_slist_element
-    *volatile next;
+      *volatile next;
 };
 
 #pragma pack( pop )

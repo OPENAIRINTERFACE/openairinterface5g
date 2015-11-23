@@ -8,29 +8,29 @@
 void benchmark_lfds611_freelist( void )
 {
   unsigned int
-    loop,
-    thread_count,
-    cpu_count;
+  loop,
+  thread_count,
+  cpu_count;
 
   struct lfds611_freelist_state
-    *fs;
+      *fs;
 
   struct lfds611_freelist_benchmark
-    *fb;
+      *fb;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   lfds611_atom_t
-    total_operations_for_full_test_for_all_cpus,
-    total_operations_for_full_test_for_all_cpus_for_one_cpu = 0;
+  total_operations_for_full_test_for_all_cpus,
+  total_operations_for_full_test_for_all_cpus_for_one_cpu = 0;
 
   double
-    mean_operations_per_second_per_cpu,
-    difference_per_second_per_cpu,
-    total_difference_per_second_per_cpu,
-    std_dev_per_second_per_cpu,
-    scalability;
+  mean_operations_per_second_per_cpu,
+  difference_per_second_per_cpu,
+  total_difference_per_second_per_cpu,
+  std_dev_per_second_per_cpu,
+  scalability;
 
   /* TRD : here we benchmark the freelist
 
@@ -50,13 +50,11 @@ void benchmark_lfds611_freelist( void )
           "CPUs,total ops,mean ops/sec per CPU,standard deviation,scalability\n", LFDS611_RELEASE_NUMBER_STRING );
 
   // TRD : we run CPU count times for scalability
-  for( thread_count = 1 ; thread_count <= cpu_count ; thread_count++ )
-  {
+  for( thread_count = 1 ; thread_count <= cpu_count ; thread_count++ ) {
     // TRD : initialisation
     lfds611_freelist_new( &fs, 1000, NULL, NULL );
 
-    for( loop = 0 ; loop < cpu_count ; loop++ )
-    {
+    for( loop = 0 ; loop < cpu_count ; loop++ ) {
       (fb+loop)->fs = fs;
       (fb+loop)->operation_count = 0;
     }
@@ -80,8 +78,7 @@ void benchmark_lfds611_freelist( void )
     if( thread_count == 1 )
       total_operations_for_full_test_for_all_cpus_for_one_cpu = total_operations_for_full_test_for_all_cpus;
 
-    for( loop = 0 ; loop < thread_count ; loop++ )
-    {
+    for( loop = 0 ; loop < thread_count ; loop++ ) {
       difference_per_second_per_cpu = ((double) (fb+loop)->operation_count / (double) 10) - mean_operations_per_second_per_cpu;
       total_difference_per_second_per_cpu += difference_per_second_per_cpu * difference_per_second_per_cpu;
     }
@@ -111,13 +108,13 @@ void benchmark_lfds611_freelist( void )
 thread_return_t CALLING_CONVENTION benchmark_lfds611_freelist_thread_pop_and_push( void *freelist_benchmark )
 {
   struct lfds611_freelist_benchmark
-    *fb;
+      *fb;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   time_t
-    start_time;
+  start_time;
 
   assert( freelist_benchmark != NULL );
 
@@ -125,8 +122,7 @@ thread_return_t CALLING_CONVENTION benchmark_lfds611_freelist_thread_pop_and_pus
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_freelist_pop( fb->fs, &fe );
     lfds611_freelist_push( fb->fs, fe );
 

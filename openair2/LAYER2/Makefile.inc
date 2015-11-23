@@ -70,6 +70,7 @@ RRC_OBJS +=  $(RRC_DIR)/rrc_eNB_ral.o
 endif
 
 RRC_OBJS += $(RRC_DIR)/rrc_eNB.o
+RRC_OBJS += $(RRC_DIR)/rrc_eNB_UE_context.o
 RRC_OBJS += $(RRC_DIR)/rrc_eNB_S1AP.o
 ifdef USE_MME
 RRC_OBJS += $(RRC_DIR)/rrc_eNB_GTPV1U.o
@@ -98,6 +99,7 @@ L2_INTERFACE_OBJS = $(L2_INTERFACE_DIR)/openair_rrc_L2_interface.o
 L2_OBJS=$(addsuffix .o,$(basename $(SOURCES_L2))) $(PHY_INTERFACE_OBJS) $(MAC_OBJS) $(L2_INTERFACE_OBJS)
 
 L2_incl =  -I$(OPENAIR2_TOP)
+L2_incl =  -I$(OPENAIR_DIR)/common/utils/msc
 L2_incl += -I$(COMMON_DIR)
 L2_incl += -I$(RLC_DIR)
 L2_incl += -I$(RLC_AM_DIR)

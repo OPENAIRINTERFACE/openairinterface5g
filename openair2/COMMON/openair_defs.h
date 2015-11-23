@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -34,7 +34,7 @@
 #include <linux/kernel.h>
 #endif //USER_MODE
 
- 
+
 #ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,9 +61,9 @@
 #define bigmalloc16(x) (bigphys_malloc(x))
 
 #define malloc16(x) (bigphys_malloc(x))
-#define free16(y,x) 
+#define free16(y,x)
 
-#define bigfree(y,x) 
+#define bigfree(y,x)
 
 #else // BIGPHYSAREA
 

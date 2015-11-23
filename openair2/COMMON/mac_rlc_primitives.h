@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -75,7 +75,7 @@ in a suspended state or to indicate the current buffer occupancy to MAC.
 // primitives definition
 //----------------------------------------------------------
 #    define UE_ID_TYPE_U_RNTI 0xFF
-                                // should not be used ?
+// should not be used ?
 #    define UE_ID_TYPE_C_RNTI 0xCC
 
 #    define MAC_TX_STATUS_SUCCESSFUL              0x0F
@@ -192,9 +192,10 @@ that RLC would use this primitive to indicate that it has nothing to send or tha
 in a suspended state or to indicate the current buffer occupancy to MAC.
 */
 struct mac_status_resp {
-  unsigned int             buffer_occupancy_in_bytes;   /*!< \brief the parameter Buffer Occupancy (BO) indicates for each logical channel the amount of data in number of bytes that is available for transmission and retransmission in RLC layer. */
+  unsigned int
+  buffer_occupancy_in_bytes;   /*!< \brief the parameter Buffer Occupancy (BO) indicates for each logical channel the amount of data in number of bytes that is available for transmission and retransmission in RLC layer. */
   unsigned short             buffer_occupancy_in_pdus;    /*!< xxx*/
-  uint32_t             head_sdu_creation_time;          
+  uint32_t             head_sdu_creation_time;
   uint32_t             head_sdu_remaining_size_to_send;
   unsigned char     head_sdu_is_segmented;
   struct rlc_entity_info rlc_info;             /*!< xxx*/
@@ -224,11 +225,11 @@ struct mac_data_req {
                                                    transmitted but not negatively acknowledged by the peer entity shall not be included in the BO.*/
   unsigned short             buffer_occupancy_in_pdus;   /*!< xxx*/
   struct rlc_entity_info rlc_info;            /*!< indicates to MAC the configuration parameters that are critical to TFC selection depending
-						   on its mode and the amount of data that could be transmitted at the next TTI. This primitive
-						   is meant to insure that MAC can perform TFC selection.*/
+               on its mode and the amount of data that could be transmitted at the next TTI. This primitive
+               is meant to insure that MAC can perform TFC selection.*/
   unsigned char              ue_id_type_indicator;       /*!< indicates the UE-ID type to be included in MAC for a DCCH when it is mapped onto a common
-					           transport channel (i.e. FACH, RACH, DSCH in FDD or CPCH). On the UE side UE-ID Type Indicator
-					           shall always be set to C-RNTI.*/
+                     transport channel (i.e. FACH, RACH, DSCH in FDD or CPCH). On the UE side UE-ID Type Indicator
+                     shall always be set to C-RNTI.*/
 };
 //---------------------
 /*! \brief  MAC-DATA-Ind primitive indicates the arrival of upper layer PDUs received within one

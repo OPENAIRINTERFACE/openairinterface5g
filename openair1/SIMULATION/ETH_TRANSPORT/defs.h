@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -41,15 +41,15 @@
 //#include "openair_defs.h"
 
 typedef enum emu_transport_info_e {
-    EMU_TRANSPORT_INFO_ERROR    = 0x0,
-    EMU_TRANSPORT_INFO_WAIT_PM,
-    EMU_TRANSPORT_INFO_WAIT_SM,
-    EMU_TRANSPORT_INFO_SYNC,
-    EMU_TRANSPORT_INFO_ENB,
-    EMU_TRANSPORT_INFO_UE,
-    EMU_TRANSPORT_INFO_RELEASE
+  EMU_TRANSPORT_INFO_ERROR    = 0x0,
+  EMU_TRANSPORT_INFO_WAIT_PM,
+  EMU_TRANSPORT_INFO_WAIT_SM,
+  EMU_TRANSPORT_INFO_SYNC,
+  EMU_TRANSPORT_INFO_ENB,
+  EMU_TRANSPORT_INFO_UE,
+  EMU_TRANSPORT_INFO_RELEASE
 #if defined(ENABLE_PGM_TRANSPORT)
-    ,EMU_TRANSPORT_NACK
+  ,EMU_TRANSPORT_NACK
 #endif
 } emu_transport_info_t;
 

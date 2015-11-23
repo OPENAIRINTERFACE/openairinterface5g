@@ -1,16 +1,16 @@
 /** \file Lock.h
- **	\date  2005-08-22
- **	\author grymse@alhem.net
+ ** \date  2005-08-22
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2005-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -34,21 +34,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "sockets-config.h"
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 class IMutex;
 
-/** IMutex encapsulation class. 
-	\ingroup threading */
+/** IMutex encapsulation class.
+  \ingroup threading */
 class Lock
 {
 public:
-	Lock(const IMutex&);
-	~Lock();
+  Lock(const IMutex&);
+  ~Lock();
 
 private:
-	const IMutex& m_mutex;
+  const IMutex& m_mutex;
 };
 
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,20 +14,20 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
- #ifndef USER_APP 
+
+#ifndef USER_APP
 
 #include <linux/uaccess.h>
 #include <linux/module.h>
@@ -94,53 +94,50 @@
 #define EM1_BUSY_FIFO_W 2
 #define EM1_BUSY_DMA    4
 
-struct	em1_private_s;
+struct  em1_private_s;
 
-struct em1_page_s
-{
-	uintptr_t addr;
-	struct page *page;
+struct em1_page_s {
+  uintptr_t addr;
+  struct page *page;
 };
 
 struct em1_mmap_ctx {
-    void* virt;
-    dma_addr_t phys;
-    size_t size;
+  void* virt;
+  dma_addr_t phys;
+  size_t size;
 };
 
-struct em1_file_s
-{
-	struct em1_private_s *pv;
-	struct em1_page_s read;
-	struct em1_page_s write;
-        struct em1_mmap_ctx mmap_list[MAX_EM1_MMAP];
+struct em1_file_s {
+  struct em1_private_s *pv;
+  struct em1_page_s read;
+  struct em1_page_s write;
+  struct em1_mmap_ctx mmap_list[MAX_EM1_MMAP];
 };
 
-struct	em1_private_s
-{
-        struct pci_dev *pdev;
-	struct device *dev;
-        spinlock_t lock;
+struct  em1_private_s {
+  struct pci_dev *pdev;
+  struct device *dev;
+  spinlock_t lock;
 
-	/* memeory mapped device base address */
-	void * base;
+  /* memeory mapped device base address */
+  void * base;
 
-	/* wait queues */
-	wait_queue_head_t rq_wait_fifo_r;
-	wait_queue_head_t rq_wait_fifo_w;
-	wait_queue_head_t rq_wait_dma;
+  /* wait queues */
+  wait_queue_head_t rq_wait_fifo_r;
+  wait_queue_head_t rq_wait_fifo_w;
+  wait_queue_head_t rq_wait_dma;
 
-	/* Number of fifo words left to read or write */ 
-	size_t fifo_read_left;
-	size_t fifo_write_left;
+  /* Number of fifo words left to read or write */
+  size_t fifo_read_left;
+  size_t fifo_write_left;
 
-	/* Cached interrupt enabled value */
-	uint32_t ie;
-	/* Driver busy operations flags */
-	int busy;
+  /* Cached interrupt enabled value */
+  uint32_t ie;
+  /* Driver busy operations flags */
+  int busy;
 
-	/* Completed DMA transfer counters */
-	uint16_t dma_started, dma_done;
+  /* Completed DMA transfer counters */
+  uint16_t dma_started, dma_done;
 };
 
 extern struct em1_private_s *em1_devices[MAX_EM1_DEVICES];
@@ -153,9 +150,9 @@ static int __init em1_init(void);
 static void __exit em1_cleanup(void);
 #endif
 int em1_user_op_enter(struct em1_private_s *pv, wait_queue_t *wait,
-		      wait_queue_head_t *wh, int busy_flag, int new_state);
+                      wait_queue_head_t *wh, int busy_flag, int new_state);
 void em1_user_op_leave(struct em1_private_s *pv, wait_queue_t *wait,
-		       wait_queue_head_t *wh);
+                       wait_queue_head_t *wh);
 
 /* em1_rw.c: read and write syscalls */
 int em1_lock_user_page(struct em1_page_s *ep, uintptr_t addr, int direction);
@@ -176,32 +173,30 @@ int em1_fifo_read(struct em1_private_s *pv, uint32_t *buf, size_t count);
 
 /* em1_ioctl.c */
 int em1_ioctl(struct inode *inode, struct file *file,
-	      unsigned int cmd, unsigned long arg);
+              unsigned int cmd, unsigned long arg);
 
 /* em1_mmap.c */
 int em1_mmap(struct file *filp, struct vm_area_struct *vma);
 
 #endif
 
-enum em1_ioctl_cmd
-{
-	EM1_IOCTL_FIFO_WRITE,
-	EM1_IOCTL_FIFO_READ,
+enum em1_ioctl_cmd {
+  EM1_IOCTL_FIFO_WRITE,
+  EM1_IOCTL_FIFO_READ,
 };
 
 #define EM1_MAX_FIFO_PAYLOAD 128
 
-struct em1_ioctl_fifo_params
-{
-	uint32_t *words;
-	size_t count;
+struct em1_ioctl_fifo_params {
+  uint32_t *words;
+  size_t count;
 };
 
 #if 0
 static int em1_ioctl_fifo_write(struct em1_private_s *pv,
-				struct em1_ioctl_fifo_params *p);
+                                struct em1_ioctl_fifo_params *p);
 static int em1_ioctl_fifo_read(struct em1_private_s *pv,
-			       struct em1_ioctl_fifo_params *p);
+                               struct em1_ioctl_fifo_params *p);
 static int em1_ioctl_alloc(struct em1_private_s *pv, void **buf);
 #endif
 

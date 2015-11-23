@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -42,13 +42,16 @@
 
 #   if defined(ENABLE_ITTI)
 
-/*! \fn rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, instance_t instanceP)
+/*! \fn rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t* const ctxt_pP, const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP)
  *\brief Process GTPV1U_ENB_CREATE_TUNNEL_RESP message received from GTPV1U, retrieve the enb teid created.
- *\param msg_p Message received by RRC.
- *\param msg_name Message name.
- *\param instance Message instance.
+ *\param ctxt_pP Running context
+ *\param create_tunnel_resp_pP Message received by RRC.
  *\return 0 when successful, -1 if the UE index can not be retrieved. */
-int rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(MessageDef *msg_pP, const char *msg_name_pP, instance_t instanceP);
+int
+rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+  const protocol_ctxt_t* const ctxt_pP,
+  const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP
+);
 
 #   endif
 # endif /* defined(ENABLE_USE_MME) */

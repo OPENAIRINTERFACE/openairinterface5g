@@ -20,10 +20,10 @@
 # Contact Information
 # OpenAirInterface Admin: openair_admin@eurecom.fr
 # OpenAirInterface Tech : openair_tech@eurecom.fr
-# OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+# OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 # Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-# Author: laurent THOMAS
+# Author: laurent THOMAS, Lionel GAUTHIER
 ###############################################################################
 
 cmake_minimum_required (VERSION 2.8)
@@ -36,44 +36,26 @@ set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
 set (OPENAIR2_DIR    ${OPENAIR_DIR}/openair2)
 set (OPENAIR3_DIR    ${OPENAIR_DIR}/openair3)
 set (OPENAIR_TARGETS ${OPENAIR_DIR}/targets)
-set (OPENAIRCN_DIR   ${OPENAIR_DIR}/openair-cn)
+set (OPENAIR3_DIR   ${OPENAIR_DIR}/openair3)
 set (OPENAIR_CMAKE   ${OPENAIR_DIR}/cmake_targets)
 set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
-####################################################
-# compilation flags
-#############################################
-if(NOT CMAKE_BUILD_TYPE)
-  # added CMAKER conditional compilation to not bother legacy building system
-  set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING 
-    "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
-endif()
-set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
-
-#
-set(CMAKE_C_FLAGS 
-  "${CMAKE_C_FLAGS} -msse4.2 -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat")
-# set a flag for changes in the source code
-# these changes are related to hardcoded path to include .h files
-add_definitions("-DCMAKER")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ggdb -DMALLOC_CHECK_=3 -O3")
-
-find_package(Subversion)
-if(SUBVERSION_FOUND)
-  Subversion_WC_INFO(${OPENAIR_DIR} openair)
-  set (FIRMWARE_VERSION "${openair_WC_REVISION} - ${openair_WC_LAST_CHANGED_DATE}")
-  Subversion_WC_LOG(${OPENAIR_DIR} Project)
-else()
-  set (FIRMWARE_VERSION "No svn information")
-endif()
-add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
-
-# Define options for compilation
+###########################################
+# macros to define options as there is numerous options in oai
 ################################################
-function(add_boolean_option name val helpstr)
+macro(add_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  add_definitions("-D${name}=${value}")
+endmacro(add_option)
+
+macro(add_boolean_option name val helpstr)
   if(DEFINED ${name})
     set(value ${${name}})
   else(DEFINED ${name})
@@ -84,9 +66,9 @@ function(add_boolean_option name val helpstr)
   if (${value})
     add_definitions("-D${name}")
   endif (${value})
-endfunction(add_boolean_option)
+endmacro(add_boolean_option)
 
-function(add_integer_option name val helpstr)
+macro(add_integer_option name val helpstr)
   if(DEFINED ${name})
     set(value ${${name}})
   else(DEFINED ${name})
@@ -94,23 +76,142 @@ function(add_integer_option name val helpstr)
   endif()
   set(${name} ${value} CACHE STRING "${helpstr}")
   add_definitions("-D${name}=${value}")
-endfunction(add_integer_option)
+endmacro(add_integer_option)
+
+macro(add_list1_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${name}=${value}")
+  endif()
+endmacro(add_list1_option)
+
+macro(add_list2_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${value}=1")
+  endif()
+endmacro(add_list2_option)
+
+macro(add_list_string_option name val helpstr)
+  if(DEFINED ${name})
+    set(value ${${name}})
+  else(DEFINED ${name})
+    set(value ${val})
+  endif()
+  set(${name} ${value} CACHE STRING "${helpstr}")
+  set_property(CACHE ${name} PROPERTY STRINGS ${ARGN})
+  if(NOT "${value}" STREQUAL "False")
+    add_definitions("-D${name}=\"${value}\"")
+  endif()
+endmacro(add_list_string_option)
+####################################################
+# compilation flags
+#############################################
+if (CMAKE_BUILD_TYPE STREQUAL "")
+   set(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
+
+Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
+if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
+  set(C_FLAGS_PROCESSOR "-gdwarf-2 -mfloat-abi=hard -mfpu=neon -lgcc -lrt")
+else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
+  file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
+  #Message("CPUINFO is ${CPUINFO}")
+  if (CPUINFO MATCHES "avx2")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
+  endif()
+  if (CPUINFO MATCHES "sse4_2")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2")
+  endif()
+  if (CPUINFO MATCHES "sse4_1")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
+  endif()
+  if (CPUINFO MATCHES "ssse3")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
+  endif()
+endif()
+
+set(C_FLAGS_PROCESSOR " ${C_FLAGS_PROCESSOR} ${CFLAGS_PROCESSOR_USER}")
+
+Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
+
+if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
+  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.2")) )
+    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1 -msse4.2. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -msse4.2\" ")
+  endif()
+endif()
+
+#
+set(CMAKE_C_FLAGS
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ")
+# add autotools definitions that were maybe used!
+set(CMAKE_C_FLAGS
+  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP"
+)
+set(CMAKE_CXX_FLAGS
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}"
+)
+# set a flag for changes in the source code
+# these changes are related to hardcoded path to include .h files
+add_definitions(-DCMAKER)
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
+
+# Below has been put in comment because does not work with
+# SVN authentication.
+#
+#find_package(Subversion)
+#if(SUBVERSION_FOUND)
+#  Subversion_WC_INFO(${OPENAIR_DIR} openair)
+#  set (FIRMWARE_VERSION "${openair_WC_REVISION} - ${openair_WC_LAST_CHANGED_DATE}")
+#  Subversion_WC_LOG(${OPENAIR_DIR} Project)
+#else()
+#  set (FIRMWARE_VERSION "No svn information")
+#endif()
+#add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
+
+# Below is a hard-coded info
+set (FIRMWARE_VERSION "No svn information")
+add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
+add_definitions("-DPACKAGE_VERSION=\"${FIRMWARE_VERSION}\"")
+add_definitions("-DPACKAGE_BUGREPORT=\"OpenAirInterface web site\"")
+
+
 
 # Debug related options
 #########################################
 add_boolean_option(MSG_PRINT  False "print debug messages")
-add_boolean_option(DISABLE_XER_PRINT True "print XER Format")
+add_boolean_option(DISABLE_XER_PRINT False "print XER Format")
 add_boolean_option(XER_PRINT False "print XER Format")
 add_boolean_option(RRC_MSG_PRINT False "print RRC messages")
-add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages")
+add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages to /tmp/pdcp.log")
+add_boolean_option(DEBUG_PDCP_PAYLOAD False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(TRACE_RLC_PAYLOAD False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
 add_boolean_option(TEST_OMG False "???")
 add_boolean_option(DEBUG_OMG False "???")
 add_boolean_option(XFORMS False "This adds the possibility to see the signal oscilloscope")
+add_boolean_option(PRINT_STATS False "This adds the possibility to see the status")
+
+add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
 add_boolean_option(ENABLE_ITTI True "ITTI is internal messaging, should remain enabled for most targets")
 set (ITTI_DIR ${OPENAIR_DIR}/common/utils/itti)
 if (${ENABLE_ITTI})
-  add_library(ITTI 
+  add_library(ITTI
     # add .h files if depend on (this one is generated)
     ${ITTI_DIR}/intertask_interface.h
     ${ITTI_DIR}/intertask_interface.c
@@ -121,7 +222,7 @@ if (${ENABLE_ITTI})
     ${ITTI_DIR}/timer.c
     )
   set(ITTI_LIB ITTI)
-  set(EXMIMO_IOT)
+  set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
@@ -141,24 +242,20 @@ endif (${RTAI})
 # so, generate the c from asn1c once at cmake run time
 # So, if someone modify the asn.1 source file in such as way that it will create
 # (so creating new asn.1 objects instead of modifying the object attributes)
-# New C code source file, cmake must be re-run (instead of re-running make only) 
+# New C code source file, cmake must be re-run (instead of re-running make only)
 #############
-set(asn1c_call "${OPENAIR_CMAKE}/generate_asn1.bash")
+set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
-if (DEFINED RRC_ASN1_VERSION)
-  set(RRC_ASN1_VERSION ${RRC_ASN1_VERSION} CACHE STRING "ASN.1 version of RRC interface")
-else(DEFINED RRC_ASN1_VERSION)
-  set(RRC_ASN1_VERSION "Rel10" CACHE STRING "ASN.1 version of RRC interface")
-endif()
-
-set_property(CACHE RRC_ASN1_VERSION PROPERTY STRINGS "Rel8" "Rel10" "CBA")
+add_list2_option(RRC_ASN1_VERSION "Rel10" "ASN.1 version of RRC interface" "Rel8" "Rel10" "CBA")
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
-elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
+elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20-lola.asn)
+else()
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 
@@ -167,11 +264,11 @@ if(NOT EXISTS ${asn1c_call})
   message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
 execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR})
-add_definitions("-D${RRC_ASN1_VERSION}")
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 set(rrc_source  ${rrc_source} ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
 set(rrc_h ${rrc_h} ${RRC_FULL_DIR}/asn1_constants.h)
+set_source_files_properties(${rrc_source} PROPERTIES COMPILE_FLAGS -w) # suppress warnings from generated code
 add_library(RRC_LIB ${rrc_h} ${rrc_source})
 include_directories ("${RRC_FULL_DIR}")
 
@@ -187,187 +284,325 @@ add_custom_command (
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-if (DEFINED USE_MME)
-  set(USE_MME ${USE_MME} CACHE HELPSTRING "MME version")
-else (DEFINED USE_MME)
-  set(USE_MME "R10" CACHE HELPSTRING "MME version")
-endif (DEFINED USE_MME)
+add_list1_option(S1AP_VERSION R10 "S1AP Asn.1 grammar version" R8 R9 R10)
 
-set_property(CACHE USE_MME PROPERTY STRINGS False R8 R10)
+set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
+if (${S1AP_VERSION} STREQUAL "R10")
+  set (ASN1RELDIR R10.5)
+  add_definitions("-DUPDATE_RELEASE_9 -DUPDATE_RELEASE_10")
+elseif (${S1AP_VERSION} STREQUAL "R9")
+  set (ASN1RELDIR R9.8)
+  add_definitions("-DUPDATE_RELEASE_9")
+else(${S1AP_VERSION} STREQUAL "R8")
+  set (ASN1RELDIR R8.10)
+endif(${S1AP_VERSION} STREQUAL "R10")
+set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
+set(S1AP_ASN_FILES
+  ${S1AP_ASN_DIR}/S1AP-CommonDataTypes.asn
+  ${S1AP_ASN_DIR}/S1AP-Constants.asn
+  ${S1AP_ASN_DIR}/S1AP-IEs.asn
+  ${S1AP_ASN_DIR}/S1AP-PDU.asn
+  )
+set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
+#message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
+execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES})
+file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
-if (NOT ${USE_MME} STREQUAL "False")
-  add_definitions("-DUSE_MME=${USE_MME}")
-  set(S1AP_DIR ${OPENAIRCN_DIR}/S1AP)
-  if (${USE_MME} STREQUAL "R10")
-    set (ASN1RELDIR R10.5)
-    add_definitions("-DUPDATE_RELEASE_9 -DUPDATE_RELEASE_10")
-  elseif (${USE_MME} STREQUAL "R9")
-    set (ASN1RELDIR R9.8)
-    add_definitions("-DUPDATE_RELEASE_9")
-  else(${USE_MME} STREQUAL "R8")
-    set (ASN1RELDIR R8.10)
-  endif(${USE_MME} STREQUAL "R10")
-  set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-  set(S1AP_ASN_FILES
-    ${S1AP_ASN_DIR}/S1AP-CommonDataTypes.asn 
-    ${S1AP_ASN_DIR}/S1AP-Constants.asn 
-    ${S1AP_ASN_DIR}/S1AP-IEs.asn 
-    ${S1AP_ASN_DIR}/S1AP-PDU.asn
-    )
-  set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
-  
-  execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES})
-  file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
-  set(S1AP_OAI_SRC
-    ${S1AP_DIR}/s1ap_common.c
-    ${S1AP_DIR}/s1ap_eNB.c
-    ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
-    ${S1AP_DIR}/s1ap_eNB_decoder.c
-    ${S1AP_DIR}/s1ap_eNB_encoder.c
-    ${S1AP_DIR}/s1ap_eNB_handlers.c
-    ${S1AP_DIR}/s1ap_eNB_itti_messaging.c
-    ${S1AP_DIR}/s1ap_eNB_management_procedures.c
-    ${S1AP_DIR}/s1ap_eNB_nas_procedures.c
-    ${S1AP_DIR}/s1ap_eNB_nnsf.c
-    ${S1AP_DIR}/s1ap_eNB_overload.c
-    ${S1AP_DIR}/s1ap_eNB_trace.c
-    ${S1AP_DIR}/s1ap_eNB_ue_context.c
-    )
-  set(S1AP_OAI_generated 
-    ${S1AP_C_DIR}/s1ap_decoder.c
-    ${S1AP_C_DIR}/s1ap_encoder.c
-    ${S1AP_C_DIR}/s1ap_xer_print.c
-    ${S1AP_C_DIR}/s1ap_ies_defs.h
-    )
-  file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
-  set(s1ap_h ${s1ap_h} ${S1AP_C_DIR}/s1ap_ies_defs.h)
-  add_custom_command (
-    OUTPUT ${S1AP_OAI_generated}
-    COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
-    COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
-    DEPENDS ${S1AP_ASN_FILES} 
-    )
-  add_library(s1ap_asn1 ${S1AP_OAI_SRC} ${S1AP_OAI_generated} ${S1AP_source})
-  set(S1AP_LIB s1ap_asn1)
-  include_directories ("${S1AP_C_DIR}")
-  include_directories ("${S1AP_DIR}")
-endif(NOT ${USE_MME} STREQUAL "False")
+set(S1AP_OAI_generated
+  ${S1AP_C_DIR}/s1ap_decoder.c
+  ${S1AP_C_DIR}/s1ap_encoder.c
+  ${S1AP_C_DIR}/s1ap_xer_print.c
+  ${S1AP_C_DIR}/s1ap_ies_defs.h
+  )
+file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
+set(s1ap_h ${s1ap_h} )
 
+add_custom_command (
+  OUTPUT ${S1AP_OAI_generated}
+  COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
+  COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
+  DEPENDS ${S1AP_ASN_FILES}
+  )
+add_library(S1AP_LIB
+  ${S1AP_OAI_generated}
+  ${S1AP_source}
+  ${S1AP_DIR}/s1ap_common.c
+  )
+
+include_directories ("${S1AP_C_DIR}")
+include_directories ("${S1AP_DIR}")
+
+add_library(S1AP_ENB
+  ${S1AP_C_DIR}/s1ap_ies_defs.h
+  ${S1AP_DIR}/s1ap_eNB.c
+  ${S1AP_DIR}/s1ap_eNB_context_management_procedures.c
+  ${S1AP_DIR}/s1ap_eNB_decoder.c
+  ${S1AP_DIR}/s1ap_eNB_encoder.c
+  ${S1AP_DIR}/s1ap_eNB_handlers.c
+  ${S1AP_DIR}/s1ap_eNB_itti_messaging.c
+  ${S1AP_DIR}/s1ap_eNB_management_procedures.c
+  ${S1AP_DIR}/s1ap_eNB_nas_procedures.c
+  ${S1AP_DIR}/s1ap_eNB_nnsf.c
+  ${S1AP_DIR}/s1ap_eNB_overload.c
+  ${S1AP_DIR}/s1ap_eNB_trace.c
+  ${S1AP_DIR}/s1ap_eNB_ue_context.c
+  )
+
+
+
+#X2AP
+# Same limitation as described in RRC/S1AP: unknown generated file list
+# so we generate it at cmake time
+##############
+add_list1_option(X2AP_VERSION R11 "X2AP Asn.1 grammar version" R10 R11)
+set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
+if (${X2AP_VERSION} STREQUAL "R11")
+  set (ASN1RELDIR R11.2)
+elseif (${X2AP_VERSION} STREQUAL "R10")
+  set (ASN1RELDIR R.UNKNOWN)
+endif(${X2AP_VERSION} STREQUAL "R11")
+set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
+set(X2AP_ASN_FILES
+  ${X2AP_ASN_DIR}/X2AP-CommonDataTypes.asn
+  ${X2AP_ASN_DIR}/X2AP-Constants.asn
+  ${X2AP_ASN_DIR}/X2AP-IEs.asn
+  ${X2AP_ASN_DIR}/X2AP-PDU.asn
+  ${X2AP_ASN_DIR}/X2AP-Containers.asn
+  )
+
+set(X2AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
+#message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
+execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES})
+file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
+
+set(X2AP_OAI_generated
+  ${X2AP_C_DIR}/x2ap_decoder.c
+  ${X2AP_C_DIR}/x2ap_encoder.c
+  ${X2AP_C_DIR}/x2ap_xer_print.c
+  ${X2AP_C_DIR}/x2ap_ies_defs.h
+  )
+file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
+set(x2ap_h ${x2ap_h} )
+
+#message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
+add_custom_command (
+  OUTPUT ${X2AP_OAI_generated}
+  COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+  COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
+  DEPENDS ${X2AP_ASN_FILES}
+  )
+
+add_library(X2AP_LIB
+  ${X2AP_OAI_generated}
+  ${X2AP_source}
+  ${X2AP_DIR}/x2ap_common.c
+  )
+
+include_directories ("${X2AP_C_DIR}")
+include_directories ("${X2AP_DIR}")
 
 # Hardware dependant options
 ###################################
-if(DEFINED NB_ANTENNAS_RX)
-  set(NB_ANTENNAS_RX ${NB_ANTENNAS_RX} CACHE HELPSTRING "Number of antennas in reception")
-else(DEFINED NB_ANTENNAS_RX)
-  set(NB_ANTENNAS_RX 2 CACHE HELPSTRING "Number of antennas in reception")
-endif(DEFINED NB_ANTENNAS_RX)
-set_property(CACHE NB_ANTENNAS_RX PROPERTY STRINGS 1 2 4)
-add_definitions("-DNB_ANTENNAS_RX=${NB_ANTENNAS_RX}")
+add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
+add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
+add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
-if(DEFINED NB_ANTENNAS_TX)
-  set(NB_ANTENNAS_TX ${NB_ANTENNAS_TX} CACHE HELPSTRING "Number of antennas in transmission")
-else(DEFINED NB_ANTENNAS_TX)
-  set(NB_ANTENNAS_TX 2 CACHE HELPSTRING "Number of antennas in transmission")
-endif(DEFINED NB_ANTENNAS_TX)
-set_property(CACHE NB_ANTENNAS_TX PROPERTY STRINGS 1 2 4)
-add_definitions("-DNB_ANTENNAS_TX=${NB_ANTENNAS_TX}")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "False" "EXMIMO" "OAI_USRP" "ETHERNET" "OAI_BLADERF" "CPRIGW")
 
-if(DEFINED NB_ANTENNAS_TXRX)
-  set(NB_ANTENNAS_TXRX ${NB_ANTENNAS_TXRX} CACHE HELPSTRING "Number of antennas in ????")
-else(DEFINED NB_ANTENNAS_TXRX)
-  set(NB_ANTENNAS_TXRX 2 CACHE HELPSTRING "Number of antennas in ????")
-endif(DEFINED NB_ANTENNAS_TXRX)
-set_property(CACHE NB_ANTENNAS_TXRX PROPERTY STRINGS 1 2 4)
-add_definitions("-DNB_ANTENNAS_TXRX=${NB_ANTENNAS_TXRX}")
-
-if(DEFINED RF_BOARD)
-  set(RF_BOARD ${RF_BOARD} CACHE HELPSTRING "RF head type")
-else(DEFINED RF_BOARD)
-  set(RF_BOARD EXMIMO CACHE HELPSTRING "RF head type")
-endif(DEFINED RF_BOARD)
-set_property(CACHE RF_BOARD PROPERTY STRINGS None EXMIMO USRP ETHERNET)
-add_definitions("-D${RF_BOARD}=1")
-
-if (${RF_BOARD} STREQUAL EXMIMO)
+if (${RF_BOARD} STREQUAL "EXMIMO")
   set(DRIVER2013)
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
-  set(HW_SOURCE ${HW_SOURCE} 
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c 
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)   
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
+    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
 
-elseif (${RF_BOARD} STREQUAL USRP)
+elseif (${RF_BOARD} STREQUAL "OAI_USRP")
+  include_directories("${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/")
   include_directories("/opt/include/uhd")
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
   LINK_DIRECTORIES("/opt/lib")
-  set(option_USRP "uhd")
+  set(option_HW_lib "uhd")
+  set(LOWLATENCY False)
 
-elseif (${RF_BOARD} STREQUAL ETHERNET)
+elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
+  include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
+  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+  include_directories("/usr/include")
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
+    )
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  set(option_HW_lib "bladeRF")
+#set(LOWLATENCY False)
+
+elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
+    )
+  set(LOWLATENCY True)
+  
+elseif (${RF_BOARD} STREQUAL "CPRIGW")
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/cprigw_lib.c
+    )
+  include_directories("${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/")
+   set(option_HW_lib "-rdynamic dl")
+endif (${RF_BOARD} STREQUAL "EXMIMO")
 
-endif (${RF_BOARD} STREQUAL EXMIMO)
- 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
-####################
-# to be documented options
-###################
-add_boolean_option(ADDR_CONF False "specific to oaisim")
-add_boolean_option(ASSERT False "specific to oaisim: ???")
-add_boolean_option(DRIVER2013 True "????")
-add_boolean_option(ENABLE_FXP True "????")
-add_boolean_option(ENABLE_NAS_UE_LOGGING True "????")
-add_boolean_option(ENABLE_NEW_MULTICAST False "specific to oaisim")
-add_boolean_option(ENABLE_PDCP_NETLINK_FIFO False "????")
-add_boolean_option(ENABLE_PGM_TRANSPORT False "specific to oaisim")
-add_boolean_option(ENABLE_RAL False "????")
-add_boolean_option(ENABLE_SECURITY True "???")
-add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: disable it if perf issues")
-add_boolean_option(ENABLE_USE_MME True "???")
-add_boolean_option(ENABLE_VCD_FIFO True "Seems legacy: always true now")
-add_boolean_option(HARD_RT False "???")
-add_boolean_option(JUMBO_FRAME True "???")
-add_boolean_option(LARGE_SCALE False "specific to oaisim: defines max eNB=2 and max UE=120")
-add_boolean_option(LINK_PDCP_TO_GTPV1U True "????")
-add_boolean_option(LINUX_LIST False "???")
-add_boolean_option(LINUX True "???")
-add_boolean_option(LOCALIZATION  False "???")
-add_boolean_option(LOG_NO_THREAD True "Disable thread for log, seems always set to true")
-add_boolean_option(LOWLATENCY  True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
-add_boolean_option(MAC_CONTEXT True "specific to oaisim")
-add_integer_option(MAX_NUM_CCs 1 "????")
-add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS True "????")
-add_boolean_option(MU_RECEIVER False "????")
-add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
-add_boolean_option(NAS_MME False "NAS_UE and NAS_MME are incompatible options")
-add_boolean_option(NAS_NETLINK True "???? Must be true to compile nasmesh driver without rtai")
-add_boolean_option(NAS_UE True "NAS_UE and NAS_MME are incompatible options")
-add_boolean_option(NEW_FFT True "????")
-add_boolean_option(NO_RRM True "????")
-add_boolean_option(OAI_EMU False "specific to oaisim")
-add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
-add_boolean_option(OAI_NW_DRIVER_USE_NETLINK False "????")
-add_boolean_option(OPENAIR1 True "????")
-add_boolean_option(OPENAIR2 True "????")
-add_boolean_option(OPENAIR_EMU False "specific to oaisim")
-add_boolean_option(OPENAIR_LTE True "Seems legacy: keep it to true")
-add_boolean_option(PBS_SIM False "????")
-add_boolean_option(PC_DSP True "????")
-add_boolean_option(PC_TARGET True "????")
-add_boolean_option(PERFECT_CE False "????")
-add_boolean_option(PHY_ABSTRACTION False "specific to oaisim")
-add_boolean_option(PHY_CONTEXT False "not clear: must remain False for dlsim")
-add_boolean_option(PHY_EMUL False "not clear: must remain False for dlsim")
-add_boolean_option(PHYSIM True "??? set in lte-softmodem, for L1 simulators (dlsim, ulsim, ...)?")
-add_boolean_option(PUCCH True "????")
-add_boolean_option(RANDOM_BF False "????")
-add_boolean_option(RLC_STOP_ON_LOST_PDU False "Fatal assert in this case")
-add_boolean_option(SECU False "???")
-add_boolean_option(SMBV False "Rohde&Schwarz SMBV100A vector signal generator")
-add_boolean_option(SPECTRA False "???")
-add_boolean_option(UE_BUILD False "????")
-add_boolean_option(USE_3GPP_ADDR_AS_LINK_ADDR False "As per attribute name")
+
+##############################################################
+#    ???!!! TO BE DOCUMENTED OPTIONS !!!???
+##############################################################
+add_boolean_option(ENABLE_SECURITY         True  "Enable LTE integrity and ciphering between RRC UE and eNB")
+add_boolean_option(ENABLE_USE_MME          True  "eNB connected to MME (INTERFACE S1-C), not standalone eNB")
+add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
 add_boolean_option(USER_MODE True "????")
-add_integer_option(PACKAGE_NAME "NotDefined" "As per attribute name")
+
+add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
+add_boolean_option(DISABLE_USE_NAS False "???")
+add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
+add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
+add_boolean_option(OAISIM False "specific to oaisim")
+add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
+add_boolean_option(USE_MME False "this flag is used only one time in lte-softmodem.c")
+add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")
+add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequence diagrams")
+add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
+add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
+########################
+# Include order
+##########################
+add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )
+
+##########################
+# Emulation options
+##########################
+add_boolean_option(ENABLE_PGM_TRANSPORT    False "specific to oaisim, emulation through ethernet, reliable multicast")
+add_boolean_option(ADDR_CONF               False "specific to oaisim, IP autoconf of user-plane IP interface")
+add_boolean_option(OPENAIR_EMU             False "specific to oaisim")
+add_boolean_option(OAI_EMU                 False "specific to oaisim")
+add_boolean_option(PHY_ABSTRACTION         False "specific to oaisim")
+
+##########################
+# SCHEDULING/REAL-TIME/PERF options
+##########################
+add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME True "Add data in vcd traces: disable it if perf issues")
+add_boolean_option(ENABLE_VCD              True  "always true now, time measurements of proc calls and var displays")
+add_boolean_option(ENABLE_VCD_FIFO         True  "time measurements of proc calls and var displays sent to FIFO (one more thread)")
+add_boolean_option(HARD_RT                 False "???")
+add_boolean_option(LINUX                   False "used in weird memcpy() in pdcp.c ???")
+add_boolean_option(LINUX_LIST              False "used only in lists.c: either use OAI implementation of lists or Linux one (should be True, but it is False")
+add_boolean_option(LOG_NO_THREAD           True  "Disable thread for log, seems always set to true")
+add_boolean_option(OPENAIR_LTE             True "Seems legacy: keep it to true")
+
+##########################
+# PHY options
+##########################
+add_boolean_option(DRIVER2013              True "only relevant for EXMIMO")
+add_boolean_option(ENABLE_FXP              True "????")
+add_boolean_option(ENABLE_NEW_MULTICAST    False "specific to oaisim")
+add_boolean_option(EXMIMO_IOT              True "????")
+add_boolean_option(LARGE_SCALE             False "specific to oaisim: defines max eNB=2 and max UE=120")
+add_boolean_option(LOCALIZATION            False "???")
+add_integer_option(MAX_NUM_CCs             1     "????")
+add_boolean_option(MU_RECEIVER             False "????")
+add_boolean_option(NEW_FFT                 True "????")
+add_boolean_option(OPENAIR1                True "????")
+add_boolean_option(PBS_SIM                 False "????")
+add_boolean_option(PC_DSP                  True "????")
+add_boolean_option(PC_TARGET               True "????")
+add_boolean_option(PERFECT_CE              False "????")
+add_boolean_option(PHYSIM                  True  "for L1 simulators (dlsim, ulsim, ...)")
+add_boolean_option(PHY_CONTEXT             True "not clear: must remain False for dlsim")
+add_boolean_option(PHY_EMUL                False "not clear: must remain False for dlsim")
+add_boolean_option(PUCCH                   True "????")
+add_boolean_option(RANDOM_BF               False "????")
+add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
+add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging options")
+add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures")
+add_boolean_option(DEBUG_DLSCH             False "Enable debugging of DLSCH physical layer channel")
+
+##########################
+# 802.21 options
+##########################
+add_boolean_option(ENABLE_RAL              False "ENABLE 802.21 INTERFACE")
+add_boolean_option(USE_3GPP_ADDR_AS_LINK_ADDR False "As per attribute name")
+
+##########################
+# NAS LAYER OPTIONS
+##########################
+add_boolean_option(ENABLE_NAS_UE_LOGGING   True  "????")
+add_boolean_option(NAS_BUILT_IN_UE         True  "UE NAS layer present in this executable")
+add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)")
+
+
+##########################
+# ACCESS STRATUM LAYER2 OPTIONS
+##########################
+add_boolean_option(MAC_CONTEXT             True  "specific to oaisim")
+add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STRATUM (larger than common MTU)")
+
+##########################
+# RLC LAYER OPTIONS
+##########################
+add_boolean_option(OPENAIR2                True  "Access Stratum layer 2 built in executable")
+add_boolean_option(TRACE_RLC_PAYLOAD       False "Fatal assert in this case")
+add_boolean_option(RLC_STOP_ON_LOST_PDU    False "Fatal assert in this case")
+
+add_boolean_option(TRACE_RLC_MUTEX         True  "TRACE for RLC, possible problem in thread scheduling")
+add_boolean_option(TRACE_RLC_AM_BO         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_FREE_SDU   False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_HOLE       False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_PDU        False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_RESEGMENT  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_RX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_RX_DECODE  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_TX         False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_TX_STATUS  False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_AM_STATUS_CREATION   False "TRACE for RLC AM, TO BE CHANGED IN A MORE GENERAL FLAG")
+
+add_boolean_option(STOP_ON_IP_TRAFFIC_OVERLOAD      False "")
+add_boolean_option(TRACE_RLC_UM_DAR        False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_UM_DISPLAY_ASCII_DATA  False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_UM_PDU        False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_UM_RX         False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_UM_SEGMENT    False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+add_boolean_option(TRACE_RLC_UM_TX_STATUS  False "TRACE for RLC UM, TO BE CHANGED IN A MORE GENERAL FLAG")
+
+
+##########################
+# PDCP LAYER OPTIONS
+##########################
+add_boolean_option(PDCP_USE_NETLINK            False "For eNB, PDCP communicate with a NETLINK socket if connected to network driver, else could use a RT-FIFO")
+add_boolean_option(PDCP_USE_NETLINK_QUEUES     False "When PDCP_USE_NETLINK is true, incoming IP packets are stored in queues")
+add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
+add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
+
+##########################
+# RRC LAYER OPTIONS
+##########################
+add_boolean_option(RRC_DEFAULT_RAB_IS_AM       False  "Otherwise it is UM, configure params are actually set in rrc_eNB.c:rrc_eNB_generate_defaultRRCConnectionReconfiguration(...)")
+
+
+##########################
+# S1AP LAYER OPTIONS
+##########################
+# none
+
+##########################
+# PROJECTS (IST, FRENCH COLL., etc)
+# SPECIFIC OPTIONS
+##########################
+add_boolean_option(SPECTRA False "???")
+add_boolean_option(MIH_C_MEDIEVAL_EXTENSIONS False "EXTENSIONS TO MIH 802.21 IN CONTEXT OF IST PROJECT CALLED MEDIEVAL")
+
+
 
 add_boolean_option(EMOS False "????")
 if(${EMOS})
@@ -381,7 +616,7 @@ endif(${EMOS})
 # We will find ConfigOAI.h after generation in target directory
 include_directories("${OPENAIR_BIN_DIR}")
 # add directories to find all include files
-# the internal rule is to use generic names such as defs.h 
+# the internal rule is to use generic names such as defs.h
 # but to make it uniq name as adding the relative path in the include directtive
 # example: #include "RRC/LITE/defs.h"
 #find_path (include_dirs_all *.h ${OPENAIR_DIR})
@@ -389,10 +624,22 @@ include_directories("${OPENAIR_BIN_DIR}")
 #include_directories("${include_dirs_all}")
 
 # Legacy exact order
+if(ENB_MODE)
+  include_directories("${OPENAIR2_DIR}/COMMON")
+  include_directories("${OPENAIR2_DIR}/UTIL")
+  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
+else()
+  include_directories("${OPENAIR3_DIR}/COMMON")
+  include_directories("${OPENAIR3_DIR}/UTILS")
+  include_directories("${OPENAIR2_DIR}/COMMON")
+  include_directories("${OPENAIR2_DIR}/UTIL")
+  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+endif()
 include_directories("${OPENAIR1_DIR}")
 include_directories("${OPENAIR2_DIR}/NAS")
 include_directories("${OPENAIR2_DIR}")
-include_directories("${OPENAIR2_DIR}/COMMON")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/AM_v9.3.0")
 include_directories("${OPENAIR2_DIR}/LAYER2/RLC/UM_v9.3.0")
@@ -404,33 +651,30 @@ include_directories("${OPENAIR3_DIR}/RAL-LTE/INTERFACE-802.21/INCLUDE")
 include_directories("${OPENAIR3_DIR}/RAL-LTE/LTE_RAL_ENB/INCLUDE")
 include_directories("${OPENAIR3_DIR}/RAL-LTE/LTE_RAL_UE/INCLUDE")
 include_directories("${OPENAIR_DIR}/common/utils")
-include_directories("${OPENAIR_DIR}/common/utils/collection/hashtable")
 include_directories("${OPENAIR_DIR}/common/utils/itti")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/api/network")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/include")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/ies")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/emm/msg")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/esm/msg")
-include_directories("${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/util")
-include_directories("${OPENAIRCN_DIR}/SECU")
-include_directories("${OPENAIRCN_DIR}/SCTP")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/API/NETWORK")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/EMM/MSG")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/ESM/MSG")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
+include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
+include_directories("${OPENAIR3_DIR}/SECU")
+include_directories("${OPENAIR3_DIR}/SCTP")
+include_directories("${OPENAIR3_DIR}/S1AP")
 include_directories("${OPENAIR2_DIR}/X2AP")
-include_directories("${OPENAIRCN_DIR}/S1AP")
-include_directories("${OPENAIRCN_DIR}/UDP")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U")
+include_directories("${OPENAIR3_DIR}/UDP")
+include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/COMMON")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/USERSPACE/LIB/")
 include_directories("${OPENAIR_DIR}/targets/ARCH/EXMIMO/DEFS")
 include_directories("${OPENAIR2_DIR}/ENB_APP")
-include_directories("${OPENAIR2_DIR}/UTIL")
 include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/inc")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
 include_directories("${OPENAIR2_DIR}/UTIL/OCG")
-include_directories("${OPENAIR2_DIR}/UTIL/LOG")
 include_directories("${OPENAIR2_DIR}/UTIL/MATH")
 include_directories("${OPENAIR2_DIR}/UTIL/TIMER")
 include_directories("${OPENAIR2_DIR}/UTIL/OMG")
@@ -439,33 +683,27 @@ include_directories("${OPENAIR2_DIR}/UTIL/CLI")
 include_directories("${OPENAIR2_DIR}/UTIL/OPT")
 include_directories("${OPENAIR2_DIR}/UTIL/OMV")
 include_directories("${OPENAIR2_DIR}/RRC/LITE/MESSAGES")
-include_directories("${OPENAIRCN_DIR}/COMMON")
-include_directories("${OPENAIRCN_DIR}/UTILS")
-include_directories("${OPENAIRCN_DIR}/NAS")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/shared")
-include_directories("${OPENAIRCN_DIR}/GTPV1-U/nw-gtpv1u/include")
-
-# define where are the source files
-##################################
-#add_subdirectory (${OPENAIR_DIR} .) 
-
-# define libraries
-#add_library(MathFunctions mysqrt.cxx)
-function(add_whole_dir dir lib_name)
-  file(GLOB mylist ${dir})
-  add_library(${lib_name} ${mylist})
-endfunction(add_whole_dir)
-
-function(add_whole_tree dir lib_name)
-  file(GLOB_RECURSE mylist "${dir}/*.c")
-  add_library(${lib_name} ${mylist})
-endfunction(add_whole_tree)
+include_directories("${OPENAIR3_DIR}/GTPV1-U/nw-gtpv1u/shared")
+include_directories("${OPENAIR3_DIR}/GTPV1-U/nw-gtpv1u/include")
+include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
-set(UTIL_SRC 
+add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
+)
+include_directories(${OPENAIR_DIR}/common/utils/collection/hashtable)
+
+if (MESSAGE_CHART_GENERATOR)
+  add_library(MSC  
+    ${OPENAIR_DIR}/common/utils/msc/msc.c
+  )  
+  set(MSC_LIB MSC)
+endif()
+include_directories(${OPENAIR_DIR}/common/utils/msc)
+
+set(UTIL_SRC
   ${OPENAIR2_DIR}/UTIL/CLI/cli.c
   ${OPENAIR2_DIR}/UTIL/CLI/cli_cmd.c
   ${OPENAIR2_DIR}/UTIL/CLI/cli_server.c
@@ -519,24 +757,25 @@ set(SECU_OSA_SRC
 add_library(SECU_OSA ${SECU_OSA_SRC})
 
 set(SECU_CN_SRC
-  ${OPENAIRCN_DIR}/SECU/kdf.c
-  ${OPENAIRCN_DIR}/SECU/rijndael.c
-  ${OPENAIRCN_DIR}/SECU/snow3g.c
-  ${OPENAIRCN_DIR}/SECU/key_nas_deriver.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea2.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia2.c
+  ${OPENAIR3_DIR}/SECU/kdf.c
+  ${OPENAIR3_DIR}/SECU/rijndael.c
+  ${OPENAIR3_DIR}/SECU/snow3g.c
+  ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
   )
 add_library(SECU_CN ${SECU_CN_SRC})
 
 # Scheduler
 ################################"
-add_whole_dir(${OPENAIR1_DIR}/SCHED/*.c SCHED_LIB)
+file(GLOB SCHED_SRC ${OPENAIR1_DIR}/SCHED/*.c)
+add_library(SCHED_LIB ${SCHED_SRC})
 
 # Layer 1
 #############################
-set(PHY_SRC 
+set(PHY_SRC
   # depend on code generation from asn1c
   ${RRC_FULL_DIR}/asn1_constants.h
   # actual source
@@ -606,14 +845,11 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
-  ${OPENAIR1_DIR}/PHY/INIT/init_top.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/fft.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cdot_prod.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/TOOLS/dB_routines.c
@@ -674,6 +910,7 @@ set(L2_SRC
   ${RRC_DIR}/rrc_UE.c
   ${RRC_DIR}/rrc_eNB.c
   ${RRC_DIR}/rrc_eNB_S1AP.c
+  ${RRC_DIR}/rrc_eNB_UE_context.c
   ${RRC_DIR}/rrc_common.c
   ${RRC_DIR}/L2_interface.c
   )
@@ -700,15 +937,9 @@ set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_config.c
   )
 
-
-if (NOT ${USE_MME} STREQUAL "False")
-  set(L2_SRC ${L2_SRC}
-    ${RRC_DIR}/rrc_eNB_GTPV1U.c)
-endif(NOT ${USE_MME} STREQUAL "False")
-
-add_library(L2 
-  ${L2_SRC} 
-  ${MAC_SRC} 
+add_library(L2
+  ${L2_SRC}
+  ${MAC_SRC}
   ${ENB_APP_SRC}
   ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
@@ -741,7 +972,7 @@ if (${ENABLE_RAL})
   set(RAL_LIB RAL)
 endif()
 
-if(MIH_C_MEDIEVAL_EXTENSIONS)
+if(${MIH_C_MEDIEVAL_EXTENSIONS})
   set(MIH_SRC
     ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_header_codec.c
     ${RAL_LTE_DIR}INTERFACE-802.21/C/MIH_C_msg_codec.c
@@ -763,299 +994,295 @@ endif()
 
 # CN libs
 ##########################
-set(GTPV1U_SRC ${OPENAIRCN_DIR}/GTPV1-U)
-set (libgtpv1u_SRC
-  ${GTPV1U_SRC}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
-  ${GTPV1U_SRC}/nw-gtpv1u/src/NwGtpv1uTrxn.c
-  ${GTPV1U_SRC}/nw-gtpv1u/src/NwGtpv1uMsg.c
-  ${GTPV1U_SRC}/nw-gtpv1u/src/NwGtpv1u.c
-  ${GTPV1U_SRC}/gtpv1u_eNB.c
-  ${GTPV1U_SRC}/gtpv1u_teid_pool.c
-)
-add_library(GTPV1U ${libgtpv1u_SRC})
 
-set(SCTP_SRC
-  ${OPENAIRCN_DIR}/SCTP/sctp_common.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_eNB_task.c
-  ${OPENAIRCN_DIR}/SCTP/sctp_eNB_itti_messaging.c
-)
-add_library(SCTP ${SCTP_SRC})
-
-add_library(UDP ${OPENAIRCN_DIR}/UDP/udp_eNB_task.c)
-
-set(NAS_SRC ${OPENAIRCN_DIR}/NAS/EURECOM-NAS/src/)
-
-set(libnas_api_OBJS
-  ${NAS_SRC}api/mme/mme_api.c
-  ${NAS_SRC}api/network/nas_message.c
-  ${NAS_SRC}api/network/as_message.c
-  ${NAS_SRC}api/network/network_api.c
+add_library(CN_UTILS
+  ${OPENAIR3_DIR}/UTILS/conversions.c
+  ${OPENAIR3_DIR}/UTILS/enum_string.c
+  ${OPENAIR3_DIR}/UTILS/log.c
+  ${OPENAIR3_DIR}/UTILS/mme_config.c
+  ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
-set(libnas_emm_OBJS
-  ${NAS_SRC}emm/Attach.c
-  ${NAS_SRC}emm/Authentication.c
-  ${NAS_SRC}emm/Detach.c
-  ${NAS_SRC}emm/EmmCommon.c
-  ${NAS_SRC}emm/emm_data_ctx.c
-  ${NAS_SRC}emm/emm_main.c
-  ${NAS_SRC}emm/EmmStatusHdl.c
-  ${NAS_SRC}emm/Identification.c
-  ${NAS_SRC}emm/IdleMode.c
-  ${NAS_SRC}emm/LowerLayer.c
-  ${NAS_SRC}emm/SecurityModeControl.c
-  ${NAS_SRC}emm/ServiceRequestHdl.c
-  ${NAS_SRC}emm/TrackingAreaUpdate.c
+set(GTPV1U_DIR ${OPENAIR3_DIR}/GTPV1-U)
+set (GTPV1U_SRC
+  ${RRC_DIR}/rrc_eNB_GTPV1U.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uTrxn.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1uMsg.c
+  ${GTPV1U_DIR}/nw-gtpv1u/src/NwGtpv1u.c
+  ${GTPV1U_DIR}/gtpv1u_teid_pool.c
+)
+add_library(GTPV1U ${GTPV1U_SRC})
+
+set(SCTP_SRC
+  ${OPENAIR3_DIR}/SCTP/sctp_common.c
+  ${OPENAIR3_DIR}/SCTP/sctp_eNB_task.c
+  ${OPENAIR3_DIR}/SCTP/sctp_eNB_itti_messaging.c
+)
+add_library(SCTP_CLIENT ${SCTP_SRC})
+
+add_library(UDP ${OPENAIR3_DIR}/UDP/udp_eNB_task.c)
+
+
+set(NAS_SRC ${OPENAIR3_DIR}/NAS/)
+set(libnas_api_OBJS
+  ${NAS_SRC}COMMON/API/NETWORK/as_message.c
+  ${NAS_SRC}COMMON/API/NETWORK/nas_message.c
+  ${NAS_SRC}COMMON/API/NETWORK/network_api.c
   )
   
 set(libnas_emm_msg_OBJS
-  ${NAS_SRC}emm/msg/AttachAccept.c
-  ${NAS_SRC}emm/msg/AuthenticationFailure.c
-  ${NAS_SRC}emm/msg/CsServiceNotification.c
-  ${NAS_SRC}emm/msg/ExtendedServiceRequest.c
-  ${NAS_SRC}emm/msg/IdentityResponse.c
-  ${NAS_SRC}emm/msg/EmmInformation.c
-  ${NAS_SRC}emm/msg/ServiceReject.c
-  ${NAS_SRC}emm/msg/TrackingAreaUpdateReject.c
-  ${NAS_SRC}emm/msg/AttachComplete.c
-  ${NAS_SRC}emm/msg/AuthenticationReject.c
-  ${NAS_SRC}emm/msg/DetachAccept.c
-  ${NAS_SRC}emm/msg/GutiReallocationCommand.c
-  ${NAS_SRC}emm/msg/emm_msg.c
-  ${NAS_SRC}emm/msg/SecurityModeCommand.c
-  ${NAS_SRC}emm/msg/ServiceRequest.c
-  ${NAS_SRC}emm/msg/TrackingAreaUpdateRequest.c
-  ${NAS_SRC}emm/msg/AttachReject.c
-  ${NAS_SRC}emm/msg/AuthenticationRequest.c
-  ${NAS_SRC}emm/msg/DetachRequest.c
-  ${NAS_SRC}emm/msg/GutiReallocationComplete.c
-  ${NAS_SRC}emm/msg/SecurityModeComplete.c
-  ${NAS_SRC}emm/msg/TrackingAreaUpdateAccept.c
-  ${NAS_SRC}emm/msg/UplinkNasTransport.c
-  ${NAS_SRC}emm/msg/AttachRequest.c
-  ${NAS_SRC}emm/msg/AuthenticationResponse.c
-  ${NAS_SRC}emm/msg/DownlinkNasTransport.c
-  ${NAS_SRC}emm/msg/EmmStatus.c
-  ${NAS_SRC}emm/msg/IdentityRequest.c
-  ${NAS_SRC}emm/msg/SecurityModeReject.c
-  ${NAS_SRC}emm/msg/TrackingAreaUpdateComplete.c
-)
-
-set(libnas_emm_sap_OBJS
-  ${NAS_SRC}emm/sap/emm_as.c
-  ${NAS_SRC}emm/sap/emm_cn.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredNoImsi.c
-  ${NAS_SRC}emm/sap/emm_reg.c
-  ${NAS_SRC}emm/sap/EmmRegisteredUpdateNeeded.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredNormalService.c
-  ${NAS_SRC}emm/sap/emm_sap.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredPlmnSearch.c
-  ${NAS_SRC}emm/sap/emm_esm.c
-  ${NAS_SRC}emm/sap/EmmRegisteredAttemptingToUpdate.c
-  ${NAS_SRC}emm/sap/emm_send.c
-  ${NAS_SRC}emm/sap/EmmCommonProcedureInitiated.c
-  ${NAS_SRC}emm/sap/EmmRegistered.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredAttachNeeded.c
-  ${NAS_SRC}emm/sap/EmmRegisteredImsiDetachInitiated.c
-  ${NAS_SRC}emm/sap/EmmServiceRequestInitiated.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredAttemptingToAttach.c
-  ${NAS_SRC}emm/sap/emm_fsm.c
-  ${NAS_SRC}emm/sap/EmmRegisteredInitiated.c
-  ${NAS_SRC}emm/sap/EmmTrackingAreaUpdatingInitiated.c
-  ${NAS_SRC}emm/sap/EmmDeregistered.c
-  ${NAS_SRC}emm/sap/EmmRegisteredLimitedService.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredInitiated.c
-  ${NAS_SRC}emm/sap/EmmNull.c
-  ${NAS_SRC}emm/sap/EmmRegisteredNoCellAvailable.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredLimitedService.c
-  ${NAS_SRC}emm/sap/emm_recv.c
-  ${NAS_SRC}emm/sap/EmmRegisteredNormalService.c
-  ${NAS_SRC}emm/sap/EmmDeregisteredNoCellAvailable.c
-  ${NAS_SRC}emm/sap/EmmRegisteredPlmnSearch.c
-)
-
-set (libnas_esm_OBJS
-  ${NAS_SRC}esm/esm_ebr_context.c
-  ${NAS_SRC}esm/PdnConnectivity.c
-  ${NAS_SRC}esm/esm_ebr.c
-  ${NAS_SRC}esm/EpsBearerContextDeactivation.c
-  ${NAS_SRC}esm/DefaultEpsBearerContextActivation.c
-  ${NAS_SRC}esm/DedicatedEpsBearerContextActivation.c
-  ${NAS_SRC}esm/PdnDisconnect.c
-  ${NAS_SRC}esm/EsmStatusHdl.c
-  ${NAS_SRC}esm/esm_main.c
-  ${NAS_SRC}esm/esm_pt.c
-  ${NAS_SRC}esm/esm_ip.c
-)
-
-set(libnas_esm_msg_OBJS
-  ${NAS_SRC}esm/msg/ModifyEpsBearerContextRequest.c
-  ${NAS_SRC}esm/msg/DeactivateEpsBearerContextRequest.c
-  ${NAS_SRC}esm/msg/BearerResourceAllocationReject.c
-  ${NAS_SRC}esm/msg/BearerResourceModificationRequest.c
-  ${NAS_SRC}esm/msg/ActivateDedicatedEpsBearerContextRequest.c
-  ${NAS_SRC}esm/msg/EsmInformationResponse.c
-  ${NAS_SRC}esm/msg/PdnDisconnectReject.c
-  ${NAS_SRC}esm/msg/ActivateDedicatedEpsBearerContextAccept.c
-  ${NAS_SRC}esm/msg/PdnDisconnectRequest.c
-  ${NAS_SRC}esm/msg/BearerResourceModificationReject.c
-  ${NAS_SRC}esm/msg/ActivateDefaultEpsBearerContextAccept.c
-  ${NAS_SRC}esm/msg/ActivateDedicatedEpsBearerContextReject.c
-  ${NAS_SRC}esm/msg/ModifyEpsBearerContextAccept.c
-  ${NAS_SRC}esm/msg/DeactivateEpsBearerContextAccept.c
-  ${NAS_SRC}esm/msg/esm_msg.c
-  ${NAS_SRC}esm/msg/EsmInformationRequest.c
-  ${NAS_SRC}esm/msg/ActivateDefaultEpsBearerContextRequest.c
-  ${NAS_SRC}esm/msg/ModifyEpsBearerContextReject.c
-  ${NAS_SRC}esm/msg/EsmStatus.c
-  ${NAS_SRC}esm/msg/PdnConnectivityReject.c
-  ${NAS_SRC}esm/msg/ActivateDefaultEpsBearerContextReject.c
-  ${NAS_SRC}esm/msg/PdnConnectivityRequest.c
-  ${NAS_SRC}esm/msg/BearerResourceAllocationRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/AttachAccept.c
+  ${NAS_SRC}COMMON/EMM/MSG/AttachComplete.c
+  ${NAS_SRC}COMMON/EMM/MSG/AttachReject.c
+  ${NAS_SRC}COMMON/EMM/MSG/AttachRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/AuthenticationFailure.c
+  ${NAS_SRC}COMMON/EMM/MSG/AuthenticationReject.c
+  ${NAS_SRC}COMMON/EMM/MSG/AuthenticationRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/AuthenticationResponse.c
+  ${NAS_SRC}COMMON/EMM/MSG/CsServiceNotification.c
+  ${NAS_SRC}COMMON/EMM/MSG/DetachAccept.c
+  ${NAS_SRC}COMMON/EMM/MSG/DetachRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/DownlinkNasTransport.c
+  ${NAS_SRC}COMMON/EMM/MSG/EmmInformation.c
+  ${NAS_SRC}COMMON/EMM/MSG/emm_msg.c
+  ${NAS_SRC}COMMON/EMM/MSG/EmmStatus.c
+  ${NAS_SRC}COMMON/EMM/MSG/ExtendedServiceRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/GutiReallocationCommand.c
+  ${NAS_SRC}COMMON/EMM/MSG/GutiReallocationComplete.c
+  ${NAS_SRC}COMMON/EMM/MSG/IdentityRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/IdentityResponse.c
+  ${NAS_SRC}COMMON/EMM/MSG/SecurityModeCommand.c
+  ${NAS_SRC}COMMON/EMM/MSG/SecurityModeComplete.c
+  ${NAS_SRC}COMMON/EMM/MSG/SecurityModeReject.c
+  ${NAS_SRC}COMMON/EMM/MSG/ServiceReject.c
+  ${NAS_SRC}COMMON/EMM/MSG/ServiceRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/TrackingAreaUpdateAccept.c
+  ${NAS_SRC}COMMON/EMM/MSG/TrackingAreaUpdateComplete.c
+  ${NAS_SRC}COMMON/EMM/MSG/TrackingAreaUpdateReject.c
+  ${NAS_SRC}COMMON/EMM/MSG/TrackingAreaUpdateRequest.c
+  ${NAS_SRC}COMMON/EMM/MSG/UplinkNasTransport.c
 )
   
-set(libnas_esm_sap_OBJS
-  ${NAS_SRC}esm/sap/esm_recv.c
-  ${NAS_SRC}esm/sap/esm_send.c
-  ${NAS_SRC}esm/sap/esm_sap.c
+set(libnas_esm_msg_OBJS
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextAccept.c
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDefaultEpsBearerContextAccept.c
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDefaultEpsBearerContextReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/ActivateDefaultEpsBearerContextRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/BearerResourceAllocationReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/BearerResourceAllocationRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/BearerResourceModificationReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/BearerResourceModificationRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/DeactivateEpsBearerContextAccept.c
+  ${NAS_SRC}COMMON/ESM/MSG/DeactivateEpsBearerContextRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/EsmInformationRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/EsmInformationResponse.c
+  ${NAS_SRC}COMMON/ESM/MSG/esm_msg.c
+  ${NAS_SRC}COMMON/ESM/MSG/EsmStatus.c
+  ${NAS_SRC}COMMON/ESM/MSG/ModifyEpsBearerContextAccept.c
+  ${NAS_SRC}COMMON/ESM/MSG/ModifyEpsBearerContextReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/ModifyEpsBearerContextRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/PdnConnectivityReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/PdnConnectivityRequest.c
+  ${NAS_SRC}COMMON/ESM/MSG/PdnDisconnectReject.c
+  ${NAS_SRC}COMMON/ESM/MSG/PdnDisconnectRequest.c
 )
 
 set(libnas_ies_OBJS
-  ${NAS_SRC}ies/UeSecurityCapability.c
-  ${NAS_SRC}ies/SecurityHeaderType.c
-  ${NAS_SRC}ies/RadioPriority.c
-  ${NAS_SRC}ies/EpsAttachResult.c
-  ${NAS_SRC}ies/ImeisvRequest.c
-  ${NAS_SRC}ies/EmergencyNumberList.c
-  ${NAS_SRC}ies/SupportedCodecList.c
-  ${NAS_SRC}ies/EsmCause.c
-  ${NAS_SRC}ies/NetworkName.c
-  ${NAS_SRC}ies/AuthenticationResponseParameter.c
-  ${NAS_SRC}ies/Cli.c
-  ${NAS_SRC}ies/AccessPointName.c
-  ${NAS_SRC}ies/DaylightSavingTime.c
-  ${NAS_SRC}ies/LcsIndicator.c
-  ${NAS_SRC}ies/PagingIdentity.c
-  ${NAS_SRC}ies/EpsMobileIdentity.c
-  ${NAS_SRC}ies/GutiType.c
-  ${NAS_SRC}ies/NasKeySetIdentifier.c
-  ${NAS_SRC}ies/CsfbResponse.c
-  ${NAS_SRC}ies/PacketFlowIdentifier.c
-  ${NAS_SRC}ies/ApnAggregateMaximumBitRate.c
-  ${NAS_SRC}ies/EpsBearerContextStatus.c
-  ${NAS_SRC}ies/MobileIdentity.c
-  ${NAS_SRC}ies/AuthenticationFailureParameter.c
-  ${NAS_SRC}ies/EpsUpdateResult.c
-  ${NAS_SRC}ies/TimeZone.c
-  ${NAS_SRC}ies/MessageType.c
-  ${NAS_SRC}ies/EmmCause.c
-  ${NAS_SRC}ies/MobileStationClassmark2.c
-  ${NAS_SRC}ies/AuthenticationParameterRand.c
-  ${NAS_SRC}ies/PdnAddress.c
-  ${NAS_SRC}ies/MobileStationClassmark3.c
-  ${NAS_SRC}ies/ServiceType.c
-  ${NAS_SRC}ies/NasRequestType.c
-  ${NAS_SRC}ies/PlmnList.c
-  ${NAS_SRC}ies/EpsQualityOfService.c
-  ${NAS_SRC}ies/NasMessageContainer.c
-  ${NAS_SRC}ies/EsmInformationTransferFlag.c
-  ${NAS_SRC}ies/TrafficFlowTemplate.c
-  ${NAS_SRC}ies/LinkedEpsBearerIdentity.c
-  ${NAS_SRC}ies/NasSecurityAlgorithms.c
-  ${NAS_SRC}ies/LlcServiceAccessPointIdentifier.c
-  ${NAS_SRC}ies/ShortMac.c
-  ${NAS_SRC}ies/TrafficFlowAggregateDescription.c
-  ${NAS_SRC}ies/PTmsiSignature.c
-  ${NAS_SRC}ies/ProtocolDiscriminator.c
-  ${NAS_SRC}ies/EpsBearerIdentity.c
-  ${NAS_SRC}ies/TimeZoneAndTime.c
-  ${NAS_SRC}ies/TrackingAreaIdentityList.c
-  ${NAS_SRC}ies/QualityOfService.c
-  ${NAS_SRC}ies/EpsUpdateType.c
-  ${NAS_SRC}ies/PdnType.c
-  ${NAS_SRC}ies/UeRadioCapabilityInformationUpdateNeeded.c
-  ${NAS_SRC}ies/AuthenticationParameterAutn.c
-  ${NAS_SRC}ies/EpsAttachType.c
-  ${NAS_SRC}ies/IdentityType2.c
-  ${NAS_SRC}ies/LcsClientIdentity.c
-  ${NAS_SRC}ies/DetachType.c
-  ${NAS_SRC}ies/LocationAreaIdentification.c
-  ${NAS_SRC}ies/TrackingAreaIdentity.c
-  ${NAS_SRC}ies/CipheringKeySequenceNumber.c
-  ${NAS_SRC}ies/MsNetworkCapability.c
-  ${NAS_SRC}ies/UeNetworkCapability.c
-  ${NAS_SRC}ies/ProtocolConfigurationOptions.c
-  ${NAS_SRC}ies/AdditionalUpdateType.c
-  ${NAS_SRC}ies/TmsiStatus.c
-  ${NAS_SRC}ies/EsmMessageContainer.c
-  ${NAS_SRC}ies/Nonce.c
-  ${NAS_SRC}ies/ProcedureTransactionIdentity.c
-  ${NAS_SRC}ies/TransactionIdentifier.c
-  ${NAS_SRC}ies/AdditionalUpdateResult.c
-  ${NAS_SRC}ies/GprsTimer.c
-  ${NAS_SRC}ies/EpsNetworkFeatureSupport.c
-  ${NAS_SRC}ies/SsCode.c
-  ${NAS_SRC}ies/DrxParameter.c
-  ${NAS_SRC}ies/KsiAndSequenceNumber.c
-  ${NAS_SRC}ies/VoiceDomainPreferenceAndUeUsageSetting.c
+  ${NAS_SRC}COMMON/IES/AccessPointName.c
+  ${NAS_SRC}COMMON/IES/AdditionalUpdateResult.c
+  ${NAS_SRC}COMMON/IES/AdditionalUpdateType.c
+  ${NAS_SRC}COMMON/IES/ApnAggregateMaximumBitRate.c
+  ${NAS_SRC}COMMON/IES/AuthenticationFailureParameter.c
+  ${NAS_SRC}COMMON/IES/AuthenticationParameterAutn.c
+  ${NAS_SRC}COMMON/IES/AuthenticationParameterRand.c
+  ${NAS_SRC}COMMON/IES/AuthenticationResponseParameter.c
+  ${NAS_SRC}COMMON/IES/CipheringKeySequenceNumber.c
+  ${NAS_SRC}COMMON/IES/Cli.c
+  ${NAS_SRC}COMMON/IES/CsfbResponse.c
+  ${NAS_SRC}COMMON/IES/DaylightSavingTime.c
+  ${NAS_SRC}COMMON/IES/DetachType.c
+  ${NAS_SRC}COMMON/IES/DrxParameter.c
+  ${NAS_SRC}COMMON/IES/EmergencyNumberList.c
+  ${NAS_SRC}COMMON/IES/EmmCause.c
+  ${NAS_SRC}COMMON/IES/EpsAttachResult.c
+  ${NAS_SRC}COMMON/IES/EpsAttachType.c
+  ${NAS_SRC}COMMON/IES/EpsBearerContextStatus.c
+  ${NAS_SRC}COMMON/IES/EpsBearerIdentity.c
+  ${NAS_SRC}COMMON/IES/EpsMobileIdentity.c
+  ${NAS_SRC}COMMON/IES/EpsNetworkFeatureSupport.c
+  ${NAS_SRC}COMMON/IES/EpsQualityOfService.c
+  ${NAS_SRC}COMMON/IES/EpsUpdateResult.c
+  ${NAS_SRC}COMMON/IES/EpsUpdateType.c
+  ${NAS_SRC}COMMON/IES/EsmCause.c
+  ${NAS_SRC}COMMON/IES/EsmInformationTransferFlag.c
+  ${NAS_SRC}COMMON/IES/EsmMessageContainer.c
+  ${NAS_SRC}COMMON/IES/GprsTimer.c
+  ${NAS_SRC}COMMON/IES/GutiType.c
+  ${NAS_SRC}COMMON/IES/IdentityType2.c
+  ${NAS_SRC}COMMON/IES/ImeisvRequest.c
+  ${NAS_SRC}COMMON/IES/KsiAndSequenceNumber.c
+  ${NAS_SRC}COMMON/IES/LcsClientIdentity.c
+  ${NAS_SRC}COMMON/IES/LcsIndicator.c
+  ${NAS_SRC}COMMON/IES/LinkedEpsBearerIdentity.c
+  ${NAS_SRC}COMMON/IES/LlcServiceAccessPointIdentifier.c
+  ${NAS_SRC}COMMON/IES/LocationAreaIdentification.c
+  ${NAS_SRC}COMMON/IES/MessageType.c
+  ${NAS_SRC}COMMON/IES/MobileIdentity.c
+  ${NAS_SRC}COMMON/IES/MobileStationClassmark2.c
+  ${NAS_SRC}COMMON/IES/MobileStationClassmark3.c
+  ${NAS_SRC}COMMON/IES/MsNetworkCapability.c
+  ${NAS_SRC}COMMON/IES/MsNetworkFeatureSupport.c
+  ${NAS_SRC}COMMON/IES/NasKeySetIdentifier.c
+  ${NAS_SRC}COMMON/IES/NasMessageContainer.c
+  ${NAS_SRC}COMMON/IES/NasRequestType.c
+  ${NAS_SRC}COMMON/IES/NasSecurityAlgorithms.c
+  ${NAS_SRC}COMMON/IES/NetworkName.c
+  ${NAS_SRC}COMMON/IES/Nonce.c
+  ${NAS_SRC}COMMON/IES/PacketFlowIdentifier.c
+  ${NAS_SRC}COMMON/IES/PagingIdentity.c
+  ${NAS_SRC}COMMON/IES/PdnAddress.c
+  ${NAS_SRC}COMMON/IES/PdnType.c
+  ${NAS_SRC}COMMON/IES/PlmnList.c
+  ${NAS_SRC}COMMON/IES/ProcedureTransactionIdentity.c
+  ${NAS_SRC}COMMON/IES/ProtocolConfigurationOptions.c
+  ${NAS_SRC}COMMON/IES/ProtocolDiscriminator.c
+  ${NAS_SRC}COMMON/IES/PTmsiSignature.c
+  ${NAS_SRC}COMMON/IES/QualityOfService.c
+  ${NAS_SRC}COMMON/IES/RadioPriority.c
+  ${NAS_SRC}COMMON/IES/SecurityHeaderType.c
+  ${NAS_SRC}COMMON/IES/ServiceType.c
+  ${NAS_SRC}COMMON/IES/ShortMac.c
+  ${NAS_SRC}COMMON/IES/SsCode.c
+  ${NAS_SRC}COMMON/IES/SupportedCodecList.c
+  ${NAS_SRC}COMMON/IES/TimeZoneAndTime.c
+  ${NAS_SRC}COMMON/IES/TimeZone.c
+  ${NAS_SRC}COMMON/IES/TmsiStatus.c
+  ${NAS_SRC}COMMON/IES/TrackingAreaIdentity.c
+  ${NAS_SRC}COMMON/IES/TrackingAreaIdentityList.c
+  ${NAS_SRC}COMMON/IES/TrafficFlowAggregateDescription.c
+  ${NAS_SRC}COMMON/IES/TrafficFlowTemplate.c
+  ${NAS_SRC}COMMON/IES/TransactionIdentifier.c
+  ${NAS_SRC}COMMON/IES/UeNetworkCapability.c
+  ${NAS_SRC}COMMON/IES/UeRadioCapabilityInformationUpdateNeeded.c
+  ${NAS_SRC}COMMON/IES/UeSecurityCapability.c
+  ${NAS_SRC}COMMON/IES/VoiceDomainPreferenceAndUeUsageSetting.c
 )
 
 set (libnas_utils_OBJS
-  ${NAS_SRC}util/device.c
-  ${NAS_SRC}util/memory.c
-  ${NAS_SRC}util/nas_log.c
-  ${NAS_SRC}util/nas_timer.c
-  ${NAS_SRC}util/socket.c
-  ${NAS_SRC}util/stty.c
-  ${NAS_SRC}util/TLVEncoder.c
-  ${NAS_SRC}util/TLVDecoder.c
-  ${NAS_SRC}util/OctetString.c
+  ${NAS_SRC}COMMON/UTIL/device.c
+  ${NAS_SRC}COMMON/UTIL/memory.c
+  ${NAS_SRC}COMMON/UTIL/nas_log.c
+  ${NAS_SRC}COMMON/UTIL/nas_timer.c
+  ${NAS_SRC}COMMON/UTIL/socket.c
+  ${NAS_SRC}COMMON/UTIL/stty.c
+  ${NAS_SRC}COMMON/UTIL/TLVEncoder.c
+  ${NAS_SRC}COMMON/UTIL/TLVDecoder.c
+  ${NAS_SRC}COMMON/UTIL/OctetString.c
 )
 
-set (libnas_user_OBJS
-  ${NAS_SRC}api/user/user_api.c
-  ${NAS_SRC}api/user/user_indication.c
-  ${NAS_SRC}api/user/at_command.c
-  ${NAS_SRC}api/user/at_error.c
-  ${NAS_SRC}api/user/at_response.c
-)
-    
-set(libnas_usim_OBJS
-  ${NAS_SRC}api/usim/aka_functions.c
-  ${NAS_SRC}api/usim/usim_api.c
-)
-
-set(libnas_OBJS
-  ${OPENAIRCN_DIR}/NAS/nas_ue_task.c
-  ${OPENAIRCN_DIR}/NAS/nas_itti_messaging.c
-  ${NAS_SRC}nas_parser.c
-  ${NAS_SRC}nas_proc.c
-  ${NAS_SRC}nas_user.c
-  ${libnas_utils_OBJS}
-  ${libnas_user_OBJS}
-  ${libnas_usim_OBJS}
-  ${libnas_emm_OBJS}
-  ${libnas_emm_msg_OBJS}
-  ${libnas_emm_sap_OBJS}
-  ${libnas_esm_OBJS}
-  ${libnas_esm_msg_OBJS}
-  ${libnas_esm_sap_OBJS}
-  ${libnas_ies_OBJS}
-  ${libnas_api_OBJS}
+if(NAS_UE) 
+  set(libnas_ue_api_OBJS
+    ${NAS_SRC}UE/API/USER/at_command.c
+    ${NAS_SRC}UE/API/USER/at_error.c
+    ${NAS_SRC}UE/API/USER/at_response.c
+    ${NAS_SRC}UE/API/USER/user_api.c
+    ${NAS_SRC}UE/API/USER/user_indication.c
+    ${NAS_SRC}UE/API/USIM/aka_functions.c
+    ${NAS_SRC}UE/API/USIM/usim_api.c
   )
-add_library(NAS ${libnas_OBJS})
-if(NAS_UE)
-  set(NAS_LIB NAS)
+  set(libnas_ue_emm_OBJS
+    ${NAS_SRC}UE/EMM/Attach.c
+    ${NAS_SRC}UE/EMM/Authentication.c
+    ${NAS_SRC}UE/EMM/Detach.c
+    ${NAS_SRC}UE/EMM/emm_main.c
+    ${NAS_SRC}UE/EMM/EmmStatusHdl.c
+    ${NAS_SRC}UE/EMM/Identification.c
+    ${NAS_SRC}UE/EMM/IdleMode.c
+    ${NAS_SRC}UE/EMM/LowerLayer.c
+    ${NAS_SRC}UE/EMM/SecurityModeControl.c
+    ${NAS_SRC}UE/EMM/ServiceRequestHdl.c
+    ${NAS_SRC}UE/EMM/TrackingAreaUpdate.c
+  )
+  set(libnas_ue_emm_sap_OBJS
+    ${NAS_SRC}UE/EMM/SAP/emm_as.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttachNeeded.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredAttemptingToAttach.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregistered.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredLimitedService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoCellAvailable.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNoImsi.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredNormalService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmDeregisteredPlmnSearch.c
+    ${NAS_SRC}UE/EMM/SAP/emm_esm.c
+    ${NAS_SRC}UE/EMM/SAP/emm_fsm.c
+    ${NAS_SRC}UE/EMM/SAP/EmmNull.c
+    ${NAS_SRC}UE/EMM/SAP/emm_recv.c
+    ${NAS_SRC}UE/EMM/SAP/emm_reg.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredAttemptingToUpdate.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegistered.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredImsiDetachInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredLimitedService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNoCellAvailable.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredNormalService.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredPlmnSearch.c
+    ${NAS_SRC}UE/EMM/SAP/EmmRegisteredUpdateNeeded.c
+    ${NAS_SRC}UE/EMM/SAP/emm_sap.c
+    ${NAS_SRC}UE/EMM/SAP/emm_send.c
+    ${NAS_SRC}UE/EMM/SAP/EmmServiceRequestInitiated.c
+    ${NAS_SRC}UE/EMM/SAP/EmmTrackingAreaUpdatingInitiated.c
+  )
+  set (libnas_ue_esm_OBJS
+    ${NAS_SRC}UE/ESM/DedicatedEpsBearerContextActivation.c
+    ${NAS_SRC}UE/ESM/DefaultEpsBearerContextActivation.c
+    ${NAS_SRC}UE/ESM/EpsBearerContextDeactivation.c
+    ${NAS_SRC}UE/ESM/esm_ebr.c
+    ${NAS_SRC}UE/ESM/esm_ebr_context.c
+    ${NAS_SRC}UE/ESM/esm_ip.c
+    ${NAS_SRC}UE/ESM/esm_main.c
+    ${NAS_SRC}UE/ESM/esm_pt.c
+    ${NAS_SRC}UE/ESM/EsmStatusHdl.c
+    ${NAS_SRC}UE/ESM/PdnConnectivity.c
+    ${NAS_SRC}UE/ESM/PdnDisconnect.c
+  )
+  set(libnas_ue_esm_sap_OBJS
+    ${NAS_SRC}UE/ESM/SAP/esm_recv.c
+    ${NAS_SRC}UE/ESM/SAP/esm_send.c
+    ${NAS_SRC}UE/ESM/SAP/esm_sap.c
+  )
+  add_library(LIB_NAS_UE
+    ${NAS_SRC}UE/nas_itti_messaging.c
+    ${NAS_SRC}UE/nas_network.c
+    ${NAS_SRC}UE/nas_parser.c
+    ${NAS_SRC}UE/nas_proc.c
+    ${NAS_SRC}UE/nas_user.c
+    ${libnas_api_OBJS}
+    ${libnas_ue_api_OBJS}
+    ${libnas_emm_msg_OBJS}
+    ${libnas_esm_msg_OBJS}
+    ${libnas_ies_OBJS}
+    ${libnas_utils_OBJS}
+    ${libnas_ue_emm_OBJS}
+    ${libnas_ue_emm_sap_OBJS}
+    ${libnas_ue_esm_OBJS}
+    ${libnas_ue_esm_sap_OBJS}
+  )
+  set(NAS_UE_LIB LIB_NAS_UE)
+
+  include_directories(${NAS_SRC}UE)
+  include_directories(${NAS_SRC}UE/API/USER)
+  include_directories(${NAS_SRC}UE/API/USIM)
+  include_directories(${NAS_SRC}UE/EMM)
+  include_directories(${NAS_SRC}UE/EMM/SAP)
+  include_directories(${NAS_SRC}UE/ESM)
+  include_directories(${NAS_SRC}UE/ESM/SAP)
 endif()
 
-include_directories(${NAS_SRC})
-include_directories(${NAS_SRC}/api/user)
-include_directories(${NAS_SRC}/esm)
-include_directories(${NAS_SRC}/esm/sap)
-include_directories(${NAS_SRC}/emm)
-include_directories(${NAS_SRC}/emm/sap)
-include_directories(${NAS_SRC}/api/usim)
-include_directories(${NAS_SRC}/api/mme)
+
 
 # Make lfds as a own source code (even if it is a outside library)
 # For better intergration with compilation flags & structure of cmake
@@ -1064,11 +1291,11 @@ set(lfds ${OPENAIR2_DIR}/UTIL/LFDS/liblfds6.1.1/liblfds611/src/)
 file(GLOB lfds_queue ${lfds}/lfds611_queue/*.c)
 file(GLOB lfds_ring ${lfds}/lfds611_ringbuffer/*.c)
 file(GLOB lfds_slist ${lfds}/lfds611_slist/*.c)
-file(GLOB lfds_stack ${lfds}/lfds611_stack/*.c/)
+file(GLOB lfds_stack ${lfds}/lfds611_stack/*.c)
 file(GLOB lfds_freelist ${lfds}/lfds611_freelist/*.c)
 
 include_directories(${lfds})
-add_library(LFDS 
+add_library(LFDS
   ${lfds_queue} ${lfds_ring} ${lfds_slist} ${lfds_stack} ${lfds_freelist}
   ${lfds}/lfds611_liblfds/lfds611_liblfds_abstraction_test_helpers.c
   ${lfds}/lfds611_liblfds/lfds611_liblfds_aligned_free.c
@@ -1089,7 +1316,6 @@ ${OPENAIR1_DIR}/SIMULATION/TOOLS/multipath_tv_channel.c
 ${OPENAIR1_DIR}/SIMULATION/RF/rf.c
 ${OPENAIR1_DIR}/SIMULATION/RF/dac.c
 ${OPENAIR1_DIR}/SIMULATION/RF/adc.c
-${OPENAIR1_DIR}/USERSPACE_TOOLS/SCOPE/lte_scope.c
 )
 
 add_library(SIMU_ETH
@@ -1099,6 +1325,10 @@ ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/bypass_session_layer.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/emu_transport.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/pgm_link.c
+)
+
+add_library(OPENAIR0_LIB
+  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
 )
 
 # System packages that are required
@@ -1120,11 +1350,10 @@ pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
 #use native cmake method as this package is not in pkg-config
-if (${RF_BOARD} STREQUAL "USRP")
+if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
   include_directories(${LIBBOOST_INCLUDE_DIR})
-  target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
-endif (${RF_BOARD} STREQUAL "USRP")
+endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
 pkg_search_module(OPENPGM openpgm-5.1)
 if(NOT ${OPENPGM_FOUND})
@@ -1157,77 +1386,279 @@ endif()
 
 if (${XFORMS})
   include_directories ("/usr/include/X11")
-  set(XFORMS_SOURCE 
+  set(XFORMS_SOURCE
     ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
+    )
+  set(XFORMS_SOURCE_SOFTMODEM
     ${OPENAIR_TARGETS}/RT/USER/stats.c
     )
   set(XFORMS_LIBRARIES "forms")
 endif (${XFORMS})
 
-# add executables
+set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
-add_executable(lte-softmodem 
-${rrc_h}
-${s1ap_h}
-${OPENAIR_BIN_DIR}/messages_xml.h
-${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
-${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
-${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
-${OPENAIR_TARGETS}/COMMON/create_tasks.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-${HW_SOURCE}
-${RTAI_SOURCE}
-${XFORMS_SOURCE}
-)
-target_link_libraries (lte-softmodem 
-  -Wl,--start-group 
-  RRC_LIB ${S1AP_LIB} GTPV1U SECU_CN SECU_OSA UTIL SCTP UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} ${NAS_LIB} ${ITTI_LIB} ${MIH_LIB}
+
+# Hack on a test of asn1c version (already dirty)
+add_definitions(-DASN1_MINIMUM_VERSION=924)
+
+#################################
+# add executables for operation
+#################################""
+
+# lte-softmodem is both eNB and UE implementation
+###################################################
+add_executable(lte-softmodem
+  ${rrc_h}
+  ${s1ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
+  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${GTPU_need_ITTI}
+  ${HW_SOURCE}
+  ${RTAI_SOURCE}
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
+  )
+
+target_link_libraries (lte-softmodem
+  -Wl,--start-group
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
   -Wl,--end-group )
-target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_USRP} ${XFORMS_LIBRARIES} )
 
+
+target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
+
+# lte-softmodem-nos1 is both eNB and UE implementation
+###################################################
+add_executable(lte-softmodem-nos1
+  ${rrc_h}
+  ${s1ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
+  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
+  ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
+  #${OPENAIR2_DIR}/RRC/NAS/nas_config.c # enable if you want rrc to mount ip interface
+  #${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${HW_SOURCE}
+  ${RTAI_SOURCE}
+  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_SOFTMODEM}
+  )
+target_link_libraries (lte-softmodem-nos1
+  -Wl,--start-group
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
+  -Wl,--end-group )
+
+target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
+
+
+
+# rrh
+################################
+set(DRIVER2013)
+
+#Note: only on RF type is currently supported for RRH
+add_executable(rrh_gw
+  ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
+  ${OPENAIR_TARGETS}/RT/USER/eNB_transport_IQ.c
+  ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
+  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
+  ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c		
+  ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c 
+  ${HW_SOURCE}
+  )
+# assert and common_lib.h
+target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti ${OPENAIR_TARGETS}/ARCH/COMMON ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ )
+
+target_link_libraries(rrh_gw
+  -Wl,--start-group
+  UTIL LFDS  
+  -Wl,--end-group )
+target_link_libraries (rrh_gw rt pthread m )
+target_link_libraries (rrh_gw ${option_HW_lib} ${LIBBOOST_LIBRARIES} )
+
+#Message("-- default_HW_lib=ETHERNET") # only in case of RRH
+Message("-- option_HW_lib=${option_HW_lib}")
+Message("-- HW_SOURCE=${HW_SOURCE}")
+
+# USIM process
+#################
+#add_executable(usim
+#  ${OPENAIR3_DIR}/NAS/TOOLS/usim_data.c
+#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/usim_api.c
+#  ${OPENAIR3_DIR}/NAS/USER/API/USIM/aka_functions.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/OctetString.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/TLVEncoder.c
+#  )
+#target_link_libraries (usim ${NAS_LIB} UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
+
+# ???
+#####################
+#add_executable(nvram
+#  ${OPENAIR3_DIR}/NAS/TOOLS/ue_data.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/memory.c
+#  ${OPENAIR3_DIR}/NAS/COMMON/UTIL/nas_log.c
+#  )
+#target_link_libraries (nvram LIB_NAS_UE UTIL ${ITTI_LIB} LFDS pthread rt nettle crypto m)
+
+
+###################################"
+# Addexecutables for tests
+####################################
+
+# A all in one network simulator
+################
 add_executable(oaisim
-${rrc_h}
-${s1ap_h}
-${OPENAIR_BIN_DIR}/messages_xml.h
-${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
-${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
-${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
-${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
-${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
-${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
-${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
-${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
-${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-${OPENAIR2_DIR}/UTIL/OMG/sumo.c
-${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${rrc_h}
+  ${s1ap_h}
+  ${x2ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
+  ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
+  ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
+  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
+  ${GTPU_need_ITTI}
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${HW_SOURCE}
+  ${XFORMS_SOURCE}
 )
+
+
 target_include_directories(oaisim PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim
-  -Wl,--start-group 
-  RRC_LIB ${S1AP_LIB} GTPV1U SECU_CN UTIL SCTP UDP SCHED_LIB PHY LFDS L2 ${RAL_LIB} ${NAS_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  -Wl,--start-group
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} LIB_NAS_UE SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
+
 target_link_libraries (oaisim ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
-target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_USRP} 
+target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES} sctp ${option_HW_lib}
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
 
+
+
+# A all in one network simulator
+################
+add_executable(oaisim_nos1
+  ${rrc_h}
+  ${s1ap_h}
+  ${x2ap_h}
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  ${OPENAIR_TARGETS}/SIMU/USER/channel_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_config.c
+  ${OPENAIR_TARGETS}/SIMU/USER/sinr_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/cor_SF_sim.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim_functions.c
+  ${OPENAIR_TARGETS}/SIMU/USER/event_handler.c
+  ${OPENAIR_TARGETS}/SIMU/USER/oaisim.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR2_DIR}/UTIL/OMG/sumo.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
+  ${HW_SOURCE}
+  ${XFORMS_SOURCE}
+)
+target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
+target_link_libraries (oaisim_nos1
+  -Wl,--start-group
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  -Wl,--end-group )
+
+target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
+target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
+#Force link with forms, regardless XFORMS option
+target_link_libraries (oaisim_nos1 forms)
+
+
+# Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
+#####################################
+
 foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
   add_executable(${myExe}
+    ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
-    ${XFORMS_SOURCE} 
+    ${XFORMS_SOURCE}
     )
   target_link_libraries (${myExe}
-    -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS  ${ITTI_LIB} -Wl,--end-group 
+    -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
     pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES}
     )
 endforeach(myExe)
+
+add_executable(test_epc_generate_scenario
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config.h
+  ${OPENAIR2_DIR}/COMMON/commonDef.h
+  ${OPENAIR2_DIR}/COMMON/messages_def.h
+  ${OPENAIR2_DIR}/COMMON/messages_types.h
+  ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  )
+target_link_libraries (test_epc_generate_scenario
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
+  )
+
+
+#unitary tests for Core NEtwork pieces
+#################################
+foreach(myExe s1ap
+    secu_knas_encrypt_eia1
+    secu_kenb
+    aes128_ctr_encrypt
+    aes128_ctr_decrypt
+    secu_knas_encrypt_eea2
+    secu_knas secu_knas_encrypt_eea1
+    kdf
+    aes128_cmac_encrypt
+    secu_knas_encrypt_eia2)
+  add_executable(test_${myExe}
+    ${OPENAIR3_DIR}/TEST/test_util.c
+    ${OPENAIR3_DIR}/TEST/test_${myExe}.c
+    )
+  target_link_libraries (test_${myExe}
+    -Wl,--start-group SECU_CN UTIL LFDS -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES} fdproto fdcore
+    )
+endforeach(myExe)
+
+# to be added
+#../targets/TEST/PDCP/test_pdcp.c
+#../targets/TEST/PDCP/with_rlc/test_pdcp_rlc.c
+
+
+
 
 ##################################################
 # Generated specific cases is not regular code
@@ -1250,7 +1681,7 @@ endforeach()
 set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
-  COMMAND gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H} 
+  COMMAND gccxml ${itti_compiler_options} -fxml=${OPENAIR_BIN_DIR}/messages.xml ${ITTI_H}
   DEPENDS ${S1AP_OAI_generated} ${RRC_FULL_DIR}/asn1_constants.h
   )
 
@@ -1283,7 +1714,6 @@ EXECUTE_PROCESS(COMMAND uname -r
   OUTPUT_VARIABLE os_release
   OUTPUT_STRIP_TRAILING_WHITESPACE)
 SET(module_build_path /lib/modules/${os_release}/build)
-message("Kernel build path = ${module_build_path}")
 
 function(make_driver name dir)
   file(MAKE_DIRECTORY ${OPENAIR_BIN_DIR}/${name})
@@ -1292,7 +1722,7 @@ function(make_driver name dir)
     string(REGEX REPLACE "c *$" "o" obj ${f})
     set(objs "${objs} ${obj}")
   endforeach()
-  CONFIGURE_FILE(${OPENAIR_CMAKE}/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
+  CONFIGURE_FILE(${OPENAIR_CMAKE}/tools/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
   add_custom_command(OUTPUT ${name}.ko
     COMMAND make -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
     WORKING_DIRECTORY ${OPENAIR_BIN_DIR}/${name}
@@ -1303,19 +1733,42 @@ function(make_driver name dir)
   add_custom_target(${name} DEPENDS ${name}.ko)
 endfunction(make_driver name dir src)
 
-# nashmesh module 
+# nashmesh module
 ################
 list(APPEND nasmesh_src device.c common.c ioctl.c classifier.c tool.c mesh.c)
-set(module_cc_opt "${module_cc_opt}")
-make_driver(nasmesh  ${OPENAIR2_DIR}/NAS/DRIVER/MESH ${nasmesh_src})
-  
+# Actually nasty stuff to be FIXED: the hereafter flag is for RTAI compilation in the driver,
+# but has different meaning in the other parts of the code
+# We should change the constant name to xxx_RTAI or likely
+if(NOT ${module_cc_opt} MATCHES "DRTAI")
+  set(module_cc_opt "${module_cc_opt} -DNAS_NETLINK")
+else()
+  string(REPLACE "-DNAS_NETLINK" "" tmp "${module_cc_opt}")
+  set(module_cc_opt ${tmp})
+endif()
+# legacy Makefile was using NAS_NETLINK flag, but other drivers the hereafter flag
+# so, this cmake use OAI_NW_DRIVER_USE_NETLINK everywhere
+if (OAI_NW_DRIVER_USE_NETLINK)
+  list(APPEND nasmesh_src netlink.c)
+endif()
+make_driver(nasmesh  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH ${nasmesh_src})
+
+# user space tool for configuring MESH IP driver
+################
+add_executable(rb_tool
+  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/constant.h
+  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/ioctl.h
+  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/rrc_nas_primitives.h
+  ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/RB_TOOL/rb_tool.c
+)
+target_include_directories(rb_tool PRIVATE ${OPENAIR2_DIR}/NETWORK_DRIVER/MESH/)
+
 # ???
 ####################
 list(APPEND oai_nw_drv_src device.c common.c ioctl.c classifier.c tool.c)
 if(OAI_NW_DRIVER_USE_NETLINK)
   list(APPEND oai_nw_drv_src netlink.c)
 endif()
-make_driver(oai_nw_drv ${OPENAIR2_DIR}/NAS/DRIVER/LITE ${oai_nw_drv_src})
+make_driver(oai_nw_drv ${OPENAIR2_DIR}/NETWORK_DRIVER/LITE ${oai_nw_drv_src})
 
 # Exmimo board drivers
 #########################
@@ -1326,6 +1779,79 @@ add_executable(updatefw
   ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/OAI_FW_INIT/updatefw.c
 )
 
-# add the install targets
-#install (TARGETS Tutorial DESTINATION bin)
-#install (FILES "${PROJECT_BIN_DIR}/TutorialConfig.h"        DESTINATION include)
+# ue_ip: purpose ???
+###############
+list(APPEND ue_ip_src device.c common.c)
+if(OAI_NW_DRIVER_USE_NETLINK)
+  list(APPEND ue_ip_src netlink.c)
+endif()
+make_driver(ue_ip ${OPENAIR2_DIR}/NETWORK_DRIVER/UE_IP ${ue_ip_src})
+
+
+# OCTAVE tools
+###############
+set(OCT_INCL -I${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS -I${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB -I${OPENAIR_TARGETS}/ARCH/COMMON)
+set(OCT_LIBS -L${CMAKE_CURRENT_BINARY_DIR} -lm -lOPENAIR0_LIB) 
+set(OCT_FLAGS -DEXMIMO)
+set(OCT_DIR ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/OCTAVE)
+set(OCT_FILES
+  oarf_config_exmimo.oct
+  oarf_config_exmimo.oct 
+  oarf_get_frame.oct 
+  oarf_stop.oct 
+  oarf_send_frame.oct 
+  oarf_get_num_detected_cards.oct 
+  oarf_stop_without_reset.oct
+)
+
+foreach(file IN ITEMS ${OCT_FILES})
+  string(REGEX REPLACE "oct *$" "cc" src ${file})
+  add_custom_command(
+    OUTPUT ${file}
+    DEPENDS ${OCT_DIR}/${src} OPENAIR0_LIB
+    COMMAND mkoctfile
+    ARGS ${OCT_FLAGS} ${OCT_INCL} ${OCT_LIBS} 
+    ARGS -o ${file} ${OCT_DIR}/${src}
+    COMMENT "Generating ${file}"
+    VERBATIM
+  )
+endforeach(file)
+
+ADD_CUSTOM_TARGET(oarf
+   DEPENDS ${OCT_FILES}
+)
+ 
+#CMAKE INSTALL and CPACK
+
+#INSTALL(PROGRAMS lte-softmodem ${OPENAIR_DIR}/targets DESTINATION bin)
+#INSTALL(PROGRAMS oaisim ${OPENAIR_DIR}/targets DESTINATION bin)
+
+
+#SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAirInterface")
+#SET(CPACK_PACKAGE_VENDOR "Eurecom")
+#SET(CPACK_PACKAGE_DESCRIPTION_FILE "${OPENAIR_DIR}/README.txt")
+#SET(CPACK_RESOURCE_FILE_LICENSE "${OPENAIR_DIR}/COPYING")
+#SET(CPACK_PACKAGE_VERSION_MAJOR "1")
+#SET(CPACK_PACKAGE_VERSION_MINOR "1")
+#SET(CPACK_PACKAGE_VERSION_PATCH "1")
+
+#SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+#SET(CPACK_STRIP_FILES "${OPENAIR_TARGETS}/bin")
+#SET(CPACK_SOURCE_STRIP_FILES "")
+
+##debian specific 
+#SET(CPACK_DEBIAN_PACKAGE_NAME "OAI") 
+#SET(CPACK_DEBIAN_PACKAGE_VERSION "${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
+##dpkg --print-architecture (do not use i686
+#SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+
+#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
+#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libpthread.so.0  libm.so.6 libconfig.so.9 librt.so.1 libcrypt.so.1 libcrypto.so.1.0.0  libnettle.so.4 libsctp.so.1 libc.so.6")
+#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "EURECOM-OSA")
+
+#SET(CPACK_PACKAGE_EXECUTABLES "lte-softmodem" "mme_gw.Rel10" "openair-hss")
+
+#SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "OpenAirInterface")
+#SET(CPACK_DEBIAN_PACKAGE_Section "Beta-Release")
+
+#INCLUDE(CPack)

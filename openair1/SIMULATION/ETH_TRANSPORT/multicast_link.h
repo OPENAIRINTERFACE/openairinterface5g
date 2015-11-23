@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,21 +14,21 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 /*! \file multicast.h
  *  \brief
- *  \author Lionel Gauthier and Navid Nikaein 
+ *  \author Lionel Gauthier and Navid Nikaein
  *  \date 2011
  *  \version 1.1
  *  \company Eurecom
@@ -58,9 +58,9 @@ private_multicast_link (typedef struct multicast_group_t {
 
 extern const char *multicast_group_list[MULTICAST_LINK_NUM_GROUPS];
 
-private_multicast_link(void  multicast_link_init ());
+private_multicast_link(void  multicast_link_init (void));
 private_multicast_link(void  multicast_link_read_data (int groupP));
-private_multicast_link(void  multicast_link_read ());
+private_multicast_link(void  multicast_link_read (void));
 private_multicast_link(void *multicast_link_main_loop (void *param));
 
 public_multicast_link(int   multicast_link_write_sock (int groupP, char *dataP, uint32_t sizeP));

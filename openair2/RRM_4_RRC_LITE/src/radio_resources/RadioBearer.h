@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -43,100 +43,101 @@
 #    include "LogicalChannelConfig.h"
 using namespace std;
 
-class RadioBearer  {
-    public:
+class RadioBearer
+{
+public:
 
 
-        RadioBearer ():m_id(0u) {};
-        RadioBearer (rb_id_t,
-                     T_PollRetransmit_t,
-                     PollPDU_t,
-                     PollByte_t,
-                     long,
-                     T_Reordering_t,
-                     T_StatusProhibit_t,
-                     long ,
-                     long ,
-                     long ,
-                     long,
-                     Command*);
+  RadioBearer ():m_id(0u) {};
+  RadioBearer (rb_id_t,
+               T_PollRetransmit_t,
+               PollPDU_t,
+               PollByte_t,
+               long,
+               T_Reordering_t,
+               T_StatusProhibit_t,
+               long ,
+               long ,
+               long ,
+               long,
+               Command*);
 
-        // RLC_UM BIDIRECTIONAL OR UNIDIRECTIONAL DL
-        RadioBearer (rb_id_t,
-                     rlc_mode_t,
-                    SN_FieldLength_t,
-                    T_Reordering_t,
-                    long ,
-                    long ,
-                    long ,
-                    long,
-                     Command*);
+  // RLC_UM BIDIRECTIONAL OR UNIDIRECTIONAL DL
+  RadioBearer (rb_id_t,
+               rlc_mode_t,
+               SN_FieldLength_t,
+               T_Reordering_t,
+               long ,
+               long ,
+               long ,
+               long,
+               Command*);
 
-        // RLC_UM BIDIRECTIONAL OR UNIDIRECTIONAL UL
-        RadioBearer (rb_id_t,
-                     SN_FieldLength_t,
-                     long ,
-                     long ,
-                     long ,
-                     long,
-                     Command*);
+  // RLC_UM BIDIRECTIONAL OR UNIDIRECTIONAL UL
+  RadioBearer (rb_id_t,
+               SN_FieldLength_t,
+               long ,
+               long ,
+               long ,
+               long,
+               Command*);
 
-        ~RadioBearer ();
+  ~RadioBearer ();
 
-        friend inline bool operator>( const RadioBearer& l, const RadioBearer r )
-        {
-            return l.m_id > r.m_id;
-        }
-        friend inline bool operator==( const RadioBearer& l, const RadioBearer r )
-        {
-            return l.m_id == r.m_id;
-        }
+  friend inline bool operator>( const RadioBearer& l, const RadioBearer r ) {
+    return l.m_id > r.m_id;
+  }
+  friend inline bool operator==( const RadioBearer& l, const RadioBearer r ) {
+    return l.m_id == r.m_id;
+  }
 
-        void SetLogicalChannelParameters(logical_channel_priority_t ,
-                            long ,
-                            long ,
-                            long);
+  void SetLogicalChannelParameters(logical_channel_priority_t ,
+                                   long ,
+                                   long ,
+                                   long);
 
-        void SetRlcUmParameters(rlc_mode_t,
-                                SN_FieldLength_t ,
-                                T_StatusProhibit_t );
+  void SetRlcUmParameters(rlc_mode_t,
+                          SN_FieldLength_t ,
+                          T_StatusProhibit_t );
 
-        void SetRlcAmParameters(T_PollRetransmit_t,
-                                PollPDU_t,
-                                PollByte_t,
-                                long,
-                                T_Reordering_t,
-                                T_StatusProhibit_t);
+  void SetRlcAmParameters(T_PollRetransmit_t,
+                          PollPDU_t,
+                          PollByte_t,
+                          long,
+                          T_Reordering_t,
+                          T_StatusProhibit_t);
 
-        rb_id_t GetId() { return m_id;};
+  rb_id_t GetId() {
+    return m_id;
+  };
 
-    private:
-        rb_id_t       m_id;
-        //pdcp_config_t                     m_pdcp_config;
-        rlc_mode_t                          m_rlc_mode;
+private:
+  rb_id_t       m_id;
+  //pdcp_config_t                     m_pdcp_config;
+  rlc_mode_t                          m_rlc_mode;
 
-        // RLC UM parameters
-        SN_FieldLength_t                    m_sn_field_length;
+  // RLC UM parameters
+  SN_FieldLength_t                    m_sn_field_length;
 
-        // RLC AM parameters
-        T_PollRetransmit_t                  m_t_poll_retransmit;
-        PollPDU_t                           m_poll_pdu;
-        PollByte_t                          m_poll_byte;
-        long                                m_max_retx_threshold;
-        T_StatusProhibit_t                  m_t_status_prohibit;
+  // RLC AM parameters
+  T_PollRetransmit_t                  m_t_poll_retransmit;
+  PollPDU_t                           m_poll_pdu;
+  PollByte_t                          m_poll_byte;
+  long                                m_max_retx_threshold;
+  T_StatusProhibit_t                  m_t_status_prohibit;
 
-        // COMMOM RLC parameters
-        T_Reordering_t                      m_t_reordering;
+  // COMMOM RLC parameters
+  T_Reordering_t                      m_t_reordering;
 
-        long                                m_priority;
-        long                                m_prioritized_bit_rate;
-        long                                m_bucket_size_duration;
-        long                                m_logical_channel_group;
+  long                                m_priority;
+  long                                m_prioritized_bit_rate;
+  long                                m_bucket_size_duration;
+  long                                m_logical_channel_group;
 
 
-        // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
-        //PDCP_Config_t                       m_pdcp_config;
-        //RLC_Config_t                        m_rlc_config;
+  // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
+  //PDCP_Config_t                       m_pdcp_config;
+  //RLC_Config_t                        m_rlc_config;
 
 };
 #    endif

@@ -5,18 +5,19 @@
 
 
 
-class TestScenario {
-    public:
-        static const int SCENARIO_ALL_IS_OK                     = 1;
+class TestScenario
+{
+public:
+  static const int SCENARIO_ALL_IS_OK                     = 1;
 
-        static void Start(const int scenario_idP);
-        static void notifyRxMessage(Message*);
+  static void Start(const int scenario_idP);
+  static void notifyRxMessage(Message*);
 
-    private:
-        TestScenario ();
-        ~TestScenario ();
-        static int        s_step;
-        static int        s_scenario_id;
+private:
+  TestScenario ();
+  ~TestScenario ();
+  static int        s_step;
+  static int        s_scenario_id;
 };
 #    endif
 

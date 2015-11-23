@@ -8,7 +8,7 @@
 void lfds611_stack_delete( struct lfds611_stack_state *ss, void (*user_data_delete_function)(void *user_data, void *user_state), void *user_state )
 {
   void
-    *user_data;
+  *user_data;
 
   assert( ss != NULL );
   // TRD : user_data_delete_function can be NULL
@@ -33,7 +33,7 @@ void lfds611_stack_delete( struct lfds611_stack_state *ss, void (*user_data_dele
 void lfds611_stack_clear( struct lfds611_stack_state *ss, void (*user_data_clear_function)(void *user_data, void *user_state), void *user_state )
 {
   void
-    *user_data;
+  *user_data;
 
   assert( ss != NULL );
   // TRD : user_data_clear_function can be NULL

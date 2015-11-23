@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -39,10 +39,10 @@
 // last channel estimate of the receiver
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
-		      PHY_VARS_UE *phy_vars_ue,
-		      unsigned char eNB_id,
-		      unsigned char clear,
-		      short coef)
+                      PHY_VARS_UE *phy_vars_ue,
+                      unsigned char eNB_id,
+                      unsigned char clear,
+                      short coef)
 {
 
   static int max_pos_fil = 0;
@@ -60,11 +60,13 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   // we only use channel estimates from tx antenna 0 here
   for (i = 0; i < frame_parms->nb_prefix_samples; i++) {
     temp = 0;
-    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+
+    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
       Re = ((int16_t*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[(i<<2)];
       Im = ((int16_t*)phy_vars_ue->lte_ue_common_vars.dl_ch_estimates_time[eNB_id][aa])[1+(i<<2)];
       temp += (Re*Re/2) + (Im*Im/2);
     }
+
     if (temp > max_val) {
       max_pos = i;
       max_val = temp;
@@ -77,21 +79,21 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   else
     max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
-  
+
   diff = max_pos_fil - frame_parms->nb_prefix_samples/8;
 
   if ( diff > SYNCH_HYST )
     phy_vars_ue->rx_offset++;
   else if (diff < -SYNCH_HYST)
     phy_vars_ue->rx_offset--;
-    
+
   if ( phy_vars_ue->rx_offset < 0 )
     phy_vars_ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
 
   if ( phy_vars_ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
     phy_vars_ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
 
-  
+
 
 #ifdef DEBUG_PHY
   LOG_D(PHY,"frame %d: rx_offset (after) = %d : max_pos = %d,max_pos_fil = %d (peak %d)\n",
@@ -103,11 +105,11 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
-			   LTE_eNB_SRS *lte_eNb_srs,
-			   unsigned int  *eNB_id,
-			   unsigned char clear,
-			   unsigned char number_of_cards,
-			   short coef)
+                           LTE_eNB_SRS *lte_eNb_srs,
+                           unsigned int  *eNB_id,
+                           unsigned char clear,
+                           unsigned char number_of_cards,
+                           short coef)
 
 {
 
@@ -123,22 +125,36 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
   ncoef = 32768 - coef;
 
-  for (ind=0;ind<number_of_cards;ind++) {
+  for (ind=0; ind<number_of_cards; ind++) {
 
     if (ind==0)
       max_val=0;
 
 
-    for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
       // do ifft of channel estimate
-      fft((short*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
-	  (short*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
-	  frame_parms->twiddle_ifft,
-	  frame_parms->rev,
-	  frame_parms->log2_symbol_size,
-	  frame_parms->log2_symbol_size/2,
-	  0);
-
+      switch(frame_parms->N_RB_DL) {
+      case 6:
+	dft128((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	       1);
+	break;
+      case 25:
+	dft512((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	       1);
+	break;
+      case 50:
+	dft1024((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
+		(int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+		1);
+	break;
+      case 100:
+	dft2048((int16_t*) &lte_eNb_srs->srs_ch_estimates[ind][aa][0],
+	       (int16_t*) lte_eNb_srs->srs_ch_estimates_time[ind][aa],
+	       1);
+	break;
+      }
 #ifdef USER_MODE
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
@@ -152,15 +168,17 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     // remember we fixed the SRS to use only every second subcarriers
     for (i = 0; i < frame_parms->ofdm_symbol_size/2; i++) {
       temp = 0;
-      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-	Re = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[(i<<2)];
-	Im = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[1+(i<<2)];
-	temp += (Re*Re/2) + (Im*Im/2);
+
+      for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+        Re = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[(i<<1)];
+        Im = ((int16_t*)lte_eNb_srs->srs_ch_estimates_time[ind][aa])[1+(i<<1)];
+        temp += (Re*Re/2) + (Im*Im/2);
       }
+
       if (temp > max_val) {
-	max_pos = i; 
-	max_val = temp;
-	*eNB_id = ind;
+        max_pos = i;
+        max_val = temp;
+        *eNB_id = ind;
       }
     }
   }
@@ -170,11 +188,11 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
     max_pos_fil2 = max_pos;
   else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
-  
+
 #ifdef DEBUG_PHY
   //LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d\n",mac_xface->frame,max_pos,max_pos_fil2);
 #endif //DEBUG_PHY
-  
+
   return(max_pos_fil2);
 }
 
@@ -195,27 +213,30 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,uint8_t UE_id,uint8_
 
 
   for (i = 0; i < frame_parms->ofdm_symbol_size; i++) {
-      temp = 0;
-      for (aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-	Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<2)];
-	Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<2)];
-	temp += (Re*Re/2) + (Im*Im/2);
-      }
-      if (temp > max_val) {
-	max_pos = i; 
-	max_val = temp;
-      }
+    temp = 0;
+
+    for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
+      Re = ((int16_t*)ul_ch_estimates_time[aa])[(i<<1)];
+      Im = ((int16_t*)ul_ch_estimates_time[aa])[1+(i<<1)];
+      temp += (Re*Re/2) + (Im*Im/2);
+    }
+
+    if (temp > max_val) {
+      max_pos = i;
+      max_val = temp;
+    }
   }
 
+  if (max_pos>frame_parms->ofdm_symbol_size/2)
+    max_pos = max_pos-frame_parms->ofdm_symbol_size;
 
   // filter position to reduce jitter
-  if (first_run == 1){
+  if (first_run == 1) {
     first_run=0;
     max_pos_fil2 = max_pos;
-  }
-  else
+  } else
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
-  
+
 #ifdef DEBUG_PHY
   LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",phy_vars_eNB->proc[sched_subframe].frame_rx,max_pos,max_pos_fil2,sync_pos);
 #endif //DEBUG_PHY

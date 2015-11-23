@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -65,9 +65,9 @@
 * \param[in]  snP            Sequence number.
 */
 protected_rlc_am_segments_holes(void rlc_am_clear_holes (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP);)
+                                  const protocol_ctxt_t* const  ctxt_pP,
+                                  rlc_am_entity_t *const rlcP,
+                                  const rlc_sn_t snP);)
 
 /*! \fn void rlc_am_remove_hole (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t * const rlcP,  rlc_sn_t snP, sdu_size_t so_startP, sdu_size_t so_stopP)
 * \brief      Remove for PDU with sequence number "snP" a NACK for byte segment offset [so_startP, so_stopP].
@@ -78,11 +78,11 @@ protected_rlc_am_segments_holes(void rlc_am_clear_holes (
 * \param[in]  so_stopP       End of segment offset.
 */
 protected_rlc_am_segments_holes(void rlc_am_remove_hole (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t   snP,
-                const sdu_size_t so_startP,
-                const sdu_size_t so_stopP);)
+                                  const protocol_ctxt_t* const  ctxt_pP,
+                                  rlc_am_entity_t *const rlcP,
+                                  const rlc_sn_t   snP,
+                                  const sdu_size_t so_startP,
+                                  const sdu_size_t so_stopP);)
 
 /*! \fn void rlc_am_get_next_hole (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t * const rlcP, rlc_sn_t snP, sdu_size_t* so_startP, sdu_size_t* so_stopP)
 * \brief      Get for PDU with sequence number "snP" the first hole start and stop parameters.
@@ -93,11 +93,11 @@ protected_rlc_am_segments_holes(void rlc_am_remove_hole (
 * \param[in,out]  so_stopP   End of segment offset.
 */
 protected_rlc_am_segments_holes(void rlc_am_get_next_hole (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP,
-                sdu_size_t* const so_startP,
-                sdu_size_t* const so_stopP);)
+                                  const protocol_ctxt_t* const  ctxt_pP,
+                                  rlc_am_entity_t *const rlcP,
+                                  const rlc_sn_t snP,
+                                  sdu_size_t* const so_startP,
+                                  sdu_size_t* const so_stopP);)
 
 /*! \fn void rlc_am_add_hole (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t * const rlcP, rlc_sn_t snP, sdu_size_t so_startP, sdu_size_t so_stopP)
 * \brief      Mark for PDU with sequence number "snP" a NACK for byte segment offset [so_startP, so_stopP].
@@ -108,10 +108,10 @@ protected_rlc_am_segments_holes(void rlc_am_get_next_hole (
 * \param[in,out]  so_stopP   End of segment offset.
 */
 protected_rlc_am_segments_holes(void rlc_am_add_hole (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_am_entity_t *const rlcP,
-                const rlc_sn_t snP,
-                const sdu_size_t so_startP,
-                      sdu_size_t so_stopP);)
+                                  const protocol_ctxt_t* const  ctxt_pP,
+                                  rlc_am_entity_t *const rlcP,
+                                  const rlc_sn_t snP,
+                                  const sdu_size_t so_startP,
+                                  sdu_size_t so_stopP);)
 /** @} */
 #endif

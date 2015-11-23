@@ -10,12 +10,12 @@ The VCD file generated is called openair_vcd_dump.vcd and is located in the exec
 
 Usage:
 1) To dump function usage:
-    vcd_signal_dumper_dump_function_by_name(FUNCTION_NAME, VCD_FUNCTION_IN); at start of function
-    vcd_signal_dumper_dump_function_by_name(FUNCTION_NAME, VCD_FUNCTION_OUT); at end of function
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(FUNCTION_NAME, VCD_FUNCTION_IN); at start of function
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(FUNCTION_NAME, VCD_FUNCTION_OUT); at end of function
     FUNCTION_NAME should be defined in the enum in vcd_signal_dumper.h and the function name should be addded at the right place in the vcd_signal_dumper.c file.
 
 2) To dump a variable:
-    vcd_signal_dumper_dump_variable_by_name(VARIABLE_NAME, value); where VARIABLE_NAME is defined as described above for functions and value is the state of the variable at log time.
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VARIABLE_NAME, value); where VARIABLE_NAME is defined as described above for functions and value is the state of the variable at log time.
 
 TODO list:
 - Add support for signed variables

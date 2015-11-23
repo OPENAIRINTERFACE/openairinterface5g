@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -33,23 +33,23 @@
 #define UDP_INIT(mSGpTR)    (mSGpTR)->ittiMsg.udp_init
 
 typedef struct {
-    uint32_t  port;
-    char     *address;
+  uint32_t  port;
+  char     *address;
 } udp_init_t;
 
 typedef struct {
-    uint8_t  *buffer;
-    uint32_t  buffer_length;
-    uint32_t  buffer_offset;
-    uint32_t  peer_address;
-    uint32_t  peer_port;
+  uint8_t  *buffer;
+  uint32_t  buffer_length;
+  uint32_t  buffer_offset;
+  uint32_t  peer_address;
+  uint32_t  peer_port;
 } udp_data_req_t;
 
 typedef struct {
-    uint8_t  *buffer;
-    uint32_t  buffer_length;
-    uint32_t  peer_address;
-    uint32_t  peer_port;
+  uint8_t  *buffer;
+  uint32_t  buffer_length;
+  uint32_t  peer_address;
+  uint32_t  peer_port;
 } udp_data_ind_t;
 
 #endif /* UDP_MESSAGES_TYPES_H_ */

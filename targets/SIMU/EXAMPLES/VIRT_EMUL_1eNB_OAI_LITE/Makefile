@@ -2,7 +2,7 @@
 all: oaisim naslite_netlink_ether
 
 oaisim:
-	(cd $(OPENAIR_TARGETS)/SIMU/USER && $(MAKE) oaisim OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS=1)
+	(cd $(OPENAIR_TARGETS)/SIMU/USER && $(MAKE) oaisim OAI_NW_DRIVER_TYPE_ETHERNET=1 LINK_ENB_PDCP_TO_IP_DRIVER=1)
 
 naslite_netlink_ether:
 	(cd $(OPENAIR2_DIR) && $(MAKE) naslite_netlink_ether.ko)

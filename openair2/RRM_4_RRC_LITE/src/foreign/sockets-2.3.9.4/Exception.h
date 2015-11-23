@@ -1,17 +1,17 @@
 /**
- **	\file Exception.h
- **	\date  2007-09-28
- **	\author grymse@alhem.net
+ ** \file Exception.h
+ ** \date  2007-09-28
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2007-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -37,7 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string>
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
 
 
@@ -45,19 +46,21 @@ namespace SOCKETS_NAMESPACE {
 class Exception
 {
 public:
-	Exception(const std::string& description);
-	virtual ~Exception() {}
+  Exception(const std::string& description);
+  virtual ~Exception() {}
 
-	virtual const std::string ToString() const;
-	virtual const std::string Stack() const;
+  virtual const std::string ToString() const;
+  virtual const std::string Stack() const;
 
-	Exception(const Exception& ) {} // copy constructor
+  Exception(const Exception& ) {} // copy constructor
 
-	Exception& operator=(const Exception& ) { return *this; } // assignment operator
+  Exception& operator=(const Exception& ) {
+    return *this;  // assignment operator
+  }
 
 private:
-	std::string m_description;
-	std::string m_stack;
+  std::string m_description;
+  std::string m_stack;
 
 };
 

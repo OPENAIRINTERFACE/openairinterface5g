@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -33,7 +33,7 @@
 * \date 2012
 * \version 0.1
 * \company Eurecom
-* \email: 
+* \email:
 * \note
 * \warning
 */
@@ -45,26 +45,26 @@
 
 /*!A sructure that represents a mapping (OAI_ID, SUMO_ID), i.e the node ID given by OAI and the node ID given by SUMO */
 typedef struct map_struct {
-	int oai_id; /*!< the oai ID as an integer */
-	char *sumo_id;  /*!< SUMO gives IDs as strings */
-}map_struct;
+  int oai_id; /*!< the oai ID as an integer */
+  char *sumo_id;  /*!< SUMO gives IDs as strings */
+} map_struct;
 
 typedef struct map_struct* MapPtr;  /*!< The typedef that reflects a #map_struct*/
 
 /*!A sructure that gathers all the existing ID Maping */
 struct map_list_struct {
-	map_struct *map;  /*!< Avariable of type #MapPtr. It represents a node */
-	struct map_list_struct  *next; /*!< A pointer to the next element */
-}map_list_struct;
+  map_struct *map;  /*!< Avariable of type #MapPtr. It represents a node */
+  struct map_list_struct  *next; /*!< A pointer to the next element */
+} map_list_struct;
 
 typedef struct map_list_struct* Map_list; /*!< The typedef that reflects a #map_list_struct*/
 
 /*!A sructure that includes all characteristics of an ID management Unit  */
 typedef struct id_manager_struct {
-	struct map_list_struct *map_oai2sumo;  /*!< Avariable of type #MapPtr. It represents the mapping from OAI ID to SUMO ID for one noe */
-	struct map_list_struct *map_sumo2oai;  /*!< Avariable of type #MapPtr. It represents the mapping from SUMO ID to OAI ID for one noe */
-	
-}id_manager_struct;
+  struct map_list_struct *map_oai2sumo;  /*!< Avariable of type #MapPtr. It represents the mapping from OAI ID to SUMO ID for one noe */
+  struct map_list_struct *map_sumo2oai;  /*!< Avariable of type #MapPtr. It represents the mapping from SUMO ID to OAI ID for one noe */
+
+} id_manager_struct;
 
 typedef struct id_manager_struct* IDManagerPtr; /*!< The typedef that reflects a #id_manager_struct*/
 
@@ -126,7 +126,7 @@ void remove_oaiID_by_SUMO(char *sumo_id, IDManagerPtr ID_manager);
  * \param Map_Vector the reference to the OAI_2_SUMO Map list
  * \return the SUMO ID in string format
  */
-char* get_sumo_entry(int oai_id, Map_list Map_Vector); 
+char* get_sumo_entry(int oai_id, Map_list Map_Vector);
 
 /**
  * \fn get_oai_entry(char* sumo_id, Map_list Map_Vector)

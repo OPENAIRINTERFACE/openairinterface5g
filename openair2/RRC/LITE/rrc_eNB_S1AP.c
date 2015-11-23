@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 /*! \file rrc_eNB_S1AP.c
  * \brief rrc S1AP procedures for eNB
- * \author Laurent Winckel and Navid Nikaein
+ * \author Laurent Winckel and Sebastien ROUX and Navid Nikaein and Lionel GAUTHIER
  * \date 2013-2014
  * \version 1.0
  * \company Eurecom
@@ -40,6 +40,8 @@
 # include "extern.h"
 # include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 # include "RRC/LITE/MESSAGES/asn1_msg.h"
+# include "RRC/LITE/defs.h"
+# include "rrc_eNB_UE_context.h"
 # include "rrc_eNB_S1AP.h"
 
 # if defined(ENABLE_ITTI)
@@ -55,6 +57,7 @@
 #if defined(ENABLE_SECURITY)
 #   include "UTIL/OSA/osa_defs.h"
 #endif
+#include "msc.h"
 
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
@@ -77,81 +80,117 @@ static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 #endif
 #endif
 
+
+
+
 # if defined(ENABLE_ITTI)
+//------------------------------------------------------------------------------
+struct rrc_ue_s1ap_ids_s*
+rrc_eNB_S1AP_get_ue_ids(
+  eNB_RRC_INST* const rrc_instance_pP,
+  const uint16_t ue_initial_id,
+  const uint32_t eNB_ue_s1ap_id
+)
+//------------------------------------------------------------------------------
+{
+  rrc_ue_s1ap_ids_t *result = NULL;
+  rrc_ue_s1ap_ids_t *result2 = NULL;
+  hashtable_rc_t     h_rc;
+
+  // we assume that a rrc_ue_s1ap_ids_s is initially inserted in initial_id2_s1ap_ids
+  if (eNB_ue_s1ap_id > 0) {
+	h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result);
+  }
+  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
+    h_rc = hashtable_get(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&result);
+	if  (h_rc == HASH_TABLE_OK) {
+	  if (eNB_ue_s1ap_id > 0) {
+	    h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result2);
+	    if  (h_rc != HASH_TABLE_OK) {
+		  result2 = malloc(sizeof(*result2));
+		  if (NULL != result2) {
+		    *result2 = *result;
+		    result2->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+		    result->eNB_ue_s1ap_id  = eNB_ue_s1ap_id;
+            h_rc = hashtable_insert(rrc_instance_pP->s1ap_id2_s1ap_ids,
+		    		               (hash_key_t)eNB_ue_s1ap_id,
+		    		               result2);
+            if (h_rc != HASH_TABLE_OK) {
+              LOG_E(S1AP, "[eNB %u] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %u\n",
+		    		  rrc_instance_pP - eNB_rrc_inst, eNB_ue_s1ap_id);
+            }
+		  }
+		}
+	  }
+	}
+  }
+  return result;
+}
+//------------------------------------------------------------------------------
+void
+rrc_eNB_S1AP_remove_ue_ids(
+  eNB_RRC_INST*              const rrc_instance_pP,
+  struct rrc_ue_s1ap_ids_s* const ue_ids_pP
+)
+//------------------------------------------------------------------------------
+{
+  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
+  const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
+  hashtable_rc_t h_rc;
+  if (rrc_instance_pP == NULL) {
+    LOG_E(RRC, "Bad RRC instance\n");
+    return;
+  }
+
+  if (ue_ids_pP == NULL) {
+    LOG_E(RRC, "Trying to free a NULL S1AP UE IDs\n");
+    return;
+  }
+
+  if (eNB_ue_s1ap_id > 0) {
+	h_rc = hashtable_remove(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id);
+	if (h_rc != HASH_TABLE_OK) {
+	  LOG_W(RRC, "S1AP Did not find entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
+	} else {
+	  LOG_W(RRC, "S1AP removed entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
+	}
+  }
+
+  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
+    h_rc = hashtable_remove(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id);
+	if (h_rc != HASH_TABLE_OK) {
+	  LOG_W(RRC, "S1AP Did not find entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
+	} else {
+	  LOG_W(RRC, "S1AP removed entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
+	}
+  }
+}
+
 /*! \fn uint16_t get_next_ue_initial_id(uint8_t mod_id)
  *\brief provide an UE initial ID for S1AP initial communication.
  *\param mod_id Instance ID of eNB.
  *\return the UE initial ID.
  */
-static uint16_t get_next_ue_initial_id(uint8_t mod_id) {
+//------------------------------------------------------------------------------
+static uint16_t
+get_next_ue_initial_id(
+  const module_id_t mod_id
+)
+//------------------------------------------------------------------------------
+{
   static uint16_t ue_initial_id[NUMBER_OF_eNB_MAX];
-
   ue_initial_id[mod_id]++;
 
   /* Never use UE_INITIAL_ID_INVALID this is the invalid id! */
   if (ue_initial_id[mod_id] == UE_INITIAL_ID_INVALID) {
-      ue_initial_id[mod_id]++;
+    ue_initial_id[mod_id]++;
   }
+
   return ue_initial_id[mod_id];
 }
 
-/*! \fn uint8_t get_UE_index_from_initial_id (uint8_t mod_id, uint16_t ue_initial_id)
- *\brief retrieve UE index in the eNB from the UE initial ID.
- *\param mod_id Instance ID of eNB.
- *\param ue_initial_id The UE initial ID sent to S1AP.
- *\return the UE index or UE_INDEX_INVALID if not found.
- */
-static uint8_t get_UE_index_from_initial_id(uint8_t mod_id, uint16_t ue_initial_id) {
-  uint8_t ue_index;
 
-  AssertFatal(mod_id < NB_eNB_INST, "eNB index invalid (%d/%d)!", mod_id, NB_eNB_INST);
-  LOG_D(RRC, "[eNB %d] get_UE_index_from_initial_id: ue_initial_id %d\n", ue_initial_id);
 
-  for (ue_index = 0; ue_index < NUMBER_OF_UE_MAX; ue_index++) {
-      /* Check if this UE is in use */
-      LOG_D(RRC, "[eNB %d][UE %d] UE rv 0x%" PRIx64 " %d\n", mod_id, ue_index,
-            eNB_rrc_inst[mod_id].Info.UE_list[ue_index], eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id);
-
-      if (eNB_rrc_inst[mod_id].Info.UE_list[ue_index] != 0) {
-          /* Check if the initial id match */
-          if (eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id == ue_initial_id) {
-              return ue_index;
-          }
-      }
-  }
-  return UE_INDEX_INVALID;
-}
-
-/*! \fn uint8_t get_UE_index_from_eNB_ue_s1ap_id(uint8_t mod_id, uint32_t eNB_ue_s1ap_id)
- *\brief retrieve UE index in the eNB from the eNB_ue_s1ap_id previously transmitted by S1AP.
- *\param mod_id Instance ID of eNB.
- *\param eNB_ue_s1ap_id The value sent by S1AP.
- *\return the UE index or UE_INDEX_INVALID if not found.
- */
-static uint8_t get_UE_index_from_eNB_ue_s1ap_id(uint8_t mod_id, uint32_t eNB_ue_s1ap_id) {
-  uint8_t ue_index;
-
-  AssertFatal(mod_id < NB_eNB_INST, "eNB index invalid (%d/%d)!", mod_id, NB_eNB_INST);
-  LOG_D(RRC, "[eNB %d] get_UE_index_from_eNB_ue_s1ap_id: eNB_ue_s1ap_id %d\n", mod_id, eNB_ue_s1ap_id);
-
-  for (ue_index = 0; ue_index < NUMBER_OF_UE_MAX; ue_index++) {
-    /* Check if this UE is in use */
-      LOG_D(RRC, "[eNB %d][UE %d] UE rv 0x%" PRIx64 " %d\n", mod_id, ue_index,
-            eNB_rrc_inst[mod_id].Info.UE_list[ue_index], eNB_rrc_inst[mod_id].Info.UE[ue_index].eNB_ue_s1ap_id);
-
-      if (eNB_rrc_inst[mod_id].Info.UE_list[ue_index] != 0) {
-          /* Check if the initial id match */
-          if (eNB_rrc_inst[mod_id].Info.UE[ue_index].eNB_ue_s1ap_id == eNB_ue_s1ap_id) {
-              return ue_index;
-          }
-      }
-  }
-  LOG_D(RRC,
-        "[eNB %d] return UE_INDEX_INVALID for eNB_ue_s1ap_id %u\n",
-        mod_id,
-        eNB_ue_s1ap_id);
-  return UE_INDEX_INVALID;
-}
 
 /*! \fn uint8_t get_UE_index_from_s1ap_ids(uint8_t mod_id, uint16_t ue_initial_id, uint32_t eNB_ue_s1ap_id)
  *\brief retrieve UE index in the eNB from the UE initial ID if not equal to UE_INDEX_INVALID or
@@ -161,19 +200,28 @@ static uint8_t get_UE_index_from_eNB_ue_s1ap_id(uint8_t mod_id, uint32_t eNB_ue_
  *\param eNB_ue_s1ap_id The value sent by S1AP.
  *\return the UE index or UE_INDEX_INVALID if not found.
  */
-static uint8_t get_UE_index_from_s1ap_ids(uint8_t mod_id, uint16_t ue_initial_id, uint32_t eNB_ue_s1ap_id) {
-  uint8_t ue_index;
+static struct rrc_eNB_ue_context_s*
+rrc_eNB_get_ue_context_from_s1ap_ids(
+  const instance_t  instanceP,
+  const uint16_t    ue_initial_idP,
+  const uint32_t    eNB_ue_s1ap_idP
+)
+{
+  rrc_ue_s1ap_ids_t* temp = NULL;
+  temp =
+    rrc_eNB_S1AP_get_ue_ids(
+      &eNB_rrc_inst[ENB_INSTANCE_TO_MODULE_ID(instanceP)],
+      ue_initial_idP,
+      eNB_ue_s1ap_idP);
 
-  if (ue_initial_id == UE_INITIAL_ID_INVALID) {
-      /* If "ue_initial_id" is not set search if "eNB_ue_s1ap_id" is know by RRC */
-      ue_index = get_UE_index_from_eNB_ue_s1ap_id (mod_id, eNB_ue_s1ap_id);
-  }
-  else {
-      /* If "ue_initial_id" is set there is probably not yet an associated "eNB_ue_s1ap_id" with S1AP */
-      ue_index = get_UE_index_from_initial_id (mod_id, ue_initial_id);
+  if (temp) {
+
+    return rrc_eNB_get_ue_context(
+             &eNB_rrc_inst[ENB_INSTANCE_TO_MODULE_ID(instanceP)],
+             temp->ue_rnti);
   }
 
-  return ue_index;
+  return NULL;
 }
 
 /*! \fn e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
@@ -181,17 +229,18 @@ static uint8_t get_UE_index_from_s1ap_ids(uint8_t mod_id, uint16_t ue_initial_id
  *\param algorithms The bit mask of available algorithms received from S1AP.
  *\return the selected algorithm.
  */
-static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms) {
-  
+static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
+{
+
 #warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
-      return SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
+    return SecurityAlgorithmConfig__cipheringAlgorithm_eea2;
   }
 
   if (algorithms & S1AP_ENCRYPTION_EEA1_MASK) {
-      return SecurityAlgorithmConfig__cipheringAlgorithm_eea1;
+    return SecurityAlgorithmConfig__cipheringAlgorithm_eea1;
   }
 
   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
@@ -202,14 +251,15 @@ static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(ui
  *\param algorithms The bit mask of available algorithms received from S1AP.
  *\return the selected algorithm.
  */
-static e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms) {
-  
+static e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms)
+{
+
   if (algorithms & S1AP_INTEGRITY_EIA2_MASK) {
-      return SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
+    return SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
   }
 
   if (algorithms & S1AP_INTEGRITY_EIA1_MASK) {
-      return SecurityAlgorithmConfig__integrityProtAlgorithm_eia1;
+    return SecurityAlgorithmConfig__integrityProtAlgorithm_eia1;
   }
 
   return INTEGRITY_ALGORITHM_NONE;
@@ -222,178 +272,252 @@ static e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrit
  *\param security_capabilities The security capabilities received from S1AP.
  *\return TRUE if at least one algorithm has been changed else FALSE.
  */
-static int rrc_eNB_process_security (uint8_t mod_id, uint8_t ue_index, security_capabilities_t *security_capabilities) {
-  int changed = FALSE;
+static int
+rrc_eNB_process_security(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  security_capabilities_t* security_capabilities_pP
+)
+{
+  boolean_t                                         changed = FALSE;
   e_SecurityAlgorithmConfig__cipheringAlgorithm cipheringAlgorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrityProtAlgorithm;
 
   /* Save security parameters */
-  eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities = *security_capabilities;
+  ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
 
   // translation
   LOG_D(RRC,
-      "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %u NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
-      mod_id,
-      eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.encryption_algorithms,
-      eNB_rrc_inst[mod_id].ciphering_algorithm[ue_index],
-      eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.integrity_algorithms,
-      eNB_rrc_inst[mod_id].integrity_algorithm[ue_index]);
+        "[eNB %d] NAS security_capabilities.encryption_algorithms %u AS ciphering_algorithm %u NAS security_capabilities.integrity_algorithms %u AS integrity_algorithm %u\n",
+        ctxt_pP->module_id,
+        ue_context_pP->ue_context.security_capabilities.encryption_algorithms,
+        ue_context_pP->ue_context.ciphering_algorithm,
+        ue_context_pP->ue_context.security_capabilities.integrity_algorithms,
+        ue_context_pP->ue_context.integrity_algorithm);
   /* Select relevant algorithms */
-  cipheringAlgorithm = rrc_eNB_select_ciphering (eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.encryption_algorithms);
-  if (eNB_rrc_inst[mod_id].ciphering_algorithm[ue_index] != cipheringAlgorithm) {
-      eNB_rrc_inst[mod_id].ciphering_algorithm[ue_index] = cipheringAlgorithm;
-      changed = TRUE;
+  cipheringAlgorithm = rrc_eNB_select_ciphering (ue_context_pP->ue_context.security_capabilities.encryption_algorithms);
+
+  if (ue_context_pP->ue_context.ciphering_algorithm != cipheringAlgorithm) {
+    ue_context_pP->ue_context.ciphering_algorithm = cipheringAlgorithm;
+    changed = TRUE;
   }
 
-  integrityProtAlgorithm = rrc_eNB_select_integrity (eNB_rrc_inst[mod_id].Info.UE[ue_index].security_capabilities.integrity_algorithms);
-  if (eNB_rrc_inst[mod_id].integrity_algorithm[ue_index] != integrityProtAlgorithm) {
-      eNB_rrc_inst[mod_id].integrity_algorithm[ue_index] = integrityProtAlgorithm;
-      changed = TRUE;
+  integrityProtAlgorithm = rrc_eNB_select_integrity (ue_context_pP->ue_context.security_capabilities.integrity_algorithms);
+
+  if (ue_context_pP->ue_context.integrity_algorithm != integrityProtAlgorithm) {
+    ue_context_pP->ue_context.integrity_algorithm = integrityProtAlgorithm;
+    changed = TRUE;
   }
 
-  LOG_I (RRC, "[eNB %d][UE %d] Selected security algorithms (%x): %x, %x, %s\n",
-         mod_id, ue_index, security_capabilities, cipheringAlgorithm, integrityProtAlgorithm, changed ? "changed" : "same");
+  LOG_I (RRC, "[eNB %d][UE %x] Selected security algorithms (%x): %x, %x, %s\n",
+         ctxt_pP->module_id,
+         ue_context_pP->ue_context.rnti,
+         security_capabilities_pP,
+         cipheringAlgorithm,
+         integrityProtAlgorithm,
+         changed ? "changed" : "same");
 
   return changed;
 }
 
-/*! \fn void process_eNB_security_key (uint8_t mod_id, uint8_t ue_index, uint8_t *security_key)
+/*! \fn void process_eNB_security_key (const protocol_ctxt_t* const ctxt_pP, eNB_RRC_UE_t * const ue_context_pP, uint8_t *security_key)
  *\brief save security key.
- *\param mod_id Instance ID of eNB.
- *\param ue_index Instance ID of UE in the eNB.
- *\param security_key The security key received from S1AP.
+ *\param ctxt_pP         Running context.
+ *\param ue_context_pP   UE context.
+ *\param security_key_pP The security key received from S1AP.
  */
-static void process_eNB_security_key (uint8_t mod_id, uint8_t ue_index, uint8_t *security_key) {
+//------------------------------------------------------------------------------
+static void process_eNB_security_key (
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  uint8_t*               security_key_pP
+)
+//------------------------------------------------------------------------------
+{
 #if defined(ENABLE_SECURITY)
   char ascii_buffer[65];
   uint8_t i;
 
   /* Saves the security key */
-  memcpy (eNB_rrc_inst[mod_id].kenb[ue_index], security_key, SECURITY_KEY_LENGTH);
+  memcpy (ue_context_pP->ue_context.kenb, security_key_pP, SECURITY_KEY_LENGTH);
 
   for (i = 0; i < 32; i++) {
-      sprintf(&ascii_buffer[2 * i], "%02X", eNB_rrc_inst[mod_id].kenb[ue_index][i]);
+    sprintf(&ascii_buffer[2 * i], "%02X", ue_context_pP->ue_context.kenb[i]);
   }
+
   ascii_buffer[2 * i] = '\0';
 
-  LOG_I (RRC, "[eNB %d][UE %d] Saved security key %s\n", mod_id, ue_index, ascii_buffer);
+  LOG_I (RRC, "[eNB %d][UE %x] Saved security key %s\n", ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ascii_buffer);
 #endif
 }
 
 
-static void rrc_pdcp_config_security(uint8_t enb_mod_idP, uint8_t ue_mod_idP, uint8_t send_security_mode_command ){
+//------------------------------------------------------------------------------
+static void
+rrc_pdcp_config_security(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const uint8_t send_security_mode_command
+)
+//------------------------------------------------------------------------------
+{
 
 #if defined(ENABLE_SECURITY)
 
-  
-  SRB_ToAddModList_t                 *SRB_configList = eNB_rrc_inst[enb_mod_idP].SRB_configList[ue_mod_idP];
+
+  SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
   pdcp_t                             *pdcp_p   = NULL;
   static int                          print_keys= 1;
-  protocol_ctxt_t                     ctxt;
+  hashtable_rc_t                      h_rc;
+  hash_key_t                          key;
+
   /* Derive the keys from kenb */
   if (SRB_configList != NULL) {
-    derive_key_up_enc(eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP],
-                      eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kUPenc);
+    derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                      ue_context_pP->ue_context.kenb,
+                      &kUPenc);
   }
-  
-  derive_key_rrc_enc(eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP],
-                     eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kRRCenc);
-  derive_key_rrc_int(eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP],
-                     eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP], &kRRCint);
-  
-#define DEBUG_SECURITY 1 
- 
+
+  derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
+                     ue_context_pP->ue_context.kenb,
+                     &kRRCenc);
+  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
+                     ue_context_pP->ue_context.kenb,
+                     &kRRCint);
+
+#define DEBUG_SECURITY 1
+
 #if defined (DEBUG_SECURITY)
 #define msg printf
+
   if (print_keys ==1 ) {
-      print_keys =0;
-      int i;
-      msg("\nKeNB:");
-      for(i = 0; i < 32; i++)
-          msg("%02x", eNB_rrc_inst[enb_mod_idP].kenb[ue_mod_idP][i]);
-      msg("\n");
-            
-      msg("\nKRRCenc:");
-      for(i = 0; i < 32; i++)
-          msg("%02x", kRRCenc[i]);
-      msg("\n");
-      
-      msg("\nKRRCint:");
-      for(i = 0; i < 32; i++)
-          msg("%02x", kRRCint[i]);
-      msg("\n");
-      
+    print_keys =0;
+    int i;
+    msg("\nKeNB:");
+
+    for(i = 0; i < 32; i++) {
+      msg("%02x", ue_context_pP->ue_context.kenb[i]);
     }
+
+    msg("\n");
+
+    msg("\nKRRCenc:");
+
+    for(i = 0; i < 32; i++) {
+      msg("%02x", kRRCenc[i]);
+    }
+
+    msg("\n");
+
+    msg("\nKRRCint:");
+
+    for(i = 0; i < 32; i++) {
+      msg("%02x", kRRCint[i]);
+    }
+
+    msg("\n");
+
+  }
+
 #endif //DEBUG_SECURITY
+  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
+  h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
 
-    pdcp_p = &pdcp_array_srb_eNB[enb_mod_idP][ue_mod_idP][DCCH-1];
-
-    ctxt.enb_module_id = enb_mod_idP;
-    ctxt.ue_module_id  = ue_mod_idP;
-    ctxt.frame         = 0;
-    ctxt.enb_flag      = ENB_FLAG_YES;
+  if (h_rc == HASH_TABLE_OK) {
     pdcp_config_set_security(
-                    &ctxt,
-                    pdcp_p,
-                    DCCH,
-                    DCCH+2,
-                    (send_security_mode_command == TRUE)  ?
-                                    0 | (eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP] << 4) :
-                                    (eNB_rrc_inst[enb_mod_idP].ciphering_algorithm[ue_mod_idP] )         |
-                                    (eNB_rrc_inst[enb_mod_idP].integrity_algorithm[ue_mod_idP] << 4),
-                    kRRCenc,
-                    kRRCint,
-                    kUPenc);
+      ctxt_pP,
+      pdcp_p,
+      DCCH,
+      DCCH+2,
+      (send_security_mode_command == TRUE)  ?
+      0 | (ue_context_pP->ue_context.integrity_algorithm << 4) :
+      (ue_context_pP->ue_context.ciphering_algorithm )         |
+      (ue_context_pP->ue_context.integrity_algorithm << 4),
+      kRRCenc,
+      kRRCint,
+      kUPenc);
+  } else {
+    LOG_E(RRC,
+          PROTOCOL_RRC_CTXT_UE_FMT"Could not get PDCP instance for SRB DCCH %u\n",
+          PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+          DCCH);
+  }
+
 #endif
 }
 
-/*------------------------------------------------------------------------------*/
-void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_index) {
-  eNB_RRC_UE_INFO *UE_info = &eNB_rrc_inst[mod_id].Info.UE[ue_index];
+//------------------------------------------------------------------------------
+void
+rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP
+)
+//------------------------------------------------------------------------------
+{
   MessageDef      *msg_p         = NULL;
   int e_rab;
   int e_rabs_done = 0;
   int e_rabs_failed = 0;
 
   msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_INITIAL_CONTEXT_SETUP_RESP);
-  S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id = UE_info->eNB_ue_s1ap_id;
-  for (e_rab = 0; e_rab < UE_info->nb_of_e_rabs; e_rab++) {
-    if (UE_info->e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+  S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+
+  for (e_rab = 0; e_rab < ue_context_pP->ue_context.nb_of_e_rabs; e_rab++) {
+    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
       e_rabs_done++;
-      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].e_rab_id = UE_info->e_rab[e_rab].param.e_rab_id;
+      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
       // TODO add other information from S1-U when it will be integrated
-          S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].gtp_teid = UE_info->enb_gtp_teid[e_rab];
-          S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr = UE_info->enb_gtp_addrs[e_rab];
-          S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length = 4;
-    }
-    else {
+      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].gtp_teid = ue_context_pP->ue_context.enb_gtp_teid[e_rab];
+      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr = ue_context_pP->ue_context.enb_gtp_addrs[e_rab];
+      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length = 4;
+    } else {
       e_rabs_failed++;
-      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs_failed[e_rab].e_rab_id = UE_info->e_rab[e_rab].param.e_rab_id;
+      S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).e_rabs_failed[e_rab].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
       // TODO add cause when it will be integrated
     }
   }
+
+  MSC_LOG_TX_MESSAGE(
+    MSC_RRC_ENB,
+    MSC_S1AP_ENB,
+    (const char *)&S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p),
+    sizeof(s1ap_initial_context_setup_resp_t),
+    MSC_AS_TIME_FMT" INITIAL_CONTEXT_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
+    MSC_AS_TIME_ARGS(ctxt_pP),
+    ue_context_pP->ue_id_rnti,
+    S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
+    e_rabs_done, e_rabs_failed);
+
+
   S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
   S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
 
-  itti_send_msg_to_task (TASK_S1AP, mod_id, msg_p);
+  itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
 }
 # endif
 
-/*------------------------------------------------------------------------------*/
-void rrc_eNB_send_S1AP_UPLINK_NAS(uint8_t mod_id, uint8_t ue_index, UL_DCCH_Message_t *ul_dcch_msg) {
+//------------------------------------------------------------------------------
+void
+rrc_eNB_send_S1AP_UPLINK_NAS(
+  const protocol_ctxt_t*    const ctxt_pP,
+  rrc_eNB_ue_context_t*             const ue_context_pP,
+  UL_DCCH_Message_t*        const ul_dcch_msg
+)
+//------------------------------------------------------------------------------
+{
 #if defined(ENABLE_ITTI)
   {
     ULInformationTransfer_t *ulInformationTransfer = &ul_dcch_msg->message.choice.c1.choice.ulInformationTransfer;
 
     if ((ulInformationTransfer->criticalExtensions.present == ULInformationTransfer__criticalExtensions_PR_c1)
-        && (ulInformationTransfer->criticalExtensions.choice.c1.present
-            == ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8)
-        && (ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.present
-            == ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)) {
+    && (ulInformationTransfer->criticalExtensions.choice.c1.present
+    == ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8)
+    && (ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.present
+    == ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)) {
       /* This message hold a dedicated info NAS payload, forward it to NAS */
       struct ULInformationTransfer_r8_IEs__dedicatedInfoType *dedicatedInfoType =
           &ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType;
@@ -405,11 +529,11 @@ void rrc_eNB_send_S1AP_UPLINK_NAS(uint8_t mod_id, uint8_t ue_index, UL_DCCH_Mess
       pdu_buffer = dedicatedInfoType->choice.dedicatedInfoNAS.buf;
 
       msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UPLINK_NAS);
-      S1AP_UPLINK_NAS (msg_p).eNB_ue_s1ap_id = eNB_rrc_inst[mod_id].Info.UE[ue_index].eNB_ue_s1ap_id;
+      S1AP_UPLINK_NAS (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
       S1AP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
       S1AP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
 
-      itti_send_msg_to_task (TASK_S1AP, mod_id, msg_p);
+      itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
     }
   }
 #else
@@ -420,97 +544,127 @@ void rrc_eNB_send_S1AP_UPLINK_NAS(uint8_t mod_id, uint8_t ue_index, UL_DCCH_Mess
     ulInformationTransfer;
 
     if (ulInformationTransfer->criticalExtensions.present ==
-        ULInformationTransfer__criticalExtensions_PR_c1)
-    {
+    ULInformationTransfer__criticalExtensions_PR_c1) {
       if (ulInformationTransfer->criticalExtensions.choice.c1.present ==
-          ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8)
-      {
+      ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8) {
 
         ULInformationTransfer_r8_IEs_t
         *ulInformationTransferR8;
         ulInformationTransferR8 =
         &ulInformationTransfer->criticalExtensions.choice.
         c1.choice.ulInformationTransfer_r8;
+
         if (ulInformationTransferR8->dedicatedInfoType.
-            present ==
-            ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)
-        s1ap_eNB_new_data_request (mod_id, ue_index,
-            ulInformationTransferR8->
-            dedicatedInfoType.choice.
-            dedicatedInfoNAS.buf,
-            ulInformationTransferR8->
-            dedicatedInfoType.choice.
-            dedicatedInfoNAS.size);
+        present ==
+        ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)
+          s1ap_eNB_new_data_request (mod_id, ue_index,
+          ulInformationTransferR8->
+          dedicatedInfoType.choice.
+          dedicatedInfoNAS.buf,
+          ulInformationTransferR8->
+          dedicatedInfoType.choice.
+          dedicatedInfoNAS.size);
       }
     }
   }
 #endif
 }
 
-/*------------------------------------------------------------------------------*/
-void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(uint8_t mod_id, uint8_t ue_index, UL_DCCH_Message_t *ul_dcch_msg) {
+//------------------------------------------------------------------------------
+void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  UL_DCCH_Message_t* ul_dcch_msg
+)
+//------------------------------------------------------------------------------
+{
   UECapabilityInformation_t *ueCapabilityInformation = &ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation;
 
   if ((ueCapabilityInformation->criticalExtensions.present == UECapabilityInformation__criticalExtensions_PR_c1)
       && (ueCapabilityInformation->criticalExtensions.choice.c1.present
           == UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8)
       && (ueCapabilityInformation->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.count > 0)) {
-        UE_CapabilityRAT_ContainerList_t *ue_CapabilityRAT_ContainerList = &ueCapabilityInformation->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList;
-        MessageDef *msg_p;
+    UE_CapabilityRAT_ContainerList_t* ue_CapabilityRAT_ContainerList =
+      &ueCapabilityInformation->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList;
+    MessageDef *msg_p;
 
-        msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CAPABILITIES_IND);
-        S1AP_UE_CAPABILITIES_IND (msg_p).eNB_ue_s1ap_id = eNB_rrc_inst[mod_id].Info.UE[ue_index].eNB_ue_s1ap_id;
-        S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.size;
-        S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.buf;
+    msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_UE_CAPABILITIES_IND);
+    S1AP_UE_CAPABILITIES_IND (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+    S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.length = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.size;
+    S1AP_UE_CAPABILITIES_IND (msg_p).ue_radio_cap.buffer = ue_CapabilityRAT_ContainerList->list.array[0]->ueCapabilityRAT_Container.buf;
 
-        itti_send_msg_to_task (TASK_S1AP, mod_id, msg_p);
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
 
-        if (ue_CapabilityRAT_ContainerList->list.count > 1) {
-          LOG_W (RRC,"[eNB %d][UE %d] can only handle 1 UE capability RAT item for now (%d)\n", mod_id, ue_index,
-                 ue_CapabilityRAT_ContainerList->list.count);
-        }
+    if (ue_CapabilityRAT_ContainerList->list.count > 1) {
+      LOG_W (RRC,"[eNB %d][UE %x] can only handle 1 UE capability RAT item for now (%d)\n",
+             ctxt_pP->module_id,
+             ue_context_pP->ue_context.rnti,
+             ue_CapabilityRAT_ContainerList->list.count);
+    }
   }
 }
 
-  /*------------------------------------------------------------------------------*/
-void rrc_eNB_send_S1AP_NAS_FIRST_REQ(uint8_t mod_id, uint8_t ue_index,
-                                     RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete) {
+//------------------------------------------------------------------------------
+void
+rrc_eNB_send_S1AP_NAS_FIRST_REQ(
+  const protocol_ctxt_t* const ctxt_pP,
+  rrc_eNB_ue_context_t*          const ue_context_pP,
+  RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+)
+//------------------------------------------------------------------------------
+{
 #if defined(ENABLE_ITTI)
   {
-    MessageDef *message_p;
+    MessageDef*         message_p         = NULL;
+    rrc_ue_s1ap_ids_t*  rrc_ue_s1ap_ids_p = NULL;
+    hashtable_rc_t      h_rc;
 
     message_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_NAS_FIRST_REQ);
     memset(&message_p->ittiMsg.s1ap_nas_first_req, 0, sizeof(s1ap_nas_first_req_t));
 
-    eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id = get_next_ue_initial_id (mod_id);
-    S1AP_NAS_FIRST_REQ (message_p).ue_initial_id = eNB_rrc_inst[mod_id].Info.UE[ue_index].ue_initial_id;
+    ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id (ctxt_pP->module_id);
+    S1AP_NAS_FIRST_REQ (message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
+
+    rrc_ue_s1ap_ids_p = malloc(sizeof(*rrc_ue_s1ap_ids_p));
+    rrc_ue_s1ap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
+    rrc_ue_s1ap_ids_p->eNB_ue_s1ap_id = UE_INITIAL_ID_INVALID;
+    rrc_ue_s1ap_ids_p->ue_rnti        = ctxt_pP->rnti;
+
+    h_rc = hashtable_insert(eNB_rrc_inst[ctxt_pP->module_id].initial_id2_s1ap_ids,
+    		               (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
+    		               rrc_ue_s1ap_ids_p);
+    if (h_rc != HASH_TABLE_OK) {
+      LOG_E(S1AP, "[eNB %d] Error while hashtable_insert in initial_id2_s1ap_ids ue_initial_id %u\n",
+    		  ctxt_pP->module_id, ue_context_pP->ue_context.ue_initial_id);
+    }
 
     /* Assume that cause is coded in the same way in RRC and S1ap, just check that the value is in S1ap range */
-    AssertFatal(eNB_rrc_inst[mod_id].Info.UE[ue_index].establishment_cause < RRC_CAUSE_LAST,
-                "Establishment cause invalid (%jd/%d) for eNB %d!",
-                eNB_rrc_inst[mod_id].Info.UE[ue_index].establishment_cause, RRC_CAUSE_LAST, mod_id);
-    S1AP_NAS_FIRST_REQ (message_p).establishment_cause = eNB_rrc_inst[mod_id].Info.UE[ue_index].establishment_cause;
+    AssertFatal(ue_context_pP->ue_context.establishment_cause < RRC_CAUSE_LAST,
+    "Establishment cause invalid (%jd/%d) for eNB %d!",
+    ue_context_pP->ue_context.establishment_cause, RRC_CAUSE_LAST, ctxt_pP->module_id);
+
+    S1AP_NAS_FIRST_REQ (message_p).establishment_cause = ue_context_pP->ue_context.establishment_cause;
 
     /* Forward NAS message */S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer =
-        rrcConnectionSetupComplete->dedicatedInfoNAS.buf;
+    rrcConnectionSetupComplete->dedicatedInfoNAS.buf;
     S1AP_NAS_FIRST_REQ (message_p).nas_pdu.length = rrcConnectionSetupComplete->dedicatedInfoNAS.size;
 
     /* Fill UE identities with available information */
     {
       S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask = UE_IDENTITIES_NONE;
 
-      if (eNB_rrc_inst[mod_id].Info.UE[ue_index].Initialue_identity_s_TMSI.presence) {
+      if (ue_context_pP->ue_context.Initialue_identity_s_TMSI.presence) {
         /* Fill s-TMSI */
-        UE_S_TMSI *s_TMSI = &eNB_rrc_inst[mod_id].Info.UE[ue_index].Initialue_identity_s_TMSI;
+        UE_S_TMSI* s_TMSI = &ue_context_pP->ue_context.Initialue_identity_s_TMSI;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_s_tmsi;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code = s_TMSI->mme_code;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi = s_TMSI->m_tmsi;
-        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ with s_TMSI: MME code %u M-TMSI %u ue_index %d\n",
-                mod_id,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
-                ue_index);
+        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ with s_TMSI: MME code %u M-TMSI %u ue %x\n",
+        ctxt_pP->module_id,
+        S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
+        S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
+        ue_context_pP->ue_context.rnti);
       }
 
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
@@ -518,62 +672,101 @@ void rrc_eNB_send_S1AP_NAS_FIRST_REQ(uint8_t mod_id, uint8_t ue_index,
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
+
         if (r_mme->plmn_Identity != NULL) {
           if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count > 0)) {
             /* Use first indicated PLMN MCC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[0];
-            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue_index %d\n",
-                    mod_id,
-                    S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
-                    ue_index);
+            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
+            ctxt_pP->module_id,
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
+            ue_context_pP->ue_context.rnti);
           }
+
           if (r_mme->plmn_Identity->mnc.list.count > 0) {
             /* Use first indicated PLMN MNC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[0];
-            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue_index %d\n",
-                    mod_id,
-                    S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
-                    ue_index);
+            LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
+                  ctxt_pP->module_id,
+                  S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
+                  ue_context_pP->ue_context.rnti);
           }
         }
+
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code     = BIT_STRING_to_uint8 (&r_mme->mmec);
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id = BIT_STRING_to_uint16 (&r_mme->mmegi);
-        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI mme_code %u mme_group_id %u ue_index %d\n",
-                mod_id,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id,
-                ue_index);
+
+        MSC_LOG_TX_MESSAGE(
+          MSC_S1AP_ENB,
+          MSC_S1AP_MME,
+          (const char *)&message_p->ittiMsg.s1ap_nas_first_req,
+          sizeof(s1ap_nas_first_req_t),
+          MSC_AS_TIME_FMT" S1AP_NAS_FIRST_REQ eNB %u UE %x",
+          MSC_AS_TIME_ARGS(ctxt_pP),
+          ctxt_pP->module_id,
+          ctxt_pP->rnti);
+
+        LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI mme_code %u mme_group_id %u ue %x\n",
+              ctxt_pP->module_id,
+              S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code,
+              S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id,
+              ue_context_pP->ue_context.rnti);
       }
     }
-    itti_send_msg_to_task (TASK_S1AP, mod_id, message_p);
+    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, message_p);
   }
 #else
   {
-    s1ap_eNB_new_data_request (mod_id, ue_index,
-        rrcConnectionSetupComplete->dedicatedInfoNAS.
-        buf,
-        rrcConnectionSetupComplete->dedicatedInfoNAS.
-        size);
+    s1ap_eNB_new_data_request (
+      ctxt_pP->module_id,
+      ue_context_pP,
+      rrcConnectionSetupComplete->dedicatedInfoNAS.
+      buf,
+      rrcConnectionSetupComplete->dedicatedInfoNAS.
+      size);
   }
 #endif
 }
 
 # if defined(ENABLE_ITTI)
-/*------------------------------------------------------------------------------*/
-int rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, instance_t instance, mui_t *rrc_eNB_mui) {
+//------------------------------------------------------------------------------
+int
+rrc_eNB_process_S1AP_DOWNLINK_NAS(
+  MessageDef* msg_p,
+  const char* msg_name,
+  instance_t instance,
+  mui_t* rrc_eNB_mui
+)
+//------------------------------------------------------------------------------
+{
   uint16_t ue_initial_id;
   uint32_t eNB_ue_s1ap_id;
-  uint8_t ue_index;
   uint32_t length;
   uint8_t *buffer;
 
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  protocol_ctxt_t              ctxt;
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
-  ue_index = get_UE_index_from_s1ap_ids (instance, ue_initial_id, eNB_ue_s1ap_id);
+  ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
+  LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d\n",
+        instance,
+        msg_name,
+        ue_initial_id,
+        eNB_ue_s1ap_id);
 
-  LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d, ue_index %d\n", instance, msg_name, ue_initial_id, eNB_ue_s1ap_id, ue_index);
+  if (ue_context_p == NULL) {
 
-  if (ue_index == UE_INDEX_INVALID) {
+    MSC_LOG_RX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      NULL,
+      0,
+      MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u eNB_ue_s1ap_id %u",
+      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_initial_id,
+      eNB_ue_s1ap_id);
+
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
 
@@ -586,139 +779,198 @@ int rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, i
 
     // TODO add failure cause when defined!
 
-    itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
 
+    MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      (const char *)NULL,
+      0,
+      MSC_AS_TIME_FMT" S1AP_NAS_NON_DELIVERY_IND UE initial id %u eNB_ue_s1ap_id %u (ue ctxt !found)",
+      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_initial_id,
+      eNB_ue_s1ap_id);
+
+    itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
     return (-1);
-  }
-  else {
+  } else {
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+
     /* Is it the first income from S1AP ? */
-    if (eNB_rrc_inst[instance].Info.UE[ue_index].eNB_ue_s1ap_id == 0) {
-      eNB_rrc_inst[instance].Info.UE[ue_index].eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
+    if (ue_context_p->ue_context.eNB_ue_s1ap_id == 0) {
+      ue_context_p->ue_context.eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
     }
- 
-   /* Create message for PDCP (DLInformationTransfer_t) */
-    length = do_DLInformationTransfer (instance, &buffer, rrc_eNB_get_next_transaction_identifier (instance),
-                                       S1AP_DOWNLINK_NAS (msg_p).nas_pdu.length,
-                                       S1AP_DOWNLINK_NAS (msg_p).nas_pdu.buffer);
+
+    MSC_LOG_RX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      (const char *)NULL,
+      0,
+      MSC_AS_TIME_FMT" DOWNLINK-NAS UE initial id %u eNB_ue_s1ap_id %u",
+      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+      ue_initial_id,
+      S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id);
+
+
+    /* Create message for PDCP (DLInformationTransfer_t) */
+    length = do_DLInformationTransfer (
+               instance,
+               &buffer,
+               rrc_eNB_get_next_transaction_identifier (instance),
+               S1AP_DOWNLINK_NAS (msg_p).nas_pdu.length,
+               S1AP_DOWNLINK_NAS (msg_p).nas_pdu.buffer);
 
 #ifdef RRC_MSG_PRINT
     int i=0;
     LOG_F(RRC,"[MSG] RRC DL Information Transfer\n");
-    for (i = 0; i < length; i++)
+
+    for (i = 0; i < length; i++) {
       LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
+    }
+
     LOG_F(RRC,"\n");
 #endif
     /* Transfer data to PDCP */
-    pdcp_rrc_data_req (instance, ue_index, 0 /* TODO put frame number ! */, 1, DCCH, *rrc_eNB_mui++, 0,
-                       length, buffer, 1);
+    pdcp_rrc_data_req (
+      &ctxt,
+      DCCH,
+      *rrc_eNB_mui++,
+      SDU_CONFIRM_NO,
+      length,
+      buffer,
+      PDCP_TRANSMISSION_MODE_CONTROL);
 
     return (0);
   }
 }
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance) {
-  uint16_t               ue_initial_id;
-  uint32_t               eNB_ue_s1ap_id;
-  uint8_t                ue_index;
-  MessageDef            *message_gtpv1u_p = NULL;
+int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
+  uint16_t                        ue_initial_id;
+  uint32_t                        eNB_ue_s1ap_id;
+  MessageDef                     *message_gtpv1u_p = NULL;
+  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 
-    ue_initial_id  = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).ue_initial_id;
-    eNB_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
-    ue_index       = get_UE_index_from_s1ap_ids (instance, ue_initial_id, eNB_ue_s1ap_id);
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  protocol_ctxt_t              ctxt;
+  ue_initial_id  = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).ue_initial_id;
+  eNB_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
+  LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d, nb_of_e_rabs %d\n",
+        instance, msg_name, ue_initial_id, eNB_ue_s1ap_id, S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs);
 
-    LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d, nb_of_e_rabs %d, ue_index %d\n",
-        instance, msg_name, ue_initial_id, eNB_ue_s1ap_id, S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs, ue_index);
+  if (ue_context_p == NULL) {
+    /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
+    MessageDef *msg_fail_p = NULL;
 
-    if (ue_index == UE_INDEX_INVALID) {
-        /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
-        MessageDef *msg_fail_p = NULL;
+    LOG_W(RRC, "[eNB %d] In S1AP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, eNB_ue_s1ap_id);
 
-        LOG_W(RRC, "[eNB %d] In S1AP_INITIAL_CONTEXT_SETUP_REQ: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, eNB_ue_s1ap_id);
+    msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_INITIAL_CONTEXT_SETUP_FAIL);
+    S1AP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
 
-        msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_INITIAL_CONTEXT_SETUP_FAIL);
-        S1AP_INITIAL_CONTEXT_SETUP_FAIL (msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+    // TODO add failure cause when defined!
 
-        // TODO add failure cause when defined!
+    itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
+    return (-1);
+  } else {
 
-        itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    ue_context_p->ue_context.eNB_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
 
-        return (-1);
+    /* Save e RAB information for later */
+    {
+      int i;
+
+      memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
+      ue_context_p->ue_context.nb_of_e_rabs = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs;
+
+      for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++) {
+        ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+        ue_context_p->ue_context.e_rab[i].param = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i];
+
+
+        create_tunnel_req.eps_bearer_id[i]       = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
+        create_tunnel_req.sgw_S1u_teid[i]        = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
+
+        memcpy(&create_tunnel_req.sgw_addr[i],
+               &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
+               sizeof(transport_layer_addr_t));
+      }
+
+      create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
+      create_tunnel_req.num_tunnels    = i;
+
+      gtpv1u_create_s1u_tunnel(
+        instance,
+        &create_tunnel_req,
+        &create_tunnel_resp);
+
+      rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+          &ctxt,
+          &create_tunnel_resp);
     }
-    else {
 
-        eNB_rrc_inst[instance].Info.UE[ue_index].eNB_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
+    /* TODO parameters yet to process ... */
+    {
+      //      S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).ue_ambr;
+    }
 
-        /* Save e RAB information for later */
-        {
-            int i;
+    rrc_eNB_process_security (
+      &ctxt,
+      ue_context_p,
+      &S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities);
+    process_eNB_security_key (
+      &ctxt,
+      ue_context_p,
+      S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
 
-            message_gtpv1u_p = itti_alloc_new_message(TASK_S1AP, GTPV1U_ENB_CREATE_TUNNEL_REQ);
-            memset(&message_gtpv1u_p->ittiMsg.Gtpv1uCreateTunnelReq, 0 , sizeof(gtpv1u_enb_create_tunnel_req_t));
-
-            eNB_rrc_inst[instance].Info.UE[ue_index].nb_of_e_rabs = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs;
-            for (i = 0; i < eNB_rrc_inst[instance].Info.UE[ue_index].nb_of_e_rabs; i++) {
-                eNB_rrc_inst[instance].Info.UE[ue_index].e_rab[i].status = E_RAB_STATUS_NEW;
-                eNB_rrc_inst[instance].Info.UE[ue_index].e_rab[i].param = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i];
-
-
-                GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).eps_bearer_id[i]       = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].e_rab_id;
-                GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_S1u_teid[i]        = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].gtp_teid;
-
-                memcpy(&GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).sgw_addr[i],
-                    &S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i].sgw_addr,
-                    sizeof(transport_layer_addr_t));
-            }
-            GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).ue_index       = ue_index; // warning put zero above
-            GTPV1U_ENB_CREATE_TUNNEL_REQ(message_gtpv1u_p).num_tunnels    = i;
-
-            itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_gtpv1u_p);
-        }
-
-        /* TODO parameters yet to process ... */
-        {
-            S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).ue_ambr;
-        }
-
-        rrc_eNB_process_security (instance, ue_index, &S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_capabilities);
-
-        process_eNB_security_key (instance, ue_index, S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
-
-        {
-          uint8_t send_security_mode_command = TRUE;
+    {
+      uint8_t send_security_mode_command = TRUE;
 
 #ifndef EXMIMO_IOT
-          if ((eNB_rrc_inst[instance].ciphering_algorithm[ue_index] == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
-                && (eNB_rrc_inst[instance].integrity_algorithm[ue_index] == INTEGRITY_ALGORITHM_NONE)) {
-                send_security_mode_command = FALSE;
-          }
+
+      if ((ue_context_p->ue_context.ciphering_algorithm == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
+          && (ue_context_p->ue_context.integrity_algorithm == INTEGRITY_ALGORITHM_NONE)) {
+        send_security_mode_command = FALSE;
+      }
+
 #endif
-          rrc_pdcp_config_security(instance, ue_index,send_security_mode_command);
+      rrc_pdcp_config_security(
+        &ctxt,
+        ue_context_p,
+        send_security_mode_command);
 
-          if (send_security_mode_command) {
+      if (send_security_mode_command) {
 
-              rrc_eNB_generate_SecurityModeCommand (instance, 0 /* TODO put frame number ! */, ue_index);
-              send_security_mode_command = FALSE;
-              // apply ciphering after RRC security command mode
-              rrc_pdcp_config_security(instance, ue_index,send_security_mode_command);
-          }
-          else {
-              rrc_eNB_generate_UECapabilityEnquiry (instance, 0 /* TODO put frame number ! */, ue_index);
-          }
-        }
-        return (0);
+        rrc_eNB_generate_SecurityModeCommand (
+          &ctxt,
+          ue_context_p);
+        send_security_mode_command = FALSE;
+        // apply ciphering after RRC security command mode
+        rrc_pdcp_config_security(
+          &ctxt,
+          ue_context_p,
+          send_security_mode_command);
+      } else {
+        rrc_eNB_generate_UECapabilityEnquiry (&ctxt, ue_context_p);
+      }
     }
+    return (0);
+  }
 }
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance) {
+int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
   uint32_t eNB_ue_s1ap_id;
-  uint8_t ue_index;
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  protocol_ctxt_t              ctxt;
 
   eNB_ue_s1ap_id = S1AP_UE_CTXT_MODIFICATION_REQ (msg_p).eNB_ue_s1ap_id;
-  ue_index = get_UE_index_from_eNB_ue_s1ap_id (instance, eNB_ue_s1ap_id);
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
-  if (ue_index == UE_INDEX_INVALID) {
+  if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
 
@@ -730,27 +982,34 @@ int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char 
     // TODO add failure cause when defined!
 
     itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
-
     return (-1);
-  }
-  else {
+  } else {
 
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
     /* TODO parameters yet to process ... */
     {
       if (S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).present & S1AP_UE_CONTEXT_MODIFICATION_UE_AMBR) {
-        S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).ue_ambr;
+        //        S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).ue_ambr;
       }
     }
 
     if (S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).present & S1AP_UE_CONTEXT_MODIFICATION_UE_SECU_CAP) {
-      if (rrc_eNB_process_security (instance, ue_index, &S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).security_capabilities)) {
+      if (rrc_eNB_process_security (
+            &ctxt,
+            ue_context_p,
+            &S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).security_capabilities)) {
         /* transmit the new security parameters to UE */
-        rrc_eNB_generate_SecurityModeCommand (instance, 0 /* TODO put frame number ! */, ue_index);
+        rrc_eNB_generate_SecurityModeCommand (
+          &ctxt,
+          ue_context_p);
       }
     }
 
     if (S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).present & S1AP_UE_CONTEXT_MODIFICATION_SECURITY_KEY) {
-      process_eNB_security_key (instance, ue_index, S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).security_key);
+      process_eNB_security_key (
+        &ctxt,
+        ue_context_p,
+        S1AP_UE_CTXT_MODIFICATION_REQ(msg_p).security_key);
 
       /* TODO reconfigure lower layers... */
     }
@@ -770,19 +1029,21 @@ int rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char 
 }
 
 /*------------------------------------------------------------------------------*/
-#warning "LG Note this message is only from eNB to MME, proc to be deleted"
-int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ (MessageDef *msg_p, const char *msg_name, instance_t instance) {
+int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ (MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
   uint32_t eNB_ue_s1ap_id;
-  uint8_t ue_index;
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 
   eNB_ue_s1ap_id = S1AP_UE_CONTEXT_RELEASE_REQ(msg_p).eNB_ue_s1ap_id;
-  ue_index = get_UE_index_from_eNB_ue_s1ap_id(instance, eNB_ue_s1ap_id);
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
-  if (ue_index == UE_INDEX_INVALID) {
+  if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
     MessageDef *msg_fail_p;
 
-    LOG_W(RRC, "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_REQ: unknown UE from eNB_ue_s1ap_id (%d) for eNB %d\n", instance, eNB_ue_s1ap_id);
+    LOG_W(RRC, "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_REQ: unknown UE from eNB_ue_s1ap_id (%d)\n",
+          instance,
+          eNB_ue_s1ap_id);
 
     msg_fail_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_RESP); /* TODO change message ID. */
     S1AP_UE_CONTEXT_RELEASE_RESP(msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
@@ -790,10 +1051,8 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ (MessageDef *msg_p, const char *
     // TODO add failure cause when defined!
 
     itti_send_msg_to_task(TASK_S1AP, instance, msg_fail_p);
-
     return (-1);
-  }
-  else {
+  } else {
     /* TODO release context. */
 
     /* Send the response */
@@ -810,85 +1069,148 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ (MessageDef *msg_p, const char *
   }
 }
 
-/*------------------------------------------------------------------------------*/
-void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (uint8_t mod_id, uint8_t ue_index, s1ap_Cause_t causeP, long cause_valueP) {
-  uint32_t eNB_ue_s1ap_id;
-
-  if (ue_index == UE_INDEX_INVALID) {
+//------------------------------------------------------------------------------
+void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
+  const module_id_t                        enb_mod_idP,
+  const rrc_eNB_ue_context_t*        const ue_context_pP,
+  const s1ap_Cause_t                       causeP,
+  const long                               cause_valueP
+)
+//------------------------------------------------------------------------------
+{
+  if (ue_context_pP == NULL) {
     LOG_W(RRC,
-            "[eNB] In S1AP_UE_CONTEXT_RELEASE_COMMAND: invalid  UE\n");
-    return (-1);
+          "[eNB] In S1AP_UE_CONTEXT_RELEASE_COMMAND: invalid  UE\n");
   } else {
-      int      e_rab;
-      int      mod_id = 0;
-      eNB_RRC_UE_INFO *UE_info = &eNB_rrc_inst[mod_id].Info.UE[ue_index];
+	  MSC_LOG_TX_MESSAGE(
+			  MSC_RRC_ENB,
+	  		  MSC_S1AP_ENB,
+	  		  NULL,0,
+	  		  "0 S1AP_UE_CONTEXT_RELEASE_REQ eNB_ue_s1ap_id 0x%06"PRIX32" ",
+	  		  ue_context_pP->ue_context.eNB_ue_s1ap_id);
 
-      MessageDef *msg_context_release_req_p = NULL;
-      msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_REQ);
-      S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).eNB_ue_s1ap_id = UE_info->eNB_ue_s1ap_id;
-      S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause          = causeP;
-      S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause_value    = cause_valueP;
-      itti_send_msg_to_task(TASK_S1AP, mod_id, msg_context_release_req_p);
-      return (0);
+    MessageDef *msg_context_release_req_p = NULL;
+    msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_REQ);
+    S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+    S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause          = causeP;
+    S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause_value    = cause_valueP;
+    itti_send_msg_to_task(TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_mod_idP), msg_context_release_req_p);
   }
 }
 
 
 /*------------------------------------------------------------------------------*/
-int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const char *msg_name, instance_t instance) {
+int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
   uint32_t eNB_ue_s1ap_id;
-  uint8_t  ue_index;
+  protocol_ctxt_t              ctxt;
+  struct rrc_eNB_ue_context_s *ue_context_p = NULL;
+  struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
 
   eNB_ue_s1ap_id = S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p).eNB_ue_s1ap_id;
-  ue_index = get_UE_index_from_eNB_ue_s1ap_id(instance, eNB_ue_s1ap_id);
 
-  if (ue_index == UE_INDEX_INVALID) {
+
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
+
+  if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index */
     MessageDef *msg_complete_p;
 
     LOG_W(RRC,
-            "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from eNB_ue_s1ap_id (%d)\n",
-            instance,
-            eNB_ue_s1ap_id);
+          "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from eNB_ue_s1ap_id (%d)\n",
+          instance,
+          eNB_ue_s1ap_id);
+
+    MSC_LOG_EVENT(
+          MSC_RRC_ENB,
+  		  "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" context not found",
+  		eNB_ue_s1ap_id);
+
+    MSC_LOG_TX_MESSAGE(
+          MSC_RRC_ENB,
+  		  MSC_S1AP_ENB,
+  		  NULL,0,
+  		  "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+  		eNB_ue_s1ap_id);
 
     msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
     S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
     itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
 
+    rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
+    		&eNB_rrc_inst[instance],
+    		UE_INITIAL_ID_INVALID,
+    		eNB_ue_s1ap_id);
+
+    if (NULL != rrc_ue_s1ap_ids) {
+      rrc_eNB_S1AP_remove_ue_ids(
+    		  &eNB_rrc_inst[instance],
+    		  rrc_ue_s1ap_ids);
+    }
     return (-1);
-  }
-  else {
-    rrc_eNB_generate_RRCConnectionRelease(instance, 0 /*frame*/, ue_index);
-      LOG_W(RRC,
-              "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: TODO call rrc_eNB_connection_release for eNB %d\n",
-              instance,
-              eNB_ue_s1ap_id);
+  } else {
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    rrc_eNB_generate_RRCConnectionRelease(&ctxt, ue_context_p);
+    /*
+          LOG_W(RRC,
+                  "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: TODO call rrc_eNB_connection_release for eNB %d\n",
+                  instance,
+                  eNB_ue_s1ap_id);
+    */
     {
-        int      e_rab;
-        int      mod_id = 0;
-        eNB_RRC_UE_INFO *UE_info = &eNB_rrc_inst[mod_id].Info.UE[ue_index];
-        MessageDef *msg_delete_tunnels_p = NULL;
+      int      e_rab;
+      int      mod_id = 0;
+      MessageDef *msg_delete_tunnels_p = NULL;
 
-        msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-        memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p),
-               0,
-               sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+      MSC_LOG_TX_MESSAGE(
+            MSC_RRC_ENB,
+            MSC_GTPU_ENB,
+            NULL,0,
+            "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ",
+            eNB_ue_s1ap_id);
 
-        // do not wait response
-        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).ue_index = ue_index;
-        for (e_rab = 0; e_rab < UE_info->nb_of_e_rabs; e_rab++) {
-            GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_p).num_erab++] = UE_info->enb_gtp_ebi[e_rab];
-            // erase data
-            UE_info->enb_gtp_teid[e_rab] = 0;
-            memset(&UE_info->enb_gtp_addrs[e_rab], 0, sizeof(UE_info->enb_gtp_addrs[e_rab]));
-            UE_info->enb_gtp_ebi[e_rab]  = 0;
-        }
-        itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+      msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+      memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p),
+             0,
+             sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
 
-        MessageDef *msg_complete_p = NULL;
-        msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-        S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-        itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
+      // do not wait response
+      GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+
+      for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_p).num_erab++] =
+          ue_context_p->ue_context.enb_gtp_ebi[e_rab];
+        // erase data
+        ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+        memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+        ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+      }
+
+      itti_send_msg_to_task(TASK_GTPV1_U, instance, msg_delete_tunnels_p);
+
+
+      MSC_LOG_TX_MESSAGE(
+            MSC_RRC_ENB,
+            MSC_S1AP_ENB,
+            NULL,0,
+            "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+            eNB_ue_s1ap_id);
+
+      MessageDef *msg_complete_p = NULL;
+      msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
+      S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+      itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
+
+      rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
+      		&eNB_rrc_inst[instance],
+      		UE_INITIAL_ID_INVALID,
+      		eNB_ue_s1ap_id);
+
+      if (NULL != rrc_ue_s1ap_ids) {
+        rrc_eNB_S1AP_remove_ue_ids(
+      		  &eNB_rrc_inst[instance],
+      		  rrc_ue_s1ap_ids);
+      }
     }
 
     return (0);

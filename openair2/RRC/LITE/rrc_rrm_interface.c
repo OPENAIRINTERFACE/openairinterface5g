@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -29,16 +29,16 @@
 /*!
 *******************************************************************************
 
-\file    	rrm_sock.c
+\file     rrm_sock.c
 
-\brief   	RRM (Radio Ressource Manager ) Socket: communication withe other medium:
-			    - RRC ,
-			    - CMM ,
-			    - PUSU
+\brief    RRM (Radio Ressource Manager ) Socket: communication withe other medium:
+          - RRC ,
+          - CMM ,
+          - PUSU
 
-\author  	BURLOT Pascal
+\author   BURLOT Pascal
 
-\date    	10/07/08
+\date     10/07/08
 
 
 \par     Historique:
@@ -68,10 +68,10 @@
 
 #include "rrc_rrm_interface.h"
 #include "defs.h"
-//! \brief 	Taille maximale de la charge utile
-#define SIZE_MAX_PAYLOAD 	2048
+//! \brief  Taille maximale de la charge utile
+#define SIZE_MAX_PAYLOAD  2048
 //! \brief PID de l'espace utilisateur (Netlink mode)
-//#define PID_USERSPACE		0xAA
+//#define PID_USERSPACE   0xAA
 
 
 
@@ -85,42 +85,41 @@
 \return  The return value is a socket handle
 */
 int open_socket(
-	sock_rrm_t *s 	,	///< socket descriptor
-	char *path_local, 	///< local socket path if unix socket
-	char *path_dest , 	///< host  Socket path if unix socket
-	int rrm_inst        ///< instance of the rrm entity
-	)
-{ /* Unix socket */
-	int 	socket_fd ;
-	int 	len ;
+  sock_rrm_t *s   , ///< socket descriptor
+  char *path_local,   ///< local socket path if unix socket
+  char *path_dest ,   ///< host  Socket path if unix socket
+  int rrm_inst        ///< instance of the rrm entity
+)
+{
+  /* Unix socket */
+  int   socket_fd ;
+  int   len ;
 
-	if ((socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1)
-	{
-		perror("unix socket");
-		return -1 ;
-	}
+  if ((socket_fd = socket(AF_UNIX, SOCK_DGRAM, 0)) == -1) {
+    perror("unix socket");
+    return -1 ;
+  }
 
-	memset(&(s->un_local_addr), 0, sizeof(struct 	sockaddr_un));
-	s->un_local_addr.sun_family = AF_UNIX;
-	sprintf(s->un_local_addr.sun_path,"%s%d", path_local, rrm_inst );
-	unlink(s->un_local_addr.sun_path);
-	msg("local %s\n",s->un_local_addr.sun_path);
-	len = strlen((s->un_local_addr).sun_path) + sizeof((s->un_local_addr).sun_family);
+  memset(&(s->un_local_addr), 0, sizeof(struct  sockaddr_un));
+  s->un_local_addr.sun_family = AF_UNIX;
+  sprintf(s->un_local_addr.sun_path,"%s%d", path_local, rrm_inst );
+  unlink(s->un_local_addr.sun_path);
+  msg("local %s\n",s->un_local_addr.sun_path);
+  len = strlen((s->un_local_addr).sun_path) + sizeof((s->un_local_addr).sun_family);
 
-	if (bind(socket_fd, (struct sockaddr *)&(s->un_local_addr), len) == -1)
-	{
-		perror("bind");
-		return -1 ;
-	}
+  if (bind(socket_fd, (struct sockaddr *)&(s->un_local_addr), len) == -1) {
+    perror("bind");
+    return -1 ;
+  }
 
-	memset(&(s->un_dest_addr), 0, sizeof(struct 	sockaddr_un));
-	s->un_dest_addr.sun_family = AF_UNIX;
-	sprintf(s->un_dest_addr.sun_path,"%s%d", path_dest, rrm_inst );
-	msg("Dest %s\n",s->un_dest_addr.sun_path);
+  memset(&(s->un_dest_addr), 0, sizeof(struct   sockaddr_un));
+  s->un_dest_addr.sun_family = AF_UNIX;
+  sprintf(s->un_dest_addr.sun_path,"%s%d", path_dest, rrm_inst );
+  msg("Dest %s\n",s->un_dest_addr.sun_path);
 
 
-	s->s = socket_fd ;
-	return socket_fd ;
+  s->s = socket_fd ;
+  return socket_fd ;
 }
 /*!
 *******************************************************************************
@@ -128,11 +127,11 @@ int open_socket(
 \return none
 */
 void close_socket(
-	sock_rrm_t *sock  ///< the socket handle
-	)
+  sock_rrm_t *sock  ///< the socket handle
+)
 {
-	shutdown(sock->s, SHUT_RDWR);
-	close(sock->s);
+  shutdown(sock->s, SHUT_RDWR);
+  close(sock->s);
 }
 
 /*!
@@ -142,50 +141,53 @@ void close_socket(
 */
 char BUFF[2048];
 int send_msg_sock(
-	sock_rrm_t *s 	,///< socket descriptor
-	msg_t *smsg       ///< the message to send
-	)
-{ /* Unix socket */
-	int 				ret 	= 0 ;
-	//	char 				*buf  	= NULL;
-	struct  msghdr 		msghd ;
-	struct 	iovec 		iov;
-	int 				taille 	= sizeof(msg_head_t)  ;
+  sock_rrm_t *s   ,///< socket descriptor
+  msg_t *smsg       ///< the message to send
+)
+{
+  /* Unix socket */
+  int         ret   = 0 ;
+  //  char        *buf    = NULL;
+  struct  msghdr    msghd ;
+  struct  iovec     iov;
+  int         taille  = sizeof(msg_head_t)  ;
 
-	if ( smsg == NULL )
-		return -1 ;
+  if ( smsg == NULL ) {
+    return -1 ;
+  }
 
-	if ( smsg->data != NULL )
-		taille += smsg->head.size ;
+  if ( smsg->data != NULL ) {
+    taille += smsg->head.size ;
+  }
 
-	//buf = RRM_MALLOC(char, taille);
-	//if (buf ==NULL)
-	//return -1 ;
+  //buf = RRM_MALLOC(char, taille);
+  //if (buf ==NULL)
+  //return -1 ;
 
-	memcpy( BUFF , &(smsg->head) , sizeof(msg_head_t) ) ;
-	memcpy( BUFF+sizeof(msg_head_t), smsg->data, smsg->head.size ) ;
+  memcpy( BUFF , &(smsg->head) , sizeof(msg_head_t) ) ;
+  memcpy( BUFF+sizeof(msg_head_t), smsg->data, smsg->head.size ) ;
 
-	iov.iov_base 	  = (void *)BUFF;
-	iov.iov_len 	  = taille ;
+  iov.iov_base    = (void *)BUFF;
+  iov.iov_len     = taille ;
 
-	msghd.msg_name 	  		= (void *)&(s->un_dest_addr);
-	msghd.msg_namelen 		= sizeof(s->un_dest_addr);
-	msghd.msg_iov 	  		= &iov;
-	msghd.msg_iovlen  		= 1;
-	msghd.msg_control 		= NULL ;
-	msghd.msg_controllen 	= 	0 ;
-	if ( sendmsg(s->s, &msghd, 0) < 0 )
-	{
-		ret = -1;
-		msg("socket %d, dest %s\n",s->s,s->un_dest_addr.sun_path);
-		perror("sendmsg:unix socket");
-	}
+  msghd.msg_name        = (void *)&(s->un_dest_addr);
+  msghd.msg_namelen     = sizeof(s->un_dest_addr);
+  msghd.msg_iov         = &iov;
+  msghd.msg_iovlen      = 1;
+  msghd.msg_control     = NULL ;
+  msghd.msg_controllen  =   0 ;
 
-	//RRM_FREE(buf) ;
-	//RRM_FREE(msg->data) ;
-	//RRM_FREE(msg) ;
+  if ( sendmsg(s->s, &msghd, 0) < 0 ) {
+    ret = -1;
+    msg("socket %d, dest %s\n",s->s,s->un_dest_addr.sun_path);
+    perror("sendmsg:unix socket");
+  }
 
-	return ret ;
+  //RRM_FREE(buf) ;
+  //RRM_FREE(msg->data) ;
+  //RRM_FREE(msg) ;
+
+  return ret ;
 }
 
 /*!
@@ -195,94 +197,108 @@ int send_msg_sock(
         is happened.
 */
 char *recv_msg(
-	sock_rrm_t *s 	///< socket descriptor
-	)
-{ /* Unix socket */
-	char 				*buf = NULL;
-	char 				*smsg = NULL;
-	struct  msghdr 		msghd ;
-	struct 	iovec 		iov;
-	int 				size_msg ;
-	msg_head_t 			*head  ;
-	int 				ret ;
+  sock_rrm_t *s   ///< socket descriptor
+)
+{
+  /* Unix socket */
+  char        *buf = NULL;
+  char        *smsg = NULL;
+  struct  msghdr    msghd ;
+  struct  iovec     iov;
+  int         size_msg ;
+  msg_head_t      *head  ;
+  int         ret ;
 
-	int taille =  SIZE_MAX_PAYLOAD ;
+  int taille =  SIZE_MAX_PAYLOAD ;
 
-	buf 				= RRM_CALLOC( char,taille);
-	if ( buf == NULL )
-		return NULL ;
+  buf         = RRM_CALLOC( char,taille);
 
-	iov.iov_base 	  	= (void *)buf;
-	iov.iov_len 	  	= taille ;
-	msghd.msg_name 	  	= (void *)&(s->un_dest_addr);
-	msghd.msg_namelen 	= sizeof(s->un_dest_addr);
-	msghd.msg_iov 	  	= &iov;
-	msghd.msg_iovlen  	= 1;
-	msghd.msg_control 	= NULL ;
-	msghd.msg_controllen= 0 ;
+  if ( buf == NULL ) {
+    return NULL ;
+  }
 
-	ret = recvmsg(s->s, &msghd , 0 ) ;
-	if ( ret <= 0  )
-	{
-          // non-blocking socket
-	  // perror("PB recvmsg_un");
-		RRM_FREE(buf);
-		return NULL ;
-	}
+  iov.iov_base      = (void *)buf;
+  iov.iov_len       = taille ;
+  msghd.msg_name      = (void *)&(s->un_dest_addr);
+  msghd.msg_namelen   = sizeof(s->un_dest_addr);
+  msghd.msg_iov       = &iov;
+  msghd.msg_iovlen    = 1;
+  msghd.msg_control   = NULL ;
+  msghd.msg_controllen= 0 ;
 
-	if (msghd.msg_flags != 0 )
-	{
-		fprintf(stderr,"error recvmsg_un: 0x%02x\n", msghd.msg_flags) ;
-		RRM_FREE(buf);
-		return NULL ;
-	}
+  ret = recvmsg(s->s, &msghd , 0 ) ;
 
-	head 		= (msg_head_t *) buf  ;
-	size_msg 	= sizeof(msg_head_t) + head->size ;
+  if ( ret <= 0  ) {
+    // non-blocking socket
+    // perror("PB recvmsg_un");
+    RRM_FREE(buf);
+    return NULL ;
+  }
 
-	smsg 		= RRM_CALLOC(char , size_msg ) ;
-	if ( smsg != NULL )
-		memcpy( smsg , buf , size_msg ) ;
+  if (msghd.msg_flags != 0 ) {
+    fprintf(stderr,"error recvmsg_un: 0x%02x\n", msghd.msg_flags) ;
+    RRM_FREE(buf);
+    return NULL ;
+  }
 
-	RRM_FREE( buf ) ;
+  head    = (msg_head_t *) buf  ;
+  size_msg  = sizeof(msg_head_t) + head->size ;
 
-	return smsg ;
+  smsg    = RRM_CALLOC(char , size_msg ) ;
+
+  if ( smsg != NULL ) {
+    memcpy( smsg , buf , size_msg ) ;
+  }
+
+  RRM_FREE( buf ) ;
+
+  return smsg ;
 }
 
 #else  //XFACE
 
-int send_msg_fifo(int *s, msg_t *fmsg){
-  int   ret 	= 0, ret1;
+int send_msg_fifo(int *s, msg_t *fmsg)
+{
+  int   ret   = 0, ret1;
   int  taille = sizeof(msg_head_t)  ;
   msg("write on fifos %d, msg %p\n",*s,fmsg);
-  if ( fmsg == NULL )
+
+  if ( fmsg == NULL ) {
     return -1 ;
+  }
+
   // envoi le header
 
 
   ret1 = rtf_put (*s,(char*) &(fmsg->head) , taille);
-  if(ret1 <0){
+
+  if(ret1 <0) {
     msg("rtf_put H ERR %d\n",ret1);
     rtf_reset(*s);
     return ret1;
   }
+
   ret=ret1;
+
   // envoi les datas si elles sont definis
-  if ( fmsg->data != NULL ){
+  if ( fmsg->data != NULL ) {
     ret1 += rtf_put (*s,(char*) fmsg->data, fmsg->head.size);
-    if(ret1 <0){
+
+    if(ret1 <0) {
       msg("rtf_put D ERR %d\n",ret1);
       rtf_reset(*s);
       return ret1;
     }
   }
+
   ret+=ret1;
   return ret;
 }
 
 #endif //XFACE
 
-int send_msg(void *s, msg_t *smsg){
+int send_msg(void *s, msg_t *smsg)
+{
 #ifdef USER_MODE
   send_msg_sock((sock_rrm_t *)s, smsg);
 #else

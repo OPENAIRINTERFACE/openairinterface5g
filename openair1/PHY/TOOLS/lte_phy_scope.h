@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -41,14 +41,16 @@ extern OPENAIR_DAQ_VARS openair_daq_vars;
 
 /* Forms and Objects */
 typedef struct {
-    FL_FORM   * lte_phy_scope_enb;
-    FL_OBJECT * rxsig_t;
-    FL_OBJECT * chest_f;
-    FL_OBJECT * chest_t;    
-    FL_OBJECT * pusch_comp;
-    FL_OBJECT * pusch_llr;
-    FL_OBJECT * pusch_tput;
-    FL_OBJECT * button_0;
+  FL_FORM   * lte_phy_scope_enb;
+  FL_OBJECT * rxsig_t;
+  FL_OBJECT * chest_f;
+  FL_OBJECT * chest_t;
+  FL_OBJECT * pusch_comp;
+  FL_OBJECT * pucch_comp;
+  FL_OBJECT * pucch_comp1;
+  FL_OBJECT * pusch_llr;
+  FL_OBJECT * pusch_tput;
+  FL_OBJECT * button_0;
 } FD_lte_phy_scope_enb;
 
 typedef struct {
@@ -66,16 +68,17 @@ typedef struct {
     FL_OBJECT * pdsch_llr1;
     FL_OBJECT * pdsch_tput;
     FL_OBJECT * button_0;
+
 } FD_lte_phy_scope_ue;
 
 FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
 FD_lte_phy_scope_ue * create_lte_phy_scope_ue( void );
 
-void phy_scope_eNB(FD_lte_phy_scope_enb *form, 
+void phy_scope_eNB(FD_lte_phy_scope_enb *form,
                    PHY_VARS_eNB *phy_vars_enb,
                    int UE_id);
 
-void phy_scope_UE(FD_lte_phy_scope_ue *form, 
+void phy_scope_UE(FD_lte_phy_scope_ue *form,
                   PHY_VARS_UE *phy_vars_ue,
                   int eNB_id,
                   int UE_id,

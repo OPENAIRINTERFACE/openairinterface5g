@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -68,8 +68,8 @@ extern "C" {
 //public_log_if( log_t *g_log;)
 
 public_log_if( int logInit (void);)
-public_log_if( void logRecord_mt(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
-public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, char *format, ...);)
+public_log_if( void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...);)
+public_log_if( void logRecord(const char *file, const char *func, int line,int comp, int level, const char *format, ...);)
 public_log_if( int set_comp_log(int component, int level, int verbosity, int interval);)
 public_log_if( int  set_log(int component, int level, int interval);)
 public_log_if( void set_glog(int level, int verbosity);)

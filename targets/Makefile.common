@@ -1,20 +1,20 @@
 # This file gathers compilation directive shared between lte-softmodem and oaisim
-export COMMON_UTILS_DIR    = $(OPENAIR_HOME)/common/utils
-export UE_NAS_DIR          = $(OPENAIR_HOME)/openair-cn/NAS
-export S1AP_DIR            = $(OPENAIR_HOME)/openair-cn/S1AP
-export X2AP_DIR            = $(OPENAIR_HOME)/openair2/X2AP
-export SCTP_DIR            = $(OPENAIR_HOME)/openair-cn/SCTP
-export UDP_DIR             = $(OPENAIR_HOME)/openair-cn/UDP
-export GTPV1U_DIR          = $(OPENAIR_HOME)/openair-cn/GTPV1-U
-export SECU_DIR            = $(OPENAIR_HOME)/openair-cn/SECU
+export COMMON_UTILS_DIR    = $(OPENAIR_DIR)/common/utils
+export UE_NAS_DIR          = $(OPENAIR_DIR)/openair3/NAS
+export S1AP_DIR            = $(OPENAIR_DIR)/openair3/S1AP
+export X2AP_DIR            = $(OPENAIR_DIR)/openair2/X2AP
+export SCTP_DIR            = $(OPENAIR_DIR)/openair3/SCTP
+export UDP_DIR             = $(OPENAIR_DIR)/openair3/UDP
+export GTPV1U_DIR          = $(OPENAIR_DIR)/openair3/GTPV1-U
+export SECU_DIR            = $(OPENAIR_DIR)/openair3/SECU
 
-UE_NAS_OBJ_DIR      = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(UE_NAS_DIR))
-SECU_OBJ_DIR        = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(SECU_DIR))
-S1AP_OBJ_DIR        = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(S1AP_DIR))
-X2AP_OBJ_DIR        = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(X2AP_DIR))
-SCTP_OBJ_DIR        = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(SCTP_DIR))
-UDP_OBJ_DIR         = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(UDP_DIR))
-GTPV1U_OBJ_DIR      = $(subst $(OPENAIR_HOME),$(OBJS_DIR),$(GTPV1U_DIR))
+UE_NAS_OBJ_DIR      = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(UE_NAS_DIR))
+SECU_OBJ_DIR        = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(SECU_DIR))
+S1AP_OBJ_DIR        = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(S1AP_DIR))
+X2AP_OBJ_DIR        = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(X2AP_DIR))
+SCTP_OBJ_DIR        = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(SCTP_DIR))
+UDP_OBJ_DIR         = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(UDP_DIR))
+GTPV1U_OBJ_DIR      = $(subst $(OPENAIR_DIR),$(OBJS_DIR),$(GTPV1U_DIR))
 
 #Export common cflags (between softmodem and oaisim)
 COMMON_CFLAGS		= \
@@ -65,6 +65,9 @@ ifeq ($(ENABLE_RAL), 1)
 CFLAGS += -DENABLE_RAL
 endif
 
+ifeq ($(PDCP_USE_NETLINK),1)  
+CFLAGS += -DPDCP_USE_NETLINK
+endif
 ifeq ($(LIBCONFIG_LONG),1)	
 CFLAGS += -DLIBCONFIG_LONG
 endif
@@ -73,8 +76,8 @@ endif
 ifeq ($(USE_MME), R10)	
 COMMON_CFLAGS		+= -DENABLE_USE_MME
 ENABLE_ITTI = 1
-ifeq ($(LINK_PDCP_TO_GTPV1U), 1)	
-    COMMON_CFLAGS       += -DLINK_PDCP_TO_GTPV1U
+ifeq ($(LINK_ENB_PDCP_TO_GTPV1U), 1)	
+    COMMON_CFLAGS       += -DLINK_ENB_PDCP_TO_GTPV1U
 # COMMON_CFLAGS       += -I$(UDP_DIR)
 # COMMON_CFLAGS       += -I$(GTPV1U_DIR)
 # COMMON_CFLAGS       += -I$(GTPV1U_DIR)/nw-gtpv1u/shared
@@ -109,12 +112,12 @@ COMMON_CFLAGS		+= -DLOG_NO_THREAD
 openair_cn_available := $(shell if [ -d "$(UE_NAS_DIR)" ]; then echo "0" ; else  echo "1" ; fi )
 ifeq 	($(openair_cn_available), 0)
 COMMON_CFLAGS		+= -DENABLE_NAS_UE_LOGGING
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/api/network
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/include
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/ies
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/emm/msg
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/esm/msg
-COMMON_CFLAGS		+= -I$(OPENAIR_HOME)/openair-cn/NAS/EURECOM-NAS/src/util
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/api/network
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/include
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/ies
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/emm/msg
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/esm/msg
+COMMON_CFLAGS		+= -I$(OPENAIR_DIR)/openair3/NAS/EURECOM-NAS/src/util
 endif
 
 UENAS_CFLAGS		= $(COMMON_CFLAGS)
@@ -122,8 +125,8 @@ UENAS_CFLAGS		+= -I$(SECU_DIR)
 export UENAS_CFLAGS
 
 SECU_CFLAGS			= $(COMMON_CFLAGS)
-SECU_CFLAGS			+= -I$(OPENAIR_HOME)/openair-cn/COMMON
-SECU_CFLAGS			+= -I$(OPENAIR_HOME)/openair-cn/UTILS
+SECU_CFLAGS			+= -I$(OPENAIR_DIR)/openair3/COMMON
+SECU_CFLAGS			+= -I$(OPENAIR_DIR)/openair3/UTILS
 SECU_CFLAGS			+= -I$(SECU_DIR)
 export SECU_CFLAGS
 
@@ -150,7 +153,7 @@ UDP_CFLAGS	 		 = $(COMMON_CFLAGS) $(COMMON_MME_CFLAGS)
 UDP_CFLAGS	 		+= -DENB_MODE
 UDP_CFLAGS	 		+= -I$(TOP_DIR)
 UDP_CFLAGS	 		+= $(UTIL_incl)
-UDP_CFLAGS	 		+= -I$(OPENAIR_HOME)/openair2/ENB_APP
+UDP_CFLAGS	 		+= -I$(OPENAIR_DIR)/openair2/ENB_APP
 export UDP_CFLAGS
 
 GTPV1U_CFLAGS            = $(COMMON_CFLAGS) $(COMMON_MME_CFLAGS)
@@ -158,12 +161,12 @@ GTPV1U_CFLAGS           += -DENB_MODE
 GTPV1U_CFLAGS           += -I$(TOP_DIR)
 GTPV1U_CFLAGS           += -I$(GTPV1U_DIR)/nw-gtpv1u/include
 GTPV1U_CFLAGS           += -I$(GTPV1U_DIR)/nw-gtpv1u/shared
-GTPV1U_CFLAGS           += -I$(OPENAIR_HOME)/openair2/ENB_APP
-GTPV1U_CFLAGS           += $(UTIL_incl) -I$(OPENAIRCN_DIR)/UTILS
+GTPV1U_CFLAGS           += -I$(OPENAIR_DIR)/openair2/ENB_APP
+GTPV1U_CFLAGS           += $(UTIL_incl) -I$(OPENAIR3_DIR)/UTILS
 export GTPV1U_CFLAGS
 
 GTPV1U_ENB_CFLAGS            = $(COMMON_CFLAGS)
-GTPV1U_ENB_CFLAGS           +=  $(OPENAIR_HOME)/openair2/COMMON
+GTPV1U_ENB_CFLAGS           +=  $(OPENAIR_DIR)/openair2/COMMON
 GTPV1U_ENB_CFLAGS           += -I$(X2AP_DIR)
 GTPV1U_ENB_CFLAGS           += -I$(S1AP_DIR)
 GTPV1U_ENB_CFLAGS           += -I$(UDP_DIR)
@@ -172,8 +175,8 @@ GTPV1U_ENB_CFLAGS           += -DENB_MODE
 GTPV1U_ENB_CFLAGS           += -I$(TOP_DIR)
 GTPV1U_ENB_CFLAGS           += -I$(GTPV1U_DIR)/nw-gtpv1u/include
 GTPV1U_ENB_CFLAGS           += -I$(GTPV1U_DIR)/nw-gtpv1u/shared
-GTPV1U_ENB_CFLAGS           += -I$(OPENAIR_HOME)/openair2/ENB_APP
-GTPV1U_ENB_CFLAGS           += $(UTIL_incl) -I$(OPENAIRCN_DIR)/UTILS
+GTPV1U_ENB_CFLAGS           += -I$(OPENAIR_DIR)/openair2/ENB_APP
+GTPV1U_ENB_CFLAGS           += $(UTIL_incl) -I$(OPENAIR3_DIR)/UTILS
 export GTPV1U_ENB_CFLAGS
 
 

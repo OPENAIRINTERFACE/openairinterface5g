@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -47,7 +47,8 @@ unsigned int s0, s1, s2, b;
 */
 //
 
-unsigned int taus(void) {
+unsigned int taus(void)
+{
 
   b = (((s0 << 13) ^ s0) >> 19);
   s0 = (((s0 & 0xFFFFFFFE) << 12)^  b);
@@ -58,7 +59,8 @@ unsigned int taus(void) {
   return s0 ^ s1 ^ s2;
 }
 
-void set_taus_seed(unsigned int seed_init) {
+void set_taus_seed(unsigned int seed_init)
+{
 
 #ifdef USER_MODE
   struct drand48_data buffer;
@@ -66,11 +68,10 @@ void set_taus_seed(unsigned int seed_init) {
 #endif
 
   if (seed_init == 0) {
-    s0 = (unsigned int)time(NULL); 
-    s1 = (unsigned int)time(NULL); 
-    s2 = (unsigned int)time(NULL); 
-  }
-  else {
+    s0 = (unsigned int)time(NULL);
+    s1 = (unsigned int)time(NULL);
+    s2 = (unsigned int)time(NULL);
+  } else {
 #ifndef USER_MODE
     s0 = (unsigned int)0x1e23d852;
     s1 = (unsigned int)0x81f38a1c;
@@ -90,13 +91,14 @@ void set_taus_seed(unsigned int seed_init) {
 
 #ifdef MAIN
 
-main() {
+main()
+{
 
   unsigned int i,rand;
 
   set_taus_seed();
 
-  for (i=0;i<10;i++){
+  for (i=0; i<10; i++) {
 
     rand = taus();
     printf("%u\n",rand);
@@ -105,5 +107,5 @@ main() {
 }
 #endif //MAIN
 
-  
-  
+
+

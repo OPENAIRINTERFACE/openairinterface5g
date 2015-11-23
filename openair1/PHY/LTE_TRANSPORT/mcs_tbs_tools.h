@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -36,8 +36,8 @@
 unsigned char I_TBS2I_MCS(unsigned char I_TBS);
 
 /** \fn unsigned char SE2I_TBS(float SE,
-		    unsigned char N_PRB,
-		    unsigned char symbPerRB);
+        unsigned char N_PRB,
+        unsigned char symbPerRB);
 \brief This function maps a requested throughput in number of bits to I_tbs. The throughput is calculated as a function of modulation order, RB allocation and number of symbols per RB. The mapping orginates in the "Transport block size table" (Table 7.1.7.2.1-1 in 3GPP TS 36.213 V8.6.0)
 \param SE Spectral Efficiency (before casting to integer, multiply by 1024, remember to divide result by 1024!)
 \param N_PRB Number of PhysicalResourceBlocks allocated \sa lte_frame_parms->N_RB_DL
@@ -45,5 +45,5 @@ unsigned char I_TBS2I_MCS(unsigned char I_TBS);
 \return I_TBS given an SE and an N_PRB
 */
 unsigned char SE2I_TBS(float SE,
-		       unsigned char N_PRB,
-		       unsigned char symbPerRB);
+                       unsigned char N_PRB,
+                       unsigned char symbPerRB);

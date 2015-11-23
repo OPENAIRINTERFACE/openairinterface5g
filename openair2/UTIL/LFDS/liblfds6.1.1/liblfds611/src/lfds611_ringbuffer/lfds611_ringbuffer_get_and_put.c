@@ -56,22 +56,19 @@ struct lfds611_freelist_element *lfds611_ringbuffer_get_write_element( struct lf
            stole an element from the lfds611_queue
   */
 
-  do
-  {
+  do {
     if( overwrite_flag != NULL )
       *overwrite_flag = 0;
 
     lfds611_freelist_pop( rs->fs, fe );
 
-    if( *fe == NULL )
-    {
+    if( *fe == NULL ) {
       lfds611_ringbuffer_get_read_element( rs, fe );
 
       if( overwrite_flag != NULL and *fe != NULL )
         *overwrite_flag = 1;
     }
-  }
-  while( *fe == NULL );
+  } while( *fe == NULL );
 
   return( *fe );
 }

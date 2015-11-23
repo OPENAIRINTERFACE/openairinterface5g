@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,20 +14,20 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
- #ifndef OPENAIR_DEVICE_H
+
+#ifndef OPENAIR_DEVICE_H
 #define OPENAIR_DEVICE_H
 
 
@@ -49,23 +49,23 @@
 #define TELECOM_PARISTECH_VENDOR 0x0002
 /*
    PCIe Subsystem ID = exmimo_id.board_exmimoversion(1,2) (4 bits) | exmimo_id.board_hwrev (4 bits) | exmimo_id.board_swrev (Protocol Revision, 8 bits)
-   
+
    Board IDs (exmimo_id.board_exmimoversion(1,2) (4 bits) + exmimo_id.board_hwrev (4 bits))
      0x11 => ExpressMIMO-1, first run/HW revision
      0x12 => ExpressMIMO-1, second run
      0x21 => ExpressMIMO-2, first run
      0x22 => ExpressMIMO-2, second run
-  
+
    SW/Protocol revisions: (exmimo_id.board_swrev (Protocol Revision, 8 bits)
-   
+
    BOARD_SWREV_LEGACY:
      - IRQ Leon->PC Bit 7 (AHBPCIE_INTERRUPT_ASSERT_BIT) must be cleared in PC kernel driver
      - PC->Leon and Leon->PC commands share a single register CONTROL1
-   
+
    BOARD_SWREV_CMDREGISTERS:
      - IRQ Leon->PC Bit 7 (AHBPCIE_INTERRUPT_ASSERT_BIT) is automatically cleared on PCIe read
      - PC->Leon and Leon->PC commands have separete command registers CONTROL1 (PC->Leon) and CONTROL2 (Leon->PC)
-   
+
    BOARD_SWREV_CMDFIFOS:
      - uses two command FIFOs (for PC->Leon and Leon->PC), by Telecom Paristech
 */

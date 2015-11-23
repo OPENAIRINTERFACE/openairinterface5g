@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -63,14 +63,14 @@ extern "C" {
 #    endif
 
 /** @defgroup _cli_if Interfaces of CLI
- * @{*/ 
+ * @{*/
 
 
-  public_cli_if( void cli_init (void); )
-  public_cli_if( int cli_server_init(cli_handler_t handler); )
-  public_cli_if(void cli_server_cleanup(void);)
-  public_cli_if(void cli_server_recv(const void * data, socklen_t len);)
-/* @}*/ 
+public_cli_if( void cli_init (void); )
+public_cli_if( int cli_server_init(cli_handler_t handler); )
+public_cli_if(void cli_server_cleanup(void);)
+public_cli_if(void cli_server_recv(const void * data, socklen_t len);)
+/* @}*/
 
 #ifdef __cplusplus
 }

@@ -26,29 +26,29 @@ void test_lfds611_ringbuffer( void )
 void ringbuffer_test_reading( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   struct ringbuffer_test_reading_state
-    *rtrs;
+      *rtrs;
 
   struct lfds611_validation_info
-    vi = { 0, 0 };
+      vi = { 0, 0 };
 
   enum lfds611_data_structure_validity
-    dvs[3];
+  dvs[3];
 
   lfds611_atom_t
-    total_read = 0;
+  total_read = 0;
 
   /* TRD : we create a single ringbuffer
            with 1,000,000 elements
@@ -70,8 +70,7 @@ void ringbuffer_test_reading( void )
 
   lfds611_ringbuffer_new( &rs, 1000000, NULL, NULL );
 
-  for( loop = 0 ; loop < 1000000 ; loop++ )
-  {
+  for( loop = 0 ; loop < 1000000 ; loop++ ) {
     lfds611_ringbuffer_get_write_element( rs, &fe, NULL );
     lfds611_freelist_set_user_data_in_element( fe, (void *) (lfds611_atom_t) loop );
     lfds611_ringbuffer_put_write_element( rs, fe );
@@ -79,8 +78,7 @@ void ringbuffer_test_reading( void )
 
   rtrs = malloc( sizeof(struct ringbuffer_test_reading_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (rtrs+loop)->rs = rs;
     (rtrs+loop)->read_count = 0;
     (rtrs+loop)->error_flag = LOWERED;
@@ -130,14 +128,14 @@ void ringbuffer_test_reading( void )
 thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_reader( void *ringbuffer_test_reading_state )
 {
   struct ringbuffer_test_reading_state
-    *rtrs;
+      *rtrs;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   lfds611_atom_t
-    *prev_user_data,
-    *user_data;
+  *prev_user_data,
+  *user_data;
 
   assert( ringbuffer_test_reading_state != NULL );
 
@@ -151,15 +149,16 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_reader( void *r
   */
 
   lfds611_ringbuffer_get_read_element( rtrs->rs, &fe );
+
   if( fe == NULL )
     return( (thread_return_t) EXIT_SUCCESS );
+
   lfds611_freelist_get_user_data_from_element( fe, (void **) &prev_user_data );
   lfds611_ringbuffer_put_read_element( rtrs->rs, fe );
 
   rtrs->read_count++;
 
-  while( lfds611_ringbuffer_get_read_element(rtrs->rs, &fe) )
-  {
+  while( lfds611_ringbuffer_get_read_element(rtrs->rs, &fe) ) {
     lfds611_freelist_get_user_data_from_element( fe, (void **) &user_data );
     lfds611_ringbuffer_put_read_element( rtrs->rs, fe );
 
@@ -182,32 +181,32 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_reader( void *r
 void ringbuffer_test_writing( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   struct ringbuffer_test_writing_state
-    *rtws;
+      *rtws;
 
   struct lfds611_validation_info
-    vi = { 100000, 100000 };
+      vi = { 100000, 100000 };
 
   enum lfds611_data_structure_validity
-    dvs[3];
+  dvs[3];
 
   lfds611_atom_t
-    thread,
-    count,
-    user_data,
-    *per_thread_counters;
+  thread,
+  count,
+  user_data,
+  *per_thread_counters;
 
   /* TRD : we create a single ringbuffer
            with 100000 elements
@@ -233,8 +232,7 @@ void ringbuffer_test_writing( void )
 
   rtws = malloc( sizeof(struct ringbuffer_test_writing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (rtws+loop)->rs = rs;
     (rtws+loop)->write_count = (lfds611_atom_t) loop << (sizeof(lfds611_atom_t)*8-8);
   }
@@ -257,15 +255,13 @@ void ringbuffer_test_writing( void )
 
   lfds611_ringbuffer_query( rs, LFDS611_RINGBUFFER_QUERY_VALIDATE, (void *) &vi, (void *) dvs );
 
-  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and dvs[2] == LFDS611_VALIDITY_VALID and lfds611_ringbuffer_get_read_element(rs, &fe) )
-  {
+  while( dvs[0] == LFDS611_VALIDITY_VALID and dvs[1] == LFDS611_VALIDITY_VALID and dvs[2] == LFDS611_VALIDITY_VALID and lfds611_ringbuffer_get_read_element(rs, &fe) ) {
     lfds611_freelist_get_user_data_from_element( fe, (void *) &user_data );
 
     thread = user_data >> (sizeof(lfds611_atom_t)*8-8);
     count = (user_data << 8) >> 8;
 
-    if( thread >= cpu_count )
-    {
+    if( thread >= cpu_count ) {
       dvs[0] = LFDS611_VALIDITY_INVALID_TEST_DATA;
       lfds611_ringbuffer_put_read_element( rs, fe );
       break;
@@ -302,13 +298,13 @@ void ringbuffer_test_writing( void )
 thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_writer( void *ringbuffer_test_writing_state )
 {
   struct ringbuffer_test_writing_state
-    *rtws;
+      *rtws;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   time_t
-    start_time;
+  start_time;
 
   assert( ringbuffer_test_writing_state != NULL );
 
@@ -318,8 +314,7 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_writer( void *r
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_ringbuffer_get_write_element( rtws->rs, &fe, NULL );
     lfds611_freelist_set_user_data_in_element( fe, (void *) (lfds611_atom_t) (rtws->write_count++) );
     lfds611_ringbuffer_put_write_element( rtws->rs, fe );
@@ -336,24 +331,24 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_simple_writer( void *r
 void ringbuffer_test_reading_and_writing( void )
 {
   unsigned int
-    loop,
-    subloop,
-    cpu_count;
+  loop,
+  subloop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct lfds611_ringbuffer_state
-    *rs;
+      *rs;
 
   struct ringbuffer_test_reading_and_writing_state
-    *rtrws;
+      *rtrws;
 
   struct lfds611_validation_info
-    vi = { 0, 0 };
+      vi = { 0, 0 };
 
   enum lfds611_data_structure_validity
-    dvs[3];
+  dvs[3];
 
   /* TRD : we create a single ringbuffer
            with 100000 elements
@@ -380,8 +375,7 @@ void ringbuffer_test_reading_and_writing( void )
 
   rtrws = malloc( sizeof(struct ringbuffer_test_reading_and_writing_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (rtrws+loop)->rs = rs;
     (rtrws+loop)->counter = (lfds611_atom_t) loop << (sizeof(lfds611_atom_t)*8-8);
     (rtrws+loop)->cpu_count = cpu_count;
@@ -428,18 +422,18 @@ void ringbuffer_test_reading_and_writing( void )
 thread_return_t CALLING_CONVENTION ringbuffer_test_thread_reader_writer( void *ringbuffer_test_reading_and_writing_state )
 {
   struct ringbuffer_test_reading_and_writing_state
-    *rtrws;
+      *rtrws;
 
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   lfds611_atom_t
-    user_data,
-    thread,
-    count;
+  user_data,
+  thread,
+  count;
 
   time_t
-    start_time;
+  start_time;
 
   assert( ringbuffer_test_reading_and_writing_state != NULL );
 
@@ -449,8 +443,7 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_reader_writer( void *r
 
   time( &start_time );
 
-  while( time(NULL) < start_time + 10 )
-  {
+  while( time(NULL) < start_time + 10 ) {
     lfds611_ringbuffer_get_write_element( rtrws->rs, &fe, NULL );
     lfds611_freelist_set_user_data_in_element( fe, (void *) (lfds611_atom_t) (rtrws->counter++) );
     lfds611_ringbuffer_put_write_element( rtrws->rs, fe );
@@ -463,8 +456,7 @@ thread_return_t CALLING_CONVENTION ringbuffer_test_thread_reader_writer( void *r
 
     if( thread >= rtrws->cpu_count )
       rtrws->error_flag = RAISED;
-    else
-    {
+    else {
       if( count < rtrws->per_thread_counters[thread] )
         rtrws->error_flag = RAISED;
 

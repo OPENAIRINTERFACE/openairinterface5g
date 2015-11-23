@@ -1,0 +1,249 @@
+#!/bin/bash
+################################################################################
+#   OpenAirInterface
+#   Copyright(c) 1999 - 2014 Eurecom
+#
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) anylater version.
+#
+#
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with OpenAirInterface.The full GNU General Public License is
+#    included in this distribution in the file called "COPYING". If not,
+#    see <http://www.gnu.org/licenses/>.
+#
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+#
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+#
+################################################################################
+# file run_enb_s1_usrp
+# brief run script for eNB USRP.
+# author  Lionel GAUTHIER
+# company Eurecom
+# email:  lionel.gauthier@eurecom.fr 
+
+
+################################
+# include helper functions
+################################
+THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
+source $THIS_SCRIPT_PATH/build_helper
+declare -i g_run_msc_gen=0
+declare    g_msc_dir="/tmp"
+
+
+function help()
+{
+  echo_error " "
+  echo_error "Usage: run_enb_s1_usrp -c config_file [OPTION]..."
+  echo_error "Run the eNB executable, hardware target is USRP."
+  echo_error " "
+  echo_error "Mandatory arguments:"
+  echo_error "  -c, -C, --config-file  eNB_config_file  eNB config file, (see $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF)"
+  echo_error " "
+  echo_error "Options:"
+  echo_error "Mandatory arguments to long options are mandatory for short options too."
+  echo_error "  -g, --gdb                           Run with GDB."
+  echo_error "  -h, --help                          Print this help."
+  echo_error "  -K, --itti-dump-file      filename  ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
+  echo_error "  -M, --target-dl-mcs       mcs       Downlink target MCS."
+  echo_error "  -m, --mscgen              directory Generate mscgen output files in a directory"
+  echo_error "  -s, --show-stdout                   Do not redirect stdout and stderr to file /tmp/lte_softmodem.stdout.txt."
+  echo_error "  -S, --enable-missed-slot            Continue execution in case of missed slot."
+  echo_error "  -T, --target-ul-mcs       mcs       Uplink target MCS."
+  echo_error "  -V, --vcd                           Dump timings of processing in a GTKWave compliant file format."
+  echo_error "  -W, --wireshark-l2                  Dump MAC frames for visualization with wireshark."
+  echo_error "                                      You need to open Wireshark, open the preferences, and check try heuristics for the UDP protocol, MAC-LTE, RLC-LTE,"
+  echo_error "                                      and PDCP-LTE. Then capture for all the interfaces with the following filters: s1ap or lte_rrc or mac-lte or rlc-lte"
+  echo_error "                                      or pdcp-lte. Note the L2 pdus are transmitted to the local interface."
+  echo_error "  -x, --xforms                        Run XFORMS scope windows."
+}
+
+
+function do_msc_gen()
+{
+  cd $g_msc_dir
+  last_created_file=`ls -t mscgen* | head -1 | tr -d ':'`
+  $OPENAIR_DIR/targets/SCRIPTS/msc_gen.py
+  sync
+  last_created_file2=`ls -t mscgen* | head -1 | tr -d ':'`
+        
+  if [ x"$last_created_file" != x"$last_created_file2" ]; then
+    if [ -f ./$last_created_file2/oai_mscgen_page_0.png ]; then 
+      command -v eog 2>/dev/null &&  eog ./$last_created_file2/oai_mscgen_page_0.png
+    fi
+  fi 
+
+}
+
+
+function control_c()
+# run if user hits control-c
+{
+  echo_warning "\nExiting by ctrl+c\n"
+  if [ $g_run_msc_gen -eq 1 ]; then 
+    do_msc_gen
+  fi
+  exit $?
+}
+
+
+function main()
+{
+  local -i run_gdb=0
+  local -i show_stdout=0
+  local    exe_arguments=""
+  local    itti_dump_file=""
+  
+  until [ -z "$1" ]
+    do
+    case "$1" in
+      -c | -C | --config-file)
+        CONFIG_FILE=$2
+        # may be relative path 
+        if [ -f $(dirname $(readlink -f $0))/$CONFIG_FILE ]; then
+          CONFIG_FILE=$(dirname $(readlink -f $0))/$CONFIG_FILE
+          echo "setting config file to: $CONFIG_FILE"
+          CONFIG_FILE_ACCESS_OK=1
+        else
+          # may be absolute path 
+          if [ -f $CONFIG_FILE ]; then
+            echo "setting config file to: $CONFIG_FILE"
+          else
+            echo_fatal "config file $CONFIG_FILE not found"
+          fi
+        fi
+        exe_arguments="$exe_arguments -O $CONFIG_FILE"
+        shift 2;
+        ;;
+      -g | --gdb)
+        run_gdb=1
+        echo "setting GDB flag to: $run_gdb"
+        shift;
+        ;;
+      -h | --help)
+        help
+        shift;
+        exit 0
+        ;;
+      -K | --itti-dump-file)
+        itti_dump_file=$2
+        # can omit file name if last arg on the line
+        if [ "x$itti_dump_file" = "x" ]; then
+          itti_dump_file="/tmp/enb_s1_usrp_itti.log"
+          shift 1;
+        else
+          shift 2;
+        fi
+        echo "setting ITTI dump file to: $itti_dump_file"
+        exe_arguments="$exe_arguments -K $itti_dump_file"
+        ;;      
+      -m | --mscgen)
+        g_msc_dir=$2
+        # can omit file name if last arg on the line
+        if [ -d  "$g_msc_dir" ]; then
+          echo "setting mscgen log files to dir: $g_msc_dir"
+          g_run_msc_gen=1
+          shift 2;
+        else
+          echo_error "Mscgen log dir does not exist"
+          exit -1
+        fi
+        ;;      
+      -M | --target-dl-mcs)
+        echo "setting target dl MCS to $2"
+        exe_arguments="$exe_arguments -m $2"
+        shift 2;
+        ;;
+      -V | --vcd)
+        echo "setting gtk-wave output"
+        exe_arguments="$exe_arguments -V /tmp/oai_gtk_wave.vcd"
+        shift ;
+        ;;
+      -s | --show-stdout)
+        echo "setting show stdout"
+        show_stdout=1
+        shift ;
+        ;;
+      -S | --enable-missed-slot)
+        echo "setting continue even if missed slot"
+        exe_arguments="$exe_arguments -S"
+        shift ;
+        ;;
+      -T | --target-ul-mcs)
+        echo "setting target ul MCS to $2"
+        exe_arguments="$exe_arguments -t $2"
+        shift 2;
+        ;;
+      -W | --wireshark-l2)
+        echo "setting l2 pcap dump output"
+        exe_arguments="$exe_arguments -W"
+        shift ;
+        ;;
+      -x | --xforms)
+        exe_arguments="$exe_arguments -d"
+        echo "setting xforms"
+        shift;
+        ;;
+      *)   
+        echo "Unknown option $1"
+        help
+        exit 0
+        ;;
+    esac
+  done
+
+
+  set_openair_env 
+  cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
+
+
+  if [ ! -e $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10 ]; then
+    echo_fatal "Cannot find $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10 executable"
+  fi
+
+
+  if [ $run_gdb -eq 0 ]; then 
+    # trap keyboard interrupt (control-c)
+    trap control_c SIGINT
+    if  [ $show_stdout -eq 0 ]; then 
+      echo_warning "stdout/sderr of lte-softmodem executable redirected to /tmp/lte_softmodem.stdout.txt"
+      exec $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10  `echo $exe_arguments` 2>&1 > /tmp/lte_softmodem.stdout.txt
+    else
+      exec $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10  `echo $exe_arguments`
+    fi
+  else
+    # trap keyboard interrupt (control-c) is done by gdb
+    touch      ~/.gdb_lte_softmodem
+    chmod 777  ~/.gdb_lte_softmodem
+    echo "file $OPENAIR_DIR/targets/bin/lte-softmodem.Rel10" > ~/.gdb_lte_softmodem
+    echo "set args $exe_arguments" >> ~/.gdb_lte_softmodem
+    echo "run"                        >> ~/.gdb_lte_softmodem
+    cat ~/.gdb_lte_softmodem
+    if  [ $show_stdout -eq 0 ]; then 
+      echo_warning "stdout/sderr of lte-softmodem executable redirected to /tmp/gdb_lte_softmodem.stdout.txt"
+      gdb -n -x ~/.gdb_lte_softmodem 2>&1 > /tmp/gdb_lte_softmodem.stdout.txt
+    else
+      gdb -n -x ~/.gdb_lte_softmodem 
+    fi
+    if [ $g_run_msc_gen -eq 1 ]; then 
+      do_msc_gen
+    fi
+  fi
+}
+
+
+
+main "$@"
+

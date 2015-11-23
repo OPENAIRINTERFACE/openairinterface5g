@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -29,9 +29,9 @@
 
 /*****************************************************************
   *
-  * File Name :		parser.h
-  * Author: 		Sharad Gupta
-  * Decription: 	contains declarations for parser functions
+  * File Name :   parser.h
+  * Author:     Sharad Gupta
+  * Decription:   contains declarations for parser functions
   *
   *    Copyright 2009, Hughes Systique India Private Limited
   *
@@ -65,8 +65,8 @@
 #define AT_CMD_BUFFSIZE 512
 //----------------------------------------------------------------------------
 typedef struct {
-    char *command;
-    void (*ResponseFunction) (char *,int);
+  char *command;
+  void (*ResponseFunction) (char *,int);
 } at_command_t;
 
 
@@ -218,7 +218,8 @@ public_at_commands(void   at_parse_string(char * str);)
 This function register the handler, handling responses from AT commands parser.
 @param at_response_handler handler procedure.
 **/
-public_at_commands(void at_parse_init(void (*at_response_handler)(char*, int), int (*mt_attach_state_request_handler)(void), int (*mt_attach_request_handler)(void), int (*mt_detach_request_handler)(void));)
+public_at_commands(void at_parse_init(void (*at_response_handler)(char*, int), int (*mt_attach_state_request_handler)(void), int (*mt_attach_request_handler)(void),
+                                      int (*mt_detach_request_handler)(void));)
 /**
 \fn void at_null_callback_handler(char* string, int size)
 This function register the handler, handling responses from AT commands parser.

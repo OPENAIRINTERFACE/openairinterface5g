@@ -21,18 +21,18 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file steadystaterwp.h
-* \brief random waypoint mobility generator 
+* \brief random waypoint mobility generator
 * \date 2014
 * \version 0.1
 * \company Eurecom
-* \email: 
+* \email:
 * \note
 * \warning
 */
@@ -59,7 +59,7 @@ void update_steadystaterwp_nodes (double cur_time);
 
 void get_steadystaterwp_positions_updated (double cur_time);
 
-#endif 
+#endif
 
 
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -45,7 +45,7 @@
 
 ///  DCI Format Type 0 (5 MHz,TDD0, 27 bits)
 struct DCI0_5MHz_TDD0 {
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
   /// Hopping flag
   uint32_t hopping:1;
@@ -90,7 +90,7 @@ struct DCI0_1_5MHz_TDD_1_6 {
   uint32_t rballoc:5;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -113,11 +113,11 @@ struct DCI1A_1_5MHz_TDD_1_6 {
   uint32_t harq_pid:4;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
   uint32_t rballoc:5;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -145,7 +145,7 @@ struct DCI0_5MHz_TDD_1_6 {
   uint32_t rballoc:9;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -168,11 +168,11 @@ struct DCI1A_5MHz_TDD_1_6 {
   uint32_t harq_pid:4;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
   uint32_t rballoc:9;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -200,7 +200,7 @@ struct DCI0_10MHz_TDD_1_6 {
   uint32_t rballoc:11;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -223,11 +223,11 @@ struct DCI1A_10MHz_TDD_1_6 {
   uint32_t harq_pid:4;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
   uint32_t rballoc:11;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -255,7 +255,7 @@ struct DCI0_20MHz_TDD_1_6 {
   uint32_t rballoc:13;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -277,11 +277,11 @@ struct DCI1A_20MHz_TDD_1_6 {
   uint32_t harq_pid:4;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL-1)/2)) bits)
   uint32_t rballoc:13;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -306,7 +306,7 @@ struct DCI0_1_5MHz_FDD {
   uint32_t rballoc:5;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 
 } __attribute__ ((__packed__));
@@ -327,11 +327,11 @@ struct DCI1A_1_5MHz_FDD {
   uint32_t harq_pid:3;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
   uint32_t rballoc:5;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -357,7 +357,7 @@ struct DCI0_5MHz_FDD {
   uint32_t rballoc:9;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 
 } __attribute__ ((__packed__));
@@ -378,11 +378,11 @@ struct DCI1A_5MHz_FDD {
   uint32_t harq_pid:3;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
   uint32_t rballoc:9;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -409,7 +409,7 @@ struct DCI0_10MHz_FDD {
   uint32_t rballoc:11;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 
 } __attribute__ ((__packed__));
@@ -430,11 +430,11 @@ struct DCI1A_10MHz_FDD {
   uint32_t harq_pid:3;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL(N_RB_DL+1)/2)) bits)
   uint32_t rballoc:11;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -459,7 +459,7 @@ struct DCI0_20MHz_FDD {
   uint32_t rballoc:13;
   /// Hopping flag
   uint32_t hopping:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 
 } __attribute__ ((__packed__));
@@ -480,11 +480,11 @@ struct DCI1A_20MHz_FDD {
   uint32_t harq_pid:3;
   /// Modulation and Coding Scheme and Redundancy Version
   uint32_t mcs:5;
-   /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL+1)/2)) bits)
+  /// RB Assignment (ceil(log2(N_RB_DL*(N_RB_DL+1)/2)) bits)
   uint32_t rballoc:13;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -697,7 +697,7 @@ struct DCI1A_RA_5MHz_TDD_1_6 {
   uint32_t rballoc:9;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
 } __attribute__ ((__packed__));
 
@@ -707,7 +707,7 @@ typedef struct DCI1A_RA_5MHz_TDD_1_6 DCI1A_RA_5MHz_TDD_1_6_t;
 /// DCI Format Type 1A (5 MHz, TDD, frame 0, 27 bits)
 /*
 struct DCI1A_5MHz_TDD_0 {
-  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A 
+  /// type = 0 => DCI Format 0, type = 1 => DCI Format 1A
   uint32_t type:1;
   /// Localized/Distributed VRB
   uint32_t vrb_type:1;
@@ -829,12 +829,73 @@ struct DCI1B_5MHz_4A_TDD {
 typedef struct DCI1B_5MHz_4A_TDD DCI1B_5MHz_4A_TDD_t;
 #define sizeof_DCI1B_5MHz_4A_TDD_t 31
 
+/// DCI Format Type 1C (1.4 MHz, 8 bits)
+struct DCI1C_1_5MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:24;
+  uint32_t mcs:5;
+  uint32_t rballoc:3;  // N_RB_step = 2, Ngap=Ngap1=3, NDLVRBGap = 6, ceil(log2((3*4)/2)) = 3
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_1_5MHz DCI1C_1_5MHz_t;
+#define sizeof_DCI1C_1_5MHz_t 8
+
+/*********************************************************
+**********************************************************/
 /// DCI Format Type 1C (5 MHz, 12 bits)
-typedef struct __attribute__ ((__packed__)){
-  uint32_t rballoc:7;
-  uint32_t tbs_index:5;
-} DCI1C_5MHz_t;
-#define sizeof_DCI1C_5MHz_t 12
+struct DCI1C_5MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:20;
+  uint32_t mcs:5;
+  uint32_t rballoc:7;   // N_RB_step = 2, Ngap1=Ngap2=12, NDLVRBGap = 24, ceil(log2((12*13)/2)) = 7
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_5MHz DCI1C_5MHz_t;
+#define sizeof_DCI1C_5MHz_t 12 
+
+/// DCI Format Type 1C (10 MHz, 13 bits)
+struct DCI1C_10MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:19;
+  uint32_t mcs:5;
+  uint32_t rballoc:7;  // N_RB_step = 4, Ngap1=27, NDLVRBGap = 46, ceil(log2(((11*12)/2)) = 7
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_10MHz DCI1C_10MHz_t;
+#define sizeof_DCI1C_10MHz_t 13
+
+/// DCI Format Type 1C (15 MHz, 14 bits)
+struct DCI1C_15MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:18;
+  uint32_t mcs:5;
+  uint32_t rballoc:8; // N_RB_step = 4, Ngap1=64, ceil(log2((16*17)/2)) = 8
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_15MHz DCI1C_15MHz_t;
+#define sizeof_DCI1C_15MHz_t X
+
+/// DCI Format Type 1C (20 MHz, 15 bits)
+struct DCI1C_20MHz
+{
+  /// padding to 32bits
+  uint32_t padding32:17;
+  uint32_t mcs:5;
+  uint32_t rballoc:9; // N_RB_step = 4, Ngap1=48, ceil(log2((24*25)/2)) = 9
+  uint32_t Ngap:1;
+} __attribute__ ((__packed__));
+
+typedef struct DCI1C_20MHz DCI1C_20MHz_t;
+#define sizeof_DCI1C_20MHz_t 15
+
+/*********************************************************
+**********************************************************/
 
 /// DCI Format Type 1D (5 MHz, FDD, 2 Antenna Ports, 27 bits)
 struct DCI1D_5MHz_2A_FDD {
@@ -997,7 +1058,7 @@ struct DCI2_1_5MHz_2A_TDD {
   /// padding to 64bits
   uint64_t padding64:30;
   /// TPMI information for precoding
-  uint64_t tpmi:3;  
+  uint64_t tpmi:3;
   /// Redundancy version 2
   uint64_t rv2:2;
   /// New Data Indicator 2
@@ -1048,8 +1109,8 @@ struct DCI2_1_5MHz_4A_TDD {
   /// HARQ Process
   uint64_t harq_pid:4;
   /// Downlink Assignment Index
-  uint64_t dai:2;  
-/// Power Control
+  uint64_t dai:2;
+  /// Power Control
   uint64_t TPC:2;
   /// RB Assignment (ceil(log2(N_RB_DL/P)) bits)
   uint64_t rballoc:6;
@@ -1331,7 +1392,7 @@ typedef struct DCI2_1_5MHz_4A_FDD DCI2_1_5MHz_4A_FDD_t;
 #define sizeof_DCI2_1_5MHz_4A_FDD_t 34
 
 /// DCI Format Type 2 (5 MHz, FDD, 2 Antenna Ports, 39 bits)
-struct DCI2_5MHz_2A_FDD{
+struct DCI2_5MHz_2A_FDD {
   /// padding for 64-bit
   uint64_t padding64:25;
   /// TPMI information for precoding
@@ -1626,7 +1687,7 @@ struct DCI2A_1_5MHz_2A_FDD {
 typedef struct DCI2A_1_5MHz_2A_FDD DCI2A_1_5MHz_2A_FDD_t;
 
 /// DCI Format Type 2A (1.5 MHz, FDD, 4 Antenna Ports, 31 bits)
-struct DCI2A_1_5MHz_4A_FDD{
+struct DCI2A_1_5MHz_4A_FDD {
   uint32_t padding:1;
   /// TPMI information for precoding
   uint32_t tpmi:2;
@@ -1812,7 +1873,7 @@ struct DCI2A_10MHz_2A_TDD {
 typedef struct DCI2A_10MHz_2A_TDD DCI2A_10MHz_2A_TDD_t;
 
 /// DCI Format Type 2A (10 MHz, TDD, 4 Antenna Ports, 41 bits)
-struct DCI2A_10MHz_4A_TDD{
+struct DCI2A_10MHz_4A_TDD {
   uint64_t padding:23;
   /// TPMI information for precoding
   uint64_t tpmi:2;
@@ -1874,7 +1935,7 @@ struct DCI2A_10MHz_2A_FDD {
 typedef struct DCI2A_10MHz_2A_FDD DCI2A_10MHz_2A_FDD_t;
 
 /// DCI Format Type 2A (10 MHz, FDD, 4 Antenna Ports, 38 bits)
-struct DCI2A_10MHz_4A_FDD{
+struct DCI2A_10MHz_4A_FDD {
   uint64_t padding:26;
   /// TPMI information for precoding
   uint64_t tpmi:2;
@@ -1905,7 +1966,7 @@ struct DCI2A_10MHz_4A_FDD{
 typedef struct DCI2A_10MHz_4A_FDD DCI2A_10MHz_4A_FDD_t;
 
 /// DCI Format Type 2A (20 MHz, TDD, 2 Antenna Ports, 51 bits)
-struct DCI2A_20MHz_2A_TDD{
+struct DCI2A_20MHz_2A_TDD {
   uint64_t padding:13;
   /// Redundancy version 2
   uint64_t rv2:2;
@@ -1936,7 +1997,7 @@ struct DCI2A_20MHz_2A_TDD{
 typedef struct DCI2A_20MHz_2A_TDD DCI2A_20MHz_2A_TDD_t;
 
 /// DCI Format Type 2A (20 MHz, TDD, 4 Antenna Ports, 53 bits)
-struct DCI2A_20MHz_4A_TDD{
+struct DCI2A_20MHz_4A_TDD {
   uint64_t padding:11;
   /// TPMI information for precoding
   uint64_t tpmi:2;
@@ -2841,27 +2902,33 @@ struct DCI2D_20MHz_FDD {
 typedef struct DCI2D_20MHz_FDD DCI2D_20MHz_FDD_t;
 
 
-typedef struct __attribute__ ((__packed__)){
+typedef struct __attribute__ ((__packed__))
+{
   uint32_t TPC:28;
-} DCI3_5MHz_TDD_0_t;
+}
+DCI3_5MHz_TDD_0_t;
 #define sizeof_DCI3_5MHz_TDD_0_t 27
 
-typedef struct __attribute__ ((__packed__)){
+typedef struct __attribute__ ((__packed__))
+{
   uint32_t TPC:28;
-} DCI3_5MHz_TDD_1_6_t;
+}
+DCI3_5MHz_TDD_1_6_t;
 #define sizeof_DCI3_5MHz_TDD_1_6_t 27
 
 
-typedef struct __attribute__ ((__packed__)){
+typedef struct __attribute__ ((__packed__))
+{
   uint32_t TPC:26;
-} DCI3_5MHz_FDD_t;
+}
+DCI3_5MHz_FDD_t;
 #define sizeof_DCI3_5MHz_FDD_t 25
 
 ///  DCI Format Type 0 (1.5 MHz,9 bits)
 struct DCI0A_1_5MHz {
   /// Padding
   uint32_t padding:19;
-    /// Cyclic shift
+  /// Cyclic shift
   uint32_t cshift:3;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
   uint32_t rballoc:5;
@@ -2874,7 +2941,7 @@ struct DCI0A_1_5MHz {
 struct DCI0A_5MHz {
   /// Padding
   uint32_t padding:19;
-    /// Cyclic shift
+  /// Cyclic shift
   uint32_t cshift:3;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
   uint32_t rballoc:9;
@@ -2887,7 +2954,7 @@ struct DCI0A_5MHz {
 struct DCI0A_10_MHz {
   /// Padding
   uint32_t padding:17;
-    /// Cyclic shift
+  /// Cyclic shift
   uint32_t cshift:3;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
   uint32_t rballoc:11;
@@ -2900,7 +2967,7 @@ struct DCI0A_10_MHz {
 struct DCI0A_20_MHz {
   /// Padding
   uint32_t padding:15;
-    /// Cyclic shift
+  /// Cyclic shift
   uint32_t cshift:3;
   /// RB Assignment (ceil(log2(N_RB_UL*(N_RB_UL+1)/2)) bits)
   uint32_t rballoc:13;

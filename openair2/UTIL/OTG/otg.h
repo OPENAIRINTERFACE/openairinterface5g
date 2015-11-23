@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file otg.h
-* \brief Data structure and functions for OTG 
+* \brief Data structure and functions for OTG
 * \author N. Nikaein and A. Hafsaoui
 * \date 2011
 * \version 1.0
@@ -40,7 +40,7 @@
 
 
 #ifndef __OTG_H__
-#	define __OTG_H__
+# define __OTG_H__
 
 
 #include <stdio.h>
@@ -54,46 +54,46 @@
 
 
 #if STANDALONE==1
-	#define LOG_G(c, x...) printf(x)
-	#define LOG_A(c, x...) printf(x)
-	#define LOG_C(c, x...) printf(x)
-	#define LOG_E(c, x...) printf(x)
-	#define LOG_W(c, x...) printf(x)
-	#define LOG_N(c, x...) printf(x)
-	#define LOG_I(c, x...) printf(x)
-	#define LOG_D(c, x...) printf(x)
-	#define LOG_F(c, x...) printf(x)  
-	#define LOG_T(c, x...) printf(x)
-	typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
+#define LOG_G(c, x...) printf(x)
+#define LOG_A(c, x...) printf(x)
+#define LOG_C(c, x...) printf(x)
+#define LOG_E(c, x...) printf(x)
+#define LOG_W(c, x...) printf(x)
+#define LOG_N(c, x...) printf(x)
+#define LOG_I(c, x...) printf(x)
+#define LOG_D(c, x...) printf(x)
+#define LOG_F(c, x...) printf(x)
+#define LOG_T(c, x...) printf(x)
+typedef enum {MIN_NUM_COMPS=0, PHY, OMG, OCM, OTG, MAX_NUM_COMPS} comp_t;
 #else
-	#include "../UTIL/LOG/log.h"
-#endif 
+#include "../UTIL/LOG/log.h"
+#endif
 
 
 /*! \fn void init_all_otg(void)
-* \brief set initial values de 0 
+* \brief set initial values de 0
 * \param[in] void
 * \param[out] void
-* \note 
+* \note
 * @ingroup  _otg
 */
 void init_all_otg(int max_nb_frames);
 
 /*! \fn void set_ctime(int ctime)
-* \brief set the simulation time to the ctime 
+* \brief set the simulation time to the ctime
 * \param[in] simulation time , void
 * \param[out] void
-* \note 
+* \note
 * @ingroup  _otg
 */
 void set_ctime(int ctime);
 
 
 /*! \fn void get_ctime(void)
-* \brief get the simulation time 
+* \brief get the simulation time
 * \param[in] int
 * \param[out] void
-* \note 
+* \note
 * @ingroup  _otg
 */
 int get_ctime(void);
@@ -102,9 +102,9 @@ int get_ctime(void);
 
 /*! \fn void free_otg(void);
 * \brief free OTG pointers
-* \param[in] 
+* \param[in]
 * \param[out]
-* \note 
+* \note
 * @ingroup  _otg
 */
 void free_otg(void);

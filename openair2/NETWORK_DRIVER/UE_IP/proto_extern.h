@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -34,7 +34,7 @@
     email                : navid.nikaein@eurecom.fr
                            lionel.gauthier@eurecom.fr
                            knopp@eurecom.fr
-		
+
 ***************************************************************************/
 
 #ifndef _UE_IP_PROTO_H
@@ -82,9 +82,9 @@ int ue_ip_find_inst(struct net_device *dev);
 @param rb_id Radio Bearer Id
  */
 void ue_ip_common_class_wireless2ip(sdu_size_t dlen,
-            void    *pdcp_sdu,
-            int     inst,
-            rb_id_t rb_id);
+                                    void    *pdcp_sdu,
+                                    int     inst,
+                                    rb_id_t rb_id);
 
 /**
 \fn void ue_ip_common_ip2wireless(struct sk_buff *skb, struct cx_entity *cx, struct classifier_entity *gc,int inst)

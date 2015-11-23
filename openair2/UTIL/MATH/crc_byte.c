@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -56,16 +56,20 @@ static          unsigned int
 crcbit (unsigned char * inputptr, int octetlen, unsigned int poly)
 {
   unsigned int             i, crc = 0, c;
+
   while (octetlen-- > 0) {
     c = (*inputptr++) << 24;
+
     for (i = 8; i != 0; i--) {
       if ((1 << 31) & (c ^ crc))
         crc = (crc << 1) ^ poly;
       else
         crc <<= 1;
+
       c <<= 1;
     }
   }
+
   return crc;
 }
 
@@ -82,6 +86,7 @@ void
 crcTableInit ()
 {
   unsigned char              c = 0;
+
   do {
     crc24Table[c] = crcbit (&c, 1, poly24);
     crc16Table[c] = (unsigned short) (crcbit (&c, 1, poly16) >> 16);
@@ -104,11 +109,14 @@ crc24 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = (crc << 8) ^ crc24Table[(*inptr++) ^ (crc >> 24)];
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ crc24Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+
   return crc;
 }
 
@@ -119,11 +127,14 @@ crc16 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = (crc << 8) ^ (crc16Table[(*inptr++) ^ (crc >> 24)] << 16);
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc16Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+
   return crc;
 }
 
@@ -134,11 +145,14 @@ crc12 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = (crc << 8) ^ (crc12Table[(*inptr++) ^ (crc >> 24)] << 16);
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc12Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 16);
+
   return crc;
 }
 
@@ -149,11 +163,14 @@ crc8 (unsigned char * inptr, int bitlen)
   unsigned int             crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
+
   while (octetlen-- > 0) {
     crc = crc8Table[(*inptr++) ^ (crc >> 24)] << 24;
   }
+
   if (resbit > 0)
     crc = (crc << resbit) ^ (crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+
   return crc;
 }
 
@@ -162,15 +179,15 @@ crc8 (unsigned char * inptr, int bitlen)
    Test code
 ********************************************************************/
 
- /* #ifdef MAIN
-    #include <stdio.h>
-    main()
-    {
-    unsigned char test[] = "Thebigredfox";
-    crcTableInit();
-    printf("%x\n", crcbit(test, sizeof(test) - 1, poly24));
-    printf("%x\n", crc24(test, (sizeof(test) - 1)*8));
-    printf("%x\n", crcbit(test, sizeof(test) - 1, poly8));
-    printf("%x\n", crc8(test, (sizeof(test) - 1)*8));
-    }
-    #endif */
+/* #ifdef MAIN
+   #include <stdio.h>
+   main()
+   {
+   unsigned char test[] = "Thebigredfox";
+   crcTableInit();
+   printf("%x\n", crcbit(test, sizeof(test) - 1, poly24));
+   printf("%x\n", crc24(test, (sizeof(test) - 1)*8));
+   printf("%x\n", crcbit(test, sizeof(test) - 1, poly8));
+   printf("%x\n", crc8(test, (sizeof(test) - 1)*8));
+   }
+   #endif */

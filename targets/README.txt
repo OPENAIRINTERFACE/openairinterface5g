@@ -44,12 +44,12 @@ The 3 folders have the following structures
 3. Now, please check the following:
    
    - the env variables in .bashrc the following lines, and source them if necessary :
-    set OPENAIR_HOME variable and export the following:
-    export OPENAIR1_DIR=$OPENAIR_HOME/openair4G/openair1
-    export OPENAIR2_DIR=$OPENAIR_HOME/openair4G/openair2
-    export OPENAIR3_DIR=$OPENAIR_HOME/openair4G/openair3
-    export OPENAIRITS_DIR=$OPENAIR_HOME/openair4G/openairITS
-    export OPENAIR_TARGETS=$OPENAIR_HOME/openair4G/targets/
+    set OPENAIR_DIR variable and export the following:
+    export OPENAIR1_DIR=$OPENAIR_DIR/openair4G/openair1
+    export OPENAIR2_DIR=$OPENAIR_DIR/openair4G/openair2
+    export OPENAIR3_DIR=$OPENAIR_DIR/openair4G/openair3
+    export OPENAIRITS_DIR=$OPENAIR_DIR/openair4G/openairITS
+    export OPENAIR_TARGETS=$OPENAIR_DIR/openair4G/targets/
     
    - checkout and compile the asn1 messages 
      follow the README.txt in OPENAIR2_DIR/RRC/LITE/MESSAGES to checkout the ASN.1 RRC messages

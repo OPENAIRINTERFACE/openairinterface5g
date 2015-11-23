@@ -78,15 +78,13 @@
 
 typedef uint16_t nasMsgType_t;
 
-struct nas_ioctl
-{
+struct nas_ioctl {
   char name[IFNAMSIZ];
   nasMsgType_t type;
   char *msg;
 };
 
-struct nas_msg_statistic_reply
-{
+struct nas_msg_statistic_reply {
   uint32_t rx_packets;
   uint32_t tx_packets;
   uint32_t rx_bytes;
@@ -97,8 +95,7 @@ struct nas_msg_statistic_reply
   uint32_t tx_dropped;
 };
 
-struct nas_msg_cx_list_reply
-{
+struct nas_msg_cx_list_reply {
   nasLocalConnectionRef_t lcr;   // Local Connection reference
   uint8_t state;
   nasCellID_t cellid;    // cell identification
@@ -107,58 +104,47 @@ struct nas_msg_cx_list_reply
   uint16_t num_rb;
   uint16_t nsclassifier;
 };
-struct nas_msg_cx_establishment_reply
-{
+struct nas_msg_cx_establishment_reply {
   int status;
 };
-struct nas_msg_cx_establishment_request
-{
+struct nas_msg_cx_establishment_request {
   nasLocalConnectionRef_t lcr;  // Local Connection reference
   nasCellID_t cellid; // Cell identification
 };
-struct nas_msg_cx_release_reply
-{
+struct nas_msg_cx_release_reply {
   int status;
 };
-struct nas_msg_cx_release_request
-{
+struct nas_msg_cx_release_request {
   nasLocalConnectionRef_t lcr; // Local Connection reference
 };
 
-struct nas_msg_rb_list_reply
-{
+struct nas_msg_rb_list_reply {
   nasRadioBearerId_t rab_id;
   nasSapId_t sapi;
   nasQoSTrafficClass_t qos;
   uint8_t state;
 };
-struct nas_msg_rb_list_request
-{
+struct nas_msg_rb_list_request {
   nasLocalConnectionRef_t lcr;   // Local Connection reference
 };
-struct nas_msg_rb_establishment_reply
-{
+struct nas_msg_rb_establishment_reply {
   int status;
 };
-struct nas_msg_rb_establishment_request
-{
+struct nas_msg_rb_establishment_request {
   nasLocalConnectionRef_t lcr;  // Local Connection reference
   nasRadioBearerId_t rab_id;
   nasQoSTrafficClass_t qos;
 };
 
-struct nas_msg_rb_release_reply
-{
+struct nas_msg_rb_release_reply {
   int status;
 };
-struct nas_msg_rb_release_request
-{
+struct nas_msg_rb_release_request {
   nasLocalConnectionRef_t lcr; // Local Connection reference
   nasRadioBearerId_t rab_id;
 };
 
-struct nas_msg_class_add_request
-{
+struct nas_msg_class_add_request {
   nasLocalConnectionRef_t lcr; // Local Connection reference
   nasRadioBearerId_t rab_id;
   uint8_t dir; // direction (send or receive)
@@ -166,14 +152,12 @@ struct nas_msg_class_add_request
   uint8_t fct;
   uint16_t classref;
   uint8_t version;
-  union
-  {
+  union {
     struct in6_addr ipv6;
     uint32_t ipv4;
   } saddr; // IP source address
   uint8_t splen; // prefix length
-  union
-  {
+  union {
     struct in6_addr ipv6;
     uint32_t ipv4;
   } daddr; // IP destination address
@@ -182,24 +166,20 @@ struct nas_msg_class_add_request
   uint16_t sport;   // source port
   uint16_t dport;   // destination port
 };
-struct nas_msg_class_add_reply
-{
+struct nas_msg_class_add_reply {
   int status;
 };
-struct nas_msg_class_del_request
-{
+struct nas_msg_class_del_request {
   nasLocalConnectionRef_t lcr; // Local Connection reference
   uint8_t dir; // direction (send or receive)
   uint8_t dscp; // codepoint
   uint16_t classref;
 };
-struct nas_msg_class_del_reply
-{
+struct nas_msg_class_del_reply {
   int status;
 };
 #define nas_msg_class_list_reply nas_msg_class_add_request
-struct nas_msg_class_list_request
-{
+struct nas_msg_class_list_request {
   nasLocalConnectionRef_t lcr;   // Local Connection reference
   uint8_t dir;
   uint8_t dscp;
@@ -210,20 +190,18 @@ struct nas_msg_class_list_request
 typedef uint32_t nioctlProviderId_t;
 typedef uint16_t nioctlSignalLoss_t;
 typedef struct nioctlMeasures {
-        nasCellID_t cell_id;
-        nasSigLevel_t level;
-        nioctlProviderId_t provider_id;
+  nasCellID_t cell_id;
+  nasSigLevel_t level;
+  nioctlProviderId_t provider_id;
 } nioctlMeasures_t;
 
-struct nas_msg_measure_request
-{
+struct nas_msg_measure_request {
   nasNumRGsMeas_t num_cells;
   nasCellID_t cellid[MAX_MEASURE_NB]; // Cell identification
   uint16_t num_providers;
   nioctlProviderId_t provider_id[MAX_MEASURE_NB]; // Provider identification
 };
-struct nas_msg_measure_reply
-{
+struct nas_msg_measure_reply {
   nasNumRGsMeas_t num_cells;
   nioctlMeasures_t measures[MAX_MEASURE_NB];
   nioctlSignalLoss_t signal_lost_flag;
@@ -232,8 +210,7 @@ struct nas_msg_measure_reply
 // Messages for L2Id transfer - MW
 typedef uint32_t nioctlL2Id_t[2];
 
-struct nas_msg_l2id_reply
-{
+struct nas_msg_l2id_reply {
   nioctlL2Id_t l2id;
 };
 

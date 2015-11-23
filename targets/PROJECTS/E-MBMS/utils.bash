@@ -178,7 +178,7 @@ set_openair() {
     declare -i index
     length_path=${#path}
 
-    for i in 'openair1' 'openair2' 'openair3' 'openair-cn' 'targets'
+    for i in 'openair1' 'openair2' 'openair3' 'openair3' 'targets'
     do
         index=`echo $path | grep -b -o $i | cut -d: -f1`
         #echo ${path%$token*}
@@ -189,11 +189,11 @@ set_openair() {
                openair_path=`echo $path | cut -c1-$index`
                #openair_path=`echo ${path:0:$index}`
                export OPENAIR_DIR=$openair_path
-               export OPENAIR_HOME=$openair_path
+               export OPENAIR_DIR=$openair_path
                export OPENAIR1_DIR=$openair_path/openair1
                export OPENAIR2_DIR=$openair_path/openair2
                export OPENAIR3_DIR=$openair_path/openair3
-               export OPENAIRCN_DIR=$openair_path/openair-cn
+               export OPENAIR3_DIR=$openair_path/openair3
                export OPENAIR_TARGETS=$openair_path/targets
                return 0
            fi
@@ -363,19 +363,19 @@ check_for_root_rights() {
 
 ###########################################################
 declare -x OPENAIR_DIR=""
-declare -x OPENAIR_HOME=""
+declare -x OPENAIR_DIR=""
 declare -x OPENAIR1_DIR=""
 declare -x OPENAIR2_DIR=""
 declare -x OPENAIR3_DIR=""
-declare -x OPENAIRCN_DIR=""
+declare -x OPENAIR3_DIR=""
 declare -x OPENAIR_TARGETS=""
 ###########################################################
 
 set_openair
 cecho "OPENAIR_DIR     = $OPENAIR_DIR" $green
-cecho "OPENAIR_HOME    = $OPENAIR_HOME" $green
+cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
-cecho "OPENAIRCN_DIR   = $OPENAIRCN_DIR" $green
+cecho "OPENAIR3_DIR   = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green

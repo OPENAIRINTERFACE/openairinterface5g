@@ -21,7 +21,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -167,7 +167,7 @@ cecho "OPENAIR_HOME    = $OPENAIR_HOME" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
-cecho "OPENAIRCN_DIR   = $OPENAIRCN_DIR" $green
+cecho "OPENAIR3_DIR   = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 
 
@@ -175,7 +175,7 @@ echo "OPENAIR_HOME    = $OPENAIR_HOME" >>  results/${oai_exp_date}
 echo "OPENAIR1_DIR    = $OPENAIR1_DIR"  >>  results/${oai_exp_date}
 echo "OPENAIR2_DIR    = $OPENAIR2_DIR"  >>  results/${oai_exp_date}
 echo "OPENAIR3_DIR    = $OPENAIR3_DIR"  >>  results/${oai_exp_date}
-echo "OPENAIRCN_DIR   = $OPENAIRCN_DIR"  >>  results/${oai_exp_date}
+echo "OPENAIR3_DIR   = $OPENAIR3_DIR"  >>  results/${oai_exp_date}
 echo "OPENAIR_TARGETS = $OPENAIR_TARGETS"  >>  results/${oai_exp_date}
 
 ################################

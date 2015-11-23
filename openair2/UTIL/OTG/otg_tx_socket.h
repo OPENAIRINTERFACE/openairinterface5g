@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -55,8 +55,8 @@
 * \brief this function allow to run the client, with the appropriate parameters.
 * \param[in] src, dst and the state
 * \param[out]  void
-* \return void 
-* \note 
+* \return void
+* \note
 * @ingroup  _otg
 */
 void socket_packet_send(int src, int dst, int state,int ctime);
@@ -65,8 +65,8 @@ void socket_packet_send(int src, int dst, int state,int ctime);
 * \brief this function allow to run the client, with IPv4 and TCP protocol.
 * \param[in] src, dst and the state
 * \param[out]  void
-* \return void 
-* \note 
+* \return void
+* \note
 * @ingroup  _otg
 */
 void client_socket_tcp_ip4(int src, int dst, int state,int ctime);
@@ -75,8 +75,8 @@ void client_socket_tcp_ip4(int src, int dst, int state,int ctime);
 * \brief this function allow to run the client, with IPv6 and TCP protocol.
 * \param[in] src, dst and the state
 * \param[out]  void
-* \return void 
-* \note 
+* \return void
+* \note
 * @ingroup  _otg
 */
 void client_socket_tcp_ip6(int src, int dst, int state,int ctime);
@@ -85,8 +85,8 @@ void client_socket_tcp_ip6(int src, int dst, int state,int ctime);
 * \brief this function allow to run the client, with IPv4 and UDP protocol.
 * \param[in] src, dst and the state
 * \param[out]  void
-* \return void 
-* \note 
+* \return void
+* \note
 * @ingroup  _otg
 */
 void client_socket_udp_ip4(int src, int dst, int state,int ctime);
@@ -95,8 +95,8 @@ void client_socket_udp_ip4(int src, int dst, int state,int ctime);
 * \brief this function allow to run the client, with IPv6 and UDP protocol.
 * \param[in] src, dst and the state
 * \param[out]  void
-* \return void 
-* \note 
+* \return void
+* \note
 * @ingroup  _otg
 */
 void client_socket_udp_ip6(int src, int dst, int state,int ctime);
@@ -105,9 +105,9 @@ void client_socket_udp_ip6(int src, int dst, int state,int ctime);
 
 /*! \fn int packet_gen(int src, int dst, int state, int ctime)
 * \brief return char *  pointer over the payload, else NULL
-* \param[in] source, 
+* \param[in] source,
 * \param[out] packet_t: the generated packet: otg_header + header + payload
-* \note 
+* \note
 * @ingroup  _otg
 */
 char* packet_gen_socket(int src, int dst, int state, int ctime);

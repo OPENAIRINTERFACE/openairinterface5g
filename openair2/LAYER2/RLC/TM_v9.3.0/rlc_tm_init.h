@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -65,9 +65,9 @@
 #            endif
 #        endif
 
-typedef volatile struct rlc_tm_info_s{
-    uint8_t             is_uplink_downlink;
- } rlc_tm_info_t;
+typedef volatile struct rlc_tm_info_s {
+  uint8_t             is_uplink_downlink;
+} rlc_tm_info_t;
 
 
 /*! \fn void config_req_rlc_tm (void config_req_rlc_tm (
@@ -83,33 +83,33 @@ typedef volatile struct rlc_tm_info_s{
 * \param[in]  srb_flagP                 Flag to indicate signalling radio bearer (1) or data radio bearer (0).
 */
 public_rlc_tm_init(   void config_req_rlc_tm (
-                const protocol_ctxt_t* const  ctxt_pP,
-                const srb_flag_t  srb_flagP,
-                const rlc_tm_info_t * const config_tmP,
-                const rb_id_t     rb_idP);)
+                        const protocol_ctxt_t* const  ctxt_pP,
+                        const srb_flag_t  srb_flagP,
+                        const rlc_tm_info_t * const config_tmP,
+                        const rb_id_t     rb_idP);)
 
 /*! \fn void rlc_tm_init (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Initialize a RLC TM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC TM protocol instance will be in RLC_NULL_STATE state.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
 protected_rlc_tm_init(void rlc_tm_init (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP);)
+                        const protocol_ctxt_t* const  ctxt_pP,
+                        rlc_tm_entity_t * const rlcP);)
 
 /*! \fn void rlc_tm_reset_state_variables (const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP)
 * \brief    Reset protocol variables and state variables to initial values.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
 protected_rlc_tm_init(void rlc_tm_reset_state_variables (
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP);)
+                        const protocol_ctxt_t* const  ctxt_pP,
+                        rlc_tm_entity_t * const rlcP);)
 
 /*! \fn void rlc_tm_cleanup(rlc_tm_entity_t * const rlcP)
 * \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC TM instance.
 * \param[in]  rlcP                      RLC TM protocol instance pointer.
 */
 public_rlc_tm_init(   void rlc_tm_cleanup(
-                rlc_tm_entity_t * const rlcP);)
+                        rlc_tm_entity_t * const rlcP);)
 
 /*! \fn void rlc_tm_configure(const protocol_ctxt_t* const  ctxt_pP,rlc_tm_entity_t * const rlcP, const boolean_t is_uplink_downlinkP)
 * \brief    Configure RLC TM protocol parameters.
@@ -118,9 +118,9 @@ public_rlc_tm_init(   void rlc_tm_cleanup(
 RECEIVER_ONLY, or TRANSMITTER_AND_RECEIVER.
 */
 protected_rlc_tm_init(void rlc_tm_configure(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const rlcP,
-                const boolean_t is_uplink_downlinkP);)
+                        const protocol_ctxt_t* const  ctxt_pP,
+                        rlc_tm_entity_t * const rlcP,
+                        const boolean_t is_uplink_downlinkP);)
 
 /*! \fn void rlc_tm_set_debug_infos(const protocol_ctxt_t* const  ctxt_pP, rlc_tm_entity_t * const rlcP, const rb_id_t rb_idP, const srb_flag_t srb_flagP)
 * \brief    Set debug informations for a RLC TM protocol instance, these informations are only for trace purpose.
@@ -129,9 +129,9 @@ protected_rlc_tm_init(void rlc_tm_configure(
 * \param[in]  rb_idP                    Radio bearer identifier.
 */
 protected_rlc_tm_init(void rlc_tm_set_debug_infos(
-                const protocol_ctxt_t* const  ctxt_pP,
-                rlc_tm_entity_t * const       rlcP,
-                const srb_flag_t              srb_flagP,
-                const rb_id_t                 rb_idP);)
+                        const protocol_ctxt_t* const  ctxt_pP,
+                        rlc_tm_entity_t * const       rlcP,
+                        const srb_flag_t              srb_flagP,
+                        const rb_id_t                 rb_idP);)
 /** @} */
 #    endif

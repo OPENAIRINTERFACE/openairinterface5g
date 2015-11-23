@@ -41,6 +41,8 @@ RRMMessageHandler::RRMMessageHandler()
 
   if (pthread_create(&m_thread, NULL, RRMMessageHandlerThreadLoop, (void *) NULL) != 0) {
   	fprintf(stderr, "\nRRMMessageHandler::RRMMessageHandler() ERROR pthread_create...\n");
+  } else {
+      pthread_setname_np( m_thread, "RRMMsgHandler" );
   }
 }
 //----------------------------------------------------------------------------

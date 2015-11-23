@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -36,22 +36,23 @@
 #        include "platform.h"
 using namespace std;
 
-class Transactions  {
-    public:
+class Transactions
+{
+public:
 
-        static Transactions *Instance ();
-        ~Transactions ();
+  static Transactions *Instance ();
+  ~Transactions ();
 
-        bool    IsTransactionRegistered(transaction_id_t idP);
-        void    AddTransaction(Transaction* txP);
-        void    RemoveTransaction(transaction_id_t idP);
-        Transaction* const GetTransaction(transaction_id_t idP);
+  bool    IsTransactionRegistered(transaction_id_t idP);
+  void    AddTransaction(Transaction* txP);
+  void    RemoveTransaction(transaction_id_t idP);
+  Transaction* const GetTransaction(transaction_id_t idP);
 
-    private:
-        Transactions ();
+private:
+  Transactions ();
 
-        static Transactions                *s_instance;
-        map<transaction_id_t,Transaction*>  m_transaction_map;
+  static Transactions                *s_instance;
+  map<transaction_id_t,Transaction*>  m_transaction_map;
 };
 #    endif
 

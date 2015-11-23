@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,40 +14,38 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 #include "defs.h"
 
-#ifndef EXPRESSMIMO_TARGET
 
-int add_vector16(short *x, 
-		 short *y, 
-		 short *z, 
-		 unsigned int N)
+int add_vector16(short *x,
+                 short *y,
+                 short *z,
+                 unsigned int N)
 {
   unsigned int i;                 // loop counter
 
-  __m128i *x_128; 
-  __m128i *y_128; 
-  __m128i *z_128; 
+  __m128i *x_128;
+  __m128i *y_128;
+  __m128i *z_128;
 
   x_128 = (__m128i *)&x[0];
   y_128 = (__m128i *)&y[0];
   z_128 = (__m128i *)&z[0];
 
 
-  for(i=0;i<(N>>5);i++)
-  {
+  for(i=0; i<(N>>5); i++) {
     /*
     printf("i = %d\n",i);
     print_shorts(x_128[0],"x[0]=");
@@ -108,25 +106,24 @@ print_shorts64(__m64 x,char *s) {
 }
 */
 
-int add_vector16_64(short *x, 
-		    short *y, 
-		    short *z, 
-		    unsigned int N)
+int add_vector16_64(short *x,
+                    short *y,
+                    short *z,
+                    unsigned int N)
 {
   unsigned int i;                 // loop counter
 
-  __m64 *x_64; 
-  __m64 *y_64; 
-  __m64 *z_64; 
+  __m64 *x_64;
+  __m64 *y_64;
+  __m64 *z_64;
 
   x_64 = (__m64 *)&x[0];
   y_64 = (__m64 *)&y[0];
   z_64 = (__m64 *)&z[0];
 
 
-  for(i=0;i<(N>>2);i++)
-  {
-    /*    
+  for(i=0; i<(N>>2); i++) {
+    /*
     printf("i = %d\n",i);
     print_shorts64(x_64[i],"x[i]=");
     print_shorts64(y_64[i],"y[i]=");
@@ -136,7 +133,7 @@ int add_vector16_64(short *x,
     /*
     print_shorts64(z_64[i],"z[i]=");
     */
-    
+
 
   }
 
@@ -145,24 +142,23 @@ int add_vector16_64(short *x,
   return(0);
 }
 
-int add_cpx_vector32(short *x, 
-		      short *y, 
-		      short *z, 
-		      unsigned int N)
+int add_cpx_vector32(short *x,
+                     short *y,
+                     short *z,
+                     unsigned int N)
 {
   unsigned int i;                 // loop counter
 
-  __m128i *x_128; 
-  __m128i *y_128; 
-  __m128i *z_128; 
+  __m128i *x_128;
+  __m128i *y_128;
+  __m128i *z_128;
 
   x_128 = (__m128i *)&x[0];
   y_128 = (__m128i *)&y[0];
   z_128 = (__m128i *)&z[0];
 
 
-  for(i=0;i<(N>>3);i++)
-  {
+  for(i=0; i<(N>>3); i++) {
     z_128[0] = _mm_add_epi32(x_128[0],y_128[0]);
     z_128[1] = _mm_add_epi32(x_128[1],y_128[1]);
     z_128[2] = _mm_add_epi32(x_128[2],y_128[2]);
@@ -174,28 +170,28 @@ int add_cpx_vector32(short *x,
     z_128 +=4;
 
   }
+
   _mm_empty();
   _m_empty();
   return(0);
 }
 
-int add_real_vector64(short *x, 
-		      short* y, 
-		      short *z, 
-		      unsigned int N)
+int add_real_vector64(short *x,
+                      short* y,
+                      short *z,
+                      unsigned int N)
 {
   unsigned int i;                 // loop counter
 
-  __m128i *x_128; 
-  __m128i *y_128; 
-  __m128i *z_128; 
+  __m128i *x_128;
+  __m128i *y_128;
+  __m128i *z_128;
 
   x_128 = (__m128i *)&x[0];
   y_128 = (__m128i *)&y[0];
   z_128 = (__m128i *)&z[0];
 
-  for(i=0;i<(N>>3);i++)
-  {
+  for(i=0; i<(N>>3); i++) {
     z_128[0] = _mm_add_epi64(x_128[0], y_128[0]);
     z_128[1] = _mm_add_epi64(x_128[1], y_128[1]);
     z_128[2] = _mm_add_epi64(x_128[2], y_128[2]);
@@ -213,23 +209,22 @@ int add_real_vector64(short *x,
   return(0);
 }
 
-int sub_real_vector64(short *x, 
-		      short* y, 
-		      short *z, 
-		      unsigned int N)
+int sub_real_vector64(short *x,
+                      short* y,
+                      short *z,
+                      unsigned int N)
 {
   unsigned int i;                 // loop counter
 
-  __m128i *x_128; 
-  __m128i *y_128; 
-  __m128i *z_128; 
+  __m128i *x_128;
+  __m128i *y_128;
+  __m128i *z_128;
 
   x_128 = (__m128i *)&x[0];
   y_128 = (__m128i *)&y[0];
   z_128 = (__m128i *)&z[0];
 
-  for(i=0;i<(N>>3);i++)
-  {
+  for(i=0; i<(N>>3); i++) {
     z_128[0] = _mm_sub_epi64(x_128[0], y_128[0]);
     z_128[1] = _mm_sub_epi64(x_128[1], y_128[1]);
     z_128[2] = _mm_sub_epi64(x_128[2], y_128[2]);
@@ -241,6 +236,7 @@ int sub_real_vector64(short *x,
     z_128+=4;
 
   }
+
   _mm_empty();
   _m_empty();
   return(0);
@@ -250,7 +246,8 @@ int sub_real_vector64(short *x,
 #ifdef MAIN
 #include <stdio.h>
 
-main () {
+main ()
+{
 
   short input[256] __attribute__((aligned(16)));
   short output[256] __attribute__((aligned(16)));
@@ -259,7 +256,7 @@ main () {
   struct complex16 alpha;
 
   Zero_Buffer(output,256*2);
- 
+
   input[0] = 100;
   input[1] = 200;
   input[2] = 100;
@@ -279,26 +276,12 @@ main () {
 
   alpha.r = 10;
   alpha.i = -10;
- 
+
   add_cpx_vector(input,(short*) &alpha,input,8);
 
-  for (i=0;i<16;i+=2)
+  for (i=0; i<16; i+=2)
     printf("output[%d] = %d + %d i\n",i,input[i],input[i+1]);
 
 }
 
 #endif //MAIN
-
-#else //EXPRESSMIMO_TARGET
-
-/*
-int add_vector16(short *x, 
-		 short *y, 
-		 short *z, 
-		 unsigned int N)
-{
-
-}
-*/
-
-#endif // EXPRESSMIMO_TARGET

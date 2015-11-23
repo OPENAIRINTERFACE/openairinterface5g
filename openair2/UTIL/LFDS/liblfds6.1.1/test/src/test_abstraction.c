@@ -26,15 +26,15 @@ void test_lfds611_abstraction( void )
 void abstraction_test_increment( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   LFDS611_ALIGN(LFDS611_ALIGN_SINGLE_POINTER) volatile lfds611_atom_t
-    shared_counter,
-    atomic_shared_counter;
+  shared_counter,
+  atomic_shared_counter;
 
   /* TRD : here we test lfds611_abstraction_increment
 
@@ -137,20 +137,20 @@ thread_return_t CALLING_CONVENTION abstraction_test_internal_thread_atomic_incre
 void abstraction_test_cas( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct abstraction_test_cas_state
-    *atcs;
+      *atcs;
 
   LFDS611_ALIGN(LFDS611_ALIGN_SINGLE_POINTER) volatile lfds611_atom_t
-    shared_counter;
+  shared_counter;
 
   lfds611_atom_t
-    local_total = 0;
+  local_total = 0;
 
   // TRD : number_logical_processors can be any value in its range
 
@@ -175,8 +175,7 @@ void abstraction_test_cas( void )
 
   atcs = malloc( sizeof(struct abstraction_test_cas_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (atcs+loop)->shared_counter = &shared_counter;
     (atcs+loop)->local_counter = 0;
   }
@@ -215,7 +214,7 @@ void abstraction_test_cas( void )
 thread_return_t CALLING_CONVENTION abstraction_test_internal_thread_cas( void *abstraction_test_cas_state )
 {
   struct abstraction_test_cas_state
-    *atcs;
+      *atcs;
 
   assert( abstraction_test_cas_state != NULL );
 
@@ -236,20 +235,20 @@ thread_return_t CALLING_CONVENTION abstraction_test_internal_thread_cas( void *a
 void abstraction_test_dcas( void )
 {
   unsigned int
-    loop,
-    cpu_count;
+  loop,
+  cpu_count;
 
   thread_state_t
-    *thread_handles;
+  *thread_handles;
 
   struct abstraction_test_dcas_state
-    *atds;
+      *atds;
 
   LFDS611_ALIGN(LFDS611_ALIGN_DOUBLE_POINTER) volatile lfds611_atom_t
-    shared_counter[2] = { 0, 0 };
+  shared_counter[2] = { 0, 0 };
 
   lfds611_atom_t
-    local_total = 0;
+  local_total = 0;
 
   /* TRD : here we test lfds611_abstraction_dcas
 
@@ -268,8 +267,7 @@ void abstraction_test_dcas( void )
 
   atds = malloc( sizeof(struct abstraction_test_dcas_state) * cpu_count );
 
-  for( loop = 0 ; loop < cpu_count ; loop++ )
-  {
+  for( loop = 0 ; loop < cpu_count ; loop++ ) {
     (atds+loop)->shared_counter = shared_counter;
     (atds+loop)->local_counter = 0;
   }
@@ -310,7 +308,7 @@ void abstraction_test_dcas( void )
 thread_return_t CALLING_CONVENTION abstraction_test_internal_thread_dcas( void *abstraction_test_dcas_state )
 {
   struct abstraction_test_dcas_state
-    *atds;
+      *atds;
 
   assert( abstraction_test_dcas_state != NULL );
 

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -61,7 +61,7 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
 void util_flush_hex_octets(comp_name_t component, unsigned char* data, unsigned long size);
 
 /*
- * Prints binary representation of given octet prepending 
+ * Prints binary representation of given octet prepending
  * passed log message
  *
  * @param Octet as an unsigned character

@@ -1,17 +1,17 @@
 /**
- **	\file XmlDocument.h
- **	\date  2008-02-09
- **	\author grymse@alhem.net
+ ** \file XmlDocument.h
+ ** \date  2008-02-09
+ ** \author grymse@alhem.net
 **/
 /*
 Copyright (C) 2008-2010  Anders Hedstrom
 
 This library is made available under the terms of the GNU GPL, with
-the additional exemption that compiling, linking, and/or using OpenSSL 
+the additional exemption that compiling, linking, and/or using OpenSSL
 is allowed.
 
 If you would like to use this library in a closed-source application,
-a separate license agreement is available. For information about 
+a separate license agreement is available. For information about
 the closed-source license agreement for the C++ sockets library,
 please visit http://www.alhem.net/Sockets/license.html and/or
 email license@alhem.net.
@@ -42,30 +42,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <libxml/parser.h>
 
 #ifdef SOCKETS_NAMESPACE
-namespace SOCKETS_NAMESPACE {
+namespace SOCKETS_NAMESPACE
+{
 #endif
-namespace Xml {
+namespace Xml
+{
 
 
 class XmlDocument
 {
 public:
-	XmlDocument(const std::string& filename,const std::string& verify_ns = "",const std::string& verify_root = "");
-	virtual ~XmlDocument();
+  XmlDocument(const std::string& filename,const std::string& verify_ns = "",const std::string& verify_root = "");
+  virtual ~XmlDocument();
 
-	/** Document parse successful. */
-	bool IsOk() { return m_ok; }
+  /** Document parse successful. */
+  bool IsOk() {
+    return m_ok;
+  }
 
-	operator xmlDocPtr();
+  operator xmlDocPtr();
 
 protected:
-	XmlDocument(const XmlDocument& ) {} // copy constructor
+  XmlDocument(const XmlDocument& ) {} // copy constructor
 
 private:
-	XmlDocument& operator=(const XmlDocument& ) { return *this; } // assignment operator
+  XmlDocument& operator=(const XmlDocument& ) {
+    return *this;  // assignment operator
+  }
 
-	xmlDocPtr m_doc;
-	bool m_ok;
+  xmlDocPtr m_doc;
+  bool m_ok;
 };
 
 

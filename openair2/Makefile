@@ -21,7 +21,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -37,7 +37,7 @@
 
 #LM_LICENSE_FILE=
 #export LM_LICENSE_FILE
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 
 KERNEL_NAME:=$(shell uname -r)
 NUM_CORES=$(shell getconf _NPROCESSORS_CONF)
@@ -120,7 +120,7 @@ install_emul:
 	(insmod SIMULATION/PHY_EMULATION/DEVICE_DRIVER/openair_emul.ko)
 	(insmod LAYER2/openair_layer2.ko)
 	(insmod RRC/MESH/openair_rrc.ko)
-	(insmod NAS/DRIVER/MESH/nasmesh.ko)
+	(insmod NETWORK_DRIVER/MESH/nasmesh.ko)
 
 remove_emul:
 	rmmod  nasmesh
@@ -133,50 +133,50 @@ remove_emul:
 
 
 clean_nasmesh:
-	(cd NAS/DRIVER/MESH && $(MAKE) V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
 
 nasmesh_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 ADDRESS_FIX=1 -C $(KERNEL_DIR)/build M=`pwd`)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 ADDRESS_FIX=1 -C $(KERNEL_DIR)/build M=`pwd`)
 
 nasmesh.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 -C $(KERNEL_DIR)/build M=`pwd`)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) V=1 -C $(KERNEL_DIR)/build M=`pwd`)
 
 # automatically detect the linux header files for driver compilation
 nasmesh_netlink.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 naslite_netlink_ether.ko:
-	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 oai_nw_ether.ko:
-	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 oai_nw_drv.ko:
-	(cd NAS/DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/LITE && $(MAKE) -j$(NUM_CORES) $(SET_UM) OAI_NW_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 nasmesh_netlink_address_fix.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 ADDRESS_FIX=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) -j$(NUM_CORES) $(SET_UM) PDCP_USE_NETLINK=1 ADDRESS_FIX=1  V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 
 nasmesh_netlink_loopback.ko:
-	(cd NAS/DRIVER/MESH && $(MAKE) $(SET_UM) NAS_NETLINK=1 LOOPBACK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/MESH && $(MAKE) $(SET_UM) PDCP_USE_NETLINK=1 LOOPBACK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 # drivers cellular version
 nascellmt_netlink.ko:
-	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 nascellmt_clean.ko:
-	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
+	(cd NAS/DRIVER/CELLULAR/NASMT && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
 
 nascellrg_netlink.ko:
-	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 nascellrg_clean.ko:
-	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 NAS_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
+	(cd NAS/DRIVER/CELLULAR/NASRG && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_DRIVER_TYPE_ETHERNET=1 PDCP_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` clean)
 
 # Driver for UE using LTE core network (MME, S+P-GW)
 ue_ip.ko:
-	(cd NETWORK_DRIVER/UE_IP && $(MAKE) -j$(NUM_CORES) $(SET_UM) NAS_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
+	(cd NETWORK_DRIVER/UE_IP && $(MAKE) -j$(NUM_CORES) $(SET_UM) PDCP_USE_NETLINK=1 OAI_NW_DRIVER_USE_NETLINK=1 V=1 -C $(KERNEL_DIR)/build M=`pwd` modules)
 
 
 rt_emul:
@@ -186,7 +186,7 @@ bypass_phy:
 	(cd SIMULATION/PHY_EMULATION/TRANSPORT/KERNEL_INTERFACE && $(MAKE))
 
 rb_tool:
-	(cd NAS/DRIVER/MESH/RB_TOOL && $(MAKE))
+	(cd NETWORK_DRIVER/MESH/RB_TOOL && $(MAKE))
 
 
 fifos:
@@ -229,18 +229,18 @@ emul_rt:
 	(cd SIMULATION/USER_TOOLS/RT_EMUL_LAUNCHER && $(MAKE))
 
 clean:
-	(cd NAS/DRIVER/MESH && $(MAKE) clean)
-	(cd NAS/DRIVER/LITE && $(MAKE) clean)
-	rm -rf NAS/DRIVER/MESH/RB_TOOL/rb_tool
-	rm -rf NAS/DRIVER/LITE/RB_TOOL/rb_tool
+	(cd NETWORK_DRIVER/MESH && $(MAKE) clean)
+	(cd NETWORK_DRIVER/LITE && $(MAKE) clean)
+	rm -rf NETWORK_DRIVER/MESH/RB_TOOL/rb_tool
+	rm -rf NETWORK_DRIVER/LITE/RB_TOOL/rb_tool
 
 cleanall:
 	find -name *.o -delete -print
 	find -name *.ko -delete -print
 	find -name *~ -delete -print
 	find -name *.bak -delete -print
-	rm -rf NAS/DRIVER/MESH/RB_TOOL/rb_tool
-	rm -rf NAS/DRIVER/LITE/RB_TOOL/rb_tool
+	rm -rf NETWORK_DRIVER/MESH/RB_TOOL/rb_tool
+	rm -rf NETWORK_DRIVER/LITE/RB_TOOL/rb_tool
 
 
 cleansvn:

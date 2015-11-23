@@ -20,7 +20,8 @@
 
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
   //initialize the log generator
   logInit();

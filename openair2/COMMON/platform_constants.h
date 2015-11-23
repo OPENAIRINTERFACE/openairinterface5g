@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -46,9 +46,9 @@
 #    define __PLATFORM_CONSTANTS_H__
 
 #ifdef JUMBO_FRAME
-       #define NL_MAX_PAYLOAD 18000  /* this should cover the max mtu size*/
+#define NL_MAX_PAYLOAD 18000  /* this should cover the max mtu size*/
 #else
-       #define NL_MAX_PAYLOAD 9000  /* this should cover the max mtu size*/
+#define NL_MAX_PAYLOAD 9000  /* this should cover the max mtu size*/
 #endif
 
 #ifdef USER_MODE

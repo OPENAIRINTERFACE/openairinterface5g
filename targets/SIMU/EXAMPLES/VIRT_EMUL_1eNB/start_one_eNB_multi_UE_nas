@@ -46,8 +46,8 @@ if [ $1 -ge 4 ]; then
 fi
 
 echo "start the emulation with 1eNB and" $1 "UE"
-echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u" $1 ">/dev/null"
-$OPENAIR_TARGETS/SIMU/USER/oaisim -a -u $1  > /dev/null 
+echo "$OPENAIR_TARGETS/SIMU/USER/oaisim -a -V -u" $1 ">/dev/null"
+$OPENAIR_TARGETS/SIMU/USER/oaisim -a -V -u $1  > /dev/null 
 
 
 echo "End"

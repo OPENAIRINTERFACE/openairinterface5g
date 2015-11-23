@@ -56,19 +56,22 @@ static DEFINE_MUTEX(nasmt_mutex);
 // This can also be implemented using thread to get the data from PDCP without blocking.
 //---------------------------------------------------------------------------
 // Function for transfer with PDCP (from NASLITE)
-static void nasmt_nl_data_ready (struct sk_buff *skb){
-//---------------------------------------------------------------------------
+static void nasmt_nl_data_ready (struct sk_buff *skb)
+{
+  //---------------------------------------------------------------------------
   struct nlmsghdr *nlh = NULL;
 
-// Start debug information
+  // Start debug information
 #ifdef NETLINK_DEBUG
   printk("nasmt_nl_data_ready - begin \n");
 #endif
-  if (!skb){
-     printk("nasmt_nl_data_ready - input parameter skb is NULL \n");
+
+  if (!skb) {
+    printk("nasmt_nl_data_ready - input parameter skb is NULL \n");
     return;
   }
-// End debug information
+
+  // End debug information
 
 #ifdef NETLINK_DEBUG
   printk("nasmt_nl_data_ready - Received socket from PDCP\n");
@@ -79,21 +82,24 @@ static void nasmt_nl_data_ready (struct sk_buff *skb){
 
 //---------------------------------------------------------------------------
 //  Function for transfer with RRC
-static void nasmt_rrcnl_data_ready (struct sk_buff *skb){
-//---------------------------------------------------------------------------
+static void nasmt_rrcnl_data_ready (struct sk_buff *skb)
+{
+  //---------------------------------------------------------------------------
   struct nlmsghdr *nlh = NULL;
   char target_sap;
   uint8_t cxi = 0;
 
-// Start debug information
+  // Start debug information
 #ifdef NAS_DEBUG_RRCNL
   printk("nasmt_rrcnl_data_ready - begin \n");
 #endif
-  if (!skb){
-     printk("nasmt_rrcnl_data_ready - input parameter skb is NULL \n");
+
+  if (!skb) {
+    printk("nasmt_rrcnl_data_ready - input parameter skb is NULL \n");
     return;
   }
-// End debug information
+
+  // End debug information
 
   nlh = (struct nlmsghdr *)skb->data;
   //pdcph = (struct pdcp_data_ind_header_t *)NLMSG_DATA(nlh);
@@ -104,37 +110,42 @@ static void nasmt_rrcnl_data_ready (struct sk_buff *skb){
   printk("nasmt_rrcnl_data_ready - Received on socket from RRC, SAP %d\n", target_sap);
 #endif //NAS_DEBUG_RRCNL
 
-  switch (target_sap){
-    case RRC_NAS_GC_OUT:
-      //printk("nasmt_rrcnl_data_ready - Calling  nasmt_ASCTL_GC_receive\n");
-      nasmt_ASCTL_GC_receive(&((char*)NLMSG_DATA(nlh))[1]);
-      break;
-    case RRC_NAS_DC0_OUT:
-      //printk("nasmt_rrcnl_data_ready - Calling  nasmt_ASCTL_DC_receive\n");
-      nasmt_ASCTL_DC_receive(gpriv->cx+cxi, &((char*)NLMSG_DATA(nlh))[1]);
-      break;
-    default:
-      printk("nasmt_rrcnl_data_ready - Invalid SAP value received\n");
+  switch (target_sap) {
+  case RRC_NAS_GC_OUT:
+    //printk("nasmt_rrcnl_data_ready - Calling  nasmt_ASCTL_GC_receive\n");
+    nasmt_ASCTL_GC_receive(&((char*)NLMSG_DATA(nlh))[1]);
+    break;
+
+  case RRC_NAS_DC0_OUT:
+    //printk("nasmt_rrcnl_data_ready - Calling  nasmt_ASCTL_DC_receive\n");
+    nasmt_ASCTL_DC_receive(gpriv->cx+cxi, &((char*)NLMSG_DATA(nlh))[1]);
+    break;
+
+  default:
+    printk("nasmt_rrcnl_data_ready - Invalid SAP value received\n");
   }
 
 }
 
 //---------------------------------------------------------------------------
-int nasmt_netlink_init(void){
-//---------------------------------------------------------------------------
+int nasmt_netlink_init(void)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_netlink_init - begin \n");
 
-  nas_nl_sk = netlink_kernel_create(&init_net,NAS_NETLINK_ID, 0, nasmt_nl_data_ready,
+  nas_nl_sk = netlink_kernel_create(&init_net,OAI_IP_DRIVER_NETLINK_ID, 0, nasmt_nl_data_ready,
                                     &nasmt_mutex, // NULL
                                     THIS_MODULE);
+
   if (!nas_nl_sk) {
     printk("nasmt_netlink_init - netlink_kernel_create failed for PDCP socket\n");
     return(-1);
   }
 
   nas_rrcnl_sk = netlink_kernel_create(&init_net,NAS_RRCNL_ID, 0, nasmt_rrcnl_data_ready,
-                                    &nasmt_mutex, // NULL
-                                    THIS_MODULE);
+                                       &nasmt_mutex, // NULL
+                                       THIS_MODULE);
+
   if (!nas_rrcnl_sk) {
     printk("nasmt_rrcnl_init - netlink_kernel_create failed for RRC socket\n");
     return(-1);
@@ -144,43 +155,50 @@ int nasmt_netlink_init(void){
 }
 
 //---------------------------------------------------------------------------
-void nasmt_netlink_release(void) {
-//---------------------------------------------------------------------------
+void nasmt_netlink_release(void)
+{
+  //---------------------------------------------------------------------------
   printk("nasmt_netlink_release - begin \n");
 
   //exit_netlink_thread=1;
   printk("nasmt_netlink_release - Releasing netlink sockets\n");
 
-  if(nas_nl_sk){
+  if(nas_nl_sk) {
     netlink_kernel_release(nas_nl_sk);
   }
-  if(nas_rrcnl_sk){
+
+  if(nas_rrcnl_sk) {
     netlink_kernel_release(nas_rrcnl_sk);
   }
 
 }
 
 //---------------------------------------------------------------------------
-int nasmt_netlink_send(unsigned char *data_buffer, unsigned int data_length, int destination) {
-//---------------------------------------------------------------------------
+int nasmt_netlink_send(unsigned char *data_buffer, unsigned int data_length, int destination)
+{
+  //---------------------------------------------------------------------------
   struct sk_buff *nl_skb;
   struct nlmsghdr *nlh;
   int status;
-// Start debug information
+  // Start debug information
 #ifdef NETLINK_DEBUG
   printk("nasmt_netlink_send - begin \n");
 #endif
-  if (!data_buffer){
-     printk("nasmt_netlink_send - ERROR - input parameter data is NULL \n");
+
+  if (!data_buffer) {
+    printk("nasmt_netlink_send - ERROR - input parameter data is NULL \n");
     return(0);
   }
+
   if (!nas_nl_sk || !nas_rrcnl_sk) {
     printk("nasmt_netlink_send - ERROR - socket is NULL\n");
     return(0);
   }
-// End debug information
+
+  // End debug information
 
   nl_skb = alloc_skb(NLMSG_SPACE(data_length),GFP_ATOMIC);
+
   if (!nl_skb) {
     printk("nasmt_netlink_send - ERROR - could not allocate skbuffer\n");
     return(0);
@@ -197,15 +215,15 @@ int nasmt_netlink_send(unsigned char *data_buffer, unsigned int data_length, int
   NETLINK_CB(nl_skb).pid = 0;
 
   // destination 0 = PDCP, 1 = RRC
-  if (!destination){
-    #ifdef NETLINK_DEBUG
+  if (!destination) {
+#ifdef NETLINK_DEBUG
     printk("nasmt_netlink_send - nl_skb %p, nl_sk %p, nlh %p, nlh->nlmsg_len %d\n", nl_skb, nas_nl_sk, nlh, nlh->nlmsg_len);
-    #endif //DEBUG_NETLINK
+#endif //DEBUG_NETLINK
     status = netlink_unicast(nas_nl_sk, nl_skb, NL_DEST_PID, MSG_DONTWAIT);
-  }else{
-    #ifdef NAS_DEBUG_RRCNL
+  } else {
+#ifdef NAS_DEBUG_RRCNL
     printk("nasmt_rrcnl_send - nl_skb %p, nas_rrcnl_sk %p, nlh %p, nlh->nlmsg_len %d\n", nl_skb, nas_rrcnl_sk, nlh, nlh->nlmsg_len);
-    #endif //NAS_DEBUG_RRCNL
+#endif //NAS_DEBUG_RRCNL
     status = netlink_unicast(nas_rrcnl_sk, nl_skb, NL_DEST_RRC_PID, MSG_DONTWAIT);
   }
 

@@ -1,9 +1,0 @@
-#!/bin/sh
-
-if [ -d /usr/doc -a ! -e /usr/doc/radiusclient-ng -a -d /usr/share/doc/radiusclient-ng ]; then
-    ln -sf ../share/doc/radiusclient-ng /usr/doc/radiusclient-ng
-fi
-
-chmod 600 /etc/radiusclient-ng/servers
-
-#DEBHELPER#

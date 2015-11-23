@@ -1,4 +1,4 @@
-include $(OPENAIR_HOME)/common/utils/Makefile.inc
+include $(OPENAIR_DIR)/common/utils/Makefile.inc
 
 NUM_CORES=$(shell cat /proc/cpuinfo | grep processor | wc -l)
 
@@ -85,7 +85,7 @@ endif
 endif
 
 ifeq ($(NAS), 1)
-CFLAGS += -DNAS_NETLINK -DLINUX
+CFLAGS += -DPDCP_USE_NETLINK -DLINUX
 NAS_FLAG=1
 endif
 

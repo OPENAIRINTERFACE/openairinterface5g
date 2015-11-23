@@ -1,0 +1,74 @@
+################################################################################
+#   OpenAirInterface
+#   Copyright(c) 1999 - 2014 Eurecom
+#
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with OpenAirInterface.The full GNU General Public License is
+#    included in this distribution in the file called "COPYING". If not,
+#    see <http://www.gnu.org/licenses/>.
+#
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+#
+#  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
+#
+################################################################################
+OUTDIR = .
+
+libgtpv1u_OBJECTS = \
+	nw-gtpv1u/src/NwGtpv1uTunnelEndPoint.o	\
+	nw-gtpv1u/src/NwGtpv1uTrxn.o 	\
+	nw-gtpv1u/src/NwGtpv1uMsg.o 	\
+	nw-gtpv1u/src/NwGtpv1u.o 	\
+	gtpv1u_eNB.o	\
+	gtpv1u_teid_pool.o
+
+# pull in dependency info for *existing* .o files
+-include $(OUTDIR)/*.d
+
+CFLAGS = \
+	-Wall			\
+	$(GTPV1U_CFLAGS)		\
+	-DENB_MODE		\
+	-Werror=uninitialized	\
+	-Werror=implicit-function-declaration
+
+$(OUTDIR)/%.o : %.c
+	@echo "Compiling $<"
+	@if [ ! -d $(dir $@) ]; then mkdir -p $(dir $@); fi;
+	@$(CC) -c $(CFLAGS) -o $@ $<
+	@$(CC) -MM $(CFLAGS) $< > $(basename $@).d
+	@mv -f $(basename $@).d $(basename $@).d.tmp
+	@sed -e 's|.*:|$@:|' < $(basename $@).d.tmp > $(basename $@).d
+	@sed -e 's/.*://' -e 's/\\$$//' < $(basename $@).d.tmp | fmt -1 | \
+	sed -e 's/^ *//' -e 's/$$/:/' >> $(basename $@).d
+	@rm -f $(basename $@).d.tmp
+
+objsdir:
+	@if [ ! -d $(OUTDIR) ]; then mkdir -p $(OUTDIR); fi;
+
+$(OUTDIR)/libgtpv1u.a: $(addprefix $(OUTDIR)/,$(libgtpv1u_OBJECTS))
+	@echo Creating GTPV1U archive
+	@$(AR) rcs $@ $(addprefix $(OUTDIR)/,$(libgtpv1u_OBJECTS))
+
+clean:
+	@$(RM_F_V) $(OUTDIR)/nw-gtpv1u/src/*.o
+	@$(RM_F_V) $(OUTDIR)/nw-gtpv1u/src/*.d
+	@$(RM_F_V) $(OUTDIR)/*.o
+	@$(RM_F_V) $(OUTDIR)/*.d
+	@$(RM_F_V) $(OUTDIR)/libgtpv1u.a
+
+cleanall: clean

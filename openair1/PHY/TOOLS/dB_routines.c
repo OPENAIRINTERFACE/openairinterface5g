@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -31,14 +31,14 @@
 // Approximate 10*log10(x) in fixed point : x = 0...(2^32)-1
 
 int8_t dB_table[256] = {
-   0,
-   3,
-   5,
-   6,
-   7,
-   8,
-   8,
-   9,
+  0,
+  3,
+  5,
+  6,
+  7,
+  8,
+  8,
+  9,
   10,
   10,
   10,
@@ -552,7 +552,7 @@ int8_t dB_fixed(int x) {
 
   int i=0,adj=0;
   int8_t log10=0;
-    
+
   // find MSB
   for (i=31;i>=0;i--) {
 
@@ -560,16 +560,16 @@ int8_t dB_fixed(int x) {
       log10 = 3*i;
       i=0;
     }
-    
+
   }
 
   // look at next 2 MSBs and adjust between 0-2
     if (i>1) {
       adj = (x>>(i-2))&3;
       if (adj == 1)
-	log10 += 1;
+  log10 += 1;
       else if ((adj == 2) || (adj == 3))
-	log10 += 2;
+  log10 += 2;
     }
     else
       log10 += (x&1 == 1) ? 1 : 0;
@@ -578,7 +578,8 @@ int8_t dB_fixed(int x) {
 }
 */
 
-int16_t dB_fixed_times10(uint32_t x) {
+int16_t dB_fixed_times10(uint32_t x)
+{
   int16_t dB_power=0;
 
 
@@ -596,12 +597,15 @@ int16_t dB_fixed_times10(uint32_t x) {
   } else {
     dB_power = dB_table_times10[(x&255)-1];
   }
+
   if (dB_power > 900)
     return(900);
+
   return dB_power;
 }
 
-int8_t dB_fixed(uint32_t x) {
+int8_t dB_fixed(uint32_t x)
+{
 
   int8_t dB_power=0;
 
@@ -620,12 +624,15 @@ int8_t dB_fixed(uint32_t x) {
   } else {
     dB_power = dB_table[(x&255)-1];
   }
+
   if (dB_power > 90)
     return(90);
+
   return dB_power;
 }
 
-int8_t dB_fixed2(uint32_t x, uint32_t y) {
+int8_t dB_fixed2(uint32_t x, uint32_t y)
+{
 
   if ((x>0) && (y>0) )
     if (x>y)

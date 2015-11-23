@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -48,7 +48,8 @@
 
 char current_dlsch_cqi;
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
+void lte_param_init(unsigned char N_tx, unsigned char N_rx)
+{
 
   printf("Start lte_param_init\n");
   PHY_vars = malloc(sizeof(PHY_VARS));
@@ -57,7 +58,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 
   randominit(0);
   set_taus_seed(0);
-  
+
   crcTableInit();
 
   lte_frame_parms = &(PHY_config->lte_frame_parms);   //openair1/PHY/impl_defs_lte.h
@@ -77,15 +78,15 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
   lte_frame_parms->nb_antennas_tx     = N_tx;
   lte_frame_parms->nb_antennas_rx     = N_rx;
   init_frame_parms(lte_frame_parms);
-  
+
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-  
+
   phy_init_top(N_tx); //allocation
-  
+
   lte_frame_parms->twiddle_fft      = twiddle_fft;
   lte_frame_parms->twiddle_ifft     = twiddle_ifft;
   lte_frame_parms->rev              = rev;
-  
+
   generate_64qam_table();
   generate_16qam_table();
   phy_init_lte_ue(lte_frame_parms,lte_ue_common_vars,lte_ue_dlsch_vars,lte_ue_dlsch_vars_cntl,lte_ue_dlsch_vars_ra,lte_ue_dlsch_vars_1A,lte_ue_pbch_vars,lte_ue_pdcch_vars);//allocation
@@ -94,7 +95,8 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx) {
 
 
 // 4-bit quantizer
-char quantize4bit(double D,double x) {
+char quantize4bit(double D,double x)
+{
 
   double qxd;
 
@@ -109,7 +111,8 @@ char quantize4bit(double D,double x) {
   return((char)qxd);
 }
 
-char quantize(double D,double x,unsigned char B) {
+char quantize(double D,double x,unsigned char B)
+{
 
   double qxd;
   char maxlev;
@@ -132,12 +135,13 @@ static char channel_output[3*(MAX_DCI_SIZE_BITS+8)]__attribute__ ((aligned(16)))
 static unsigned char decoded_output[1+(MAX_BLOCK_LENGTH>>3)];
 
 int test_pdcch(double sigma,
-	       unsigned int DCI_LENGTH,
-	       unsigned int ntrials,
-	       unsigned int *errors,
-	       unsigned int *crc_misses,
-	       unsigned int *trials,
-	       unsigned int DCI_FMT) {
+               unsigned int DCI_LENGTH,
+               unsigned int ntrials,
+               unsigned int *errors,
+               unsigned int *crc_misses,
+               unsigned int *trials,
+               unsigned int DCI_FMT)
+{
 
   unsigned int i,n,coded_bits;
   unsigned char e[576];
@@ -147,42 +151,47 @@ int test_pdcch(double sigma,
 
   memset(a,0,MAX_DCI_SIZE_BITS>>3);
 
-  for (i=0;i<(DCI_LENGTH>>3);i++)
+  for (i=0; i<(DCI_LENGTH>>3); i++)
     a[i] = i;
-  
+
 
   switch (DCI_FMT) {
   case 0:
     coded_bits = 72;
     break;
+
   case 1:
     coded_bits = 144;
     break;
+
   case 2:
     coded_bits = 288;
     break;
+
   case 3:
     coded_bits = 576;
     break;
+
   default:
     coded_bits = 72;
     break;
   }
 
-  for (n=0;n<ntrials;n++) {
-    
+  for (n=0; n<ntrials; n++) {
+
 
     dci_encoding(a,DCI_LENGTH,coded_bits,(unsigned char*)&e[0],0);
-    
-    for (i = 0; i < coded_bits; i++){
+
+    for (i = 0; i < coded_bits; i++) {
       //      printf("e[%d] = %d -> ",i,e[i]);
       if (e[i] == 0)
-	e_rx[i] = quantize4bit(sigma/4.0,(sqrt(2.0)*sigma*gaussdouble(0.0,1.0))- 1);
+        e_rx[i] = quantize4bit(sigma/4.0,(sqrt(2.0)*sigma*gaussdouble(0.0,1.0))- 1);
       else
-	e_rx[i] = quantize4bit(sigma/4.0,(sqrt(2.0)*sigma*gaussdouble(0.0,1.0))+ 1);
+        e_rx[i] = quantize4bit(sigma/4.0,(sqrt(2.0)*sigma*gaussdouble(0.0,1.0))+ 1);
+
       //      printf("e[%d] = %d\n",i,e_rx[i]);
     }
- 
+
     // now do decoding
 
     dci_decoding(DCI_LENGTH,DCI_FMT,&e_rx[0],decoded_output);
@@ -190,20 +199,22 @@ int test_pdcch(double sigma,
     crc = crc16(decoded_output,DCI_LENGTH);
     // check for errors
     /*printf("DCI_LEN %d : %x,%x\n",DCI_LENGTH,
-	   extract_crc(decoded_output,DCI_LENGTH),
-	   crc);
-*/
+     extract_crc(decoded_output,DCI_LENGTH),
+     crc);
+    */
 
-    for (i=0;i<(((DCI_LENGTH>>3)));i++) {
-//      printf("decoded output %d -> %x\n",i,decoded_output[i]);
+    for (i=0; i<(((DCI_LENGTH>>3))); i++) {
+      //      printf("decoded output %d -> %x\n",i,decoded_output[i]);
       if (decoded_output[i]!=i) {
-	*errors = *errors+1;
-	if ((extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)) == 0) {
-	  *crc_misses = *crc_misses+1;
-	  	  printf("%x %x => %x\n",extract_crc(decoded_output,DCI_LENGTH),(crc16(decoded_output,DCI_LENGTH)>>16),
-	  	 (extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)));
-	}
-	break;
+        *errors = *errors+1;
+
+        if ((extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)) == 0) {
+          *crc_misses = *crc_misses+1;
+          printf("%x %x => %x\n",extract_crc(decoded_output,DCI_LENGTH),(crc16(decoded_output,DCI_LENGTH)>>16),
+                 (extract_crc(decoded_output,DCI_LENGTH) ^ (crc16(decoded_output,DCI_LENGTH)>>16)));
+        }
+
+        break;
       }
     }
 
@@ -211,23 +222,24 @@ int test_pdcch(double sigma,
     if (*errors == 100)
       break;
   }
-  
+
   *trials = n;
-  
-  
+
+
   return(0);
-  
+
 }
 
 #define NTRIALS 1000000
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
-int ret,ret2;
+  int ret,ret2;
   unsigned int errors,crc_misses,trials;
   double SNR,sigma,rate;
   unsigned char qbits;
-  
+
   char done=0;
 
 
@@ -243,11 +255,11 @@ int ret,ret2;
 
   randominit(0);
   set_taus_seed(0);
-  
+
   crcTableInit();
   ccodelte_init();
   ccodelte_init_inv();
-   
+
   phy_generate_viterbi_tables_lte();
   lte_frame_parms = &(PHY_config->lte_frame_parms);
   lte_frame_parms->N_RB_DL            = 25;   //50 for 10MHz and 25 for 5 MHz
@@ -257,28 +269,28 @@ int ret,ret2;
   lte_frame_parms->nb_antennas_tx     = 2;
   lte_frame_parms->nb_antennas_rx     = 2;
   init_frame_parms(lte_frame_parms);
-  
+
   copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
   lte_param_init(2,2);
-  
+
   phy_init_top(2); //allocation
-  
+
   if (argc>1)
     DCI_FMT = atof(argv[1]);
   else
     DCI_FMT = 2;
 
   printf("DCI_FMT %d\n",DCI_FMT);
-  
-  
+
+
   if (argc>2)
     DCI_LENGTH = atoi(argv[2]);
   else
     DCI_LENGTH = sizeof_DCI0_5MHz_TDD_0_t;
-  
-  
 
-  for (SNR=-2;SNR<4;SNR+=.2) {
+
+
+  for (SNR=-2; SNR<4; SNR+=.2) {
 
 
     printf("\n\nSNR %f dB\n",SNR);
@@ -288,29 +300,30 @@ int ret,ret2;
     errors=0;
     crc_misses=0;
 
-    if (done == 0) {    
+    if (done == 0) {
 
       printf("PDCCH %d\n",DCI_LENGTH);
-    
+
       ret = test_pdcch(sigma,   // noise standard deviation
-		       DCI_LENGTH,
-		       NTRIALS,
-		       &errors,
-		       &crc_misses,
-		       &trials,
-		       DCI_FMT);
-      
+                       DCI_LENGTH,
+                       NTRIALS,
+                       &errors,
+                       &crc_misses,
+                       &trials,
+                       DCI_FMT);
+
       if (ret>=0)
-	printf("ref: Errors %d (%f), CRC Misses %d (%f)\n",errors,(double)errors/trials,crc_misses,(double)crc_misses/trials);
-      
+        printf("ref: Errors %d (%f), CRC Misses %d (%f)\n",errors,(double)errors/trials,crc_misses,(double)crc_misses/trials);
+
       if (((double)errors/trials) < 1e-3)
-	done=1;
-    } 
+        done=1;
+    }
 
     if (done==1) {
       printf("done\n");
       break;
     }
   }
+
   return(0);
 }

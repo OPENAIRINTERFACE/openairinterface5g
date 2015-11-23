@@ -8,10 +8,10 @@
 void lfds611_freelist_delete( struct lfds611_freelist_state *fs, void (*user_data_delete_function)(void *user_data, void *user_state), void *user_state )
 {
   struct lfds611_freelist_element
-    *fe;
+      *fe;
 
   void
-    *user_data;
+  *user_data;
 
   assert( fs != NULL );
   // TRD : user_data_delete_function can be NULL
@@ -19,10 +19,8 @@ void lfds611_freelist_delete( struct lfds611_freelist_state *fs, void (*user_dat
 
   // TRD : leading load barrier not required as it will be performed by the pop
 
-  while( lfds611_freelist_pop(fs, &fe) )
-  {
-    if( user_data_delete_function != NULL )
-    {
+  while( lfds611_freelist_pop(fs, &fe) ) {
+    if( user_data_delete_function != NULL ) {
       lfds611_freelist_get_user_data_from_element( fe, &user_data );
       user_data_delete_function( user_data, user_state );
     }

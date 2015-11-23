@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,22 +14,22 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 /* Header file for making PLATON work on both RTLinux and RTAI using pthreads
 *  Copyright Frank Wartena, 2004
-*  Version:	0.1 January 28th, 2004 ## First version for scheduling test
-* 		0.2 February 20th, 2004 ## All PLATON functions added
+*  Version: 0.1 January 28th, 2004 ## First version for scheduling test
+*     0.2 February 20th, 2004 ## All PLATON functions added
 *  It is mostly a conversion from RTLinux to RTAI, because PLATON was written
 *  for RTLinux.
 *  Not all necessary conversions can be done in this header file, other
@@ -61,7 +61,7 @@
 #define pthread_mutexattr_init pthread_mutexattr_init_rt
 
 //function for setting a mutex protocol, does not exist in RTAI
-#define pthread_mutexattr_setprotocol(x,y); 
+#define pthread_mutexattr_setprotocol(x,y);
 
 //function for locking a mutex
 #define pthread_mutex_lock pthread_mutex_lock_rt

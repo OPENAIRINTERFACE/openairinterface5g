@@ -1,31 +1,31 @@
-/*******************************************************************************
-    OpenAirInterface 
-    Copyright(c) 1999 - 2014 Eurecom
-
-    OpenAirInterface is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-
-    OpenAirInterface is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
-   see <http://www.gnu.org/licenses/>.
-
-  Contact Information
-  OpenAirInterface Admin: openair_admin@eurecom.fr
-  OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
-  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
-
- *******************************************************************************/
+/*
+ * Copyright (c) 2015, EURECOM (www.eurecom.fr)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation are those
+ * of the authors and should not be interpreted as representing official policies,
+ * either expressed or implied, of the FreeBSD Project.
+ */
 
 /** @defgroup _intertask_interface_impl_ Intertask Interface Mechanisms
  * Implementation
@@ -37,6 +37,7 @@
 #define INTERTASK_INTERFACE_TYPES_H_
 
 #include "itti_types.h"
+#include "platform_types.h"
 
 /* Defines to handle bit fields on unsigned long values */
 #define UL_BIT_MASK(lENGTH)             ((1UL << (lENGTH)) - 1UL)
@@ -63,19 +64,17 @@
 #include <messages_types.h>
 
 /* This enum defines messages ids. Each one is unique. */
-typedef enum
-{
+typedef enum {
 #define MESSAGE_DEF(iD, pRIO, sTRUCT, fIELDnAME) iD,
 #include <messages_def.h>
 #undef MESSAGE_DEF
 
-    MESSAGES_ID_MAX,
+  MESSAGES_ID_MAX,
 } MessagesIds;
 
 //! Thread id of each task
-typedef enum
-{
-    THREAD_NULL = 0,
+typedef enum {
+  THREAD_NULL = 0,
 
 #define TASK_DEF(tHREADiD, pRIO, qUEUEsIZE)             THREAD_##tHREADiD,
 #define SUB_TASK_DEF(tHREADiD, sUBtASKiD, qUEUEsIZE)
@@ -83,13 +82,12 @@ typedef enum
 #undef SUB_TASK_DEF
 #undef TASK_DEF
 
-    THREAD_MAX,
-    THREAD_FIRST = 1,
+  THREAD_MAX,
+  THREAD_FIRST = 1,
 } thread_id_t;
 
 //! Sub-tasks id, to defined offset form thread id
-typedef enum
-{
+typedef enum {
 #define TASK_DEF(tHREADiD, pRIO, qUEUEsIZE)             tHREADiD##_THREAD = THREAD_##tHREADiD,
 #define SUB_TASK_DEF(tHREADiD, sUBtASKiD, qUEUEsIZE)    sUBtASKiD##_THREAD = THREAD_##tHREADiD,
 #include <tasks_def.h>
@@ -98,9 +96,8 @@ typedef enum
 } task_thread_id_t;
 
 //! Tasks id of each task
-typedef enum
-{
-    TASK_UNKNOWN = 0,
+typedef enum {
+  TASK_UNKNOWN = 0,
 
 #define TASK_DEF(tHREADiD, pRIO, qUEUEsIZE)             tHREADiD,
 #define SUB_TASK_DEF(tHREADiD, sUBtASKiD, qUEUEsIZE)    sUBtASKiD,
@@ -108,12 +105,11 @@ typedef enum
 #undef SUB_TASK_DEF
 #undef TASK_DEF
 
-    TASK_MAX,
-    TASK_FIRST = 1,
+  TASK_MAX,
+  TASK_FIRST = 1,
 } task_id_t;
 
-typedef union msg_s
-{
+typedef union msg_s {
 #define MESSAGE_DEF(iD, pRIO, sTRUCT, fIELDnAME) sTRUCT fIELDnAME;
 #include <messages_def.h>
 #undef MESSAGE_DEF
@@ -121,35 +117,34 @@ typedef union msg_s
 
 typedef uint16_t MessageHeaderSize;
 
-typedef struct itti_lte_time_s
-{
-    uint32_t frame;
-    uint8_t slot;
+typedef struct itti_lte_time_s {
+  uint32_t frame;
+  uint8_t slot;
 } itti_lte_time_t;
 
 /** @struct MessageHeader
  *  @brief Message Header structure for inter-task communication.
  */
-typedef struct MessageHeader_s
-{
-        MessagesIds messageId;          /**< Unique message id as referenced in enum MessagesIds */
+typedef struct MessageHeader_s {
+  MessagesIds messageId;          /**< Unique message id as referenced in enum MessagesIds */
 
-        task_id_t  originTaskId;        /**< ID of the sender task */
-        task_id_t  destinationTaskId;   /**< ID of the destination task */
-        instance_t instance;            /**< Task instance for virtualization */
+  task_id_t  originTaskId;        /**< ID of the sender task */
+  task_id_t  destinationTaskId;   /**< ID of the destination task */
+  instance_t instance;            /**< Task instance for virtualization */
 
-        MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
+  MessageHeaderSize ittiMsgSize;         /**< Message size (not including header size) */
 
-        itti_lte_time_t lte_time;       /**< Reference LTE time */
+  itti_lte_time_t lte_time;       /**< Reference LTE time */
 } MessageHeader;
 
 /** @struct MessageDef
  *  @brief Message structure for inter-task communication.
+ *  \internal
+ *  The attached attribute \c __packed__ is neccessary, because the memory allocation code expects \ref ittiMsg directly following \ref ittiMsgHeader.
  */
-typedef struct MessageDef_s
-{
-        MessageHeader ittiMsgHeader; /**< Message header */
-        msg_t         ittiMsg; /**< Union of payloads as defined in x_messages_def.h headers */
+typedef struct __attribute__ ((__packed__)) MessageDef_s {
+  MessageHeader ittiMsgHeader; /**< Message header */
+  msg_t         ittiMsg; /**< Union of payloads as defined in x_messages_def.h headers */
 } MessageDef;
 
 #endif /* INTERTASK_INTERFACE_TYPES_H_ */

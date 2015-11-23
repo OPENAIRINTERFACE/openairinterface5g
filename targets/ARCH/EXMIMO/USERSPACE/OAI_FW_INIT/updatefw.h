@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,19 +14,19 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-    included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+    included in this distribution in the file called "COPYING". If not,
     see <http://www.gnu.org/licenses/>.
 
    Contact Information
    OpenAirInterface Admin: openair_admin@eurecom.fr
    OpenAirInterface Tech : openair_tech@eurecom.fr
-   OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+   OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
    Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
- 
+
 /*
     C Header file <updatefw.h> for updatefw tool.
 
@@ -53,7 +53,7 @@ unsigned long ltmp;
 #define invert4(x)      {ltmp=x; x=((ltmp & 0xff)<<24) | ((ltmp & 0xff00)<<8) | \
                          ((ltmp & 0xff0000)>>8) | ((ltmp & 0xff000000)>>24); }
 unsigned short stmp;
-#define invert2(x)		{stmp=x; x=((stmp & 0xff)<< 8) | ((stmp & 0xff00)>>8);}
+#define invert2(x)    {stmp=x; x=((stmp & 0xff)<< 8) | ((stmp & 0xff00)>>8);}
 
 
 /* static variables, global */

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -50,72 +50,75 @@ class ENodeB;
 
 using namespace std;
 
-class Mobile  {
-    public:
-        //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
+class Mobile
+{
+public:
+  //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
 
-        Mobile (mobile_id_t);
-        Mobile () {Mobile(0u);};
-        Mobile(cell_id_t , mobile_id_t , transaction_id_t );
-        ~Mobile ();
+  Mobile (mobile_id_t);
+  Mobile () {
+    Mobile(0u);
+  };
+  Mobile(cell_id_t , mobile_id_t , transaction_id_t );
+  ~Mobile ();
 
-        friend inline bool operator>( const Mobile& l, const Mobile r )
-        {
-            return l.m_id > r.m_id;
-        }
-        friend inline bool operator==( const Mobile& l, const Mobile r )
-        {
-            return l.m_id == r.m_id;
-        }
+  friend inline bool operator>( const Mobile& l, const Mobile r ) {
+    return l.m_id > r.m_id;
+  }
+  friend inline bool operator==( const Mobile& l, const Mobile r ) {
+    return l.m_id == r.m_id;
+  }
 
-        mobile_id_t                     GetId() {return m_id;};
-        void                            CommitTransaction(transaction_id_t transaction_idP);
-        RadioResourceConfigDedicated_t* GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP);
-        void                            AddSignallingRadioBearer2(signed int cell_indexP, transaction_id_t transaction_idP);
-        void                            AddDefaultDataRadioBearer(signed int cell_indexP, transaction_id_t transaction_idP);
+  mobile_id_t                     GetId() {
+    return m_id;
+  };
+  void                            CommitTransaction(transaction_id_t transaction_idP);
+  RadioResourceConfigDedicated_t* GetASN1RadioResourceConfigDedicated(transaction_id_t transaction_idP);
+  void                            AddSignallingRadioBearer2(signed int cell_indexP, transaction_id_t transaction_idP);
+  void                            AddDefaultDataRadioBearer(signed int cell_indexP, transaction_id_t transaction_idP);
 
-        /*void        AddDataRadioBearer(ENodeB* e_node_bP,
-                                rb_id_t            radio_bearer_idP,
-                                unsigned short     m_traffic_class,
-                                unsigned short     m_delay,
-                                unsigned int       m_guaranted_bit_rate_uplink,
-                                unsigned int       m_max_bit_rate_uplink,
-                                unsigned int       m_guaranted_bit_rate_downlink,
-                                unsigned int       m_max_bit_rate_downlink,
-                                Transaction*       transactionP);*/
+  /*void        AddDataRadioBearer(ENodeB* e_node_bP,
+                          rb_id_t            radio_bearer_idP,
+                          unsigned short     m_traffic_class,
+                          unsigned short     m_delay,
+                          unsigned int       m_guaranted_bit_rate_uplink,
+                          unsigned int       m_max_bit_rate_uplink,
+                          unsigned int       m_guaranted_bit_rate_downlink,
+                          unsigned int       m_max_bit_rate_downlink,
+                          Transaction*       transactionP);*/
 
-        void        RemoveDataRadioBearer(ENodeB* e_node_bP,
-                                rb_id_t            radio_bearer_idP,
-                                Transaction*       transactionP);
-    protected:
-        signed int  FindCellIndex(cell_id_t cell_idP);
+  void        RemoveDataRadioBearer(ENodeB* e_node_bP,
+                                    rb_id_t            radio_bearer_idP,
+                                    Transaction*       transactionP);
+protected:
+  signed int  FindCellIndex(cell_id_t cell_idP);
 
-        void        AddSignallingRadioBearer1(signed int cell_indexP, transaction_id_t transaction_idP);
-        //void        AddSignallingRadioBearer1(signed int cell_indexP, Transaction* transactionP);
-        //void        AddSignallingRadioBearer2(signed int cell_indexP, Transaction* transactionP);
-        //void        AddDefaultDataRadioBearer(signed int cell_indexP, Transaction* transactionP);
+  void        AddSignallingRadioBearer1(signed int cell_indexP, transaction_id_t transaction_idP);
+  //void        AddSignallingRadioBearer1(signed int cell_indexP, Transaction* transactionP);
+  //void        AddSignallingRadioBearer2(signed int cell_indexP, Transaction* transactionP);
+  //void        AddDefaultDataRadioBearer(signed int cell_indexP, Transaction* transactionP);
 
 
-        signed int                            m_cell_id2_cell_index[MAX_ENODE_B];
-        cell_id_t                             m_cell_index2_cell_id[MAX_ENODE_B_PER_MOBILE];
-        //boost::ptr_map<mobile_id_t ,Mobile >  m_mobile_map;
-        //RadioBearer*                          m_radio_bearer_array[MAX_RB_PER_MOBILE][MAX_ENODE_B_PER_MOBILE];
-        mobile_id_t                           m_id;
+  signed int                            m_cell_id2_cell_index[MAX_ENODE_B];
+  cell_id_t                             m_cell_index2_cell_id[MAX_ENODE_B_PER_MOBILE];
+  //boost::ptr_map<mobile_id_t ,Mobile >  m_mobile_map;
+  //RadioBearer*                          m_radio_bearer_array[MAX_RB_PER_MOBILE][MAX_ENODE_B_PER_MOBILE];
+  mobile_id_t                           m_id;
 
-        // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
-        MAC_MainConfig_t                      m_mac_main_config;
-        DRB_ToAddMod_t*                       m_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
-        SRB_ToAddMod_t*                       m_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
+  // ASN1 AUTO GENERATED STRUCTS COMPLIANT WITH 3GPP
+  MAC_MainConfig_t                      m_mac_main_config;
+  DRB_ToAddMod_t*                       m_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
+  SRB_ToAddMod_t*                       m_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
 
-        // FOR TRANSACTIONS
-        DRB_Identity_t                        m_pending_drb_to_release[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
-        transaction_id_t                      m_tx_id_pending_drb_to_release[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
+  // FOR TRANSACTIONS
+  DRB_Identity_t                        m_pending_drb_to_release[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
+  transaction_id_t                      m_tx_id_pending_drb_to_release[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
 
-        DRB_ToAddMod_t*                       m_pending_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
-        transaction_id_t                      m_tx_id_pending_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
+  DRB_ToAddMod_t*                       m_pending_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
+  transaction_id_t                      m_tx_id_pending_drb_to_add_mod[MAX_DRB][MAX_ENODE_B_PER_MOBILE];
 
-        SRB_ToAddMod_t*                       m_pending_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
-        transaction_id_t                      m_tx_id_pending_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
+  SRB_ToAddMod_t*                       m_pending_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
+  transaction_id_t                      m_tx_id_pending_srb_to_add_mod[MAX_SRB][MAX_ENODE_B_PER_MOBILE];
 
 };
 #    include "ENodeB.h"

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -36,7 +36,7 @@
 
 #include <stdlib.h>
 
-// TYPEDEFS 
+// TYPEDEFS
 
 #define true 1
 #define false 0
@@ -46,69 +46,69 @@
 
 #ifdef STANDALONE
 typedef struct {
-    char *name;	/*!< \brief string name of item */
-    int value;	/*!< \brief integer value of mapping */
+  char *name; /*!< \brief string name of item */
+  int value;  /*!< \brief integer value of mapping */
 } mapping;
 int  map_str_to_int(mapping *map, const char *str);
 char *map_int_to_str(mapping *map, int val);
 #endif
 
 /****************************************************************************
-!A sructure that includes all the characteristic mobility elements of a node 
+!A sructure that includes all the characteristic mobility elements of a node
 *****************************************************************************/
 struct mobility_struct {
-	double x_from; /*!< The X coordinate of the previous location of the node */
-	double y_from; /*!< The Y coordinate of the previous location of the node */
-	double x_to; /*!< The X coordinate of the destination location of the node */
-	double y_to; /*!< The Y coordinate of the destination location of the node */
-	double speed; /*!< The speed of the node */
-	double sleep_duration; /*!< The sleep duration of the node (Used with the RWP model) */
-	double azimuth; /*!< The direction in which the node moves (Used with RWALK model) */
-	double journey_time; /*!< The duration of the node trip */
-	double start_journey; /*!< The instant on which the node trip starts*/
-        double target_time;/*!<The time instant before the node should complete>*/  
-        double target_speed;/*!<The time instant before the node should complete>*/
+  double x_from; /*!< The X coordinate of the previous location of the node */
+  double y_from; /*!< The Y coordinate of the previous location of the node */
+  double x_to; /*!< The X coordinate of the destination location of the node */
+  double y_to; /*!< The Y coordinate of the destination location of the node */
+  double speed; /*!< The speed of the node */
+  double sleep_duration; /*!< The sleep duration of the node (Used with the RWP model) */
+  double azimuth; /*!< The direction in which the node moves (Used with RWALK model) */
+  double journey_time; /*!< The duration of the node trip */
+  double start_journey; /*!< The instant on which the node trip starts*/
+  double target_time;/*!<The time instant before the node should complete>*/
+  double target_speed;/*!<The time instant before the node should complete>*/
 };
 
 typedef struct mobility_struct mobility_struct; /*!< The typedef that reflects a #mobility_struct*/
 
 /******************************************************************************
-!A sructure that defines a node and its associated informaion 
+!A sructure that defines a node and its associated informaion
 *******************************************************************************/
 struct node_struct {
-	int id; /*!< The identifier of the node in question */
-        int gid;  /*!< given id of node used for trace mobility */
-	int type; /*!< The node's type, it is one of types enumarated in #node_types */
-	int mobile;  /*!< The node status: static or mobile  */
-	double x_pos; /*!< The X coordinate of the current location of the node */
-	double y_pos; /*!< The Y coordinate of the current location of the node */
-	struct mobility_struct *mob; /*!< An instantiation of the structure #mobility_struct that includes the mobility elements corresponding to the node*/
-	int generator; /*!< The mobility generator according to which the node is moving or stagnating. It is one of the types enumarated in #mobility_types*/
-        int block_num; /*!<block identification for connected domain rwp*/
-        int event_num;
+  int id; /*!< The identifier of the node in question */
+  int gid;  /*!< given id of node used for trace mobility */
+  node_types type; /*!< The node's type, it is one of types enumarated in #node_types */
+  int mobile;  /*!< The node status: static or mobile  */
+  double x_pos; /*!< The X coordinate of the current location of the node */
+  double y_pos; /*!< The Y coordinate of the current location of the node */
+  struct mobility_struct *mob; /*!< An instantiation of the structure #mobility_struct that includes the mobility elements corresponding to the node*/
+  int generator; /*!< The mobility generator according to which the node is moving or stagnating. It is one of the types enumarated in #mobility_types*/
+  int block_num; /*!<block identification for connected domain rwp*/
+  int event_num;
 };
 
 typedef struct node_struct node_struct; /*!< The typedef that reflects a #node_struct*/
 
 /********************************************************************************
-!A sructure that gathers all the existing nodes 
+!A sructure that gathers all the existing nodes
 *********************************************************************************/
 struct node_list_struct {
-	struct node_struct *node;  /*!< Avariable of type #NodePtr. It represents a node */
-	struct node_list_struct *next; /*!< A pointer to the next element */
+  struct node_struct *node;  /*!< Avariable of type #NodePtr. It represents a node */
+  struct node_list_struct *next; /*!< A pointer to the next element */
 };
 
 typedef struct node_list_struct node_list; /*!< The typedef that reflects a #node_list_struct*/
 
 /********************************************************************************
-!A sructure that represents a peer (Node, Time), 
-i.e the node in question and its job (move or sleep) execution time. 
+!A sructure that represents a peer (Node, Time),
+i.e the node in question and its job (move or sleep) execution time.
 It is the atomic component of the #job_list_struct structure
 *********************************************************************************/
 
 struct pair_struct {
-	node_struct *b; /*!< A variable of type #NodePtr. It represents a node */
-	double next_event_t;  /*!< The corresponding time of job execution */
+  node_struct *b; /*!< A variable of type #NodePtr. It represents a node */
+  double next_event_t;  /*!< The corresponding time of job execution */
 };
 
 typedef struct pair_struct pair_struct;  /*!< The typedef that reflects a #pair_struct*/
@@ -116,59 +116,59 @@ typedef struct pair_struct pair_struct;  /*!< The typedef that reflects a #pair_
 
 /*****************************************************************************
 !A sructure that gathers the jobs to be executed by all the non static nodes.
-In the context of OMG, a job is either a move or a sleep 
+In the context of OMG, a job is either a move or a sleep
 *****************************************************************************/
 struct job_list_struct {
-	pair_struct* pair; /*!< A variable of type #Pair. It represents a (Node, job-execution Time) peer */
-	struct job_list_struct *next; /*!< A pointer to the next element */
+  pair_struct* pair; /*!< A variable of type #Pair. It represents a (Node, job-execution Time) peer */
+  struct job_list_struct *next; /*!< A pointer to the next element */
 };
 typedef struct job_list_struct job_list;  /*!< The typedef that reflects a #job_list_struct*/
 
 /****************************************************************************************
-!A sructure that gathers the ultimate parameters needed to launch a simulation scenario 
+!A sructure that gathers the ultimate parameters needed to launch a simulation scenario
 ***************************************************************************************/
-typedef struct{
-	int nodes; /*!< The total number of nodes */
-        //int number_of_nodes[MAX_NUM_NODE_TYPES];
-	double min_x; /*!< The minimum value that the X coordinate might take. In other words, the minimum boundary of the simulation area according to the X axis */
-	double max_x; /*!< The maximum value that the X coordinate might take, i.e the maximum boundary of the simulation area according to the X axis*/
-	double min_y; /*!< The minimum value that the Y coordinate might take, i.e the minimum boundary of the simulation area according to the Y axis */
-	double max_y; /*!< The minimum value that the Y coordinate might take, i.e the maximum boundary of the simulation area according to the Y axis */
+typedef struct {
+  int nodes; /*!< The total number of nodes */
+  //int number_of_nodes[MAX_NUM_NODE_TYPES];
+  double min_x; /*!< The minimum value that the X coordinate might take. In other words, the minimum boundary of the simulation area according to the X axis */
+  double max_x; /*!< The maximum value that the X coordinate might take, i.e the maximum boundary of the simulation area according to the X axis*/
+  double min_y; /*!< The minimum value that the Y coordinate might take, i.e the minimum boundary of the simulation area according to the Y axis */
+  double max_y; /*!< The minimum value that the Y coordinate might take, i.e the maximum boundary of the simulation area according to the Y axis */
   bool user_fixed; /*!< Sets if the coordinates are user defined*/
-	double fixed_x; /*!< The user defined x value*/
-	double fixed_y; /*!< The user defined y value*/
-	double min_speed; /*!< The minimum speed. It should be different than 0.0 in order to avoid instability*/ 
-	double max_speed; /*!< The maximum allowed speed */ 
-	double min_journey_time; /*!< The minimum allowed trip duration. It should be different than 0.0 in order to avoid instability and properly reflect the mobility model behavior */ 
-	double max_journey_time; /*!< The maximum allowed trip duration */
-	double min_azimuth; /*!< The minimum allowed value of the RWALK movement angle*/
-	double max_azimuth; /*!< The maximum allowed value of the RWALK movement angle */
-	double min_sleep; /*!< The minimum allowed sleep duration. It should be different than 0.0 in order to avoid instability */
-	double max_sleep; /*!< The minimum allowed sleep duration*/
-	int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
-	int rwp_type; /*!< The chosen RWP  mobility model for the nodes in question either RESTRICTED or CONNECTED_DOMAIN. */
-	int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
-        //int nodes_mob_type[MAX_NUM_NODE_TYPES];
-        int max_vertices; /*!<maximum number of verices in the grid>*/
-        int max_block_num; /*!<maximum number of blocks in the grid>*/
+  double fixed_x; /*!< The user defined x value*/
+  double fixed_y; /*!< The user defined y value*/
+  double min_speed; /*!< The minimum speed. It should be different than 0.0 in order to avoid instability*/
+  double max_speed; /*!< The maximum allowed speed */
+  double min_journey_time; /*!< The minimum allowed trip duration. It should be different than 0.0 in order to avoid instability and properly reflect the mobility model behavior */
+  double max_journey_time; /*!< The maximum allowed trip duration */
+  double min_azimuth; /*!< The minimum allowed value of the RWALK movement angle*/
+  double max_azimuth; /*!< The maximum allowed value of the RWALK movement angle */
+  double min_sleep; /*!< The minimum allowed sleep duration. It should be different than 0.0 in order to avoid instability */
+  double max_sleep; /*!< The minimum allowed sleep duration*/
+  int mobility_type; /*!< The chosen mobility model for the nodes in question. It should be one of the types inumarated as #mobility_types*/
+  int rwp_type; /*!< The chosen RWP  mobility model for the nodes in question either RESTRICTED or CONNECTED_DOMAIN. */
+  int nodes_type; /*!< The type of the nodes in question. It should be one of the types inumarated as #node_types */
+  //int nodes_mob_type[MAX_NUM_NODE_TYPES];
+  int max_vertices; /*!<maximum number of verices in the grid>*/
+  int max_block_num; /*!<maximum number of blocks in the grid>*/
 
-  	int seed; /*!< The seed used to generate the random positions*/
-	char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model; DEFAULT: TRACE/example_trace.tr */
-        char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details; DEFAULT: sumo */
-        char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder DEFAULT: SUMO/Scenarios/scen.sumo.cfg */
-	int sumo_start; /*!< The time at which SUMO should start; Default: 0s */
-        int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI Default: END OF EMULATION */
-        int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second); DEFAULT: 1000ms (1s) */
-        char* sumo_host; /*!< The IP host address where SUMO will be run. DEFAULT: localhost */
-        int sumo_port; /*!< The port number attached to SUMO on the host DEFAULT: TBC */
-}omg_global_param;  
+  int seed; /*!< The seed used to generate the random positions*/
+  char* mobility_file; /*!< The mobility file name containing the mobility traces used by the TRACE model; DEFAULT: TRACE/example_trace.tr */
+  char* sumo_command; /*!< The command to start SUMO; Either 'sumo' or 'sumo-gui' in case a GUI would be required; see SUMO for further details; DEFAULT: sumo */
+  char* sumo_config; /*!< The configuration file for SUMO; it must be a '.cfg' file located in ./SUMO/Scenarios folder DEFAULT: SUMO/Scenarios/scen.sumo.cfg */
+  int sumo_start; /*!< The time at which SUMO should start; Default: 0s */
+  int sumo_end; /*!< The time at which SUMO should stop; It shold be greater or equal to OAI Default: END OF EMULATION */
+  int sumo_step; /*!< The simulation step of SUMO, in ms. it is 1000ms by default (i.e. SUMO updates its mobility every second); DEFAULT: 1000ms (1s) */
+  char* sumo_host; /*!< The IP host address where SUMO will be run. DEFAULT: localhost */
+  int sumo_port; /*!< The port number attached to SUMO on the host DEFAULT: TBC */
+} omg_global_param;
 
 /******************************************************************************
 !A string List structure
 *******************************************************************************/
 struct string_list_struct {
-	char* string;  /*! a string */
-	struct string_list_struct *next; /*!< A pointer to the next string in the list */
+  char* string;  /*! a string */
+  struct string_list_struct *next; /*!< A pointer to the next string in the list */
 };
 
 typedef struct string_list_struct string_list; /*!< The typedef that reflects a #string_list_struct*/
@@ -178,7 +178,7 @@ typedef struct string_list_struct string_list; /*!< The typedef that reflects a 
 
 /**
  * \fn void update_node_vector(int mobility_type, double cur_time)
- * \brief According to the mobility type, call the corresponding update function 
+ * \brief According to the mobility type, call the corresponding update function
  * \param mobility_type an integer that represents the mobility model name
  * \param cur_time a variable of type double that represents the current time
  */
@@ -197,7 +197,7 @@ node_struct* get_node_position(int node_type, int nid);
 /**
  * \fn Node_list add_entry(NodePtr node, Node_list Node_Vector)
  * \brief Add the Node sructure to the specified Node_Vector
- * \param node a pointer to the node that should be added to the Node_Vector 
+ * \param node a pointer to the node that should be added to the Node_Vector
  * \param Node_Vector a pointer of type Node_list that represents the Node_Vector storing all the nodes of the specified mobility type
  * \return the Node_list to which a new entry is added
  */
@@ -205,9 +205,9 @@ node_list* add_entry(node_struct* node, node_list* node_vector);
 
 /**
  * \fn Node_list remove_node_entry(NodePtr node, Node_list Node_Vector)
- * \brief Remove the Node sructure to the specified Node_Vector. 
+ * \brief Remove the Node sructure to the specified Node_Vector.
  *     Note: the entry will be removed, but the Node will not be deleted.
- * \param node a pointer to the node that should be deleted to the Node_Vector 
+ * \param node a pointer to the node that should be deleted to the Node_Vector
  * \param Node_Vector a pointer of type Node_list that represents the Node_Vector storing all the nodes of the specified mobility type
  * \return the Node_list to which a new entry is removed
  */
@@ -225,7 +225,7 @@ void display_node_list(node_list* node_vector);
  * \fn Node_list remove_node(Node_list list, int nID, int node_type)
  * \brief Remove a given node, identified by its ID and type, from the specified Node_list
  * \param list a pointer of type Node_list that represents the Node_Vector from which the element is to be removed
- * \param nID an int that represents the ID of the node to be removed 
+ * \param nID an int that represents the ID of the node to be removed
  * \param node_type an int that represents the type of the node to be removed from the Node_list
  * \return a pointer to the Node_list from which a new entry is removed
  */
@@ -233,7 +233,7 @@ node_list* remove_node(node_list* list, int nid, int node_type);
 
 /**
  * \fn NodePtr find_node(Node_list list, int nID, int node_type)
- * \brief Returns the OAI node of ID nID and type node_type; 
+ * \brief Returns the OAI node of ID nID and type node_type;
  * \param list a pointer of type Node_list that represents the Node_Vector from which the element is to be located
  * \param nID an int that represents the ID of the node to be located
  * \param node_type an int that represents the type of the node to be located in the Node_list
@@ -273,12 +273,12 @@ node_list* reset_node_list(node_list* list);
 
 /**
  * \fn void display_node_position(int ID, int generator, int type, int mobile, double X, double Y)
- * \brief Display information about the node identified by the parameters passed as arguments 
+ * \brief Display information about the node identified by the parameters passed as arguments
  * \param ID the node's ID
  * \param generator the node's mobility type
- * \param type the node's type 
+ * \param type the node's type
  * \param mobile the node's status (moving or sleeping)
- * \param X the node's current location according to the X axis 
+ * \param X the node's current location according to the X axis
  * \param Y the node's current location according to the Y axis
  */
 void display_node_position(int id, int generator, int type, int mobile, double x, double y);
@@ -288,15 +288,15 @@ void display_node_position(int id, int generator, int type, int mobile, double x
  * \fn Node_list filter(Node_list Vector, int node_type)
  * \brief Filter the content of the specified Node_list in order to return only the nodes whose type is the one passed as argument
  * \param Vector a pointer of type Node_list that represents the Node_Vector to be filtered
- * \param node_type the desired type 
- * \return a pointer to a new Node_list which is the input Node_list after filtering 
+ * \param node_type the desired type
+ * \return a pointer to a new Node_list which is the input Node_list after filtering
  */
 node_list* filter(node_list* vector, int node_type);
 
 
 /**
  * \fn double randomGen(double a, double b)
- * \brief Generate a random number in the range [a, b] and of type double 
+ * \brief Generate a random number in the range [a, b] and of type double
  * \param a lower limit
  * \param b upper limit
  * \return double: the generated random number
@@ -306,7 +306,7 @@ double randomgen(double a, double b);
 
 /**
  * \fn NodePtr create_node(void)
- * \brief Creates a new #NodePtr by allocating the needed memory space for it 
+ * \brief Creates a new #NodePtr by allocating the needed memory space for it
  * \return the created node structure
  */
 node_struct* create_node(void);
@@ -314,7 +314,7 @@ node_struct* create_node(void);
 
 /**
  * \fn MobilityPtr create_mobility(void)
- * \brief Creates a new #MobilityPtr by allocating the needed memory space for it 
+ * \brief Creates a new #MobilityPtr by allocating the needed memory space for it
  * \return the created mobility structure
  */
 mobility_struct* create_mobility(void);
@@ -366,7 +366,7 @@ job_list* quick_sort (job_list* list);
  * \param list the Job_list from which the job is to be removed
  * \param nID the ID of the node whose job should be removed
  * \param node_type the type of the node whose job should be removed
- * \return the updated Job_list after removing the job in question 
+ * \return the updated Job_list after removing the job in question
  */
 job_list* remove_job(job_list* list, int nid, int node_type);
 
@@ -381,7 +381,7 @@ int length(char* s);
 /**
  * \fn void reset_String_list(String_list)
  * \brief clears the String_list and free memory
- * \param list the String_list to be cleared; 
+ * \param list the String_list to be cleared;
  * \return reference to the HEAD of the cleared String_list
  */
 string_list* clear_string_list(string_list* list);

@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,26 +14,26 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 /*! \file socket.c
-* \brief 
-* \author Lionel Gauthier 
+* \brief
+* \author Lionel Gauthier
 * \date 2011
-* \version 1.0 
+* \version 1.0
 * \company Eurecom
 * \email: lionel.gauthier@eurecom.fr
-*/ 
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,20 +55,24 @@
 void
 socket_setnonblocking (int sockP)
 {
-//------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
 
   int             opts;
 
   opts = fcntl (sockP, F_GETFL);
+
   if (opts < 0) {
     perror ("fcntl(F_GETFL)");
     exit (EXIT_FAILURE);
   }
+
   opts = (opts | O_NONBLOCK);
+
   if (fcntl (sockP, F_SETFL, opts) < 0) {
     perror ("fcntl(F_SETFL)");
     exit (EXIT_FAILURE);
   }
+
   return;
 }
 
@@ -76,7 +80,7 @@ socket_setnonblocking (int sockP)
 int
 make_socket_inet (int typeP, uint16_t * portP, struct sockaddr_in *ptr_addressP)
 {
-//------------------------------------------------------------------------------
+  //------------------------------------------------------------------------------
 
   int             sock;
   unsigned int             length = sizeof (struct sockaddr_in);
@@ -87,6 +91,7 @@ make_socket_inet (int typeP, uint16_t * portP, struct sockaddr_in *ptr_addressP)
 
   /* Create the socket. */
   sock = socket (PF_INET, typeP, 0);
+
   if (sock < 0) {
     fprintf (stderr, "ERROR: %s line %d socket %m", __FILE__, __LINE__);
     exit (EXIT_FAILURE);
@@ -96,15 +101,17 @@ make_socket_inet (int typeP, uint16_t * portP, struct sockaddr_in *ptr_addressP)
   name.sin_family = AF_INET;
   name.sin_port = htons (*portP);
   name.sin_addr.s_addr = htonl (INADDR_ANY);
-  
+
   if (bind (sock, (struct sockaddr *) &name, sizeof (name)) < 0) {
     close (sock);
     fprintf (stderr, "ERROR: %s line %d bind port %d %m", __FILE__, __LINE__, *portP);
     exit (EXIT_FAILURE);
   }
+
   if (ptr_addressP != NULL) {
     getsockname (sock, (struct sockaddr *) ptr_addressP, &length);
   }
+
   msg("[SOCKET] bound socket port %d\n", *portP);
   return sock;
 }

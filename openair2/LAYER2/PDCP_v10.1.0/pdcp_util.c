@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -58,26 +58,31 @@ void util_print_hex_octets(comp_name_t component, unsigned char* data, unsigned 
   LOG_T(component, "     |  0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f |\n");
   LOG_T(component, "-----+-------------------------------------------------|\n");
   LOG_T(component, " 000 |");
+
   for (octet_index = 0; octet_index < size; ++octet_index) {
     /*
      * Print every single octet in hexadecimal form
      */
     LOG_T(component, "%02x.", data[octet_index]);
+
     /*
      * Align newline and pipes according to the octets in groups of 2
      */
     if (octet_index != 0 && (octet_index + 1) % 16 == 0) {
       LOG_T(component, " |\n");
       LOG_T(component, " %03d |", octet_index);
-      }
+    }
   }
 
   /*
    * Append enough spaces and put final pipe
    */
   unsigned char index;
-  for (index = octet_index; index < 16; ++index)
+
+  for (index = octet_index; index < 16; ++index) {
     LOG_T(component, "   ");
+  }
+
   LOG_T(component, " \n");
 }
 
@@ -87,19 +92,22 @@ void util_flush_hex_octets(comp_name_t component, unsigned char* data, unsigned 
     LOG_W(component, "Incoming buffer is NULL! Ignoring...\n");
     return;
   }
+
   printf("[PDCP]");
 
   unsigned long octet_index = 0;
+
   for (octet_index = 0; octet_index < size; ++octet_index) {
-      //LOG_T(component, "%02x.", data[octet_index]);
-      printf("%02x.", data[octet_index]);
+    //LOG_T(component, "%02x.", data[octet_index]);
+    printf("%02x.", data[octet_index]);
   }
+
   //LOG_T(component, " \n");
   printf(" \n");
 }
 
 /*
- * Prints binary representation of given octet prepending 
+ * Prints binary representation of given octet prepending
  * passed log message
  *
  * @param Octet as an unsigned character
@@ -121,6 +129,7 @@ void util_print_binary_representation(unsigned char* message, uint8_t octet)
 
     mask /= 2;
   }
+
   LOG_T(PDCP, "\n");
 }
 

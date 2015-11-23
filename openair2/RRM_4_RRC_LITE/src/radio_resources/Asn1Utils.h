@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -38,16 +38,17 @@
 
 using namespace std;
 
-class Asn1Utils  {
-    public:
+class Asn1Utils
+{
+public:
 
-        Asn1Utils () {};
-        ~Asn1Utils ();
+  Asn1Utils () {};
+  ~Asn1Utils ();
 
-        static DRB_Identity_t*   Clone(DRB_Identity_t*);
-        static DRB_ToAddMod_t*   Clone(DRB_ToAddMod_t*);
-        static SRB_ToAddMod_t*   Clone(SRB_ToAddMod_t*);
-        static MAC_MainConfig_t* Clone(MAC_MainConfig_t*);
+  static DRB_Identity_t*   Clone(DRB_Identity_t*);
+  static DRB_ToAddMod_t*   Clone(DRB_ToAddMod_t*);
+  static SRB_ToAddMod_t*   Clone(SRB_ToAddMod_t*);
+  static MAC_MainConfig_t* Clone(MAC_MainConfig_t*);
 };
 #    endif
 

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -56,6 +56,7 @@
 #                define public_rlc_um(x)     extern x
 #            endif
 #        endif
+#        include <errno.h>
 #        include "platform_types.h"
 #        include "rlc_def.h"
 #        include "rlc_def_lte.h"
@@ -74,6 +75,42 @@
 //#        include "rlc_um_very_simple_test.h"
 #endif
 
+#define PROTOCOL_RLC_UM_CTXT_FMT PROTOCOL_CTXT_FMT"[%s %02u] %s()"
+#define PROTOCOL_RLC_UM_CTXT_ARGS(CTXT_Pp, rLC_Pp) PROTOCOL_CTXT_ARGS(CTXT_Pp),\
+          (rLC_Pp->is_data_plane) ? "DRB UM" : "SRB UM",\
+          rLC_Pp->rb_id,\
+          __FUNCTION__
+
+#define PROTOCOL_RLC_UM_MSC_FMT "[RNTI %"PRIx16" %s %02u]"
+#define PROTOCOL_RLC_UM_MSC_ARGS(CTXT_Pp, rLC_Pp) \
+        CTXT_Pp->rnti,\
+          (rLC_Pp->is_data_plane) ? "DRB UM" : "SRB UM",\
+          rLC_Pp->rb_id
+
+#if defined(TRACE_RLC_MUTEX)
+#define RLC_UM_MUTEX_LOCK(mUTEX, cTXT, rLC) \
+	do {\
+      int pmtl_rc = pthread_mutex_trylock(mUTEX);\
+	  if (pmtl_rc != 0){\
+        if (pmtl_rc == EBUSY) {\
+          MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
+                       "0 "PROTOCOL_RLC_UM_MSC_FMT" Warning try lock %s busy",\
+                       PROTOCOL_RLC_UM_MSC_ARGS(cTXT,rLC),\
+                       #mUTEX);\
+          pthread_mutex_lock(mUTEX);\
+        } else {\
+            MSC_LOG_EVENT((cTXT->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,\
+                       "0 "PROTOCOL_RLC_UM_MSC_FMT" Error try lock %s %d",\
+                       PROTOCOL_RLC_UM_MSC_ARGS(cTXT,rLC),\
+                       #mUTEX, pmtl_rc);\
+        }\
+      }\
+	} while (0);
+#else
+#define RLC_UM_MUTEX_LOCK(mUTEX, cTXT, rLC) pthread_mutex_lock(mUTEX)
+#endif
+
+#define RLC_UM_MUTEX_UNLOCK(mUTEX) pthread_mutex_unlock(mUTEX)
 
 /*! \fn void     rlc_um_stat_req     (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,
                         unsigned int* stat_tx_pdcp_sdu,
@@ -115,23 +152,23 @@
 * \param[out] stat_timer_reordering_timed_out      Number of times the timer "reordering" has timed-out.
 */
 public_rlc_um(void     rlc_um_stat_req     (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP,
-                        unsigned int* stat_tx_pdcp_sdu,
-                        unsigned int* stat_tx_pdcp_bytes,
-                        unsigned int* stat_tx_pdcp_sdu_discarded,
-                        unsigned int* stat_tx_pdcp_bytes_discarded,
-                        unsigned int* stat_tx_data_pdu,
-                        unsigned int* stat_tx_data_bytes,
-                        unsigned int* stat_rx_pdcp_sdu,
-                        unsigned int* stat_rx_pdcp_bytes,
-                        unsigned int* stat_rx_data_pdus_duplicate,
-                        unsigned int* stat_rx_data_bytes_duplicate,
-                        unsigned int* stat_rx_data_pdu,
-                        unsigned int* stat_rx_data_bytes,
-                        unsigned int* stat_rx_data_pdu_dropped,
-                        unsigned int* stat_rx_data_bytes_dropped,
-                        unsigned int* stat_rx_data_pdu_out_of_window,
-                        unsigned int* stat_rx_data_bytes_out_of_window,
-                        unsigned int* stat_timer_reordering_timed_out);)
+              unsigned int* stat_tx_pdcp_sdu,
+              unsigned int* stat_tx_pdcp_bytes,
+              unsigned int* stat_tx_pdcp_sdu_discarded,
+              unsigned int* stat_tx_pdcp_bytes_discarded,
+              unsigned int* stat_tx_data_pdu,
+              unsigned int* stat_tx_data_bytes,
+              unsigned int* stat_rx_pdcp_sdu,
+              unsigned int* stat_rx_pdcp_bytes,
+              unsigned int* stat_rx_data_pdus_duplicate,
+              unsigned int* stat_rx_data_bytes_duplicate,
+              unsigned int* stat_rx_data_pdu,
+              unsigned int* stat_rx_data_bytes,
+              unsigned int* stat_rx_data_pdu_dropped,
+              unsigned int* stat_rx_data_bytes_dropped,
+              unsigned int* stat_rx_data_pdu_out_of_window,
+              unsigned int* stat_rx_data_bytes_out_of_window,
+              unsigned int* stat_timer_reordering_timed_out);)
 
 /*! \fn void     rlc_um_get_pdus (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Request the segmentation of SDUs based on status previously sent by MAC.

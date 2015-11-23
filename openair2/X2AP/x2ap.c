@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -43,35 +43,36 @@
 
 void *x2ap_task(void *arg)
 {
-    MessageDef *received_msg = NULL;
-    int         result;
+  MessageDef *received_msg = NULL;
+  int         result;
 
-    X2AP_DEBUG("Starting X2AP layer\n");
+  X2AP_DEBUG("Starting X2AP layer\n");
 
-    x2ap_prepare_internal_data();
+  x2ap_prepare_internal_data();
 
-    itti_mark_task_ready(TASK_X2AP);
+  itti_mark_task_ready(TASK_X2AP);
 
-    while (1) {
-        itti_receive_msg(TASK_X2AP, &received_msg);
+  while (1) {
+    itti_receive_msg(TASK_X2AP, &received_msg);
 
-        switch (ITTI_MSG_ID(received_msg)) {
-            case TERMINATE_MESSAGE:
-                itti_exit_task();
-                break;
+    switch (ITTI_MSG_ID(received_msg)) {
+    case TERMINATE_MESSAGE:
+      itti_exit_task();
+      break;
 
-            default:
-                X2AP_ERROR("Received unhandled message: %d:%s\n",
-                           ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
-                break;
-        }
-
-        result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
-        AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-
-        received_msg = NULL;
+    default:
+      X2AP_ERROR("Received unhandled message: %d:%s\n",
+                 ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+      break;
     }
-    return NULL;
+
+    result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+
+    received_msg = NULL;
+  }
+
+  return NULL;
 }
 
 

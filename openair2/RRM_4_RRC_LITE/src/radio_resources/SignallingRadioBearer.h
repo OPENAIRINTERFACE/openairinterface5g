@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -41,29 +41,28 @@
 
 using namespace std;
 
-class SignallingRadioBearer: public RadioBearer  {
-    public:
-        //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
+class SignallingRadioBearer: public RadioBearer
+{
+public:
+  //typedef boost::shared_ptr<ENodeB> ENodeBPtr;
 
-        SignallingRadioBearer ():m_id(0u) {};
-        SignallingRadioBearer (unsigned int);
-        ~SignallingRadioBearer ();
+  SignallingRadioBearer ():m_id(0u) {};
+  SignallingRadioBearer (unsigned int);
+  ~SignallingRadioBearer ();
 
-        friend inline bool operator>( const SignallingRadioBearer& l, const SignallingRadioBearer r )
-        {
-            return l.m_id > r.m_id;
-        }
-        friend inline bool operator==( const SignallingRadioBearer& l, const SignallingRadioBearer r )
-        {
-            return l.m_id == r.m_id;
-        }
-
-
-    private:
-        unsigned int       m_id;
+  friend inline bool operator>( const SignallingRadioBearer& l, const SignallingRadioBearer r ) {
+    return l.m_id > r.m_id;
+  }
+  friend inline bool operator==( const SignallingRadioBearer& l, const SignallingRadioBearer r ) {
+    return l.m_id == r.m_id;
+  }
 
 
-        SRB_ToAddMod_t     m_srb_to_add_mod;
+private:
+  unsigned int       m_id;
+
+
+  SRB_ToAddMod_t     m_srb_to_add_mod;
 };
 #    endif
 

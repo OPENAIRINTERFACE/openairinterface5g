@@ -21,14 +21,14 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
 
 /*! \file otg_rx.h
-* \brief Data structure and functions for OTG receiver  
+* \brief Data structure and functions for OTG receiver
 * \author navid nikaein A. Hafsaoui
 * \date 2011
 * \version 1.0
@@ -40,7 +40,7 @@
 
 
 #ifndef __OTG_RX_H__
-#	define __OTG_RX_H__
+# define __OTG_RX_H__
 
 #include <unistd.h>
 #include <stdio.h>
@@ -53,32 +53,33 @@
 
 
 
-/*! \fn char *check_packet(int src, int dst, int ctime);
-* \brief check if the packet is well received and do measurements: one way delay, throughput,etc. 
-* \param[in] the source 
-* \param[in] the destination 
+/*! \fn int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buffer_tx, const unsigned int size);
+* \brief check if the packet is well received and do measurements: one way delay, throughput,etc.
+* \param[in] the destination
 * \param[in] time of the emulation
+* \param[in] The packet
+* \param[in] Size of the packet
 * \param[out] return NULL is the packet is well received,  else the packet to forward
-* \note 
+* \note
 * @ingroup  _otg
 */
-int otg_rx_pkt(int src, int dst, int ctime, char *packet, unsigned int size);
+int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buffer_tx, const unsigned int size);
 
 
 /*! \fn void owd_const_gen(int src,int dst);
 *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
-*\param[in] the source 
+*\param[in] the source
 *\param[in] the destination
 *\param[out] void
-*\note 
+*\note
 *@ingroup  _otg
 */
-void owd_const_gen(int src,int dst, int flow_id, unsigned int flag);
+void owd_const_gen(const int src, const int dst, const int flow_id, const unsigned int flag);
 
 /*! \fn float owd_const_capillary();
 *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
 *\param[out] float: capillary delay constant
-*\note 
+*\note
 *@ingroup  _otg
 */
 float owd_const_capillary(void);
@@ -86,7 +87,7 @@ float owd_const_capillary(void);
 /*! \fn float owd_const_mobile_core();
 *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
 *\param[out] float: mobile core delay constant
-*\note 
+*\note
 *@ingroup  _otg
 */
 float owd_const_mobile_core(void);
@@ -94,7 +95,7 @@ float owd_const_mobile_core(void);
 /*! \fn float owd_const_IP_backbone();
 *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
 *\param[out] float: IP backbone delay constant
-*\note 
+*\note
 *@ingroup  _otg
 */
 float owd_const_IP_backbone(void);
@@ -102,24 +103,30 @@ float owd_const_IP_backbone(void);
 /*! \fn float owd_const_applicatione();
 *\brief compute the one way delay introduced in LTE/LTE-A network REF PAPER: "Latency for Real-Time Machine-to-Machine Communication in LTE-Based System Architecture"
 *\param[out] float: application delay constant
-*\note 
+*\note
 *@ingroup  _otg
 */
 float owd_const_application(void);
 
 
-/*! \fn void rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
+/*! \fn void rx_check_loss(const int src, const int dst, const unsigned int flag, const int seq_num, unsigned int * const seq_num_rx, unsigned int * const nb_loss_pkts);
 *\brief check the number of loss packet/out of sequence
 *\param[in] src
 *\param[in] dst
 *\param[in] flag: background or data
 *\param[in] seq_num: packet sequence number
 *\param[in] seq_num_rx:RX sequence number
-*\param[in] nb_loss_pkts: number of lost packet 
+*\param[in] nb_loss_pkts: number of lost packet
 *\param[out] lost_packet: (0) no lost packets, (1) lost packets
-*\note 
+*\note
 *@ingroup  _otg
 */
-int rx_check_loss(int src, int dst, unsigned int flag, int seq_num, unsigned int *seq_num_rx, unsigned int *nb_loss_pkts);
+int rx_check_loss(
+  const int src,
+  const int dst,
+  const unsigned int flag,
+  const int seq_num,
+  unsigned int * const seq_num_rx,
+  unsigned int * const nb_loss_pkts);
 
 #endif

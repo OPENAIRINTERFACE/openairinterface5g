@@ -24,11 +24,12 @@ IMPORTS
 	id-Time-UE-StayedInCell-EnhancedGranularity,
 	id-MBMS-Service-Area-List,
 	id-HO-cause,
-	x2ap-maxnoofBearers,
 	x2ap-maxCellineNB,
 	x2ap-maxEARFCN,
 	x2ap-maxInterfaces,
+	x2ap-maxFailedMeasObjects,
 	x2ap-maxnoofBands,
+	x2ap-maxnoofBearers,
 	x2ap-maxnoofBPLMNs,
 	x2ap-maxnoofCells,
 	x2ap-maxnoofEPLMNs,
@@ -54,9 +55,9 @@ FROM X2AP-CommonDataTypes
 
 --	ProtocolExtensionContainer{},
 --	ProtocolIE-Single-Container{},
---	X2AP-PROTOCOL-EXTENSION,
+	X2AP-PROTOCOL-EXTENSION
 --	X2AP-PROTOCOL-IES		
---FROM X2AP-Containers
+FROM X2AP-Containers
 
 	X2ap-IE
 FROM X2AP-PDU;
@@ -65,6 +66,13 @@ FROM X2AP-PDU;
 X2ap-IE-Extensions ::= SEQUENCE (SIZE (1..x2ap-maxProtocolExtensions)) OF X2ap-IE
 
 -- A
+X2ap-ActivatedCellList ::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-ActivatedCellList-Item
+X2ap-ActivatedCellList-Item ::= SEQUENCE {
+	ecgi								X2ap-ECGI,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions						ProtocolExtensionContainer { { X2ap-ActivatedCellList-Item-ExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
 
 X2ap-ABSInformation ::= CHOICE {
 	fdd					X2ap-ABSInformationFDD,
@@ -254,6 +262,38 @@ X2ap-CellType ::= SEQUENCE {
 X2ap-CellType-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
 	...
 }
+X2ap-CellToReport-List 		::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-IE
+--ProtocolIE-Single-Container { {X2ap-CellToReport-ItemIEs} }
+
+X2ap-CellToReport-Item ::= SEQUENCE {
+	cell-ID									X2ap-ECGI,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions							X2ap-ProtocolExtensionContainer { {CellToReport-Item-ExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
+X2ap-MeasurementFailureCause-List	::= SEQUENCE (SIZE (1..x2ap-maxFailedMeasObjects)) OF X2ap-IE
+
+X2ap-MeasurementFailureCause-Item ::= SEQUENCE {
+	measurementFailedReportCharacteristics			X2ap-ReportCharacteristics,
+	cause											X2ap-Cause,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions									ProtocolExtensionContainer { { X2ap-MeasurementFailureCause-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
+X2ap-CellInformation-List 		::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-IE
+--ProtocolIE-Single-Container { {X2ap-CellInformation-ItemIEs} }
+
+X2ap-CellInformation-Item ::= SEQUENCE {
+	cell-ID							X2ap-ECGI,
+	ul-InterferenceOverloadIndication		X2ap-UL-InterferenceOverloadIndication		OPTIONAL,
+	ul-HighInterferenceIndicationInfo		X2ap-UL-HighInterferenceIndicationInfo		OPTIONAL,
+	relativeNarrowbandTxPower				X2ap-RelativeNarrowbandTxPower				OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions							ProtocolExtensionContainer { {X2ap-CellInformation-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
 
 X2ap-CompositeAvailableCapacityGroup	::= SEQUENCE {
 	dL-CompositeAvailableCapacity					X2ap-CompositeAvailableCapacity,
@@ -291,6 +331,29 @@ X2ap-COUNTvalue-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
 	...
 }
 
+X2ap-CompleteFailureCauseInformation-List	::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-IE
+--ProtocolIE-Single-Container { {X2ap-CompleteFailureCauseInformation-ItemIEs} }
+
+X2ap-CompleteFailureCauseInformation-Item ::= SEQUENCE {
+	cell-ID											X2ap-ECGI,
+	measurementFailureCause-List					X2ap-MeasurementFailureCause-List,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions									ProtocolExtensionContainer { { X2ap-CompleteFailureCauseInformation-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
+X2ap-CellMeasurementResult-List 		::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-IE
+--ProtocolIE-Single-Container { {X2ap-CellMeasurementResult-ItemIEs} }
+
+X2ap-CellMeasurementResult-Item ::= SEQUENCE {
+	cell-ID						X2ap-ECGI,
+	hWLoadIndicator				X2ap-HWLoadIndicator		OPTIONAL,
+	s1TNLLoadIndicator			X2ap-S1TNLLoadIndicator	OPTIONAL,
+	radioResourceStatus			X2ap-RadioResourceStatus	OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions				X2ap-ProtocolExtensionContainer { {X2ap-CellMeasurementResult-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
 
 X2ap-CriticalityDiagnostics ::= SEQUENCE {
 	procedureCode					X2ap-ProcedureCode					OPTIONAL,
@@ -452,6 +515,44 @@ X2ap-E-RAB-Item ::= SEQUENCE {
 }
 
 X2ap-E-RAB-Item-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+X2ap-E-RABs-ToBeSetup-List ::= SEQUENCE (SIZE(1..x2ap-maxnoofBearers)) OF X2ap-IE
+
+X2ap-E-RABs-ToBeSetup-Item ::= SEQUENCE {
+	e-RAB-ID					X2ap-E-RAB-ID,
+	e-RAB-Level-QoS-Parameters		X2ap-E-RAB-Level-QoS-Parameters,
+	dL-Forwarding					X2ap-DL-Forwarding													OPTIONAL,
+	uL-GTPtunnelEndpoint			X2ap-GTPtunnelEndpoint,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions					ProtocolExtensionContainer { {X2ap-E-RABs-ToBeSetup-ItemExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
+X2ap-E-RABs-Admitted-List 		::= SEQUENCE (SIZE (1..x2ap-maxnoofBearers)) OF X2ap-IE
+--ProtocolIE-Single-Container { {X2ap-E-RABs-Admitted-ItemIEs} }
+
+X2ap-E-RABs-Admitted-Item ::= SEQUENCE {
+	e-RAB-ID					X2ap-E-RAB-ID,
+	uL-GTP-TunnelEndpoint			X2ap-GTPtunnelEndpoint	OPTIONAL,
+	dL-GTP-TunnelEndpoint			X2ap-GTPtunnelEndpoint	OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions					ProtocolExtensionContainer { {X2ap-E-RABs-Admitted-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
+X2ap-E-RABs-SubjectToStatusTransfer-List	::= SEQUENCE (SIZE (1..x2ap-maxnoofBearers)) OF X2ap-IE
+--ProtocolIE-Single-Container { { X2ap-E-RABs-SubjectToStatusTransfer-ItemIEs} }
+
+X2ap-E-RABs-SubjectToStatusTransfer-Item ::= SEQUENCE {
+	e-RAB-ID						X2ap-E-RAB-ID,
+	
+	receiveStatusofULPDCPSDUs		X2ap-ReceiveStatusofULPDCPSDUs			OPTIONAL,
+	uL-COUNTvalue					X2ap-COUNTvalue,
+	dL-COUNTvalue					X2ap-COUNTvalue,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions							ProtocolExtensionContainer { {X2ap-E-RABs-SubjectToStatusTransfer-ItemExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
 	...
 }
 
@@ -709,6 +810,18 @@ X2ap-MDT-Activation		::= ENUMERATED {
 	...
 }
 
+
+X2ap-MeasurementInitiationResult-List	::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-IE
+--ProtocolIE-Single-Container { { X2ap-MeasurementInitiationResult-ItemIEs} }
+
+X2ap-MeasurementInitiationResult-Item ::= SEQUENCE {
+	cell-ID											X2ap-ECGI,
+	measurementFailureCause-List					X2ap-MeasurementFailureCause-List	OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions									ProtocolExtensionContainer { { X2ap-MeasurementInitiationResult-Item-ExtIEs} }	OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
+
 X2ap-MDT-Configuration ::= SEQUENCE {
 	mdt-Activation				X2ap-MDT-Activation,
 	areaScopeOfMDT				X2ap-AreaScopeOfMDT,
@@ -816,9 +929,15 @@ X2ap-Number-of-Antennaports ::= ENUMERATED {
 
 -- O
 
+X2ap-Old-ECGIs::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-ECGI
+
 X2ap-Oneframe ::= BIT STRING (SIZE (6))
 
 -- P
+X2ap-PartialSuccessIndicator ::= ENUMERATED {
+	partial-success-allowed,
+...
+}
 
 X2ap-PDCP-SN ::= INTEGER (0..4095)  
 
@@ -870,6 +989,14 @@ X2ap-PriorityLevel				::= INTEGER { spare (0), highest (1), lowest (14), no-prio
 X2ap-QCI ::= INTEGER (0..255)
 
 -- R
+
+X2ap-ReportingPeriodicity ::= ENUMERATED {
+	one-thousand-ms,
+	two-thousand-ms,
+	five-thousand-ms,
+	ten-thousand-ms,
+...
+}
 
 X2ap-RadioframeAllocationOffset ::= INTEGER (0..7, ...)
 
@@ -975,6 +1102,14 @@ X2ap-RRCConnSetupIndicator::= ENUMERATED {
 }
 
 -- S
+X2ap-ServedCellsToActivate::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-ServedCellsToActivate-Item
+
+X2ap-ServedCellsToActivate-Item ::= SEQUENCE {
+	ecgi						X2ap-ECGI,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions					ProtocolExtensionContainer { { X2ap-ServedCellsToActivate-Item-ExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
+	...
+}
 
 X2ap-S1TNLLoadIndicator ::= SEQUENCE {
 	dLS1TNLLoadIndicator			X2ap-LoadIndicator,
@@ -991,10 +1126,10 @@ X2ap-S1TNLLoadIndicator-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
 
 
 
-X2ap-ServedCells ::= SEQUENCE (SIZE (1.. x2ap-maxCellineNB)) OF ServedCellItem
+X2ap-ServedCells ::= SEQUENCE (SIZE (1.. x2ap-maxCellineNB)) OF X2ap-ServedCellItem
 
 
-ServedCellItem ::= SEQUENCE {
+X2ap-ServedCellItem ::= SEQUENCE {
 	servedCellInfo					X2ap-ServedCell-Information,
 	neighbour-Info					X2ap-Neighbour-Information			OPTIONAL,
 --EURECOM COMMENT, ADDED NEXT LINE 	iE-Extensions					ProtocolExtensionContainer { {ServedCell-ExtIEs} } OPTIONAL,
@@ -1003,6 +1138,17 @@ ServedCellItem ::= SEQUENCE {
 }
 
 X2ap-ServedCell-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+X2ap-ServedCellsToModify::= SEQUENCE (SIZE (1..x2ap-maxCellineNB)) OF X2ap-ServedCellsToModify-Item
+
+X2ap-ServedCellsToModify-Item ::= SEQUENCE {
+	old-ecgi						X2ap-ECGI,
+	servedCellInfo					X2ap-ServedCell-Information,
+	neighbour-Info					X2ap-Neighbour-Information			OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions					ProtocolExtensionContainer { { X2ap-ServedCellsToModify-Item-ExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
 	...
 }
 
@@ -1211,6 +1357,21 @@ X2ap-UESecurityCapabilities ::= SEQUENCE {
 }
 
 X2ap-UESecurityCapabilities-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+X2ap-UE-ContextInformation ::= SEQUENCE {
+	mME-UE-S1AP-ID						X2ap-UE-S1AP-ID,
+	uESecurityCapabilities				X2ap-UESecurityCapabilities,
+	aS-SecurityInformation				X2ap-AS-SecurityInformation,
+	uEaggregateMaximumBitRate			X2ap-UEAggregateMaximumBitRate,
+	subscriberProfileIDforRFP			X2ap-SubscriberProfileIDforRFP		OPTIONAL,
+	e-RABs-ToBeSetup-List				X2ap-E-RABs-ToBeSetup-List,
+	rRC-Context							X2ap-RRC-Context,
+	handoverRestrictionList				X2ap-HandoverRestrictionList		OPTIONAL,
+	locationReportingInformation		X2ap-LocationReportingInformation	OPTIONAL,
+--EURECOM COMMENT, ADDED NEXT LINE	iE-Extensions						ProtocolExtensionContainer { {X2ap-UE-ContextInformation-ExtIEs} } OPTIONAL,
+	iE-Extensions               X2ap-IE-Extensions OPTIONAL,
 	...
 }
 

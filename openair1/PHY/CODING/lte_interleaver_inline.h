@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,29 +14,31 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
 extern unsigned int threegpplte_interleaver_output;
 extern unsigned int threegpplte_interleaver_tmp;
 
-static inline void threegpplte_interleaver_reset(void) {
+static inline void threegpplte_interleaver_reset(void)
+{
   threegpplte_interleaver_output = 0;
   threegpplte_interleaver_tmp    = 0;
 }
 
 static inline unsigned short threegpplte_interleaver(unsigned short f1,
-					      unsigned short f2,
-					      unsigned short K) {
+    unsigned short f2,
+    unsigned short K)
+{
 
   threegpplte_interleaver_tmp = (threegpplte_interleaver_tmp+(f2<<1));
 
@@ -49,7 +51,8 @@ static inline unsigned short threegpplte_interleaver(unsigned short f1,
 }
 
 
-static inline short threegpp_interleaver_parameters(unsigned short bytes_per_codeword) {
+static inline short threegpp_interleaver_parameters(unsigned short bytes_per_codeword)
+{
   if (bytes_per_codeword<=64)
     return (bytes_per_codeword-5);
   else if (bytes_per_codeword <=128)
@@ -61,7 +64,7 @@ static inline short threegpp_interleaver_parameters(unsigned short bytes_per_cod
   else {
 #ifdef DEBUG_TURBO_ENCODER
     printf("Illegal codeword size !!!\n");
-#endif 
+#endif
     return(-1);
   }
 }

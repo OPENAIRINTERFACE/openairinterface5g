@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -48,9 +48,9 @@ extern "C" {
 /** @defgroup _detect_file Detect File
  *  @ingroup _fn
  *  @brief Detect new XML configuration file in USER_XML_FOLDER
- * @{*/ 
-  //int detect_file(int argc, char *argv[], char folder[DIR_LENGTH_MAX]);
-  int detect_file(char folder[DIR_LENGTH_MAX], char is_local_server[FILENAME_LENGTH_MAX]);
+ * @{*/
+//int detect_file(int argc, char *argv[], char folder[DIR_LENGTH_MAX]);
+int detect_file(char folder[DIR_LENGTH_MAX], char is_local_server[FILENAME_LENGTH_MAX]);
 /* @}*/
 
 #ifdef __cplusplus

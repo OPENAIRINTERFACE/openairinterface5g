@@ -1,7 +1,0 @@
-
-Files in this directory are test datas, please do not move/rename/delete 
-since this would cause certain "good" code to go "bad". If you really have 
-to change something here please run tests afterwards and be sure everything 
-is alright.
-
-- Baris Demiray <baris.demiray@eurecom.fr>

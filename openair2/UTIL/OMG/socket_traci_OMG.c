@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -44,164 +44,168 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netdb.h> 
+#include <netdb.h>
 #include "socket_traci_OMG.h"
 #include "storage_traci_OMG.h"
 
 
-int connection_(char *hoststr,int portno){
-        host = gethostbyname(hoststr);
-	
-	printf("trying to connect to %s at the port %i \n",hoststr, portno);
-        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-             #ifdef STANDALONE 
-   		 printf(" Socket Error\n");
-            #else
-                 LOG_D(OMG, " Socket Error\n");
- 	     #endif	
-        }
-         
-	server_addr.sin_family = AF_INET;     
-        server_addr.sin_port = htons(portno);   
-        server_addr.sin_addr = *((struct in_addr *)host->h_addr);
-        bzero(&(server_addr.sin_zero),8); 
+int connection_(char *hoststr,int portno)
+{
+  host = gethostbyname(hoststr);
 
-        if (connect(sock, (struct sockaddr *)&server_addr,
-                    sizeof(struct sockaddr)) < 0) 
-        {
-              #ifdef STANDALONE 
-   		  printf("Connection Failed\n"); 
-              #else
-                 LOG_E(OMG, " Connection Error\n");
- 	     #endif
+  printf("trying to connect to %s at the port %i \n",hoststr, portno);
 
-            return -1;
-            
-        }  
-	       
-        return 1;
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+#ifdef STANDALONE
+    printf(" Socket Error\n");
+#else
+    LOG_D(OMG, " Socket Error\n");
+#endif
+  }
+
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_port = htons(portno);
+  server_addr.sin_addr = *((struct in_addr *)host->h_addr);
+  bzero(&(server_addr.sin_zero),8);
+
+  if (connect(sock, (struct sockaddr *)&server_addr,
+              sizeof(struct sockaddr)) < 0) {
+#ifdef STANDALONE
+    printf("Connection Failed\n");
+#else
+    LOG_E(OMG, " Connection Error\n");
+#endif
+
+    return -1;
+
+  }
+
+  return 1;
 }
 
 
-void sendExact(int cmdLength){
-	
-        msgLength = cmdLength + 4;
-        writeInt(msgLength);
+void sendExact(int cmdLength)
+{
 
-        rearange();
-        unsigned char *buf = (unsigned char *)malloc(sizeof(unsigned char) * (msgLength));
-        storage *cur_ptr = storageStart;
-        size_t i = 0;
-        size_t numbytes = msgLength;
-        while (cur_ptr->next != NULL){
-	buf[i]= cur_ptr->item;
-        cur_ptr = cur_ptr->next;
-        i++;
-        }
-	buf[i]= cur_ptr->item;
+  msgLength = cmdLength + 4;
+  writeInt(msgLength);
 
-        while (numbytes > 0){
-                int n = send(sock, buf, (int)numbytes, 0);//<----- need to check
-		if (numbytes == n)
-			break;
-		
-                if (n<0) {
-                    #ifdef STANDALONE 
-   		       printf(" ERROR writing to socket\n");
-                    #else
-                        LOG_E(OMG, " ERROR writing to socket\n");
- 	            #endif	
-                        
-                }
-		
-                numbytes -= n;
-                buf +=n;
-        } 
-        freeStorage(storageStart);
-	free(buf);
+  rearange();
+  unsigned char *buf = (unsigned char *)malloc(sizeof(unsigned char) * (msgLength));
+  storage *cur_ptr = storageStart;
+  size_t i = 0;
+  size_t numbytes = msgLength;
+
+  while (cur_ptr->next != NULL) {
+    buf[i]= cur_ptr->item;
+    cur_ptr = cur_ptr->next;
+    i++;
+  }
+
+  buf[i]= cur_ptr->item;
+
+  while (numbytes > 0) {
+    int n = send(sock, buf, (int)numbytes, 0);//<----- need to check
+
+    if (numbytes == n)
+      break;
+
+    if (n<0) {
+#ifdef STANDALONE
+      printf(" ERROR writing to socket\n");
+#else
+      LOG_E(OMG, " ERROR writing to socket\n");
+#endif
+
+    }
+
+    numbytes -= n;
+    buf +=n;
+  }
+
+  freeStorage(storageStart);
+  free(buf);
 }
 
 
 
-storage * receiveExact(){
+storage * receiveExact()
+{
 
-        unsigned char* bufLength = (unsigned char *)malloc(sizeof(unsigned char) * (4));
-	int bytesRead = 0;
-	int readThisTime = 0;
-	
-        //Get the length of the entire message by reading the 1st field	
-	while (bytesRead<4)
-	{
-	        readThisTime = recv( sock, (char*)(bufLength + bytesRead), 4-bytesRead, 0 );
+  unsigned char* bufLength = (unsigned char *)malloc(sizeof(unsigned char) * (4));
+  int bytesRead = 0;
+  int readThisTime = 0;
 
-		if( readThisTime <= 0 ) {
-                        #ifdef STANDALONE 
-   		       printf(" tcpip::Socket::receive() @ recv\n");
-                    #else
-                        LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
- 	            #endif
-		}
+  //Get the length of the entire message by reading the 1st field
+  while (bytesRead<4) {
+    readThisTime = recv( sock, (char*)(bufLength + bytesRead), 4-bytesRead, 0 );
 
-		bytesRead += readThisTime;
-        }
-        
-        // create storage to access the content
-        tracker = writePacket(bufLength, 4);
-        
-	free( bufLength );
-        bufLength = 0;
-	
-        // store pointer to free the space later
-//         storage *freeTracker = tracker;   
-        int s= readInt();
-	int NN = s - 4;
-        printf("debug \n");
-        printf("value of s is %d \n",s);
-        printf("end debug \n");
-        //Free space after use
-        //freeStorage(freeTracker); // JHNOte: will be done by calling reset() in storage_traci_omg
+    if( readThisTime <= 0 ) {
+#ifdef STANDALONE
+      printf(" tcpip::Socket::receive() @ recv\n");
+#else
+      LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+#endif
+    }
 
-        int mySize = 0;
-        mySize = sizeof(unsigned char) * (NN);
-        printf("debug \n");
-        printf("value of mySize is %d \n",mySize);
-        printf("end debug \n");
-	// receive actual message content 
-	//unsigned char* buf = (unsigned char *)malloc(sizeof(unsigned char) * (NN));
-	unsigned char* buf = (unsigned char *)malloc(mySize);
-	
-        bytesRead = 0;
-	readThisTime = 0;
-	
-	while (bytesRead<NN)
-	{
-		readThisTime = recv( sock, (char*)(buf + bytesRead), NN-bytesRead, 0 );
-		
-                if( readThisTime <= 0 ) {
-                    #ifdef STANDALONE 
-   		       printf(" tcpip::Socket::receive() @ recv\n");
-                    #else
-                       LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
- 	            #endif
-                }
+    bytesRead += readThisTime;
+  }
 
-		bytesRead += readThisTime;
-	}
-	
-	storage* temp = writePacket(buf, NN);
-	free( buf );
-	return temp;
-	//return writePacket(buf, NN);
-        
+  // create storage to access the content
+  tracker = writePacket(bufLength, 4);
+
+  free( bufLength );
+  bufLength = 0;
+
+  // store pointer to free the space later
+  //         storage *freeTracker = tracker;
+  int s= readInt();
+  int NN = s - 4;
+  printf("debug \n");
+  printf("value of s is %d \n",s);
+  printf("end debug \n");
+  //Free space after use
+  //freeStorage(freeTracker); // JHNOte: will be done by calling reset() in storage_traci_omg
+
+  int mySize = 0;
+  mySize = sizeof(unsigned char) * (NN);
+  printf("debug \n");
+  printf("value of mySize is %d \n",mySize);
+  printf("end debug \n");
+  // receive actual message content
+  //unsigned char* buf = (unsigned char *)malloc(sizeof(unsigned char) * (NN));
+  unsigned char* buf = (unsigned char *)malloc(mySize);
+
+  bytesRead = 0;
+  readThisTime = 0;
+
+  while (bytesRead<NN) {
+    readThisTime = recv( sock, (char*)(buf + bytesRead), NN-bytesRead, 0 );
+
+    if( readThisTime <= 0 ) {
+#ifdef STANDALONE
+      printf(" tcpip::Socket::receive() @ recv\n");
+#else
+      LOG_E(OMG, " tcpip::Socket::receive() @ recv\n");
+#endif
+    }
+
+    bytesRead += readThisTime;
+  }
+
+  storage* temp = writePacket(buf, NN);
+  free( buf );
+  return temp;
 }
 
 
-void close_connection(){
-        #ifdef STANDALONE 
-   		  printf("closing the socket \n");
-        #else
-                 LOG_E(OMG, "closing the socket \n");
-        #endif
-        close(sock);
+void close_connection()
+{
+#ifdef STANDALONE
+  printf("closing the socket \n");
+#else
+  LOG_E(OMG, "closing the socket \n");
+#endif
+  close(sock);
 }
 

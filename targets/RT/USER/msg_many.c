@@ -35,22 +35,23 @@ static void *msg_test_thread(void *arg)
   rt_make_hard_real_time();
 
   task_index = tm_add_task(self, ri);
-  if(task_index != -TM_WORKER_FULL_ERROR)
-  {
-    while (*(ri->exit_condition) == 0)
-      {
-        // wait only one PERIOD to avoid wait for ever 
-        sender_task = rt_receive_timed(ri->sender, &msg, ri->period);
-        //sender_task = rt_receive(0, &msg);
-        if(sender_task == ri->sender)
-          counter++;
-      }
+
+  if(task_index != -TM_WORKER_FULL_ERROR) {
+    while (*(ri->exit_condition) == 0) {
+      // wait only one PERIOD to avoid wait for ever
+      sender_task = rt_receive_timed(ri->sender, &msg, ri->period);
+
+      //sender_task = rt_receive(0, &msg);
+      if(sender_task == ri->sender)
+        counter++;
+    }
+
     rt_printk("%s: counter == %i\n", name, counter);
     tm_del_task(task_index, ri);
   } else {
     rt_printk("%s: Worker array full!\n", name);
   }
-  
+
   rt_make_soft_real_time();
 
   rt_task_delete(self);
@@ -89,8 +90,10 @@ int main(void)
   ri.exit_condition = &exit_condition;
   ri.period = nano2count(PERIOD);
   ri.update_sem = rt_sem_init(nam2num("MUTEX"), 1);
+
   if(ri.update_sem == 0)
     exit(-1);
+
   ri.used = 0;
   ri.worker = &worker_tasks;
 
@@ -98,14 +101,14 @@ int main(void)
   rt_task_make_periodic(self, now, ri.period);
 
   /* start all threads */
-  for(i = 0; i < NUM_THREADS; i++)
-  {
+  for(i = 0; i < NUM_THREADS; i++) {
     ti = (thread_info_t *)malloc(sizeof(thread_info_t));
-    if(ti == NULL)
-    {
+
+    if(ti == NULL) {
       rt_printk("MAINTK: can't get memory!\n");
       exit(-1);
     }
+
     ti->ri = &ri;
     ti->thread_num = i;
     worker_threads[i] = rt_thread_create(msg_test_thread, ti , 10000);
@@ -114,28 +117,31 @@ int main(void)
   rt_sleep(NUM_THREADS * ri.period);
 
   rt_printk("start\n");
-  for(i = 0; i < THRESHOLD; i++)
-    {
-      rt_task_wait_period();
-      lost = 1;
-      for(ii = 0; ii < ri.used; ii++)
-      {
-        old_index = tm_get_next_task_index(old_index, &ri);
-        if(old_index == -TM_WORKER_ERROR)
-        {
-          rt_printk("MAINTK: No Tasks!\n");
-          break;
-        }
-        tmp_worker_task = rt_send_if(worker_tasks[old_index], i);
-        if(tmp_worker_task == worker_tasks[old_index])
-        {
-          lost = 0;
-          break;
-        }
+
+  for(i = 0; i < THRESHOLD; i++) {
+    rt_task_wait_period();
+    lost = 1;
+
+    for(ii = 0; ii < ri.used; ii++) {
+      old_index = tm_get_next_task_index(old_index, &ri);
+
+      if(old_index == -TM_WORKER_ERROR) {
+        rt_printk("MAINTK: No Tasks!\n");
+        break;
       }
-      if(lost)
-        fail_count++;
+
+      tmp_worker_task = rt_send_if(worker_tasks[old_index], i);
+
+      if(tmp_worker_task == worker_tasks[old_index]) {
+        lost = 0;
+        break;
+      }
     }
+
+    if(lost)
+      fail_count++;
+  }
+
   rt_printk("fail_count == %i\n", fail_count);
 
   // cleanup
@@ -143,11 +149,12 @@ int main(void)
   rt_make_soft_real_time();
 
   rt_task_delete(self);
+
   /* wait for the worker threadss  */
-  for(ii = 0; ii < ri.used; ii++)
-  {
+  for(ii = 0; ii < ri.used; ii++) {
     rt_thread_join(worker_threads[ii]);
   }
+
   stop_rt_timer();
   return 0;
 }

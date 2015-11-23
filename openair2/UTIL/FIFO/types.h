@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -42,15 +42,15 @@
 /* Types regrouping both user-defined and regular events */
 typedef enum  {
   MIN_ET=0,
-  OAI_ET=MIN_ET, // config events 
+  OAI_ET=MIN_ET, // config events
   SYS_ET,
   TOPO_ET,
   APP_ET,
   EMU_ET,
   DL_ET, // frame events
-  UL_ET, 
-  S_ET, 
-  PHY_ET, // protocol events 
+  UL_ET,
+  S_ET,
+  PHY_ET, // protocol events
   MAC_ET,
   RLC_ET,
   PDCP_ET,
@@ -64,14 +64,14 @@ typedef enum Job_type_e { JT_OTG, JT_PDCP, JT_PHY_MAC, JT_INIT_SYNC, JT_DL, JT_U
 typedef enum Operation_Type_e { READ, WRITE, RESET} Operation_Type_t;
 
 typedef struct Job_s {
-    enum Job_type_e type;
-    int             exe_time; /* execution time at the worker*/
-    int             nid; /* node id*/
-    eNB_flag_t      eNB_flag;
-    frame_t         frame;
-    int             last_slot;
-    int             next_slot;
-    int             ctime;
+  enum Job_type_e type;
+  int             exe_time; /* execution time at the worker*/
+  int             nid; /* node id*/
+  eNB_flag_t      eNB_flag;
+  frame_t         frame;
+  int             last_slot;
+  int             next_slot;
+  int             ctime;
 } Job_t;
 
 typedef struct Signal_buffers_s { // (s = transmit, r,r0 = receive)
@@ -96,13 +96,13 @@ typedef struct Packet_otg_s {
 } Packet_otg_t;
 
 typedef struct {
-    Event_Type_t type;
-		enum Operation_Type_e optype; //op
-    char             *key;
-    void             *value;
-    frame_t           frame;
-		int ue;
-		int lcid;
+  Event_Type_t type;
+  enum Operation_Type_e optype; //op
+  char             *key;
+  void             *value;
+  frame_t           frame;
+  int ue;
+  int lcid;
 } Event_t;
 
 /*typedef struct Global_Time {
@@ -117,9 +117,9 @@ typedef struct {
 
 
 typedef struct Packet_otg_elt_s {
-    struct Packet_otg_elt_s *next;
-    struct Packet_otg_elt_s *previous;
-    Packet_otg_t             otg_pkt;
+  struct Packet_otg_elt_s *next;
+  struct Packet_otg_elt_s *previous;
+  Packet_otg_t             otg_pkt;
 } Packet_otg_elt_t;
 
 typedef struct Job_element_s {
@@ -128,8 +128,8 @@ typedef struct Job_element_s {
 } Job_elt_t;
 
 typedef struct Event_element_s {
-  struct Event_element *next;
-  struct Event_element *previous;
+  struct Event_element_s *next;
+  struct Event_element_s *previous;
   Event_t               event;
 } Event_elt_t;
 #endif

@@ -21,7 +21,7 @@
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
@@ -52,10 +52,10 @@
 
 extern bool bigEndian;
 
-union n{
-       short   s;
-       char    c[sizeof(short)];
-     } un ;
+union n {
+  short   s;
+  char    c[sizeof(short)];
+} un ;
 
 
 void check_endianness(void);
@@ -63,8 +63,8 @@ void check_endianness(void);
 //----------------STORAGE------------------------------------
 struct Storage {
 
-        unsigned char item;
-        struct Storage *next;
+  unsigned char item;
+  struct Storage *next;
 
 } ;
 typedef struct Storage storage;
@@ -78,42 +78,42 @@ int descLen;
 
 extern int msgLength;
 
-	void reset(void);
-        int storageLength(storage *);
-        
-        void rearange(void);
-        unsigned char readChar(void); 
-	void writeChar(unsigned char); 
+void reset(void);
+int storageLength(storage *);
 
-	int readByte(void) ;
-	void writeByte(int) ;
+void rearange(void);
+unsigned char readChar(void);
+void writeChar(unsigned char);
+
+int readByte(void) ;
+void writeByte(int) ;
 
 
-	int readUnsignedByte(void); 
-	void writeUnsignedByte(int); 
+int readUnsignedByte(void);
+void writeUnsignedByte(int);
 
-	char * readString(void) ;
-	void writeString(char *);
+char * readString(void) ;
+void writeString(char *);
 
-        string_list* readStringList(string_list*) ;
-	void writeStringList(string_list*); 
+string_list* readStringList(string_list*) ;
+void writeStringList(string_list*);
 
-	int readShort(void) ;
-	void writeShort(int); 
+int readShort(void) ;
+void writeShort(int);
 
-	int readInt(void) ;
-	void writeInt(int); 
+int readInt(void) ;
+void writeInt(int);
 
-	float readFloat(void) ;
-	void writeFloat( float ); 
+float readFloat(void) ;
+void writeFloat( float );
 
-        double readDouble(void) ;
-        void writeDouble( double ); 
+double readDouble(void) ;
+void writeDouble( double );
 
-	storage* writePacket(unsigned char*, int);
+storage* writePacket(unsigned char*, int);
 
-	//void writeStorage(storage & );
-        void freeStorage(storage *);
+//void writeStorage(storage & );
+void freeStorage(storage *);
 
 #endif
 

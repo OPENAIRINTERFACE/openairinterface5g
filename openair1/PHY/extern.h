@@ -1,5 +1,5 @@
 /*******************************************************************************
-    OpenAirInterface 
+    OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
@@ -14,15 +14,15 @@
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with OpenAirInterface.The full GNU General Public License is 
-   included in this distribution in the file called "COPYING". If not, 
+    along with OpenAirInterface.The full GNU General Public License is
+   included in this distribution in the file called "COPYING". If not,
    see <http://www.gnu.org/licenses/>.
 
   Contact Information
   OpenAirInterface Admin: openair_admin@eurecom.fr
   OpenAirInterface Tech : openair_tech@eurecom.fr
-  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-  
+  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
@@ -30,16 +30,14 @@
 #define __PHY_EXTERN_H__
 
 #include "PHY/defs.h"
-#include "PHY/TOOLS/twiddle_extern.h"
+
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;
- extern  char fmageren_name2[512];
+extern  char fmageren_name2[512];
 
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
-extern short *twiddle_fft,*twiddle_ifft,*twiddle_fft_times4,*twiddle_ifft_times4,*twiddle_fft_half,*twiddle_ifft_half;
-extern unsigned short rev[2048],rev_times4[8192],rev_half[1024],rev1024[1024],rev256[256],rev512[512],rev2048[2048],rev4096[4096],rev8192[8192];
 
 #ifdef OPENAIR_LTE
 #include "PHY/LTE_TRANSPORT/extern.h"
@@ -66,12 +64,12 @@ extern short primary_synch2[144];
 extern unsigned char primary_synch0_tab[72];
 extern unsigned char primary_synch1_tab[72];
 extern unsigned char primary_synch2_tab[72];
-extern int16_t *primary_synch0_time;
-extern int16_t *primary_synch1_time;
-extern int16_t *primary_synch2_time;
-extern int *sync_corr_ue0;
-extern int *sync_corr_ue1;
-extern int *sync_corr_ue2;
+extern int16_t *primary_synch0_time; //!< index: [0..ofdm_symbol_size*2[
+extern int16_t *primary_synch1_time; //!< index: [0..ofdm_symbol_size*2[
+extern int16_t *primary_synch2_time; //!< index: [0..ofdm_symbol_size*2[
+extern int *sync_corr_ue0; //!< index [0..10*samples_per_tti[
+extern int *sync_corr_ue1; //!< index [0..10*samples_per_tti[
+extern int *sync_corr_ue2; //!< index [0..10*samples_per_tti[
 
 extern int flagMag;
 //extern short **txdataF_rep_tmp;
@@ -118,4 +116,4 @@ extern double beta2_dlsch[6][MCS_COUNT];
 
 
 #endif /*__PHY_EXTERN_H__ */
- 
+
