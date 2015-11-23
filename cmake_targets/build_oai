@@ -54,6 +54,8 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 
+trap handle_ctrl_c INT
+
 function print_help() {
   echo_info '
 This program installs OpenAirInterface Software
@@ -80,8 +82,6 @@ Options
    Makes the LTE softmodem
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) 
---EPC
-   Makes the EPC (MME-SPGW, HSS)
 --RRH
    Makes the RRH
 -r | --3gpp-release
@@ -116,8 +116,8 @@ Options
 
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
- Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
- NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files -w USRP
+ Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
+ NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB -x --install-system-files -w USRP
 Usage (Regular):
  oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
@@ -158,10 +158,6 @@ function main() {
        --UE)
             UE=1
             echo_info "Will compile UE"
-            shift;;
-       --EPC)
-            EPC=1
-            echo_info "Will compile EPC"
             shift;;
        --RRH)
             RRH=1
@@ -416,7 +412,7 @@ function main() {
 
   # EXMIMO drivers & firmware loader
   ###############
-  if [ "$HW" = "EXMIMO" -a "$EPC" = "0" ] ; then
+  if [ "$HW" = "EXMIMO" ] ; then
     
     echo_info "Compiling Express MIMO 2 board drivers"
     compilations \
@@ -554,42 +550,24 @@ function main() {
       rrh_gw $dbin/rrh_gw
   fi
 
-  # EPC compilation
-  ##################
-  if [ "$EPC" = "1" ] ; then
-      echo_info "Compiling EPC"
-      # Example HSS and EPC run on the same host
-      if [ "$CLEAN" = "1" ]; then
-	  $OPENAIR_DIR/cmake_targets/tools/build_epc --clean --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-	  $OPENAIR_DIR/cmake_targets/tools/build_hss --clean --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-      else
-	  $OPENAIR_DIR/cmake_targets/tools/build_epc --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-	  $OPENAIR_DIR/cmake_targets/tools/build_hss --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-      fi
-      
-      #   if [ "$INSTALL_SYSTEM_FILES" = "1" ] ;then
-      #    if [ -f $dbin/hss.conf ] ; then
-      #      sed -e 's/ *= */=/' $dbin/hss.conf > $dconf/hss.conf.nospace
-      #      source $dconf/hss.conf.nospace
-      #      rm -f $dconf/hss.conf.nospace
-      #      create_hss_database root linux "$MYSQL_user" "$MYSQL_pass" "$MYSQL_db"
-      #    else
-      #      echo_warning "not created HSS database: config not found"
-      #    fi
-      #  fi
-  fi
   
   # Auto-tests
   #####################
   if [ "$OAI_TEST" = "1" ]; then
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
+    read -s -p "Enter Password: " mypassword
+    echo -e "\n"
+    echo_info "The log file for the autotest script for debugging is located here: $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log "
+    echo_info "The results of autotests results is located here: $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+    echo_info "You can hit CTRL-C any time to terminate the autotests..."
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     if [ "$RUN_GROUP" -eq "1" ]; then
-        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP"
+        echo '$mypassword'  | $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     else
-        $SUDO $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+        echo '$mypassword'  | $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     fi
+    wait
   else
     echo_info "10. Bypassing the Tests ..."
   fi

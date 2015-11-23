@@ -7,12 +7,15 @@ else
    exit 1
 fi
 
+trap handle_ctrl_c INT
+
 source $OPENAIR_DIR/cmake_targets/tools/test_helper
+
 
 #SUDO="sudo -E "
 tdir=$OPENAIR_DIR/cmake_targets/autotests
-rm -fr $tdir/bin $tdir/log
-mkdir -p $tdir/bin $tdir/log
+rm -fr $tdir/bin 
+mkdir -p $tdir/bin
 results_file="$tdir/log/results_autotests.xml"
 
 updated=$(svn st -q $OPENAIR_DIR)
@@ -36,7 +39,7 @@ cd $tdir
 #\param $12 -> class of the test case (compilation, execution)
 #\param $13 -> output of compilation program that needs to be found for test case to pass
 #\param $14 -> tags to help identify the test case for readability in output xml file
-test_compile() {
+function test_compile() {
 
     xUnit_start
     test_case_name=$1
@@ -130,8 +133,9 @@ test_compile() {
 #\param $12 -> class of the test case (compilation, execution)
 #\param $13 -> output of compilation program that needs to be found for test case to pass
 #\param $14 -> tags to help identify the test case for readability in output xml file
+#\param $15 => password for the user to run certain commands as sudo
 
-test_compile_and_run() {
+function test_compile_and_run() {
     xUnit_start
     test_case_name=$1
     log_dir=$tdir/log
@@ -149,16 +153,13 @@ test_compile_and_run() {
     class=${12}
     compile_prog_out=${13}
     tags=${14}
+    mypassword=${15}
     build_dir=$tdir/$1/build
     exec_file=$build_dir/$6
     
     #Temporary log file where execution log is stored.
     temp_exec_log=$log_dir/temp_log.txt
     
-    
-
-
-
     #echo "log_dir = $log_dir"
     #echo "log_file = $log_file"
     #echo "exec_file = $exec_file"
@@ -217,7 +218,8 @@ test_compile_and_run() {
           echo "<EXECUTION LOG Run = $run_index >" >> $log_file  2>&1
  
           if [ -n "$pre_exec_file" ]; then
-            { eval "source $pre_exec_file $pre_exec_args"; } >> $log_file  2>&1
+            { eval " echo '$mypassword' |sudo -S -E $pre_exec_file $pre_exec_args " ; }>> $log_file  2>&1
+
           fi
           echo "Executing $exec_file $main_exec_args_array_index "
           echo "Executing $exec_file $main_exec_args_array_index " >> $log_file
@@ -275,34 +277,14 @@ test_compile_and_run() {
        let "tags_array_index++"
      done # End of for loop (nindex)
    fi
+   rm -fr $build_dir
 }
 
 dbin=$OPENAIR_DIR/cmake_targets/autotests/bin
 dlog=$OPENAIR_DIR/cmake_targets/autotests/log
 
-run_test() {
-case=case$1; shift
-cmd=$1; shift
-expected=$3; shift
-echo "expected = $expected"
-exit
 
-$cmd > $dlog/$case.txt 2>&1
-if [ $expected = "true" ] ; then	 
-  if $* $dlog/$case.txt; then
-    echo_success "test $case, command: $cmd ok"
-  else
-    echo_error "test $case, command: $cmd Failed"
-  fi
-else 
-  if $* $dlog/$case.txt; then
-    echo_error "test $case, command: $cmd Failed"
-  else
-    echo_success "test $case, command: $cmd ok"
-  fi
-fi
-}
-print_help() {
+function print_help() {
  echo_info '
 This program runs automated test case system for OpenAirInterface
 You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
@@ -314,11 +296,13 @@ Options
 '
 }
 
-main () {
+function main () {
 RUN_GROUP=0
 test_case_group=""
 test_case_group_array=()
 test_case_array=()
+echo_info "Note that the user should be sudoer for executing certain commands, for example loading kernel modules"
+read -s -p "Enter Password: " mypassword
 
 until [ -z "$1" ]
   do
@@ -421,9 +405,9 @@ for search_expr in "${test_case_array[@]}"
     if [ "$class" == "compilation" ]; then
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
-        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" 
+        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" 
     else
-        echo "Unexpected class of test case...Exiting...."
+        echo "Unexpected class of test case...Skipping the test case $name ...."
     fi
 
     done

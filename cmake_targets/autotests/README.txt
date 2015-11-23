@@ -88,7 +88,22 @@ Obj.#   Case#   Test#	Description
 01      51      06      mbmssim (TBD)
 
 
-01      55              lte-softmodem tests
+01      55              lte-softmodem tests with ALU EPC w/ Bandrich COTS UE
+01      55      00      FDD 5MHz UL Throughput for 60 sec
+01      55      00      FDD 10MHz UL Throughput for 60 sec
+01      55      00      FDD 20MHz UL Throughput for 60 sec
+01      55      00      FDD 5MHz DL Throughput for 60 sec
+01      55      00      FDD 10MHz DL Throughput for 60 sec
+01      55      00      FDD 20MHz DL Throughput for 60 sec
+
+
+01      56              lte-softmodem tests with OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
+
+
+01      57              lte-softmodem tests with OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
+
+
+01      58              lte-softmodem-noS1 tests
 
 02                      Functional test case
 
