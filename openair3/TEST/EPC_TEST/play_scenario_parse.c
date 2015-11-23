@@ -47,17 +47,19 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "intertask_interface.h"
 #include "platform_types.h"
-#include "enb_config.h"
 #include "assertions.h"
 #include "play_scenario.h"
 //------------------------------------------------------------------------------
 #define ENB_CONFIG_MAX_XSLT_PARAMS 32
 //------------------------------------------------------------------------------
 extern char                  *g_openair_dir;
-extern Enb_properties_array_t enb_properties;
+extern Enb_properties_array_t g_enb_properties;
 //------------------------------------------------------------------------------
 void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * const s1ap)
 {
@@ -407,6 +409,10 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
             }
             xmlFree(xml_char);
           }
+        } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"eNB.instance"))) {
+          xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
+          packet->enb_instance = strtoul((const char *)xml_char, NULL, 0);
+          xmlFree(xml_char);
         }
       //}
     }
@@ -439,8 +445,11 @@ et_scenario_t* et_generate_scenario(
     if ((!xmlStrcmp(root->name, (const xmlChar *)"scenario"))) {
       xml_char = xmlGetProp(root, (const xmlChar *)"name");
       printf("scenario name: %s\n", xml_char);
-      scenario = calloc(1, sizeof(*scenario));
-      scenario->name = xml_char; // nodup nofree
+      scenario            = calloc(1, sizeof(*scenario));
+      scenario->name      = xml_char; // nodup nofree
+      scenario->fsm_state = ET_FSM_STATE_NULL;
+      pthread_mutex_init(&scenario->fsm_lock, NULL);
+
       next_packet = &scenario->list_packet;
       for (node = root->children; node != NULL; node = node->next) {
         if ((!xmlStrcmp(node->name, (const xmlChar *)"packet"))) {
@@ -509,21 +518,21 @@ int et_generate_xml_scenario(
     fprintf(stdout, "Test scenario file: %s\n", xml_in_scenario_filename);
   }
 
-  for (i = 0; i < enb_properties.number; i++) {
+  for (i = 0; i < g_enb_properties.number; i++) {
     // eNB S1-C IPv4 address
     sprintf(astring, "enb_s1c%d", i);
     params[nb_params++] = strdup(astring);
-    addr.s_addr = enb_properties.properties[i]->enb_ipv4_address_for_S1_MME;
+    addr.s_addr = g_enb_properties.properties[i]->enb_ipv4_address_for_S1_MME;
     sprintf(astring, "\"%s\"", inet_ntoa(addr));
     params[nb_params++] = strdup(astring);
 
     // MME S1-C IPv4 address
-    for (j = 0; j < enb_properties.properties[i]->nb_mme; j++) {
+    for (j = 0; j < g_enb_properties.properties[i]->nb_mme; j++) {
       sprintf(astring, "mme_s1c%d_%d", i, j);
       params[nb_params++] = strdup(astring);
-      AssertFatal (enb_properties.properties[i]->mme_ip_address[j].ipv4_address,
+      AssertFatal (g_enb_properties.properties[i]->mme_ip_address[j].ipv4_address,
           "Only support MME IPv4 address\n");
-      sprintf(astring, "\"%s\"", enb_properties.properties[i]->mme_ip_address[j].ipv4_address);
+      sprintf(astring, "\"%s\"", g_enb_properties.properties[i]->mme_ip_address[j].ipv4_address);
       params[nb_params++] = strdup(astring);
     }
   }

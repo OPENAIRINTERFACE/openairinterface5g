@@ -48,6 +48,9 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 #include "intertask_interface_init.h"
@@ -63,11 +66,19 @@
 #define GS_IS_FILE                 1
 #define GS_IS_DIR                  2
 //------------------------------------------------------------------------------
-char                  *g_openair_dir        = NULL;
+char                  *g_openair_dir = NULL;
+Enb_properties_array_t g_enb_properties;
 //------------------------------------------------------------------------------
-extern int                    xmlLoadExtDtdDefaultValue;
-extern int                    asn_debug;
-extern int                    asn1_xer_print;
+extern et_scenario_t  *g_scenario;
+extern int             xmlLoadExtDtdDefaultValue;
+extern int             asn_debug;
+extern int             asn1_xer_print;
+
+//------------------------------------------------------------------------------
+// MEMO:
+// Scenario with several eNBs: We may have to create ethx.y interfaces
+//
+
 
 
 //------------------------------------------------------------------------------
@@ -159,6 +170,7 @@ void et_free_scenario(et_scenario_t* scenario)
       packet = next_packet->next;
     }
     et_free_pointer(scenario);
+    pthread_mutex_destroy(&scenario->fsm_lock);
   }
 }
 
@@ -290,17 +302,250 @@ void et_ip_str2et_ip(const xmlChar  * const ip_str, et_ip_t * const ip)
     AssertFatal (0, "ERROR %s() Could not parse ip address %s!\n", __FUNCTION__, ip_str);
   }
 }
+#ifdef LIBCONFIG_LONG
+#define libconfig_int long
+#else
+#define libconfig_int int
+#endif
+//------------------------------------------------------------------------------
+void et_enb_config_init(const  char const * lib_config_file_name_pP)
+//------------------------------------------------------------------------------
+{
+  config_t          cfg;
+  config_setting_t *setting                       = NULL;
+  config_setting_t *subsetting                    = NULL;
+  config_setting_t *setting_mme_addresses         = NULL;
+  config_setting_t *setting_mme_address           = NULL;
+  config_setting_t *setting_enb                   = NULL;
+  int               num_enb_properties            = 0;
+  int               enb_properties_index          = 0;
+  int               num_enbs                      = 0;
+  int               num_mme_address               = 0;
+  int               i                             = 0;
+  int               j                             = 0;
+  int               parse_errors                  = 0;
+  libconfig_int     enb_id                        = 0;
+  const char*       cell_type                     = NULL;
+  const char*       tac                           = 0;
+  const char*       enb_name                      = NULL;
+  const char*       mcc                           = 0;
+  const char*       mnc                           = 0;
+  char*             ipv4                          = NULL;
+  char*             ipv6                          = NULL;
+  char*             active                        = NULL;
+  char*             preference                    = NULL;
+  const char*       active_enb[MAX_ENB];
+  char*             enb_interface_name_for_S1U    = NULL;
+  char*             enb_ipv4_address_for_S1U      = NULL;
+  libconfig_int     enb_port_for_S1U              = 0;
+  char*             enb_interface_name_for_S1_MME = NULL;
+  char*             enb_ipv4_address_for_S1_MME   = NULL;
+  char             *address                       = NULL;
+  char             *cidr                          = NULL;
+
+
+  AssertFatal (lib_config_file_name_pP != NULL,
+               "Bad parameter lib_config_file_name_pP %s , must reference a valid eNB config file\n",
+               lib_config_file_name_pP);
+
+  memset((char*)active_enb,     0 , MAX_ENB * sizeof(char*));
+
+  config_init(&cfg);
+
+  /* Read the file. If there is an error, report it and exit. */
+  if (! config_read_file(&cfg, lib_config_file_name_pP)) {
+    config_destroy(&cfg);
+    AssertFatal (0, "Failed to parse eNB configuration file %s!\n", lib_config_file_name_pP);
+  }
+
+  // Get list of active eNBs, (only these will be configured)
+  setting = config_lookup(&cfg, ENB_CONFIG_STRING_ACTIVE_ENBS);
+
+  if (setting != NULL) {
+    num_enbs = config_setting_length(setting);
+
+    for (i = 0; i < num_enbs; i++) {
+      setting_enb   = config_setting_get_elem(setting, i);
+      active_enb[i] = config_setting_get_string (setting_enb);
+      AssertFatal (active_enb[i] != NULL,
+                   "Failed to parse config file %s, %uth attribute %s \n",
+                   lib_config_file_name_pP, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+      active_enb[i] = strdup(active_enb[i]);
+      num_enb_properties += 1;
+    }
+  }
+
+  /* Output a list of all eNBs. */
+  setting = config_lookup(&cfg, ENB_CONFIG_STRING_ENB_LIST);
+
+  if (setting != NULL) {
+    enb_properties_index = g_enb_properties.number;
+    parse_errors      = 0;
+    num_enbs = config_setting_length(setting);
+
+    for (i = 0; i < num_enbs; i++) {
+      setting_enb = config_setting_get_elem(setting, i);
+
+      if (! config_setting_lookup_int(setting_enb, ENB_CONFIG_STRING_ENB_ID, &enb_id)) {
+        /* Calculate a default eNB ID */
+# if defined(ENABLE_USE_MME)
+        uint32_t hash;
+
+        hash = et_s1ap_generate_eNB_id ();
+        enb_id = i + (hash & 0xFFFF8);
+# else
+        enb_id = i;
+# endif
+      }
+
+      if (  !(       config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_CELL_TYPE,           &cell_type)
+                    && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_ENB_NAME,            &enb_name)
+                    && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_TRACKING_AREA_CODE,  &tac)
+                    && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE, &mcc)
+                    && config_setting_lookup_string(setting_enb, ENB_CONFIG_STRING_MOBILE_NETWORK_CODE, &mnc)
+
+
+            )
+        ) {
+        AssertError (0, parse_errors ++,
+                     "Failed to parse eNB configuration file %s, %u th enb\n",
+                     lib_config_file_name_pP, i);
+        continue; // FIXME this prevents segfaults below, not sure what happens after function exit
+      }
+
+      // search if in active list
+      for (j=0; j < num_enb_properties; j++) {
+        if (strcmp(active_enb[j], enb_name) == 0) {
+          g_enb_properties.properties[enb_properties_index] = calloc(1, sizeof(Enb_properties_t));
+
+          g_enb_properties.properties[enb_properties_index]->eNB_id   = enb_id;
+
+          if (strcmp(cell_type, "CELL_MACRO_ENB") == 0) {
+            g_enb_properties.properties[enb_properties_index]->cell_type = CELL_MACRO_ENB;
+          } else  if (strcmp(cell_type, "CELL_HOME_ENB") == 0) {
+            g_enb_properties.properties[enb_properties_index]->cell_type = CELL_HOME_ENB;
+          } else {
+            AssertError (0, parse_errors ++,
+                         "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                         lib_config_file_name_pP, i, cell_type);
+          }
+
+          g_enb_properties.properties[enb_properties_index]->eNB_name         = strdup(enb_name);
+          g_enb_properties.properties[enb_properties_index]->tac              = (uint16_t)atoi(tac);
+          g_enb_properties.properties[enb_properties_index]->mcc              = (uint16_t)atoi(mcc);
+          g_enb_properties.properties[enb_properties_index]->mnc              = (uint16_t)atoi(mnc);
+          g_enb_properties.properties[enb_properties_index]->mnc_digit_length = strlen(mnc);
+          AssertFatal((g_enb_properties.properties[enb_properties_index]->mnc_digit_length == 2) ||
+                      (g_enb_properties.properties[enb_properties_index]->mnc_digit_length == 3),
+                      "BAD MNC DIGIT LENGTH %d",
+                      g_enb_properties.properties[i]->mnc_digit_length);
+
+
+          setting_mme_addresses = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_MME_IP_ADDRESS);
+          num_mme_address     = config_setting_length(setting_mme_addresses);
+          g_enb_properties.properties[enb_properties_index]->nb_mme = 0;
+
+          for (j = 0; j < num_mme_address; j++) {
+            setting_mme_address = config_setting_get_elem(setting_mme_addresses, j);
+
+            if (  !(
+                   config_setting_lookup_string(setting_mme_address, ENB_CONFIG_STRING_MME_IPV4_ADDRESS, (const char **)&ipv4)
+                   && config_setting_lookup_string(setting_mme_address, ENB_CONFIG_STRING_MME_IPV6_ADDRESS, (const char **)&ipv6)
+                   && config_setting_lookup_string(setting_mme_address, ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE, (const char **)&active)
+                   && config_setting_lookup_string(setting_mme_address, ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE, (const char **)&preference)
+                 )
+              ) {
+              AssertError (0, parse_errors ++,
+                           "Failed to parse eNB configuration file %s, %u th enb %u th mme address !\n",
+                           lib_config_file_name_pP, i, j);
+              continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+            }
+
+            g_enb_properties.properties[enb_properties_index]->nb_mme += 1;
+
+            g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4_address = strdup(ipv4);
+            g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6_address = strdup(ipv6);
+
+            if (strcmp(active, "yes") == 0) {
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].active = 1;
+            } // else { (calloc)
+
+            if (strcmp(preference, "ipv4") == 0) {
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
+            } else if (strcmp(preference, "ipv6") == 0) {
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
+            } else if (strcmp(preference, "no") == 0) {
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv4 = 1;
+              g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
+            }
+          }
+
+
+          // NETWORK_INTERFACES
+          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+
+          if (subsetting != NULL) {
+            if (  (
+                   config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME,
+                                                 (const char **)&enb_interface_name_for_S1_MME)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,
+                                                    (const char **)&enb_ipv4_address_for_S1_MME)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,
+                                                    (const char **)&enb_interface_name_for_S1U)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,
+                                                    (const char **)&enb_ipv4_address_for_S1U)
+                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,
+                                                &enb_port_for_S1U)
+                 )
+              ) {
+              g_enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
+              cidr = enb_ipv4_address_for_S1U;
+              address = strtok(cidr, "/");
+
+              if (address) {
+                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1U, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
+              }
+
+              g_enb_properties.properties[enb_properties_index]->enb_port_for_S1U = enb_port_for_S1U;
+
+              g_enb_properties.properties[enb_properties_index]->enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
+              cidr = enb_ipv4_address_for_S1_MME;
+              address = strtok(cidr, "/");
+
+              if (address) {
+                IPV4_STR_ADDR_TO_INT_NWBO ( address, g_enb_properties.properties[enb_properties_index]->enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
+              }
+            }
+          } // if (subsetting != NULL) {
+          enb_properties_index += 1;
+        } // if (strcmp(active_enb[j], enb_name) == 0)
+      } // for (j=0; j < num_enb_properties; j++)
+    } // for (i = 0; i < num_enbs; i++)
+  } //   if (setting != NULL) {
+
+  g_enb_properties.number += num_enb_properties;
+
+
+  AssertFatal (parse_errors == 0,
+               "Failed to parse eNB configuration file %s, found %d error%s !\n",
+               lib_config_file_name_pP, parse_errors, parse_errors > 1 ? "s" : "");
+}
+/*------------------------------------------------------------------------------*/
+const Enb_properties_array_t *et_enb_config_get(void)
+{
+  return &g_enb_properties;
+}
 /*------------------------------------------------------------------------------*/
 uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties)
 {
   uint32_t         enb_id;
   uint32_t         mme_id;
   MessageDef      *msg_p;
-  uint32_t         register_enb_pending = 0;
   char            *str                  = NULL;
   struct in_addr   addr;
 
 
+  g_scenario->register_enb_pending = 0;
   for (enb_id = 0; (enb_id < enb_properties->number) ; enb_id++) {
     {
       s1ap_register_enb_req_t *s1ap_register_eNB;
@@ -318,7 +563,6 @@ uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties)
       s1ap_register_eNB->mcc              = enb_properties->properties[enb_id]->mcc;
       s1ap_register_eNB->mnc              = enb_properties->properties[enb_id]->mnc;
       s1ap_register_eNB->mnc_digit_length = enb_properties->properties[enb_id]->mnc_digit_length;
-      s1ap_register_eNB->default_drx      = enb_properties->properties[enb_id]->pcch_defaultPagingCycle[0];
 
       s1ap_register_eNB->nb_mme =         enb_properties->properties[enb_id]->nb_mme;
       AssertFatal (s1ap_register_eNB->nb_mme <= S1AP_MAX_NB_MME_IP_ADDRESS, "Too many MME for eNB %d (%d/%d)!", enb_id, s1ap_register_eNB->nb_mme,
@@ -347,34 +591,22 @@ uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties)
 
       itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
-      register_enb_pending++;
+      g_scenario->register_enb_pending++;
     }
   }
 
-  return register_enb_pending;
+  return g_scenario->register_enb_pending;
 }
 /*------------------------------------------------------------------------------*/
 void *et_eNB_app_task(void *args_p)
 {
-  const Enb_properties_array_t   *enb_properties_p  = NULL;
-  uint32_t                        register_enb_pending;
-  uint32_t                        registered_enb;
-  long                            enb_register_retry_timer_id;
-  uint32_t                        enb_id;
+  et_scenario_t                  *scenario = (et_scenario_t*)args_p;
   MessageDef                     *msg_p           = NULL;
   const char                     *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
 
   itti_mark_task_ready (TASK_ENB_APP);
-
-
-  enb_properties_p = enb_config_get();
-
-
-  /* Try to register each eNB */
-  registered_enb = 0;
-  register_enb_pending = et_eNB_app_register (enb_properties_p);
 
 
   do {
@@ -389,40 +621,40 @@ void *et_eNB_app_task(void *args_p)
       itti_exit_task ();
       break;
 
-
-
     case S1AP_REGISTER_ENB_CNF:
       LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, msg_name,
             S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
 
-      DevAssert(register_enb_pending > 0);
-      register_enb_pending--;
+      DevAssert(g_scenario->register_enb_pending > 0);
+      g_scenario->register_enb_pending--;
 
       /* Check if at least eNB is registered with one MME */
       if (S1AP_REGISTER_ENB_CNF(msg_p).nb_mme > 0) {
-        registered_enb++;
+        g_scenario->registered_enb++;
       }
 
       /* Check if all register eNB requests have been processed */
-      if (register_enb_pending == 0) {
-        if (registered_enb == enb_properties_p->number) {
+      if (scenario->register_enb_pending == 0) {
+        if (scenario->registered_enb == scenario->enb_properties->number) {
           /* If all eNB are registered, start scenario */
-
+          et_event_t event;
+          event.code = ET_EVENT_S1C_CONNECTED;
+          et_scenario_fsm_notify_event(event);
         } else {
-          uint32_t not_associated = enb_properties_p->number - registered_enb;
+          uint32_t not_associated = scenario->enb_properties->number - scenario->registered_enb;
 
           LOG_W(ENB_APP, " %d eNB %s not associated with a MME, retrying registration in %d seconds ...\n",
                 not_associated, not_associated > 1 ? "are" : "is", ET_ENB_REGISTER_RETRY_DELAY);
 
           /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
           if (timer_setup (ET_ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                           NULL, &enb_register_retry_timer_id) < 0) {
+                           NULL, &scenario->enb_register_retry_timer_id) < 0) {
             LOG_E(ENB_APP, " Can not start eNB register retry timer, use \"sleep\" instead!\n");
 
             sleep(ET_ENB_REGISTER_RETRY_DELAY);
             /* Restart the registration process */
-            registered_enb = 0;
-            register_enb_pending = et_eNB_app_register (enb_properties_p);
+            scenario->registered_enb = 0;
+            scenario->register_enb_pending = et_eNB_app_register (scenario->enb_properties);
           }
         }
       }
@@ -439,10 +671,10 @@ void *et_eNB_app_task(void *args_p)
     case TIMER_HAS_EXPIRED:
       LOG_I(ENB_APP, " Received %s: timer_id %d\n", msg_name, TIMER_HAS_EXPIRED(msg_p).timer_id);
 
-      if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
+      if (TIMER_HAS_EXPIRED (msg_p).timer_id == scenario->enb_register_retry_timer_id) {
         /* Restart the registration process */
-        registered_enb = 0;
-        register_enb_pending = et_eNB_app_register (enb_properties_p);
+        scenario->registered_enb = 0;
+        scenario->register_enb_pending = et_eNB_app_register (scenario->enb_properties);
       }
       break;
 
@@ -476,7 +708,7 @@ int et_play_scenario(et_scenario_t* const scenario)
   }
 
   // create ENB_APP ITTI task: not as same as eNB code
-  if (itti_create_task (TASK_ENB_APP, et_eNB_app_task, NULL) < 0) {
+  if (itti_create_task (TASK_ENB_APP, et_eNB_app_task, scenario) < 0) {
     LOG_E(ENB_APP, "Create task for ENB_APP failed\n");
     return -1;
   }
@@ -523,7 +755,6 @@ et_config_parse_opt_line (
 {
   int                           option;
   int                           rv                   = 0;
-  const Enb_properties_array_t *enb_properties_p     = NULL;
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
@@ -606,7 +837,7 @@ et_config_parse_opt_line (
     if (is_file_exists(*enb_config_file_name, "eNB config file") != GS_IS_FILE) {
       fprintf(stderr, "ERROR: original eNB config file name %s is not found in dir %s\n", *enb_config_file_name, *et_dir_name);
     }
-    enb_properties_p = enb_config_init(*enb_config_file_name);
+    et_enb_config_init(*enb_config_file_name);
 
     if (NULL == *scenario_file_name) {
       fprintf(stderr, "ERROR: please provide the scenario file name that should be in %s\n", *et_dir_name);

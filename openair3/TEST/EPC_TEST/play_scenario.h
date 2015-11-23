@@ -28,7 +28,7 @@
 *******************************************************************************/
 
 /*
-                                et_scenario.h
+                                play_scenario.h
                              -------------------
   AUTHOR  : Lionel GAUTHIER
   COMPANY : EURECOM
@@ -39,14 +39,121 @@
 #define PLAY_SCENARIO_H_
 #  include <time.h>
 #  include <stdint.h>
+#  include <pthread.h>
 #  include <libxml/tree.h>
 #  include <netinet/in.h>
 
-#include "enb_config.h"
+#include "S1AP-PDU.h"
 #include "s1ap_ies_defs.h"
+#include "play_scenario_s1ap_eNB_defs.h"
+#include "hashtable.h"
 
-#   define ET_ENB_REGISTER_RETRY_DELAY 3
 
+#define MAX_ENB 16
+
+#define ENB_CONFIG_STRING_ACTIVE_ENBS                   "Active_eNBs"
+
+#define ENB_CONFIG_STRING_ENB_LIST                      "eNBs"
+#define ENB_CONFIG_STRING_ENB_ID                        "eNB_ID"
+#define ENB_CONFIG_STRING_CELL_TYPE                     "cell_type"
+#define ENB_CONFIG_STRING_ENB_NAME                      "eNB_name"
+
+#define ENB_CONFIG_STRING_TRACKING_AREA_CODE            "tracking_area_code"
+#define ENB_CONFIG_STRING_MOBILE_COUNTRY_CODE           "mobile_country_code"
+#define ENB_CONFIG_STRING_MOBILE_NETWORK_CODE           "mobile_network_code"
+
+
+#define ENB_CONFIG_STRING_MME_IP_ADDRESS                "mme_ip_address"
+#define ENB_CONFIG_STRING_MME_IPV4_ADDRESS              "ipv4"
+#define ENB_CONFIG_STRING_MME_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE         "active"
+#define ENB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE     "preference"
+
+#define ENB_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
+#define ENB_CONFIG_STRING_SCTP_INSTREAMS                 "SCTP_INSTREAMS"
+#define ENB_CONFIG_STRING_SCTP_OUTSTREAMS                "SCTP_OUTSTREAMS"
+
+#define ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG     "NETWORK_INTERFACES"
+#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME "ENB_INTERFACE_NAME_FOR_S1_MME"
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME   "ENB_IPV4_ADDRESS_FOR_S1_MME"
+#define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U    "ENB_INTERFACE_NAME_FOR_S1U"
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
+
+
+typedef struct mme_ip_address_s {
+  unsigned  ipv4:1;
+  unsigned  ipv6:1;
+  unsigned  active:1;
+  char     *ipv4_address;
+  char     *ipv6_address;
+} mme_ip_address_t;
+
+#define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
+            struct in_addr inp;\
+            if ( inet_aton(AdDr_StR, &inp ) < 0 ) {\
+                AssertFatal (0, MeSsAgE);\
+            } else {\
+                NwBo = inp.s_addr;\
+            }\
+        } while (0);
+
+
+typedef struct Enb_properties_s {
+  /* Unique eNB_id to identify the eNB within EPC.
+   * For macro eNB ids this field should be 20 bits long.
+   * For home eNB ids this field should be 28 bits long.
+   */
+  uint32_t            eNB_id;
+
+  /* The type of the cell */
+  enum cell_type_e    cell_type;
+
+  /* Optional name for the cell
+   * NOTE: the name can be NULL (i.e no name) and will be cropped to 150
+   * characters.
+   */
+  char               *eNB_name;
+
+  /* Tracking area code */
+  uint16_t            tac;
+
+  /* Mobile Country Code
+   * Mobile Network Code
+   */
+  uint16_t            mcc;
+  uint16_t            mnc;
+  uint8_t             mnc_digit_length;
+
+
+
+  /* Physical parameters */
+
+  int16_t                 Nid_cell[1+MAX_NUM_CCs];// for testing, change later
+  /* Nb of MME to connect to */
+  uint8_t             nb_mme;
+  /* List of MME to connect to */
+  mme_ip_address_t    mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
+
+  int                 sctp_in_streams;
+  int                 sctp_out_streams;
+
+  char               *enb_interface_name_for_S1U;
+  in_addr_t           enb_ipv4_address_for_S1U;
+  tcp_udp_port_t      enb_port_for_S1U;
+
+  char               *enb_interface_name_for_S1_MME;
+  in_addr_t           enb_ipv4_address_for_S1_MME;
+
+} Enb_properties_t;
+
+typedef struct Enb_properties_array_s {
+  int                  number;
+  Enb_properties_t    *properties[MAX_ENB];
+} Enb_properties_array_t;
+
+#  define ET_ENB_REGISTER_RETRY_DELAY 3
+#  define ET_FSM_STATE_WAITING_RX_EVENT_DELAY_SEC 15
 
 typedef enum {
   ET_PACKET_STATUS_START = 0,
@@ -54,19 +161,17 @@ typedef enum {
   ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT,
   ET_PACKET_STATUS_SCHEDULED_FOR_SENDING,
   ET_PACKET_STATUS_SENT,
-  ET_PACKET_STATUS_SENT_WITH_ERRORS,
   ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING,
   ET_PACKET_STATUS_RECEIVED,
-  ET_PACKET_STATUS_RECEIVED_WITH_ERRORS,
   ET_PACKET_STATUS_END
 } et_packet_status_t;
 
 typedef enum {
   ET_FSM_STATE_START = 0,
   ET_FSM_STATE_NULL = ET_FSM_STATE_START,
-  ET_FSM_STATE_CONNECTING_SCTP,
-  ET_FSM_STATE_WAITING_TX_EVENT,
-  ET_FSM_STATE_WAITING_RX_EVENT,
+  ET_FSM_STATE_CONNECTING_S1C,
+  ET_FSM_STATE_WAITING_EVENT,
+  ET_FSM_STATE_RUNNING,
   ET_FSM_STATE_END
 } et_fsm_state_t;
 
@@ -136,6 +241,7 @@ typedef struct sctp_datahdr_s {
   uint16_t    stream;
   uint16_t    ssn;
   uint32_t    ppid;
+  uint32_t    assoc_id; // filled when running scenario
   et_s1ap_t   payload;
 } sctp_datahdr_t;
 
@@ -182,11 +288,15 @@ typedef struct et_packet_s {
   struct timeval       time_relative_to_last_received_packet;
   unsigned int         original_frame_number;
   unsigned int         packet_number;
+  instance_t           enb_instance;
   et_ip_hdr_t          ip_hdr;
   et_sctp_hdr_t        sctp_hdr;
   struct et_packet_s  *next;
+
   //scenario running vars
   et_packet_status_t   status;
+  long                 timer_id;         // ITTI timer id for waiting rx packets
+  struct timeval       timestamp_packet; // timestamp when rx or tx packet
 }et_packet_t;
 
 
@@ -203,24 +313,37 @@ typedef struct sctp_epoll_s {
 } thread_desc_t;
 
 typedef struct et_scenario_s {
-  xmlChar        *name;
-  et_packet_t   *list_packet;
-
+  xmlChar                *name;
+  et_packet_t            *list_packet;
+  //--------------------------
   // playing scenario
-  et_packet_t   *waited_packet;
-  et_packet_t   *current_packet;
+  //--------------------------
+  Enb_properties_array_t *enb_properties;
+  uint32_t                register_enb_pending;
+  uint32_t                registered_enb;
+  long                    enb_register_retry_timer_id;
+
+  pthread_mutex_t         fsm_lock;
+  et_fsm_state_t          fsm_state;
+
+  hash_table_t           *hash_mme2association_id;
+  hash_table_t           *hash_old_ue_mme_id2ue_mme_id;
+  struct timeval          time_last_tx_packet;
+  struct timeval          time_last_rx_packet;
+  et_packet_t            *last_rx_packet;
+  et_packet_t            *last_tx_packet;
+  et_packet_t            *next_packet;
 } et_scenario_t;
 
 
 typedef enum {
   ET_EVENT_START = 0,
   ET_EVENT_INIT = ET_EVENT_START,
+  ET_EVENT_S1C_CONNECTED,
   ET_EVENT_RX_SCTP_EVENT,
   ET_EVENT_RX_S1AP,
-  ET_EVENT_RX_X2AP,
   ET_EVENT_RX_PACKET_TIME_OUT,
-  ET_EVENT_TX_PACKET,
-  ET_EVENT_STOP,
+  ET_EVENT_TX_TIMED_PACKET,
   ET_EVENT_END
 } et_event_code_t;
 
@@ -241,7 +364,8 @@ typedef struct et_event_s {
   union {
     et_event_init_t           init;
     et_event_s1ap_data_ind_t  s1ap_data_ind;
-    et_event_s1ap_data_req_t  s1ap_data_req;
+    et_packet_t               *tx_timed_packet;
+    et_packet_t               *rx_packet_time_out;
   } u;
 } et_event_t;
 
@@ -266,16 +390,36 @@ int et_s1ap_decode_unsuccessful_outcome(s1ap_message *message, S1ap_Unsuccessful
 int et_s1ap_decode_pdu(S1AP_PDU_t * const pdu, s1ap_message * const message, const uint8_t * const buffer, const uint32_t length);
 void et_decode_s1ap(et_s1ap_t * const s1ap);
 //-------------------------
-void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind);
+int et_s1ap_eNB_compare_assoc_id( struct s1ap_eNB_mme_data_s *p1, struct s1ap_eNB_mme_data_s *p2);
+uint16_t et_s1ap_eNB_fetch_add_global_cnx_id(void);
+void et_s1ap_eNB_prepare_internal_data(void);
+void et_s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p);
+struct s1ap_eNB_mme_data_s *et_s1ap_eNB_get_MME(s1ap_eNB_instance_t *instance_p,int32_t assoc_id, uint16_t cnx_id);
+s1ap_eNB_instance_t *et_s1ap_eNB_get_instance(instance_t instance);
+void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,uint32_t buffer_length, uint16_t stream);
+void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind);
+void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t * const sctp_data_ind);
+void et_s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
+                                  net_ip_address_t    *mme_ip_address,
+                                  net_ip_address_t    *local_ip_addr,
+                                  uint16_t             in_streams,
+                                  uint16_t             out_streams);
+void et_s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_shutdown);
+void et_s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB);
+void et_s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 void * et_s1ap_eNB_task(void *arg);
+//-------------------------
 int et_generate_xml_scenario(
     const char const * xml_in_dir_name,
     const char const * xml_in_scenario_filename,
     const char const * enb_config_filename,
           char const * tsml_out_scenario_filename);
 //-------------------------
-int et_scenario_fsm_notify_event_state_null(et_event_t event);
-int et_scenario_fsm_notify_event(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event(et_event_t event);
 //-------------------------
 void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * const s1ap);
 void et_parse_sctp_data_chunk(xmlDocPtr doc, const xmlNode const *sctp_node, sctp_datahdr_t * const sctp_hdr);
@@ -297,6 +441,8 @@ sctp_cid_t et_chunk_type_str2cid(const xmlChar * const chunk_type_str);
 const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type);
 et_packet_action_t et_action_str2et_action_t(const xmlChar * const action);
 void et_ip_str2et_ip(const xmlChar  * const ip_str, et_ip_t * const ip);
+void et_enb_config_init(const  char const * lib_config_file_name_pP);
+const Enb_properties_array_t *et_enb_config_get(void);
 uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties);
 void *et_eNB_app_task(void *args_p);
 int et_play_scenario(et_scenario_t* const scenario);

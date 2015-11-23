@@ -8,30 +8,30 @@
   />
 
   <!-- Ugly but no time to find a better way in XSLT 1.0 (map/list)-->
-  <xsl:param name="enb_s1c0"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c1"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c2"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c3"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c4"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c5"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c6"   select="'0.0.0.0'"/>
-  <xsl:param name="enb_s1c7"   select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c0_0" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c0_1" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c0_2" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c0_3" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c1_0" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c1_1" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c1_2" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c1_3" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c2_0" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c2_1" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c2_2" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c2_3" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c3_0" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c3_1" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c3_2" select="'0.0.0.0'"/>
-  <xsl:param name="mme_s1c3_3" select="'0.0.0.0'"/>
+  <xsl:param name="enb0_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb1_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb2_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb3_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb4_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb5_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb6_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="enb7_s1c"   select="'0.0.0.0'"/>
+  <xsl:param name="mme0_s1c_0" select="'0.0.0.0'"/>
+  <xsl:param name="mme0_s1c_1" select="'0.0.0.0'"/>
+  <xsl:param name="mme0_s1c_2" select="'0.0.0.0'"/>
+  <xsl:param name="mme0_s1c_3" select="'0.0.0.0'"/>
+  <xsl:param name="mme1_s1c_0" select="'0.0.0.0'"/>
+  <xsl:param name="mme1_s1c_1" select="'0.0.0.0'"/>
+  <xsl:param name="mme1_s1c_2" select="'0.0.0.0'"/>
+  <xsl:param name="mme1_s1c_3" select="'0.0.0.0'"/>
+  <xsl:param name="mme2_s1c_0" select="'0.0.0.0'"/>
+  <xsl:param name="mme2_s1c_1" select="'0.0.0.0'"/>
+  <xsl:param name="mme2_s1c_2" select="'0.0.0.0'"/>
+  <xsl:param name="mme2_s1c_3" select="'0.0.0.0'"/>
+  <xsl:param name="mme3_s1c_0" select="'0.0.0.0'"/>
+  <xsl:param name="mme3_s1c_1" select="'0.0.0.0'"/>
+  <xsl:param name="mme3_s1c_2" select="'0.0.0.0'"/>
+  <xsl:param name="mme3_s1c_3" select="'0.0.0.0'"/>
   <xsl:param name="ip_address" select="'0.0.0.0'"/>
 
 
@@ -39,36 +39,56 @@
   <xsl:template name="reverse_ip">
     <xsl:param name="ip_address"/>
       <xsl:choose>
-        <xsl:when test="$ip_address=$enb_s1c0">enb_s1c0</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c1">enb_s1c1</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c2">enb_s1c2</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c3">enb_s1c3</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c4">enb_s1c4</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c5">enb_s1c5</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c6">enb_s1c6</xsl:when>
-        <xsl:when test="$ip_address=$enb_s1c7">enb_s1c7</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c0_0">mme_s1c0_0</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c0_1">mme_s1c0_1</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c0_2">mme_s1c0_2</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c0_3">mme_s1c0_3</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c1_0">mme_s1c1_0</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c1_1">mme_s1c1_1</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c1_2">mme_s1c1_2</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c1_3">mme_s1c1_3</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c2_0">mme_s1c2_0</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c2_1">mme_s1c2_1</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c2_2">mme_s1c2_2</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c2_3">mme_s1c2_3</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c3_0">mme_s1c3_0</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c3_1">mme_s1c3_1</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c3_2">mme_s1c3_2</xsl:when>
-        <xsl:when test="$ip_address=$mme_s1c3_3">mme_s1c3_3</xsl:when>
+        <xsl:when test="$ip_address=$enb0_s1c">enb0_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb1_s1c">enb1_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb2_s1c">enb2_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb3_s1c">enb3_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb4_s1c">enb4_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb5_s1c">enb5_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb6_s1c">enb6_s1c</xsl:when>
+        <xsl:when test="$ip_address=$enb7_s1c">enb7_s1c</xsl:when>
+        <xsl:when test="$ip_address=$mme0_s1c_0">mme0_s1c_0</xsl:when>
+        <xsl:when test="$ip_address=$mme0_s1c_1">mme0_s1c_1</xsl:when>
+        <xsl:when test="$ip_address=$mme0_s1c_2">mme0_s1c_2</xsl:when>
+        <xsl:when test="$ip_address=$mme0_s1c_3">mme0_s1c_3</xsl:when>
+        <xsl:when test="$ip_address=$mme1_s1c_0">mme1_s1c_0</xsl:when>
+        <xsl:when test="$ip_address=$mme1_s1c_1">mme1_s1c_1</xsl:when>
+        <xsl:when test="$ip_address=$mme1_s1c_2">mme1_s1c_2</xsl:when>
+        <xsl:when test="$ip_address=$mme1_s1c_3">mme1_s1c_3</xsl:when>
+        <xsl:when test="$ip_address=$mme2_s1c_0">mme2_s1c_0</xsl:when>
+        <xsl:when test="$ip_address=$mme2_s1c_1">mme2_s1c_1</xsl:when>
+        <xsl:when test="$ip_address=$mme2_s1c_2">mme2_s1c_2</xsl:when>
+        <xsl:when test="$ip_address=$mme2_s1c_3">mme2_s1c_3</xsl:when>
+        <xsl:when test="$ip_address=$mme3_s1c_0">mme3_s1c_0</xsl:when>
+        <xsl:when test="$ip_address=$mme3_s1c_1">mme3_s1c_1</xsl:when>
+        <xsl:when test="$ip_address=$mme3_s1c_2">mme3_s1c_2</xsl:when>
+        <xsl:when test="$ip_address=$mme3_s1c_3">mme3_s1c_3</xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">ERROR: Cannot reverse resolv IP <xsl:value-of select="."/> !
           </xsl:message>
         </xsl:otherwise>
       </xsl:choose> 
   </xsl:template>
+
+  <xsl:template name="enb_ip_2_enb_instance">
+    <xsl:param name="ip_address"/>
+      <xsl:choose>
+        <xsl:when test="$ip_address=$enb0_s1c">0</xsl:when>
+        <xsl:when test="$ip_address=$enb1_s1c">1</xsl:when>
+        <xsl:when test="$ip_address=$enb2_s1c">2</xsl:when>
+        <xsl:when test="$ip_address=$enb3_s1c">3</xsl:when>
+        <xsl:when test="$ip_address=$enb4_s1c">4</xsl:when>
+        <xsl:when test="$ip_address=$enb5_s1c">5</xsl:when>
+        <xsl:when test="$ip_address=$enb6_s1c">6</xsl:when>
+        <xsl:when test="$ip_address=$enb7_s1c">7</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">ERROR: Cannot set eNB instance <xsl:value-of select="."/> !
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose> 
+  </xsl:template>
+
+
 
   <xsl:template name="chunktype2str">
     <xsl:param name="chunk_type"/>
@@ -120,8 +140,26 @@
     </xsl:variable>
     <xsl:variable name="action">
       <xsl:choose>
-        <xsl:when test="starts-with($ip_src,'enb_s1')">SEND</xsl:when>
-        <xsl:when test="starts-with($ip_src,'mme_s1c')">RECEIVE</xsl:when>
+        <xsl:when test="starts-with($ip_src,'enb')">SEND</xsl:when>
+        <xsl:when test="starts-with($ip_src,'mme')">RECEIVE</xsl:when>
+        <xsl:otherwise>
+          <xsl:message terminate="yes">ERROR: UNKNOWN ACTION <xsl:value-of select="."/> !
+          </xsl:message>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="enb_instance">
+      <xsl:choose>
+        <xsl:when test="starts-with($ip_src,'enb')">
+          <xsl:call-template name="enb_ip_2_enb_instance">
+            <xsl:with-param name="ip_address" select="$ip/field[@name='ip.src']/@show"/>
+          </xsl:call-template>
+        </xsl:when>
+        <xsl:when test="starts-with($ip_dst,'enb')">
+          <xsl:call-template name="enb_ip_2_enb_instance">
+            <xsl:with-param name="ip_address" select="$ip/field[@name='ip.dst']/@show"/>
+          </xsl:call-template>
+        </xsl:when>
         <xsl:otherwise>
           <xsl:message terminate="yes">ERROR: UNKNOWN ACTION <xsl:value-of select="."/> !
           </xsl:message>
@@ -156,6 +194,7 @@
               <pos_offset                 value="{$s1ap_pos_offset}"/>
               <ip.src                     value="{$ip_src}"/>
               <ip.dst                     value="{$ip_dst}"/>
+              <eNB.instance               value="{$enb_instance}"/>
               <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
               <!--sctp.srcport               value="{$sctp_srcport}"/-->
               <!--sctp.dstport               value="{$sctp_dstport}"/-->
@@ -177,6 +216,7 @@
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
+            <eNB.instance               value="{$enb_instance}"/>
             <!--sctp.srcport               value="{$sctp_srcport}"/-->
             <!--sctp.dstport               value="{$sctp_dstport}"/-->
             <!--sctp.init_nr_in_streams    value="{$sctp_init_nr_in_streams}"/-->
@@ -197,6 +237,7 @@
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
+            <eNB.instance               value="{$enb_instance}"/>
             <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
             <!--sctp.srcport               value="{$sctp_srcport}"/-->
             <!--sctp.dstport               value="{$sctp_dstport}"/-->
@@ -218,6 +259,7 @@
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
+            <eNB.instance               value="{$enb_instance}"/>
             <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
             <!--sctp.srcport               value="{$sctp_srcport}"/-->
             <!--sctp.dstport               value="{$sctp_dstport}"/-->
@@ -233,6 +275,7 @@
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
+            <eNB.instance               value="{$enb_instance}"/>
             <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
             <!--sctp.srcport               value="{$sctp_srcport}"/-->
             <!--sctp.dstport               value="{$sctp_dstport}"/-->
@@ -249,6 +292,7 @@
             <pos_offset                 value="{$sctp_pos_offset}"/>
             <ip.src                     value="{$ip_src}"/>
             <ip.dst                     value="{$ip_dst}"/>
+            <eNB.instance               value="{$enb_instance}"/>
             <!--sctp.data_sid              value="{$sctp_data_sid}"/-->
             <!--sctp.srcport               value="{$sctp_srcport}"/-->
             <!--sctp.dstport               value="{$sctp_dstport}"/-->
