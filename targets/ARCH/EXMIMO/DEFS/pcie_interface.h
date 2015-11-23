@@ -332,11 +332,11 @@ typedef struct {
 #define SWITCHSTATE_1     (1<<3)
 #define TEST_ADACLOOP_MASK  (1<<4)
 #define TEST_ADACLOOP_EN    (1<<4)
-#define ACTIVE_RF_MASK      (15<<5)
-#define ACTIVE_RF_1         (1<<5)
-#define ACTIVE_RF_2         (2<<5)
-#define ACTIVE_RF_3         (4<<5)
-#define ACTIVE_RF_4         (8<<5)
+#define RF_ACTIVE_MASK      (15<<5)
+#define RF_ACTIVE_1         (1<<5)
+#define RF_ACTIVE_2         (2<<5)
+#define RF_ACTIVE_3         (4<<5)
+#define RF_ACTIVE_4         (8<<5)
 
 typedef enum {
   BW5,
