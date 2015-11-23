@@ -83,9 +83,9 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
+
 LTE_UE_ULSCH_t *new_ue_ulsch(uint8_t Mdlharq, unsigned char N_RB_UL, uint8_t abstraction_flag);
-
-
 
 /** \fn dlsch_encoding(uint8_t *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
