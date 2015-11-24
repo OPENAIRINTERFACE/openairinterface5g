@@ -36,6 +36,7 @@
  */
 #include <stdio.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #include "intertask_interface.h"
 #include "platform_types.h"
@@ -46,7 +47,9 @@
 #include "timer.h"
 
 //------------------------------------------------------------------------------
-et_scenario_t  *g_scenario  = NULL;
+et_scenario_t    *g_scenario  = NULL;
+pthread_mutex_t   g_fsm_lock  = PTHREAD_MUTEX_INITIALIZER;
+et_fsm_state_t    g_fsm_state = ET_FSM_STATE_NULL;
 //------------------------------------------------------------------------------
 int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b)
 {
@@ -83,7 +86,7 @@ void et_scenario_wait_rx_packet(et_packet_t * const packet)
                    NULL, &packet->timer_id) < 0) {
     AssertFatal(0, " Can not start waiting RX event timer\n");
   }
-  g_scenario->fsm_state = ET_FSM_STATE_WAITING_EVENT;
+  g_fsm_state = ET_FSM_STATE_WAITING_EVENT;
   packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING;
 }
 //------------------------------------------------------------------------------
@@ -102,7 +105,8 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
   s1ap_eNB_instance = et_s1ap_eNB_get_instance(packet->enb_instance);
   AssertFatal(NULL != s1ap_eNB_instance, "Cannot get s1ap_eNB_instance_t for eNB instance %d", packet->enb_instance);
 
-  g_scenario->fsm_state = ET_FSM_STATE_WAITING_EVENT;
+  LOG_D(ENB_APP, "%s\n", __FUNCTION__);
+  g_fsm_state = ET_FSM_STATE_WAITING_EVENT;
 
   switch (packet->sctp_hdr.chunk_type) {
     case SCTP_CID_DATA:
@@ -124,7 +128,7 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
                          NULL, &packet->timer_id) < 0) {
           AssertFatal(0, " Can not start TX event timer\n");
         }
-        // Done g_scenario->fsm_state = ET_FSM_STATE_WAITING_TX_EVENT;
+        // Done g_fsm_state = ET_FSM_STATE_WAITING_TX_EVENT;
       } else {
         // send immediately
         et_s1ap_eNB_itti_send_sctp_data_req(
@@ -134,7 +138,7 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
             packet->sctp_hdr.u.data_hdr.payload.binary_stream_allocated_size,
             packet->sctp_hdr.u.data_hdr.stream);
         packet->status = ET_PACKET_STATUS_SENT;
-        g_scenario->fsm_state = ET_FSM_STATE_RUNNING;
+        g_fsm_state = ET_FSM_STATE_RUNNING;
       }
       break;
     case SCTP_CID_INIT:
@@ -162,7 +166,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
     default:
       AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_RUNNING", event.code);
   }
-  pthread_mutex_unlock(&g_scenario->fsm_lock);
+  pthread_mutex_unlock(&g_fsm_lock);
   return 0;
 }
 
@@ -188,14 +192,14 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event)
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.payload.binary_stream_allocated_size,
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.stream);
       event.u.tx_timed_packet->status = ET_PACKET_STATUS_SENT;
-      g_scenario->fsm_state = ET_FSM_STATE_RUNNING;
+      g_fsm_state = ET_FSM_STATE_RUNNING;
       break;
 
 
     default:
       AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_WAITING", event.code);
   }
-  pthread_mutex_unlock(&g_scenario->fsm_lock);
+  pthread_mutex_unlock(&g_fsm_lock);
   return 0;
 }
 
@@ -215,8 +219,8 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
             // no init in this scenario, may be sub-scenario
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
               et_scenario_schedule_tx_packet(g_scenario->next_packet);
-              pthread_mutex_unlock(&g_scenario->fsm_lock);
-              return g_scenario->fsm_state;
+              pthread_mutex_unlock(&g_fsm_lock);
+              return g_fsm_state;
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
                 g_scenario->last_rx_packet = g_scenario->next_packet;
@@ -226,8 +230,8 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
 
               } else if (g_scenario->next_packet->status == ET_PACKET_STATUS_NONE) {
                 et_scenario_wait_rx_packet(g_scenario->next_packet);
-                pthread_mutex_unlock(&g_scenario->fsm_lock);
-                return g_scenario->fsm_state;
+                pthread_mutex_unlock(&g_fsm_lock);
+                return g_fsm_state;
               } else {
                 AssertFatal(0, "Invalid packet status %d", g_scenario->next_packet->status);
               }
@@ -263,15 +267,15 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
         }
       }
       fprintf(stderr, "No Packet found in this scenario: %s\n", g_scenario->name);
-      g_scenario->fsm_state = ET_FSM_STATE_NULL;
-      pthread_mutex_unlock(&g_scenario->fsm_lock);
-      return g_scenario->fsm_state;
+      g_fsm_state = ET_FSM_STATE_NULL;
+      pthread_mutex_unlock(&g_fsm_lock);
+      return g_fsm_state;
       break;
 
     default:
       AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_CONNECTING_S1C", event.code);
   }
-  pthread_mutex_unlock(&g_scenario->fsm_lock);
+  pthread_mutex_unlock(&g_fsm_lock);
   return 0;
 }
 //------------------------------------------------------------------------------
@@ -289,8 +293,8 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
             // no init in this scenario, may be sub-scenario
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
               et_scenario_schedule_tx_packet(g_scenario->next_packet);
-              pthread_mutex_unlock(&g_scenario->fsm_lock);
-              return g_scenario->fsm_state;
+              pthread_mutex_unlock(&g_fsm_lock);
+              return g_fsm_state;
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
                 g_scenario->last_rx_packet = g_scenario->next_packet;
@@ -300,8 +304,8 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
 
               } else if (g_scenario->next_packet->status == ET_PACKET_STATUS_NONE) {
                 et_scenario_wait_rx_packet(g_scenario->next_packet);
-                pthread_mutex_unlock(&g_scenario->fsm_lock);
-                return g_scenario->fsm_state;
+                pthread_mutex_unlock(&g_fsm_lock);
+                return g_fsm_state;
               } else {
                 AssertFatal(0, "Invalid packet status %d", g_scenario->next_packet->status);
               }
@@ -317,10 +321,10 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
             g_scenario->hash_mme2association_id      = hashtable_create (256,NULL,NULL);
             // Try to register each eNB
             g_scenario->registered_enb       = 0;
-            g_scenario->fsm_state            = ET_FSM_STATE_CONNECTING_S1C;
-            g_scenario->register_enb_pending = et_eNB_app_register (g_scenario->enb_properties);
-            pthread_mutex_unlock(&g_scenario->fsm_lock);
-            return g_scenario->fsm_state;
+            g_fsm_state            = ET_FSM_STATE_CONNECTING_S1C;
+            et_eNB_app_register (g_scenario->enb_properties);
+            pthread_mutex_unlock(&g_fsm_lock);
+            return g_fsm_state;
             break;
 
           case SCTP_CID_HEARTBEAT:
@@ -348,9 +352,9 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
         }
       }
       fprintf(stderr, "No Useful packet found in this scenario: %s\n", g_scenario->name);
-      g_scenario->fsm_state = ET_FSM_STATE_NULL;
-      pthread_mutex_unlock(&g_scenario->fsm_lock);
-      return g_scenario->fsm_state;
+      g_fsm_state = ET_FSM_STATE_NULL;
+      pthread_mutex_unlock(&g_fsm_lock);
+      return g_fsm_state;
       break;
 
     default:
@@ -364,15 +368,15 @@ et_fsm_state_t et_scenario_fsm_notify_event(et_event_t event)
 {
   AssertFatal((event.code >= ET_EVENT_START) && (event.code < ET_EVENT_END), "Unknown et_event_t.code %d", event.code);
 
-  pthread_mutex_lock(&g_scenario->fsm_lock);
-  switch (g_scenario->fsm_state){
+  pthread_mutex_lock(&g_fsm_lock);
+  switch (g_fsm_state){
     case ET_FSM_STATE_NULL: return et_scenario_fsm_notify_event_state_null(event); break;
     case ET_FSM_STATE_CONNECTING_S1C: return et_scenario_fsm_notify_event_state_connecting_s1c(event); break;
     case ET_FSM_STATE_WAITING_EVENT: return et_scenario_fsm_notify_event_state_waiting(event); break;
     case ET_FSM_STATE_RUNNING: return et_scenario_fsm_notify_event_state_running(event); break;
     default:
-      AssertFatal(0, "Case fsm_state %d not handled", g_scenario->fsm_state);
+      AssertFatal(0, "Case fsm_state %d not handled", g_fsm_state);
   }
-  pthread_mutex_unlock(&g_scenario->fsm_lock);
-  return g_scenario->fsm_state;
+  pthread_mutex_unlock(&g_fsm_lock);
+  return g_fsm_state;
 }

@@ -39,7 +39,6 @@
 #define PLAY_SCENARIO_H_
 #  include <time.h>
 #  include <stdint.h>
-#  include <pthread.h>
 #  include <libxml/tree.h>
 #  include <netinet/in.h>
 
@@ -274,6 +273,7 @@ typedef struct et_ip_s {
     struct in6_addr  ipv6;
     in_addr_t        ipv4;
   }address;
+  char str[INET6_ADDRSTRLEN+1];
 }et_ip_t;
 
 typedef struct et_ip_hdr_s {
@@ -323,8 +323,6 @@ typedef struct et_scenario_s {
   uint32_t                registered_enb;
   long                    enb_register_retry_timer_id;
 
-  pthread_mutex_t         fsm_lock;
-  et_fsm_state_t          fsm_state;
 
   hash_table_t           *hash_mme2association_id;
   hash_table_t           *hash_old_ue_mme_id2ue_mme_id;
@@ -391,6 +389,7 @@ int et_s1ap_decode_pdu(S1AP_PDU_t * const pdu, s1ap_message * const message, con
 void et_decode_s1ap(et_s1ap_t * const s1ap);
 //-------------------------
 int et_s1ap_eNB_compare_assoc_id( struct s1ap_eNB_mme_data_s *p1, struct s1ap_eNB_mme_data_s *p2);
+uint32_t et_s1ap_generate_eNB_id(void);
 uint16_t et_s1ap_eNB_fetch_add_global_cnx_id(void);
 void et_s1ap_eNB_prepare_internal_data(void);
 void et_s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p);
@@ -436,6 +435,7 @@ int  et_split_path     ( char * pathP, char *** resP);
 void et_display_node   ( xmlNodePtr node, unsigned int indent);
 void et_display_tree   ( xmlNodePtr node, unsigned int indent);
 char * et_ip2ip_str(const et_ip_t * const ip);
+int et_compare_et_ip_to_net_ip_address(const et_ip_t * const ip, const net_ip_address_t * const net_ip);
 int et_hex2data(unsigned char * const data, const unsigned char * const hexstring, const unsigned int len);
 sctp_cid_t et_chunk_type_str2cid(const xmlChar * const chunk_type_str);
 const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type);
@@ -443,7 +443,7 @@ et_packet_action_t et_action_str2et_action_t(const xmlChar * const action);
 void et_ip_str2et_ip(const xmlChar  * const ip_str, et_ip_t * const ip);
 void et_enb_config_init(const  char const * lib_config_file_name_pP);
 const Enb_properties_array_t *et_enb_config_get(void);
-uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties);
+void et_eNB_app_register(const Enb_properties_array_t *enb_properties);
 void *et_eNB_app_task(void *args_p);
 int et_play_scenario(et_scenario_t* const scenario);
 

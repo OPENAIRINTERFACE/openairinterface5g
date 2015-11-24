@@ -308,28 +308,82 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
                                         s1ap_eNB_mme_data_t        * const mme_desc_p)
 {
   et_packet_t     *packet = NULL;
-  struct in6_addr  s1c_mme_ipv6 = IN6ADDR_ANY_INIT;
-  in_addr_t        s1c_mme_ipv4 = INADDR_ANY;
-  struct in6_addr  s1c_enb_ipv6 = IN6ADDR_ANY_INIT;
-  in_addr_t        s1c_enb_ipv4 = INADDR_ANY;
+  int              ret;
+  unsigned int     old_enb_port = 0;
+  unsigned int     old_mme_port = 0;
 
-  packet = g_scenario->next_packet;
+  S1AP_DEBUG("%s for SCTP association (%u)\n",__FUNCTION__,assoc_id);
+
+  packet = g_scenario->list_packet;
   while (NULL != packet) {
     switch (packet->sctp_hdr.chunk_type) {
 
       case SCTP_CID_DATA :
-        if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
-          // TODO compare addresses and ports
-          if (packet->ip_hdr.dst)
-            packet->sctp_hdr.dst_port == 0;
-          packet->sctp_hdr.src_port == 0;
-
-        } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+        if (ET_PACKET_STATUS_NONE == packet->status) {
+          if (0 < old_mme_port) {
+            if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
+              ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
+              if (0 == ret) {
+                ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
+                if (0 == ret) {
+                  // same IP src, same IP dst
+                  if ((packet->sctp_hdr.dst_port == old_mme_port) && (packet->sctp_hdr.src_port == old_enb_port)) {
+                    packet->sctp_hdr.u.data_hdr.assoc_id = assoc_id;
+                    S1AP_DEBUG("tPacket:\tnum %u  | original frame number %u \n", packet->packet_number, packet->original_frame_number);
+                    S1AP_DEBUG("\tUpdated assoc id: %u\n", assoc_id);
+                  }
+                }
+              }
+            } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+              ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &mme_desc_p->mme_net_ip_address);
+              if (0 == ret) {
+                ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &s1ap_eNB_instance->s1c_net_ip_address);
+                if (0 == ret) {
+                  // same IP src, same IP dst
+                  if ((packet->sctp_hdr.src_port == old_mme_port) && (packet->sctp_hdr.dst_port == old_enb_port)) {
+                    packet->sctp_hdr.u.data_hdr.assoc_id = assoc_id;
+                    S1AP_DEBUG("tPacket:\tnum %u  | original frame number %u \n", packet->packet_number, packet->original_frame_number);
+                    S1AP_DEBUG("\tUpdated assoc id: %u\n", assoc_id);
+                  }
+                }
+              }
+            }
+          }
         }
         break;
 
+        // Strong assumption
+        // in replayed scenario, the order of SCTP INIT packets is supposed to be the same as in the catched scenario
       case SCTP_CID_INIT:
+        ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
+        if (0 == ret) {
+          ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
+          if (0 == ret) {
+            if (0 == old_enb_port) {
+              if (ET_PACKET_STATUS_NONE == packet->status) {
+                packet->status = ET_PACKET_STATUS_SENT;
+                old_enb_port = packet->sctp_hdr.src_port;
+              }
+            }
+          }
+        }
+        break;
+
       case SCTP_CID_INIT_ACK:
+        ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
+        if (0 == ret) {
+          ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
+          if (0 == ret) {
+            if (old_enb_port == packet->sctp_hdr.dst_port) {
+              if (ET_PACKET_STATUS_NONE == packet->status) {
+                packet->status = ET_PACKET_STATUS_RECEIVED;
+                old_mme_port = packet->sctp_hdr.dst_port;
+              }
+            }
+          }
+        }
+        break;
+
       case SCTP_CID_HEARTBEAT:
       case SCTP_CID_HEARTBEAT_ACK:
       case SCTP_CID_COOKIE_ECHO:
@@ -384,11 +438,13 @@ void et_s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_s
     if (mme_desc_p->s1ap_eNB_instance->s1ap_mme_pending_nb > 0) {
       /* Decrease pending messages number */
       mme_desc_p->s1ap_eNB_instance->s1ap_mme_pending_nb --;
+      mme_desc_p->s1ap_eNB_instance->s1ap_mme_associated_nb++;
     }
 
     et_s1ap_update_assoc_id_of_packets(mme_desc_p->assoc_id,
         mme_desc_p->s1ap_eNB_instance,
         mme_desc_p);
+
 
     /* If there are no more pending messages, inform eNB app */
     if (mme_desc_p->s1ap_eNB_instance->s1ap_mme_pending_nb == 0) {
@@ -484,6 +540,10 @@ void et_s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_asso
     return;
   }
 
+  S1AP_DEBUG("Received successful result for SCTP association (%u), instance %d, cnx_id %u\n",
+             sctp_new_association_resp->sctp_state,
+             instance,
+             sctp_new_association_resp->ulp_cnx_id);
   /* Update parameters */
   s1ap_mme_data_p->assoc_id    = sctp_new_association_resp->assoc_id;
   s1ap_mme_data_p->in_streams  = sctp_new_association_resp->in_streams;
@@ -557,7 +617,7 @@ void *et_s1ap_eNB_task(void *arg)
       if (TIMER_HAS_EXPIRED (received_msg).timer_id == g_scenario->enb_register_retry_timer_id) {
         /* Restart the registration process */
         g_scenario->registered_enb = 0;
-        g_scenario->register_enb_pending = et_eNB_app_register (g_scenario->enb_properties);
+        et_eNB_app_register (g_scenario->enb_properties);
       }
       break;
 

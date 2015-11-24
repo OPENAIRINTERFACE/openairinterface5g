@@ -51,6 +51,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 
 #include "intertask_interface_init.h"
@@ -60,6 +61,7 @@
 #include "intertask_interface.h"
 #include "play_scenario.h"
 #include "sctp_eNB_task.h"
+#include "sctp_default_values.h"
 #include "log.h"
 //------------------------------------------------------------------------------
 #define PLAY_SCENARIO              1
@@ -73,6 +75,7 @@ extern et_scenario_t  *g_scenario;
 extern int             xmlLoadExtDtdDefaultValue;
 extern int             asn_debug;
 extern int             asn1_xer_print;
+extern pthread_mutex_t g_fsm_lock;
 
 //------------------------------------------------------------------------------
 // MEMO:
@@ -170,7 +173,7 @@ void et_free_scenario(et_scenario_t* scenario)
       packet = next_packet->next;
     }
     et_free_pointer(scenario);
-    pthread_mutex_destroy(&scenario->fsm_lock);
+    pthread_mutex_destroy(&g_fsm_lock);
   }
 }
 
@@ -276,7 +279,7 @@ const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type)
     case  SCTP_CID_ASCONF:            return "ASCONF"; break;
     case  SCTP_CID_ASCONF_ACK:        return "ASCONF_ACK"; break;
     default:
-      AssertFatal (0, "ERROR %s(): Unknown chunk_type %d!\n", __FUNCTION__, chunk_type);
+      AssertFatal (0, "ERROR: Unknown chunk_type %d!\n", chunk_type);
   }
 }
 //------------------------------------------------------------------------------
@@ -284,24 +287,50 @@ et_packet_action_t et_action_str2et_action_t(const xmlChar * const action)
 {
   if ((!xmlStrcmp(action, (const xmlChar *)"SEND")))              { return ET_PACKET_ACTION_S1C_SEND;}
   if ((!xmlStrcmp(action, (const xmlChar *)"RECEIVE")))              { return ET_PACKET_ACTION_S1C_RECEIVE;}
-  AssertFatal (0, "ERROR: %s cannot convert: %s\n", __FUNCTION__, action);
+  AssertFatal (0, "ERROR: cannot convert: %s\n", action);
   //if (NULL == action) {return ACTION_S1C_NULL;}
 }
 //------------------------------------------------------------------------------
 void et_ip_str2et_ip(const xmlChar  * const ip_str, et_ip_t * const ip)
 {
-  AssertFatal (NULL != ip_str, "ERROR %s() Cannot convert null string to ip address!\n", __FUNCTION__);
-  AssertFatal (NULL != ip,     "ERROR %s() out parameter pointer is NULL!\n", __FUNCTION__);
+  AssertFatal (NULL != ip_str, "ERROR Cannot convert null string to ip address!\n");
+  AssertFatal (NULL != ip,     "ERROR out parameter pointer is NULL!\n");
   // store this IP address in sa:
   if (inet_pton(AF_INET, (const char*)ip_str, (void*)&(ip->address.ipv4)) > 0) {
     ip->address_family = AF_INET;
+    strncpy((char *)ip->str, (const char *)ip_str, INET_ADDRSTRLEN+1);
   } else if (inet_pton(AF_INET6, (const char*)ip_str, (void*)&(ip->address.ipv6)) > 0) {
     ip->address_family = AF_INET6;
+    strncpy((char *)ip->str, (const char *)ip_str, INET6_ADDRSTRLEN+1);
   } else {
     ip->address_family = AF_UNSPEC;
     AssertFatal (0, "ERROR %s() Could not parse ip address %s!\n", __FUNCTION__, ip_str);
   }
 }
+//------------------------------------------------------------------------------
+int et_compare_et_ip_to_net_ip_address(const et_ip_t * const ip, const net_ip_address_t * const net_ip)
+{
+  AssertFatal (NULL != ip,     "ERROR ip parameter\n");
+  AssertFatal (NULL != net_ip, "ERROR net_ip parameter\n");
+  switch (ip->address_family) {
+    case AF_INET:
+      if (net_ip->ipv4) {
+        S1AP_DEBUG("%s(%s,%s)=%d\n",__FUNCTION__,ip->str, net_ip->ipv4_address, strcmp(ip->str, net_ip->ipv4_address));
+        return strcmp(ip->str, net_ip->ipv4_address);
+      }
+      return -1;
+      break;
+    case AF_INET6:
+      if (net_ip->ipv6) {
+        return strcmp(ip->str, net_ip->ipv6_address);
+      }
+      return -1;
+      break;
+    default:
+      return -1;
+  }
+}
+
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
 #else
@@ -317,6 +346,7 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP)
   config_setting_t *setting_mme_addresses         = NULL;
   config_setting_t *setting_mme_address           = NULL;
   config_setting_t *setting_enb                   = NULL;
+  libconfig_int     my_int;
   int               num_enb_properties            = 0;
   int               enb_properties_index          = 0;
   int               num_enbs                      = 0;
@@ -479,6 +509,20 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP)
               g_enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
             }
           }
+          // SCTP SETTING
+          g_enb_properties.properties[enb_properties_index]->sctp_out_streams = SCTP_OUT_STREAMS;
+          g_enb_properties.properties[enb_properties_index]->sctp_in_streams  = SCTP_IN_STREAMS;
+          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_SCTP_CONFIG);
+
+          if (subsetting != NULL) {
+            if ( (config_setting_lookup_int( subsetting, ENB_CONFIG_STRING_SCTP_INSTREAMS, &my_int) )) {
+              g_enb_properties.properties[enb_properties_index]->sctp_in_streams = (uint16_t)my_int;
+            }
+
+            if ( (config_setting_lookup_int( subsetting, ENB_CONFIG_STRING_SCTP_OUTSTREAMS, &my_int) )) {
+              g_enb_properties.properties[enb_properties_index]->sctp_out_streams = (uint16_t)my_int;
+            }
+          }
 
 
           // NETWORK_INTERFACES
@@ -536,19 +580,19 @@ const Enb_properties_array_t *et_enb_config_get(void)
   return &g_enb_properties;
 }
 /*------------------------------------------------------------------------------*/
-uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties)
+void et_eNB_app_register(const Enb_properties_array_t *enb_properties)
 {
-  uint32_t         enb_id;
-  uint32_t         mme_id;
-  MessageDef      *msg_p;
-  char            *str                  = NULL;
-  struct in_addr   addr;
+  uint32_t         enb_id = 0;
+  uint32_t         mme_id = 0;
+  MessageDef      *msg_p  = NULL;
+  char            *str    = NULL;
+  struct in_addr   addr   = {.s_addr = 0};
 
 
   g_scenario->register_enb_pending = 0;
   for (enb_id = 0; (enb_id < enb_properties->number) ; enb_id++) {
     {
-      s1ap_register_enb_req_t *s1ap_register_eNB;
+      s1ap_register_enb_req_t *s1ap_register_eNB = NULL;
 
       /* note:  there is an implicit relationship between the data structure and the message name */
       msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
@@ -589,13 +633,10 @@ uint32_t et_eNB_app_register(const Enb_properties_array_t *enb_properties)
       str = inet_ntoa(addr);
       strcpy(s1ap_register_eNB->enb_ip_address.ipv4_address, str);
 
-      itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-
       g_scenario->register_enb_pending++;
+      itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
   }
-
-  return g_scenario->register_enb_pending;
 }
 /*------------------------------------------------------------------------------*/
 void *et_eNB_app_task(void *args_p)
@@ -603,11 +644,10 @@ void *et_eNB_app_task(void *args_p)
   et_scenario_t                  *scenario = (et_scenario_t*)args_p;
   MessageDef                     *msg_p           = NULL;
   const char                     *msg_name        = NULL;
-  instance_t                      instance;
-  int                             result;
+  instance_t                      instance        = 0;
+  int                             result          = 0;
 
   itti_mark_task_ready (TASK_ENB_APP);
-
 
   do {
     // Wait for a message
@@ -625,18 +665,20 @@ void *et_eNB_app_task(void *args_p)
       LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, msg_name,
             S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
 
-      DevAssert(g_scenario->register_enb_pending > 0);
-      g_scenario->register_enb_pending--;
+      DevAssert(scenario->register_enb_pending > 0);
+      scenario->register_enb_pending--;
 
       /* Check if at least eNB is registered with one MME */
       if (S1AP_REGISTER_ENB_CNF(msg_p).nb_mme > 0) {
-        g_scenario->registered_enb++;
+        scenario->registered_enb++;
       }
 
       /* Check if all register eNB requests have been processed */
       if (scenario->register_enb_pending == 0) {
+        timer_remove(scenario->enb_register_retry_timer_id);
         if (scenario->registered_enb == scenario->enb_properties->number) {
           /* If all eNB are registered, start scenario */
+          LOG_D(ENB_APP, " All eNB are now associated with a MME\n");
           et_event_t event;
           event.code = ET_EVENT_S1C_CONNECTED;
           et_scenario_fsm_notify_event(event);
@@ -654,7 +696,7 @@ void *et_eNB_app_task(void *args_p)
             sleep(ET_ENB_REGISTER_RETRY_DELAY);
             /* Restart the registration process */
             scenario->registered_enb = 0;
-            scenario->register_enb_pending = et_eNB_app_register (scenario->enb_properties);
+            et_eNB_app_register (scenario->enb_properties);
           }
         }
       }
@@ -674,7 +716,7 @@ void *et_eNB_app_task(void *args_p)
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == scenario->enb_register_retry_timer_id) {
         /* Restart the registration process */
         scenario->registered_enb = 0;
-        scenario->register_enb_pending = et_eNB_app_register (scenario->enb_properties);
+        et_eNB_app_register (scenario->enb_properties);
       }
       break;
 
@@ -870,10 +912,13 @@ int main( int argc, char **argv )
 
   // logging
   logInit();
+  set_glog(LOG_TRACE, LOG_MED);
+
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
 
+  set_comp_log(ENB_APP, LOG_TRACE, LOG_MED, 1);
   set_comp_log(S1AP, LOG_TRACE, LOG_MED, 1);
-  set_comp_log(SCTP, LOG_TRACE, LOG_MED, 1);
+  set_comp_log(SCTP, LOG_TRACE, LOG_FULL, 1);
   asn_debug      = 0;
   asn1_xer_print = 1;
 
@@ -895,6 +940,6 @@ int main( int argc, char **argv )
     et_free_pointer(scenario_file_name);
     et_free_pointer(enb_config_file_name);
   }
-
+  itti_wait_tasks_end();
   return ret;
 }

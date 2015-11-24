@@ -447,8 +447,6 @@ et_scenario_t* et_generate_scenario(
       printf("scenario name: %s\n", xml_char);
       scenario            = calloc(1, sizeof(*scenario));
       scenario->name      = xml_char; // nodup nofree
-      scenario->fsm_state = ET_FSM_STATE_NULL;
-      pthread_mutex_init(&scenario->fsm_lock, NULL);
 
       next_packet = &scenario->list_packet;
       for (node = root->children; node != NULL; node = node->next) {
