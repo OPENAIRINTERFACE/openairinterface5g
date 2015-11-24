@@ -955,7 +955,7 @@ int get_nCCE_offset(int *CCE_table,
       break;
     }
 
-    //    LOG_I(PHY,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
+    LOG_I(MAC,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
 
     for (m = 0 ; m < nb_candidates ; m++) {
       search_space_free = 1;
@@ -994,7 +994,7 @@ int allocate_CCEs(int module_idP,
   int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
 
-  LOG_I(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
+  LOG_I(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
   init_CCE_table(module_idP,CC_idP);
   DCI_pdu->nCCE=0;
 

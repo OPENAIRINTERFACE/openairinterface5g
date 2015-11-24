@@ -340,13 +340,12 @@ typedef struct {
 #define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 
-#if defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP)
 #define MAX_FRAME_NUMBER 0x400
+#if defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP)
 #define NUMBER_OF_eNB_MAX 1
 #define NUMBER_OF_UE_MAX 4
 #define NUMBER_OF_CONNECTED_eNB_MAX 3
 #else
-#define MAX_FRAME_NUMBER 0xFFFF
 #ifdef LARGE_SCALE
 #define NUMBER_OF_eNB_MAX 2
 #define NUMBER_OF_UE_MAX 120

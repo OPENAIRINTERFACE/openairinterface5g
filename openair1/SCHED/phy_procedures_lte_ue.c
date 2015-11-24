@@ -2061,9 +2061,9 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
 #endif
 
-#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,frame_rx,slot_rx,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
-#endif
+  //#ifdef DEBUG_PHY_PROC
+  LOG_I(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,frame_rx,slot_rx,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
+  //#endif
 
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
   /*
@@ -2101,10 +2101,10 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
 #ifdef DEBUG_PHY_PROC
 
-    if (subframe_rx == 9) { //( frame_rx % 100 == 0)   {
-      LOG_D(PHY,"frame %d, subframe %d, rnti %x: dci %d/%d\n",frame_rx,subframe_rx,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,i,dci_cnt);
+    //    if (subframe_rx == 9) { //( frame_rx % 100 == 0)   {
+      LOG_I(PHY,"frame %d, subframe %d, rnti %x: dci %d/%d\n",frame_rx,subframe_rx,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,i,dci_cnt);
       //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-    }
+      //    }
 
 #endif
 
@@ -2622,13 +2622,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
         phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
 
-#ifdef DEBUG_PHY_PROC
+	//#ifdef DEBUG_PHY_PROC
         LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d Scheduling DLSCH decoding\n",
               phy_vars_ue->Mod_id,
               phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
               harq_pid,
               (subframe_prev == 9) ? (frame_rx-1) : frame_rx,subframe_prev);
-#endif
+	//#endif
 
         if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
           if (abstraction_flag == 0) {
@@ -2674,17 +2674,18 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
           if (ret == (1+phy_vars_ue->dlsch_ue[eNB_id][0]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_errors[eNB_id]++;
 
-#ifdef DEBUG_PHY_PROC
-            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
+	    //#ifdef DEBUG_PHY_PROC
+            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
                   harq_pid,frame_rx,subframe_prev,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
-                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
 
             //      if (abstraction_flag ==0 )
-            //dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
-            //mac_xface->macphy_exit("");
-#endif
+            dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
+            mac_xface->macphy_exit("");
+	    //#endif
           } else {
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d (slot_rx %d): Received DLSCH (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,

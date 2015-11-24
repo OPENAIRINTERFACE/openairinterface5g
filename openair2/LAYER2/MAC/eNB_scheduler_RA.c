@@ -604,7 +604,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 			      (void*)&RA_template->RA_alloc_pdu2[0],
 			      RA_template->rnti,
 			      RA_template->RA_dci_size_bytes2,
-			      1,
+			      2,
 			      RA_template->RA_dci_size_bits2,
 			      RA_template->RA_dci_fmt2,
 			      0);
