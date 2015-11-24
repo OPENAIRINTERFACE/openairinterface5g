@@ -422,7 +422,7 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  -C Set the downlink frequecny for all Component carrier\n");
+  printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
   printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
@@ -436,6 +436,7 @@ void help (void) {
   printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
   printf("  -S Skip the missed slots/subframes \n");    
   printf("  -t Set the maximum uplink MCS\n");
+  printf("  -T Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n");
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
@@ -2061,7 +2062,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:x:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2326,8 +2327,13 @@ static void get_options (int argc, char **argv)
         printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
         exit(-1);
       }
-
       break;
+
+    case 'T':
+      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	frame_parms[CC_id]->frame_type = TDD;
+      break;
+
     case 'h':
       help ();
       exit (-1);
@@ -2487,12 +2493,10 @@ int main( int argc, char **argv )
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   set_latency_target();
 
-
-
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
-    frame_parms[CC_id]->frame_type         = FDD; /* TDD */
+    frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
     frame_parms[CC_id]->tdd_config_S        = 0;
     frame_parms[CC_id]->N_RB_DL             = 100;
@@ -3088,7 +3092,7 @@ int main( int argc, char **argv )
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     rf_map[CC_id].card=0;
-    rf_map[CC_id].chain=CC_id+1;
+    rf_map[CC_id].chain=CC_id;
   }
 
   // connect the TX/RX buffers
