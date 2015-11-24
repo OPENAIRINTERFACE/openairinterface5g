@@ -344,7 +344,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                frame_parms,
                                symbol,
                                first_symbol_flag,
-                               get_Qm(dlsch0_harq->mcs),
+                               dlsch0_harq->Qm,
                                nb_rb,
                                lte_ue_pdsch_vars[eNB_id]->log2_maxh,
                                phy_measurements); // log2_maxh+I0_shift
@@ -407,16 +407,18 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         // effective channel of desired user is always stronger than interfering eff. channel
         dlsch_channel_level_TM34(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, 
                                  frame_parms, 
-                                 avg, symbol, nb_rb,
+                                 avg,
+				 symbol,
+				 nb_rb,
                                  dlsch0_harq->mimo_mode);
 	    
-	/*
+	
 	if (rx_type>rx_standard) {
 	  //	LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->mcs>>1)-1]);
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
 	else 
-	*/
+
 
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0])/2;
       }
@@ -426,8 +428,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                      phy_measurements, 
                                      eNB_id, 
                                      symbol, 
-                                     get_Qm(dlsch0_harq->mcs), 
-                                     get_Qm(dlsch1_harq->mcs),
+                                     dlsch0_harq->Qm, 
+                                     dlsch1_harq->Qm,
                                      harq_pid,
                                      dlsch0_harq->round,
                                      dlsch0_harq->mimo_mode,

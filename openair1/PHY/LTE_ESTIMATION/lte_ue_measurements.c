@@ -428,8 +428,8 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
      phy_vars_ue->PHY_measurements.rank[eNB_id] = 0;
     else 
     phy_vars_ue->PHY_measurements.rank[eNB_id] = 1;
-    printf ("tx mode %d\n", phy_vars_ue->transmission_mode[eNB_id]);
-    printf ("rank %d\n", phy_vars_ue->PHY_measurements.rank[eNB_id]);
+  //  printf ("tx mode %d\n", phy_vars_ue->transmission_mode[eNB_id]);
+  //  printf ("rank %d\n", phy_vars_ue->PHY_measurements.rank[eNB_id]);
 
   switch (N_RB_DL) {
   case 6:

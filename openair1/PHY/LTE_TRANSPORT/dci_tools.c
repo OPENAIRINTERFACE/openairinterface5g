@@ -4631,7 +4631,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 	}
       }
       else {
-	LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
+	LOG_E(PHY,"UE: Format2 DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
       }
 
       break;
@@ -4694,7 +4694,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 	}
       }
       else {
-	LOG_E(PHY,"UE: Format2A DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
+	LOG_E(PHY,"UE: Format2 DCI: unsupported number of TX antennas %d\n",frame_parms->nb_antennas_tx_eNB);
       }
 
       break;
@@ -4921,7 +4921,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch1_harq->mcs         = mcs2;
 
     if (dlsch1_harq->nb_rb>1) {
-      dlsch1_harq->TBS       = TBStable[dlsch1_harq->mcs][dlsch1_harq->nb_rb-1];
+      dlsch1_harq->TBS       = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
       if (mcs2 <= 28)
 	dlsch1_harq->Qm      = get_Qm(mcs2);
       else if (mcs1<=31)

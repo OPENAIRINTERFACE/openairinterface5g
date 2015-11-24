@@ -410,6 +410,7 @@ int main(int argc, char **argv)
 
     case 'M':
       mcs2 = atoi(optarg);
+      i_mod = get_Qm(mcs2); /// think here again!!!
       break;
 
     case 't':
@@ -1782,7 +1783,7 @@ n(tikz_fname,"w");
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	= 0;
+		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
 		break;
 	      }	  
 	    }
