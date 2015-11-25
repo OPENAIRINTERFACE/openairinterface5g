@@ -130,7 +130,7 @@ boolean_t pdcp_data_req(
             PROTOCOL_CTXT_ARGS(ctxt_pP),
             rb_idP);
     return FALSE;
-  }
+    }
   }
 
   if (sdu_buffer_sizeP == 0) {

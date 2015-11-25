@@ -1077,7 +1077,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   struct PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
   struct LogicalChannelConfig        *DRB_lchan_config                 = NULL;
   struct LogicalChannelConfig__ul_SpecificParameters
-      *DRB_ul_SpecificParameters        = NULL;
+    *DRB_ul_SpecificParameters        = NULL;
   DRB_ToAddModList_t**                DRB_configList=&ue_context_pP->ue_context.DRB_configList; 
   //DRB_ToAddModList_t**                RRC_DRB_configList=&ue_context_pP->ue_context.DRB_configList;
 
@@ -1085,8 +1085,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
 
   long                               *logicalchannelgroup, *logicalchannelgroup_drb;
-  int drb_identity_index=0;
-
+  int drb_identity_index=0, nas_sequence_flag = 0;
+  
 // Configure DRB
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
   *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
@@ -1097,7 +1097,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 	i++){
     
     // bypass the already configured erabs
-    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED) {
+    if (ue_context_pP->ue_context.e_rab[i].status >= E_RAB_STATUS_DONE) {
       drb_identity_index++;
       continue;
     }
@@ -1107,7 +1107,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
     *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;  
 
-    DRB_config->drb_Identity = 1 + drb_identity_index;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+    DRB_config->drb_Identity =  1 + drb_identity_index ;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
     // 1 + drb_identiy_index;  
 
     DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
@@ -1181,35 +1181,40 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
     ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
-
+    //ue_context_pP->ue_context.DRB_configList2[drb_identity_index] = &(*DRB_configList);
+    
     LOG_I(RRC,"EPS ID %d, DRB ID %d (index %d), QCI %d, priority %d, LCID %d LCGID %d \n",
 	  *DRB_config->eps_BearerIdentity,
 	  DRB_config->drb_Identity, i,
 	  ue_context_pP->ue_context.e_rab[i].param.qos.qci,
 	  DRB_ul_SpecificParameters->priority,
 	  *(DRB_config->logicalChannelIdentity),
-	  DRB_ul_SpecificParameters->logicalChannelGroup	  
+	  *DRB_ul_SpecificParameters->logicalChannelGroup	  
 	  );
- 
-    if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
-      dedicatedInfoNas = CALLOC(1, sizeof(DedicatedInfoNAS_t));
-      memset(dedicatedInfoNas, 0, sizeof(OCTET_STRING_t));
-      OCTET_STRING_fromBuf(dedicatedInfoNas, 
-			   (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
-                           ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
-      ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
-    } 
-    /* TODO parameters yet to process ... */
-    {
-      //      ue_context_pP->ue_context.e_rab[i].param.qos;
-      //      ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
-      //      ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
-    }
 
-    /* If list is empty free the list and reset the address */
-    if (dedicatedInfoNASList->list.count == 0) {
-      free(dedicatedInfoNASList);
-      dedicatedInfoNASList = NULL;
+    //if (nas_sequence_flag == 0)
+    {
+      if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
+	dedicatedInfoNas = CALLOC(1, sizeof(DedicatedInfoNAS_t));
+	memset(dedicatedInfoNas, 0, sizeof(OCTET_STRING_t));
+	OCTET_STRING_fromBuf(dedicatedInfoNas, 
+			     (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
+			     ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
+	ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
+	//	nas_sequence_flag = 1;
+      } 
+      /* TODO parameters yet to process ... */
+      {
+	//      ue_context_pP->ue_context.e_rab[i].param.qos;
+	//      ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
+	//      ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
+      }
+      
+      /* If list is empty free the list and reset the address */
+      if (dedicatedInfoNASList->list.count == 0) {
+	free(dedicatedInfoNASList);
+	dedicatedInfoNASList = NULL;
+      }					       
     }
     
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
@@ -1482,6 +1487,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
   ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+  //ue_context_pP->ue_context.DRB_configList2[0] = &(*DRB_configList);
 
   mac_MainConfig = CALLOC(1, sizeof(*mac_MainConfig));
   ue_context_pP->ue_context.mac_MainConfig = mac_MainConfig;
@@ -3238,7 +3244,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   rrc_pdcp_config_asn1_req(
     ctxt_pP,
     NULL,  //LG-RK 14/05/2014 SRB_configList,
-    DRB_configList, (DRB_ToReleaseList_t *) NULL,
+    DRB_configList, 
+    (DRB_ToReleaseList_t *) NULL,
     /*eNB_rrc_inst[ctxt_pP->module_id].ciphering_algorithm[ue_mod_idP] |
              (eNB_rrc_inst[ctxt_pP->module_id].integrity_algorithm[ue_mod_idP] << 4),
      */

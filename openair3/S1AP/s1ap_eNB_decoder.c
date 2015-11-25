@@ -124,7 +124,7 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
   case S1ap_ProcedureCode_id_E_RABSetup:
     ret = s1ap_decode_s1ap_e_rabsetuprequesties(
 						&message->msg.s1ap_E_RABSetupRequestIEs, &initiating_p->value);
-    s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
+    //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
     message_id = S1AP_E_RAB_SETUP_REQUEST_LOG;
     message_string_size = strlen(message_string);
     message_p           = itti_alloc_new_message_sized(TASK_S1AP,
@@ -139,7 +139,7 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
   case S1ap_ProcedureCode_id_E_RABRelease:
     ret = s1ap_decode_s1ap_e_rabreleasecommandies(&message->msg.s1ap_E_RABReleaseCommandIEs, 
 						 &initiating_p->value);
-    s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
+    //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
     S1AP_ERROR("TODO  E_RABReleas initiating message\n");
     free(message_string);
     

@@ -33,7 +33,6 @@
  * \email: navid.nikaein@eurecom.fr
  * \version 1.0
  * @ingroup _s1ap
-
  */
 
 #include <pthread.h>
