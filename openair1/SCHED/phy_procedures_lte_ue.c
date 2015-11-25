@@ -977,7 +977,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #else
           tx_amp = AMP;
 #endif
-	  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
+	  LOG_I(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
 		Mod_id,harq_pid,frame_tx,subframe_tx,phy_vars_ue->tx_power_dBm,phy_vars_ue->tx_power_max_dBm, tx_amp);
           start_meas(&phy_vars_ue->ulsch_modulation_stats);
           ulsch_modulation(phy_vars_ue->lte_ue_common_vars.txdataF,
@@ -1238,8 +1238,9 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #else //this is the normal case
         ulsch_start = (frame_parms->samples_per_tti*subframe_tx)-phy_vars_ue->N_TA_offset; //-phy_vars_ue->timing_advance;
 #endif //else EXMIMO
-	if ((frame_tx%100) == 0)
-	  LOG_D(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
+        if (generate_ul_signal == 1 ) {
+
+	  LOG_I(PHY,"[UE %d] Frame %d, subframe %d: ulsch_start = %d (rxoff %d, HW TA %d, timing advance %d, TA_offset %d\n",
 		Mod_id,frame_tx,subframe_tx,
 		ulsch_start,
 		phy_vars_ue->rx_offset,
@@ -1247,11 +1248,6 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 		phy_vars_ue->timing_advance,
 		phy_vars_ue->N_TA_offset);
  
-
-        if (generate_ul_signal == 1 ) {
-
-
-
           start_meas(&phy_vars_ue->ofdm_mod_stats);
 
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
@@ -1282,12 +1278,12 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
               &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
               nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe,
               phy_vars_ue->lte_ue_common_vars.txdataF[0]);
-              write_output("txsigF8.m","txsF8", &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe],
-              phy_vars_ue->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+
               write_output("txsig8.m","txs8", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
               phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
               }
             */
+
 #ifndef OFDMA_ULSCH
 #if defined(EXMIMO) || defined(OAI_USRP)
             apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,0);
@@ -1296,12 +1292,6 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
             apply_7_5_kHz(phy_vars_ue,&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],0);
             apply_7_5_kHz(phy_vars_ue,&phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],1);
 #endif
-            /*
-              if (subframe_tx == 8) {
-              write_output("txsig8_mod.m","txs8_mod", &phy_vars_ue->lte_ue_common_vars.txdata[0][phy_vars_ue->lte_frame_parms.samples_per_tti*subframe],
-              phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
-              }
-            */
 #endif
 
 #if defined(EXMIMO) || defined(OAI_USRP)
@@ -1330,9 +1320,19 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #endif
 #endif
 
-          } //nb_antennas_tx
+	  } //nb_antennas_tx
 
-          stop_meas(&phy_vars_ue->ofdm_mod_stats);
+	  stop_meas(&phy_vars_ue->ofdm_mod_stats);
+	  
+	  /*
+	  write_output("/tmp/txsigF.m","txsF", &phy_vars_ue->lte_ue_common_vars.txdataF[0][nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*subframe_tx],
+		       phy_vars_ue->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
+	  write_output("/tmp/txsig.m","txs", &phy_vars_ue->lte_ue_common_vars.txdata[0][0],
+		       10*phy_vars_ue->lte_frame_parms.samples_per_tti,1,1);
+	  
+	  mac_xface->macphy_exit("signals written to /tmp\n");
+	  */
+
         } // generate_ul_signal == 1
         else {  // no uplink so clear signal buffer instead
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
@@ -1439,7 +1439,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #endif
           }
 
-          LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
+          LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, subframe %d: Generating PRACH (eNB %d) preamble index %d for UL, TX power %d dBm (PL %d dB), l3msg \n",
                 Mod_id,frame_tx,subframe_tx,eNB_id,
                 phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex,
                 phy_vars_ue->prach_resources[eNB_id]->ra_PREAMBLE_RECEIVED_TARGET_POWER+get_PL(Mod_id,CC_id,eNB_id),
@@ -3018,7 +3018,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 #ifdef OPENAIR2
 
           if ((phy_vars_ue->UE_mode[eNB_id] != PUSCH) && (phy_vars_ue->prach_resources[eNB_id]->Msg3!=NULL)) {
-            LOG_D(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
+            LOG_I(PHY,"[UE  %d][RAPROC] Frame %d subframe %d Invoking MAC for RAR (current preamble %d)\n",
                   phy_vars_ue->Mod_id,frame_rx-((subframe_prev==9) ? 1 : 0),
                   subframe_prev,
                   phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex);

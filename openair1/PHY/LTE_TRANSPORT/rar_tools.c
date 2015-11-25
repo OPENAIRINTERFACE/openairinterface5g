@@ -308,18 +308,18 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT[rballoc];
   ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT[rballoc];
  
-  ulsch->harq_processes[harq_pid]->first_rb                              = rballoc%25;
-  ulsch->harq_processes[harq_pid]->nb_rb                                 = rballoc/25+1;
+  //ulsch->harq_processes[harq_pid]->first_rb                              = rballoc%25;
+  //ulsch->harq_processes[harq_pid]->nb_rb                                 = rballoc/25+1;
 
   if (ulsch->harq_processes[harq_pid]->nb_rb ==0){
-	printf("Error\n");
+    printf("Error\n");
     return(-1);
-	}
+  }
 
   ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
   if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
-    printf("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+    printf("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 4\n");
     //return(-1);
   }
 
