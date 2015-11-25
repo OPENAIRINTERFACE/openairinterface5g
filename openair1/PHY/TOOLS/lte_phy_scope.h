@@ -87,7 +87,4 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
 
 
-
-
-
 #endif /* FD_lte_scope_h_ */

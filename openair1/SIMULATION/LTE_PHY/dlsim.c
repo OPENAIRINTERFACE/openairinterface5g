@@ -385,7 +385,7 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y:X")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
