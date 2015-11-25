@@ -178,6 +178,231 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
 
 int8_t delta_PUSCH_msg2[8] = {-6,-4,-2,0,2,4,6,8};
 
+
+#define CMW 
+#ifdef CMW
+int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
+                                      unsigned char eNB_id )
+{
+
+  int bi_flag=0;
+  int j_rapdi_index=0;
+  int i,j;
+  //  RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)rar_pdu;
+  uint8_t transmission_mode = phy_vars_ue->transmission_mode[eNB_id];
+  //unsigned char *rar_pdu = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
+  unsigned char *dlsch_buffer = phy_vars_ue->dlsch_ue_ra[eNB_id]->harq_processes[0]->b;
+  unsigned char subframe = phy_vars_ue->ulsch_ue_Msg3_subframe[eNB_id];
+  LTE_UE_ULSCH_t *ulsch  = phy_vars_ue->ulsch_ue[eNB_id];
+  PHY_MEASUREMENTS *meas = &phy_vars_ue->PHY_measurements;
+  LTE_DL_FRAME_PARMS *frame_parms =  &phy_vars_ue->lte_frame_parms;
+  //  int current_dlsch_cqi = phy_vars_ue->current_dlsch_cqi[eNB_id];
+
+  //uint8_t *rar = (uint8_t *)(rar_pdu+1);
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,phy_vars_ue->frame_tx,subframe);
+  uint16_t rballoc;
+  uint8_t cqireq;
+  uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
+  uint16_t RIV_max = 0;
+
+  LOG_I(PHY,"[eNB][RAPROC] Frame %d: generate_ue_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",phy_vars_ue->frame_tx,subframe,harq_pid);
+
+
+  for( i=0; i < 8; i++ ){
+        if( ((dlsch_buffer[i]&0x80)>>7) ){
+                if( i==0 && ((dlsch_buffer[i]&0x40)>>6)==0 ){ //BI sub-header
+                        /*LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/R(%d)/R(%d)/BI(%d)\n",
+                        module_idP,i,
+                        ((dlsch_buffer[i]&0x80)>>7), //E
+                        ((dlsch_buffer[i]&0x40)>>6), //T
+                        ((dlsch_buffer[i]&0x20)>>5), //R
+                        ((dlsch_buffer[i]&0x10)>>4), //R
+                        ((dlsch_buffer[i]&0x0F))); //BI*/
+			bi_flag=1;
+                }else{  //Regular RAPID 
+                        /*LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/RAPID(%d)\n",
+                        module_idP,i,
+                        ((dlsch_buffer[i]&0x80)>>7), //E
+                        ((dlsch_buffer[i]&0x40)>>6), //T
+                        ((dlsch_buffer[i]&0x3f)));   //RAPID*/
+                }
+        }else{
+                /*LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/RAPID(%d)\n",
+                module_idP,i,
+                ((dlsch_buffer[i]&0x80)>>7), //E
+                ((dlsch_buffer[i]&0x40)>>6), //T
+                ((dlsch_buffer[i]&0x3f)));   //RAPID
+                rarh->RAPID = ((dlsch_buffer[i]&0x3f));*/
+		j_rapdi_index=i++;
+		if(bi_flag)
+			 j_rapdi_index--;
+                break;
+        }
+  }
+  //i++;
+  /*for(j=0; j < i*6; j+=6 ){
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->Timing_Advance_Command %d\n",module_idP,j/6,(((uint16_t)(dlsch_buffer[i+j]&0x7f))<<4) + (dlsch_buffer[i+j+1]>>4));
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->rballoc %d\n",module_idP,j/6,(((uint16_t)(dlsch_buffer[i+j+1]&7))<<7)|(dlsch_buffer[i+j+2]>>1));
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->mcs %d\n",module_idP,j/6,((dlsch_buffer[i+j+2]&1)<<3)|(dlsch_buffer[i+j+3]>>5));
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->TPC %d\n",module_idP,j/6,(dlsch_buffer[i+j+3]>>3)&7);
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->cqi %d\n",module_idP,j/6,dlsch_buffer[i+j+3]&1);
+        LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->t_crnti %x\n",module_idP,j/6,(uint16_t)dlsch_buffer[i+j+5]+(dlsch_buffer[i+j+4]<<8));
+  }*/
+
+
+  LOG_W(MAC,"[UE %d][RAPROC] Processing RAR PDU: TA(%d),rballoc(%d),mcs(%d),TPC(%d),cqi(%d),t_cnrti(%x)\n",phy_vars_ue->Mod_id,
+        (((uint16_t)(dlsch_buffer[i+j_rapdi_index*6]&0x7f))<<4) + (dlsch_buffer[i+j_rapdi_index*6+1]>>4),
+        (((uint16_t)(dlsch_buffer[i+j_rapdi_index*6+1]&7))<<7)|(dlsch_buffer[i+j_rapdi_index*6+2]>>1),
+        ((dlsch_buffer[i+j_rapdi_index*6+2]&1)<<3)|(dlsch_buffer[i+j_rapdi_index*6+3]>>5),
+        (dlsch_buffer[i+j_rapdi_index*6+3]>>3)&7,
+        dlsch_buffer[i+j_rapdi_index*6+3]&1,
+        (uint16_t)dlsch_buffer[i+j_rapdi_index*6+5]+(dlsch_buffer[i+j_rapdi_index*6+4]<<8));
+   
+
+  switch (frame_parms->N_RB_DL) {
+  case 6:
+    RIV2nb_rb_LUT     = &RIV2nb_rb_LUT6[0];
+    RIV2first_rb_LUT  = &RIV2first_rb_LUT6[0];
+    RIV_max           = RIV_max6;
+    break;
+
+  case 25:
+    RIV2nb_rb_LUT     = &RIV2nb_rb_LUT25[0];
+    RIV2first_rb_LUT  = &RIV2first_rb_LUT25[0];
+    RIV_max           = RIV_max25;
+    break;
+
+  case 50:
+    RIV2nb_rb_LUT     = &RIV2nb_rb_LUT50[0];
+    RIV2first_rb_LUT  = &RIV2first_rb_LUT50[0];
+    RIV_max           = RIV_max50;
+    break;
+
+  case 100:
+    RIV2nb_rb_LUT     = &RIV2nb_rb_LUT100[0];
+    RIV2first_rb_LUT  = &RIV2first_rb_LUT100[0];
+    RIV_max           = RIV_max100;
+    break;
+
+  default:
+    DevParam(frame_parms->N_RB_DL, eNB_id, harq_pid);
+    break;
+  }
+
+  printf("RIV_max %d\n",RIV_max);
+
+
+  //ulsch->harq_processes[harq_pid]->TPC                                   = (rar[3]>>3)&7;//rar->TPC;
+  ulsch->harq_processes[harq_pid]->TPC                                   =  (dlsch_buffer[i+j_rapdi_index*6+3]>>3)&7;//rar->TPC;
+
+  //rballoc = (((uint16_t)(rar[1]&7))<<7)|(rar[2]>>1);
+  rballoc = (((uint16_t)(dlsch_buffer[i+j_rapdi_index*6+1]&7))<<7)|(dlsch_buffer[i+j_rapdi_index*6+2]>>1);
+  //cqireq=rar[3]&1;
+  cqireq=dlsch_buffer[i+j_rapdi_index*6+3]&1;
+
+  if (rballoc>RIV_max) {
+    printf("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
+    return(-1);
+  }
+
+  ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT[rballoc];
+  ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT[rballoc];
+ 
+  ulsch->harq_processes[harq_pid]->first_rb                              = rballoc%25;
+  ulsch->harq_processes[harq_pid]->nb_rb                                 = rballoc/25+1;
+
+  if (ulsch->harq_processes[harq_pid]->nb_rb ==0){
+	printf("Error\n");
+    return(-1);
+	}
+
+  ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
+
+  if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
+    printf("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+    //return(-1);
+  }
+
+  //  ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
+  if (ulsch->harq_processes[harq_pid]->round == 0)
+    ulsch->harq_processes[harq_pid]->status = ACTIVE;
+
+  if (cqireq==1) {
+    ulsch->O_RI                                  = 1;
+
+    if (meas->rank[eNB_id] == 1) {
+      ulsch->uci_format                          = wideband_cqi_rank2_2A;
+      ulsch->O                                   = sizeof_wideband_cqi_rank2_2A_5MHz;
+      ulsch->o_RI[0]                             = 1;
+    } else {
+      ulsch->uci_format                          = wideband_cqi_rank1_2A;
+      ulsch->O                                   = sizeof_wideband_cqi_rank1_2A_5MHz;
+      ulsch->o_RI[0]                             = 0;
+    }
+
+    ulsch->uci_format = HLC_subband_cqi_nopmi;
+    fill_CQI(ulsch,meas,eNB_id,0,phy_vars_ue->lte_frame_parms.N_RB_DL,0, transmission_mode,phy_vars_ue->sinr_eff);
+
+    if (((phy_vars_ue->frame_tx % 100) == 0) || (phy_vars_ue->frame_tx < 10))
+      print_CQI(ulsch->o,ulsch->uci_format,eNB_id,phy_vars_ue->lte_frame_parms.N_RB_DL);
+  } else {
+    ulsch->O_RI                                = 0;
+    ulsch->O                                   = 0;
+  }
+
+  ulsch->harq_processes[harq_pid]->O_ACK                                  = 0;//2;
+
+  ulsch->beta_offset_cqi_times8                  = 18;
+  ulsch->beta_offset_ri_times8                   = 10;
+  ulsch->beta_offset_harqack_times8              = 16;
+
+  ulsch->Nsymb_pusch                             = 12-(frame_parms->Ncp<<1);
+  //ulsch->rnti = (((uint16_t)rar[4])<<8)+rar[5];  //rar->t_crnti;
+  ulsch->rnti =  (uint16_t)dlsch_buffer[i+j_rapdi_index*6+5]+(dlsch_buffer[i+j_rapdi_index*6+4]<<8);  //rar->t_crnti;
+
+  if (ulsch->harq_processes[harq_pid]->round == 0) {
+    ulsch->harq_processes[harq_pid]->status = ACTIVE;
+    ulsch->harq_processes[harq_pid]->rvidx = 0;
+    //ulsch->harq_processes[harq_pid]->mcs         = ((rar[2]&1)<<3)|(rar[3]>>5);
+    ulsch->harq_processes[harq_pid]->mcs         = ((dlsch_buffer[i+j_rapdi_index*6+2]&1)<<3)|(dlsch_buffer[i+j_rapdi_index*6+3]>>5);
+    //ulsch->harq_processes[harq_pid]->TPC         = (rar[3]>>2)&7;
+    ulsch->harq_processes[harq_pid]->TPC         = (dlsch_buffer[i+j_rapdi_index*6+3]>>3)&7;
+    //ulsch->harq_processes[harq_pid]->TBS         = dlsch_tbs25[ulsch->harq_processes[harq_pid]->mcs][ulsch->harq_processes[harq_pid]->nb_rb-1];
+    ulsch->harq_processes[harq_pid]->TBS         = TBStable[get_I_TBS_UL(ulsch->harq_processes[harq_pid]->mcs)][ulsch->harq_processes[harq_pid]->nb_rb-1];
+    ulsch->harq_processes[harq_pid]->Msc_initial   = 12*ulsch->harq_processes[harq_pid]->nb_rb;
+    ulsch->harq_processes[harq_pid]->Nsymb_initial = 9;
+    ulsch->harq_processes[harq_pid]->round = 0;
+  } else {
+    ulsch->harq_processes[harq_pid]->rvidx = 0;
+    ulsch->harq_processes[harq_pid]->round++;
+  }
+
+  // initialize power control based on PRACH power
+  ulsch->f_pusch = delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC] +
+                   mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id,phy_vars_ue->CC_id);
+  LOG_D(PHY,"[UE %d][PUSCH PC] Initializing f_pusch to %d dB, TPC %d (delta_PUSCH_msg2 %d dB), deltaP_rampup %d dB\n",
+        phy_vars_ue->Mod_id,ulsch->f_pusch,ulsch->harq_processes[harq_pid]->TPC,delta_PUSCH_msg2[ulsch->harq_processes[harq_pid]->TPC],
+        mac_xface->get_deltaP_rampup(phy_vars_ue->Mod_id,phy_vars_ue->CC_id));
+
+
+  //#ifdef DEBUG_RAR
+  printf("ulsch ra (UE): harq_pid %d\n",harq_pid);
+  printf("ulsch ra (UE): NBRB     %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  printf("ulsch ra (UE): first_rb %x\n",ulsch->harq_processes[harq_pid]->first_rb);
+  printf("ulsch ra (UE): nb_rb    %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+  printf("ulsch ra (UE): round    %d\n",ulsch->harq_processes[harq_pid]->round);
+  printf("ulsch ra (UE): TBS      %d\n",ulsch->harq_processes[harq_pid]->TBS);
+  printf("ulsch ra (UE): mcs      %d\n",ulsch->harq_processes[harq_pid]->mcs);
+  printf("ulsch ra (UE): TPC      %d\n",ulsch->harq_processes[harq_pid]->TPC);
+  printf("ulsch ra (UE): O        %d\n",ulsch->O);
+  printf("ulsch ra (UE): ORI      %d\n",ulsch->O_RI);
+  //#endif
+  return(-1);
+  return(0);
+}
+
+#else
+
 int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
                                       unsigned char eNB_id )
 {
@@ -198,7 +423,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
   uint16_t RIV_max = 0;
 
-  LOG_D(PHY,"[eNB][RAPROC] Frame %d: generate_ue_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",phy_vars_ue->frame_tx,subframe,harq_pid);
+  LOG_I(PHY,"[eNB][RAPROC] Frame %d: generate_ue_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",phy_vars_ue->frame_tx,subframe,harq_pid);
 
   switch (frame_parms->N_RB_DL) {
   case 6:
@@ -238,20 +463,22 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   cqireq=rar[3]&1;
 
   if (rballoc>RIV_max) {
-    msg("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
-    return(-1);
+    printf("rar_tools.c: ERROR: rb_alloc (%x) > RIV_max\n",rballoc);
+    //return(-1);
   }
 
   ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT[rballoc];
   ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT[rballoc];
 
-  if (ulsch->harq_processes[harq_pid]->nb_rb ==0)
+  if (ulsch->harq_processes[harq_pid]->nb_rb ==0){
+	printf("Error\n");
     return(-1);
+	}
 
   ulsch->power_offset = ue_power_offsets[ulsch->harq_processes[harq_pid]->nb_rb];
 
   if (ulsch->harq_processes[harq_pid]->nb_rb > 4) {
-    msg("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
+    printf("rar_tools.c: unlikely rb count for RAR grant : nb_rb > 3\n");
     return(-1);
   }
 
@@ -328,4 +555,7 @@ int generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
   //#endif
   return(0);
 }
+#endif
+
+
 #endif

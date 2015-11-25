@@ -149,7 +149,9 @@ ue_process_rar(
 )
 //------------------------------------------------------------------------------
 {
-
+  int j_rapdi_index=0;
+  int bi_flag=0;
+  int i,j,nh;
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *)dlsch_buffer;
   //  RAR_PDU *rar = (RAR_PDU *)(dlsch_buffer+1);
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
@@ -159,31 +161,72 @@ ue_process_rar(
     return(0xffff);
   }
 
-  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",module_idP,frameP,
-        *(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
-        rarh->RAPID,preamble_index);
 #ifdef DEBUG_RAR
-  LOG_D(MAC,"[UE %d][RAPROC] rarh->E %d\n",module_idP,rarh->E);
-  LOG_D(MAC,"[UE %d][RAPROC] rarh->T %d\n",module_idP,rarh->T);
-  LOG_D(MAC,"[UE %d][RAPROC] rarh->RAPID %d\n",module_idP,rarh->RAPID);
-
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->R %d\n",module_idP,rar->R);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",module_idP,(((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->hopping_flag %d\n",module_idP,rar->hopping_flag);
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->rb_alloc %d\n",module_idP,rar->rb_alloc);
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->mcs %d\n",module_idP,rar->mcs);
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->TPC %d\n",module_idP,rar->TPC);
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->UL_delay %d\n",module_idP,rar->UL_delay);
-  //  LOG_I(MAC,"[UE %d][RAPROC] rar->cqi_req %d\n",module_idP,rar->cqi_req);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",module_idP,(uint16_t)rar[5]+(rar[4]<<8));
+  for( i=0; i < 8; i++ ){
+	if( ((dlsch_buffer[i]&0x80)>>7) ){
+		if( i==0 && ((dlsch_buffer[i]&0x40)>>6)==0 ){ //BI sub-header
+	 		LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/R(%d)/R(%d)/BI(%d)\n",
+			module_idP,i,
+  			((dlsch_buffer[i]&0x80)>>7), //E
+			((dlsch_buffer[i]&0x40)>>6), //T
+			((dlsch_buffer[i]&0x20)>>5), //R
+			((dlsch_buffer[i]&0x10)>>4), //R
+			((dlsch_buffer[i]&0x0F))); //BI
+			bi_flag=1;
+		}else{  //Regular RAPID 
+			LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/RAPID(%d)\n",
+			module_idP,i,
+			((dlsch_buffer[i]&0x80)>>7), //E
+			((dlsch_buffer[i]&0x40)>>6), //T
+			((dlsch_buffer[i]&0x3f)));   //RAPID
+		}
+	}else{
+		LOG_I(MAC,"[UE %d][RAPROC] MAC sub-header(%d): E(%d)/T(%d)/RAPID(%d)\n",
+		module_idP,i,
+		((dlsch_buffer[i]&0x80)>>7), //E
+		((dlsch_buffer[i]&0x40)>>6), //T
+		((dlsch_buffer[i]&0x3f)));   //RAPID
+		rarh->RAPID = ((dlsch_buffer[i]&0x3f));
+		j_rapdi_index=i++;
+		break;
+	}
+  }
+  //i++;
+  for(j=0; j < i*6; j+=6 ){
+ 	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->R %d\n",module_idP,j/6,(dlsch_buffer[i+j]>>7));
+ 	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->Timing_Advance_Command %d\n",module_idP,j/6,(((uint16_t)(dlsch_buffer[i+j]&0x7f))<<4) + (dlsch_buffer[i+j+1]>>4));
+	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->Hopping_Flag %d\n",(dlsch_buffer[i+j+1]&0x08)>>3);
+  	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->rballoc %d\n",module_idP,j/6,(((uint16_t)(dlsch_buffer[i+j+1]&7))<<7)|(dlsch_buffer[i+j+2]>>1)&0x01ff);
+  	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->mcs %d\n",module_idP,j/6,((dlsch_buffer[i+j+2]&1)<<3)|(dlsch_buffer[i+j+3]>>5));
+  	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->TPC %d\n",module_idP,j/6,(dlsch_buffer[i+j+3]>>3)&7);
+  	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->cqi %d\n",module_idP,j/6,dlsch_buffer[i+j+3]&1);
+  	LOG_I(MAC,"[UE %d][RAPROC] MAC RAR(%d) rar->t_crnti %x\n",module_idP,j/6,(uint16_t)dlsch_buffer[i+j+5]+(dlsch_buffer[i+j+4]<<8));
+  }
 #endif
 
 
-  if (preamble_index == rarh->RAPID) {
-    *t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
+
+  LOG_W(MAC,"[eNB %d][RAPROC] Frame %d Identified RAR,RAPID(%d): TA(%d),rballoc(%d),mcs(%d),TPC(%d),cqi(%d),t_cnrti(%x)\n",module_idP,frameP,((dlsch_buffer[j_rapdi_index]&0x3f)),
+	(((uint16_t)(dlsch_buffer[i+j_rapdi_index*6]&0x7f))<<4) + (dlsch_buffer[i+j_rapdi_index*6+1]>>4),
+	(((uint16_t)(dlsch_buffer[i+j_rapdi_index*6+1]&7))<<7)|(dlsch_buffer[i+j_rapdi_index*6+2]>>1),
+	((dlsch_buffer[i+j_rapdi_index*6+2]&1)<<3)|(dlsch_buffer[i+j_rapdi_index*6+3]>>5),
+	(dlsch_buffer[i+j_rapdi_index*6+3]>>3)&7,
+	dlsch_buffer[i+j_rapdi_index*6+3]&1,
+	(uint16_t)dlsch_buffer[i+j_rapdi_index*6+5]+(dlsch_buffer[i+j_rapdi_index*6+4]<<8));
+
+  LOG_I(MAC,"[eNB %d][RAPROC] Frame %d Received RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for preamble %d/%d\n",module_idP,frameP,
+        *(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
+        rarh->RAPID,preamble_index);
+
+
+  //if (preamble_index == rarh->RAPID) {
+  if (preamble_index == (dlsch_buffer[j_rapdi_index]&0x3f) ) {
+    //*t_crnti = (uint16_t)rar[5]+(rar[4]<<8);//rar->t_crnti;
+    *t_crnti = (uint16_t)dlsch_buffer[i+j_rapdi_index*6+5]+(dlsch_buffer[i+j_rapdi_index*6+4]<<8);
     UE_mac_inst[module_idP].crnti = *t_crnti;//rar->t_crnti;
     //return(rar->Timing_Advance_Command);
-    return((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    //return((((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+    return((((uint16_t)(dlsch_buffer[i+j_rapdi_index*6]&0x7f))<<4) + (dlsch_buffer[i+j_rapdi_index*6+1]>>4));
   } else {
     UE_mac_inst[module_idP].crnti=0;
     return(0xffff);
