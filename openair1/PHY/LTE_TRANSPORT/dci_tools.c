@@ -2641,23 +2641,23 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     dlsch1_harq->subframe = subframe;
   }
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
 
   if (dlsch0) {
-    msg("dlsch0 eNB: dlsch0   %p\n",dlsch0);
-    msg("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
-    msg("dlsch0 eNB: NBRB     %d\n",dlsch0_harq->nb_rb);
-    msg("dlsch0 eNB: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
-    msg("dlsch0 eNB: harq_pid %d\n",harq_pid);
-    msg("dlsch0 eNB: round    %d\n",dlsch0_harq->round);
-    msg("dlsch0 eNB: rvidx    %d\n",dlsch0_harq->rvidx);
-    msg("dlsch0 eNB: TBS      %d (NPRB %d)\n",dlsch0_harq->TBS,NPRB);
-    msg("dlsch0 eNB: mcs      %d\n",dlsch0_harq->mcs);
-    msg("dlsch0 eNB: tpmi %d\n",tpmi);
-    msg("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
+    printf("dlsch0 eNB: dlsch0   %p\n",dlsch0);
+    printf("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
+    printf("dlsch0 eNB: NBRB     %d\n",dlsch0_harq->nb_rb);
+    printf("dlsch0 eNB: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
+    printf("dlsch0 eNB: harq_pid %d\n",harq_pid);
+    printf("dlsch0 eNB: round    %d\n",dlsch0_harq->round);
+    printf("dlsch0 eNB: rvidx    %d\n",dlsch0_harq->rvidx);
+    printf("dlsch0 eNB: TBS      %d (NPRB %d)\n",dlsch0_harq->TBS,NPRB);
+    printf("dlsch0 eNB: mcs      %d\n",dlsch0_harq->mcs);
+    printf("dlsch0 eNB: tpmi %d\n",tpmi);
+    printf("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
   }
 
-#endif
+  //#endif
 
   // compute DL power control parameters
   computeRhoA_eNB(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off);
@@ -5508,21 +5508,21 @@ int generate_ue_dlsch_params_from_dci(int frame,
   }
 
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
 
   if (dlsch[0]) {
-    msg("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
-    msg("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
-    msg("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
-    msg("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
-    msg("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
-    msg("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
-    msg("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
-    msg("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
-    msg("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
+    printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
+    printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
+    printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
+    printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
+    printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
+    printf("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
+    printf("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
+    printf("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
+    printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
   }
 
-#endif
+  //#endif
   dlsch[0]->active=1;
 
   // compute DL power control parameters

@@ -2288,7 +2288,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       input_buffer_length = phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->TBS/8;
 
 
-#ifdef DEBUG_PHY_PROC
+      //#ifdef DEBUG_PHY_PROC
       LOG_D(PHY,
             "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", G %d, nb_rb %"PRIu16", mcs %"PRIu8", pmi_alloc %"PRIx16", rv %"PRIu8" (round %"PRIu8")\n",
             phy_vars_eNB->Mod_id, phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti,harq_pid,
@@ -2304,7 +2304,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
             pmi2hex_2Ar1(phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->pmi_alloc),
             phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->rvidx,
             phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->round);
-#endif
+      //#endif
 #if defined(MESSAGE_CHART_GENERATOR_PHY)
       MSC_LOG_TX_MESSAGE(
         MSC_PHY_ENB,MSC_PHY_UE,
@@ -3324,7 +3324,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         }
       }
 
-#ifdef DEBUG_PHY_PROC
+      //#ifdef DEBUG_PHY_PROC
       LOG_D(PHY,
             "[eNB %d][PUSCH %d] Frame %d Subframe %d Demodulating PUSCH: dci_alloc %d, rar_alloc %d, round %d, first_rb %d, nb_rb %d, mcs %d, TBS %d, rv %d, cyclic_shift %d (n_DMRS2 %d, cyclicShift_common %d, nprs %d), O_ACK %d \n",
             phy_vars_eNB->Mod_id,harq_pid,frame,subframe,
@@ -3341,7 +3341,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->lte_frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
             nPRS,
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->O_ACK);
-#endif
+      //#endif
       start_meas(&phy_vars_eNB->ulsch_demodulation_stats);
 
       if (abstraction_flag==0) {
@@ -3387,7 +3387,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 #endif
       stop_meas(&phy_vars_eNB->ulsch_decoding_stats);
 
-#ifdef DEBUG_PHY_PROC
+      //#ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) RSSI (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d\n",
             phy_vars_eNB->Mod_id,harq_pid,
             frame,subframe,
@@ -3401,7 +3401,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->o_ACK[0],
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->o_ACK[1],
             ret);
-#endif //DEBUG_PHY_PROC
+      //#endif //DEBUG_PHY_PROC
       /*
       if ((two_ues_connected==1) && (phy_vars_eNB->cooperation_flag==2)) {
       for (j=0;j<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;j++) {
@@ -3623,11 +3623,11 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
         if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 #ifdef OPENAIR2
-#ifdef DEBUG_PHY_PROC
+	  //#ifdef DEBUG_PHY_PROC
           LOG_I(PHY,"[eNB %d][RAPROC] Frame %d Terminating ra_proc for harq %d, UE %d\n",
                 phy_vars_eNB->Mod_id,
                 frame,harq_pid,i);
-#endif
+	  //#endif
           mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
                             phy_vars_eNB->CC_id,
                             frame,subframe,
@@ -3660,9 +3660,9 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
           phy_vars_eNB->eNB_UE_stats[i].mode = PUSCH;
           phy_vars_eNB->ulsch_eNB[i]->Msg3_flag = 0;
 
-#ifdef DEBUG_PHY_PROC
-          LOG_D(PHY,"[eNB %d][RAPROC] Frame %d : RX Subframe %d Setting UE %d mode to PUSCH\n",phy_vars_eNB->Mod_id,frame,subframe,i);
-#endif //DEBUG_PHY_PROC
+	  //#ifdef DEBUG_PHY_PROC
+	    LOG_D(PHY,"[eNB %d][RAPROC] Frame %d : RX Subframe %d Setting UE %d mode to PUSCH\n",phy_vars_eNB->Mod_id,frame,subframe,i);
+	    //#endif //DEBUG_PHY_PROC
 
           for (k=0; k<8; k++) { //harq_processes
             for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mdlharq; j++) {
@@ -4517,11 +4517,11 @@ void phy_procedures_eNB_lte(unsigned char subframe,PHY_VARS_eNB **phy_vars_eNB,u
     phy_vars_eNB[CC_id]->proc[subframe].frame_tx++;
     phy_vars_eNB[CC_id]->proc[subframe].frame_rx++;
 
-    if (phy_vars_eNB[CC_id]->proc[subframe].frame_tx==MAX_FRAME_NUMBER) // defined in impl_defs_top.h
-      phy_vars_eNB[CC_id]->proc[subframe].frame_tx=0;
+    if (phy_vars_eNB[CC_id]->proc[subframe].frame_tx>=MAX_FRAME_NUMBER) // defined in impl_defs_top.h
+      phy_vars_eNB[CC_id]->proc[subframe].frame_tx-=MAX_FRAME_NUMBER;
 
-    if (phy_vars_eNB[CC_id]->proc[subframe].frame_rx==MAX_FRAME_NUMBER)
-      phy_vars_eNB[CC_id]->proc[subframe].frame_rx=0;
+    if (phy_vars_eNB[CC_id]->proc[subframe].frame_rx>=MAX_FRAME_NUMBER)
+      phy_vars_eNB[CC_id]->proc[subframe].frame_rx-=MAX_FRAME_NUMBER;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_LTE,0);

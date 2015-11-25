@@ -223,7 +223,7 @@ void rx_sdu(
             payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4], payload_ptr[5], rntiP);
 
       for (ii=0; ii<NB_RA_PROC_MAX; ii++) {
-        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %p Checking proc %d : rnti (%x, %x), active %d\n",
+        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Checking proc %d : rnti (%x, %x), active %d\n",
               enb_mod_idP, CC_idP, ii,
               eNB->common_channels[CC_idP].RA_template[ii].rnti, rntiP,
               eNB->common_channels[CC_idP].RA_template[ii].RA_active);
@@ -236,7 +236,7 @@ void rx_sdu(
           if (UE_id < 0) {
             memcpy(&eNB->common_channels[CC_idP].RA_template[ii].cont_res_id[0],payload_ptr,6);
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3: length %d, offset %d\n",
-                  enb_mod_idP,CC_idP,frameP,rx_lengths[ii],payload_ptr-sduP);
+                  enb_mod_idP,CC_idP,frameP,rx_lengths[i],payload_ptr-sduP);
 
             if ((UE_id=add_new_ue(enb_mod_idP,CC_idP,eNB->common_channels[CC_idP].RA_template[ii].rnti,harq_pidP)) == -1 ) {
               mac_xface->macphy_exit("[MAC][eNB] Max user count reached\n");
@@ -246,7 +246,7 @@ void rx_sdu(
                     enb_mod_idP,CC_idP,frameP,eNB->common_channels[CC_idP].RA_template[ii].rnti,UE_id);
           } else {
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %d\n",
-                  enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[ii],payload_ptr-sduP);
+                  enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[i],payload_ptr-sduP);
 	    // kill RA procedure
           }
 
@@ -258,7 +258,7 @@ void rx_sdu(
               rntiP,
               CCCH,
               (uint8_t*)payload_ptr,
-              rx_lengths[ii],
+              rx_lengths[i],
               ENB_FLAG_YES,
               enb_mod_idP,
               0);
@@ -297,17 +297,17 @@ void rx_sdu(
                 enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
 
           mac_rlc_data_ind(
-            enb_mod_idP,
-            rntiP,
-	      enb_mod_idP,
-            frameP,
-            ENB_FLAG_YES,
-            MBMS_FLAG_NO,
-            rx_lcids[i],
-            (char *)payload_ptr,
-            rx_lengths[i],
-            1,
-            NULL);//(unsigned int*)crc_status);
+			   enb_mod_idP,
+			   rntiP,
+			   enb_mod_idP,
+			   frameP,
+			   ENB_FLAG_YES,
+			   MBMS_FLAG_NO,
+			   rx_lcids[i],
+			   (char *)payload_ptr,
+			   rx_lengths[i],
+			   1,
+			   NULL);//(unsigned int*)crc_status);
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
         }
@@ -732,6 +732,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         continue; // break;
       }
 
+      printf("UE %d/%x is feasible, mode %s\n",UE_id,rnti,mode_string[eNB_UE_stats->mode]);
 
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
