@@ -4765,6 +4765,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->rvidx     = rv1;
     dlsch1_harq->rvidx     = rv2;
 
+    // assume both TBs are active
+    dlsch0_harq->Nl        = 1;
+    dlsch1_harq->Nl        = 1;
+    dlsch0->active = 1;
+    dlsch1->active = 1;
+
+    
     // check if either TB is disabled (see 36-213 V8.6 p. 26)
 
     if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0)) {

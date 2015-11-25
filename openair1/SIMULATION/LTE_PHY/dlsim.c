@@ -410,7 +410,7 @@ int main(int argc, char **argv)
 
     case 'M':
       mcs2 = atoi(optarg);
-      i_mod = get_Qm(mcs2); /// think here again!!!
+      //i_mod = get_Qm(mcs2); /// think here again!!!
       break;
 
     case 't':
@@ -2747,9 +2747,9 @@ n(tikz_fname,"w");
 		       k,cw,rate,rate*get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
 		       coded_bits_per_codeword,
 		       tbs,
-		       get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs), //changed dlsch_eNB[k][0]
+		       get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
 		       num_pdcch_symbols,
-		       PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->round);//changed dlsch_eNB[k][0]
+		       PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->round);
 
 	      // use the PMI from previous trial
 	      if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
@@ -3521,7 +3521,7 @@ n(tikz_fname,"w");
 					    num_pdcch_symbols,
 					    0,subframe);
 	    PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
-
+	    PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw]->harq_processes[0]->mcs);
 	    if (n_frames==1) {
 	      printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw,coded_bits_per_codeword,
 		     PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->TBS);
