@@ -254,11 +254,11 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     printf("[BRF] set RX sample rate to %u, %u\n", (unsigned int) openair0_cfg[card].sample_rate, actual_value);
  
 
-  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_bw, &actual_value)) != 0){
+  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, 2*(unsigned int) openair0_cfg[card].rx_bw, &actual_value)) != 0){
     fprintf(stderr,"Failed to set RX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set RX bandwidth to %u, %u\n",(unsigned int)openair0_cfg[card].rx_bw, actual_value);
+    printf("[BRF] set RX bandwidth to %u, %u\n",2*(unsigned int)openair0_cfg[card].rx_bw, actual_value);
  
   if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_RX, (int) openair0_cfg[card].rx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set RX gain: %s\n",bladerf_strerror(status));
@@ -280,11 +280,11 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   }else 
     printf("[BRF] set TX sampling rate to %u \n", (unsigned int) openair0_cfg[card].sample_rate);
 
-  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_TX,(unsigned int)openair0_cfg[card].tx_bw, NULL)) != 0){
+  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_TX,2*(unsigned int)openair0_cfg[card].tx_bw, NULL)) != 0){
     fprintf(stderr, "Failed to set TX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set TX bandwidth to %u \n", (unsigned int) openair0_cfg[card].tx_bw);
+    printf("[BRF] set TX bandwidth to %u \n", 2*(unsigned int) openair0_cfg[card].tx_bw);
 
   if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_TX, (int) openair0_cfg[card].tx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set TX gain: %s\n",bladerf_strerror(status));
@@ -327,7 +327,7 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     printf("[BRF] RX module enabled \n");
 
   // calibrate 
-  /*  
+    
  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
     fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
     brf_error(status);
@@ -339,7 +339,7 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     brf_error(status);
   }else 
     printf("[BRF] RX module calibrated DC \n");
-  */
+  
 
   bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg[card].log_level));
   

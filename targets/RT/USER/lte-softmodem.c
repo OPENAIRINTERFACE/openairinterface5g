@@ -950,7 +950,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
         ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
 #ifdef EXMIMO
           ((short*)dummy_tx_b)[2*i]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	((short*)dummy_tx_b)[2*i];
 #else
           ((short*)dummy_tx_b)[2*i]<<4;
@@ -958,7 +958,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	  ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
 #ifdef EXMIMO
 	    ((short*)dummy_tx_b)[2*i+1]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	  ((short*)dummy_tx_b)[2*i+1];
 #else
 	  ((short*)dummy_tx_b)[2*i+1]<<4;
@@ -997,6 +997,7 @@ static void* eNB_thread_tx( void* param )
   eNB_proc_t *proc = (eNB_proc_t*)param;
   FILE  *tx_time_file;
   char tx_time_name[101];
+
   if (opp_enabled == 1) {
     snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf_%d", "eNB", proc->subframe);
     tx_time_file = fopen(tx_time_name,"w");
@@ -1136,7 +1137,20 @@ static void* eNB_thread_tx( void* param )
     }
 
     do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
-
+    /*
+    short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
+    int i;
+    for (i=0;i<7680*2;i+=8) {
+      txdata[i] = 2047;
+      txdata[i+1] = 0;
+      txdata[i+2] = 0;
+      txdata[i+3] = 2047;
+      txdata[i+4] = -2047;
+      txdata[i+5] = 0;
+      txdata[i+6] = 0;
+      txdata[i+7] = -2047;
+    }
+    */
     if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc %d\n", proc->subframe );
       exit_fun("nothing to add");
