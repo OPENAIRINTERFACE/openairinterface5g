@@ -177,7 +177,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   if (1==0) {
     /***************** get working interface name ***************************/
     /* convert ascii ip address from config file to network binary format */
-    inet_aton(device->openair0_cfg.my_addr, &ia); */
+    inet_aton(device->openair0_cfg.my_addr, &ia); 
       /* look for the interface used, we have its ip address get info on all our network interfaces*/ 
       ids = if_nameindex(); 
       /* loop on these network interfaces */
