@@ -403,7 +403,7 @@ int main(int argc, char **argv)
                                 0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
-  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,N_RB_DL,0);
+  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,N_RB_DL,0,&PHY_vars_eNB->lte_frame_parms);
 
   if (!PHY_vars_eNB->dlsch_eNB_MCH) {
     printf("Can't get eNB dlsch structures\n");
