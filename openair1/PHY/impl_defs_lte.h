@@ -530,12 +530,12 @@ typedef struct {
   uint32_t samples_per_tti;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
-  /// Number of Transmit antennas in node
+  /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
-  /// Number of Transmit antennas in eNodeB
-  uint8_t nb_antennas_tx_eNB;
+  /// Number of Logical transmit antenna ports in eNodeB
+  uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
   /// PUCCH Config Common (from 36-331 RRC spec)
@@ -602,11 +602,17 @@ typedef struct {
   /// - third index:
   int32_t **txdata[3];
   /// \brief holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: tx antenna [0..14[ where 14 is the total supported antenna ports.
+  /// - third index: sample [0..]
+  mod_sym_t **txdataF[3];
+  /// \brief holds the transmit data after beamforming in the frequency domain.
+  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER. //?
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: sample [0..]
-  mod_sym_t **txdataF[3];
+  mod_sym_t **txdataF_BF[3];
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: eNB id [0..2] (hard coded)
@@ -627,6 +633,18 @@ typedef struct {
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: sample [0..samples_per_tti*10[
   uint32_t *sync_corr[3];
+  /// \brief Holds the cell specific beamforming weights
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: cell specific eNB antenna port index, up to 2 logical antenna ports are supported
+  /// - third index: tx antenna [0..nb_antennas_tx[
+  /// - fourth index: sample [0..]
+  int32_t **cell_spec_bf_weights[3][2];
+  /// \brief Holds the ue specific beamforming weights
+  /// - first index: eNB id [0..2] (hard coded)
+  /// - second index: ue specific eNB antenna port index, port5->index0, port7-15->index0-7
+  /// - third index: tx antenna [0..nb_antennas_tx[
+  /// - fourth index: sample [0..]
+  int32_t **ue_spec_bf_weights[3][8];
 } LTE_eNB_COMMON;
 
 typedef struct {

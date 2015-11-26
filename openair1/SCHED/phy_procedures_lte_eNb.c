@@ -1434,7 +1434,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
   if (abstraction_flag==0) {
     // clear the transmit data array for the current subframe
-    for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB; aa++) {
+    for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antenna_ports_eNB; aa++) {
 
       memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][subframe*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)],
              0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
@@ -2243,8 +2243,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                       subframe,
                                       num_pdcch_symbols,
                                       phy_vars_eNB->dlsch_eNB_SI,
-                                      (LTE_eNB_DLSCH_t *)NULL,
-				      (int32_t **)NULL);
+                                      (LTE_eNB_DLSCH_t *)NULL);
       stop_meas(&phy_vars_eNB->dlsch_modulation_stats);
     }
 
@@ -2381,8 +2380,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                         subframe,
                                         num_pdcch_symbols,
                                         phy_vars_eNB->dlsch_eNB_ra,
-                                        (LTE_eNB_DLSCH_t *)NULL,
-					(int32_t **)NULL);
+                                        (LTE_eNB_DLSCH_t *)NULL);
 
       }
 
@@ -2560,8 +2558,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                         subframe,
                                         num_pdcch_symbols,
                                         phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0],
-                                        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][1],
-					(int32_t **)NULL);
+                                        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][1]);
 
         stop_meas(&phy_vars_eNB->dlsch_modulation_stats);
       }

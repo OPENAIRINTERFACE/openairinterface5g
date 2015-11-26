@@ -184,7 +184,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
   if (phy_vars_ue->perfect_ce == 0) {
     if ((l==0) || (l==(4-frame_parms->Ncp))) {
-      for (aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
+      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
         msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);

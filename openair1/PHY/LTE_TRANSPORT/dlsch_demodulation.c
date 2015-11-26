@@ -163,7 +163,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   else
     rballoc = dlsch0_harq->rb_alloc_even;
 
-  if (frame_parms->nb_antennas_tx_eNB>1 && beamforming_mode==0) {
+  if (frame_parms->nb_antenna_ports_eNB>1 && beamforming_mode==0) {
 #ifdef DEBUG_DLSCH_MOD
     LOG_I(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch_ue[0],dlsch0_harq->rb_alloc_even[0]);
 #endif
@@ -296,7 +296,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     // in case of precoding we add an additional factor of two for the precoding gain
     avgs = 0;
 
-    for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
@@ -304,7 +304,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
 
     lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);
-    // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
+    // + log2_approx(frame_parms->nb_antenna_ports_eNB-1) //-1 because log2_approx counts the number of bits
     //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
     if ((dlsch0_harq->mimo_mode>=UNIFORM_PRECODING11) &&
@@ -317,11 +317,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        Nb_tx*Nb_rx   in TM2,4,5
        Nb_tx^2*Nb_rx in TM6 */
     /*
-      K = frame_parms->nb_antennas_rx*frame_parms->nb_antennas_tx_eNB; //that also covers TM1 since Nb_tx=1
+      K = frame_parms->nb_antennas_rx*frame_parms->nb_antenna_ports_eNB; //that also covers TM1 since Nb_tx=1
       if ((dlsch0_harq->mimo_mode>=UNIFORM_PRECODING11) &&
       (dlsch0_harq->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
       (dlsch0_harq->dl_power_off==1)) // we are in TM 6
-      K *= frame_parms->nb_antennas_tx_eNB;
+      K *= frame_parms->nb_antenna_ports_eNB;
 
       lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(K*avgs)/2);
     */
@@ -332,7 +332,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 #endif
   }
 
-  aatx = frame_parms->nb_antennas_tx_eNB;
+  aatx = frame_parms->nb_antenna_ports_eNB;
   aarx = frame_parms->nb_antennas_rx;
 
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {// SISO or ALAMOUTI
@@ -393,7 +393,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     }
   } else if (dlsch0_harq->mimo_mode == LARGE_CDD) { // TM3
     //   LOG_I(PHY,"Running PDSCH RX for TM3\n");
-    if (frame_parms->nb_antennas_tx_eNB == 2) {
+    if (frame_parms->nb_antenna_ports_eNB == 2) {
       if (first_symbol_flag==1) {
         // effective channel of desired user is always stronger than interfering eff. channel
         dlsch_channel_level_TM3(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -573,7 +573,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //  printf("MRC\n");
   if (frame_parms->nb_antennas_rx > 1) {
     if (dlsch0_harq->mimo_mode == LARGE_CDD) {
-      if (frame_parms->nb_antennas_tx_eNB == 2) {
+      if (frame_parms->nb_antenna_ports_eNB == 2) {
         dlsch_detection_mrc(frame_parms,
                             lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                             lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[dlsch0_harq->round],
@@ -870,7 +870,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
       pilots=1;
   }
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
@@ -1130,7 +1130,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
     }
   }
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
     if (mod_order == 4) {
       QAM_amp128  = vmovq_n_s16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = vmovq_n_s16(0);
@@ -2643,7 +2643,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (frame_parms->nb_antennas_rx>1) {
 
-    for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
 
       rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
@@ -2703,7 +2703,7 @@ void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (frame_parms->nb_antennas_rx>1) {
 
-    for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
 
       rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
@@ -2785,7 +2785,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++) {
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
@@ -2829,7 +2829,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = _mm_setzero_si128();
@@ -2886,7 +2886,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = vdupq_n_s32(0);
@@ -3119,7 +3119,7 @@ void dlsch_channel_level_TM7(int **dl_bf_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx_eNB; aatx++)
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
       avg128D = _mm_setzero_si128();
@@ -4931,7 +4931,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
     write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[1],12*N_RB_DL*nsymb,1,1);
   }
 
-  if (phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB == 2) {
+  if (phy_vars_ue->lte_frame_parms.nb_antenna_ports_eNB == 2) {
     sprintf(fname,"dlsch%d_ch_r%d_ext10.m",eNB_id,round);
     sprintf(vname,"dl%d_ch_r%d_ext10",eNB_id,round);
     write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2],12*N_RB_DL*nsymb,1,1);
@@ -4959,7 +4959,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);
-  if (phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB == 2) {
+  if (phy_vars_ue->lte_frame_parms.nb_antenna_ports_eNB == 2) {
     sprintf(fname,"dlsch%d_rxF_r%d_comp1.m",eNB_id,round);
     sprintf(vname,"dl%d_rxF_r%d_comp1",eNB_id,round);
     write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[0][round],12*N_RB_DL*nsymb,1,1);

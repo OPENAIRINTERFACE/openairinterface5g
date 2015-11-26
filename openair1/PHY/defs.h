@@ -220,8 +220,8 @@ typedef struct PHY_VARS_eNB_s {
   LTE_eNB_PUSCH       *lte_eNB_pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        lte_eNB_prach_vars;
   LTE_eNB_DLSCH_t     *dlsch_eNB[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
-  // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
-  LTE_eNB_ULSCH_t     *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
+  // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];  // Nusers times two spatial streams
+  LTE_eNB_ULSCH_t     *ulsch_eNB[NUMBER_OF_UE_MAX+1];    // Nusers + number of RA
   LTE_eNB_DLSCH_t     *dlsch_eNB_SI,*dlsch_eNB_ra;
   LTE_eNB_DLSCH_t     *dlsch_eNB_MCH;
   LTE_eNB_UE_stats     eNB_UE_stats[NUMBER_OF_UE_MAX];

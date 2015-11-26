@@ -63,8 +63,10 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag);
     @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
+    @param nb_antenna_tx number of physical transmit antennas at eNB
 */
-LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t N_RB_DL, uint8_t abstraction_flag);
+LTE_eNB_DLSCH_t *new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t
+N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms);
 
 /** \fn free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
     \brief This function frees memory allocated for a particular DLSCH at UE
@@ -157,7 +159,6 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
     \param skip_half indicate that first or second half of RB must be skipped for PBCH/PSS/SSS
     \param ue_spec_rs UE specific RS indicator 
     \param nb_antennas_tx_phy Physical antenna elements which can be different with antenna port number, especially in beamforming case
-    \param beamforming_weights_rb Beamforming weights applied on each antenna element and each carrier in case of TM7-10
     \param use2ndpilots Set to use the pilots from antenna port 1 for PDSCH
     \param frame_parms Frame parameter descriptor
 */
@@ -168,8 +169,8 @@ int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
                            uint32_t *jj2,
                            uint16_t re_offset,
                            uint32_t symbol_offset,
-                           LTE_DL_eNB_HARQ_t *dlsch0_harq,
-                           LTE_DL_eNB_HARQ_t *dlsch1_harq,
+                           LTE_eNB_DLSCH_t *dlsch0,
+                           LTE_eNB_DLSCH_t *dlsch1,
                            uint8_t pilots,
                            int16_t amp,
                            uint8_t precoder_index,
@@ -178,10 +179,9 @@ int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
                            uint32_t *re_allocated,
                            uint8_t skip_dc,
                            uint8_t skip_half,
-                  			   uint8_t lprime,
-			                     uint8_t mprime,
-		                   	   uint8_t Ns,
-			                     int32_t **beamforming_weights);
+                           uint8_t lprime,
+		           uint8_t mprime,
+		           uint8_t Ns);
 
 /** \fn int32_t dlsch_modulation(mod_sym_t **txdataF,
     int16_t amp,
@@ -198,8 +198,6 @@ int32_t allocate_REs_in_RB(PHY_VARS_eNB* phy_vars_eNB,
     @param num_pdcch_symbols Number of PDCCH symbols in this subframe
     @param dlsch0 Pointer to Transport Block 0 DLSCH descriptor for this allocation
     @param dlsch1 Pointer to Transport Block 0 DLSCH descriptor for this allocation
-    @param nb_antennas_tx_phy Physical antenna elements which can be different with antenna port number, especially in beamforming case
-    @param beamforming_weights Beamforming weights applied on each antenna element and each carrier in case of TM7-10
 */
 int32_t dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                          mod_sym_t **txdataF,
@@ -207,8 +205,7 @@ int32_t dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
                          uint32_t sub_frame_offset,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
-                         LTE_eNB_DLSCH_t *dlsch1,
-                   			 int32_t **beamforming_weights);
+                         LTE_eNB_DLSCH_t *dlsch1);
 /*
   \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.
   @param txdataF Table of pointers for frequency-domain TX signals
@@ -330,6 +327,41 @@ int32_t generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                       uint8_t frame_mod4);
 
 int32_t generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,uint8_t *pbch_pdu);
+
+
+/** \brief This function performs UE specific beamforming especially for
+ * transmission mode TM7-10
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param txdataF_BF Table of pointers for frequency-domain TX signals
+after beamforming
+    @param frame_parms Frame descriptor structure
+    @param ue_spec_bf_weights UE specific beamforming weights applied on
+each antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act*/
+int ue_spec_beamforming(int32_t **txdataF,
+	                int32_t **txdataF_BF,
+                        LTE_DL_FRAME_PARMS *frame_parms,
+	                int32_t ***ue_spec_bf_weights,
+                        int slot,
+                        int symbol);
+
+/** \brief This function performs cell specific beamforming for common
+ * data
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param txdataF_BF Table of pointers for frequency-domain TX signals
+    @param frame_parms Frame descriptor structure
+after beamforming
+    @param cell_spec_bf_weights Common beamforming weights applied on each
+antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act*/
+int cell_spec_beamforming(int32_t **txdataF,
+	                  int32_t **txdataF_BF,
+                          LTE_DL_FRAME_PARMS *frame_parms,
+	                  int32_t ***cell_spec_bf_weights,
+                          int slot,
+                          int symbol);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0

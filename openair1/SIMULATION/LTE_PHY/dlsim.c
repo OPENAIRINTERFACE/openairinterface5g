@@ -134,7 +134,7 @@ void lte_param_init(unsigned char N_tx_port_eNB, unsigned char N_tx_phy, unsigne
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx_phy;
   lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->nb_antennas_tx_eNB = N_tx_port_eNB;
+  lte_frame_parms->nb_antenna_ports_eNB = N_tx_port_eNB;
   lte_frame_parms->phich_config_common.phich_resource         = one;
   lte_frame_parms->tdd_config         = tdd_config;
   lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
@@ -205,32 +205,59 @@ uint64_t DLSCH_alloc_pdu_1[2];
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 //#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x0001
-void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms, uint8_t num_pdcch_symbols, unsigned char transmission_mode)
 {
 
-  int aa, slot_offset, slot_offset_F;
+  int aa, l, slot_offset, slot_offset_F;
+  mod_sym_t **txdataF = eNB_common_vars->txdataF[eNB_id];
+  mod_sym_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
+  int32_t **txdata = eNB_common_vars->txdata[eNB_id];
 
-  slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
+  //slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
-  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
+  //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
+  for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
+  
+    //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
+    if (l<num_pdcch_symbols)
+      cell_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->cell_spec_bf_weights,next_slot,l);
+    else
+      if (transmission_mode<7)
+        cell_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->cell_spec_bf_weights,next_slot,l);
+      else 
+        ue_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->ue_spec_bf_weights,next_slot,l);
 
-    if (frame_parms->Ncp == 1)
-      PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
-                   &txdata[aa][slot_offset],         // output
-                   frame_parms->log2_symbol_size,                // log2_fft_size
-                   6,                 // number of symbols
-                   frame_parms->nb_prefix_samples,               // number of prefix samples
-                   CYCLIC_PREFIX);
-    else {
-      normal_prefix_mod(&txdataF[aa][slot_offset_F],
-                        &txdata[aa][slot_offset],
-                        7,
-                        frame_parms);
+    for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+
+      if (frame_parms->Ncp == 1)
+        PHY_ofdm_mod(txdataF_BF[aa],         // input
+                     &txdata[aa][slot_offset+l*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],            // output
+                     frame_parms->log2_symbol_size,       // log2_fft_size
+                     1,                                   // number of symbols
+                     frame_parms->nb_prefix_samples,      // number of prefix samples
+                     CYCLIC_PREFIX);
+      else {
+        if (l==0) {
+          PHY_ofdm_mod(txdataF_BF[aa],        // input
+                       &txdata[aa][slot_offset],           // output
+                       frame_parms->log2_symbol_size,      // log2_fft_size
+                       1,                                  // number of symbols
+                       frame_parms->nb_prefix_samples0,    // number of prefix samples
+                       CYCLIC_PREFIX);
+           
+        } else {
+          PHY_ofdm_mod(txdataF_BF[aa],        // input
+                       &txdata[aa][slot_offset+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(l-1)*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],           // output
+                       frame_parms->log2_symbol_size,      // log2_fft_size
+                       1,                                  // number of symbols
+                       frame_parms->nb_prefix_samples,     // number of prefix samples
+                       CYCLIC_PREFIX);
+        }
+      }
+  
+  
     }
-
-
   }
 
 }
@@ -239,7 +266,8 @@ int main(int argc, char **argv)
 {
 
   int c;
-  int k,i,aa,aarx,aatx;
+  int k,i,j,aa,aarx,aatx;
+  int re;
 
   int s,Kr,Kr_bytes;
 
@@ -253,7 +281,7 @@ int main(int argc, char **argv)
 
   uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=1;
   uint16_t Nid_cell=0;
-  int32_t **beamforming_weights;
+  int32_t **ue_spec_bf_weights, **cell_spec_bf_weights;
 
   int eNB_id = 0, eNB_id_i = 1;
   unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
@@ -585,7 +613,7 @@ int main(int argc, char **argv)
 
       //if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
       if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
-        msg("For TM7, physical antenna number should be an exponent of 4, maximum 64 antennas supported.\n");
+        msg("Physical number of antennas not supported for TM7.\n");
 	exit(-1);
       }
 
@@ -767,27 +795,20 @@ int main(int argc, char **argv)
 
   lte_param_init(n_tx_port,n_tx_phy,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf,perfect_ce);
 
+  frame_parms = &PHY_vars_eNB->lte_frame_parms;
+
+  cell_spec_bf_weights = PHY_vars_eNB->lte_eNB_common_vars.cell_spec_bf_weights[0][0];
+  for(aa=0;aa<n_tx_phy;aa++) {
+    for(i=0;i<frame_parms->ofdm_symbol_size;i++) {
+      cell_spec_bf_weights[aa][i] = 0x00007fff;
+    }
+  }
+
   if (transmission_mode==7){
     lte_gold_ue_spec_port5(PHY_vars_eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
     lte_gold_ue_spec_port5(PHY_vars_UE->lte_gold_uespec_port5_table,Nid_cell,n_rnti);
- 
-    beamforming_weights = (int32_t **)malloc(12*N_RB_DL*sizeof(int32_t*));
-    for(i=0;i<12*N_RB_DL;i++){
-      beamforming_weights[i]=(int32_t *)malloc(n_tx_phy*sizeof(int32_t));
-      for(aa=0;aa<n_tx_phy;aa++){
-        //tmp
-        if (n_tx_phy==1 || n_tx_phy==2)
-	  beamforming_weights[i][aa] = 0x00007fff;
-        else if (n_tx_phy==4)
-	  beamforming_weights[i][aa] = 0x00007fff>>1;
-        else if (n_tx_phy==16)
-	  beamforming_weights[i][aa] = 0x00007fff>>2;
-        else if (n_tx_phy==64)
-	  beamforming_weights[i][aa] = 0x00007fff>>4;//3
-      }
-    }
-    printf("***n_tx_phy=%d,n_tx_phy>>2=%d,beamforming_weights=%d\n",n_tx_phy,n_tx_phy>>2,beamforming_weights[0][0]);
   }
+
 
   eNB_id_i = PHY_vars_UE->n_connected_eNB;
 
@@ -809,8 +830,6 @@ int main(int argc, char **argv)
     txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
     txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
   */
-
-  frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
   s_re = malloc(n_tx_phy*sizeof(double*));
   s_im = malloc(n_tx_phy*sizeof(double*));
@@ -1041,11 +1060,31 @@ int main(int argc, char **argv)
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
-      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+
+      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0,&PHY_vars_UE->lte_frame_parms);
 
       if (!PHY_vars_eNB->dlsch_eNB[k][i]) {
         printf("Can't get eNB dlsch structures\n");
         exit(-1);
+      } else {
+         // this initilisation may should be moved to another place
+         for (j=0; j<4; j++) { // antenna port 5,7-14
+
+           ue_spec_bf_weights = PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j]; 
+
+           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+             for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+               if (n_tx_phy==1 || n_tx_phy==2)
+                 ue_spec_bf_weights[aa][re] = 0x00007fff;
+               else if (n_tx_phy==4)
+                 ue_spec_bf_weights[aa][re] = 0x00007fff>>1;
+               else if (n_tx_phy==16)
+                 ue_spec_bf_weights[aa][re] = 0x00007fff>>2;
+               else if (n_tx_phy==64)
+                 ue_spec_bf_weights[aa][re] = 0x00007fff>>4;
+             }
+           }
+         } 
       }
 
       PHY_vars_eNB->dlsch_eNB[k][i]->rnti = n_rnti+k;
@@ -1064,7 +1103,7 @@ int main(int argc, char **argv)
   }
 
   // structure for SIC at UE
-  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0,&PHY_vars_eNB->lte_frame_parms);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
 
@@ -2221,8 +2260,7 @@ int main(int argc, char **argv)
 PMI_FEEDBACK:
 
           //printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
-          //for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
-          for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx; aa++) {
+          for (aa=0; aa<NB_ANTENNA_PORTS_ENB; aa++) {
             memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
           }
 
@@ -2738,8 +2776,7 @@ PMI_FEEDBACK:
                                               subframe,
                                               num_pdcch_symbols,
                                               PHY_vars_eNB->dlsch_eNB[k][0],
-                                              PHY_vars_eNB->dlsch_eNB[k][1],
-					      beamforming_weights);
+                                              PHY_vars_eNB->dlsch_eNB[k][1]);
               stop_meas(&PHY_vars_eNB->dlsch_modulation_stats);
               /*
               if (trials==0 && round==0)
@@ -2883,27 +2920,37 @@ PMI_FEEDBACK:
  	      } 
 
 */
-            do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-                          PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+            do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
+                          eNB_id,
                           (subframe*2),
-                          &PHY_vars_eNB->lte_frame_parms);
+                          &PHY_vars_eNB->lte_frame_parms,
+                          num_pdcch_symbols,
+                          transmission_mode);
 
-            do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-                          PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+            do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
+                          eNB_id,
                           (subframe*2)+1,
-                          &PHY_vars_eNB->lte_frame_parms);
+                          &PHY_vars_eNB->lte_frame_parms,
+                          num_pdcch_symbols,
+                          transmission_mode);
 
             stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
             stop_meas(&PHY_vars_eNB->phy_proc_tx);
 
-            do_OFDM_mod_l(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-                          PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id],
+           /* do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
+                          eNB_id,
                           (subframe*2)+2,
-                          &PHY_vars_eNB->lte_frame_parms);
+                          &PHY_vars_eNB->lte_frame_parms); */
 
             if (n_frames==1) {
-              write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
-                           nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
+              if (transmission_mode<7)
+                write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][0][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
+                             nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
+              else if (transmission_mode==7)
+                write_output("txsigF0.m","txsF0", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][5][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
+                             nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
+              write_output("txsigF0_BF.m","txsF0_BF", &PHY_vars_eNB->lte_eNB_common_vars.txdataF_BF[eNB_id][0][0],
+                           PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
 
               if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)// to be updated
                 write_output("txsigF1.m","txsF1", &PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][1][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],
@@ -3144,7 +3191,7 @@ PMI_FEEDBACK:
                   //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
                   //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
-                    for(aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
+                    for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                         for (i=0; i<frame_parms->N_RB_DL*12; i++) {
                           ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(
@@ -3173,7 +3220,7 @@ PMI_FEEDBACK:
                     }
                   }
                 } else {
-                  for(aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
+                  for(aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
                     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                       for (i=0; i<frame_parms->N_RB_DL*12; i++) {
                           ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
@@ -4347,16 +4394,11 @@ PMI_FEEDBACK:
     free(r_im[i]);
   }
 
-  if(transmission_mode == 7){
-    for(i=0;i<12*N_RB_DL;i++)
-      free(beamforming_weights[i]);
-  }
 
   free(s_re);
   free(s_im);
   free(r_re);
   free(r_im);
-  free(beamforming_weights);
 
   //  lte_sync_time_free();
 

@@ -117,12 +117,13 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, uint8_t abstraction_flag)
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS* frame_parms)
 {
 
   LTE_eNB_DLSCH_t *dlsch;
-  unsigned char exit_flag = 0,i,j,r;
+  unsigned char exit_flag = 0,i,j,r,aa;
   unsigned char bw_scaling =1;
+  uint8_t nb_antennas_tx = frame_parms->nb_antennas_tx;
 
   switch (N_RB_DL) {
   case 6:
@@ -193,6 +194,15 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
         exit_flag=3;
       }
     }
+    
+    for (i=0; i<4; i++) {
+      dlsch->ue_spec_bf_weights[i] = (int32_t **)malloc16(nb_antennas_tx*sizeof(int32_t*));
+      dlsch->ue_spec_bf_weights[i] = (int32_t **)malloc16(nb_antennas_tx*sizeof(int32_t*));
+
+      for (aa=0; aa<nb_antennas_tx; aa++) {
+        dlsch->ue_spec_bf_weights[i][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      }
+    } 
 
     if (exit_flag==0) {
       for (i=0; i<Mdlharq; i++) {

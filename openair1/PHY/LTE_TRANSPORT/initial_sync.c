@@ -163,7 +163,7 @@ char phich_resource[6];
 
   if (pbch_decoded) {
 
-    frame_parms->nb_antennas_tx_eNB = pbch_tx_ant;
+    frame_parms->nb_antenna_ports_eNB = pbch_tx_ant;
 
     // set initial transmission mode to 1 or 2 depending on number of detected TX antennas
     frame_parms->mode1_flag = (pbch_tx_ant==1);
@@ -566,7 +566,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 	  phy_vars_ue->lte_frame_parms.N_RB_DL,
 	  phy_vars_ue->lte_frame_parms.phich_config_common.phich_duration,
 	  phich_string[phy_vars_ue->lte_frame_parms.phich_config_common.phich_resource],
-	  phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB);
+	  phy_vars_ue->lte_frame_parms.nb_antenna_ports_eNB);
 #if defined(OAI_USRP) || defined(EXMIMO)
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  phy_vars_ue->Mod_id,
