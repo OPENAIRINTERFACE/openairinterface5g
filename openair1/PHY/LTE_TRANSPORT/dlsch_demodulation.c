@@ -52,7 +52,7 @@
 #endif
 
 //#define DEBUG_PHY 1
-#define DEBUG_DLSCH_DEMOD 1
+//#define DEBUG_DLSCH_DEMOD 1
 
 int avg[4]; 
 
