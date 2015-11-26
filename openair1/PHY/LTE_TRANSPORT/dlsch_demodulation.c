@@ -52,7 +52,7 @@
 #endif
 
 //#define DEBUG_PHY 1
-//#define DEBUG_DLSCH_DEMOD 1
+#define DEBUG_DLSCH_DEMOD 1
 
 int avg[4]; 
 
@@ -4373,15 +4373,41 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
         else
           rb_alloc_ind = 0;
 
+	if (rb_alloc_ind == 1)
+          nb_rb++;
+
         // For second half of RBs skip DC carrier
         if (rb==(frame_parms->N_RB_DL>>1)) {
           rxF       = &rxdataF[aarx][(1 + (symbol*(frame_parms->ofdm_symbol_size)))];
           //dl_ch0++;
         }
+        
+        // PBCH
+        if ((subframe==0) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4))) {
+          rb_alloc_ind = 0;
+        }
+
+        //SSS
+        if (((subframe==0)||(subframe==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb) ) {
+          rb_alloc_ind = 0;
+        }
+
+
+        if (frame_parms->frame_type == FDD) {
+          //PSS
+          if (((subframe==0)||(subframe==5)) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
+            rb_alloc_ind = 0;
+          }
+        }
+
+        if ((frame_parms->frame_type == TDD) &&
+            (subframe==6)) { //TDD Subframe 6
+          if ((rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
+            rb_alloc_ind = 0;
+          }
+        }
 
         if (rb_alloc_ind==1) {
-          //*pmi_ext = (pmi>>((rb>>2)<<1))&3;
-          //memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 
           /*
               printf("rb %d\n",rb);
@@ -4439,7 +4465,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             exit(-1);
           }
 
-          nb_rb++;
         }
 
         dl_ch0+=12;
@@ -4517,7 +4542,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
 
         if (rb_alloc_ind==1) {
-          //printf("rb %d/symbol %d pilots %d, uespec_pilots %d, (skip_half %d)\n",rb,l,pilots,uespec_pilots,skip_half);
+#ifdef DEBUG_DLSCH_DEMOD
+          printf("rb %d/symbol %d pilots %d, uespec_pilots %d, (skip_half %d)\n",rb,l,pilots,uespec_pilots,skip_half);
+#endif
 
           if (pilots==0 && uespec_pilots==0) {
             //printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
@@ -4525,16 +4552,24 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             if (skip_half==1) {
               memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
 
-              for (i=0; i<6; i++)
+              for (i=0; i<6; i++) {
                 rxF_ext[i]=rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+		printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
+              }
 
               dl_ch0_ext+=6;
               rxF_ext+=6;
             } else if (skip_half==2) {
               memcpy(dl_ch0_ext,dl_ch0+6,6*sizeof(int));
 
-              for (i=0; i<6; i++)
+              for (i=0; i<6; i++) {
                 rxF_ext[i]=rxF[(i+6)];
+#ifdef DEBUG_DLSCH_DEMOD
+		printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
+              }
 
               dl_ch0_ext+=6;
               rxF_ext+=6;
@@ -4543,7 +4578,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
 
               for (i=0; i<12; i++){
                 rxF_ext[i]=rxF[i];
-                //printf("symbol %d, extract rb %d, re %d => (%d,%d)\n",symbol,rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]));
+#ifdef DEBUG_DLSCH_DEMOD
+                printf("extract rb %d, re %d => (%d,%d)\n",symbol,rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]));
+#endif
               }
               dl_ch0_ext+=12;
               rxF_ext+=12;
@@ -4556,8 +4593,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               for (i=0; i<6; i++) {
                 if (i!=((frame_parms->nushift+poffset)%6)) {
                   rxF_ext[j]=rxF[i];
-                  //            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+		printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                 }
               }
 
@@ -4567,8 +4606,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               for (i=0; i<6; i++) {
                 if (i!=((frame_parms->nushift+poffset)%6)) {
                   rxF_ext[j]=rxF[(i+6)];
-                  //            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+		printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                 }
               }
 
@@ -4579,9 +4620,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                 if ((i!=(frame_parms->nushift+poffset)) &&
                     (i!=((frame_parms->nushift+poffset+6)%12))) {
                   rxF_ext[j]=rxF[i];
-                  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+#ifdef DEBUG_DLSCH_DEMOD
+                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+#endif
                   dl_ch0_ext[j++]=dl_ch0[i];
-                  //printf("symbol %d, extract rb %d => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
 
                 }
               }
@@ -4599,6 +4641,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
                     rxF_ext[j]=rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+       		    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=6-(uespec_nushift+uespec_poffset<6)-(uespec_nushift+uespec_poffset+4<6)-((uespec_nushift+uespec_poffset+8)%12<6);
@@ -4609,6 +4654,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
                     rxF_ext[j]=rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+		    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=4;
@@ -4621,6 +4669,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
                     rxF_ext[j]=rxF[(i+6)];
                     dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+        	    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=6-(uespec_nushift+uespec_poffset>6)-(uespec_nushift+uespec_poffset+4>6)-((uespec_nushift+uespec_poffset+8)%12>6);
@@ -4631,6 +4682,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
                     rxF_ext[j]=rxF[(i+6)];
                     dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+		    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=4;
@@ -4644,12 +4698,17 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++] = dl_ch0[i];  
-                    //printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+#ifdef DEBUG_DLSCH_DEMOD
+                    printf("extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+#endif
                   }
                 } else{
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i]; 
+#ifdef DEBUG_DLSCH_DEMOD
+		    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   } 
                 }
   
@@ -4685,7 +4744,8 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
       else
         rb_alloc_ind = 0;
 
-
+      if (rb_alloc_ind == 1)
+        nb_rb++;
 
       // PBCH
       if ((subframe==0) && (rb>=((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4))) {
@@ -4719,6 +4779,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
           for (i=0; i<6; i++) {
             dl_ch0_ext[i]=dl_ch0[i];
             rxF_ext[i]=rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
           }
 
           rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
@@ -4726,6 +4789,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
           for (; i<12; i++) {
             dl_ch0_ext[i]=dl_ch0[i];
             rxF_ext[i]=rxF[(1+i-6)];
+#ifdef DEBUG_DLSCH_DEMOD
+	    printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
           }
 
           dl_ch0_ext+=12;
@@ -4737,6 +4803,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             if (i!=((frame_parms->nushift+poffset)%6)) {
               dl_ch0_ext[j]=dl_ch0[i];
               rxF_ext[j++]=rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
             }
           }
 
@@ -4746,7 +4815,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             if (i!=((frame_parms->nushift+6+poffset)%12)) {
               dl_ch0_ext[j]=dl_ch0[i];
               rxF_ext[j++]=rxF[(1+i-6)];
-              //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+#ifdef DEBUG_DLSCH_DEMOD
+	      printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
             }
           }
 
@@ -4760,13 +4831,17 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){                
                 dl_ch0_ext[j]=dl_ch0[i];  
 	        rxF_ext[j++] = rxF[i];
-                //printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
-                //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
               }
             } else {
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){
                 dl_ch0_ext[j]=dl_ch0[i];  
 	        rxF_ext[j++] = rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+    	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
               }
             }
 	  }
@@ -4778,13 +4853,17 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){                
                 dl_ch0_ext[j]=dl_ch0[i];
                 rxF_ext[j++]=rxF[(1+i-6)];
-                // printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
-                // printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
               }
             } else {
               if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){
                 dl_ch0_ext[j]=dl_ch0[i];  
 	        rxF_ext[j++] = rxF[(1+i-6)];
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
               }
             }
           }
@@ -4794,7 +4873,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
           	  
 	}// symbol_mod==0
 
-        nb_rb++;
       } // rballoc==1
       else {
         rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
@@ -4868,7 +4946,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
         }
 
         if (rb_alloc_ind==1) {
-          //    printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
+#ifdef DEBUG_DLSCH_DEMOD
+           printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
+#endif
           /*
               printf("rb %d\n",rb);
             for (i=0;i<12;i++)
@@ -4880,8 +4960,12 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             if (skip_half==1) {
               memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
 
-              for (i=0; i<6; i++)
+              for (i=0; i<6; i++) {
                 rxF_ext[i]=rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
+              }
 
               dl_ch0_ext+=6;
               rxF_ext+=6;
@@ -4889,8 +4973,12 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             } else if (skip_half==2) {
               memcpy(dl_ch0_ext,dl_ch0+6,6*sizeof(int));
 
-              for (i=0; i<6; i++)
+              for (i=0; i<6; i++) {
                 rxF_ext[i]=rxF[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
+              }
 
               dl_ch0_ext+=6;
               rxF_ext+=6;
@@ -4899,8 +4987,12 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
               //printf("symbol %d, extract rb %d, => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
 
-              for (i=0; i<12; i++)
+              for (i=0; i<12; i++) {
                 rxF_ext[i]=rxF[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	        printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
+              }
 
               dl_ch0_ext+=12;
               rxF_ext+=12;
@@ -4913,8 +5005,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               for (i=0; i<6; i++) {
                 if (i!=((frame_parms->nushift+poffset)%6)) {
                   rxF_ext[j]=rxF[i];
-                  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	          printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                 }
               }
 
@@ -4924,8 +5018,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
               for (i=0; i<6; i++) {
                 if (i!=((frame_parms->nushift+poffset)%6)) {
                   rxF_ext[j]=rxF[(i+6)];
-                  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
                   dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+	          printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                 }
               }
 
@@ -4936,9 +5032,10 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                 if ((i!=(frame_parms->nushift+poffset)) &&
                     (i!=((frame_parms->nushift+poffset+6)%12))) {
                   rxF_ext[j]=rxF[i];
-                  //printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+#ifdef DEBUG_DLSCH_DEMOD
+                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
+#endif
                   dl_ch0_ext[j++]=dl_ch0[i];
-                  //printf("symbol %d, extract rb %d => (%d,%d)\n",symbol,rb,*(short *)&dl_ch0[i],*(1+(short*)&dl_ch0[i]));
                 }
               }
 
@@ -4954,6 +5051,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
                     rxF_ext[j]=rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=6-(uespec_nushift+uespec_poffset<6)-(uespec_nushift+uespec_poffset+4<6)-((uespec_nushift+uespec_poffset+8)%12<6);
@@ -4964,6 +5064,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
                     rxF_ext[j]=rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=4;
@@ -4976,6 +5079,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
                     rxF_ext[j]=rxF[i+6];
                     dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=6-(uespec_nushift+uespec_poffset>6)-(uespec_nushift+uespec_poffset+4>6)-((uespec_nushift+uespec_poffset+8)%12>6);
@@ -4986,6 +5092,9 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
                     rxF_ext[j]=rxF[(i+6)];
                     dl_ch0_ext[j++]=dl_ch0[i+6];
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
                 dl_ch0_ext+=4;
@@ -4998,12 +5107,17 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+4 && i!=(uespec_nushift+uespec_poffset+8)%12){
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i];  
-                    // printf("symbol %d, extract rb %d, re %d, j %d => (%d,%d)\n",symbol,rb,i,j-1,*(short *)&dl_ch0[j],*(1+(short*)&dl_ch0[i]));
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 } else{
                   if (i!=uespec_nushift+uespec_poffset && i!=uespec_nushift+uespec_poffset+3 && i!=uespec_nushift+uespec_poffset+6 && i!=(uespec_nushift+uespec_poffset+9)%12){                
 	            rxF_ext[j] = rxF[i];
                     dl_ch0_ext[j++]=dl_ch0[i]; 
+#ifdef DEBUG_DLSCH_DEMOD
+	            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
+#endif
                   }
                 }
 	      }
