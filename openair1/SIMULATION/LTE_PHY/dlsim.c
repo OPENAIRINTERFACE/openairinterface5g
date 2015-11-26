@@ -220,7 +220,7 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
     //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-    if (l<num_pdcch_symbols)
+    if (l<num_pdcch_symbols && next_slot&1 == 0)
       cell_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->cell_spec_bf_weights,next_slot,l);
     else
       if (transmission_mode<7)
