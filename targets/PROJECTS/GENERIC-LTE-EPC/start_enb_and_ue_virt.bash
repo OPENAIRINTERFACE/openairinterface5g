@@ -22,7 +22,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -125,13 +125,13 @@ fi
 #######################################################
 export NVRAM_DIR=$THIS_SCRIPT_PATH
 
-if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data ] || [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
+if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data ] || [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
     if [ ! -f /tmp/nas_cleaned ]; then
-        echo_success "make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean"
-        make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean
+        echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean"
+        make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean
     fi
-    echo_success "make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS -f Makefile PROCESS=UE all"
-    make  -f Makefile --debug=b --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS PROCESS=UE all
+    echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS -f Makefile PROCESS=UE all"
+    make  -f Makefile --debug=b --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS PROCESS=UE all
     rm .ue.nvram
     rm .usim.nvram
     touch /tmp/nas_cleaned
@@ -139,15 +139,15 @@ fi
 
 if [ ! -f .ue.nvram ]; then
     echo_success "generate .ue_emm.nvram .ue.nvram"
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
 fi
 
 if [ ! -f .usim.nvram ]; then
     echo_success "generate .usim.nvram"
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
 fi
-$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --print
-$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --print
+$OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print
+$OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --print
 
 ##################################################
 # LAUNCH eNB + UE executable
@@ -226,7 +226,7 @@ cd $THIS_SCRIPT_PATH
 #nohup tshark -i $ENB_INTERFACE_NAME_FOR_S1_MME -i $ENB_INTERFACE_NAME_FOR_S1U -w OUTPUT/$HOSTNAME/tshark_enb_ue.$HOSTNAME.pcap &
 
 # To start NAS connectivity: AT+CFUN=1
-# nohup xterm -hold -e $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/UserProcess &
+# nohup xterm -hold -e $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/UserProcess &
 
 export MALLOC_TRACE=/tmp/malloc_trace.txt
 touch /tmp/malloc_trace.txt

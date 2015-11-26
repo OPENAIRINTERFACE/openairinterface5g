@@ -11,4 +11,4 @@ To run itti_analyzer, please perform the following actions:
 
 5) make
 
-6) ./itt
+6) ./itti_analyzer

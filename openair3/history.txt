@@ -1,7 +1,0 @@
--------------------------
-11 Jun: 
-Description: 1st Importation. Forgive me if I make some error :-P
-Features: (released on 5 may 2008) 
-	PMIPv6 + IPv6-in-IPv6 + IPv6-Movement Detection
-	Configuration files (radvd for MR1 & MR2 only)
-	

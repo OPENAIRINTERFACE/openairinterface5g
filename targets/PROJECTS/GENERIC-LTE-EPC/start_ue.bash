@@ -22,7 +22,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -72,27 +72,27 @@ EMULATION_DEV_ADDRESS=`ifconfig $EMULATION_DEV_INTERFACE | grep 'inet addr:'| gr
 #######################################################
 export NVRAM_DIR=$THIS_SCRIPT_PATH
 
-if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data ]; then
-    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean
-    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS PROCESS=UE
+if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data ]; then
+    make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean
+    make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS PROCESS=UE
     rm .ue.nvram
 fi
-if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
-    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS veryveryclean
-    make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS PROCESS=UE
+if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
+    make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean
+    make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS PROCESS=UE
     rm .usim.nvram
 fi
 if [ ! -f .ue.nvram ]; then
     # generate .ue_emm.nvram .ue.nvram
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
 fi
 
 if [ ! -f .usim.nvram ]; then
     # generate .usim.nvram
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
 fi
-$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --print
-$OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --print
+$OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print
+$OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --print
 
 ##################################################
 # LAUNCH UE executable
@@ -145,7 +145,7 @@ if [ x$hard_real_time != "xyes" ]; then
     
     cd $THIS_SCRIPT_PATH
 
-    nohup xterm -e $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/UserProcess &
+    nohup xterm -e $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/UserProcess &
 
     cp $OPENAIR_TARGETS/SIMU/USER/oaisim  $OPENAIR_TARGETS/SIMU/USER/oaisim_ue
     gdb --args $OPENAIR_TARGETS/SIMU/USER/oaisim_ue -a -l9 -u1 -b0 -M1 -p2 -g$EMULATION_MULTICAST_GROUP -D $EMULATION_DEV_ADDRESS -K $ITTI_LOG_FILE  2>&1 | tee $STDOUT_LOG_FILE 

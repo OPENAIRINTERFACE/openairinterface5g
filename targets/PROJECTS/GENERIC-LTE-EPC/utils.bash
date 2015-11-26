@@ -21,7 +21,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -186,7 +186,7 @@ set_openair() {
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
     export OPENAIR3_DIR=$openair_path/openair3
-    export OPENAIRCN_DIR=$openair_path/openair-cn
+    export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR_TARGETS=$openair_path/targets
     export CDPATH=$CDPATH:$openair_path
 }
@@ -302,7 +302,7 @@ start_openswitch_daemon() {
       bash_exec "insmod /lib/modules/`uname -r`/extra/openvswitch.ko" > /dev/null 2>&1
   else
       echo_error "/lib/modules/`uname -r`/extra/openvswitch.ko not found"
-      bash $OPENAIRCN_DIR/SCRIPTS/install_openvswitch1.9.0.bash
+      bash $OPENAIR3_DIR/SCRIPTS/install_openvswitch1.9.0.bash
   fi
   is_process_started "ovsdb-server"
   if [ $? -ne 0 ]
@@ -349,26 +349,26 @@ check_epc_s6a_certificate() {
     fi
     echo_error "MME S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
     echo_warning "MME S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
-    cd $OPENAIRCN_DIR/S6A/freediameter
+    cd $OPENAIR3_DIR/S6A/freediameter
     ./make_certs.sh ${1:-'eur'}
     check_epc_s6a_certificate ${1:-'eur'}
     return 1
 }
 
 check_hss_s6a_certificate() {
-        if [ -f $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.cert.pem ]
+        if [ -f $OPENAIR3_DIR/OPENAIRHSS/conf/hss.cert.pem ]
         then
-            full_hostname=`cat $OPENAIRCN_DIR/OPENAIRHSS/conf/hss.cert.pem | grep "Subject" | grep "CN" | cut -d '=' -f6`
+            full_hostname=`cat $OPENAIR3_DIR/OPENAIRHSS/conf/hss.cert.pem | grep "Subject" | grep "CN" | cut -d '=' -f6`
             # we should replace 'hss' with hostname 
             if [ a$full_hostname == ahss.${1:-'eur'} ]
             then
-                echo_success "HSS S6A: Found valid certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf/"
+                echo_success "HSS S6A: Found valid certificate in $OPENAIR3_DIR/OPENAIRHSS/conf/"
                 return 1
             fi
         fi
-    echo_error "HSS S6A: Did not find valid certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf"
-    echo_warning "HSS S6A: generatting new certificate in $OPENAIRCN_DIR/OPENAIRHSS/conf..."
-    cd $OPENAIRCN_DIR/OPENAIRHSS/conf
+    echo_error "HSS S6A: Did not find valid certificate in $OPENAIR3_DIR/OPENAIRHSS/conf"
+    echo_warning "HSS S6A: generatting new certificate in $OPENAIR3_DIR/OPENAIRHSS/conf..."
+    cd $OPENAIR3_DIR/OPENAIRHSS/conf
     ./make_certs.sh ${1:-'eur'}
     check_hss_s6a_certificate ${1:-'eur'}
     return 1
@@ -406,7 +406,7 @@ create_hss_database(){
        echo_success "oai_db creation succeeded"
     fi
     
-    $MYSQL -u $1 --password=$2 oai_db < $OPENAIRCN_DIR/OPENAIRHSS/db/oai_db.sql
+    $MYSQL -u $1 --password=$2 oai_db < $OPENAIR3_DIR/OPENAIRHSS/db/oai_db.sql
     if [ $? -ne 0 ]; then
        echo_error "oai_db tables creation failed"
     else
@@ -539,13 +539,13 @@ check_install_epc_software() {
     if [ ! -d /usr/local/etc/freeDiameter ]
         then
            # This script make certificates also
-            cd $OPENAIRCN_DIR/S6A/freediameter && ./install_freediameter.sh
+            cd $OPENAIR3_DIR/S6A/freediameter && ./install_freediameter.sh
         else
             echo_success "freediameter is installed"
             check_epc_s6a_certificate
     fi
 
-    test_command_install_script   "asn1c" "$OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash"
+    test_command_install_script   "asn1c" "$OPENAIR3_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash"
 
     # One mor check about version of asn1c
     ASN1C_COMPILER_REQUIRED_VERSION_MESSAGE="ASN.1 Compiler, v0.9.24"
@@ -558,7 +558,7 @@ check_install_epc_software() {
         echo_error "$ASN1C_COMPILER_VERSION_MESSAGE"
         while read -r -n 1 -s answer; do
             if [[ $answer = [YyNn] ]]; then
-                [[ $answer = [Yy] ]] && $OPENAIRCN_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash
+                [[ $answer = [Yy] ]] && $OPENAIR3_DIR/SCRIPTS/install_asn1c_0.9.24.modified.bash
                 [[ $answer = [Nn] ]] && echo_error "Version of asn1c is not the required one, exiting." && exit 1
                 break
             fi
@@ -577,7 +577,7 @@ function cgrp()
     find $OPENAIR2_DIR    -name *.c -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR1_DIR    -name *.c -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR3_DIR    -name *.c -exec grep  --color=auto -Hni $1 {} \;
-    find $OPENAIRCN_DIR   -name *.c -exec grep  --color=auto -Hni $1 {} \;
+    find $OPENAIR3_DIR   -name *.c -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR_TARGETS -name *.c -exec grep  --color=auto -Hni $1 {} \;
 }
 
@@ -591,7 +591,7 @@ function hgrp()
     find $OPENAIR2_DIR    -name *.h -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR1_DIR    -name *.h -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR3_DIR    -name *.h -exec grep  --color=auto -Hni $1 {} \;
-    find $OPENAIRCN_DIR   -name *.h -exec grep  --color=auto -Hni $1 {} \;
+    find $OPENAIR3_DIR   -name *.h -exec grep  --color=auto -Hni $1 {} \;
     find $OPENAIR_TARGETS -name *.h -exec grep  --color=auto -Hni $1 {} \;
 }
 
@@ -606,7 +606,7 @@ function svn_find_str_in_file_history()
 }
 
 compile_hss() {
-    cd $OPENAIRCN_DIR/OPENAIRHSS
+    cd $OPENAIR3_DIR/OPENAIRHSS
     OBJ_DIR=`find . -maxdepth 1 -type d -iname obj*`
     if [ ! -n "$OBJ_DIR" ]
     then
@@ -646,7 +646,7 @@ compile_hss() {
 
 
 compile_epc() {
-    cd $OPENAIRCN_DIR
+    cd $OPENAIR3_DIR
     OBJ_DIR=`find . -maxdepth 1 -type d -iname obj*`
     if [ ! -n "$OBJ_DIR" ]
     then
@@ -695,7 +695,7 @@ declare -x OPENAIR_DIR=""
 declare -x OPENAIR1_DIR=""
 declare -x OPENAIR2_DIR=""
 declare -x OPENAIR3_DIR=""
-declare -x OPENAIRCN_DIR=""
+declare -x OPENAIR3_DIR=""
 declare -x OPENAIR_TARGETS=""
 ###########################################################
 
@@ -705,7 +705,7 @@ cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 cecho "OPENAIR1_DIR    = $OPENAIR1_DIR" $green
 cecho "OPENAIR2_DIR    = $OPENAIR2_DIR" $green
 cecho "OPENAIR3_DIR    = $OPENAIR3_DIR" $green
-cecho "OPENAIRCN_DIR   = $OPENAIRCN_DIR" $green
+cecho "OPENAIR3_DIR   = $OPENAIR3_DIR" $green
 cecho "OPENAIR_TARGETS = $OPENAIR_TARGETS" $green
 
 export UTILS_ARCH=$(uname -m | sed 's/x86_//;s/i[3-6]86/32/')

@@ -22,7 +22,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Compus SophiaTech 450, route des chappes, 06451 Biot, France.
 #
@@ -32,7 +32,7 @@
 $1 rm -Rf /usr/local/src/asn1c-r1516
 $1 svn co https://github.com/vlm/asn1c/trunk  /usr/local/src/asn1c-r1516 -r 1516  > /tmp/install_log.txt
 cd /usr/local/src/asn1c-r1516
-$1 patch -p0 < $OPENAIRCN_DIR/S1AP/MESSAGES/ASN1/asn1cpatch.p0  > /tmp/install_log.txt
+$1 patch -p0 < $OPENAIR3_DIR/S1AP/MESSAGES/ASN1/asn1cpatch.p0  > /tmp/install_log.txt
 $1 ./configure  > /tmp/install_log.txt
 $1 make  > /tmp/install_log.txt
 $1 make install  > /tmp/install_log.txt

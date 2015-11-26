@@ -1,30 +1,32 @@
 #!/bin/bash
 ################################################################################
-#   OpenAirInterface
-#   Copyright(c) 1999 - 2014 Eurecom
 #
-#    OpenAirInterface is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) anylater version.
+# Copyright (c) 2015, EURECOM (www.eurecom.fr)
+# All rights reserved.
 #
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 #
-#    OpenAirInterface is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with OpenAirInterface.The full GNU General Public License is
-#    included in this distribution in the file called "COPYING". If not,
-#    see <http://www.gnu.org/licenses/>.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-#  Contact Information
-#  OpenAirInterface Admin: openair_admin@eurecom.fr
-#  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
-#
-#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+# The views and conclusions contained in the software and documentation are those
+# of the authors and should not be interpreted as representing official policies,
+# either expressed or implied, of the FreeBSD Project.
 #
 ################################################################################
 # file build_oai
@@ -45,8 +47,10 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 REL="Rel10"
 HW="EXMIMO"
+NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
+CFLAGS_PROCESSOR_USER=""
 
 function print_help() {
   echo_info '
@@ -103,6 +107,9 @@ Options
    Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
 --verbose-compile
    Shows detailed compilation instructions in makefile
+--cflags_processor
+   Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
+
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
@@ -209,6 +216,10 @@ function main() {
 	    VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
+       --cflags_processor)
+            CFLAGS_PROCESSOR_USER=$2
+            echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            shift 2;;
         -h | --help)
             print_help
             exit 1;;
@@ -252,8 +263,6 @@ function main() {
   if [ "$INSTALL_EXTERNAL" = "1" ] ; then
     echo_info "Installing packages"
     check_install_oai_software
-    echo_info "Making X.509 certificates"
-    make_certs eur
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
@@ -302,6 +311,7 @@ function main() {
     if [ "$NOS1" = "1" ] ; then
 	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
     fi
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
@@ -312,7 +322,7 @@ function main() {
     cmake ..
   fi
 
-  if [ "$eNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" ] ; then
     echo_info "Compiling $lte_exec"
     compilations \
 	  $lte_build_dir $lte_exec \
@@ -329,7 +339,7 @@ function main() {
     fi
   fi
 
-  if [ "$UE" = 1 ] ; then
+  if [ "$UE" = 1 -a "$NOS1" = "0" ] ; then
     # ue_ip driver compilation
     echo_info "Compiling UE specific part"
     compilations \
@@ -430,6 +440,7 @@ function main() {
     echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
     cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
     cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )" >>  $cmake_file
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
@@ -564,6 +575,8 @@ function main() {
   #####################
   if [ "$OAI_TEST" = "1" ]; then
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
+    rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
+    mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     $OPENAIR_DIR/cmake_targets/autotests/run_compilation_autotests.bash
     $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
   else

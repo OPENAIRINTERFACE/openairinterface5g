@@ -20,7 +20,7 @@
 # Contact Information
 # OpenAirInterface Admin: openair_admin@eurecom.fr
 # OpenAirInterface Tech : openair_tech@eurecom.fr
-# OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+# OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 # Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 # Author: Lionel GAUTHIER
@@ -47,11 +47,11 @@ endif( NOT DEFINED OPENAIR_DIR)
 set(OPENAIR1_DIR          ${OPENAIR_DIR}/openair1)
 set(OPENAIR2_DIR          ${OPENAIR_DIR}/openair2)
 set(OPENAIR3_DIR          ${OPENAIR_DIR}/openair3)
-set(OPENAIRCN_DIR         ${OPENAIR_DIR}/openair-cn)
+set(OPENAIR3_DIR         ${OPENAIR_DIR}/openair3)
 set(OPENAIR_TARGETS       ${OPENAIR_DIR}/targets)
 set(OPENAIR_CMAKE_SCRIPTS ${OPENAIR_DIR}/cmake_targets/tools)
 set(OPENAIR_BIN_DIR       ${OPENAIR_DIR}/targets/bin)
-set(OPENAIR_NAS_DIR       ${OPENAIR_DIR}/openair-cn/NAS)
+set(OPENAIR_NAS_DIR       ${OPENAIR_DIR}/openair3/NAS)
 
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
@@ -131,20 +131,20 @@ add_boolean_option(NAS_MME                 False "NAS_UE and NAS_MME are incompa
 # SECU LIB
 ################################################################################
 set(secu_cn_SRC
-  ${OPENAIRCN_DIR}/SECU/kdf.c
-  ${OPENAIRCN_DIR}/SECU/rijndael.c
-  ${OPENAIRCN_DIR}/SECU/snow3g.c
-  ${OPENAIRCN_DIR}/SECU/key_nas_deriver.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia1.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eea2.c
-  ${OPENAIRCN_DIR}/SECU/nas_stream_eia2.c
+  ${OPENAIR3_DIR}/SECU/kdf.c
+  ${OPENAIR3_DIR}/SECU/rijndael.c
+  ${OPENAIR3_DIR}/SECU/snow3g.c
+  ${OPENAIR3_DIR}/SECU/key_nas_deriver.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia1.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eea2.c
+  ${OPENAIR3_DIR}/SECU/nas_stream_eia2.c
   )
 add_library(secu_cn ${secu_cn_SRC})
 target_include_directories(secu_cn PRIVATE 
                             ${OPENAIR_DIR}/common/utils/itti
                             ${OPENAIR_DIR}/openair2/COMMON
-                            ${OPENAIRCN_DIR}/UTILS
+                            ${OPENAIR3_DIR}/UTILS
 )
 
 ################################################################################
@@ -657,8 +657,8 @@ target_include_directories(ies PRIVATE
 ################################################################################
 include_directories( 
                      ${OPENAIR_DIR}/common/utils/msc 
-                     ${OPENAIRCN_DIR}/COMMON 
-                     ${OPENAIRCN_DIR}/SECU 
+                     ${OPENAIR3_DIR}/COMMON 
+                     ${OPENAIR3_DIR}/SECU 
                      ${OPENAIR_NAS_DIR}/src 
                      ${OPENAIR_NAS_DIR}/COMMON 
                      ${OPENAIR_NAS_DIR}/COMMON/API/NETWORK 

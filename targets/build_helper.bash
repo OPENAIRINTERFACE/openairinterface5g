@@ -21,7 +21,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -288,7 +288,7 @@ check_install_freediamter(){
     $SUDO tar -xzf 1.1.5.tar.gz 
     echo "Uncompressing freeDiameter archive"
     cd freeDiameter-1.1.5
-    $SUDO patch -p1 < $OPENAIRCN_DIR/S6A/freediameter/freediameter-1.1.5.patch 
+    $SUDO patch -p1 < $OPENAIR3_DIR/S6A/freediameter/freediameter-1.1.5.patch 
     $SUDO mkdir build
     cd build
     $SUDO cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr ../ 
@@ -327,7 +327,7 @@ check_epc_s6a_certificate() {
     fi
     echo_error "EPC S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
     echo_warning "EPC S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
-    cd $OPENAIRCN_DIR/S6A/freediameter
+    cd $OPENAIR3_DIR/S6A/freediameter
     ./make_certs.sh ${1:-'eur'}
     if [ $# -lt 2 ] ; then
         check_epc_s6a_certificate ${1:-'eur'}  2
@@ -353,7 +353,7 @@ check_hss_s6a_certificate() {
     fi
     echo_error "S6A: Did not find valid certificate in /usr/local/etc/freeDiameter"
     echo_warning "S6A: generatting new certificate in /usr/local/etc/freeDiameter..."
-    cd $OPENAIRCN_DIR/OPENAIRHSS/conf
+    cd $OPENAIR3_DIR/OPENAIRHSS/conf
     ./make_certs.sh ${1:-'eur'}
     if [ $# -lt 2 ] ; then
         check_hss_s6a_certificate ${1:-'eur'} 2
@@ -638,7 +638,7 @@ check_install_asn1c(){
 # 2. compile 
 ################################################
 compile_hss() {
-    cd $OPENAIRCN_DIR/OPENAIRHSS
+    cd $OPENAIR3_DIR/OPENAIRHSS
     
     if [ "$1" -eq 1 ]; then
         echo_info "build a clean HSS"
@@ -693,7 +693,7 @@ compile_hss() {
 
 
 compile_epc() {
-    cd $OPENAIRCN_DIR
+    cd $OPENAIR3_DIR
     if [ $1 = 1 ]; then
         echo_info "build a clean EPC"
         bash_exec "rm -rf objs"
@@ -742,7 +742,7 @@ compile_epc() {
         return 1
     fi
     
-    cd $OPENAIRCN_DIR/GTPV1-U/GTPUAH;
+    cd $OPENAIR3_DIR/GTPV1-U/GTPUAH;
     make
     if [ $? -ne 0 ]; then
         echo_error "Build GTPUAH module failed, exiting"
@@ -752,7 +752,7 @@ compile_epc() {
         $SUDO cp -pfv ./Bin/*.ko $OPENAIR_TARGETS/bin
     fi
     
-    cd $OPENAIRCN_DIR/GTPV1-U/GTPURH;
+    cd $OPENAIR3_DIR/GTPV1-U/GTPURH;
     make
     if [ $? -ne 0 ]; then
         echo_error "Build GTPURH module failed, exiting"
@@ -854,11 +854,11 @@ compile_nas_tools() {
     cd $NVRAM_DIR
     
         if [ ! -f /tmp/nas_cleaned ]; then
-            echo_success "make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS/tools veryveryclean"
-            make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS/tools veryveryclean
+            echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools veryveryclean"
+            make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools veryveryclean
         fi
-        echo_success "make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS/tools all"
-        make --directory=$OPENAIRCN_DIR/NAS/EURECOM-NAS/tools all
+        echo_success "make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools all"
+        make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS/tools all
         rm .ue.nvram
         rm .usim.nvram
         touch /tmp/nas_cleaned
@@ -882,21 +882,21 @@ check_for_ltesoftmodem_executable() {
 }
 
 check_for_epc_executable() {
-    if [ ! -f $OPENAIRCN_DIR/objs/OAI_EPC/oai_epc ]; then
-        echo_error "Cannot find oai_epc executable object in directory $OPENAIRCN_DIR/objs/OAI_EPC/"
+    if [ ! -f $OPENAIR3_DIR/objs/OAI_EPC/oai_epc ]; then
+        echo_error "Cannot find oai_epc executable object in directory $OPENAIR3_DIR/objs/OAI_EPC/"
         echo_fatal "Please make sure you have compiled OAI EPC with --enable-standalone-epc option"
     fi
 }
 
 check_for_hss_executable() {
-    if [ ! -f $OPENAIRCN_DIR/OPENAIRHSS/objs/openair-hss ]; then
-        echo_error "Cannot find openair-hss executable object in directory $OPENAIRCN_DIR/OPENAIRHSS/objs/"
+    if [ ! -f $OPENAIR3_DIR/OPENAIRHSS/objs/openair-hss ]; then
+        echo_error "Cannot find openair-hss executable object in directory $OPENAIR3_DIR/OPENAIRHSS/objs/"
         echo_fatal "Please make sure you have compiled OAI HSS"
     fi
 }
 
 check_for_sgw_executable() {
-    if [ ! -f $OPENAIRCN_DIR/objs/OAI_SGW/oai_sgw ]; then
+    if [ ! -f $OPENAIR3_DIR/objs/OAI_SGW/oai_sgw ]; then
         echo_error "Cannot find oai_sgw executable object in directory $OPENAIR3_DIR/OPENAIRMME/objs/OAI_SGW/"
         echo_fatal "Please make sure you have compiled OAI EPC without --enable-standalone-epc option"
     fi
@@ -959,8 +959,8 @@ check_for_mbmssim_executable() {
 }
 
 check_for_nas_ue_executable() {
-    if [ ! -f $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/UserProcess ]; then
-        echo_error "Cannot find UserProcess executable object in directory  $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin"
+    if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/UserProcess ]; then
+        echo_error "Cannot find UserProcess executable object in directory  $OPENAIR3_DIR/NAS/EURECOM-NAS/bin"
         echo_fatal "Check the compilation logs in bin/install_log.txt"
     fi
 }
@@ -1036,15 +1036,15 @@ install_nas_tools() {
     cd $OPENAIR_TARGETS/bin
     if [ ! -f .ue.nvram ]; then
         echo_success "generate .ue_emm.nvram .ue.nvram"
-        $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
+        $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
     fi
 
     if [ ! -f .usim.nvram ]; then
         echo_success "generate .usim.nvram"
-        $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
+        $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
     fi
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/ue_data --print
-    $OPENAIRCN_DIR/NAS/EURECOM-NAS/bin/usim_data --print
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print
+    $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --print
 }
 
 install_nasmesh(){
@@ -1106,7 +1106,7 @@ create_hss_database(){
     mysql -u $3 --password=$4  -e "desc $5.users" > /dev/null 2>&1
     
     if [ $? -eq 1 ]; then 
-        $MYSQL -u $3 --password=$4 $5 < $OPENAIRCN_DIR/OPENAIRHSS/db/oai_db.sql
+        $MYSQL -u $3 --password=$4 $5 < $OPENAIR3_DIR/OPENAIRHSS/db/oai_db.sql
         if [ $? -ne 0 ]; then
             echo_error "$5 tables creation failed"
             return 1
@@ -1126,7 +1126,7 @@ set_openair_env(){
     fullpath=`readlink -f $BASH_SOURCE`
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/targets/*}
-    openair_path=${openair_path%/openair-cn/*}
+    openair_path=${openair_path%/openair3/*}
     openair_path=${openair_path%/openair[123]/*}
 
     export OPENAIR_DIR=$openair_path
@@ -1134,7 +1134,7 @@ set_openair_env(){
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
     export OPENAIR3_DIR=$openair_path/openair3
-    export OPENAIRCN_DIR=$openair_path/openair-cn
+    export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR_TARGETS=$openair_path/targets
 
 }
