@@ -40,14 +40,15 @@ void eea2_encrypt(uint8_t direction, uint32_t count,
                   uint8_t bearer, uint8_t *key, uint32_t key_length, uint8_t *message,
                   uint32_t length, uint8_t *expected)
 {
-  nas_stream_cipher_t *nas_cipher;
-  uint8_t *result;
-  uint32_t zero_bits = length & 7;
-  uint32_t byte_length = length >> 3;
+  nas_stream_cipher_t *nas_cipher  = NULL;
+  uint8_t             *result      = NULL;
+  uint32_t             zero_bits   = length & 7;
+  uint32_t             byte_length = length >> 3;
 
   if (zero_bits > 0)
     byte_length += 1;
 
+  result     = calloc(1, byte_length);
   nas_cipher = calloc(1, sizeof(nas_stream_cipher_t));
 
   nas_cipher->direction  = direction;
@@ -58,7 +59,7 @@ void eea2_encrypt(uint8_t direction, uint32_t count,
   nas_cipher->blength    = length;
   nas_cipher->message    = message;
 
-  if (nas_stream_encrypt_eea2(nas_cipher, &result) != 0)
+  if (nas_stream_encrypt_eea2(nas_cipher, result) != 0)
     fail("Fail: nas_stream_encrypt_eea2\n");
 
   if (compare_buffer(result, byte_length, expected, byte_length) != 0) {
