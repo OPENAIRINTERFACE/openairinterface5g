@@ -53,6 +53,7 @@ for the message.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
+
 */
 void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe);
 
@@ -122,6 +123,7 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,i
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe on which to act
+
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
 void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);

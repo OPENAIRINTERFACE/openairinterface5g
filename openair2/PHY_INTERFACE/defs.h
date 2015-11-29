@@ -238,7 +238,8 @@ typedef struct {
   int (*get_ue_active_harq_pid)(module_id_t Mod_id, uint8_t CC_id,rnti_t rnti, int frame, uint8_t subframe, uint8_t *harq_pid, uint8_t *round, uint8_t ul_flag);
 
   /// Function to retrieve number of CCE
-  uint16_t (*get_nCCE_max)(module_id_t Mod_id,uint8_t  CC_id,int num_pdcch_symbols ,int subframe);
+  uint16_t (*get_nCCE_max)(module_id_t Mod_id,uint8_t  CC_id,int num_pdcch_symbols,int subframe);
+
 
   int (*get_nCCE_offset)(unsigned char L, int nCCE, int common_dci, unsigned short rnti, unsigned char subframe);
 

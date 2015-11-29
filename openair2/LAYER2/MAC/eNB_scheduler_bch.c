@@ -328,7 +328,6 @@ schedule_SI(
       eNB->eNB_stats[CC_id].bcch_mcs=mcs;
     } else {
 
-
       //LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
     }
   }

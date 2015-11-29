@@ -471,7 +471,6 @@ schedule_ue_spec(
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id]=get_min_rb_unit(module_idP,CC_id);
     frame_parms[CC_id] = mac_xface->get_lte_frame_parms(module_idP,CC_id);
-
     // get number of PRBs less those used by common channels
     total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL;
     for (i=0;i<frame_parms[CC_id]->N_RB_DL;i++)

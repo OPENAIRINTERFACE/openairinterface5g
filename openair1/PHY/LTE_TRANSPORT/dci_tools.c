@@ -2667,7 +2667,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     dlsch1_harq->subframe = subframe;
   }
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
 
   if (dlsch0) {
     printf("dlsch0 eNB: dlsch0   %p\n",dlsch0);
@@ -2683,7 +2683,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     printf("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
   }
 
-#endif
+  //#endif
 
   // compute DL power control parameters
   computeRhoA_eNB(pdsch_config_dedicated, dlsch[0],dlsch0_harq->dl_power_off);
@@ -5534,7 +5534,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
   }
 
 
-#ifdef DEBUG_DCI
+  //#ifdef DEBUG_DCI
 
   if (dlsch[0]) {
     printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
@@ -5548,7 +5548,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
   }
 
-#endif
+  //#endif
   dlsch[0]->active=1;
 
   // compute DL power control parameters
