@@ -53,18 +53,16 @@ for the message.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param nprb Pointer to current PRB count
 */
-void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb);
+void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param Msg3_subframe Subframe where Msg3 will be transmitted
-@param nprb Pointer to current PRB count
 */
-void schedule_SI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP, unsigned int *nprb);
+void schedule_SI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
@@ -116,19 +114,17 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
 @param Mod_id Instance of eNB
 @param frame Frame index
 @param subframe Index of subframe
-@param rballoc Bitmask for allowable subband allocations
 @param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint32_t *rballoc,int *mbsfn_flag);
+void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe on which to act
-@param nb_rb_used0 Number of PRB used by SI/RA
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
-void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,unsigned int *nb_rb_used0,int *mbsfn_flag);
+void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE

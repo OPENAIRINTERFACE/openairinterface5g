@@ -906,12 +906,12 @@ int get_nCCE_offset(int *CCE_table,
     // check CCE(0 ... L-1)
     nb_candidates = (L==4) ? 4 : 2;
     nb_candidates = min(nb_candidates,nCCE/L);
-    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
+    //    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
     for (m = nb_candidates-1 ; m >=0 ; m--) {
 
       search_space_free = 1;
       for (l=0; l<L; l++) {
-	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
+	//	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
         if (CCE_table[(m*L) + l] == 1) {
           search_space_free = 0;
           break;
@@ -919,7 +919,7 @@ int get_nCCE_offset(int *CCE_table,
       }
      
       if (search_space_free == 1) {
-	printf("returning %d\n",m*L);
+	//	printf("returning %d\n",m*L);
         for (l=0; l<L; l++)
           CCE_table[(m*L)+l]=1;
         return(m*L);
@@ -955,7 +955,7 @@ int get_nCCE_offset(int *CCE_table,
       break;
     }
 
-    LOG_I(MAC,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
+    LOG_D(MAC,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
 
     for (m = 0 ; m < nb_candidates ; m++) {
       search_space_free = 1;
@@ -994,7 +994,7 @@ int allocate_CCEs(int module_idP,
   int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
 
-  LOG_I(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+  LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
   init_CCE_table(module_idP,CC_idP);
   DCI_pdu->nCCE=0;
 
@@ -1002,7 +1002,7 @@ int allocate_CCEs(int module_idP,
 
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
       dci_alloc = &DCI_pdu->dci_alloc[i];
-      LOG_I(MAC,"Trying to allocate DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+      LOG_D(MAC,"Trying to allocate DCI %d/%d (%d,%d) : rnti %x, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
 	    i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
 	    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
 	    dci_alloc->rnti,1<<dci_alloc->L,
@@ -1024,11 +1024,11 @@ int allocate_CCEs(int module_idP,
 				   (i<DCI_pdu->Num_common_dci) ? 1 : 0, 
 				   dci_alloc->rnti, 
 				    subframeP))>=0) {// the allocation is feasible, rnti rule passes
-	  LOG_I(MAC,"Allocating at nCCE %d\n",fCCE);
+	  LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);
 	  if (test_onlyP == 0) {
 	    DCI_pdu->nCCE += (1<<dci_alloc->L);
 	    dci_alloc->firstCCE=fCCE;
-	    LOG_I(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
+	    LOG_D(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
 	  }
 	} // fCCE>=0
 	else {

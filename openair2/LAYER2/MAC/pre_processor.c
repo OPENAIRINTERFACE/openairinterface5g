@@ -731,20 +731,24 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
 
 void dlsch_scheduler_pre_processor_reset (int module_idP,
-    int UE_id,
-    uint8_t  CC_id,
-    int frameP,
-    int subframeP,					  
-    int N_RBG,
-    uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
-    unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
+					  int UE_id,
+					  uint8_t  CC_id,
+					  int frameP,
+					  int subframeP,					  
+					  int N_RBG,
+					  uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					  uint16_t nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
+					  unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
+  
 {
-  int i;
+  int i,j;
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
+  uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
+  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
+
 
   // initialize harq_pid and round
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
@@ -759,8 +763,15 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
   for (i=0; i<N_RBG; i++) {
-    ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
+    ue_sched_ctl->rballoc_sub_UE[CC_id][UE_id] = 0;
     rballoc_sub[CC_id][i] = 0;
+    for (j=0;j<RBGsize;j++) {
+      if (vrb_map[j+(i*RBGsize)]!=0) {
+	rballoc_sub[CC_id][i] = 1;
+	break;
+      }
+    }
+    LOG_D(MAC,"Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",frameP,subframeP,CC_id,i,rballoc_sub[CC_id][i]);
     MIMO_mode_indicator[CC_id][i] = 2;
   }
 }

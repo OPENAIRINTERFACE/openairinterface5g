@@ -72,8 +72,7 @@ void
 schedule_SI(
   module_id_t   module_idP,
   frame_t       frameP,
-  sub_frame_t   subframeP,
-  unsigned int* nprbP)
+  sub_frame_t   subframeP)
 
 //------------------------------------------------------------------------------
 {
@@ -323,14 +322,13 @@ schedule_SI(
       }
 
 
-      nprbP[CC_id]=3;
       eNB->eNB_stats[CC_id].total_num_bcch_pdu+=1;
       eNB->eNB_stats[CC_id].bcch_buffer=bcch_sdu_length;
       eNB->eNB_stats[CC_id].total_bcch_buffer+=bcch_sdu_length;
       eNB->eNB_stats[CC_id].bcch_mcs=mcs;
     } else {
 
-      nprbP[CC_id]=0;
+
       //LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
     }
   }

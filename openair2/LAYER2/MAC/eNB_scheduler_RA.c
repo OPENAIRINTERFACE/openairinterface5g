@@ -68,7 +68,7 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
-void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,unsigned char Msg3_subframe,unsigned int *nprb)
+void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,unsigned char Msg3_subframe)
 {
 
   int CC_id;
@@ -259,7 +259,6 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 			   RA_template->RA_dci_fmt1,
 			   1);
 
-	    nprb[CC_id]= nprb[CC_id] + 3;
 	    RA_template->Msg3_subframe=Msg3_subframe;
 	  }
         } else if (RA_template->generate_Msg4 == 1) {
@@ -647,7 +646,6 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 		      module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), rrc_sdu_length);
 	      }
 	      
-	      nprb[CC_id]= nprb[CC_id] + 3;
 	    }
 	  }
 

@@ -732,7 +732,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         continue; // break;
       }
 
-      printf("UE %d/%x is feasible, mode %s\n",UE_id,rnti,mode_string[eNB_UE_stats->mode]);
+      //      printf("UE %d/%x is feasible, mode %s\n",UE_id,rnti,mode_string[eNB_UE_stats->mode]);
 
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 

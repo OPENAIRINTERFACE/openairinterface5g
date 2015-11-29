@@ -422,8 +422,7 @@ schedule_ue_spec(
   module_id_t   module_idP,
   frame_t       frameP,
   sub_frame_t   subframeP,
-  unsigned int  *nb_rb_used0,
-  int*           mbsfn_flag
+  int*          mbsfn_flag
 )
 //------------------------------------------------------------------------------
 {
@@ -457,6 +456,7 @@ schedule_ue_spec(
   int32_t                 tpc=1;
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
+  int i;
 
   if (UE_list->head==-1) {
     return;
@@ -471,7 +471,13 @@ schedule_ue_spec(
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id]=get_min_rb_unit(module_idP,CC_id);
     frame_parms[CC_id] = mac_xface->get_lte_frame_parms(module_idP,CC_id);
-    total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL - nb_rb_used0[CC_id];
+
+    // get number of PRBs less those used by common channels
+    total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL;
+    for (i=0;i<frame_parms[CC_id]->N_RB_DL;i++)
+      if (eNB->common_channels[CC_id].vrb_map[i]!=0)
+	total_nb_available_rb[CC_id]--;
+
     N_RBG[CC_id] = frame_parms[CC_id]->N_RBG;
 
     // store the global enb stats:
@@ -1505,7 +1511,6 @@ fill_DLSCH_dci(
 	       module_id_t module_idP,
 	       frame_t frameP,
 	       sub_frame_t subframeP,
-	       uint32_t* RBallocP,
 	       int* mbsfn_flagP
 	       )
 //------------------------------------------------------------------------------
@@ -1518,7 +1523,6 @@ fill_DLSCH_dci(
   unsigned char *vrb_map;
   uint8_t            rballoc_sub[25];
   //uint8_t number_of_subbands=13;
-  uint32_t           *rballoc=RBallocP;
 
   unsigned char round;
   unsigned char harq_pid;
@@ -1563,11 +1567,6 @@ fill_DLSCH_dci(
         /// Synchronizing rballoc with rballoc_sub
         for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RBG; i++) {
           rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
-
-          if(rballoc_sub[i] == 1) {
-            rballoc[CC_id] |= (0x0001<<i);  // TO be FIXED!!!!!!
-          }
-
         }
 
         switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)) {
@@ -1576,7 +1575,7 @@ fill_DLSCH_dci(
         case 1:
 
         case 2:
-          LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS (rb alloc: %x) \n",module_idP, CC_id, UE_id, nb_rb,rballoc);
+          LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS \n",module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
             switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
@@ -1669,7 +1668,7 @@ fill_DLSCH_dci(
 
         case 3:
           LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
-                module_idP, CC_id, UE_id, nb_rb,rballoc);
+                module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
             switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
