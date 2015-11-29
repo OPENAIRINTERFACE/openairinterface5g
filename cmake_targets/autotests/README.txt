@@ -6,41 +6,50 @@ Obj.#   Case#   Test#	Description
 01                      pre-commit test case
 01      01              Build OAI 
 01      01      01      Build oaisim.Rel8
-01      01      02      Build oaisim.Rel8 + network device driver(nasmesh_fix)	
-01      01      03      Build (lte-softmodem.Rel8.EXMIMO + lte-softmodem.Rel10.EXMIMO + lte-softmodem.Rel10.USRP)	
-01      01      04      Build (dlsim.Rel10 + ulsim.Rel10 + pucchsim.Rel10 + prachsim.Rel10 + pdcchsim.Rel10 + pbchsim.Rel10 + mbmssim.Rel10
+01      01      02      Build oaisim.Rel10	
+01      01      03      Build oaisim_noS1.Rel10	
+01      01      10      Build lte-softmodem_noS1.USRP.Rel10
+01      01      11      Build lte-softmodem_noS1.EXMIMO.Rel10
+01      01      12      Build lte-softmodem_noS1.BLADERF.Rel10
+01      01      13      Build lte-softmodem_noS1.ETHERNET.Rel10
+01      01      20      Build lte-softmodem.USRP.Rel10
+01      01      21      Build lte-softmodem.EXMIMO.Rel10
+01      01      22      Build lte-softmodem.BLADERF.Rel10
+01      01      23      Build lte-softmodem.ETHERNET.Rel10
+
+01      01      30      Build (dlsim.Rel10 + ulsim.Rel10 + pucchsim.Rel10 + prachsim.Rel10 + pdcchsim.Rel10 + pbchsim.Rel10 + mbmssim.Rel10
                         secu_knas_encrypt_eia1.Rel10 secu_kenb.Rel10 aes128_ctr_encrypt.Rel10 aes128_ctr_decrypt.Rel10 secu_knas_encrypt_eea2.Rel10
                         secu_knas.Rel10 secu_knas_encrypt_eea1.Rel10 kdf.Rel10 aes128_cmac_encrypt.Rel10 secu_knas_encrypt_eia2.Rel10)
-01      01      06      Build oaisim.Rel8 + ITTI
-01      01      07      Build oaisim.Rel10 
-01      01      08      Build oaisim.Rel10 + ITTI
-01      01      20      Build Nasmesh
-01      01      30      Build RRH Gateway
+
+01      01      40      Build RRH Gateway for USRP (Rel 10)
+01      01      41      Build RRH Gateway for EXMIMO  (Rel 10)
+01      01      42      Build RRH Gateway for BLADERF  (Rel 10)
 
 
-01      02              Run OAISIM Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      02      00      Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      01      Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      02      Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      03      Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      04      Run OAI Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+
+01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
+01      02      00      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
+01      02      01      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
+01      02      02      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
+01      02      03      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
+01      02      04      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      02      05      Run OAI Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      02      05      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
-01      03              Run OAISIM Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      03      00      Run OAISIM Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      01      Run OAISIM Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      02      Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      03      Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      04      Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+01      03              Run OAISIM-NOS1 Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
+01      03      00      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
+01      03      01      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
+01      03      02      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
+01      03      03      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
+01      03      04      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      03      05      Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      03      05      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
 
 
-01      04              MBSFN Tests
+01      04              OAISIM-NOS1 MBSFN Tests
 01      04      00      Check if eMBMS procedure is not finished completely, make sure that the SIB13/MCCH have been correclty received by UEs
 01      04      01      Check if eMBMS multicast/broadcast data is received, make sure that the SIB13/MCCH/MTCH have been correclty received by UEs
 01      04      02      Check for eMBMS multicast/broadcast data received in fdd mode, make sure that the SIB13/MCCH/MTCH have been correctly
