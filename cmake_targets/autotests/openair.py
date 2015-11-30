@@ -164,15 +164,15 @@ class openair(core):
     def kill(self, user, pw):
         try:
             if user == 'root' :
-                os.system('pkill oaisim')
+                os.system('pkill oaisim oaisim_nos1')
                 os.system('pkill cc1') 
                 time.sleep(1)
-                os.system('pkill oaisim')
+                os.system('pkill oaisim oaisim_nos1')
             else :
-                os.system('echo '+pw+' | sudo -S pkill oaisim')
+                os.system('echo '+pw+' | sudo -S pkill oaisim oaisim_nos1')
                 os.system('echo '+pw+' | sudo -S pkill cc1') 
                 time.sleep(1)
-                os.system('echo '+pw+' | sudo -S pkill oaisim')
+                os.system('echo '+pw+' | sudo -S pkill oaisim oaisim_nos1')
         except Error, val:
             print "Error:", val
             

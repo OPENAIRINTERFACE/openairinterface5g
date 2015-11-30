@@ -211,47 +211,98 @@ class oaiThread (threading.Thread):
         print "result = " + result
         print "Exiting " + self.name
 
-#This class runs test cases with class oaisim_noS1, compilatation
-class testCaseThread_generic(threading.thread):
-   def __init__(self, threadID, name, oai, machine, logdirOAI5GRepo, oai5GRepoDirRemote, testcasename,oldprogramList, CleanupAluLteBox, username, password, timeout):
+#This class runs test cases with class execution, compilatation
+class testCaseThread_generic (threading.Thread):
+   def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, password, timeout):
        threading.Thread.__init__(self)
        self.threaID = threadID
        self.name = name
-       self.oai = oai
        self.testcasename = testcasename
        self.timeout = timeout
        self.machine = machine
-       self.oai5GRepoDirRemote = oai5GRepoDirRemote
        self.logdirOAI5GRepo = logdirOAI5GRepo
-       self.username = username
-       self.password = password
+       self.oldprogramList = oldprogramList
+       self.CleanupAluLteBox = CleanupAluLteBox
+       self.password=password
    def run(self):
      try:
        mypassword=''
        #addsudo = 'echo \'' + mypassword + '\' | sudo -S -E '
        addpass = 'echo \'' + mypassword + '\' | '
        user = getpass.getuser()
-       print "Starting test case : " + self.testcasename + " On machine " + machineName 
+       print "Starting test case : " + self.testcasename + " On machine " + self.machine 
+       oai = openair('localdomain',machine)
+       oai.connect(user, self.password)
        cleanOldPrograms(oai, oldprogramList, CleanUpAluLteBox)
-       logdir_local_testcase = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
-       logdir_local_base = logdirOAI5GRepo+'/cmake_targets/autotests/log/'
-       logdir_remote_testcase = oai5GRepoDirRemote + '/cmake_targets/autotests/log' + self.testcasename
+       logdir_local = os.environ.get('OPENAIR_DIR')
+       logdir_local_testcase = logdir_local +'/cmake_targets/autotests/log/'+ self.testcasename
+       logdir_local_base = logdir_local +'/cmake_targets/autotests/log/'
+       logdir_remote_testcase = self.logdirOAI5GRepo + '/cmake_targets/autotests/log' + self.testcasename
+       logdir_remote = self.logdirOAI5GRepo + '/cmake_targets/autotests/log'
+       logfile_task_testcasename = logdir_local_testcase + '/test_task' + '_' + testcasename + '_.log'
+       logfile_task_testcasename_out = logdir_remote + '/test_task_out' + '_' + str(run) + '_.log'
        os.removedirs(logdir_testcase)
        os.mkdir (logdir_testcase)
-       cmd = "( cd " +  self.oai5GRepoDirRemote + " \n "
+       cmd = "( cd " +  self.logdirOAI5GRepo + " \n "
        cmd = cmd + "source oaienv \n"
-       cmd = cmd + "python run_test_case_generic -d " +  self.oai5GRepoDirRemote + " -g " + "\"" + self.testcasename + "\""
-       cmd = cmd + " ) "   
-
-       #Now we copy all the remote 
-       ssh = SSHSession(self.machine , username=username, key_file=None, passsword=password)
+       cmd = cmd + "$OPENAIR_DIR/cmake_targets/autotests/run_exec_autotets.bash --run-group \"" + "self.testcasename +\" "
+       cmd = cmd + " ) >& "   + logfile_task_testcasename_out + " ; " + " mv " + logfile_task_testcasename_out + logdir_remote_testcase 
+    
+       write_file(logfile_task_testcasename, cmd, mode="w")
+       #Now we copy all the remote files
+       ssh = SSHSession(self.machine , username=user, key_file=None, password=password)
        ssh.get_all(logdir_remote_testcase , logdir_local_base)
-       print "Finishing test case : " + self.testcasename + " On machine " + machineName 
+       print "Finishing test case : " + self.testcasename + " On machine " + machineName
+       cleanOldPrograms(oai, oldprogramList, CleanUpAluLteBox)
+       oai.kill()
+       oai.disconnect()
+     except Exception, e:
+         error=''
+         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+         error = error + '\n threadID = ' + self.threaID + '\n testcasename = ' + self.testcasename + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n'  
+         error = error + traceback.format_exc()
 
 
 def addsudo (cmd, password=""):
   cmd = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
   return cmd
+
+def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, password, CleanupAluLteBox,timeout):
+  try:
+    mypassword=password
+    MachineListFree=[]
+    while MachineListFree.__len__() == 0 :
+       MachineListBusy=[]
+       #first we need to find the list of free machines that we could run our test case
+       if threadListGeneric.__len__() ==0 :
+       #This means no thread is started yet
+          MachineListFree = MachineList
+       else :
+          for param in threadListGeneric :
+             thread_id = param["thread_id"]
+             machine = param["Machine"]
+             testcasename = param["testcasename"]
+             thread_id.join(1)
+             if thread_id.isAlive == True:
+                MachineListBusy.append(machine)
+             else :
+                threadListGeneric.remove(param)
+          #Now we check if there is at least one free machine
+          MachineListFree = MachineList
+          for machine in MachineListBusy:
+             MachineListFree.remove(machine)
+    machine = MachineListFree[0]
+    thread = testCaseThread_generic(1,"Generic Thread", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
+    param={"thread_id":thread, "Machine":machine, "testcasename":testcasename}
+    thread.start()
+    threadListGeneric.append(param)
+    return threadListGeneric
+  except Exception, e:
+    error=''
+    error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+    error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + MachineList + '\n timeout = ' + timeout +  '\n'  
+    error = error + traceback.format_exc()
+
   
 #Function to handle test case class : lte-softmodem
 def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox):
@@ -603,6 +654,7 @@ def search_test_case_group(testcasename, testcasegroup):
        
 
 #thread1 = myThread(1, "Thread-1", 1)
+threadListGeneric=[]
 debug = 0
 pw =''
 i = 0
@@ -714,6 +766,7 @@ GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
 GitOpenaircnRepoBranch = xmlRoot.findtext('GitOpenair-cnRepoBranch',default='')
 CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
 CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
+Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
 
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
@@ -725,7 +778,7 @@ cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
 GitOAI5GHeadVersion = subprocess.check_output ([cmd], shell=True)
 print "GitOAI5GHeadVersion = " + GitOAI5GHeadVersion
 print "CleanUpOldProgs = " + CleanUpOldProgs
-
+print "Timeout_execution = " + str(Timeout_execution)
 
 MachineList = MachineList.split()
 
@@ -897,6 +950,7 @@ for index in oai_list:
       sys.exit(1)
 
 
+
 #Now we wait for all the threads to complete
 index = 0
 for t in threads_init_setup:
@@ -922,7 +976,7 @@ for t in threads_init_setup:
 
 #Now we process all the test cases
 
-
+threadListGeneric=[]
 testcaseList=xmlRoot.findall('testCase')
 #print testcaseList
 for testcase in testcaseList:
@@ -939,18 +993,16 @@ for testcase in testcaseList:
        index_EPCMachine = MachineList.index(EPCMachine)
        print "testcasename = " + testcasename + " class = " + testcaseclass
        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, oai_list, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
-
-     elif testcaseclass == 'compilation' :
-       continue
-       handle_testcaseclass_compilation (testcase)
-     elif testcaseclass == 'execution' :
-       continue
-       handle_testcaseclass_oaisim (testcase)
+     elif (testcaseclass == 'compilation'): 
+       handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, pw, CleanupAluLteBox,Timeout_execution)
+     elif (testcaseclass == 'execution'): 
+       handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, pw, CleanupAluLteBox,Timeout_execution)
      else :
        print "Unknown test case class: " + testcaseclass
        sys.exit()
 
 print "Exiting the test cases execution now..."
+
 
 sys.exit()
 

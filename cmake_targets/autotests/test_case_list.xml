@@ -8,7 +8,7 @@
  <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
  <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* </CleanUpOldProgs>	
  <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
-
+ <Timeout_execution>1800</Timeout_execution>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
@@ -26,7 +26,7 @@
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
      <tags>oaisim.Rel8</tags>
-     <nruns>2</nruns>
+     <nruns>1</nruns>
      </testCase>
 
      <testCase id="010102" >
@@ -928,7 +928,6 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <cleanupScript>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox*</cleanupScript>
     <TimeOut_cmd>60</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
@@ -1000,7 +999,6 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>nano</EPC>
-    <cleanupScript>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox*</cleanupScript>
     <TimeOut_cmd>60</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
@@ -1079,7 +1077,6 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
    <EPC>calisson</EPC>
-    <cleanupScript>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox*</cleanupScript>
     <TimeOut_cmd>60</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
