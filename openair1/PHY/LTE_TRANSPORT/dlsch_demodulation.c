@@ -4486,6 +4486,8 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
         else
           rb_alloc_ind = 0;
 
+        if (rb_alloc_ind == 1)
+          nb_rb++;
 
         // PBCH
         if ((subframe==0) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4))) {
@@ -4723,8 +4725,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             exit(-1);
             
           }
-
-          nb_rb++;
         }
 
         dl_ch0+=12;
@@ -4898,7 +4898,8 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
         else
           rb_alloc_ind = 0;
 
-
+        if (rb_alloc_ind==1)
+          nb_rb++;
 
         // PBCH
         if ((subframe==0) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4))) {
@@ -5128,8 +5129,6 @@ unsigned short dlsch_extract_rbs_TM7(int **rxdataF,
             }
 	      
           }// pilots=0
-
-          nb_rb++;
         }
 
         dl_ch0+=12;
