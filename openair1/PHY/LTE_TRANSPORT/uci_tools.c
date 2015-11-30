@@ -285,6 +285,10 @@ void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats, uint8_
         stats->DL_cqi[1] = 24;
 
       stats->DL_pmi_dual   = ((wideband_cqi_rank2_2A_5MHz *)o)->pmi;
+      //this translates the 2-layer PMI into a single layer PMI for the first codeword
+      //the PMI for the second codeword will be stats->DL_pmi_single^0x1555
+      for (i=0;i<7;i++)
+	stats->DL_pmi_single&(1<<(2*i)) = (stats->DL_pmi_dual&(1<i))*2;  
       break;
 
     case HLC_subband_cqi_nopmi:

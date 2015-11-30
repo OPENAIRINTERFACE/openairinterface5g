@@ -1257,9 +1257,9 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
   //  printf("Getting pmi for RB %d => %d\n",rb,(pmi_alloc>>((rb>>2)<<1))&3);
   switch (N_RB_DL) {
   case 6:   // 1 PRB per subband
-    if (mode <= PUSCH_PRECODING1)
+    if (mode <= PUSCH_PRECODING1) //single layer
       return((pmi_alloc>>(rb<<1))&3);
-    else
+    else //two layer
       return((pmi_alloc>>rb)&1);
 
     break;
