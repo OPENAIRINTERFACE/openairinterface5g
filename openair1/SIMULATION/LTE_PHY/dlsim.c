@@ -799,8 +799,15 @@ int main(int argc, char **argv)
 
   cell_spec_bf_weights = PHY_vars_eNB->lte_eNB_common_vars.cell_spec_bf_weights[0][0];
   for(aa=0;aa<n_tx_phy;aa++) {
-    for(i=0;i<frame_parms->ofdm_symbol_size;i++) {
-      cell_spec_bf_weights[aa][i] = 0x00007fff;
+    for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
+      if (n_tx_phy==1 || n_tx_phy==2)
+        cell_spec_bf_weights[aa][re] = 0x00007fff;
+      else if (n_tx_phy==4)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>1;
+      else if (n_tx_phy==16)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>2;
+      else if (n_tx_phy==64)
+        cell_spec_bf_weights[aa][re] = 0x00007fff>>4;
     }
   }
 
