@@ -50,6 +50,7 @@
 et_scenario_t    *g_scenario  = NULL;
 pthread_mutex_t   g_fsm_lock  = PTHREAD_MUTEX_INITIALIZER;
 et_fsm_state_t    g_fsm_state = ET_FSM_STATE_NULL;
+uint32_t          g_constraints = ET_BIT_MASK_MATCH_SCTP_STREAM | ET_BIT_MASK_MATCH_SCTP_SSN;
 //------------------------------------------------------------------------------
 int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b)
 {
@@ -123,6 +124,9 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
       }
       if (we_are_too_early > 0) {
         // set timer
+        LOG_D(ENB_APP, "Send packet num %u original frame number %u in %ld.%d sec\n",
+            packet->packet_number, packet->original_frame_number, offset.tv_sec, offset.tv_usec);
+
         packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_SENDING;
         if (timer_setup (offset.tv_sec, offset.tv_usec, TASK_S1AP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
                          NULL, &packet->timer_id) < 0) {
@@ -130,7 +134,9 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
         }
         // Done g_fsm_state = ET_FSM_STATE_WAITING_TX_EVENT;
       } else {
+        LOG_D(ENB_APP, "Send packet num %u original frame number %u immediately\n", packet->packet_number, packet->original_frame_number);
         // send immediately
+        AssertFatal(0 == gettimeofday(&packet->timestamp_packet, NULL), "gettimeofday() Failed");
         et_s1ap_eNB_itti_send_sctp_data_req(
             packet->enb_instance,
             packet->sctp_hdr.u.data_hdr.assoc_id,
@@ -161,7 +167,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
       AssertFatal(0, "Event ET_EVENT_TX_TIMED_PACKET not handled in FSM state ET_FSM_STATE_RUNNING");
       break;
     case ET_EVENT_RX_S1AP:
-      AssertFatal(0, "TODO");
+      et_s1ap_process_rx_packet(&event.u.s1ap_data_ind);
       break;
     default:
       AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_RUNNING", event.code);
@@ -185,6 +191,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event)
       break;
     case ET_EVENT_TX_TIMED_PACKET:
       // send immediately
+      AssertFatal(0 == gettimeofday(&event.u.tx_timed_packet->timestamp_packet, NULL), "gettimeofday() Failed");
       et_s1ap_eNB_itti_send_sctp_data_req(
           event.u.tx_timed_packet->enb_instance,
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.assoc_id,
@@ -290,7 +297,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
         switch (g_scenario->next_packet->sctp_hdr.chunk_type) {
 
           case SCTP_CID_DATA :
-            // no init in this scenario, may be sub-scenario
+            // no init in this scenario, may be sub-scenario, ...
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
               et_scenario_schedule_tx_packet(g_scenario->next_packet);
               pthread_mutex_unlock(&g_fsm_lock);

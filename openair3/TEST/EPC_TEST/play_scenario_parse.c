@@ -518,7 +518,7 @@ int et_generate_xml_scenario(
 
   for (i = 0; i < g_enb_properties.number; i++) {
     // eNB S1-C IPv4 address
-    sprintf(astring, "enb_s1c%d", i);
+    sprintf(astring, "enb%d_s1c", i);
     params[nb_params++] = strdup(astring);
     addr.s_addr = g_enb_properties.properties[i]->enb_ipv4_address_for_S1_MME;
     sprintf(astring, "\"%s\"", inet_ntoa(addr));
@@ -526,7 +526,7 @@ int et_generate_xml_scenario(
 
     // MME S1-C IPv4 address
     for (j = 0; j < g_enb_properties.properties[i]->nb_mme; j++) {
-      sprintf(astring, "mme_s1c%d_%d", i, j);
+      sprintf(astring, "mme%d_s1c_%d", i, j);
       params[nb_params++] = strdup(astring);
       AssertFatal (g_enb_properties.properties[i]->mme_ip_address[j].ipv4_address,
           "Only support MME IPv4 address\n");

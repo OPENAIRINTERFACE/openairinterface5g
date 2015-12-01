@@ -40,6 +40,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <crypt.h>
+#include <sys/time.h>
 #include "tree.h"
 #include "queue.h"
 
@@ -58,6 +59,7 @@ s1ap_eNB_internal_data_t s1ap_eNB_internal_data;
 RB_GENERATE(s1ap_mme_map, s1ap_eNB_mme_data_s, entry, et_s1ap_eNB_compare_assoc_id);
 //------------------------------------------------------------------------------
 extern et_scenario_t  *g_scenario;
+extern uint32_t        g_constraints;
 //------------------------------------------------------------------------------
 int et_s1ap_eNB_compare_assoc_id(
   struct s1ap_eNB_mme_data_s *p1, struct s1ap_eNB_mme_data_s *p2)
@@ -187,20 +189,86 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 //------------------------------------------------------------------------------
-void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind)
+int et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
+{
+  if (s1ap1->pdu.present != s1ap2->pdu.present)     return -6;
+  switch (s1ap1->pdu.present) {
+    case  S1AP_PDU_PR_NOTHING:
+      break;
+    case  S1AP_PDU_PR_initiatingMessage:
+      if (s1ap1->pdu.choice.initiatingMessage.procedureCode != s1ap2->pdu.choice.initiatingMessage.procedureCode) return -7;
+      if (s1ap1->pdu.choice.initiatingMessage.criticality != s1ap2->pdu.choice.initiatingMessage.criticality) return -8;
+      break;
+    case  S1AP_PDU_PR_successfulOutcome:
+      if (s1ap1->pdu.choice.successfulOutcome.procedureCode != s1ap2->pdu.choice.successfulOutcome.procedureCode) return -7;
+      if (s1ap1->pdu.choice.successfulOutcome.criticality != s1ap2->pdu.choice.successfulOutcome.criticality) return -8;
+      break;
+    case  S1AP_PDU_PR_unsuccessfulOutcome:
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.procedureCode != s1ap2->pdu.choice.unsuccessfulOutcome.procedureCode) return -7;
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.criticality != s1ap2->pdu.choice.unsuccessfulOutcome.criticality) return -8;
+      break;
+    default:
+      AssertFatal(0, "Unknown pdu.present %d", s1ap1->pdu.present);
+  }
+
+  if (s1ap1->binary_stream_allocated_size == s1ap2->binary_stream_allocated_size) {
+    if (memcmp((void*)s1ap1->binary_stream, (void*)s1ap2->binary_stream, s1ap1->binary_stream_allocated_size) ==  0) return 0;
+  }
+  // if no matching, may be the scenario need minor corrections (same enb_ue_s1ap_id but need to update mme_ue_s1ap_id)
+  return et_s1ap_ies_is_matching(s1ap1->pdu.present, &s1ap1->message, &s1ap2->message, constraints);
+}
+
+//------------------------------------------------------------------------------
+et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const s1ap_data_ind)
 {
   et_packet_t     * packet    = NULL;
+  AssertFatal (NULL != s1ap_data_ind, "Bad parameter sctp_data_ind\n");
+  packet = calloc(1, sizeof(*packet));
+  packet->action                                        = ET_PACKET_ACTION_S1C_NULL;
+  //packet->time_relative_to_first_packet.tv_sec          = 0;
+  //packet->time_relative_to_first_packet.tv_usec         = 0;
+  //packet->time_relative_to_last_sent_packet.tv_sec      = 0;
+  //packet->time_relative_to_last_sent_packet.tv_usec     = 0;
+  //packet->time_relative_to_last_received_packet.tv_sec  = 0;
+  //packet->time_relative_to_last_received_packet.tv_usec = 0;
+  //packet->original_frame_number                         = 0;
+  //packet->packet_number                                 = 0;
+  packet->enb_instance = 0; //TODO
+  //packet->ip_hdr;
+  // keep in mind: allocated buffer: sctp_datahdr.payload.binary_stream
+  memcpy((void*)&packet->sctp_hdr, (void*)&s1ap_data_ind->sctp_datahdr, sizeof(packet->sctp_hdr));
+  //packet->next = NULL;
+  packet->status = ET_PACKET_STATUS_RECEIVED;
+  //packet->timer_id = 0;
+  AssertFatal(0 == gettimeofday(&packet->timestamp_packet, NULL), "gettimeofday() Failed");
+  return packet;
+}
+
+
+//------------------------------------------------------------------------------
+void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
+{
+  et_packet_t     * packet    = NULL;
+  et_packet_t     * rx_packet = NULL;
   unsigned long int not_found = 1;
+
+  AssertFatal (NULL != s1ap_data_ind, "Bad parameter sctp_data_ind\n");
+  rx_packet = et_build_packet_from_s1ap_data_ind(s1ap_data_ind);
 
   packet = g_scenario->next_packet;
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
   while ((NULL != packet) && (not_found < 5)) {
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
       //TODO
+      if (et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints) == 0) {
+        et_scenario_set_packet_received(packet);
+      }
     }
     not_found += 1;
     packet = packet->next;
   }
+  S1AP_DEBUG("Rx packet not found in scenario:\n");
+  et_display_packet_sctp(&rx_packet->sctp_hdr);
 }
 
 //------------------------------------------------------------------------------
@@ -234,7 +302,7 @@ void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t * const sctp_data_ind)
            &event.u.s1ap_data_ind.sctp_datahdr.payload.message,
            event.u.s1ap_data_ind.sctp_datahdr.payload.binary_stream,
            event.u.s1ap_data_ind.sctp_datahdr.payload.binary_stream_allocated_size) < 0) {
-      AssertFatal (0, "ERROR %s() Cannot decode RX S1AP message!\n", __FUNCTION__);
+      AssertFatal (0, "ERROR Cannot decode RX S1AP message!\n");
     }
 
   }
@@ -319,6 +387,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
     switch (packet->sctp_hdr.chunk_type) {
 
       case SCTP_CID_DATA :
+        S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_DATA\n",__FUNCTION__,assoc_id);
         if (ET_PACKET_STATUS_NONE == packet->status) {
           if (0 < old_mme_port) {
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
@@ -355,6 +424,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
         // Strong assumption
         // in replayed scenario, the order of SCTP INIT packets is supposed to be the same as in the catched scenario
       case SCTP_CID_INIT:
+        S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_INIT\n",__FUNCTION__,assoc_id);
         ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
         if (0 == ret) {
           ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
@@ -363,6 +433,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
               if (ET_PACKET_STATUS_NONE == packet->status) {
                 packet->status = ET_PACKET_STATUS_SENT;
                 old_enb_port = packet->sctp_hdr.src_port;
+                S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_INIT SUCCESS\n",__FUNCTION__,assoc_id);
               }
             }
           }
@@ -370,14 +441,16 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
         break;
 
       case SCTP_CID_INIT_ACK:
-        ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
+        S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_INIT_ACK\n",__FUNCTION__,assoc_id);
+        ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &mme_desc_p->mme_net_ip_address);
         if (0 == ret) {
-          ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
+          ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &s1ap_eNB_instance->s1c_net_ip_address);
           if (0 == ret) {
             if (old_enb_port == packet->sctp_hdr.dst_port) {
               if (ET_PACKET_STATUS_NONE == packet->status) {
                 packet->status = ET_PACKET_STATUS_RECEIVED;
                 old_mme_port = packet->sctp_hdr.dst_port;
+                S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_INIT_ACK SUCCESS\n",__FUNCTION__,assoc_id);
               }
             }
           }
@@ -475,6 +548,7 @@ void et_s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_
     DevCheck(new_instance->mcc == s1ap_register_eNB->mcc, new_instance->mcc, s1ap_register_eNB->mcc, 0);
     DevCheck(new_instance->mnc == s1ap_register_eNB->mnc, new_instance->mnc, s1ap_register_eNB->mnc, 0);
     DevCheck(new_instance->mnc_digit_length == s1ap_register_eNB->mnc_digit_length, new_instance->mnc_digit_length, s1ap_register_eNB->mnc_digit_length, 0);
+    DevCheck(memcmp((void*)&new_instance->s1c_net_ip_address, (void*)&s1ap_register_eNB->enb_ip_address, sizeof(new_instance->s1c_net_ip_address)) == 0, 0,0,0);
   } else {
     new_instance = calloc(1, sizeof(s1ap_eNB_instance_t));
     DevAssert(new_instance != NULL);
@@ -491,6 +565,7 @@ void et_s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_
     new_instance->mcc              = s1ap_register_eNB->mcc;
     new_instance->mnc              = s1ap_register_eNB->mnc;
     new_instance->mnc_digit_length = s1ap_register_eNB->mnc_digit_length;
+    memcpy((void*)&new_instance->s1c_net_ip_address, (void*)&s1ap_register_eNB->enb_ip_address, sizeof(new_instance->s1c_net_ip_address));
 
     /* Add the new instance to the list of eNB (meaningfull in virtual mode) */
     et_s1ap_eNB_insert_new_instance(new_instance);

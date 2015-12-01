@@ -43,3 +43,48 @@
 #include "assertions.h"
 #include "play_scenario.h"
 
+//------------------------------------------------------------------------------
+int et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints)
+{
+  // no comparison for ports
+  if (sctp1->ppid     != sctp2->ppid)     return -4;
+  if (sctp1->assoc_id != sctp2->assoc_id) return -5;
+  if (sctp1->stream != sctp2->stream) {
+    if (constraints & ET_BIT_MASK_MATCH_SCTP_STREAM) {
+      return -2;
+    } else {
+      S1AP_WARN("No Matching SCTP stream %u %u\n", sctp1->stream, sctp2->stream);
+    }
+  }
+  if (sctp1->ssn != sctp2->ssn) {
+    if (constraints & ET_BIT_MASK_MATCH_SCTP_SSN) {
+      return -3;
+    } else {
+      S1AP_WARN("No Matching SCTP ssn %u %u\n", sctp1->ssn, sctp2->ssn);
+    }
+  }
+  return et_s1ap_is_matching(&sctp1->payload, &sctp2->payload,  constraints);
+}
+
+//------------------------------------------------------------------------------
+int et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints)
+{
+  // no comparison for ports
+  if (sctp1->chunk_type != sctp2->chunk_type) return -1;
+  switch (sctp1->chunk_type) {
+    case SCTP_CID_DATA:
+      return et_sctp_data_is_matching(&sctp1->u.data_hdr, &sctp2->u.data_hdr, constraints);
+      break;
+
+    case SCTP_CID_INIT:
+      AssertFatal(0, "Not needed now");
+      break;
+    case SCTP_CID_INIT_ACK:
+      AssertFatal(0, "Not needed now");
+      break;
+    default:
+      AssertFatal(0, "Not needed now cid %d", sctp1->chunk_type);
+  }
+
+  return 0;
+}
