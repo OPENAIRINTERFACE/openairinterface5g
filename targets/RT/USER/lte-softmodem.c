@@ -1632,7 +1632,6 @@ static void* eNB_thread( void* arg )
 #ifndef EXMIMO
   spp        = openair0_cfg[0].samples_per_packet;
   tx_pos     = openair0_cfg[0].tx_scheduling_advance;
-  tx_advance = openair0_cfg[0].tx_sample_advance;
 #endif
 
   while (!oai_exit) {

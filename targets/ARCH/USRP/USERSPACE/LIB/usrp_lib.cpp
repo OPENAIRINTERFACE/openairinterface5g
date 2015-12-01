@@ -405,27 +405,27 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 
-    switch (openair0_cfg[0].sample_rate) {
-    case 30.72e6:
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
             // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 15;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
-    case 15.36e6:
+    case 15360000:
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 45;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
-    case 7.6e6:
+    case 7680000:
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 50;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
-    case 1.92e6:
+    case 1920000:
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 50;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
@@ -445,32 +445,32 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
 
-    device->type = USRP_B200_IF
+    device->type = USRP_B200_IF;
     s->usrp->set_master_clock_rate(30.72e6);
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
 
-    switch (openair0_cfg[0].sample_rate) {
-    case 30.72e6:
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
             // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 175;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
-    case 15.36e6:
+    case 15360000:
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 95;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
-    case 7.6e6:
+    case 7680000:
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 70;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
-    case 1.92e6:
+    case 1920000:
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 40;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[card].samples_per_packet;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
