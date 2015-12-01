@@ -84,8 +84,10 @@ typedef struct {
   double sample_rate;
   //! number of samples per RX/TX packet (USRP + Ethernet)
   int samples_per_packet;
-  // delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
-  int tx_delay;
+  //! delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
+  int tx_scheduling_advance;
+  //! offset in samples between TX and RX paths
+  int tx_sample_advance;
   //! adjust the position of the samples after delay when sending   
   unsigned int	tx_forward_nsamps;
   //! number of RX channels (=RX antennas)
