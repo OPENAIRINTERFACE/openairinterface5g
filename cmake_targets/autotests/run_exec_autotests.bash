@@ -354,16 +354,20 @@ Options
    This help
 -g | --run-group
    Run test cases in a group. For example, ./run_exec_autotests "0101* 010102"
+-p
+   Use password for logging
 '
 }
 
 function main () {
 RUN_GROUP=0
+SET_PASSWORD=0
+passwd=""
 test_case_group=""
 test_case_group_array=()
 test_case_array=()
 echo_info "Note that the user should be sudoer for executing certain commands, for example loading kernel modules"
-read -s -p "Enter Password: " mypassword
+
 
 until [ -z "$1" ]
   do
@@ -372,6 +376,10 @@ until [ -z "$1" ]
             RUN_GROUP=1
             test_case_group=$2
             echo_info "Will execute test cases only in group $test_case_group"
+            shift 2;;
+        -p)
+            SET_PASSWORD=1
+            passwd=$2
             shift 2;;
         -h | --help)
             print_help
@@ -383,6 +391,20 @@ until [ -z "$1" ]
    esac
   done
 
+if [ "$SET_PASSWORD" == "1" ]; then
+   mypassword=$passwd
+else
+   read -s -p "Enter Password: " mypassword
+fi
+
+tmpfile=`mktemp`
+echo \'$passwd\' | sudo -S -v >& $tmpfile
+tstsudo=`cat $tmpfile`
+if [ "$tstsudo" != "" ]; then
+  echo "User might not have sudo privileges. Exiting" 
+fi
+echo "tstsudo = $tstsudo"
+rm -fr $tmpfile
 
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
