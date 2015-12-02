@@ -1128,7 +1128,7 @@ void *UE_thread(void *arg)
           txp[i] = (void*)&txdata[i][txpos];
 
         openair0.trx_write_func(&openair0,
-                                (timestamp+spp*openair0_cfg[0].tx_scheduling_advance-openair0_cfg[0].tx_sample_advance),
+                                (timestamp+openair0_cfg[0].tx_scheduling_advance-openair0_cfg[0].tx_sample_advance),
                                 txp,
 				spp - ((first_rx==1) ? rx_off_diff : 0),
                                 UE->lte_frame_parms.nb_antennas_tx,
