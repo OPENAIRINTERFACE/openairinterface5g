@@ -189,7 +189,7 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 //------------------------------------------------------------------------------
-int et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
+long et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
 {
   if (s1ap1->pdu.present != s1ap2->pdu.present)     return -ET_ERROR_MATCH_PACKET_S1AP_PRESENT;
   switch (s1ap1->pdu.present) {
@@ -247,19 +247,22 @@ et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const
 
 
 //------------------------------------------------------------------------------
-void et_scenario_set_packet_received(et_packet_t * const packet)
+// return 0 if packet was waited
+int et_scenario_set_packet_received(et_packet_t * const packet)
 {
   int rc = 0;
   packet->status = ET_PACKET_STATUS_RECEIVED;
   S1AP_DEBUG("Packet num %d received\n", packet->packet_number);
   if (packet->timer_id != 0) {
     rc = timer_remove(packet->timer_id);
-    AssertFatal(rc == 0, "Timer on Rx packet num %d unknown", packet->packet_number);
+    AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %d unknown", packet->packet_number);
+    return rc;
   }
+  return 1;
 }
 
 //------------------------------------------------------------------------------
-void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
+int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
 {
   et_packet_t     * packet    = NULL;
   et_packet_t     * rx_packet = NULL;
@@ -291,9 +294,15 @@ void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
       rv = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
       if (0 == rv) {
         S1AP_DEBUG("Compare RX packet with packet num %d succeeded\n", packet->packet_number);
-        et_scenario_set_packet_received(packet);
+        return et_scenario_set_packet_received(packet);
       } else {
         S1AP_DEBUG("Compare RX packet with packet num %d failed %s\n", packet->packet_number, et_error_match2str(rv));
+        // asn1 compare no match return code, may not collide with non asn1 error return codes
+        // (each asn1 rc <= 166 (enum e_S1ap_ProtocolIE_ID, in generated file S1ap_ProtocolIE_ID.h))
+        if ((rv > 0) || (rv <= -ET_ERROR_MATCH_END)) {
+          //TODO MME_UE_S1AP_ID, etc.
+          AssertFatal(0,"Some work needed there");
+        }
       }
     }
     not_found += 1;
@@ -301,6 +310,7 @@ void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
   }
   S1AP_DEBUG("Rx packet not found in scenario:\n");
   et_display_packet_sctp(&rx_packet->sctp_hdr);
+  return -1;
 }
 
 //------------------------------------------------------------------------------
@@ -342,6 +352,10 @@ void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t * const sctp_data_ind)
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 
+  et_scenario_fsm_notify_event(event);
+
+  memset((void*)&event, 0, sizeof(event));
+  event.code = ET_EVENT_TICK;
   et_scenario_fsm_notify_event(event);
 
 }

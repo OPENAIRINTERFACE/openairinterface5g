@@ -58,15 +58,15 @@ extern et_scenario_t  *g_scenario;
 extern uint32_t        g_constraints;
 //------------------------------------------------------------------------------
 
-int et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints)
+long et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints)
 {
   long ret = 0;
   AssertFatal(m1 != NULL, "bad parameter m1");
   AssertFatal(m2 != NULL, "bad parameter m2");
   AssertFatal((present == S1AP_PDU_PR_initiatingMessage) ||
               (present == S1AP_PDU_PR_successfulOutcome) ||
-              (present == S1AP_PDU_PR_unsuccessfulOutcome) , "bad parameter S1AP_PDU_PR present ");
-  if (m1->procedureCode != m2->procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
+              (present == S1AP_PDU_PR_unsuccessfulOutcome) , "Bad parameter S1AP_PDU_PR present ");
+  AssertFatal( m1->procedureCode == m2->procedureCode, "Bad parameters: no matching procedure codes");
 
 
   // some cases can never occur since uplink only.

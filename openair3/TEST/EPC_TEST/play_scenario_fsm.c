@@ -87,7 +87,7 @@ void et_scenario_wait_rx_packet(et_packet_t * const packet)
                    NULL, &packet->timer_id) < 0) {
     AssertFatal(0, " Can not start waiting RX event timer\n");
   }
-  g_fsm_state = ET_FSM_STATE_WAITING_EVENT;
+  g_fsm_state = ET_FSM_STATE_WAITING_RX_EVENT;
   packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING;
 }
 //------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
   AssertFatal(NULL != s1ap_eNB_instance, "Cannot get s1ap_eNB_instance_t for eNB instance %d", packet->enb_instance);
 
   LOG_D(ENB_APP, "%s\n", __FUNCTION__);
-  g_fsm_state = ET_FSM_STATE_WAITING_EVENT;
+  g_fsm_state = ET_FSM_STATE_WAITING_TX_EVENT;
 
   switch (packet->sctp_hdr.chunk_type) {
     case SCTP_CID_DATA:
@@ -160,6 +160,10 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
 {
 
   switch (event.code){
+    case ET_EVENT_TICK:
+      //TODO
+
+      break;
     case ET_EVENT_RX_PACKET_TIME_OUT:
       AssertFatal(0, "Event ET_EVENT_RX_PACKET_TIME_OUT not handled in FSM state ET_FSM_STATE_RUNNING");
       break;
@@ -177,18 +181,17 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
 }
 
 //------------------------------------------------------------------------------
-et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event)
+et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event)
 {
-
+  int rv = 0;
   switch (event.code){
-    case ET_EVENT_RX_PACKET_TIME_OUT:
-      fprintf(stderr, "Error The following packet is not received:\n");
-      et_display_packet(event.u.rx_packet_time_out);
-      AssertFatal(0, "Waited packet not received");
+    case ET_EVENT_TICK:
       break;
+
     case ET_EVENT_RX_S1AP:
-      et_s1ap_process_rx_packet(&event.u.s1ap_data_ind);
+      rv = et_s1ap_process_rx_packet(&event.u.s1ap_data_ind);
       break;
+
     case ET_EVENT_TX_TIMED_PACKET:
       // send immediately
       AssertFatal(0 == gettimeofday(&event.u.tx_timed_packet->timestamp_packet, NULL), "gettimeofday() Failed");
@@ -202,9 +205,39 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event)
       g_fsm_state = ET_FSM_STATE_RUNNING;
       break;
 
-
+    case ET_EVENT_RX_PACKET_TIME_OUT:
     default:
-      AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_WAITING", event.code);
+      AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_WAITING_TX", event.code);
+  }
+  pthread_mutex_unlock(&g_fsm_lock);
+  return 0;
+}
+
+//------------------------------------------------------------------------------
+et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event)
+{
+  int rv = 0;
+  switch (event.code){
+    case ET_EVENT_TICK:
+      break;
+
+    case ET_EVENT_RX_PACKET_TIME_OUT:
+      fprintf(stderr, "Error The following packet is not received:\n");
+      et_display_packet(event.u.rx_packet_time_out);
+      AssertFatal(0, "Waited packet not received");
+      break;
+
+    case ET_EVENT_RX_S1AP:
+      rv = et_s1ap_process_rx_packet(&event.u.s1ap_data_ind);
+      // waited packet
+      if (rv == 0) {
+        g_fsm_state = ET_FSM_STATE_RUNNING;
+      }
+      break;
+
+    case ET_EVENT_TX_TIMED_PACKET:
+    default:
+      AssertFatal(0, "Case event %d not handled in ET_FSM_STATE_WAITING_RX", event.code);
   }
   pthread_mutex_unlock(&g_fsm_lock);
   return 0;
@@ -215,6 +248,9 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
 {
 
   switch (event.code){
+    case ET_EVENT_TICK:
+      break;
+
     case ET_EVENT_S1C_CONNECTED:
       // hack simulate we have been able to get the right timing values
       AssertFatal(gettimeofday(&g_scenario->time_last_tx_packet, NULL) == 0, "gettimeofday failed");
@@ -227,6 +263,11 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
               et_scenario_schedule_tx_packet(g_scenario->next_packet);
               pthread_mutex_unlock(&g_fsm_lock);
+
+              et_event_t continue_event;
+              continue_event.code = ET_EVENT_TICK;
+              et_scenario_fsm_notify_event(continue_event);
+
               return g_fsm_state;
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
@@ -289,6 +330,9 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
 et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
 {
   switch (event.code){
+    case ET_EVENT_TICK:
+      break;
+
     case ET_EVENT_INIT:
       AssertFatal(NULL == g_scenario, "Current scenario not ended");
       g_scenario = event.u.init.scenario;
@@ -304,6 +348,11 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
             if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
               et_scenario_schedule_tx_packet(g_scenario->next_packet);
               pthread_mutex_unlock(&g_fsm_lock);
+
+              et_event_t continue_event;
+              continue_event.code = ET_EVENT_TICK;
+              et_scenario_fsm_notify_event(continue_event);
+
               return g_fsm_state;
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
@@ -382,7 +431,8 @@ et_fsm_state_t et_scenario_fsm_notify_event(et_event_t event)
   switch (g_fsm_state){
     case ET_FSM_STATE_NULL: return et_scenario_fsm_notify_event_state_null(event); break;
     case ET_FSM_STATE_CONNECTING_S1C: return et_scenario_fsm_notify_event_state_connecting_s1c(event); break;
-    case ET_FSM_STATE_WAITING_EVENT: return et_scenario_fsm_notify_event_state_waiting(event); break;
+    case ET_FSM_STATE_WAITING_TX_EVENT: return et_scenario_fsm_notify_event_state_waiting_tx(event); break;
+    case ET_FSM_STATE_WAITING_RX_EVENT: return et_scenario_fsm_notify_event_state_waiting_rx(event); break;
     case ET_FSM_STATE_RUNNING: return et_scenario_fsm_notify_event_state_running(event); break;
     default:
       AssertFatal(0, "Case fsm_state %d not handled", g_fsm_state);

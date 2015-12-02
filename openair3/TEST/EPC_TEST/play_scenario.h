@@ -173,7 +173,8 @@ typedef enum {
   ET_FSM_STATE_START = 0,
   ET_FSM_STATE_NULL = ET_FSM_STATE_START,
   ET_FSM_STATE_CONNECTING_S1C,
-  ET_FSM_STATE_WAITING_EVENT,
+  ET_FSM_STATE_WAITING_RX_EVENT,
+  ET_FSM_STATE_WAITING_TX_EVENT,
   ET_FSM_STATE_RUNNING,
   ET_FSM_STATE_END
 } et_fsm_state_t;
@@ -359,6 +360,7 @@ typedef enum {
   ET_EVENT_RX_S1AP,
   ET_EVENT_RX_PACKET_TIME_OUT,
   ET_EVENT_TX_TIMED_PACKET,
+  ET_EVENT_TICK,
   ET_EVENT_END
 } et_event_code_t;
 
@@ -413,10 +415,10 @@ void et_s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p);
 struct s1ap_eNB_mme_data_s *et_s1ap_eNB_get_MME(s1ap_eNB_instance_t *instance_p,int32_t assoc_id, uint16_t cnx_id);
 s1ap_eNB_instance_t *et_s1ap_eNB_get_instance(instance_t instance);
 void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,uint32_t buffer_length, uint16_t stream);
-int et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
+long et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
 et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const s1ap_data_ind);
-void et_scenario_set_packet_received(et_packet_t * const packet);
-void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind);
+int et_scenario_set_packet_received(et_packet_t * const packet);
+int  et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind);
 void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t * const sctp_data_ind);
 void et_s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *mme_ip_address,
@@ -435,7 +437,8 @@ int et_generate_xml_scenario(
           char const * tsml_out_scenario_filename);
 //-------------------------
 et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event);
-et_fsm_state_t et_scenario_fsm_notify_event_state_waiting(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event);
+et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event(et_event_t event);
@@ -448,10 +451,10 @@ void et_parse_sctp(xmlDocPtr doc, const xmlNode const *sctp_node, et_sctp_hdr_t 
 et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node);
 et_scenario_t* et_generate_scenario(const char  * const et_scenario_filename );
 //-------------------------
-int et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
+long et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
 //-------------------------
-int et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints);
-int et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints);
+long et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints);
+long et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints);
 //------------------------------------------------------------------------------
 void et_print_hex_octets(const unsigned char * const byte_stream, const unsigned long int num);
 int  et_is_file_exists ( const char const * file_nameP, const char const *file_roleP);

@@ -44,7 +44,7 @@
 #include "play_scenario.h"
 
 //------------------------------------------------------------------------------
-int et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints)
+long et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints)
 {
   // no comparison for ports
   if (sctp1->ppid     != sctp2->ppid) {
@@ -73,7 +73,7 @@ int et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * cons
 }
 
 //------------------------------------------------------------------------------
-int et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints)
+long et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints)
 {
   // no comparison for ports
   if (sctp1->chunk_type != sctp2->chunk_type) return -ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE;
