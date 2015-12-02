@@ -283,6 +283,22 @@ const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type)
   }
 }
 //------------------------------------------------------------------------------
+const char * const et_error_match2str(const int err)
+{
+  switch (err) {
+    case  -ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE:       return "SCTP_CHUNK_TYPE"; break;
+    case  -ET_ERROR_MATCH_PACKET_SCTP_PPID:             return "SCTP_PPID"; break;
+    case  -ET_ERROR_MATCH_PACKET_SCTP_ASSOC_ID:         return "SCTP_ASSOC_ID"; break;
+    case  -ET_ERROR_MATCH_PACKET_SCTP_STREAM_ID:        return "SCTP_STREAM_ID"; break;
+    case  -ET_ERROR_MATCH_PACKET_SCTP_SSN:              return "SCTP_SSN"; break;
+    case  -ET_ERROR_MATCH_PACKET_S1AP_PRESENT:          return "S1AP_PRESENT"; break;
+    case  -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE:   return "S1AP_PROCEDURE_CODE"; break;
+    case  -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY:      return "S1AP_CRITICALITY"; break;
+    default:
+      AssertFatal (0, "ERROR: Unknown match error %d!(TODO handle an1c error codes)\n", err);
+  }
+}
+//------------------------------------------------------------------------------
 et_packet_action_t et_action_str2et_action_t(const xmlChar * const action)
 {
   if ((!xmlStrcmp(action, (const xmlChar *)"SEND")))              { return ET_PACKET_ACTION_S1C_SEND;}

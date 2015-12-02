@@ -292,7 +292,10 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
     case ET_EVENT_INIT:
       AssertFatal(NULL == g_scenario, "Current scenario not ended");
       g_scenario = event.u.init.scenario;
-      g_scenario->next_packet = g_scenario->list_packet;
+      g_scenario->next_packet            = g_scenario->list_packet;
+      g_scenario->last_rx_packet         = NULL;
+      g_scenario->last_tx_packet         = NULL;
+
       while (NULL != g_scenario->next_packet) {
         switch (g_scenario->next_packet->sctp_hdr.chunk_type) {
 

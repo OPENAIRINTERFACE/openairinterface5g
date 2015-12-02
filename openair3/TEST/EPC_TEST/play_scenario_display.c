@@ -273,6 +273,28 @@ void et_display_packet(const et_packet_t * const packet)
     default:
       fprintf(stdout, "\tPacket:\tAction UNKNOWN\n");
     }
+    switch(packet->status) {
+    case   ET_PACKET_STATUS_NONE:
+      fprintf(stdout, "\tPacket:\tStatus NONE\n");
+      break;
+    case   ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT:
+      fprintf(stdout, "\tPacket:\tStatus NOT_TAKEN_IN_ACCOUNT\n");
+      break;
+    case   ET_PACKET_STATUS_SCHEDULED_FOR_SENDING:
+      fprintf(stdout, "\tPacket:\tStatus SCHEDULED_FOR_SENDING\n");
+      break;
+    case   ET_PACKET_STATUS_SENT:
+      fprintf(stdout, "\tPacket:\tStatus SENT\n");
+      break;
+    case   ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING:
+      fprintf(stdout, "\tPacket:\tStatus SCHEDULED_FOR_RECEIVING\n");
+      break;
+    case   ET_PACKET_STATUS_RECEIVED:
+      fprintf(stdout, "\tPacket:\tStatus RECEIVED\n");
+      break;
+    default:
+      fprintf(stdout, "\tPacket:\tStatus UNKNOWN\n");
+    }
     et_display_packet_ip(&packet->ip_hdr);
     et_display_packet_sctp(&packet->sctp_hdr);
   }

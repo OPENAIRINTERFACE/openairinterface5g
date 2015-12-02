@@ -178,6 +178,19 @@ typedef enum {
   ET_FSM_STATE_END
 } et_fsm_state_t;
 
+typedef enum {
+  ET_ERROR_MATCH_START = 1,
+  ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE = ET_ERROR_MATCH_START,
+  ET_ERROR_MATCH_PACKET_SCTP_PPID,
+  ET_ERROR_MATCH_PACKET_SCTP_ASSOC_ID,
+  ET_ERROR_MATCH_PACKET_SCTP_STREAM_ID,
+  ET_ERROR_MATCH_PACKET_SCTP_SSN,
+  ET_ERROR_MATCH_PACKET_S1AP_PRESENT,
+  ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE,
+  ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY,
+  ET_ERROR_MATCH_END
+} et_error_match_code_t;
+
 
 
 
@@ -332,9 +345,9 @@ typedef struct et_scenario_s {
   hash_table_t           *hash_old_ue_mme_id2ue_mme_id;
   struct timeval          time_last_tx_packet;
   struct timeval          time_last_rx_packet;
-  et_packet_t            *last_rx_packet;
-  et_packet_t            *last_tx_packet;
-  et_packet_t            *next_packet;
+  et_packet_t            *last_rx_packet;         // last packet received with all previous scenario RX packet received.
+  et_packet_t            *last_tx_packet;         // last sent packet
+  et_packet_t            *next_packet;   // next packet to be handled in the scenario (RX or TX packet)
 } et_scenario_t;
 
 
@@ -402,6 +415,7 @@ s1ap_eNB_instance_t *et_s1ap_eNB_get_instance(instance_t instance);
 void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,uint32_t buffer_length, uint16_t stream);
 int et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
 et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const s1ap_data_ind);
+void et_scenario_set_packet_received(et_packet_t * const packet);
 void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind);
 void et_s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t * const sctp_data_ind);
 void et_s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
@@ -450,6 +464,7 @@ int et_compare_et_ip_to_net_ip_address(const et_ip_t * const ip, const net_ip_ad
 int et_hex2data(unsigned char * const data, const unsigned char * const hexstring, const unsigned int len);
 sctp_cid_t et_chunk_type_str2cid(const xmlChar * const chunk_type_str);
 const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type);
+const char * const et_error_match2str(const int err);
 et_packet_action_t et_action_str2et_action_t(const xmlChar * const action);
 void et_ip_str2et_ip(const xmlChar  * const ip_str, et_ip_t * const ip);
 void et_enb_config_init(const  char const * lib_config_file_name_pP);

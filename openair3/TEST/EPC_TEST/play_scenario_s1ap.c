@@ -191,21 +191,21 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
 //------------------------------------------------------------------------------
 int et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
 {
-  if (s1ap1->pdu.present != s1ap2->pdu.present)     return -6;
+  if (s1ap1->pdu.present != s1ap2->pdu.present)     return -ET_ERROR_MATCH_PACKET_S1AP_PRESENT;
   switch (s1ap1->pdu.present) {
     case  S1AP_PDU_PR_NOTHING:
       break;
     case  S1AP_PDU_PR_initiatingMessage:
-      if (s1ap1->pdu.choice.initiatingMessage.procedureCode != s1ap2->pdu.choice.initiatingMessage.procedureCode) return -7;
-      if (s1ap1->pdu.choice.initiatingMessage.criticality != s1ap2->pdu.choice.initiatingMessage.criticality) return -8;
+      if (s1ap1->pdu.choice.initiatingMessage.procedureCode != s1ap2->pdu.choice.initiatingMessage.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
+      if (s1ap1->pdu.choice.initiatingMessage.criticality != s1ap2->pdu.choice.initiatingMessage.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
       break;
     case  S1AP_PDU_PR_successfulOutcome:
-      if (s1ap1->pdu.choice.successfulOutcome.procedureCode != s1ap2->pdu.choice.successfulOutcome.procedureCode) return -7;
-      if (s1ap1->pdu.choice.successfulOutcome.criticality != s1ap2->pdu.choice.successfulOutcome.criticality) return -8;
+      if (s1ap1->pdu.choice.successfulOutcome.procedureCode != s1ap2->pdu.choice.successfulOutcome.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
+      if (s1ap1->pdu.choice.successfulOutcome.criticality != s1ap2->pdu.choice.successfulOutcome.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
       break;
     case  S1AP_PDU_PR_unsuccessfulOutcome:
-      if (s1ap1->pdu.choice.unsuccessfulOutcome.procedureCode != s1ap2->pdu.choice.unsuccessfulOutcome.procedureCode) return -7;
-      if (s1ap1->pdu.choice.unsuccessfulOutcome.criticality != s1ap2->pdu.choice.unsuccessfulOutcome.criticality) return -8;
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.procedureCode != s1ap2->pdu.choice.unsuccessfulOutcome.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.criticality != s1ap2->pdu.choice.unsuccessfulOutcome.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
       break;
     default:
       AssertFatal(0, "Unknown pdu.present %d", s1ap1->pdu.present);
@@ -236,7 +236,8 @@ et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const
   packet->enb_instance = 0; //TODO
   //packet->ip_hdr;
   // keep in mind: allocated buffer: sctp_datahdr.payload.binary_stream
-  memcpy((void*)&packet->sctp_hdr, (void*)&s1ap_data_ind->sctp_datahdr, sizeof(packet->sctp_hdr));
+  packet->sctp_hdr.chunk_type = SCTP_CID_DATA;
+  memcpy((void*)&packet->sctp_hdr.u.data_hdr, (void*)&s1ap_data_ind->sctp_datahdr, sizeof(packet->sctp_hdr));
   //packet->next = NULL;
   packet->status = ET_PACKET_STATUS_RECEIVED;
   //packet->timer_id = 0;
@@ -246,22 +247,53 @@ et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const
 
 
 //------------------------------------------------------------------------------
+void et_scenario_set_packet_received(et_packet_t * const packet)
+{
+  int rc = 0;
+  packet->status = ET_PACKET_STATUS_RECEIVED;
+  S1AP_DEBUG("Packet num %d received\n", packet->packet_number);
+  if (packet->timer_id != 0) {
+    rc = timer_remove(packet->timer_id);
+    AssertFatal(rc == 0, "Timer on Rx packet num %d unknown", packet->packet_number);
+  }
+}
+
+//------------------------------------------------------------------------------
 void et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
 {
   et_packet_t     * packet    = NULL;
   et_packet_t     * rx_packet = NULL;
   unsigned long int not_found = 1;
+  long              rv        = 0;
 
   AssertFatal (NULL != s1ap_data_ind, "Bad parameter sctp_data_ind\n");
   rx_packet = et_build_packet_from_s1ap_data_ind(s1ap_data_ind);
 
-  packet = g_scenario->next_packet;
+  if (NULL == g_scenario->last_rx_packet) {
+    packet = g_scenario->list_packet;
+    while (NULL != packet) {
+      if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+        if (packet->status == ET_PACKET_STATUS_RECEIVED) {
+          g_scenario->last_rx_packet = packet;
+        } else {
+          break;
+        }
+      }
+      packet = packet->next;
+    }
+    packet = g_scenario->list_packet;
+  } else {
+    packet = g_scenario->last_rx_packet;
+  }
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
   while ((NULL != packet) && (not_found < 5)) {
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-      //TODO
-      if (et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints) == 0) {
+      rv = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
+      if (0 == rv) {
+        S1AP_DEBUG("Compare RX packet with packet num %d succeeded\n", packet->packet_number);
         et_scenario_set_packet_received(packet);
+      } else {
+        S1AP_DEBUG("Compare RX packet with packet num %d failed %s\n", packet->packet_number, et_error_match2str(rv));
       }
     }
     not_found += 1;
@@ -388,9 +420,9 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
 
       case SCTP_CID_DATA :
         S1AP_DEBUG("%s for SCTP association (%u) SCTP_CID_DATA\n",__FUNCTION__,assoc_id);
-        if (ET_PACKET_STATUS_NONE == packet->status) {
+        if ((ET_PACKET_STATUS_NONE == packet->status) || (ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING == packet->status)) {
           if (0 < old_mme_port) {
-            if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
+            if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
               ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &mme_desc_p->mme_net_ip_address);
               if (0 == ret) {
                 ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &s1ap_eNB_instance->s1c_net_ip_address);
@@ -403,7 +435,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
                   }
                 }
               }
-            } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+            } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.src, &mme_desc_p->mme_net_ip_address);
               if (0 == ret) {
                 ret = et_compare_et_ip_to_net_ip_address(&packet->ip_hdr.dst, &s1ap_eNB_instance->s1c_net_ip_address);
@@ -474,6 +506,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
         break;
 
       default:
+        AssertFatal(0, "Unknown chunk_type %d packet num %d", packet->sctp_hdr.chunk_type, packet->packet_number);
         ;
     }
     packet = packet->next;
