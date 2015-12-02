@@ -217,7 +217,7 @@ struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_real[1]     = {R_sqrt_22_orth_eff
 struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap[16] = {{0.70711,0.0}, {0.0,0.0}, {0.0, -0.70711}, {0.0,0.0}, 
 							{0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {0.0,0.70711},
 							{0.0,-0.70711}, {0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, 
-							{0.0, 0.0}, {0.0,0.70711}, {0.0, 0.70711}, {-0.70711,0.0}};
+							{0.0, 0.0}, {0.0,0.70711}, {0.0, 0.0}, {-0.70711,0.0}};
 struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_imag[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap};
 
 
