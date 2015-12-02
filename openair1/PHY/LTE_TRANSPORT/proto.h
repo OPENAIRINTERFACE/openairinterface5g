@@ -1603,7 +1603,7 @@ uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
     @param rank (0 or 1)
     @returns subband PMI bitmap
 */
-uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, unit8_t rank);
+uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank);
 
 /** \brief  This routine extracts a single subband PMI from a bitmap coming from UCI or the pmi_extend function
     @param N_RB_DL number of resource blocks
