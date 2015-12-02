@@ -1574,10 +1574,18 @@ void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 void extract_CQI(void *o,UCI_format_t uci_format,LTE_eNB_UE_stats *stats,uint8_t N_RB_DL, uint16_t * crnti, uint8_t * access_mode);
 
 void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id, uint8_t harq_pid,int N_RB_DL, rnti_t rnti, uint8_t trans_mode,double sinr_eff);
+
 void reset_cba_uci(void *o);
 
+/** \brief  This routine computes the subband PMI bitmap based on measurements (0,1,2,3 for rank 0 and 0,1 for rank 1) in the format needed for UCI
+    @param meas pointer to measurements
+    @param eNB_id eNB_id
+    @param nb_subbands number of subbands
+    @returns subband PMI bitmap
+*/
 uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_subbands);
-uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
+
+//uint16_t quantize_subband_pmi2(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
 
 uint64_t pmi2hex_2Ar1(uint32_t pmi);
 
@@ -1587,7 +1595,21 @@ uint64_t cqi2hex(uint32_t cqi);
 
 uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
-uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi);
+/** \brief  This routine expands a single (wideband) PMI to subband PMI bitmap similar to the one used in the UCI and in the dlsch_modulation routine
+    @param frame_parms Pointer to DL frame configuration parameters
+    @param wideband_pmi (0,1,2,3 for rank 0 and 0,1 for rank 1) 
+    @param rank (0 or 1)
+    @returns subband PMI bitmap
+*/
+uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, unit8_t rank);
+
+/** \brief  This routine extracts a single subband PMI from a bitmap coming from UCI or the pmi_extend function
+    @param N_RB_DL number of resource blocks
+    @param dlsch_harq pointer to dlsch structure (containing mimo_mode and pmi_alloc)
+    @param rb resource block for which to extract PMI
+    @returns subband PMI
+*/
+uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb);
 
 
 uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi);
