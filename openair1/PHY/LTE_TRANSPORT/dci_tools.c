@@ -1547,12 +1547,13 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 	  dlsch1_harq->mimo_mode   = DUALSTREAM_UNIFORM_PRECODINGj;
 	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
 	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,1);
+
 	  break;
 	case 2: // PUSCH precoding
 	  dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
 	  dlsch0_harq->pmi_alloc   = DL_pmi_single;
 	  dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-	  dlsch1_harq->pmi_alloc   = DL_pmi_single^ 0x1555; //opposite; this is just random assignment for first trial
+	  dlsch1_harq->pmi_alloc   = DL_pmi_single; //this is actually never used, since the PMI for the second codeword is always the opposote of the first one
 	  break;
 	default:
 	  break;
@@ -1567,19 +1568,19 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 	  break;
 	case 1:
 	  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
-	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 0);
+	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0,0);
 	  break;
 	case 2:
 	  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
-	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1, 0);
+	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1,0);
 	  break;
 	case 3:
 	  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
-	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
+	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2,0);
 	  break;
 	case 4:
 	  dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1mj;
-	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3, 0);
+	  dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,3,0);
 	  break;
 	case 5:
 	  dlsch0_harq->mimo_mode   = PUSCH_PRECODING0;
@@ -2560,16 +2561,19 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     case 1:
       dlsch0_harq->mimo_mode   = UNIFORM_PRECODING11;
       dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,0, 0);
+
       break;
 
     case 2:
       dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1m1;
       dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,1, 0);
+
       break;
 
     case 3:
       dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
       dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
+
       break;
 
     case 4:
@@ -5536,6 +5540,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     case 3:
       dlsch0_harq->mimo_mode   = UNIFORM_PRECODING1j;
       dlsch0_harq->pmi_alloc   = pmi_extend(frame_parms,2, 0);
+
       break;
 
     case 4:
@@ -6285,6 +6290,7 @@ void reset_cba_uci(void *o)
   ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->mcs     = 0; //fixme
   ((HLC_subband_cqi_mcs_CBA_5MHz *)o)->crnti  = 0x0;
 }
+
 
 uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank)
 {
