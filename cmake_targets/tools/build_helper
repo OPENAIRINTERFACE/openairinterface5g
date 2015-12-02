@@ -210,7 +210,8 @@ check_install_additional_tools (){
 	unzip  \
 	valgrind  \
 	vlan	  \
-	ctags
+	ctags \
+        ntpdate
       ) >& $log_file
 }
 
