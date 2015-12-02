@@ -1254,7 +1254,6 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
   MIMO_mode_t mode   = dlsch_harq->mimo_mode;
   uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
 
- printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>rb)&1));
   switch (N_RB_DL) {
   case 6:   // 1 PRB per subband
     if (mode <= PUSCH_PRECODING1) //single layer
@@ -1268,9 +1267,10 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
   case 25:  // 4 PRBs per subband
     if (mode <= PUSCH_PRECODING1)
       return((pmi_alloc>>((rb>>2)<<1))&3);
-    else
+    else {
+      printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>(rb>>2))&1));
       return((pmi_alloc>>(rb>>2))&1);
-
+    }
     break;
 
   case 50: // 6 PRBs per subband
@@ -1369,7 +1369,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    printf("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %llx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
+    printf("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %lx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
         harq_pid,
         dlsch0_harq->mimo_mode,
         pmi2hex_2Ar2(dlsch0_harq->pmi_alloc),

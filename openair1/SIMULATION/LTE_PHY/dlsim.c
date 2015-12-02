@@ -1712,8 +1712,8 @@ n(tikz_fname,"w");
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs2             = mcs2;  
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
-		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
+		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
+		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
 		dci_length = sizeof_DCI2_20MHz_2A_TDD_t;
 		dci_length_bytes = sizeof(DCI2_20MHz_2A_TDD_t);
 		break;
@@ -1735,7 +1735,7 @@ n(tikz_fname,"w");
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	  = 0;
+		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	  = 0;
 		break;
 	      case 25:
 		dci_length = sizeof_DCI2_5MHz_2A_FDD_t;
@@ -1751,7 +1751,7 @@ n(tikz_fname,"w");
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	= 0;
+		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	= 0;
 		break;
 	      case 50:
 		dci_length = sizeof_DCI2_10MHz_2A_FDD_t;
@@ -1767,7 +1767,7 @@ n(tikz_fname,"w");
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
+		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
 		break;
 	      case 100:
 		dci_length = sizeof_DCI2_20MHz_2A_FDD_t;
@@ -1783,7 +1783,7 @@ n(tikz_fname,"w");
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
+		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
 		break;
 	      }	  
 	    }
@@ -2149,7 +2149,7 @@ n(tikz_fname,"w");
 	  //	  printf("Trial %d, round %d\n",trials,round);
 	  round_trials[round]++;
 
-	  if(transmission_mode>=5)
+	  if (transmission_mode == 4 || transmission_mode == 5 || transmission_mode == 6) 
 	    pmi_feedback=1;
 	  else 
 	    pmi_feedback=0;
@@ -2773,7 +2773,7 @@ n(tikz_fname,"w");
 	      }
 	      
 	      
-	       if (transmission_mode==4 && (((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2)){
+	      if (transmission_mode==4 && (((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2)){
 		PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_eNB->lte_frame_parms.N_RB_DL);
 		PHY_vars_UE->dlsch_ue[0][0]->pmi_alloc = quantize_subband_pmi(&PHY_vars_UE->PHY_measurements,0,PHY_vars_UE->lte_frame_parms.N_RB_DL);
 	      }

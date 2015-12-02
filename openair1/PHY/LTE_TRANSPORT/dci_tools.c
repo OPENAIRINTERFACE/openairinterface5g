@@ -5841,22 +5841,21 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
         pmi_re += meas->subband_pmi_re[eNB_id][i][aarx];
         pmi_im += meas->subband_pmi_im[eNB_id][i][aarx];
       }
-         if (pmi_re > pmi_im) 
-	  pmiq = PMI_2A_R1_11;
-	else if (pmi_re < pmi_im) 
-	  pmiq = PMI_2A_R1_1j;
-     printf("subband %d, pmi%d \n",i,pmiq);
-     //According to Section 7.2.4 of 36.213
-	 pmivect |= ((pmiq-1)<<(i)); //shift 1 since only one bit  
-    printf("subband %d pmivect %d \n",i, pmivect);
+      if (pmi_re > pmi_im) 
+	pmiq = PMI_2A_R1_11;
+      else //if (pmi_re < pmi_im) 
+	pmiq = PMI_2A_R1_1j;
+      printf("subband %d, pmi_re %d, pmi_in %d, pmiq %d \n",i,pmi_re,pmi_im,pmiq);
+      //According to Section 7.2.4 of 36.213
+      pmivect |= ((pmiq-1)<<(i)); //shift 1 since only one bit  
     }
-	else {
-      // This needs to be done properly!!!
-      msg("PMI feedback for rank>1 not supported!\n");
+    else {
+      LOG_E(PHY,"PMI feedback for rank>1 not supported!\n");
       pmivect = 0;
     }
   }
 
+  printf("subband %d pmivect %d \n",i, pmivect);
   return(pmivect);
 }
 

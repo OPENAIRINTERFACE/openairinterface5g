@@ -190,9 +190,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //printf("rx_pdsch: harq_pid=%d, round=%d\n",harq_pid,round);
 
   if (frame_parms->nb_antennas_tx_eNB>1) {
-//#ifdef DEBUG_DLSCH_MOD
- //printf("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch_ue[0],dlsch0_harq->rb_alloc_even[0]);
-//#endif
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
                                    lte_ue_common_vars->dl_ch_estimates[eNB_id],
                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
@@ -205,6 +202,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                    phy_vars_ue->high_speed_flag,
                                    frame_parms,
 				   dlsch0_harq->mimo_mode);
+//#ifdef DEBUG_DLSCH_MOD
+    printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc,*lte_ue_pdsch_vars[eNB_id]->pmi_ext);
+//#endif
 
    if (rx_type==rx_IC_single_stream) {
       if (eNB_id_i<phy_vars_ue->n_connected_eNB) // we are in TM5
@@ -1830,7 +1830,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1;
   int **rxdataF_comp0         = lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1         = lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
-  unsigned char **pmi_ext     = lte_ue_pdsch_vars->pmi_ext;
+  unsigned char *pmi_ext     = lte_ue_pdsch_vars->pmi_ext;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp0_128,QAM_amp0_128b,QAM_amp1_128,QAM_amp1_128b;   
     
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -4016,14 +4016,6 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
                                       LTE_DL_FRAME_PARMS *frame_parms,
 				      MIMO_mode_t mimo_mode) {
     
-/*uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
-{
-
-
-  MIMO_mode_t mode   = dlsch_harq->mimo_mode;*/
-
-//PHY_VARS_UE *phy_vars_ue,
-
   int prb,nb_rb=0;
   int prb_off,prb_off2;
   int rb_alloc_ind,skip_half=0,sss_symb,pss_symb=0,nsymb,l;
