@@ -1607,11 +1607,12 @@ uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_
 
 /** \brief  This routine extracts a single subband PMI from a bitmap coming from UCI or the pmi_extend function
     @param N_RB_DL number of resource blocks
-    @param dlsch_harq pointer to dlsch structure (containing mimo_mode and pmi_alloc)
+    @param mimo_mode  
+    @param pmi_alloc subband PMI bitmap
     @param rb resource block for which to extract PMI
     @returns subband PMI
 */
-uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb);
+uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb);
 
 
 uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi);

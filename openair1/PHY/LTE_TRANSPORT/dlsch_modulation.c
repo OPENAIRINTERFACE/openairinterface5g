@@ -1247,12 +1247,12 @@ int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
   return(0);
 }
 
-uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
+uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb)
 {
-
-
+  /*
   MIMO_mode_t mode   = dlsch_harq->mimo_mode;
   uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
+  */
 
   switch (N_RB_DL) {
   case 6:   // 1 PRB per subband
@@ -1268,7 +1268,7 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
     if (mode <= PUSCH_PRECODING1)
       return((pmi_alloc>>((rb>>2)<<1))&3);
     else {
-      printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>(rb>>2))&1));
+      //printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>(rb>>2))&1));
       return((pmi_alloc>>(rb>>2))&1);
     }
     break;
@@ -1572,7 +1572,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
                            (dlsch1==NULL) ? NULL : dlsch1->harq_processes[harq_pid],
                            pilots,
                            ((pilots) ? amp_rho_b : amp_rho_a),
-                           get_pmi(frame_parms->N_RB_DL,dlsch0->harq_processes[harq_pid],rb),
+                           get_pmi(frame_parms->N_RB_DL,dlsch0->harq_processes[harq_pid]->mimo_mode,dlsch0->harq_processes[harq_pid]->pmi_alloc,rb),
                            qam_table_s0,
                            qam_table_s1,
                            &re_allocated,

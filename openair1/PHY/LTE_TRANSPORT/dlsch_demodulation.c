@@ -203,7 +203,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                    frame_parms,
 				   dlsch0_harq->mimo_mode);
 //#ifdef DEBUG_DLSCH_MOD
-    printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc,*lte_ue_pdsch_vars[eNB_id]->pmi_ext);
+    printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
+    for (rb=0;rb<nb_rb;rb++)
+      printf("%d",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb]);
+    printf("\n");
 //#endif
 
    if (rx_type==rx_IC_single_stream) {
@@ -1381,17 +1384,19 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
     ch0[0] = _mm_adds_epi16(tmp0,tmp1);
     ch1[0] = _mm_subs_epi16(tmp0,tmp1);
   }
-  else {
+  else { //[1 j; 1 -j]
     tmp0 = ch0[0];
-    tmp1   = _mm_sign_epi16(ch1[0],*(__m128i*)&conjugate[0]);
-    tmp1   = _mm_shufflelo_epi16(tmp1,_MM_SHUFFLE(2,3,0,1));
-    tmp1   = _mm_shufflehi_epi16(tmp1,_MM_SHUFFLE(2,3,0,1));
-    ch0[0] = _mm_subs_epi16(tmp0,tmp1);
+    tmp1 = ch1[0];
+    ch0[0] = _mm_adds_epi16(tmp0,tmp1);
     ch1[0] = _mm_subs_epi16(tmp0,tmp1);
-  }
+  
+    //print_shorts("prec2A_TM4 ch0 (middle):",ch0);
+    //print_shorts("prec2A_TM4 ch1 (middle):",ch1);
 
-  //print_shorts("prec2A_TM4 ch0 (middle):",ch0);
-  //print_shorts("prec2A_TM4 ch1 (middle):",ch1);
+    ch1[0] = _mm_sign_epi16(ch1[0],*(__m128i*)&conjugate2[0]);
+    ch1[0] = _mm_shufflelo_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
+    ch1[0] = _mm_shufflehi_epi16(ch1[0],_MM_SHUFFLE(2,3,0,1));
+  }
 
   //ch0[0] = _mm_mulhi_epi16(ch0[0],amp);
   //ch0[0] = _mm_slli_epi16(ch0[0],1);
@@ -1902,7 +1907,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         }
       }
       
-        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
+      else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
         prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
         prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
         
@@ -4137,14 +4142,16 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    rxF      = &rxdataF[aarx][prb_off2+
 				      (symbol*(frame_parms->ofdm_symbol_size))];
 	  }
-	  
+
+	  /*	  
 	 if (mimo_mode <= PUSCH_PRECODING1)
           *pmi_loc = (pmi>>((prb>>2)<<1))&3;
 	 else
 	  *pmi_loc=(pmi>>prb)&1;
-	  
+	  */
+	  *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
           pmi_loc++;
-	  
+	
 	  
           if (pilots == 0) {
 	    
@@ -4279,13 +4286,16 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 #ifdef DEBUG_DLSCH_DEMOD
 	  printf("symbol %d / rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p) prb_off (%d,%d)\n",symbol,prb,rb_alloc_ind,skip_half,rxF,rxF_ext,prb_off,prb_off2);
 #endif
+	  /*
           if (mimo_mode <= PUSCH_PRECODING1)
            *pmi_loc = (pmi>>((prb>>2)<<1))&3;
 	  else
 	   *pmi_loc=(pmi>>prb)&1;
-         // printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,prb,prb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+	   */
 
+	  *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
           pmi_loc++;
+
 
 	  if (prb != (frame_parms->N_RB_DL>>1)) { // This PRB is not around DC
 	    if (pilots==0) {
