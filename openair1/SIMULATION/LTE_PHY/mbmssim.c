@@ -54,8 +54,6 @@
 
 #include "OCG_vars.h"
 
-//#define BW 5.0
-
 
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
@@ -131,7 +129,7 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa,aarx;
+  int i,l,aa,aarx,k;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
@@ -172,7 +170,6 @@ int main(int argc, char **argv)
   unsigned int trials,errs[4]= {0,0,0,0}; //,round_trials[4]={0,0,0,0};
 
   uint8_t N_RB_DL=25,osf=1;
-  double BW=5.0;
   uint32_t perfect_ce = 0;
 
   lte_frame_type_t frame_type = FDD;
@@ -255,27 +252,9 @@ int main(int argc, char **argv)
     case 'R':
       N_RB_DL = atoi(optarg);
 
-      switch (N_RB_DL) {
-      case 6:
-        BW=1.25;
-        break;
-
-      case 25:
-        BW=5.0;
-        break;
-
-      case 50:
-        BW=10.0;
-        break;
-
-      case 100:
-        BW=20.0;
-        break;
-
-      default:
+      if ((N_RB_DL!=6) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=100))  {
         printf("Unsupported Bandwidth %d\n",N_RB_DL);
         exit(-1);
-        break;
       }
 
       break;
@@ -397,7 +376,8 @@ int main(int argc, char **argv)
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
                                 0);
@@ -541,15 +521,26 @@ int main(int argc, char **argv)
                        subframe%10,
                        0,
                        0);
-      }
-
-      for (l=2; l<12; l++) {
-        rx_pmch(PHY_vars_UE,
+  
+	if (PHY_vars_UE->perfect_ce==1) {
+	  // fill in perfect channel estimates
+	  freq_channel(eNB2UE,PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+	  for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
+	    for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+	      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+		for (i=0; i<frame_parms->N_RB_DL*12; i++) {
+		  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].x*AMP);
+		  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[k][(aa<<1)+aarx])[2*i+1+(l*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(int16_t)(eNB2UE->chF[aarx+(aa*frame_parms->nb_antennas_rx)][i].y*AMP);
+		}
+	      }
+	    }
+	  }
+	}
+	
+	rx_pmch(PHY_vars_UE,
                 0,
                 subframe%10,
                 l);
-
-
       }
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
