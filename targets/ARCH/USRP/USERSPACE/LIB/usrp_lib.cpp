@@ -454,17 +454,17 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     case 30720000:
             // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 175;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 115;
+      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 95;
+      openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
       openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 70;
+      openair0_cfg[0].tx_sample_advance     = 103;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:

@@ -88,8 +88,6 @@ typedef struct {
   int tx_scheduling_advance;
   //! offset in samples between TX and RX paths
   int tx_sample_advance;
-  //! adjust the position of the samples after delay when sending   
-  unsigned int	tx_forward_nsamps;
   //! number of RX channels (=RX antennas)
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
