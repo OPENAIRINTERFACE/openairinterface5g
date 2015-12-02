@@ -87,11 +87,17 @@
 #if !defined(C_RNTI)
 #define C_RNTI   (rnti_t)0x1234
 #endif
-
-#define PMI_2A_11 0
+// These are the codebook indexes according to Table 6.3.4.2.3-1 of 36.211
+//1 layer
+#define PMI_2A_11  0
 #define PMI_2A_1m1 1
-#define PMI_2A_1j 2
+#define PMI_2A_1j  2
 #define PMI_2A_1mj 3
+//2 layers
+#define PMI_2A_R1_10 0 
+#define PMI_2A_R1_11 1
+#define PMI_2A_R1_1j 2
+
 
 typedef enum {
   SCH_IDLE,

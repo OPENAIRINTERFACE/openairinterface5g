@@ -786,7 +786,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	  precoder_index1 = 3; //[1 -j]
 	}
 	else {
-	  LOG_E(PHY,"problem with precoder in TM4\n");
+	 printf("problem with precoder in TM4\n");
 	  return(-1);
 	}
 
@@ -1254,7 +1254,7 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
   MIMO_mode_t mode   = dlsch_harq->mimo_mode;
   uint32_t pmi_alloc = dlsch_harq->pmi_alloc;
 
-  //  printf("Getting pmi for RB %d => %d\n",rb,(pmi_alloc>>((rb>>2)<<1))&3);
+ printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>rb)&1));
   switch (N_RB_DL) {
   case 6:   // 1 PRB per subband
     if (mode <= PUSCH_PRECODING1)
@@ -1369,10 +1369,10 @@ int dlsch_modulation(mod_sym_t **txdataF,
   for (l=num_pdcch_symbols; l<nsymb; l++) {
 
 #ifdef DEBUG_DLSCH_MODULATION
-    msg("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %llx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
+    printf("Generating DLSCH (harq_pid %d,mimo %d, pmi_alloc0 %llx, mod0 %d, mod1 %d, rb_alloc[0] %d) in %d\n",
         harq_pid,
         dlsch0_harq->mimo_mode,
-        pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),
+        pmi2hex_2Ar2(dlsch0_harq->pmi_alloc),
         mod_order0,
         mod_order1,
         rb_alloc[0],

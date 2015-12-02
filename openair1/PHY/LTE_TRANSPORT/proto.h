@@ -909,7 +909,8 @@ uint16_t dlsch_extract_rbs_dual(int32_t **rxdataF,
                                 uint8_t symbol,
                                 uint8_t subframe,
                                 uint32_t high_speed_flag,
-                                LTE_DL_FRAME_PARMS *frame_parms);
+                                LTE_DL_FRAME_PARMS *frame_parms, 
+				MIMO_mode_t mimo_mode);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
@@ -994,6 +995,7 @@ void dlsch_channel_level(int32_t **dl_ch_estimates_ext,
 
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 			      LTE_DL_FRAME_PARMS *frame_parms,
+			      unsigned char *pmi_ext,
 			      int *avg,
 			      uint8_t symbol,
 			      unsigned short nb_rb,
@@ -1587,7 +1589,7 @@ uint64_t cqi2hex(uint32_t cqi);
 
 uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
-uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi);
+uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi, uint8_t rank);
 
 
 uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi);

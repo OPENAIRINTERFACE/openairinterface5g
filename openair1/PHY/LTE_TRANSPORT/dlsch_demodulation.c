@@ -51,6 +51,9 @@
 #define NOCYGWIN_STATIC
 #endif
 
+//#undef LOG_D
+//#define LOG_D LOG_I
+
 //#define DEBUG_PHY 1
 //#define DEBUG_DLSCH_DEMOD 1
 
@@ -107,6 +110,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   int32_t **rxdataF_comp_ptr;
   int32_t **dl_ch_mag_ptr;
 
+  
+  
   switch (type) {
   case SI_PDSCH:
     lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id];
@@ -167,10 +172,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   else
     rballoc = dlsch0_harq->rb_alloc_even;
 
-  if (dlsch0_harq->mimo_mode>DUALSTREAM_UNIFORM_PRECODINGj) {
+  if (dlsch0_harq->mimo_mode>DUALSTREAM_PUSCH_PRECODING) {
     LOG_E(PHY,"This transmission mode is not yet supported!\n");
     return(-1);
   }
+  
+  
+  
   if ((dlsch0_harq->mimo_mode==LARGE_CDD) || ((dlsch0_harq->mimo_mode>=DUALSTREAM_UNIFORM_PRECODING1) && (dlsch0_harq->mimo_mode<=DUALSTREAM_PUSCH_PRECODING)))  {
     DevAssert(dlsch1_harq);
     if (eNB_id!=eNB_id_i) {
@@ -182,9 +190,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   //printf("rx_pdsch: harq_pid=%d, round=%d\n",harq_pid,round);
 
   if (frame_parms->nb_antennas_tx_eNB>1) {
-#ifdef DEBUG_DLSCH_MOD
-    LOG_I(PHY,"dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch_ue[0],dlsch0_harq->rb_alloc_even[0]);
-#endif
+//#ifdef DEBUG_DLSCH_MOD
+ //printf("dlsch: using pmi %x (%p), rb_alloc %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),dlsch_ue[0],dlsch0_harq->rb_alloc_even[0]);
+//#endif
     nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
                                    lte_ue_common_vars->dl_ch_estimates[eNB_id],
                                    lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
@@ -195,7 +203,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                    symbol,
                                    subframe,
                                    phy_vars_ue->high_speed_flag,
-                                   frame_parms);
+                                   frame_parms,
+				   dlsch0_harq->mimo_mode);
 
    if (rx_type==rx_IC_single_stream) {
       if (eNB_id_i<phy_vars_ue->n_connected_eNB) // we are in TM5
@@ -209,7 +218,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                        symbol,
                                        subframe,
                                        phy_vars_ue->high_speed_flag,
-                                       frame_parms);
+                                       frame_parms,
+				       dlsch0_harq->mimo_mode);
      else 
        nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
                                        lte_ue_common_vars->dl_ch_estimates[eNB_id],
@@ -221,7 +231,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                        symbol,
                                        subframe,
                                        phy_vars_ue->high_speed_flag,
-                                       frame_parms);
+                                       frame_parms,
+				       dlsch0_harq->mimo_mode);
     }
   } // if n_tx>1
   else {
@@ -406,7 +417,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       if (first_symbol_flag==1) {
         // effective channel of desired user is always stronger than interfering eff. channel
         dlsch_channel_level_TM34(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, 
-                                 frame_parms, 
+                                 frame_parms,
+				 lte_ue_pdsch_vars[eNB_id]->pmi_ext,
                                  avg,
 				 symbol,
 				 nb_rb,
@@ -418,8 +430,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
 	else 
-
-
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0])/2;
       }
     
@@ -488,7 +498,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       if (first_symbol_flag==1) {
 
         // effective channel of desired user is always stronger than interfering eff. channel
-       dlsch_channel_level_TM56(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, frame_parms, lte_ue_pdsch_vars[eNB_id]->pmi_ext, avg, symbol, nb_rb);
+       dlsch_channel_level_TM56(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+				frame_parms,
+				lte_ue_pdsch_vars[eNB_id]->pmi_ext,
+				avg,
+				symbol,
+				nb_rb);
 
         //    LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1]);
         avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1];
@@ -949,7 +964,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
     return(-1);
     break;
-  }
+  } 
   return(0);    
 
 }
@@ -1388,7 +1403,8 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
   ch0[0] = _mm_srai_epi16(ch0[0],1); //divide by 2
   ch1[0] = _mm_srai_epi16(ch1[0],1); //divide by 2
 
-
+  _mm_empty();
+  _m_empty();
  // print_shorts("prec2A_TM4 ch0 (end):",ch0);
   //print_shorts("prec2A_TM4 ch1 (end):",ch1);
 }
@@ -1814,6 +1830,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **dl_ch_magb1           = lte_ue_pdsch_vars->dl_ch_magb1;
   int **rxdataF_comp0         = lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1         = lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
+  unsigned char **pmi_ext     = lte_ue_pdsch_vars->pmi_ext;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp0_128,QAM_amp0_128b,QAM_amp1_128,QAM_amp1_128b;   
     
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
@@ -1884,6 +1901,17 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
           prec2A_TM4_128(1,&dl_ch0_128[2],&dl_ch1_128[2]); 
         }
       }
+      
+        else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
+        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
+        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
+        
+        if (pilots==0) {
+          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[2],&dl_ch1_128[2]); 
+        }
+      }
+      
+      
       else {
         LOG_E(PHY,"Unknown MIMO mode\n");
         return;
@@ -2985,7 +3013,118 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 }
 
 //compute average channel_level of effective (precoded) channel
+
+//compute average channel_level of effective (precoded) channel
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
+                              LTE_DL_FRAME_PARMS *frame_parms,
+			       unsigned char *pmi_ext,
+                              int *avg,
+                              uint8_t symbol,
+                              unsigned short nb_rb,
+                              MIMO_mode_t mimo_mode){
+
+#if defined(__x86_64__)||defined(__i386__)
+
+
+  short rb;
+  unsigned char aarx,nre=12,symbol_mod;
+  __m128i *dl_ch0_128,*dl_ch1_128, dl_ch0_128_tmp, dl_ch1_128_tmp,avg128D;
+
+  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+
+  //clear average level
+  avg128D = _mm_setzero_si128();
+  avg[0] = 0;
+  avg[1] = 0;
+  // 5 is always a symbol with no pilots for both normal and extended prefix
+
+  if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
+    nre=8;
+  else if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==1))
+    nre=10;
+  else
+    nre=12;
+
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    dl_ch0_128 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
+    dl_ch1_128 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
+
+    for (rb=0; rb<nb_rb; rb++) {
+
+      dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
+      dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[0]);
+
+      if (mimo_mode==LARGE_CDD) 
+        prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+        prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+
+      //      mmtmpD0 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
+      avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+
+      dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[1]);
+      dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[1]);
+
+      if (mimo_mode==LARGE_CDD) 
+        prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+        prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+      else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+
+      //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
+      avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+
+      if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
+        dl_ch0_128+=2;  
+        dl_ch1_128+=2;
+      }
+      else {
+        dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[2]);
+        dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[2]);          
+
+        if (mimo_mode==LARGE_CDD) 
+          prec2A_TM3_128(&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODING1)
+          prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
+          prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+	else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
+	  prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        //      mmtmpD2 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
+        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+
+        dl_ch0_128+=3;  
+        dl_ch1_128+=3;
+      }          
+    }
+
+    avg[aarx] = (((int*)&avg128D)[0])/(nb_rb*nre) +
+      (((int*)&avg128D)[1])/(nb_rb*nre) +
+      (((int*)&avg128D)[2])/(nb_rb*nre) +
+      (((int*)&avg128D)[3])/(nb_rb*nre);
+  }
+
+  // choose maximum of the 2 effective channels
+  avg[0] = cmax(avg[0],avg[1]);
+
+  _mm_empty();
+  _m_empty();
+
+#elif defined(__arm__)
+
+#endif
+}
+
+
+
+/*void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               LTE_DL_FRAME_PARMS *frame_parms,
                               int *avg,
                               uint8_t symbol,
@@ -3084,7 +3223,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 #elif defined(__arm__)
 
 #endif
-}
+}*/
 
 //compute average channel_level of effective (precoded) channel
 void dlsch_channel_level_TM56(int **dl_ch_estimates_ext,
@@ -3874,9 +4013,16 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
                                       unsigned char symbol,
                                       unsigned char subframe,
                                       uint32_t high_speed_flag,
-                                      LTE_DL_FRAME_PARMS *frame_parms) {
+                                      LTE_DL_FRAME_PARMS *frame_parms,
+				      MIMO_mode_t mimo_mode) {
     
+/*uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
+{
 
+
+  MIMO_mode_t mode   = dlsch_harq->mimo_mode;*/
+
+//PHY_VARS_UE *phy_vars_ue,
 
   int prb,nb_rb=0;
   int prb_off,prb_off2;
@@ -3885,7 +4031,7 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
   int32_t *dl_ch0,*dl_ch0p,*dl_ch0_ext,*dl_ch1,*dl_ch1p,*dl_ch1_ext,*rxF,*rxF_ext;
   int symbol_mod,pilots=0,j=0;
   unsigned char *pmi_loc;
-
+  
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   //  printf("extract_rbs: symbol_mod %d\n",symbol_mod);
 
@@ -3999,7 +4145,12 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    rxF      = &rxdataF[aarx][prb_off2+
 				      (symbol*(frame_parms->ofdm_symbol_size))];
 	  }
+	  
+	 if (mimo_mode <= PUSCH_PRECODING1)
           *pmi_loc = (pmi>>((prb>>2)<<1))&3;
+	 else
+	  *pmi_loc=(pmi>>prb)&1;
+	  
           pmi_loc++;
 	  
 	  
@@ -4136,8 +4287,11 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 #ifdef DEBUG_DLSCH_DEMOD
 	  printf("symbol %d / rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p) prb_off (%d,%d)\n",symbol,prb,rb_alloc_ind,skip_half,rxF,rxF_ext,prb_off,prb_off2);
 #endif
-          *pmi_loc = (pmi>>((prb>>2)<<1))&3;
-          //    printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,rb,rb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
+          if (mimo_mode <= PUSCH_PRECODING1)
+           *pmi_loc = (pmi>>((prb>>2)<<1))&3;
+	  else
+	   *pmi_loc=(pmi>>prb)&1;
+         // printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,prb,prb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
 
           pmi_loc++;
 
