@@ -41,6 +41,8 @@ import os
 import array
 import shutil
 import subprocess 
+import sys
+import traceback
 # import call
 
 from core import *
@@ -102,8 +104,12 @@ class openair(core):
             self.oai.prompt()
             print self.oai.before
                               
-        except Error, val :
-                print "Error: can't connect to"+username+"@"+self.address
+        except Exception, e:
+            error=''
+            error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+            error = error + traceback.format_exc()
+            print error
+            sys.exit(1)
                 
     def connect2(self, username, password, prompt='$'):
         self.prompt1 = prompt
@@ -133,9 +139,12 @@ class openair(core):
                             sys.exit(1) 
                     return 'Ok'
                         
-            except Exception, val:
-                time.sleep(5)
-                print "Error:", val
+            except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
 
     def connect_localshell(self, prompt='$'):
         self.prompt1 = prompt
@@ -152,9 +161,12 @@ class openair(core):
                 else :
                     sys.exit(1)
 
-            except Exception, val:
-                time.sleep(5)
-                print "Error:", val
+            except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
 
     def disconnect(self):
         print 'disconnecting the ssh connection to ' + self.address + '\n'
@@ -173,8 +185,12 @@ class openair(core):
                 os.system('echo '+pw+' | sudo -S pkill cc1') 
                 time.sleep(1)
                 os.system('echo '+pw+' | sudo -S pkill oaisim oaisim_nos1')
-        except Error, val:
-            print "Error:", val
+        except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
             
     def rm_driver(self,oai,user, pw):
         try:
@@ -184,8 +200,12 @@ class openair(core):
             else :
                 oai.send_nowait('echo '+pw+ ' | sudo -S rmmod nasmesh;')
                 #os.system('echo '+pw+ ' | sudo -S rmmod nasmesh;')
-        except Error, val:
-            print "Error removing oai network driver module:", val
+        except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
    
     def driver(self,oai,user,pw):
         #pwd = oai.send_recv('pwd') 
@@ -197,8 +217,12 @@ class openair(core):
             else :
                 oai.send('echo '+pw+ ' | sudo -S insmod ./nasmesh.ko;')
                 
-        except Error, val:
-            print "Error inserting oai network driver module:", val
+        except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
     
     def cleandir (self, logdir,debug) :
         
@@ -209,8 +233,12 @@ class openair(core):
                 print 'filepath is ' + filepath 
             try:
                 shutil.rmtree(filepath)
-            except OSError:
-                os.remove(filepath)
+            except Exception, e:
+               error=''
+               error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+               error = error + traceback.format_exc()
+               print error
+               sys.exit(1)
                 #print 'Could not remove the filepath'+ filepath + ' with error ' + OSError
     
     def create_dir(self,dirname,debug) :

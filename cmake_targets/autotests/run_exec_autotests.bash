@@ -107,6 +107,7 @@ function test_compile() {
        #mkdir -p $build_dir
        cd $log_dir
        {   
+          uname -a
           compile_log_dir=`eval echo \"$OPENAIR_DIR/cmake_targets/log/\"`
           echo "Removing compilation log files in $compile_log_dir"
           rm -frv $compile_log_dir
@@ -236,6 +237,7 @@ function test_compile_and_run() {
 
        cd $log_dir
        {   
+          uname -a
           #eval $pre_compile_prog
           #cmake ..
           #rm -fv $exec_file
@@ -272,7 +274,7 @@ function test_compile_and_run() {
           fi
           echo "Executing $main_exec $main_exec_args_array_index "
           echo "Executing $main_exec $main_exec_args_array_index " >> $temp_exec_log
-          { eval "$main_exec $main_exec_args_array_index" ;} >> $temp_exec_log  2>&1
+          { uname -a ; eval "$main_exec $main_exec_args_array_index" ;} >> $temp_exec_log  2>&1
 
           echo "</EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]},  Run = $run_index >" >> $temp_exec_log  2>&1
           cat $temp_exec_log >> $log_file  2>&1
@@ -503,6 +505,8 @@ for search_expr in "${test_case_array[@]}"
     
 
 }
+
+uname -a
 
 main "$@"
 

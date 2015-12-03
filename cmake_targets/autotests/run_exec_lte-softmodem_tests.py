@@ -61,7 +61,8 @@ from  openair import *
 import paramiko
 import ssh
 from ssh import SSHSession
-
+import subprocess
+import commands
 
 def write_file(filename, string, mode="w"):
    text_file = open(filename, mode)
@@ -107,6 +108,7 @@ def sftp_module (username, password, hostname, ports, paramList,logfile):
          error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
          error = error + '\n username = ' + username + '\n hostname = ' + hostname + '\n localfile = ' + localD + '\n remotefile = ' + remoteD + '\n operation = ' + operation + '\nlogfile = ' + logfile + '\n ports = ' + str(ports) + '\n'  
          error = error + traceback.format_exc()
+         print error
 
    sftp.close()
    transport.close() 
@@ -195,27 +197,38 @@ class myThread (threading.Thread):
 
 
 class oaiThread (threading.Thread):
-    def __init__(self, threadID, name, oai, cmd, sudo, timeout):
+    def __init__(self, threadID, threadname, machine, username, password, cmd, sudo, timeout):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.name = name
-        #self.counter = counter
-        self.oai = oai
+        self.threadname = threadname
+        self.machine = machine
+        self.username = username
+        self.password = password
         self.cmd = cmd
         self.sudo = sudo
         self.timeout = timeout
-        self.machineName = machineName
     def run(self):
-        print "Starting " + self.name
-        result = self.oai.send_recv(self.cmd, self.sudo, self.timeout)
-        print "result = " + result
-        print "Exiting " + self.name
+        try:
+          oai = openair('localdomain',self.machine)
+          oai.connect(user, self.password)
+          print "Starting " + self.threadname + "on machine " + self.machine
+          result = oai.send_recv(self.cmd, self.sudo, self.timeout)
+          print "result = " + result
+          print "Exiting " + self.threadname
+          oai.disconnect()
+        except Exception, e:
+           error=''
+           error = error + ' In class oaiThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n'  
+           error = error + traceback.format_exc()
+           print error
+
 
 #This class runs test cases with class execution, compilatation
 class testCaseThread_generic (threading.Thread):
    def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, password, timeout):
        threading.Thread.__init__(self)
-       self.threaID = threadID
+       self.threadID = threadID
        self.name = name
        self.testcasename = testcasename
        self.timeout = timeout
@@ -231,36 +244,51 @@ class testCaseThread_generic (threading.Thread):
        addpass = 'echo \'' + mypassword + '\' | '
        user = getpass.getuser()
        print "Starting test case : " + self.testcasename + " On machine " + self.machine 
-       oai = openair('localdomain',machine)
+       oai = openair('localdomain',self.machine)
        oai.connect(user, self.password)
-       cleanOldPrograms(oai, oldprogramList, CleanUpAluLteBox)
+       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
        logdir_local = os.environ.get('OPENAIR_DIR')
        logdir_local_testcase = logdir_local +'/cmake_targets/autotests/log/'+ self.testcasename
        logdir_local_base = logdir_local +'/cmake_targets/autotests/log/'
-       logdir_remote_testcase = self.logdirOAI5GRepo + '/cmake_targets/autotests/log' + self.testcasename
-       logdir_remote = self.logdirOAI5GRepo + '/cmake_targets/autotests/log'
-       logfile_task_testcasename = logdir_local_testcase + '/test_task' + '_' + testcasename + '_.log'
-       logfile_task_testcasename_out = logdir_remote + '/test_task_out' + '_' + str(run) + '_.log'
-       os.removedirs(logdir_testcase)
-       os.mkdir (logdir_testcase)
-       cmd = "( cd " +  self.logdirOAI5GRepo + " \n "
+       logdir_remote_testcase = self.logdirOAI5GRepo + '/cmake_targets/autotests/log/' + self.testcasename
+       logdir_remote = self.logdirOAI5GRepo + '/cmake_targets/autotests/log/'
+       logfile_task_testcasename = logdir_local_testcase + '/test_task' + '_' + self.testcasename + '_.log'
+       logfile_task_testcasename_out = logdir_remote + '/test_task_out' + '_' + self.testcasename + '_.log'
+       #print "logdir_local_testcase = " + logdir_local_testcase
+       #print "logdir_remote_testcase = " + logdir_remote_testcase
+       #if os.path.exists(logdir_local_testcase) == True :
+       #    os.removedirs(logdir_local_testcase)
+       #os.mkdir(logdir_local_testcase)
+       os.system("rm -fr " + logdir_local_testcase )
+       os.system("mkdir -p " +  logdir_local_testcase)
+       cmd = "mkdir -p " + logdir_remote_testcase
+       res = oai.send_recv(cmd, False, self.timeout) 
+       print "res = " + res
+
+       cmd =  "( cd " +  self.logdirOAI5GRepo + " \n "
        cmd = cmd + "source oaienv \n"
-       cmd = cmd + "$OPENAIR_DIR/cmake_targets/autotests/run_exec_autotets.bash --run-group \"" + "self.testcasename +\" "
-       cmd = cmd + " ) >& "   + logfile_task_testcasename_out + " ; " + " mv " + logfile_task_testcasename_out + logdir_remote_testcase 
-    
+       cmd = cmd + "$OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash --run-group \"" + self.testcasename + "\" -p \'\'"
+       cmd = cmd + " ) >& "   + logfile_task_testcasename_out + " ; " + "mkdir -p " + logdir_remote_testcase +  "; mv " + logfile_task_testcasename_out + " " +logdir_remote_testcase 
+      
+       #print "cmd = " + cmd
+       res = oai.send_recv(cmd, False, self.timeout) 
+       #print "res = " + res
+       print "ThreadID = " + str(self.threadID) + "ThreadName: " + self.name + " testcasename: " + self.testcasename + "Execution Result = " + res
        write_file(logfile_task_testcasename, cmd, mode="w")
        #Now we copy all the remote files
-       ssh = SSHSession(self.machine , username=user, key_file=None, password=password)
+       ssh = SSHSession(self.machine , username=user, key_file=None, password=self.password)
        ssh.get_all(logdir_remote_testcase , logdir_local_base)
-       print "Finishing test case : " + self.testcasename + " On machine " + machineName
-       cleanOldPrograms(oai, oldprogramList, CleanUpAluLteBox)
-       oai.kill()
+       print "Finishing test case : " + self.testcasename + " On machine " + self.machine
+       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
+       #oai.kill(user,mypassword)
        oai.disconnect()
      except Exception, e:
          error=''
-         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-         error = error + '\n threadID = ' + self.threaID + '\n testcasename = ' + self.testcasename + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n'  
+         error = error + ' In Class = testCaseThread_generic,  function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+         error = error + '\n threadID = ' + str(self.threadID) + '\n threadName = ' + self.name + '\n testcasename = ' + self.testcasename + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n' + '\n timeout = ' + str(timeout)  
          error = error + traceback.format_exc()
+         print error
+         sys.exit()
 
 
 def addsudo (cmd, password=""):
@@ -276,36 +304,59 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
        #first we need to find the list of free machines that we could run our test case
        if threadListGeneric.__len__() ==0 :
        #This means no thread is started yet
-          MachineListFree = MachineList
+          MachineListFree = MachineList[:]
        else :
           for param in threadListGeneric :
              thread_id = param["thread_id"]
              machine = param["Machine"]
-             testcasename = param["testcasename"]
+             testcasenameold = param["testcasename"]
              thread_id.join(1)
-             if thread_id.isAlive == True:
-                MachineListBusy.append(machine)
+             if thread_id.isAlive() == True:
+                print "thread_id is alive: testcasename: " + testcasenameold
+                if machine not in MachineListBusy:
+                   MachineListBusy.append(machine)
              else :
                 threadListGeneric.remove(param)
-          #Now we check if there is at least one free machine
-          MachineListFree = MachineList
-          for machine in MachineListBusy:
-             MachineListFree.remove(machine)
+       #Now we check if there is at least one free machine
+       MachineListFree = MachineList[:]
+       for machine in MachineListBusy:
+          if machine in MachineListFree:
+            MachineListFree.remove(machine)
+       #print "MachineListFree = " + ','.join(MachineListFree)
+       #print "MachineListBusy = " + ','.join(MachineListBusy)
+       #print "MachineList = " + ','.join(MachineList)
     machine = MachineListFree[0]
-    thread = testCaseThread_generic(1,"Generic Thread", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
+    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+machine+_, machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
     param={"thread_id":thread, "Machine":machine, "testcasename":testcasename}
     thread.start()
     threadListGeneric.append(param)
     return threadListGeneric
   except Exception, e:
-    error=''
-    error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-    error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + MachineList + '\n timeout = ' + timeout +  '\n'  
-    error = error + traceback.format_exc()
+     error=''
+     error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+     error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + ','.join(MachineList) + '\n timeout = ' + str(timeout) +  '\n'  
+     error = error + traceback.format_exc()
+     print error
+     sys.exit(1)
 
-  
+#Blocking wait for all threads related to generic testcase execution, class (compilation and execution)
+def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
+   for param in threadListGeneric:
+      thread_id = param["thread_id"]
+      machine = param["Machine"]
+      testcasenameold = param["testcasename"]
+      thread_id.join(timeout)
+      if thread_id.isAlive() == True:
+         print "thread_id on machine: " + machine + "  is still alive: testcasename: " + testcasenameold
+         print " Exiting now..."
+         sys.exit(1)
+      else:
+         print "thread_id on machine: " + machine + "  is stopped: testcasename: " + testcasenameold
+         threadListGeneric.remove(param)
+   return threadListGeneric
+
 #Function to handle test case class : lte-softmodem
-def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -365,15 +416,13 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOA
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
   index_EPCMachine = MachineList.index(EPCMachine)
-  oai_eNB = oai_list[index_eNBMachine]
-  oai_UE = oai_list[index_UEMachine]
-  
-  #We need to create two ssh sessions to avoid race conditions 
-  if index_eNBMachine == index_EPCMachine:
-     oai_EPC = openair('localdomain', EPCMachine)
-     oai_EPC.connect(user,password)
-  else:
-     oai_EPC = oai_list[index_EPCMachine]
+  oai_eNB = openair('localdomain', eNBMachine)
+  oai_eNB.connect(user, password)
+  oai_UE = openair('localdomain', UEMachine)
+  oai_UE.connect(user, password)
+  oai_EPC = openair('localdomain', EPCMachine)
+  oai_EPC.connect(user, password)
+
   cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox)
   cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
   cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
@@ -515,9 +564,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOA
     task_EPC  = task_EPC + ' ) > ' + logfile_task_EPC_out + ' 2>&1 ' 
     write_file(logfile_task_EPC, task_EPC, mode="w")
     
-    thread_EPC = oaiThread(1, "EPC_thread", oai_EPC , task_EPC, False, timeout_thread)
-    thread_eNB = oaiThread(2, "eNB_thread", oai_eNB , task_eNB, False, timeout_thread)
-    thread_UE = oaiThread(3, "UE_thread", oai_UE , task_UE, False, timeout_thread) 
+    thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)
+    thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB, False, timeout_thread)
+    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE, False, timeout_thread) 
 
     threads=[]
     threads.append(thread_eNB)
@@ -631,9 +680,12 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, oai_list, logdirOA
     remotefile = logdir_EPC + '/EPC_task_out' + '_' + str(run) + '_.log'
     paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
     sftp_module (user, password, EPCMachine, ports, paramList, sftp_log)
+    oai_eNB.disconnect()
+    oai_UE.disconnect()
+    oai_EPC.disconnect()
     #We need to close the new ssh session that was created  
-    if index_eNBMachine == index_EPCMachine:
-        oai_EPC.disconnect()
+    #if index_eNBMachine == index_EPCMachine:
+    #    oai_EPC.disconnect()
 
 #This function searches if test case is present in list of test cases that need to be executed by user
 def search_test_case_group(testcasename, testcasegroup):
@@ -654,7 +706,6 @@ def search_test_case_group(testcasename, testcasegroup):
        
 
 #thread1 = myThread(1, "Thread-1", 1)
-threadListGeneric=[]
 debug = 0
 pw =''
 i = 0
@@ -677,8 +728,8 @@ if openairdir_local is None:
    sys.exit()
 locallogdir = openairdir_local + '/cmake_targets/autotests/log/'
 #Remove  the contents of local log directory
-os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
-
+#os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+flag_remove_logdir=False
 i=1
 while i < len (sys.argv):
     arg=sys.argv[i]
@@ -688,7 +739,9 @@ while i < len (sys.argv):
         debug = 2
     elif arg == '-p' :
         prompt2 = sys.argv[i+1]
-        i = i +1  
+        i = i +1
+    elif arg == '-r':
+        flag_remove_logdir=True 
     elif arg == '-w' :
         pw = sys.argv[i+1]
         i = i +1  
@@ -708,6 +761,7 @@ while i < len (sys.argv):
         print "-d:  low debug level"
         print "-dd: high debug level"
         print "-p:  set the prompt"
+        print "-r:  Remove the log directory in autotests/"
         print "-w:  set the password for ssh to localhost"
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
@@ -734,6 +788,12 @@ try:
 except KeyError: 
    print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
    sys.exit(1)
+
+if flag_remove_logdir == True:
+   print "Removing directory: " + locallogdir
+   os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+
+
 
 paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
 res=os.system(' echo > ' + paramiko_logfile)
@@ -767,7 +827,7 @@ GitOpenaircnRepoBranch = xmlRoot.findtext('GitOpenair-cnRepoBranch',default='')
 CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
 CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
 Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
-
+MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
 print "GitOAI5GRepo = " + GitOAI5GRepo
@@ -781,6 +841,7 @@ print "CleanUpOldProgs = " + CleanUpOldProgs
 print "Timeout_execution = " + str(Timeout_execution)
 
 MachineList = MachineList.split()
+MachineListGeneric = MachineListGeneric.split()
 
 index=0
 for machine in MachineList: 
@@ -909,7 +970,7 @@ for index in oai_list:
       #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
       #result = oai_list[index].send_recv(cmd, False, 300 )
       write_file(setup_script, cmd, mode="w")
-      tempThread = oaiThread(index, 'thread_'+str(index), oai_list[index] , cmd, False, 300)
+      tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 300)
       threads_init_setup.append(tempThread )
       tempThread.start()
 
@@ -944,12 +1005,13 @@ for index in oai_list:
 
       #print '\nCleaning Older running programs : ' + CleanUpOldProgs
       #cleanOldPrograms(oai_list[index], CleanUpOldProgs)
-
-  except :
-      print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
-      sys.exit(1)
-
-
+  except Exception, e:
+         print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
+         error=''
+         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+         error = error + traceback.format_exc()
+         print error
+         sys.exit(1)
 
 #Now we wait for all the threads to complete
 index = 0
@@ -975,37 +1037,61 @@ for t in threads_init_setup:
    index = index+1
 
 #Now we process all the test cases
+#Now we check if there was error in setup files
 
-threadListGeneric=[]
+status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup*')
+if (out != '') :
+  print "There is error in setup of machines"
+  print "status  = " + str(status) + "\n out = " + out
+  print sys.exit(1)
+
+
+threadListGlobal=[]
 testcaseList=xmlRoot.findall('testCase')
 #print testcaseList
 for testcase in testcaseList:
-   testcasename = testcase.get('id')
-   testcaseclass = testcase.findtext('class',default='')
-   desc = testcase.findtext('desc',default='')
-   if search_test_case_group(testcasename, testcasegroup) == True:
-     if testcaseclass == 'lte-softmodem' :
-       eNBMachine = testcase.findtext('eNB',default='')
-       UEMachine = testcase.findtext('UE',default='')
-       EPCMachine = testcase.findtext('EPC',default='')
-       index_eNBMachine = MachineList.index(eNBMachine)
-       index_UEMachine = MachineList.index(UEMachine)
-       index_EPCMachine = MachineList.index(EPCMachine)
-       print "testcasename = " + testcasename + " class = " + testcaseclass
-       handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, oai_list, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
-     elif (testcaseclass == 'compilation'): 
-       handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, pw, CleanupAluLteBox,Timeout_execution)
-     elif (testcaseclass == 'execution'): 
-       handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, pw, CleanupAluLteBox,Timeout_execution)
-     else :
-       print "Unknown test case class: " + testcaseclass
-       sys.exit()
+  try:
+    testcasename = testcase.get('id')
+    testcaseclass = testcase.findtext('class',default='')
+    desc = testcase.findtext('desc',default='')
+    #print "Machine list top level = " + ','.join(MachineList)
+    if search_test_case_group(testcasename, testcasegroup) == True:
+      if testcaseclass == 'lte-softmodem' :
+        eNBMachine = testcase.findtext('eNB',default='')
+        UEMachine = testcase.findtext('UE',default='')
+        EPCMachine = testcase.findtext('EPC',default='')
+        #index_eNBMachine = MachineList.index(eNBMachine)
+        #index_UEMachine = MachineList.index(UEMachine)
+        #index_EPCMachine = MachineList.index(EPCMachine)
+        if (eNBMachine not in MachineList)|(UEMachine not in MachineList)|(UEMachine not in MachineList):
+           print "One of the machines is not in the machine list"
+           print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
+        print "testcasename = " + testcasename + " class = " + testcaseclass
+        threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
+      elif (testcaseclass == 'compilation'): 
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution)
+      elif (testcaseclass == 'execution'): 
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution)
+      else :
+        print "Unknown test case class: " + testcaseclass
+        sys.exit()
+
+  except Exception, e:
+     error=''
+     error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+     error = error + '\n testcasename = ' + testcasename + '\n testcaseclass = ' + testcaseclass + '\n desc = ' + 'desc' + '\n'  
+     error = error + traceback.format_exc()
+     print error
+     sys.exit(1)
+
 
 print "Exiting the test cases execution now..."
 
+for t in threadListGlobal:
+   t.join
 
 sys.exit()
-
 
    #+ "class = "+ classx
 
