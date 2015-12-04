@@ -104,7 +104,7 @@ def start_ue () :
    timeout=60 #timeout in seconds
    send_command('AT', 'OK' , timeout)
    send_command('AT+CFUN=1' , 'OK' , timeout)
-   send_command('AT+CGATT=0' , 'OK' , timeout)
+   #send_command('AT+CGATT=0' , 'OK' , timeout)
    send_command('AT+CGATT=1','OK', 300)
    #os.system('wvdial -C ' + bandrich_ppd_config + ' &' )
    
@@ -135,7 +135,7 @@ def stop_ue():
    timeout=60
    os.system('killall wvdial')
    send_command('AT', 'OK' , timeout)
-   send_command('AT+CGATT=0' , 'OK' , timeout)
+   #send_command('AT+CGATT=0' , 'OK' , timeout)
    send_command('AT+CFUN=4' , 'OK' , timeout)
 
 for arg in sys.argv[1:]:
