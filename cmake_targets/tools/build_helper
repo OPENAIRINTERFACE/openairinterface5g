@@ -274,6 +274,7 @@ install_asn1c_from_source(){
     patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
     patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
     patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 >> /tmp/log_compile_asn1c
     ./configure
     make > /tmp/log_compile_asn1c 2>&1
     $SUDO make install

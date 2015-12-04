@@ -250,9 +250,24 @@ et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const
 // return 0 if packet was waited
 int et_scenario_set_packet_received(et_packet_t * const packet)
 {
-  int rc = 0;
+  et_packet_t * p = NULL;
+  int           rc = 0;
+
   packet->status = ET_PACKET_STATUS_RECEIVED;
   S1AP_DEBUG("Packet num %d received\n", packet->packet_number);
+
+  p = g_scenario->last_rx_packet;
+  while (NULL != p) {
+    if (p->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+      if (p->status == ET_PACKET_STATUS_RECEIVED) {
+        g_scenario->last_rx_packet = p;
+      } else {
+        break;
+      }
+    }
+    p = p->next;
+  }
+
   if (packet->timer_id != 0) {
     rc = timer_remove(packet->timer_id);
     AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %d unknown", packet->packet_number);
@@ -278,6 +293,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
       if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
         if (packet->status == ET_PACKET_STATUS_RECEIVED) {
           g_scenario->last_rx_packet = packet;
+          g_scenario->time_last_rx_packet = g_scenario->last_rx_packet->timestamp_packet;
         } else {
           break;
         }
@@ -286,7 +302,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     }
     packet = g_scenario->list_packet;
   } else {
-    packet = g_scenario->last_rx_packet;
+    packet = g_scenario->last_rx_packet->next;
   }
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
   while ((NULL != packet) && (not_found < 5)) {
@@ -308,8 +324,8 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     not_found += 1;
     packet = packet->next;
   }
-  S1AP_DEBUG("Rx packet not found in scenario:\n");
   et_display_packet_sctp(&rx_packet->sctp_hdr);
+  AssertFatal(0, "Rx packet not found in scenario (see dump above)");
   return -1;
 }
 

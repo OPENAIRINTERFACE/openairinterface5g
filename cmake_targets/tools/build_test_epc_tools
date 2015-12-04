@@ -141,9 +141,14 @@ function main()
   compilations \
       epc_test test_epc_generate_scenario \
       test_epc_generate_scenario $dbin/test_epc_generate_scenario
+
   compilations \
       epc_test test_epc_play_scenario \
       test_epc_play_scenario $dbin/test_epc_play_scenario
+      
+  $SUDO cp -upv test_epc_generate_scenario /usr/local/bin
+  $SUDO cp -upv test_epc_play_scenario     /usr/local/bin
+  $SUDO cp -upv  $OPENAIR_DIR/openair3/TEST/EPC_TEST/mme_test_s1_pcap2pdml /usr/local/bin
 }
 
 

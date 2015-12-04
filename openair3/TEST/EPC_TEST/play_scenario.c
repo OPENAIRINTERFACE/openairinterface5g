@@ -331,18 +331,18 @@ int et_compare_et_ip_to_net_ip_address(const et_ip_t * const ip, const net_ip_ad
   switch (ip->address_family) {
     case AF_INET:
       if (net_ip->ipv4) {
-        S1AP_DEBUG("%s(%s,%s)=%d\n",__FUNCTION__,ip->str, net_ip->ipv4_address, strcmp(ip->str, net_ip->ipv4_address));
+        //S1AP_DEBUG("%s(%s,%s)=%d\n",__FUNCTION__,ip->str, net_ip->ipv4_address, strcmp(ip->str, net_ip->ipv4_address));
         return strcmp(ip->str, net_ip->ipv4_address);
       }
-      S1AP_DEBUG("%s(%s,%s)=-1 (IP version (4) not matching)\n",__FUNCTION__,ip->str, net_ip->ipv4_address);
+      //S1AP_DEBUG("%s(%s,%s)=-1 (IP version (4) not matching)\n",__FUNCTION__,ip->str, net_ip->ipv4_address);
       return -1;
       break;
     case AF_INET6:
       if (net_ip->ipv6) {
-        S1AP_DEBUG("%s(%s,%s)=%d\n",__FUNCTION__,ip->str, net_ip->ipv4_address, strcmp(ip->str, net_ip->ipv6_address));
+        //S1AP_DEBUG("%s(%s,%s)=%d\n",__FUNCTION__,ip->str, net_ip->ipv4_address, strcmp(ip->str, net_ip->ipv6_address));
         return strcmp(ip->str, net_ip->ipv6_address);
       }
-      S1AP_DEBUG("%s(%s,%s)=-1 (IP version (6) not matching)\n",__FUNCTION__,ip->str, net_ip->ipv6_address);
+      //S1AP_DEBUG("%s(%s,%s)=-1 (IP version (6) not matching)\n",__FUNCTION__,ip->str, net_ip->ipv6_address);
       return -1;
       break;
     default:

@@ -87,6 +87,7 @@ void et_scenario_wait_rx_packet(et_packet_t * const packet)
                    NULL, &packet->timer_id) < 0) {
     AssertFatal(0, " Can not start waiting RX event timer\n");
   }
+  LOG_D(ENB_APP, "Waiting RX packet num %d\n", packet->packet_number);
   g_fsm_state = ET_FSM_STATE_WAITING_RX_EVENT;
   packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING;
 }
@@ -144,6 +145,7 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
             packet->sctp_hdr.u.data_hdr.payload.binary_stream_allocated_size,
             packet->sctp_hdr.u.data_hdr.stream);
         packet->status = ET_PACKET_STATUS_SENT;
+        g_scenario->next_packet    = g_scenario->next_packet->next;
         g_fsm_state = ET_FSM_STATE_RUNNING;
       }
       break;
@@ -161,8 +163,76 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
 
   switch (event.code){
     case ET_EVENT_TICK:
-      //TODO
+      while (NULL != g_scenario->next_packet) {
+        LOG_D(ENB_APP, "EVENT_TICK: Considering packet num %d:\n", g_scenario->next_packet->packet_number);
+        switch (g_scenario->next_packet->sctp_hdr.chunk_type) {
+          case SCTP_CID_DATA :
+            // no init in this scenario, may be sub-scenario
+            if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_SEND) {
+              if (g_scenario->next_packet->status == ET_PACKET_STATUS_NONE) {
+                et_scenario_schedule_tx_packet(g_scenario->next_packet);
+                pthread_mutex_unlock(&g_fsm_lock);
 
+                et_event_t continue_event;
+                continue_event.code = ET_EVENT_TICK;
+                et_scenario_fsm_notify_event(continue_event);
+
+                return g_fsm_state;
+              } else if (g_scenario->next_packet->status != ET_PACKET_STATUS_SCHEDULED_FOR_SENDING) {
+                AssertFatal(0, "Invalid packet status %d", g_scenario->next_packet->status);
+              }
+            } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+              if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
+                g_scenario->next_packet    = g_scenario->next_packet->next;
+
+              } else if (g_scenario->next_packet->status == ET_PACKET_STATUS_NONE) {
+                et_scenario_wait_rx_packet(g_scenario->next_packet);
+                pthread_mutex_unlock(&g_fsm_lock);
+                return g_fsm_state;
+              } else {
+                AssertFatal(0, "Invalid packet status %d", g_scenario->next_packet->status);
+              }
+            } else {
+              AssertFatal(0, "Invalid packet action %d", g_scenario->next_packet->action);
+            }
+            break;
+
+          case SCTP_CID_INIT:
+          case SCTP_CID_INIT_ACK:
+          case SCTP_CID_HEARTBEAT:
+          case SCTP_CID_HEARTBEAT_ACK:
+          case SCTP_CID_COOKIE_ECHO:
+          case SCTP_CID_COOKIE_ACK:
+          case SCTP_CID_ECN_ECNE:
+          case SCTP_CID_ECN_CWR:
+            LOG_D(ENB_APP, "EVENT_TICK: Ignoring packet num %d SCTP CID %s\n",
+                g_scenario->next_packet->packet_number,
+                et_chunk_type_cid2str(g_scenario->next_packet->sctp_hdr.chunk_type));
+            g_scenario->next_packet->status = ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT;
+            g_scenario->next_packet = g_scenario->next_packet->next;
+            break;
+
+          case SCTP_CID_ABORT:
+          case SCTP_CID_SHUTDOWN:
+          case SCTP_CID_SHUTDOWN_ACK:
+          case SCTP_CID_ERROR:
+          case SCTP_CID_SHUTDOWN_COMPLETE:
+            AssertFatal(0, "The scenario should be cleaned (packet %s cannot be processed at this time)",
+                et_chunk_type_cid2str(g_scenario->next_packet->sctp_hdr.chunk_type));
+            break;
+
+          default:
+            LOG_D(ENB_APP, "EVENT_TICK: Ignoring packet num %d SCTP CID %s\n",
+                g_scenario->next_packet->packet_number,
+                et_chunk_type_cid2str(g_scenario->next_packet->sctp_hdr.chunk_type));
+            g_scenario->next_packet->status = ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT;
+            g_scenario->next_packet = g_scenario->next_packet->next;
+        }
+      }
+      fprintf(stderr, "No Packet found in this scenario: %s\n", g_scenario->name);
+      g_fsm_state = ET_FSM_STATE_NULL;
+      pthread_mutex_unlock(&g_fsm_lock);
+      return g_fsm_state;
       break;
     case ET_EVENT_RX_PACKET_TIME_OUT:
       AssertFatal(0, "Event ET_EVENT_RX_PACKET_TIME_OUT not handled in FSM state ET_FSM_STATE_RUNNING");
@@ -186,6 +256,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event)
   int rv = 0;
   switch (event.code){
     case ET_EVENT_TICK:
+      fprintf(stdout, "EVENT_TICK: waiting for tx event\n");
       break;
 
     case ET_EVENT_RX_S1AP:
@@ -202,6 +273,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event)
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.payload.binary_stream_allocated_size,
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.stream);
       event.u.tx_timed_packet->status = ET_PACKET_STATUS_SENT;
+      g_scenario->next_packet    = event.u.tx_timed_packet->next;
       g_fsm_state = ET_FSM_STATE_RUNNING;
       break;
 
@@ -219,6 +291,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event)
   int rv = 0;
   switch (event.code){
     case ET_EVENT_TICK:
+      fprintf(stdout, "EVENT_TICK: waiting for rx event\n");
       break;
 
     case ET_EVENT_RX_PACKET_TIME_OUT:
@@ -272,7 +345,6 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
                 g_scenario->last_rx_packet = g_scenario->next_packet;
-                g_scenario->next_packet    = g_scenario->next_packet->next;
                 g_scenario->time_last_rx_packet = g_scenario->last_rx_packet->timestamp_packet;
                 g_scenario->next_packet    = g_scenario->next_packet->next;
 
@@ -357,7 +429,6 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
             } else if (g_scenario->next_packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
               if (g_scenario->next_packet->status == ET_PACKET_STATUS_RECEIVED) {
                 g_scenario->last_rx_packet = g_scenario->next_packet;
-                g_scenario->next_packet    = g_scenario->next_packet->next;
                 g_scenario->time_last_rx_packet = g_scenario->last_rx_packet->timestamp_packet;
                 g_scenario->next_packet    = g_scenario->next_packet->next;
 
