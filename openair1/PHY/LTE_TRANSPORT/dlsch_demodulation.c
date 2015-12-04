@@ -203,7 +203,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                    frame_parms,
 				   dlsch0_harq->mimo_mode);
 //#ifdef DEBUG_DLSCH_MOD
-    printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext %x\n",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc,*lte_ue_pdsch_vars[eNB_id]->pmi_ext);
+    /*   printf("dlsch: using pmi %lx, rb_alloc %x, pmi_ext ",pmi2hex_2Ar1(dlsch0_harq->pmi_alloc),*rballoc);
+       for (rb=0;rb<nb_rb;rb++)
+	  printf("%d",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb]);
+       printf("\n");*/
 //#endif
 
    if (rx_type==rx_IC_single_stream) {
@@ -4137,12 +4140,14 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 	    rxF      = &rxdataF[aarx][prb_off2+
 				      (symbol*(frame_parms->ofdm_symbol_size))];
 	  }
-	  
+	 
+	 /*
 	 if (mimo_mode <= PUSCH_PRECODING1)
           *pmi_loc = (pmi>>((prb>>2)<<1))&3;
 	 else
-	  *pmi_loc=(pmi>>prb)&1;
-	  
+	  *pmi_loc=(pmi>>prb)&1;*/
+	 
+	 *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
           pmi_loc++;
 	  
 	  
@@ -4279,12 +4284,13 @@ unsigned short dlsch_extract_rbs_dual(int **rxdataF,
 #ifdef DEBUG_DLSCH_DEMOD
 	  printf("symbol %d / rb %d: alloc %d skip_half %d (rxF %p, rxF_ext %p) prb_off (%d,%d)\n",symbol,prb,rb_alloc_ind,skip_half,rxF,rxF_ext,prb_off,prb_off2);
 #endif
-          if (mimo_mode <= PUSCH_PRECODING1)
+         /* if (mimo_mode <= PUSCH_PRECODING1)
            *pmi_loc = (pmi>>((prb>>2)<<1))&3;
 	  else
 	   *pmi_loc=(pmi>>prb)&1;
          // printf("symbol_mod %d (pilots %d) rb %d, sb %d, pmi %d (pmi_loc %p,rxF %p, ch00 %p, ch01 %p, rxF_ext %p dl_ch0_ext %p dl_ch1_ext %p)\n",symbol_mod,pilots,prb,prb>>2,*pmi_loc,pmi_loc,rxF,dl_ch0, dl_ch1, rxF_ext,dl_ch0_ext,dl_ch1_ext);
-
+*/
+	 *pmi_loc = get_pmi(frame_parms->N_RB_DL,mimo_mode,pmi,prb);
           pmi_loc++;
 
 	  if (prb != (frame_parms->N_RB_DL>>1)) { // This PRB is not around DC

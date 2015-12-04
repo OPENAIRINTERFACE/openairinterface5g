@@ -614,6 +614,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
             // For each RE in subband perform ch0 * conj(ch1)
             // multiply by conjugated channel
 #if defined(__x86_64__) || defined(__i386__)
+	    mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
             mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));//_MM_SHUFFLE(2,3,0,1)
             mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
             mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);

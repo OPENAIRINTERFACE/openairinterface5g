@@ -242,6 +242,8 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
     first_re=6;
 
   for (re=first_re; re<last_re; re++) {
+    
+  // printf("element %d precoder_index for allocation %d\n",re, precoder_index );
 
 
     if ((skip_dc == 1) && (re==6))
@@ -1268,7 +1270,7 @@ uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb
     if (mode <= PUSCH_PRECODING1)
       return((pmi_alloc>>((rb>>2)<<1))&3);
     else {
-      //printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>(rb>>2))&1));
+    //  printf("Getting pmi for RB %d => %d\n",rb,((pmi_alloc>>(rb>>2))&1));
       return((pmi_alloc>>(rb>>2))&1);
     }
     break;
