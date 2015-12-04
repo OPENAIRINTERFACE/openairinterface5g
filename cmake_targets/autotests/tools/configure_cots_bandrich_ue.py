@@ -135,7 +135,7 @@ def stop_ue():
    timeout=60
    os.system('killall wvdial')
    send_command('AT', 'OK' , timeout)
-   #send_command('AT+CGATT=0' , 'OK' , timeout)
+   send_command('AT+CGATT=0' , 'OK' , timeout)
    send_command('AT+CFUN=4' , 'OK' , timeout)
 
 for arg in sys.argv[1:]:
