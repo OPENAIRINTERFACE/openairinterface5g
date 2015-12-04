@@ -279,7 +279,8 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
-	wvdial
+	wvdial \
+        python-numpy
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
@@ -291,6 +292,8 @@ check_install_oai_software() {
     $SUDO pip install pyroute2
     ) > $log_file 2>&1
     install_asn1c_from_source
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
