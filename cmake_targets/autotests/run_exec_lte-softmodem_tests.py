@@ -49,6 +49,8 @@ import math #from time import clock
 import xml.etree.ElementTree as ET
 import re
 
+import numpy as np
+
 import log
 import case01
 import case02
@@ -59,16 +61,100 @@ import case05
 from  openair import *
 
 import paramiko
-import ssh
-from ssh import SSHSession
+
 import subprocess
 import commands
+sys.path.append('/opt/ssh')
+
+import ssh
+from ssh import SSHSession
 
 def write_file(filename, string, mode="w"):
    text_file = open(filename, mode)
    text_file.write(string)
    text_file.close()
    
+#$1 name of file (assuming created with iperf -s -u ....
+#$2 minimum throughput
+#$3 maximum throughput
+#$4 average throughput
+#$5 minimum duration of throughput
+#The throughput values found in file must be higher than values from from 2,3,4,5
+#The function returns True if throughput conditions are saisfied else it returns fails
+   
+def tput_test(filename, min_tput, max_tput, average, min_duration):
+   if os.path.exists(filename):
+      with open (filename, "r") as myfile:
+         data=myfile.read()
+      p=re.compile('(\d*.\d*) Mbits/sec')
+      array=p.findall(data)
+      array = [ float(x) for x in array ]
+      duration = array.__len__()
+      if duration !=0:
+        min_list = min(array) 
+        max_list = max(array)
+        average_list = np.mean(array)
+      else:
+        min_list = 0
+        max_list = 0
+        average_list=0
+      
+      if (min_list >= min_tput and  max_list >= max_tput and average_list >= average and duration >= min_duration):
+        return True
+      else:
+        return False
+   else: 
+      return False
+
+    
+def try_convert_to_float(string, fail=None):
+    try:
+        return float(string)
+    except Exception:
+        return fail;
+
+def tput_test_search_expr (search_expr, logfile_traffic):
+   result=0
+   if search_expr !='':
+       if search_expr.find('throughput_test')!= -1 :
+          p= re.compile('min\s*=\s*(\d*.\d*)\s*Mbits/sec')
+          min_tput=p.findall(search_expr)
+          if min_tput.__len__()==1:
+             min_tput = min_tput[0]
+          else:
+             min_tput = None
+
+          p= re.compile('max\s*=\s*(\d*.\d*)\s*Mbits/sec')
+          max_tput=p.findall(search_expr)
+          if max_tput.__len__()==1:
+             max_tput = max_tput[0]
+          else:
+             max_tput = None
+
+          p= re.compile('average\s*=\s*(\d*.\d*)\s*Mbits/sec')
+          avg_tput=p.findall(search_expr)
+          if avg_tput.__len__()==1:
+             avg_tput=avg_tput[0]
+          else:
+             avg_tput = None
+
+          p= re.compile('duration\s*=\s*(\d*.\d*)\s*s')
+          duration=p.findall(search_expr)
+          if duration.__len__()==1:
+             duration = duration[0]
+          else:
+             duration = None
+          
+          min_tput = try_convert_to_float(min_tput)
+          max_tput = try_convert_to_float(max_tput)
+          avg_tput = try_convert_to_float(avg_tput)
+          duration = try_convert_to_float(duration)
+          
+          if (min_tput != None and max_tput != None  and avg_tput != None  and duration != None ):
+             result = tput_test(logfile_traffic, min_tput, max_tput, avg_tput, duration)
+   return result
+
+      
 
 def sftp_module (username, password, hostname, ports, paramList,logfile): 
    #localD = localfile
@@ -365,13 +451,14 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   addpass = 'echo \'' + mypassword + '\' | '
   user = getpass.getuser()
   testcasename = testcase.get('id')
+  testcaseclass = testcase.findtext('class',default='')
   timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
   timeout_cmd = int(float(timeout_cmd))
   #Timeout_thread is more than that of cmd to have room for compilation time, etc
   timeout_thread = timeout_cmd + 300 
   nruns = testcase.findtext('nruns',default='')
   nruns = int(float(nruns))
-
+  tags = testcase.findtext('tags',default='')
   eNBMachine = testcase.findtext('eNB',default='')
   eNB_config_file = testcase.findtext('eNB_config_file',default='')
   eNB_compile_prog = testcase.findtext('eNB_compile_prog',default='')
@@ -383,6 +470,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_traffic_exec = testcase.findtext('eNB_traffic_exec',default='')
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
   eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
+  eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -395,6 +483,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_traffic_exec = testcase.findtext('UE_traffic_exec',default='')
   UE_traffic_exec_args = testcase.findtext('UE_traffic_exec_args',default='')
   UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
+  UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -412,6 +501,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   EPC_traffic_exec = testcase.findtext('EPC_traffic_exec',default='')
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
   EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
+  EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
 
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
@@ -447,8 +537,12 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   #update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo)
   #update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo)
   #update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo)
-  
+  test_result=1
+  test_result_string=''
+  start_time=time.time()
   for run in range(0,nruns):
+    run_result=1
+    run_result_string=''
     logdir_eNB = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     logdir_UE =  logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     logdir_EPC = logdirOpenaircnRepo+'/TEST/autotests/log/'+ testcasename + '/run_' + str(run)
@@ -587,105 +681,51 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
     cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
 
-    localfile = logdir_local_testcase + '/eNB_compile' + '_' + str(run) + '_.log'
-    remotefile = logdir_eNB + '/eNB_compile' + '_' + str(run) + '_.log'
-    sftp_log = os.path.expandvars(logdir_local_testcase + '/sftp_module.log')
-    ports = 22
-    paramList = []
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    print "Copying files from EPCMachine : " + EPCMachine
+    ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
+    ssh.get_all(logdir_EPC , logdir_local_testcase)
 
-    localfile = logdir_local_testcase + '/eNB_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_eNB + '/eNB_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
+    print "Copying files from eNBMachine " + eNBMachine
+    ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
+    ssh.get_all(logdir_eNB, logdir_local_testcase)
 
-    localfile = logdir_local_testcase + '/eNB_pre_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_eNB + '/eNB_pre_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/eNB_traffic' + '_' + str(run) + '_.log'
-    remotefile = logdir_eNB + '/eNB_traffic' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, eNBMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/eNB_task_out' + '_' + str(run) + '_.log'
-    remotefile = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-
-    localfile = logdir_local_testcase + '/test_case_list.xml'
-    remotefile = logdirOAI5GRepo+'/cmake_targets/autotests/test_case_list.xml' 
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    sftp_module (user, password, eNBMachine, ports, paramList, sftp_log)
+    print "Copying files from UEMachine : " + UEMachine
+    ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
+    ssh.get_all(logdir_UE , logdir_local_testcase)
     
-    paramList=[]
-    localfile = logdir_local_testcase + '/UE_compile' + '_' + str(run) + '_.log'
-    remotefile = logdir_UE + '/UE_compile' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/UE_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_UE + '/UE_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/UE_pre_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_UE + '/UE_pre_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/UE_traffic' + '_' + str(run) + '_.log'
-    remotefile = logdir_UE + '/UE_traffic' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, UEMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/UE_task_out' + '_' + str(run) + '_.log'
-    remotefile = logdir_UE + '/UE_task_out' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    sftp_module (user, password, UEMachine, ports, paramList, sftp_log)
+    #Currently we only perform throughput tests
+    result = tput_test_search_expr(eNB_search_expr_true, logfile_traffic_eNB)
+    run_result=run_result&result
+    result = tput_test_search_expr(ePC_search_expr_true, logfile_traffic_ePC)
+    run_result=run_result&result
+    result = tput_test_search_expr(UE_search_expr_true, logfile_traffic_UE)
+    run_result=run_result&result
     
-    paramList=[]
-    localfile = logdir_local_testcase + '/EPC_compile' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/EPC_compile' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    if run_result == 1:  
+      run_result_string = 'RUN_'+str(run) + ' = PASS'
+    else:
+      run_result_string = 'RUN_'+str(run) + ' = FAIL'
 
-    localfile = logdir_local_testcase + '/EPC_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/EPC_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
+    test_result=test_result & run_result
+    test_result_string=test_result_string + run_result_string
 
-    localfile = logdir_local_testcase + '/HSS_compile' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/HSS_compile' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/HSS_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/HSS_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/EPC_pre_exec' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/EPC_pre_exec' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/EPC_traffic' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/EPC_traffic' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    #sftp_module (user, password, EPCMachine, ports, localfile, remotefile, sftp_log, "get")
-
-    localfile = logdir_local_testcase + '/EPC_task_out' + '_' + str(run) + '_.log'
-    remotefile = logdir_EPC + '/EPC_task_out' + '_' + str(run) + '_.log'
-    paramList.append ( {"operation":'get', "localfile":localfile, "remotefile":remotefile} )
-    sftp_module (user, password, EPCMachine, ports, paramList, sftp_log)
     oai_eNB.disconnect()
     oai_UE.disconnect()
     oai_EPC.disconnect()
     #We need to close the new ssh session that was created  
     #if index_eNBMachine == index_EPCMachine:
     #    oai_EPC.disconnect()
+  #Now we finalize the xml file of the test case
+  end_time=time.time()
+  duration= end_time - start_time
+  xmlFile = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + 'test.' + testcasename + '.xml'
+  if test_result ==0: 
+    result='FAIL'
+  else:
+    result = 'PASS'
+  xml="<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + duration + "\'s RESULT=\'" +result + "\'></testcase>"
+  write_file(xmlFile, xml, mode="w")
+
 
 #This function searches if test case is present in list of test cases that need to be executed by user
 def search_test_case_group(testcasename, testcasegroup):

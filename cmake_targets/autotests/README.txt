@@ -97,20 +97,29 @@ Obj.#   Case#   Test#	Description
 01      51      06      mbmssim (TBD)
 
 
-01      55              lte-softmodem tests with ALU EPC w/ Bandrich COTS UE
-01      55      00      FDD 5MHz UL Throughput for 60 sec
-01      55      00      FDD 10MHz UL Throughput for 60 sec
-01      55      00      FDD 20MHz UL Throughput for 60 sec
-01      55      00      FDD 5MHz DL Throughput for 60 sec
-01      55      00      FDD 10MHz DL Throughput for 60 sec
-01      55      00      FDD 20MHz DL Throughput for 60 sec
+01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
+01      55      00      Band 7 FDD 5MHz UL Throughput for 60 sec for 1TX/1RX
+01      55      00      Band 7 FDD 10MHz UL Throughput for 60 sec
+01      55      00      Band 7 FDD 20MHz UL Throughput for 60 sec
+01      55      00      Band 7 FDD 5MHz DL Throughput for 60 sec
+01      55      00      Band 7 FDD 10MHz DL Throughput for 60 sec
+01      55      00      Band 7 FDD 20MHz DL Throughput for 60 sec
 
 
-01      56              lte-softmodem tests with OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
+01      56              lte-softmodem tests with USRP B210  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 
 
-01      57              lte-softmodem tests with OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
+01      57              lte-softmodem tests with USRP B210 RF as eNB and OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
+01      58               lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
+
+01      59              lte-softmodem tests with USRP B210  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
+
+01      61              lte-softmodem tests with USRP B210 RF as eNB and OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
+
+01      61              lte-softmodem tests with EXMIMO RF as eNB and ALU EPC w/ Bandrich COTS UE
+01      62              lte-softmodem tests with EXMIMO RF as eNB and OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
+01      63              lte-softmodem tests with EXMIMO RF as eNB and  OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
 01      58              lte-softmodem-noS1 tests
 

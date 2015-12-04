@@ -961,7 +961,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>ping 192.172.0.1</UE_traffic_exec>
+    <UE_traffic_exec>iperf -u -c  192.172.0.1 -b 10Mbits/s -t 3000</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -984,12 +984,12 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>iperf -s</EPC_traffic_exec>
+    <EPC_traffic_exec>iperf -s -i 1 -u -f m</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true></EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=0.0Mbits/sec max=0.0Mbits/sec average=0.0Mbits/sec duration=0.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
-
+    <tags>USRP.ALU_EPC.Bandrich.5MHz.FDD.UL</tags>
     <nruns>3</nruns>
     </testCase> 
 
