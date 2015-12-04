@@ -596,8 +596,10 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 
           // pmi
 #if defined(__x86_64__) || defined(__i386__)
-          pmi128_re = _mm_setzero_si128();
-          pmi128_im = _mm_setzero_si128();
+       
+	  
+	    pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
+            pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
 #elif defined(__arm__)
           pmi128_re = vdupq_n_s32(0);
 	  pmi128_im = vdupq_n_s32(0);
@@ -610,6 +612,9 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
             limit = last_subband_size>>2;
 
           for (i=0; i<limit; i++) {
+	    
+	      mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+              mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
 
             // For each RE in subband perform ch0 * conj(ch1)
             // multiply by conjugated channel
