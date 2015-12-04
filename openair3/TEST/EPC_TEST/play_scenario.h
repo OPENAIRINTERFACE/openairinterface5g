@@ -344,11 +344,11 @@ typedef struct et_scenario_s {
 
   hash_table_t           *hash_mme2association_id;
   hash_table_t           *hash_old_ue_mme_id2ue_mme_id;
-  struct timeval          time_last_tx_packet;
-  struct timeval          time_last_rx_packet;
-  et_packet_t            *last_rx_packet;         // last packet received with all previous scenario RX packet received.
-  et_packet_t            *last_tx_packet;         // last sent packet
-  et_packet_t            *next_packet;   // next packet to be handled in the scenario (RX or TX packet)
+  struct timeval          time_last_tx_packet;    // Time last sent packet
+  struct timeval          time_last_rx_packet;    // Time last packet received with all previous scenario RX packet received.
+  et_packet_t            *last_rx_packet;         // Last packet received with all previous scenario RX packet received.
+  et_packet_t            *last_tx_packet;         // Last sent packet
+  et_packet_t            *next_packet;            // Next packet to be handled in the scenario (RX or TX packet)
 } et_scenario_t;
 
 

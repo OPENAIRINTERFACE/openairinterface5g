@@ -343,6 +343,7 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
 
     xml_char = xmlGetProp(node, (const xmlChar *)"action");
     packet->action = et_action_str2et_action_t(xml_char);
+    packet->status = ET_PACKET_STATUS_NONE;
     xmlFree(xml_char);
     packet->packet_number = packet_number++;
 

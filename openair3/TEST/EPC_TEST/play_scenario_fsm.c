@@ -55,17 +55,19 @@ uint32_t          g_constraints = ET_BIT_MASK_MATCH_SCTP_STREAM | ET_BIT_MASK_MA
 int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b)
 {
   struct timeval  b2;
+  int nsec = 0;
   b2.tv_sec   = b->tv_sec;
   b2.tv_usec = b->tv_usec;
 
+
   /* Perform the carry for the later subtraction by updating y. */
   if (a->tv_usec < b2.tv_usec) {
-    int nsec = (b2.tv_usec - a->tv_usec) / 1000000 + 1;
+    nsec = (b2.tv_usec - a->tv_usec) / 1000000 + 1;
     b2.tv_usec -= 1000000 * nsec;
     b2.tv_sec += nsec;
   }
   if (a->tv_usec - b2.tv_usec > 1000000) {
-    int nsec = (a->tv_usec - b2.tv_usec) / 1000000;
+    nsec = (a->tv_usec - b2.tv_usec) / 1000000;
     b2.tv_usec += 1000000 * nsec;
     b2.tv_sec -= nsec;
   }
@@ -75,7 +77,8 @@ int timeval_subtract (struct timeval * const result, struct timeval * const a, s
   result->tv_sec = a->tv_sec - b2.tv_sec;
   result->tv_usec = a->tv_usec - b2.tv_usec;
 
-  /* Return 1 if result is negative. */
+  LOG_D(ENB_APP, "timeval_subtract(%ld.%06d, %ld.%06d)=%ld.%06d\n", a->tv_sec, a->tv_usec, b->tv_sec, b->tv_usec, result->tv_sec, result->tv_usec);
+
   return a->tv_sec < b2.tv_sec;
 }
 
@@ -117,15 +120,22 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
       AssertFatal(gettimeofday(&now, NULL) == 0, "gettimeofday failed");
       timeval_subtract(&offset_last_tx_packet,&now,&g_scenario->time_last_tx_packet);
       timeval_subtract(&offset_last_rx_packet,&now,&g_scenario->time_last_rx_packet);
+      LOG_D(ENB_APP, "offset_last_tx_packet=%ld.%06d\n", offset_last_tx_packet.tv_sec, offset_last_tx_packet.tv_usec);
+      LOG_D(ENB_APP, "offset_last_rx_packet=%ld.%06d\n", offset_last_rx_packet.tv_sec, offset_last_rx_packet.tv_usec);
+
       last_packet_was_tx = timeval_subtract(&offset_tx_rx,&offset_last_tx_packet,&offset_last_rx_packet);
       if (last_packet_was_tx) {
+        LOG_D(ENB_APP, "last_packet_was_tx\n");
         we_are_too_early = timeval_subtract(&offset,&offset_last_tx_packet,&packet->time_relative_to_last_sent_packet);
+        LOG_D(ENB_APP, "we_are_too_early=%d, offset=%ld.%06d\n", we_are_too_early, offset.tv_sec, offset.tv_usec);
       } else {
+        LOG_D(ENB_APP, "last_packet_was_rx\n");
         we_are_too_early = timeval_subtract(&offset,&offset_last_rx_packet,&packet->time_relative_to_last_received_packet);
+        LOG_D(ENB_APP, "we_are_too_early=%d, offset=%ld.%06d\n", we_are_too_early, offset.tv_sec, offset.tv_usec);
       }
       if (we_are_too_early > 0) {
         // set timer
-        LOG_D(ENB_APP, "Send packet num %u original frame number %u in %ld.%d sec\n",
+        LOG_D(ENB_APP, "Send packet num %u original frame number %u in %ld.%06d sec\n",
             packet->packet_number, packet->original_frame_number, offset.tv_sec, offset.tv_usec);
 
         packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_SENDING;
@@ -138,6 +148,10 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
         LOG_D(ENB_APP, "Send packet num %u original frame number %u immediately\n", packet->packet_number, packet->original_frame_number);
         // send immediately
         AssertFatal(0 == gettimeofday(&packet->timestamp_packet, NULL), "gettimeofday() Failed");
+
+        g_scenario->time_last_tx_packet.tv_sec  = packet->timestamp_packet.tv_sec;
+        g_scenario->time_last_tx_packet.tv_usec = packet->timestamp_packet.tv_usec;
+
         et_s1ap_eNB_itti_send_sctp_data_req(
             packet->enb_instance,
             packet->sctp_hdr.u.data_hdr.assoc_id,
@@ -266,6 +280,10 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event)
     case ET_EVENT_TX_TIMED_PACKET:
       // send immediately
       AssertFatal(0 == gettimeofday(&event.u.tx_timed_packet->timestamp_packet, NULL), "gettimeofday() Failed");
+
+      g_scenario->time_last_tx_packet.tv_sec  = event.u.tx_timed_packet->timestamp_packet.tv_sec;
+      g_scenario->time_last_tx_packet.tv_usec = event.u.tx_timed_packet->timestamp_packet.tv_usec;
+
       et_s1ap_eNB_itti_send_sctp_data_req(
           event.u.tx_timed_packet->enb_instance,
           event.u.tx_timed_packet->sctp_hdr.u.data_hdr.assoc_id,
@@ -325,8 +343,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_connecting_s1c(et_event_t even
       break;
 
     case ET_EVENT_S1C_CONNECTED:
-      // hack simulate we have been able to get the right timing values
-      AssertFatal(gettimeofday(&g_scenario->time_last_tx_packet, NULL) == 0, "gettimeofday failed");
+      // hack simulate we have been able to get the right timing values for STCP connect
       AssertFatal(gettimeofday(&g_scenario->time_last_rx_packet, NULL) == 0, "gettimeofday failed");
 
       while (NULL != g_scenario->next_packet) {
@@ -452,6 +469,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_null(et_event_t event)
             // Try to register each eNB
             g_scenario->registered_enb       = 0;
             g_fsm_state            = ET_FSM_STATE_CONNECTING_S1C;
+            AssertFatal(gettimeofday(&g_scenario->time_last_tx_packet, NULL) == 0, "gettimeofday failed");
             et_eNB_app_register (g_scenario->enb_properties);
             pthread_mutex_unlock(&g_fsm_lock);
             return g_fsm_state;

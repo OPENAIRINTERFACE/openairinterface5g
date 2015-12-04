@@ -254,13 +254,18 @@ int et_scenario_set_packet_received(et_packet_t * const packet)
   int           rc = 0;
 
   packet->status = ET_PACKET_STATUS_RECEIVED;
-  S1AP_DEBUG("Packet num %d received\n", packet->packet_number);
+  S1AP_DEBUG("Packet received:          num %u  | original frame number %u \n", packet->packet_number, packet->original_frame_number);
+  S1AP_DEBUG("Last Packet received:     num %u  | original frame number %u \n", g_scenario->last_rx_packet->packet_number, g_scenario->last_rx_packet->original_frame_number);
 
   p = g_scenario->last_rx_packet;
   while (NULL != p) {
-    if (p->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-      if (p->status == ET_PACKET_STATUS_RECEIVED) {
+    if (ET_PACKET_ACTION_S1C_RECEIVE == p->action) {
+      if ((ET_PACKET_STATUS_RECEIVED == p->status) || (ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT == p->status)) {
         g_scenario->last_rx_packet = p;
+        g_scenario->time_last_rx_packet.tv_sec   = p->timestamp_packet.tv_sec;
+        g_scenario->time_last_rx_packet.tv_usec  = p->timestamp_packet.tv_usec;
+        S1AP_DEBUG("Set Last Packet received: num %u  | original frame number %u \n", g_scenario->last_rx_packet->packet_number, g_scenario->last_rx_packet->original_frame_number);
+        S1AP_DEBUG("Set time_last_rx_packet %ld.%06d\n", g_scenario->time_last_rx_packet.tv_sec, g_scenario->time_last_rx_packet.tv_usec);
       } else {
         break;
       }
@@ -268,7 +273,7 @@ int et_scenario_set_packet_received(et_packet_t * const packet)
     p = p->next;
   }
 
-  if (packet->timer_id != 0) {
+  if (0 != packet->timer_id) {
     rc = timer_remove(packet->timer_id);
     AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %d unknown", packet->packet_number);
     return rc;
@@ -291,9 +296,14 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     packet = g_scenario->list_packet;
     while (NULL != packet) {
       if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-        if (packet->status == ET_PACKET_STATUS_RECEIVED) {
+        if ((ET_PACKET_STATUS_RECEIVED == packet->status) || (ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT == packet->status)) {
           g_scenario->last_rx_packet = packet;
-          g_scenario->time_last_rx_packet = g_scenario->last_rx_packet->timestamp_packet;
+          if  (ET_PACKET_STATUS_NOT_TAKEN_IN_ACCOUNT != packet->status) {
+            g_scenario->time_last_rx_packet.tv_sec  = packet->timestamp_packet.tv_sec;
+            g_scenario->time_last_rx_packet.tv_usec = packet->timestamp_packet.tv_usec;
+          }
+          S1AP_DEBUG("Set Last Packet received: num %u  | original frame number %u \n", g_scenario->last_rx_packet->packet_number, g_scenario->last_rx_packet->original_frame_number);
+          S1AP_DEBUG("Set time_last_rx_packet %ld.%06d\n", g_scenario->time_last_rx_packet.tv_sec, g_scenario->time_last_rx_packet.tv_usec);
         } else {
           break;
         }
@@ -309,10 +319,13 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
       rv = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
       if (0 == rv) {
-        S1AP_DEBUG("Compare RX packet with packet num %d succeeded\n", packet->packet_number);
+        S1AP_DEBUG("Compare RX packet with packet: num %u  | original frame number %u \n", packet->packet_number, packet->original_frame_number);
+        packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
+        packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
         return et_scenario_set_packet_received(packet);
       } else {
-        S1AP_DEBUG("Compare RX packet with packet num %d failed %s\n", packet->packet_number, et_error_match2str(rv));
+        S1AP_DEBUG("Compare RX packet with packet: num %u  | original frame number %u failed:%s\n",
+            packet->packet_number, packet->original_frame_number, et_error_match2str(rv));
         // asn1 compare no match return code, may not collide with non asn1 error return codes
         // (each asn1 rc <= 166 (enum e_S1ap_ProtocolIE_ID, in generated file S1ap_ProtocolIE_ID.h))
         if ((rv > 0) || (rv <= -ET_ERROR_MATCH_END)) {
