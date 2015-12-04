@@ -142,10 +142,19 @@ void put_harq_pid_in_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
   DLSCH_ptr->tail_freelist = (DLSCH_ptr->tail_freelist + 1) % 10;
 }
 
-void get_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
+void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
 {
   if (DLSCH_ptr->head_freelist == DLSCH_ptr->tail_freelist) {
     LOG_E(PHY, "%s:%d: you cannot read this!\n", __FILE__, __LINE__);
+    abort();
+  }
+  /* basic check, in case several threads deal with the free list at the same time
+   * in normal situations it should not happen, that's also why we don't use any
+   * locking mechanism to protect the free list
+   * to be refined in case things don't work properly
+   */
+  if (harq_pid != DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist]) {
+    LOG_E(PHY, "%s:%d: critical error, get in touch with the authors\n", __FILE__, __LINE__);
     abort();
   }
   DLSCH_ptr->head_freelist = (DLSCH_ptr->head_freelist + 1) % 10;
@@ -247,15 +256,12 @@ int8_t find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB)
 
 int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t ul_flag)
 {
-  int hp2sf[] = { 1, 2, 3, 4, 6, 7, 8, 9 };
-
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
   uint8_t ulsch_subframe,ulsch_frame;
   uint8_t i;
   int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
   int sf1=(10*frame)+subframe,sf2,sfdiff,sfdiff_max=7;
-  int first_proc_found=0;
 
   if (UE_id==-1) {
     LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
@@ -283,7 +289,6 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 	    sfdiff_max = sfdiff; 
 	    *harq_pid = i;
 	    *round = DLSCH_ptr->harq_processes[i]->round;
-	    first_proc_found = 1;
 	  }
 	}
       } else { // a process is not defined
