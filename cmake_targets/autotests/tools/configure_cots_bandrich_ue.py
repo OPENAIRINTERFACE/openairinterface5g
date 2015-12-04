@@ -15,6 +15,11 @@ import os
 #First we find an open port to work with
 serial_port=''
 ser=serial.Serial()
+openair_dir = os.environ.get('OPENAIR_DIR')
+if openair_dir == None:
+  print "Error getting OPENAIR_DIR environment variable"
+  sys.exit(1)
+
 def find_open_port():
    global serial_port, ser
    max_ports=100
@@ -33,7 +38,7 @@ find_open_port()
 print 'Using Serial port : ' + serial_port  
     
 #serial_port = '/dev/ttyUSB2'
-bandrich_ppd_config = '$OPENAIR_DIR/cmake_targets/autotests/tools/wdial.bandrich.conf'
+bandrich_ppd_config = os.environ.get('OPENAIR_DIR') + '/cmake_targets/autotests/tools/wdial.bandrich.conf'
 
 exit_flag=0
 
@@ -122,6 +127,7 @@ def start_ue () :
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
         os.system ('route add 192.172.0.1 ppp0')
+        os.system ('ping 192.172.0.1')
         break
      except Exception, e:
         error = ' Interface ' + iface + 'does not exist...'
@@ -135,7 +141,7 @@ def stop_ue():
    timeout=60
    os.system('killall wvdial')
    send_command('AT', 'OK' , timeout)
-   send_command('AT+CGATT=0' , 'OK' , timeout)
+   #send_command('AT+CGATT=0' , 'OK' , timeout)
    send_command('AT+CFUN=4' , 'OK' , timeout)
 
 for arg in sys.argv[1:]:
