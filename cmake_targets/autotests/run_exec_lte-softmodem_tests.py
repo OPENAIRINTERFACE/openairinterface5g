@@ -297,7 +297,7 @@ class oaiThread (threading.Thread):
         try:
           oai = openair('localdomain',self.machine)
           oai.connect(user, self.password)
-          print "Starting " + self.threadname + "on machine " + self.machine
+          print "Starting " + self.threadname + " on machine " + self.machine
           result = oai.send_recv(self.cmd, self.sudo, self.timeout)
           print "result = " + result
           print "Exiting " + self.threadname
@@ -639,14 +639,14 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_EPC = task_EPC + '(' + HSS_compile_prog + ' ' + HSS_compile_prog_args + ' ) > ' + logfile_compile_HSS + ' 2>&1 \n'
     if EPC_pre_exec != "":
        task_EPC  = task_EPC +  ' ( ' + EPC_pre_exec + ' '+ EPC_pre_exec_args + ' ) > ' + logfile_pre_exec_EPC + ' 2>&1 \n'
-    if EPC_main_exec !=  "":
-       task_EPC  = task_EPC + '(' + addsudo (EPC_main_exec + ' ' + EPC_main_exec_args, mypassword) + ' ) > ' + logfile_exec_EPC  +  ' 2>&1   & \n'
-       task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
-       task_EPC = task_EPC + 'echo EPC_main_exec PID = $! \n'
     if HSS_main_exec !=  "":
        task_EPC  = task_EPC + '(' + addsudo (HSS_main_exec + ' ' + HSS_main_exec_args, mypassword) + ' ) > ' + logfile_exec_HSS  +  ' 2>&1   & \n'
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
        task_EPC = task_EPC + 'echo HSS_main_exec PID = $! \n'
+    if EPC_main_exec !=  "":
+       task_EPC  = task_EPC + '(' + addsudo (EPC_main_exec + ' ' + EPC_main_exec_args, mypassword) + ' ) > ' + logfile_exec_EPC  +  ' 2>&1   & \n'
+       task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
+       task_EPC = task_EPC + 'echo EPC_main_exec PID = $! \n'
     if EPC_traffic_exec !=  "":
        task_EPC  = task_EPC + '(' + EPC_traffic_exec + ' ' + EPC_traffic_exec_args + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'  
@@ -681,15 +681,15 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
     cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
 
-    print "Copying files from EPCMachine : " + EPCMachine
+    print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
     ssh.get_all(logdir_EPC , logdir_local_testcase)
 
-    print "Copying files from eNBMachine " + eNBMachine
+    print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
     ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
     ssh.get_all(logdir_eNB, logdir_local_testcase)
 
-    print "Copying files from UEMachine : " + UEMachine
+    print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
     ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
     ssh.get_all(logdir_UE , logdir_local_testcase)
     
