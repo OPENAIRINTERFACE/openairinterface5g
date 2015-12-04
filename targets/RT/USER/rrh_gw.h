@@ -51,7 +51,7 @@
 
 /*! \brief RRH supports two types of modules: eNB and UE
 	   each module is associated with an ethernet device (device of ETH_IF) 
-	   and optionally with a RF device (device type can be USRP_IF/BLADERF_IF/EXMIMO_IF/NONE_IF)
+	   and optionally with a RF device (device type can be USRP_B200/USRP_X300/BLADERF_IF/EXMIMO_IF/NONE_IF)
            UE modules will always have RF device type NONE_IF */
 typedef struct {
 /*! \brief module id */
