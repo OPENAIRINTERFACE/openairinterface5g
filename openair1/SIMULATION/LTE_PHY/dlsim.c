@@ -1234,7 +1234,7 @@ n(tikz_fname,"w");
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 1;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
@@ -1662,7 +1662,7 @@ n(tikz_fname,"w");
 		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap	  = 0;
-		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi  		  = 2;
+		((DCI2_1_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi  		  = 1;
 		break;
 	      case 25:
 		dci_length = sizeof_DCI2_5MHz_2A_TDD_t;
@@ -1697,7 +1697,7 @@ n(tikz_fname,"w");
 		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
+		((DCI2_10MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 1;
 
 		break;
 	      case 100:
@@ -1713,7 +1713,7 @@ n(tikz_fname,"w");
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
+		((DCI2_20MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 1;
 		dci_length = sizeof_DCI2_20MHz_2A_TDD_t;
 		dci_length_bytes = sizeof(DCI2_20MHz_2A_TDD_t);
 		break;
