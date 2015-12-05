@@ -540,6 +540,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   LOG_D(MAC,"FrameP %d, subframeP %d : Scheduling CCEs\n",frameP,subframeP);
 
+  // Allocate CCEs for good after scheduling is done
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     allocate_CCEs(module_idP,CC_id,subframeP,0);
 

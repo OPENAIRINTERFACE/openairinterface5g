@@ -1595,6 +1595,12 @@ uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
 
 uint32_t pmi_extend(LTE_DL_FRAME_PARMS *frame_parms,uint8_t wideband_pmi);
 
+int get_nCCE_offset_l1(int *CCE_table,
+		       const unsigned char L, 
+		       const int nCCE, 
+		       const int common_dci, 
+		       const unsigned short rnti, 
+		       const unsigned char subframe);
 
 uint16_t get_nCCE(uint8_t num_pdcch_symbols,LTE_DL_FRAME_PARMS *frame_parms,uint8_t mi);
 

@@ -543,7 +543,6 @@ schedule_ue_spec(
                     UE_list);
         // update UL DAI after DLSCH scheduling
         set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
-
       }
 
       if (continue_flag == 1 ) {

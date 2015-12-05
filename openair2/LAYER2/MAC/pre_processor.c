@@ -762,6 +762,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
+  // Initialize Subbands according to VRB map
   for (i=0; i<N_RBG; i++) {
     ue_sched_ctl->rballoc_sub_UE[CC_id][UE_id] = 0;
     rballoc_sub[CC_id][i] = 0;

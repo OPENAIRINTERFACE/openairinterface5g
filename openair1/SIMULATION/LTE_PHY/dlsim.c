@@ -266,15 +266,15 @@ int main(int argc, char **argv)
   unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
 
-  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]= {0,0,0,0},errs2[4]= {0,0,0,0},round_trials[4]= {0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
-  int re_allocated;
+  unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]= {0,0,0,0},errs2[4]= {0,0,0,0},round_trials[4]= {0,0,0,0},dci_errors=0,dlsch_active=0;//,num_layers;
+  //  int re_allocated;
   char fname[32],vname[32];
   FILE *bler_fd;
   char bler_fname[256];
   FILE *time_meas_fd;
   char time_meas_fname[256];
-  FILE *tikz_fd;
-  char tikz_fname[256];
+  //  FILE *tikz_fd;
+  //  char tikz_fname[256];
 
   FILE *input_trch_fd=NULL;
   unsigned char input_trch_file=0;
@@ -300,7 +300,7 @@ int main(int argc, char **argv)
   uint8_t rx_sample_offset = 0;
   //char stats_buffer[4096];
   //int len;
-  uint8_t num_rounds = 4,fix_rounds=0;
+  uint8_t num_rounds = 4;//,fix_rounds=0;
   uint8_t subframe=7;
   int u;
   int n=0;
@@ -314,8 +314,8 @@ int main(int argc, char **argv)
 
   // void *data;
   // int ii;
-  int bler;
-  double blerr[4],uncoded_ber,avg_ber;
+  //  int bler;
+  double blerr[4],uncoded_ber;//,avg_ber;
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   uint8_t fdd_flag = 0;
@@ -330,7 +330,7 @@ int main(int argc, char **argv)
   int common_flag=0,TPC=0;
 
   double cpu_freq_GHz;
-  time_stats_t ts;//,sts,usts;
+  //  time_stats_t ts;//,sts,usts;
   int avg_iter,iter_trials;
   int rballocset=0;
   int print_perf=0;
@@ -344,17 +344,22 @@ int main(int argc, char **argv)
   int TB0_active = 1;
   uint32_t perfect_ce = 0;
 
-  LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
-  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
+  //  LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
+  //  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
   uint8_t Kmimo;
   uint8_t ue_category=4;
   uint32_t Nsoft;
-  FILE    *proc_fd = NULL;
-  char buf[64];
+
+
+
+  int CCE_table[800];
 
   opp_enabled=1; // to enable the time meas
 
 #if defined(__arm__)
+  FILE    *proc_fd = NULL;
+  char buf[64];
+
   proc_fd = fopen("/sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq", "r");
   if(!proc_fd)
      printf("cannot open /sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq");
@@ -377,7 +382,7 @@ int main(int argc, char **argv)
   // default parameters
   n_frames = 1000;
   snr0 = 0;
-  num_layers = 1;
+  //  num_layers = 1;
   perfect_ce = 0;
 
   while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:U:v:w:B:PLl:Y")) != -1) {
@@ -1328,7 +1333,7 @@ int main(int argc, char **argv)
           dci_alloc[num_dci].L          = 1;
           dci_alloc[num_dci].rnti       = SI_RNTI;
           dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].nCCE       = 0;
+          dci_alloc[num_dci].firstCCE       = 0;
           dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1635,7 +1640,7 @@ int main(int argc, char **argv)
           dci_alloc[num_dci].L          = 1;
           dci_alloc[num_dci].rnti       = SI_RNTI;
           dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].nCCE       = 0;
+          dci_alloc[num_dci].firstCCE       = 0;
           dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1943,7 +1948,7 @@ int main(int argc, char **argv)
           dci_alloc[num_dci].L          = 1;
           dci_alloc[num_dci].rnti       = SI_RNTI;
           dci_alloc[num_dci].format     = format1A;
-          dci_alloc[num_dci].nCCE       = 0;
+          dci_alloc[num_dci].firstCCE       = 0;
           dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
 
           printf("Generating dlsch params for user %d\n",k);
@@ -1974,7 +1979,7 @@ int main(int argc, char **argv)
         dci_alloc[num_dci].L          = 1;
         dci_alloc[num_dci].rnti       = n_rnti+k;
         dci_alloc[num_dci].format     = format1E_2A_M10PRB;
-        dci_alloc[num_dci].nCCE       = 4*k;
+        dci_alloc[num_dci].firstCCE       = 4*k;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
 					   subframe,
@@ -2019,17 +2024,20 @@ int main(int argc, char **argv)
     if (n_frames==1) printf("%d\n",numCCE);
 
     // apply RNTI-based nCCE allocation
+    memset(CCE_table,0,800*sizeof(int));
+
     for (i=num_common_dci; i<num_dci; i++) {
 
-      dci_alloc[i].nCCE = get_nCCE_offset(1<<dci_alloc[i].L,
-                                          numCCE,
-                                          (dci_alloc[i].rnti==SI_RNTI)? 1 : 0,
-                                          dci_alloc[i].rnti,
-                                          subframe);
+      dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
+						 1<<dci_alloc[i].L,
+						 numCCE,
+						 (dci_alloc[i].rnti==SI_RNTI)? 1 : 0,
+						 dci_alloc[i].rnti,
+						 subframe);
 
       if (n_frames==1)
         printf("dci %d: rnti %x, format %d : nCCE %d/%d\n",i,dci_alloc[i].rnti, dci_alloc[i].format,
-               dci_alloc[i].nCCE,numCCE);
+               dci_alloc[i].firstCCE,numCCE);
     }
 
     for (k=0; k<n_users; k++) {
@@ -2112,7 +2120,7 @@ int main(int argc, char **argv)
       round_trials[3] = 0;
 
       dci_errors=0;
-      avg_ber = 0;
+      //      avg_ber = 0;
 
       round=0;
       avg_iter = 0;
@@ -2697,13 +2705,13 @@ PMI_FEEDBACK:
               }
 
               start_meas(&PHY_vars_eNB->dlsch_modulation_stats);
-              re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
-                                              AMP,
-                                              subframe,
-                                              &PHY_vars_eNB->lte_frame_parms,
-                                              num_pdcch_symbols,
-                                              PHY_vars_eNB->dlsch_eNB[k][0],
-                                              PHY_vars_eNB->dlsch_eNB[k][1]);
+              dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
+			       AMP,
+			       subframe,
+			       &PHY_vars_eNB->lte_frame_parms,
+			       num_pdcch_symbols,
+			       PHY_vars_eNB->dlsch_eNB[k][0],
+			       PHY_vars_eNB->dlsch_eNB[k][1]);
               stop_meas(&PHY_vars_eNB->dlsch_modulation_stats);
               /*
               if (trials==0 && round==0)

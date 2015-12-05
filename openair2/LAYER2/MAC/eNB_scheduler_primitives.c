@@ -1027,10 +1027,10 @@ int allocate_CCEs(int module_idP,
       }
       else { // number of CCEs left can potentially hold this allocation
 	if ((fCCE = get_nCCE_offset(CCE_table,
-				   1<<(dci_alloc->L), 
-				   nCCE_max,
-				   (i<DCI_pdu->Num_common_dci) ? 1 : 0, 
-				   dci_alloc->rnti, 
+				    1<<(dci_alloc->L), 
+				    nCCE_max,
+				    (i<DCI_pdu->Num_common_dci) ? 1 : 0, 
+				    dci_alloc->rnti, 
 				    subframeP))>=0) {// the allocation is feasible, rnti rule passes
 
 	  LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);

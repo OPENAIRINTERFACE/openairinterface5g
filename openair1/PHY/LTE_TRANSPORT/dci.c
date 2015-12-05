@@ -2546,6 +2546,107 @@ uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int sub
 		  get_mi(&PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms,subframe))); 
 }
 
+
+int get_nCCE_offset_l1(int *CCE_table,
+		       const unsigned char L, 
+		       const int nCCE, 
+		       const int common_dci, 
+		       const unsigned short rnti, 
+		       const unsigned char subframe)
+{
+
+  int search_space_free,m,nb_candidates = 0,l,i;
+  unsigned int Yk;
+   /*
+    printf("CCE Allocation: ");
+    for (i=0;i<nCCE;i++)
+    printf("%d.",CCE_table[i]);
+    printf("\n");
+  */
+  if (common_dci == 1) {
+    // check CCE(0 ... L-1)
+    nb_candidates = (L==4) ? 4 : 2;
+    nb_candidates = min(nb_candidates,nCCE/L);
+
+    //    printf("Common DCI nb_candidates %d, L %d\n",nb_candidates,L);
+
+    for (m = nb_candidates-1 ; m >=0 ; m--) {
+
+      search_space_free = 1;
+      for (l=0; l<L; l++) {
+
+	//	printf("CCE_table[%d] %d\n",(m*L)+l,CCE_table[(m*L)+l]);
+        if (CCE_table[(m*L) + l] == 1) {
+          search_space_free = 0;
+          break;
+        }
+      }
+     
+      if (search_space_free == 1) {
+
+	//	printf("returning %d\n",m*L);
+
+        for (l=0; l<L; l++)
+          CCE_table[(m*L)+l]=1;
+        return(m*L);
+      }
+    }
+
+    return(-1);
+
+  } else { // Find first available in ue specific search space
+    // according to procedure in Section 9.1.1 of 36.213 (v. 8.6)
+    // compute Yk
+    Yk = (unsigned int)rnti;
+
+    for (i=0; i<=subframe; i++)
+      Yk = (Yk*39827)%65537;
+
+    Yk = Yk % (nCCE/L);
+
+
+    switch (L) {
+    case 1:
+    case 2:
+      nb_candidates = 6;
+      break;
+
+    case 4:
+    case 8:
+      nb_candidates = 2;
+      break;
+
+    default:
+      DevParam(L, nCCE, rnti);
+      break;
+    }
+
+
+    LOG_D(MAC,"rnti %x, Yk = %d, nCCE %d (nCCE/L %d),nb_cand %d\n",rnti,Yk,nCCE,nCCE/L,nb_candidates);
+
+    for (m = 0 ; m < nb_candidates ; m++) {
+      search_space_free = 1;
+
+      for (l=0; l<L; l++) {
+        if (CCE_table[(((Yk+m)%(nCCE/L))*L) + l] == 1) {
+          search_space_free = 0;
+          break;
+        }
+      }
+
+      if (search_space_free == 1) {
+        for (l=0; l<L; l++)
+          CCE_table[(((Yk+m)%(nCCE/L))*L)+l]=1;
+
+        return(((Yk+m)%(nCCE/L))*L);
+      }
+    }
+
+    return(-1);
+  }
+}
+
+
 void dci_decoding_procedure0(LTE_UE_PDCCH **lte_ue_pdcch_vars,
 			     int do_common,
 			     uint8_t subframe,
