@@ -293,10 +293,6 @@ static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 char ref[128] = "internal";
 char channels[128] = "0";
 
-//unsigned int samples_per_frame = 307200;
-//unsigned int tx_forward_nsamps=0;
-//int tx_delay;
-
 #endif
 
 int                      rx_input_level_dBm;
@@ -1559,7 +1555,7 @@ static void* eNB_thread( void* arg )
   int hw_subframe = 0; // 0..NUM_ENB_THREADS-1 => 0..9
   
   unsigned int rx_pos = 0;
-  unsigned int tx_pos = 0; //spp*tx_delay;
+  unsigned int tx_pos = 0;
 #endif
   int CC_id=0;	
   struct timespec trx_time0, trx_time1, trx_time2;
@@ -1634,8 +1630,8 @@ static void* eNB_thread( void* arg )
   int frame = 0;
 
 #ifndef EXMIMO
-  spp = openair0_cfg[0].samples_per_packet;
-  tx_pos=spp*openair0_cfg[0].tx_delay;
+  spp        = openair0_cfg[0].samples_per_packet;
+  tx_pos     = openair0_cfg[0].tx_scheduling_advance;
 #endif
 
   while (!oai_exit) {
@@ -1796,11 +1792,10 @@ static void* eNB_thread( void* arg )
       // prepare tx buffer pointers
       for (i=0; i<PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx; i++)
 	txp[i] = (void*)&txdata[i][tx_pos];
-      //printf("tx_pos %d ts %d, ts_offset %d txp[i] %p, ap %d\n", tx_pos,  timestamp, (timestamp+(tx_delay*spp)-tx_forward_nsamps),txp[i], i);
       // if symb_written < spp ==> error 
       if (frame > 50) {
 	openair0.trx_write_func(&openair0,
-				(timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps),
+				(timestamp+(openair0_cfg[card].tx_scheduling_advance)-openair0_cfg[card].tx_sample_advance),
 				txp,
 				spp,
 				PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx,
@@ -1808,7 +1803,7 @@ static void* eNB_thread( void* arg )
       }
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, timestamp&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+(openair0_cfg[card].tx_delay*spp)-openair0_cfg[card].tx_forward_nsamps)&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+(openair0_cfg[card].tx_scheduling_advance)-openair0_cfg[card].tx_sample_advance)&0xffffffff );
 
       stop_meas( &softmodem_stats_mt );
       clock_gettime( CLOCK_MONOTONIC, &trx_time2 );
@@ -2847,66 +2842,33 @@ int main( int argc, char **argv )
   for (card=0; card<MAX_CARDS; card++) {
 
     if(frame_parms[0]->N_RB_DL == 100) {
-      sample_rate = 30.72e6;
-      bw          = 10.0e6;
-#ifndef EXMIMO
       openair0_cfg[card].sample_rate=30.72e6;
-      openair0_cfg[card].samples_per_packet = 2048;
       openair0_cfg[card].samples_per_frame = 307200; 
       openair0_cfg[card].tx_bw = 10e6;
       openair0_cfg[card].rx_bw = 10e6;
-      // from usrp_time_offset
-      openair0_cfg[card].tx_forward_nsamps = 175;
-      openair0_cfg[card].tx_delay = 8;
-#endif
     } else if(frame_parms[0]->N_RB_DL == 50) {
-      sample_rate = 15.36e6;
-      bw          = 5.0e6;
-#ifndef EXMIMO
       openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_packet = 2048;
       openair0_cfg[card].samples_per_frame = 153600;
       openair0_cfg[card].tx_bw = 5e6;
       openair0_cfg[card].rx_bw = 5e6;
-      openair0_cfg[card].tx_forward_nsamps = 95;
-      openair0_cfg[card].tx_delay = 5;
-#endif
     } else if (frame_parms[0]->N_RB_DL == 25) {
-      sample_rate = 7.68e6;
-      bw          = 2.5e6;
-#ifndef EXMIMO
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
       openair0_cfg[card].tx_bw = 2.5e6;
       openair0_cfg[card].rx_bw = 2.5e6;
-      openair0_cfg[card].samples_per_packet = 1024;
-#ifdef OAI_USRP
-    openair0_cfg[card].tx_forward_nsamps = 70;
-    openair0_cfg[card].tx_delay = 5;
-#elif OAI_BLADERF
-      openair0_cfg[card].tx_forward_nsamps = 0;
-      openair0_cfg[card].tx_delay = 8;
-#endif 
-#endif
+
     } else if (frame_parms[0]->N_RB_DL == 6) {
-      sample_rate = 1.92e6;
-      bw          = 0.96e6;
-#ifndef EXMIMO
       openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_packet = 256;
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
       openair0_cfg[card].rx_bw = 1.5e6;
-      openair0_cfg[card].tx_forward_nsamps = 40;
-      openair0_cfg[card].tx_delay = 8;
-#endif
     }
     
 #ifdef ETHERNET
 
     //calib needed
-    openair0_cfg[card].tx_delay = 0;
-    openair0_cfg[card].tx_forward_nsamps = 0;
+    openair0_cfg[card].tx_scheduling_advance = 0;
+    openair0_cfg[card].tx_sample_advance = 0;
     
     if (frame_parms[0]->N_RB_DL == 6) 
       openair0_cfg[card].samples_per_packet = 256;
@@ -2917,9 +2879,6 @@ int main( int argc, char **argv )
 #endif
 
 
-#ifndef EXMIMO
-    openair0_cfg[card].samples_per_packet = openair0_cfg[0].samples_per_packet;
-#endif
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_tx),
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_rx));
@@ -2935,11 +2894,9 @@ int main( int argc, char **argv )
       openair0_cfg[card].remote_ip   = &rrh_eNB_ip[0];
       openair0_cfg[card].remote_port = rrh_eNB_port;
     }
-openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
-    openair0_cfg[card].sample_rate = sample_rate;
-    openair0_cfg[card].tx_bw = bw;
-    openair0_cfg[card].rx_bw = bw;
+
     // in the case of the USRP, the following variables need to be initialized before the init
     // since the USRP only supports one CC (for the moment), we initialize all the cards with first CC.
     // in the case of EXMIMO2, these values are overwirtten in the function setup_eNB/UE_buffer
@@ -2965,24 +2922,28 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
       else {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;// - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
       }
-
+      
       switch(frame_parms[0]->N_RB_DL) {
       case 6:
-        openair0_cfg[card].rx_gain[i] -= 6;
+        openair0_cfg[card].rx_gain[i] -= 12;
         break;
 
       case 25:
-        openair0_cfg[card].rx_gain[i] += 6;
+        openair0_cfg[card].rx_gain[i] -= 6;
         break;
 
       case 50:
-        openair0_cfg[card].rx_gain[i] += 8;
+        openair0_cfg[card].rx_gain[i] -= 3;
+        break;
+
+      case 100:
+        openair0_cfg[card].rx_gain[i] -= 0;
         break;
 
       default:
         break;
       }
-
+      
 
     }
 
@@ -3070,7 +3031,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   // connect the TX/RX buffers
   if (UE_flag==1) {
 #ifdef OAI_USRP
-    openair_daq_vars.timing_advance = 160;
+    openair_daq_vars.timing_advance = 0;
 #else
     openair_daq_vars.timing_advance = 160;
 #endif
