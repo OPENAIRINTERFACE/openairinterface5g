@@ -211,7 +211,7 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w ETHERNET -r Rel10 </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -280,7 +280,6 @@
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--RRH -w EXMIMO</compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
-                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/CMakeFiles/openair_rf/openair_rf.ko
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/updatefw
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct</compile_prog_out>
@@ -307,7 +306,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <tags>RRH.USRP.Rel10</tags>
+     <tags>RRH.BLADERF.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
 
@@ -929,7 +928,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>60</TimeOut_cmd>
+    <TimeOut_cmd>180</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -937,15 +936,15 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
-    <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
+    <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
     <eNB_pre_exec></eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  </eNB_main_exec_args>
-    <eNB_traffic_exec>iperf -s</eNB_traffic_exec>
+    <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
@@ -956,12 +955,12 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
+    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec>sleep 30 ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>iperf -u -c  192.172.0.1 -b 10Mbits/s -t 3000</UE_traffic_exec>
+    <UE_traffic_exec> while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 3000 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -984,7 +983,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>iperf -s -i 1 -u -f m</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=0.0Mbits/sec max=0.0Mbits/sec average=0.0Mbits/sec duration=0.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>

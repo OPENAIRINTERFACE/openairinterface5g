@@ -233,10 +233,11 @@ def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
     sleep $wakeup_interval
     done
     echo "Final time step (Duration of test case) = $step "
+    date
     """
   else:
     #We do not terminate the script if one of the processes has existed prematurely
-    cmd = cmd + 'sleep ' + str(timeout_cmd) + '\n'
+    cmd = cmd + 'sleep ' + str(timeout_cmd) + ' ; date  \n'
   
   return cmd
 
@@ -329,7 +330,7 @@ class testCaseThread_generic (threading.Thread):
        #addsudo = 'echo \'' + mypassword + '\' | sudo -S -E '
        addpass = 'echo \'' + mypassword + '\' | '
        user = getpass.getuser()
-       print "Starting test case : " + self.testcasename + " On machine " + self.machine 
+       print "Starting test case : " + self.testcasename + " On machine " + self.machine + " timeout = " + str(self.timeout) 
        oai = openair('localdomain',self.machine)
        oai.connect(user, self.password)
        cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
@@ -349,7 +350,7 @@ class testCaseThread_generic (threading.Thread):
        os.system("mkdir -p " +  logdir_local_testcase)
        cmd = "mkdir -p " + logdir_remote_testcase
        res = oai.send_recv(cmd, False, self.timeout) 
-       print "res = " + res
+       #print "res = " + res
 
        cmd =  "( cd " +  self.logdirOAI5GRepo + " \n "
        cmd = cmd + "source oaienv \n"
@@ -359,7 +360,7 @@ class testCaseThread_generic (threading.Thread):
        #print "cmd = " + cmd
        res = oai.send_recv(cmd, False, self.timeout) 
        #print "res = " + res
-       print "ThreadID = " + str(self.threadID) + "ThreadName: " + self.name + " testcasename: " + self.testcasename + "Execution Result = " + res
+       #print "ThreadID = " + str(self.threadID) + "ThreadName: " + self.name + " testcasename: " + self.testcasename + "Execution Result = " + res
        write_file(logfile_task_testcasename, cmd, mode="w")
        #Now we copy all the remote files
        ssh = SSHSession(self.machine , username=user, key_file=None, password=self.password)
@@ -385,8 +386,11 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
   try:
     mypassword=password
     MachineListFree=[]
+    threadListNew=[]
     while MachineListFree.__len__() == 0 :
        MachineListBusy=[]
+       MachineListFree=[]
+       threadListNew=[]
        #first we need to find the list of free machines that we could run our test case
        if threadListGeneric.__len__() ==0 :
        #This means no thread is started yet
@@ -398,25 +402,29 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
              testcasenameold = param["testcasename"]
              thread_id.join(1)
              if thread_id.isAlive() == True:
-                print "thread_id is alive: testcasename: " + testcasenameold
+                threadListNew.append(param)
+                print "thread_id is alive: testcasename: " + testcasenameold +  " on machine "+ machine
                 if machine not in MachineListBusy:
                    MachineListBusy.append(machine)
              else :
-                threadListGeneric.remove(param)
+                print "thread_id is finished: testcasename: " + testcasenameold + " on machine " + machine
+                #threadListGeneric.remove(param)
+                #if machine not in MachineListFree:
+                #   MachineListFree.append(machine)
        #Now we check if there is at least one free machine
        MachineListFree = MachineList[:]
        for machine in MachineListBusy:
           if machine in MachineListFree:
             MachineListFree.remove(machine)
-       #print "MachineListFree = " + ','.join(MachineListFree)
-       #print "MachineListBusy = " + ','.join(MachineListBusy)
-       #print "MachineList = " + ','.join(MachineList)
+       print "MachineListFree = " + ','.join(MachineListFree)
+       print "MachineListBusy = " + ','.join(MachineListBusy)
+       print "MachineList = " + ','.join(MachineList)
     machine = MachineListFree[0]
-    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+machine+_, machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
+    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+ "machine_", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
     param={"thread_id":thread, "Machine":machine, "testcasename":testcasename}
     thread.start()
-    threadListGeneric.append(param)
-    return threadListGeneric
+    threadListNew.append(param)
+    return threadListNew
   except Exception, e:
      error=''
      error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
@@ -561,14 +569,24 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_exec_eNB = logdir_eNB + '/eNB_exec' + '_' + str(run) + '_.log'
     logfile_pre_exec_eNB = logdir_eNB + '/eNB_pre_exec' + '_' + str(run) + '_.log'
     logfile_traffic_eNB = logdir_eNB + '/eNB_traffic' + '_' + str(run) + '_.log'
+    logfile_task_eNB_compile_out = logdir_eNB + '/eNB_task_compile_out' + '_' + str(run) + '_.log'
+    logfile_task_eNB_compile = logdir_local_testcase + '/eNB_task_compile' + '_' + str(run) + '_.log'
     logfile_task_eNB_out = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
     logfile_task_eNB = logdir_local_testcase + '/eNB_task' + '_' + str(run) + '_.log'
-    task_eNB = ' ( \n'
-    task_eNB = task_eNB + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
-    task_eNB = task_eNB + 'env |grep OPENAIR  \n'
-    task_eNB = task_eNB + update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
+
+    task_eNB_compile = ' ( uname -a ; date \n'
+    task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+    task_eNB_compile = task_eNB_compile + 'env |grep OPENAIR  \n'
+    task_eNB_compile = task_eNB_compile + update_config_file(oai_eNB, eNB_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
     if eNB_compile_prog != "":
-       task_eNB  = task_eNB +  ' ( ' + eNB_compile_prog + ' '+ eNB_compile_prog_args + ' ) > ' + logfile_compile_eNB + ' 2>&1 \n'
+       task_eNB_compile  = task_eNB_compile +  ' ( ' + eNB_compile_prog + ' '+ eNB_compile_prog_args + ' ) > ' + logfile_compile_eNB + ' 2>&1 \n'
+    task_eNB_compile =  task_eNB_compile + ' date ) > ' + logfile_task_eNB_compile_out + ' 2>&1  '
+    write_file(logfile_task_eNB_compile, task_eNB_compile, mode="w")
+
+    task_eNB = ' ( uname -a ; date \n'
+    task_eNB = task_eNB + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+    task_eNB = task_eNB + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
+
     if eNB_pre_exec != "":
        task_eNB  = task_eNB +  ' ( ' + eNB_pre_exec + ' '+ eNB_pre_exec_args + ' ) > ' + logfile_pre_exec_eNB + ' 2>&1 \n'
     if eNB_main_exec != "":
@@ -593,15 +611,27 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_traffic_UE = logdir_UE + '/UE_traffic' + '_' + str(run) + '_.log'    
     logfile_task_UE_out = logdir_UE + '/UE_task_out' + '_' + str(run) + '_.log'
     logfile_task_UE = logdir_local_testcase + '/UE_task' + '_' + str(run) + '_.log'
-    task_UE = ' ( \n'
+    logfile_task_UE_compile_out = logdir_UE + '/UE_task_compile_out' + '_' + str(run) + '_.log'
+    logfile_task_UE_compile = logdir_local_testcase + '/UE_task_compile' + '_' + str(run) + '_.log'
+
+    task_UE_compile = ' ( uname -a ; date \n'
+    task_UE_compile = task_UE_compile + 'array_exec_pid=()' + '\n'
+    task_UE_compile = task_UE_compile + 'cd ' + logdirOAI5GRepo + '\n'  
+    task_UE_compile = task_UE_compile + 'source oaienv \n'
+    task_UE_compile = task_UE_compile + 'source cmake_targets/tools/build_helper \n'
+    task_UE_compile = task_UE_compile + 'env |grep OPENAIR  \n'
+    task_UE_compile = task_UE_compile + update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
+    if UE_compile_prog != "":
+       task_UE_compile = task_UE_compile + ' ( ' + UE_compile_prog + ' '+ UE_compile_prog_args + ' ) > ' + logfile_compile_UE + ' 2>&1 \n'
+    task_UE_compile  = task_UE_compile + ' ) > ' + logfile_task_UE_compile_out + ' 2>&1 '
+    write_file(logfile_task_UE_compile, task_UE_compile, mode="w")
+
+    task_UE = ' ( uname -a ; date \n'
     task_UE = task_UE + 'array_exec_pid=()' + '\n'
     task_UE = task_UE + 'cd ' + logdirOAI5GRepo + '\n'  
     task_UE = task_UE + 'source oaienv \n'
     task_UE = task_UE + 'source cmake_targets/tools/build_helper \n'
     task_UE = task_UE + 'env |grep OPENAIR  \n'
-    task_UE = task_UE + update_config_file(oai_UE, UE_config_file, logdirOAI5GRepo, '$OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py') + '\n'
-    if UE_compile_prog != "":
-       task_UE = task_UE + ' ( ' + UE_compile_prog + ' '+ UE_compile_prog_args + ' ) > ' + logfile_compile_UE + ' 2>&1 \n'
     if UE_pre_exec != "":
        task_UE  = task_UE +  ' ( ' + UE_pre_exec + ' '+ UE_pre_exec_args + ' ) > ' + logfile_pre_exec_UE + ' 2>&1 \n'
     if UE_main_exec != "":
@@ -628,15 +658,25 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_traffic_EPC = logdir_EPC + '/EPC_traffic' + '_' + str(run) + '_.log'
     logfile_task_EPC_out = logdir_EPC + '/EPC_task_out' + '_' + str(run) + '_.log'
     logfile_task_EPC = logdir_local_testcase + '/EPC_task' + '_' + str(run) + '_.log'
-    task_EPC = ' ( \n'
+    logfile_task_EPC_compile_out = logdir_EPC + '/EPC_task_compile_out' + '_' + str(run) + '_.log'
+    logfile_task_EPC_compile = logdir_local_testcase + '/EPC_task_compile' + '_' + str(run) + '_.log'
+
+    task_EPC_compile = ' ( uname -a ; date \n'
+    task_EPC_compile = task_EPC_compile + 'array_exec_pid=()' + '\n'
+    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + '\n'
+    task_EPC_compile = task_EPC_compile + update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo, logdirOpenaircnRepo+'/TEST/autotests/tools/search_repl.py') + '\n'
+    task_EPC_compile = task_EPC_compile +  'source BUILD/TOOLS/build_helper \n'
+    if EPC_compile_prog != "":
+       task_EPC_compile = task_EPC_compile + '(' + EPC_compile_prog + ' ' + EPC_compile_prog_args +  ' ) > ' + logfile_compile_EPC + ' 2>&1 \n'
+    if HSS_compile_prog != "":
+       task_EPC_compile = task_EPC_compile + '(' + HSS_compile_prog + ' ' + HSS_compile_prog_args + ' ) > ' + logfile_compile_HSS + ' 2>&1 \n'
+    task_EPC_compile  = task_EPC_compile + ' ) > ' + logfile_task_EPC_compile_out + ' 2>&1 ' 
+    write_file(logfile_task_EPC_compile, task_EPC_compile, mode="w")
+    
+    task_EPC = ' ( uname -a ; date \n'
     task_EPC = task_EPC + 'array_exec_pid=()' + '\n'
     task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '\n'
-    task_EPC = task_EPC + update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo, logdirOpenaircnRepo+'/TEST/autotests/tools/search_repl.py') + '\n'
     task_EPC = task_EPC +  'source BUILD/TOOLS/build_helper \n'
-    if EPC_compile_prog != "":
-       task_EPC = task_EPC + '(' + EPC_compile_prog + ' ' + EPC_compile_prog_args +  ' ) > ' + logfile_compile_EPC + ' 2>&1 \n'
-    if HSS_compile_prog != "":
-       task_EPC = task_EPC + '(' + HSS_compile_prog + ' ' + HSS_compile_prog_args + ' ) > ' + logfile_compile_HSS + ' 2>&1 \n'
     if EPC_pre_exec != "":
        task_EPC  = task_EPC +  ' ( ' + EPC_pre_exec + ' '+ EPC_pre_exec_args + ' ) > ' + logfile_pre_exec_EPC + ' 2>&1 \n'
     if HSS_main_exec !=  "":
@@ -658,6 +698,23 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_EPC  = task_EPC + ' ) > ' + logfile_task_EPC_out + ' 2>&1 ' 
     write_file(logfile_task_EPC, task_EPC, mode="w")
     
+    #first we compile all the programs
+    thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
+    thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
+    thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+    threads=[]
+    threads.append(thread_eNB)
+    threads.append(thread_UE)
+    threads.append(thread_EPC)
+    # Start new Threads
+    thread_eNB.start()
+    thread_UE.start()
+    thread_EPC.start()
+    #Wait for all the compile threads to complete
+    for t in threads:
+       t.join()
+
+    #Now we execute all the threads
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)
     thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB, False, timeout_thread)
     thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE, False, timeout_thread) 
@@ -683,20 +740,20 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_EPC , logdir_local_testcase)
+    ssh.get_all(logdir_EPC , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
 
     print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
     ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_eNB, logdir_local_testcase)
+    ssh.get_all(logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
 
     print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
     ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_UE , logdir_local_testcase)
+    ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     
     #Currently we only perform throughput tests
     result = tput_test_search_expr(eNB_search_expr_true, logfile_traffic_eNB)
     run_result=run_result&result
-    result = tput_test_search_expr(ePC_search_expr_true, logfile_traffic_ePC)
+    result = tput_test_search_expr(EPC_search_expr_true, logfile_traffic_EPC)
     run_result=run_result&result
     result = tput_test_search_expr(UE_search_expr_true, logfile_traffic_UE)
     run_result=run_result&result
