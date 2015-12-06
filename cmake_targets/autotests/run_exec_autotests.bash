@@ -153,8 +153,8 @@ function test_compile() {
       echo_success "$test_case_name.${tags} PASSED"
       xUnit_success "compilation" "$test_case_name.$tags" "PASS" "$result_string" "$xmlfile_testcase"
     else             
-      echo_success "$test_case_name.${tags} FAILED"
-      xUnit_success "compilation" "$test_case_name.$tags" "FAIL" "$result_string" "$xmlfile_testcase"
+      echo_error "$test_case_name.${tags} FAILED"
+      xUnit_fail "compilation" "$test_case_name.$tags" "FAIL" "$result_string" "$xmlfile_testcase"
     fi
 }
 
@@ -324,7 +324,7 @@ function test_compile_and_run() {
 
        if [ "$result_string" == "" ]; then
            echo_error "execution $test_case_name.$compile_prog.${tags_array[$tags_array_index]} Run_Result = \"$result_string\"  Result = FAIL"
-	   xUnit_success "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase"
+	   xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase"
        else
         if [ "$global_result" == "0" ]; then
            echo_error "execution $test_case_name.${tags_array[$tags_array_index]} Run_Result = \"$result_string\" Result =  FAIL"

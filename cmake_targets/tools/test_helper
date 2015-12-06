@@ -34,7 +34,7 @@ xUnit_fail() {
   xmlfile_testcase=$5
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time' RESULT='$result'></testcase>"
+  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
   echo  -e $xml > $xmlfile_testcase
   XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_FAILED=$((XUNIT_FAILED+1))
@@ -56,7 +56,7 @@ xUnit_success() {
   xmlfile_testcase=$5
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time' RESULT='$result'></testcase>"
+  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
   echo  -e $xml > $xmlfile_testcase
   XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_SUCCESS=$((XUNIT_SUCCESS+1))
