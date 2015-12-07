@@ -152,6 +152,9 @@ def tput_test_search_expr (search_expr, logfile_traffic):
           
           if (min_tput != None and max_tput != None  and avg_tput != None  and duration != None ):
              result = tput_test(logfile_traffic, min_tput, max_tput, avg_tput, duration)
+   else: 
+      result=1
+
    return result
 
       
@@ -492,6 +495,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_traffic_exec_args = testcase.findtext('UE_traffic_exec_args',default='')
   UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
+  UE_stop_script =  testcase.findtext('UE_stop_script','')
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -573,6 +577,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_task_eNB_compile = logdir_local_testcase + '/eNB_task_compile' + '_' + str(run) + '_.log'
     logfile_task_eNB_out = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
     logfile_task_eNB = logdir_local_testcase + '/eNB_task' + '_' + str(run) + '_.log'
+    logfile_local_traffic_eNB_out = logdir_local_testcase + '/eNB_traffic' + '_' + str(run) + '_.log' 
 
     task_eNB_compile = ' ( uname -a ; date \n'
     task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
@@ -613,6 +618,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_task_UE = logdir_local_testcase + '/UE_task' + '_' + str(run) + '_.log'
     logfile_task_UE_compile_out = logdir_UE + '/UE_task_compile_out' + '_' + str(run) + '_.log'
     logfile_task_UE_compile = logdir_local_testcase + '/UE_task_compile' + '_' + str(run) + '_.log'
+    logfile_local_traffic_UE_out = logdir_local_testcase + '/UE_traffic' + '_' + str(run) + '_.log' 
 
     task_UE_compile = ' ( uname -a ; date \n'
     task_UE_compile = task_UE_compile + 'array_exec_pid=()' + '\n'
@@ -660,6 +666,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_task_EPC = logdir_local_testcase + '/EPC_task' + '_' + str(run) + '_.log'
     logfile_task_EPC_compile_out = logdir_EPC + '/EPC_task_compile_out' + '_' + str(run) + '_.log'
     logfile_task_EPC_compile = logdir_local_testcase + '/EPC_task_compile' + '_' + str(run) + '_.log'
+    logfile_local_traffic_EPC_out = logdir_local_testcase + '/EPC_traffic' + '_' + str(run) + '_.log' 
 
     task_EPC_compile = ' ( uname -a ; date \n'
     task_EPC_compile = task_EPC_compile + 'array_exec_pid=()' + '\n'
@@ -737,6 +744,20 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox)
     cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
     cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
+    logfile_UE_stop_script_out = logdir_UE + '/UE_stop_script_out' + '_' + str(run) + '_.log'
+    logfile_UE_stop_script = logdir_local_testcase + '/UE_stop_script' + '_' + str(run) + '_.log'
+
+    if UE_stop_script != "":
+      cmd = ' ( uname -a ; date \n'
+      cmd = cmd + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+      cmd = cmd + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
+      cmd = cmd + UE_stop_script + '\n'
+      cmd = cmd + ') > ' + logfile_UE_stop_script_out + ' 2>&1 ' 
+      write_file(logfile_UE_stop_script , cmd, mode="w")
+      thread_UE = oaiThread(4, "UE_thread", UEMachine, user, password  , cmd, False, timeout_thread)
+      thread_UE.start()
+      thread_UE.join()
+   
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
@@ -751,17 +772,17 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     
     #Currently we only perform throughput tests
-    result = tput_test_search_expr(eNB_search_expr_true, logfile_traffic_eNB)
+    result = tput_test_search_expr(eNB_search_expr_true, logfile_local_traffic_eNB_out)
     run_result=run_result&result
-    result = tput_test_search_expr(EPC_search_expr_true, logfile_traffic_EPC)
+    result = tput_test_search_expr(EPC_search_expr_true, logfile_local_traffic_EPC_out)
     run_result=run_result&result
-    result = tput_test_search_expr(UE_search_expr_true, logfile_traffic_UE)
+    result = tput_test_search_expr(UE_search_expr_true, logfile_local_traffic_UE_out)
     run_result=run_result&result
     
     if run_result == 1:  
-      run_result_string = 'RUN_'+str(run) + ' = PASS'
+      run_result_string = ' RUN_'+str(run) + ' = PASS'
     else:
-      run_result_string = 'RUN_'+str(run) + ' = FAIL'
+      run_result_string = ' RUN_'+str(run) + ' = FAIL'
 
     test_result=test_result & run_result
     test_result_string=test_result_string + run_result_string
@@ -775,12 +796,12 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   #Now we finalize the xml file of the test case
   end_time=time.time()
   duration= end_time - start_time
-  xmlFile = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + 'test.' + testcasename + '.xml'
+  xmlFile = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + '/test.' + testcasename + '.xml'
   if test_result ==0: 
     result='FAIL'
   else:
     result = 'PASS'
-  xml="<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + duration + "\'s RESULT=\'" +result + "\'></testcase>"
+  xml="<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + str(duration) + " s \' RESULT=\'" + result + "\'></testcase>"
   write_file(xmlFile, xml, mode="w")
 
 

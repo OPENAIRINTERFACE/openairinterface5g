@@ -97,13 +97,13 @@ Obj.#   Case#   Test#	Description
 01      51      06      mbmssim (TBD)
 
 
-01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
+01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
 01      55      00      Band 7 FDD 5MHz UL Throughput for 60 sec for 1TX/1RX
-01      55      00      Band 7 FDD 10MHz UL Throughput for 60 sec
-01      55      00      Band 7 FDD 20MHz UL Throughput for 60 sec
-01      55      00      Band 7 FDD 5MHz DL Throughput for 60 sec
-01      55      00      Band 7 FDD 10MHz DL Throughput for 60 sec
-01      55      00      Band 7 FDD 20MHz DL Throughput for 60 sec
+01      55      01      Band 7 FDD 10MHz UL Throughput for 60 sec for 1TX/RX
+01      55      02      Band 7 FDD 20MHz UL Throughput for 60 sec for 1TX/RX
+01      55      03      Band 7 FDD 5MHz DL Throughput for 60 sec for 1TX/RX
+01      55      04      Band 7 FDD 10MHz DL Throughput for 60 sec for 1TX/RX
+01      55      05      Band 7 FDD 20MHz DL Throughput for 60 sec for 1TX/RX
 
 
 01      56              lte-softmodem tests with USRP B210  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
