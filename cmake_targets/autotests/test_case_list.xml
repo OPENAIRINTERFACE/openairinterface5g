@@ -1,149 +1,312 @@
  <testCaseList>
 
-<MachineList>mozart stevens calisson nano amerique</MachineList>
+<MachineList>stevens calisson mozart nano amerique</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>feature-34-test_framework</GitOAI5GRepoBranch>
- <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox* </CleanUpOldProgs>	
-
+ <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
+ <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests*</CleanUpOldProgs>	
+ <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
+ <Timeout_execution>1800</Timeout_execution>
+ <MachineListGeneric>calisson stevens mozart nano amerique</MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>oaisim_nos1</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--oaisim -r Rel8</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/oaisim_build_oai/build/oaisim
+                       $OPENAIR_DIR/cmake_targets/at_commands/build/at_nas_ue
+                       $OPENAIR_DIR/cmake_targets/nas_sim_tools/build/usim
+                       $OPENAIR_DIR/cmake_targets/nas_sim_tools/build/nvram</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>oaisim.Rel8</tags>
      <nruns>1</nruns>
      </testCase>
- 
+
      <testCase id="010102" >
      <class>compilation</class>
-     <desc>Build oaisim.Rel8 + network device driver(nasmesh_fix)</desc>
+     <desc>Build oaisim.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>oaisim_nos1</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--oaisim -r Rel10</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/oaisim_build_oai/build/oaisim
+                       $OPENAIR_DIR/cmake_targets/at_commands/build/at_nas_ue
+                       $OPENAIR_DIR/cmake_targets/nas_sim_tools/build/usim
+                       $OPENAIR_DIR/cmake_targets/nas_sim_tools/build/nvram</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
-     <search_expr_true></search_expr_true> 
+     <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>oaisim.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
 
      <testCase id="010103" >
      <class>compilation</class>
-     <desc>Build lte-softmodem EXMIMO.Rel8 + EXMIMO.Rel10 + USRP.Rel10</desc>
-     <pre_compile_prog>cp -vf ../CMakeLists.txt.Rel8 ../CMakeLists.txt
-                       cp -vf ../CMakeLists.txt.Rel10 ../CMakeLists.txt 
-                       cp -vf ../CMakeLists.txt.USRP ../CMakeLists.txt </pre_compile_prog>
-     <compile_prog>lte-softmodem</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <desc>Build oaisim_noS1.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--oaisim -r Rel10 --noS1</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1
+                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/CMakeFiles/oai_nw_drv/oai_nw_drv.ko</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>oaisim_noS1.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
+     </testCase> 
 
-     <testCase id="010104" >
+     <testCase id="010110" >
      <class>compilation</class>
-     <desc>Build phy unitary simulators + secuirity unitary tests</desc>
+     <desc>Build lte_softmodem_noS1.USRP.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim test_secu_knas_encrypt_eia1 test_secu_kenb test_aes128_ctr_encrypt test_aes128_ctr_decrypt test_secu_knas_encrypt_eea2 test_secu_knas test_secu_knas_encrypt_eea1 test_kdf test_aes128_cmac_encrypt test_secu_knas_encrypt_eia2</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w USRP -r Rel10 --noS1</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>lte-softmodem_noS1.USRP.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
+     </testCase> 
 
-     <testCase id="010106" >
+     <testCase id="010111" >
      <class>compilation</class>
-     <desc>Build oaisim.Rel8 + ITTI</desc>
+     <desc>Build lte_softmodem_noS1.EXMIMO.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>oaisim</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w EXMIMO -r Rel10 --noS1</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/oarf_config_exmimo.oct</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>lte-softmodem_noS1.EXMIMO.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
+     </testCase> 
 
-     <testCase id="010107" >
+     <testCase id="010112" >
      <class>compilation</class>
-     <desc>Build oaisim_nos1.Rel10</desc>
+     <desc>Build lte_softmodem_noS1.BLADERF.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>oaisim_nos1</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w BLADERF -r Rel10 --noS1</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>lte-softmodem_noS1.EXMIMO.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
- 
-     <testCase id="010108" >
+     </testCase> 
+
+     <testCase id="010113" >
      <class>compilation</class>
-     <desc>Build oaisim.Rel10 + ITTI</desc>
+     <desc>Build lte_softmodem_noS1.ETHERNET.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>oaisim</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w ETHERNET -r Rel10 --noS1</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>lte-softmodem_noS1.ETHERNET.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
- 
+     </testCase> 
+
+
+
      <testCase id="010120" >
      <class>compilation</class>
-     <desc>Build Nasmesh</desc>
+     <desc>Build lte_softmodem.USRP.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>nasmesh</compile_prog>
-     <compile_prog_args></compile_prog_args>
-     <compile_prog_out>CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w USRP -r Rel10 </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>lte-softmodem.USRP.Rel10</tags>
      <nruns>1</nruns>
-     </testCase>
+     </testCase> 
 
+     <testCase id="010121" >
+     <class>compilation</class>
+     <desc>Build lte_softmodem.EXMIMO.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w EXMIMO -r Rel10 </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/oarf_config_exmimo.oct</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>lte-softmodemEXMIMO.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase> 
+
+     <testCase id="010122" >
+     <class>compilation</class>
+     <desc>Build lte_softmodem.BLADERF.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w BLADERF -r Rel10 </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>lte-softmodem.EXMIMO.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase> 
+
+     <testCase id="010123" >
+     <class>compilation</class>
+     <desc>Build lte_softmodem.ETHERNET.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w ETHERNET -r Rel10 </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>lte-softmodem.ETHERNET.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase> 
 
      <testCase id="010130" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build phy unitary simulators + secuirity unitary tests</desc>
      <pre_compile_prog></pre_compile_prog>
-     <compile_prog>rrh_gw</compile_prog>
-     <compile_prog_args></compile_prog_args>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--phy_simulators --core_simulators</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/pucchsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/prachsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/pdcchsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/pbchsim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/mbmssim
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt
+                       $OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia2</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
+     <tags>unitary-sim.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+
+     <testCase id="010140" >
+     <class>compilation</class>
+     <desc>Build RRH Gateway</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--RRH -w USRP</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRH.USRP.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+     <testCase id="010141" >
+     <class>compilation</class>
+     <desc>Build RRH Gateway</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--RRH -w EXMIMO</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/CMakeFiles/openair_rf/openair_rf.ko
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/updatefw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRH.EXMIMO.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
+
+     <testCase id="010142" >
+     <class>compilation</class>
+     <desc>Build RRH Gateway</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--RRH -w BLADERF</compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <pre_exec></pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRH.BLADERF.Rel10</tags>
      <nruns>1</nruns>
      </testCase>
 
@@ -152,11 +315,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1
@@ -169,7 +332,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6</main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -179,11 +342,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -a 
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -a 
@@ -196,7 +359,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -a 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -a</main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -206,11 +369,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1
@@ -223,7 +386,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 </main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -233,11 +396,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz) in PHY_ABSTRACTION mode and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -a 
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -a
@@ -250,7 +413,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -a</main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6               oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -260,11 +423,11 @@
       <class>execution</class>
       <desc>Run OAI Rel10 TDD, 1 eNB + 1 UE (5 MHz) without abstraction mode, send ping from from eNB to UE, and check that there is no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -c26 
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -c26 
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 
@@ -277,7 +440,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -c26 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -c26 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -c26 </main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6     oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -287,11 +450,11 @@
       <class>execution</class>
       <desc>Run OAI Rel10 TDD, 1 eNB + 1 UE (5 MHz) in PHY_ABSTRACTION  mode, send ping from from eNB to  UE, and check that there is no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -c26 -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -c26  -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 -a
@@ -304,7 +467,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -c26 -a </main_exec_args>
-      <tags>tdd.5MHz.TM1 tdd.10MHz.TM1 tdd.20MHz.TM1 tdd.5MHz.TM2 tdd.10MHz.TM2 tdd.20MHz.TM2 tdd.5MHz.TM5 tdd.10MHz.TM5 tdd.20MHz.TM5 tdd.5MHz.TM6 tdd.10MHz.TM6 tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6                oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -314,11 +477,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F
@@ -331,7 +494,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F</main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6     oaisim_noS1.FDD.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -341,11 +504,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -a
@@ -358,7 +521,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -a</main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags> 
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -368,11 +531,11 @@
       <class>execution</class>
       <desc> Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -F
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -F
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F
@@ -385,7 +548,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -F 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -F </main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags> 
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6     oaisim_noS1.FDD.20MHz.TM6</tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -395,11 +558,11 @@
       <class>execution</class>
       <desc>Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 1 -F -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 1 -F -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F -a
@@ -412,7 +575,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -F  -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -F -a</main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6 oaisim_noS1.FDD.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -422,11 +585,11 @@
       <class>execution</class>
       <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE, and for check for no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -c26
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -c26
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26
@@ -439,7 +602,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -c26
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -c26
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -c26</main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -449,11 +612,11 @@
       <class>execution</class>
       <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE, and check for no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 1 -F -c26 -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 1 -F -c26 -a
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26 -a
@@ -466,7 +629,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -c26 -a </main_exec_args>
-      <tags>FDD.5MHz.TM1 FDD.10MHz.TM1 FDD.20MHz.TM1 FDD.5MHz.TM2 FDD.10MHz.TM2 FDD.20MHz.TM2 FDD.5MHz.TM5 FDD.10MHz.TM5 FDD.20MHz.TM5 FDD.5MHz.TM6 FDD.10MHz.TM6 FDD.20MHz.TM6</tags>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -476,14 +639,15 @@
       <class>execution</class>
       <desc>Check if eMBMS procedure is not finished completely, make sure that the SIB13/MCCH have been correclty received by UEs</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -x 1 -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Found MBSFNAreaConfiguration from eNB 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>oaisim_noS1.eMBMS</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -491,14 +655,15 @@
       <class>execution</class>
       <desc>Check if eMBMS multicast/broadcast data is received, make sure that the SIB13/MCCH/MTCH have been correclty received by UEs</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -x 1 -T mscbr -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Received a multicast packet"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>oaisim_noS1.eMBMS</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -506,14 +671,15 @@
       <class>execution</class>
       <desc>Check for eMBMS multicast/broadcast data received in fdd mode, make sure that the SIB13/MCCH/MTCH have been correclty received by UEs</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -F -T mscbr -x 1 -Q3 -n 100 -b1 -u1</main_exec_args>
       <search_expr_true>"Received a multicast packet"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>oaisim_noS1.eMBMS</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -521,14 +687,15 @@
       <class>execution</class>
       <desc>Check for eMBMS multicast/broadcast DF relaying working properly in fdd mode, make sure that the SIB13/MCCH/MTCH have been correclty received by UEs</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>oaisim_nos1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args>--oaisim --noS1</compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/tools/init_nas_nos1</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>oaisim_nos1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1</main_exec>
       <main_exec_args> -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -l7 -c43 -F -T mbvbr -Q4 -j1 -n120</main_exec_args>
       <search_expr_true>"MTCH for sync area 1"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>oaisim_noS1.eMBMS</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -536,14 +703,15 @@
       <class>execution</class>
       <desc>test_aes128_cmac_encrypt</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_aes128_cmac_encrypt</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_aes128_cmac_encrypt</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_cmac_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_aes128_cmac_encrypt</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -551,14 +719,15 @@
       <class>execution</class>
       <desc>test_aes128_ctr_decrypt</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_aes128_ctr_decrypt</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_aes128_ctr_decrypt</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_decrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_aes128_ctr_decrypt</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -566,14 +735,15 @@
       <class>execution</class>
       <desc>test_aes128_ctr_encrypt</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_aes128_ctr_encrypt</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_aes128_ctr_encrypt</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_aes128_ctr_encrypt</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_aes128_ctr_encrypt</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -581,14 +751,15 @@
       <class>execution</class>
       <desc>test_secu_kenb</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_kenb</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_kenb</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_kenb</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_kenb</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -596,14 +767,15 @@
       <class>execution</class>
       <desc>test_secu_knas</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_knas</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_knas</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_knas</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -611,14 +783,15 @@
       <class>execution</class>
       <desc>test_secu_knas_encrypt_eea1</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_knas_encrypt_eea1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_knas_encrypt_eea1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_knas_encrypt_eea1</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -626,14 +799,15 @@
       <class>execution</class>
       <desc>test_secu_knas_encrypt_eea2</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_knas_encrypt_eea2</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_knas_encrypt_eea2</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eea2</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_knas_encrypt_eea2</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -641,14 +815,15 @@
       <class>execution</class>
       <desc>test_secu_knas_encrypt_eia1</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_knas_encrypt_eia1</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_knas_encrypt_eia1</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_knas_encrypt_eia1</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -656,14 +831,15 @@
       <class>execution</class>
       <desc>test_secu_knas_encrypt_eia2</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_secu_knas_encrypt_eia2</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_secu_knas_encrypt_eia2</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_secu_knas_encrypt_eia1</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_secu_knas_encrypt_eia2</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -671,14 +847,15 @@
       <class>execution</class>
       <desc>test_kdf</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>test_kdf</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --core_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>test_kdf</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/test_kdf</main_exec>
       <main_exec_args> --verbose</main_exec_args>
       <search_expr_true>"finished with 0 errors"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <tags>test_kdf</tags>
       <nruns>3</nruns>
     </testCase>
 
@@ -697,11 +874,11 @@
       (TM2 Test 1b 20 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
        </desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>dlsim</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>dlsim</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
       <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
                        -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
                        -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
@@ -713,7 +890,7 @@
                        -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70 -L
 		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70 -L
                        -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70 -L</main_exec_args>
-      <tags>test1 test5 test6 test6b test7 test7b test10 test10b test11 TM2_test1 TM2_test1b</tags>
+      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>1</nruns>
@@ -728,18 +905,18 @@
              (Test 5, 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
              (Test 6, 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
       <pre_compile_prog></pre_compile_prog>
-      <compile_prog>ulsim</compile_prog>
-      <compile_prog_args></compile_prog_args>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators</compile_prog_args>
       <pre_exec></pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec>ulsim</main_exec>
+      <main_exec>$OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
       <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
                        -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
                         -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 
                        -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
                         -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
                        -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L</main_exec_args>
-     <tags>test1 test2 test3 test4 test5 test6</tags>
+     <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>1</nruns>
@@ -750,62 +927,228 @@
     <desc></desc>
     <eNB>calisson</eNB>
     <UE>stevens</UE>
-    <EPC>nano</EPC>
-    <cleanupScript>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* ltebox*</cleanupScript>
-    <TimeOut_cmd>300</TimeOut_cmd>
-
+    <EPC>amerique</EPC>
+    <TimeOut_cmd>180</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>$OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 1
-                     $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 208
-                     $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code 95</eNB_config_file>
-    <eNB_pre_compile_prog></eNB_pre_compile_prog>
-    <eNB_pre_compile_prog_args></eNB_pre_compile_prog_args>
-    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai </eNB_compile_prog>
-    <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
-    <eNB_pre_exec>iperf </eNB_pre_exec>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address "ipv4=\"192.168.12.26\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"</eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
+    <eNB_pre_exec></eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
-    <eNB_main_exec_args></eNB_main_exec_args>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  </eNB_main_exec_args>
+    <eNB_traffic_exec></eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_pre_compile_prog></UE_pre_compile_prog>
-    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
+    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
     <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
-    <UE_pre_exec>iperf </UE_pre_exec>
+    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</UE_main_exec>
+    <UE_main_exec>sleep 30 ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec> while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 3000 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-
-    <UE_working_dir>/tmp</UE_working_dir>
-    <UE_pre_compile_prog></UE_pre_compile_prog>
-    <UE_pre_compile_prog_args></UE_pre_compile_prog_args>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
-    <UE_pre_exec>iperf </UE_pre_exec>
-    <UE_pre_exec_args></UE_pre_exec_args>
-    <UE_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</UE_main_exec>
-    <UE_main_exec_args></UE_main_exec_args>
-    <UE_search_expr_true></UE_search_expr_true>
-    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_pre_compile_prog></EPC_pre_compile_prog>
-    <EPC_pre_compile_prog_args></EPC_pre_compile_prog_args>
-    <EPC_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</EPC_compile_prog>
-    <EPC_compile_prog_args>--eNB -w USRP</EPC_compile_prog_args>
-    <EPC_pre_exec>iperf </EPC_pre_exec>
+    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
+    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
+    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+
+    <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
-    <EPC_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</EPC_main_exec>
+    <EPC_main_exec>/opt/ltebox/tools/stop_ltebox ; /opt/ltebox/tools/start_ltebox ; sleep 3000</EPC_main_exec>
     <EPC_main_exec_args></EPC_main_exec_args>
+    <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
+    <HSS_main_exec_args></HSS_main_exec_args>
+    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec_args></EPC_traffic_exec_args>
+    <EPC_search_expr_true>throughput_test min=0.0Mbits/sec max=0.0Mbits/sec average=0.0Mbits/sec duration=0.0s </EPC_search_expr_true>
+    <EPC_search_expr_false></EPC_search_expr_false>
+    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <tags>USRP.ALU_EPC.Bandrich.5MHz.FDD.UL</tags>
+    <nruns>3</nruns>
+    </testCase> 
+
+
+  <testCase id="015600" >
+    <class>lte-softmodem</class>
+    <desc></desc>
+    <eNB>calisson</eNB>
+    <UE>stevens</UE>
+    <EPC>nano</EPC>
+    <TimeOut_cmd>60</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"</eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
+    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  </eNB_main_exec_args>
+    <eNB_traffic_exec>iperf -s</eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"</UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
+    <UE_pre_exec></UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>ping 192.172.0.1</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true></UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+
+    <EPC_working_dir>/tmp</EPC_working_dir>
+    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" 
+                     BUILD/EPC/epc.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.conf.in   TAC \"1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
+                     BUILD/EPC/epc.conf.in   MME_IPV4_ADDRESS_FOR_S1_MME \"192.168.12.62/24\"
+                     BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP \"192.168.12.62/24\"
+                     BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI  \"192.168.12.62/24\"</EPC_config_file>
+    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
+    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog_args> -c </HSS_compile_prog_args>
+
+    <EPC_pre_exec></EPC_pre_exec>
+    <EPC_pre_exec_args></EPC_pre_exec_args>
+    <EPC_main_exec>/SCRIPTS/run_epc -g </EPC_main_exec>
+    <EPC_main_exec_args></EPC_main_exec_args>
+    <HSS_main_exec>/SCRIPTS/run_hss -g </HSS_main_exec>
+    <HSS_main_exec_args></HSS_main_exec_args>
+    <EPC_traffic_exec>iperf -s</EPC_traffic_exec>
+    <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
+    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <nruns>2</nruns>
-    </testCase> 
+   </testCase>
+
+
+  <testCase id="015700" >
+    <class>lte-softmodem</class>
+    <desc></desc>
+    <eNB>calisson</eNB>
+    <UE>stevens</UE>
+   <EPC>calisson</EPC>
+    <TimeOut_cmd>60</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mme_ip_address "ipv4=\"192.168.12.62\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"</eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>--eNB -w USRP</eNB_compile_prog_args>
+    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  </eNB_main_exec_args>
+    <eNB_traffic_exec></eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"</UE_config_file>
+    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
+    <UE_compile_prog_args>--eNB -w USRP</UE_compile_prog_args>
+    <UE_pre_exec></UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>ping 192.172.0.1</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true></UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+
+    <EPC_working_dir>/tmp</EPC_working_dir>
+    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
+                     BUILD/EPC/epc.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.conf.in   TAC \"1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.62/24\"
+                     BUILD/EPC/epc.conf.in   MME_IPV4_ADDRESS_FOR_S1_MME \"192.168.12.62/24\"
+                     BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP \"192.168.12.62/24\"
+                     BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI  \"192.168.12.62/24\"</EPC_config_file>
+    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
+    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+
+    <EPC_pre_exec></EPC_pre_exec>
+    <EPC_pre_exec_args></EPC_pre_exec_args>
+    <EPC_main_exec>SCRIPTS/run_epc -l </EPC_main_exec>
+    <EPC_main_exec_args></EPC_main_exec_args>
+    <HSS_main_exec>SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec_args></HSS_main_exec_args>
+    <EPC_traffic_exec>iperf -s</EPC_traffic_exec>
+    <EPC_traffic_exec_args></EPC_traffic_exec_args>
+    <EPC_search_expr_true></EPC_search_expr_true>
+    <EPC_search_expr_false></EPC_search_expr_false>
+    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+
+    <nruns>2</nruns>
+   </testCase>
 
   </testCaseList>
 
