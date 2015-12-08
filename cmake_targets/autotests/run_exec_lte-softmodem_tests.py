@@ -81,8 +81,8 @@ def write_file(filename, string, mode="w"):
 #$5 minimum duration of throughput
 #The throughput values found in file must be higher than values from from 2,3,4,5
 #The function returns True if throughput conditions are saisfied else it returns fails
-   
 def tput_test(filename, min_tput, max_tput, average, min_duration):
+   
    if os.path.exists(filename):
       with open (filename, "r") as myfile:
          data=myfile.read()
@@ -98,13 +98,13 @@ def tput_test(filename, min_tput, max_tput, average, min_duration):
         min_list = 0
         max_list = 0
         average_list=0
-      
+      tput_string=' ( '+ "min=%0.2f"  % min_list + ' Mbps / ' + "max=%0.2f" %  max_list + ' Mbps / ' + "avg=%0.2f" % average_list + ' Mbps / ' + "dur=%0.2f" % duration + ' s) ' 
       if (min_list >= min_tput and  max_list >= max_tput and average_list >= average and duration >= min_duration):
-        return True
+        return True , tput_string
       else:
-        return False
+        return False , tput_string
    else: 
-      return False
+      return False , tput_string
 
     
 def try_convert_to_float(string, fail=None):
@@ -115,6 +115,7 @@ def try_convert_to_float(string, fail=None):
 
 def tput_test_search_expr (search_expr, logfile_traffic):
    result=0
+   tput_string=''
    if search_expr !='':
        if search_expr.find('throughput_test')!= -1 :
           p= re.compile('min\s*=\s*(\d*.\d*)\s*Mbits/sec')
@@ -151,12 +152,11 @@ def tput_test_search_expr (search_expr, logfile_traffic):
           duration = try_convert_to_float(duration)
           
           if (min_tput != None and max_tput != None  and avg_tput != None  and duration != None ):
-             result = tput_test(logfile_traffic, min_tput, max_tput, avg_tput, duration)
+             result, tput_string = tput_test(logfile_traffic, min_tput, max_tput, avg_tput, duration)
    else: 
       result=1
 
-   return result
-
+   return result, tput_string
       
 
 def sftp_module (username, password, hostname, ports, paramList,logfile): 
@@ -772,17 +772,23 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     
     #Currently we only perform throughput tests
-    result = tput_test_search_expr(eNB_search_expr_true, logfile_local_traffic_eNB_out)
+    tput_run_string=''
+    result, tput_string = tput_test_search_expr(eNB_search_expr_true, logfile_local_traffic_eNB_out)
+    tput_run_string = tput_run_string + tput_string
     run_result=run_result&result
-    result = tput_test_search_expr(EPC_search_expr_true, logfile_local_traffic_EPC_out)
+    result, tput_string = tput_test_search_expr(EPC_search_expr_true, logfile_local_traffic_EPC_out)
     run_result=run_result&result
-    result = tput_test_search_expr(UE_search_expr_true, logfile_local_traffic_UE_out)
+    tput_run_string = tput_run_string + tput_string
+    result, tput_string = tput_test_search_expr(UE_search_expr_true, logfile_local_traffic_UE_out)
     run_result=run_result&result
+    tput_run_string = tput_run_string + tput_string
     
     if run_result == 1:  
       run_result_string = ' RUN_'+str(run) + ' = PASS'
     else:
       run_result_string = ' RUN_'+str(run) + ' = FAIL'
+    
+    run_result_string = run_result_string + tput_run_string
 
     test_result=test_result & run_result
     test_result_string=test_result_string + run_result_string
@@ -801,7 +807,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     result='FAIL'
   else:
     result = 'PASS'
-  xml="\n<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + str(duration) + " s \' RESULT=\'" + result + "\'></testcase>"
+  xml="\n<testcase classname=\'"+ testcaseclass +  "\' name=\'" + testcasename + "."+tags +  "\' Run_result=\'" + test_result_string + "\' time=\'" + str(duration) + " s \' RESULT=\'" + result + "\'></testcase> \n"
   write_file(xmlFile, xml, mode="w")
 
 
