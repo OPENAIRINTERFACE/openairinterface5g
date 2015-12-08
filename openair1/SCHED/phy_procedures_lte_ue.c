@@ -781,6 +781,21 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 
 
 
+        LOG_I(PHY,
+              "[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",
+              Mod_id,harq_pid,frame_tx,subframe_tx,
+              first_rb,nb_rb,
+              phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->round,
+              phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->mcs,
+              phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->rvidx,
+              (frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift+
+               phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2+
+               frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[slot_tx])%12,
+              frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift,
+              phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->n_DMRS2,
+              frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[slot_tx],
+              phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[0],phy_vars_ue->ulsch_ue[eNB_id]->o_ACK[1],
+              phy_vars_ue->ulsch_ue[eNB_id]->harq_processes[harq_pid]->O_ACK);
 #ifdef DEBUG_PHY_PROC
         LOG_D(PHY,
               "[UE  %d][PUSCH %d] Frame %d subframe %d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d\n",

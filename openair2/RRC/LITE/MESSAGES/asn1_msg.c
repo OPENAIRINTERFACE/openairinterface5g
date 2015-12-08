@@ -107,7 +107,7 @@ int errno;
 # endif
 #endif
 
-//#define XER_PRINT
+#define XER_PRINT
 
 extern Enb_properties_array_t enb_properties;
 typedef struct xer_sprint_string_s {
@@ -1297,6 +1297,11 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
                                    100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
                enc_rval.failed_type->name, enc_rval.encoded);
+
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+#endif
+
 
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)

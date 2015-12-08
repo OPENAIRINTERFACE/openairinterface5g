@@ -334,7 +334,7 @@ void print_opp_meas(void);
 int transmission_mode=1;
 
 
-int16_t           glog_level         = LOG_INFO;
+int16_t           glog_level         = LOG_DEBUG;
 int16_t           glog_verbosity     = LOG_MED;
 int16_t           hw_log_level       = LOG_INFO;
 int16_t           hw_log_verbosity   = LOG_MED;
@@ -2524,9 +2524,9 @@ int main( int argc, char **argv )
 
     set_comp_log(HW,      LOG_INFO,  LOG_HIGH, 1);
     set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(RLC,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
+    set_comp_log(MAC,     LOG_DEBUG,   LOG_HIGH, 1);
+    set_comp_log(RLC,     LOG_DEBUG,   LOG_HIGH, 1);
+    set_comp_log(PDCP,    LOG_DEBUG,   LOG_HIGH, 1);
     set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RRC,     LOG_INFO,   LOG_HIGH, 1);
 #if defined(ENABLE_ITTI)
@@ -3019,7 +3019,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
   openair0.type=EXMIMO_IF;
   printf("Setting the HW to EXMIMO and initializing openair0 ...\n");
 #elif OAI_USRP
-  openair0.type=USRP_IF;
+  openair0.type=USRP_B200_IF;
   printf("Setting the HW to USRP and initializing openair0 ...\n");
 #elif OAI_BLADERF  
   openair0.type=BLADERF_IF;	
@@ -3107,7 +3107,7 @@ openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #ifdef OAI_USRP
     openair_daq_vars.timing_advance = timing_advance;
 #else
-    openair_daq_vars.timing_advance = 160;
+    openair_daq_vars.timing_advance = timing_advance;
 #endif
     if (setup_ue_buffers(UE,&openair0_cfg[0],rf_map)!=0) {
       printf("Error setting up eNB buffer\n");

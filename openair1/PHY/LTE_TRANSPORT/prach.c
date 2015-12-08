@@ -1016,7 +1016,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
 #if defined(EXMIMO) || defined(OAI_USRP)
     int j;
     int overflow = prach_start + prach_len - LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_ue->lte_frame_parms.samples_per_tti;
-    LOG_D( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
+    LOG_I( PHY, "prach_start=%d, overflow=%d\n", prach_start, overflow );
 
     for (i=prach_start,j=0; i<min(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME,prach_start+prach_len); i++,j++) {
       ((int16_t*)phy_vars_ue->lte_ue_common_vars.txdata[0])[2*i] = prach[2*j]<<4;
