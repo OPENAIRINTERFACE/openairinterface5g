@@ -27,24 +27,24 @@ Obj.#   Case#   Test#	Description
 
 
 
-01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      02      00      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      01      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      02      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      03      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      04      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation
+01      02      00      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      02      01      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      02      02      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      02      03      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      02      04      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      02      05      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      02      05      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
-01      03              Run OAISIM-NOS1 Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      03      00      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      01      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      02      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      03      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      04      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+01      03              Run OAISIM-NOS1 Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation
+01      03      00      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      03      01      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      03      02      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      03      03      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      03      04      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      03      05      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      03      05      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
 
