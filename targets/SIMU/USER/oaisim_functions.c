@@ -1122,24 +1122,28 @@ void init_ocm(void)
               else
          */
 
-        eNB2UE[eNB_id][UE_id][CC_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-                                       PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
-                                       map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
-                                       oai_emulation.environment_system_config.system_bandwidth_MB,
-                                       forgetting_factor,
-                                       0,
-                                       0);
+        eNB2UE[eNB_id][UE_id][CC_id] = 
+	  new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
+			       PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+			       map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
+			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL),
+			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL),
+			       forgetting_factor,
+			       0,
+			       0);
         random_channel(eNB2UE[eNB_id][UE_id][CC_id],abstraction_flag);
         LOG_D(OCM,"[SIM] Initializing channel (%s, %d) from UE %d to eNB %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
 
-        UE2eNB[UE_id][eNB_id][CC_id] = new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-                                       PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
-                                       map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
-                                       oai_emulation.environment_system_config.system_bandwidth_MB,
-                                       forgetting_factor,
-                                       0,
-                                       0);
+        UE2eNB[UE_id][eNB_id][CC_id] = 
+	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
+			       PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+			       map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
+			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_UL),
+			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_UL),
+			       forgetting_factor,
+			       0,
+			       0);
 
         random_channel(UE2eNB[UE_id][eNB_id][CC_id],abstraction_flag);
 

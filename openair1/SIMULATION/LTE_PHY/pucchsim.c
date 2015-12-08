@@ -49,8 +49,6 @@
 #include "OCG_vars.h"
 #include "UTIL/LOG/log_extern.h"
 
-#define BW 5.0
-
 int current_dlsch_cqi; //FIXME!
 
 PHY_VARS_eNB *PHY_vars_eNB;
@@ -418,7 +416,8 @@ int main(int argc, char **argv)
   UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+ 				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
+				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
                                 0.0,
                                 0,
                                 0);
