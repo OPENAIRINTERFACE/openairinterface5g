@@ -189,30 +189,363 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 //------------------------------------------------------------------------------
-long et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
+int et_handle_s1ap_mismatch(et_packet_t * const spacket, et_packet_t * const rx_packet)
 {
-  if (s1ap1->pdu.present != s1ap2->pdu.present)     return -ET_ERROR_MATCH_PACKET_S1AP_PRESENT;
+  S1ap_MME_UE_S1AP_ID_t scenario_mme_ue_s1ap_id = 0;
+  S1ap_MME_UE_S1AP_ID_t rx_mme_ue_s1ap_id       = 0;
+  S1AP_PDU_PR           present;
+
+  present = rx_packet->sctp_hdr.u.data_hdr.payload.pdu.present;
+
+  switch (rx_packet->sctp_hdr.u.data_hdr.payload.message.procedureCode) {
+    case  S1ap_ProcedureCode_id_HandoverPreparation:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequiredIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequiredIEs.mme_ue_s1ap_id;
+      } else {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCommandIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCommandIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_HandoverResourceAllocation:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_successfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestAcknowledgeIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverRequestAcknowledgeIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_unsuccessfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverFailureIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverFailureIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_HandoverNotification:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverNotifyIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverNotifyIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_PathSwitchRequest:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PathSwitchRequestIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PathSwitchRequestIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_HandoverCancel:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCancelIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_HandoverCancelIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_E_RABSetup:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABSetupRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABSetupRequestIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABSetupResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABSetupResponseIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_E_RABModify:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABModifyRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABModifyRequestIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABModifyResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABModifyResponseIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_E_RABRelease:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseCommandIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseCommandIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseResponseIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_E_RABReleaseIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseIndicationIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_E_RABReleaseIndicationIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_InitialContextSetup:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialContextSetupRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialContextSetupRequestIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialContextSetupResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialContextSetupResponseIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_Paging:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PagingIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_PagingIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_downlinkNASTransport:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNASTransportIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNASTransportIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_initialUEMessage:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialUEMessageIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_InitialUEMessageIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_uplinkNASTransport:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNASTransportIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNASTransportIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_Reset:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ResetIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ResetIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_ErrorIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ErrorIndicationIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ErrorIndicationIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_NASNonDeliveryIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_NASNonDeliveryIndication_IEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_NASNonDeliveryIndication_IEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_S1Setup:
+      /*if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupRequestIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_successfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupResponseIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_unsuccessfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupFailureIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_S1SetupFailureIEs.mme_ue_s1ap_id;
+      }*/
+      break;
+
+    case  S1ap_ProcedureCode_id_UEContextReleaseRequest:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseRequestIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseRequestIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_DownlinkS1cdma2000tunneling:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkS1cdma2000tunnelingIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkS1cdma2000tunnelingIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_UplinkS1cdma2000tunneling:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkS1cdma2000tunnelingIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkS1cdma2000tunnelingIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_UEContextModification:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationRequestIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_successfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationResponseIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_unsuccessfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationFailureIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextModificationFailureIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_UECapabilityInfoIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UECapabilityInfoIndicationIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UECapabilityInfoIndicationIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_UEContextRelease:
+      if (present == S1AP_PDU_PR_initiatingMessage) {
+        //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.mme_ue_s1ap_id;
+        //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCompleteIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCompleteIEs.mme_ue_s1ap_id;
+      }
+      break;
+
+    case  S1ap_ProcedureCode_id_eNBStatusTransfer:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBStatusTransferIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBStatusTransferIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_MMEStatusTransfer:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEStatusTransferIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEStatusTransferIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_DeactivateTrace:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DeactivateTraceIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DeactivateTraceIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_TraceStart:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_TraceStartIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_TraceStartIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_TraceFailureIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_TraceFailureIndicationIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_TraceFailureIndicationIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_ENBConfigurationUpdate:
+      /*if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_successfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateAcknowledgeIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateAcknowledgeIEs.mme_ue_s1ap_id;
+      } else {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateFailureIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBConfigurationUpdateFailureIEs.mme_ue_s1ap_id;
+      }*/
+      break;
+
+    case  S1ap_ProcedureCode_id_MMEConfigurationUpdate:
+      /*if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateIEs.mme_ue_s1ap_id;
+      } else if (present == S1AP_PDU_PR_successfulOutcome) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateAcknowledgeIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateAcknowledgeIEs.mme_ue_s1ap_id;
+      } else {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateFailureIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEConfigurationUpdateFailureIEs.mme_ue_s1ap_id;
+      }*/
+      break;
+
+    case  S1ap_ProcedureCode_id_LocationReportingControl:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportingControlIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportingControlIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_LocationReportingFailureIndication:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportingFailureIndicationIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportingFailureIndicationIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_LocationReport:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_LocationReportIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_OverloadStart:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_OverloadStartIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_OverloadStartIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_OverloadStop:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_OverloadStopIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_OverloadStopIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_WriteReplaceWarning:
+      /*if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_WriteReplaceWarningRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_WriteReplaceWarningRequestIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_WriteReplaceWarningResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_WriteReplaceWarningResponseIEs.mme_ue_s1ap_id;
+      }*/
+      break;
+
+    case  S1ap_ProcedureCode_id_eNBDirectInformationTransfer:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBDirectInformationTransferIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_ENBDirectInformationTransferIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_MMEDirectInformationTransfer:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEDirectInformationTransferIEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_MMEDirectInformationTransferIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_PrivateMessage:
+    case  S1ap_ProcedureCode_id_eNBConfigurationTransfer:
+    case  S1ap_ProcedureCode_id_MMEConfigurationTransfer:
+      AssertFatal(0, "TODO");
+      break;
+
+    case  S1ap_ProcedureCode_id_CellTrafficTrace:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_CellTrafficTraceIEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_CellTrafficTraceIEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_Kill:
+      /*if (present == S1AP_PDU_PR_initiatingMessage) {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillRequestIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillRequestIEs.mme_ue_s1ap_id;
+      } else  {
+        rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillResponseIEs.mme_ue_s1ap_id;
+        scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_KillResponseIEs.mme_ue_s1ap_id;
+      }*/
+      break;
+
+    case  S1ap_ProcedureCode_id_downlinkUEAssociatedLPPaTransport:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_uplinkUEAssociatedLPPaTransport:
+      rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_downlinkNonUEAssociatedLPPaTransport:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_DownlinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      break;
+
+    case  S1ap_ProcedureCode_id_uplinkNonUEAssociatedLPPaTransport:
+      //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UplinkNonUEAssociatedLPPaTransport_IEs.mme_ue_s1ap_id;
+      break;
+
+    default:
+      AssertFatal(0, "Unknown procedure code %ld", rx_packet->sctp_hdr.u.data_hdr.payload.message.procedureCode);
+  }
+  return 0;
+}
+//------------------------------------------------------------------------------
+asn_comp_rval_t * et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
+{
+  asn_comp_rval_t *rv = NULL;
+  if (s1ap1->pdu.present != s1ap2->pdu.present)  {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_PRESENT; return rv;}
   switch (s1ap1->pdu.present) {
     case  S1AP_PDU_PR_NOTHING:
       break;
     case  S1AP_PDU_PR_initiatingMessage:
-      if (s1ap1->pdu.choice.initiatingMessage.procedureCode != s1ap2->pdu.choice.initiatingMessage.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
-      if (s1ap1->pdu.choice.initiatingMessage.criticality != s1ap2->pdu.choice.initiatingMessage.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
+      if (s1ap1->pdu.choice.initiatingMessage.procedureCode != s1ap2->pdu.choice.initiatingMessage.procedureCode)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE; return rv;}
+      if (s1ap1->pdu.choice.initiatingMessage.criticality != s1ap2->pdu.choice.initiatingMessage.criticality)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY; return rv;}
       break;
     case  S1AP_PDU_PR_successfulOutcome:
-      if (s1ap1->pdu.choice.successfulOutcome.procedureCode != s1ap2->pdu.choice.successfulOutcome.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
-      if (s1ap1->pdu.choice.successfulOutcome.criticality != s1ap2->pdu.choice.successfulOutcome.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
+      if (s1ap1->pdu.choice.successfulOutcome.procedureCode != s1ap2->pdu.choice.successfulOutcome.procedureCode)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE; return rv;}
+      if (s1ap1->pdu.choice.successfulOutcome.criticality != s1ap2->pdu.choice.successfulOutcome.criticality)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY; return rv;}
       break;
     case  S1AP_PDU_PR_unsuccessfulOutcome:
-      if (s1ap1->pdu.choice.unsuccessfulOutcome.procedureCode != s1ap2->pdu.choice.unsuccessfulOutcome.procedureCode) return -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE;
-      if (s1ap1->pdu.choice.unsuccessfulOutcome.criticality != s1ap2->pdu.choice.unsuccessfulOutcome.criticality) return -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY;
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.procedureCode != s1ap2->pdu.choice.unsuccessfulOutcome.procedureCode)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE; return rv;}
+      if (s1ap1->pdu.choice.unsuccessfulOutcome.criticality != s1ap2->pdu.choice.unsuccessfulOutcome.criticality)
+        {rv  = calloc(1, sizeof(asn_comp_rval_t)); rv->err_code = ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY; return rv;}
       break;
     default:
       AssertFatal(0, "Unknown pdu.present %d", s1ap1->pdu.present);
   }
 
   if (s1ap1->binary_stream_allocated_size == s1ap2->binary_stream_allocated_size) {
-    if (memcmp((void*)s1ap1->binary_stream, (void*)s1ap2->binary_stream, s1ap1->binary_stream_allocated_size) ==  0) return 0;
+    if (memcmp((void*)s1ap1->binary_stream, (void*)s1ap2->binary_stream, s1ap1->binary_stream_allocated_size) ==  0) return NULL;
   }
   // if no matching, may be the scenario need minor corrections (same enb_ue_s1ap_id but need to update mme_ue_s1ap_id)
   return et_s1ap_ies_is_matching(s1ap1->pdu.present, &s1ap1->message, &s1ap2->message, constraints);
@@ -284,10 +617,12 @@ int et_scenario_set_packet_received(et_packet_t * const packet)
 //------------------------------------------------------------------------------
 int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
 {
-  et_packet_t     * packet    = NULL;
-  et_packet_t     * rx_packet = NULL;
-  unsigned long int not_found = 1;
-  long              rv        = 0;
+  et_packet_t      *packet       = NULL;
+  et_packet_t      *rx_packet    = NULL;
+  unsigned long int not_found    = 1;
+  asn_comp_rval_t  *comp_results = NULL;
+  asn_comp_rval_t  *comp_results2 = NULL;
+  unsigned char     error_code   = 0;
 
   AssertFatal (NULL != s1ap_data_ind, "Bad parameter sctp_data_ind\n");
   rx_packet = et_build_packet_from_s1ap_data_ind(s1ap_data_ind);
@@ -317,20 +652,35 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
   while ((NULL != packet) && (not_found < 5)) {
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-      rv = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
-      if (0 == rv) {
+      comp_results = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
+      if (NULL == comp_results) {
         S1AP_DEBUG("Compare RX packet with packet: num %u  | original frame number %u \n", packet->packet_number, packet->original_frame_number);
         packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
         packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
         return et_scenario_set_packet_received(packet);
       } else {
-        S1AP_DEBUG("Compare RX packet with packet: num %u  | original frame number %u failed:%s\n",
-            packet->packet_number, packet->original_frame_number, et_error_match2str(rv));
-        // asn1 compare no match return code, may not collide with non asn1 error return codes
-        // (each asn1 rc <= 166 (enum e_S1ap_ProtocolIE_ID, in generated file S1ap_ProtocolIE_ID.h))
-        if ((rv > 0) || (rv <= -ET_ERROR_MATCH_END)) {
-          //TODO MME_UE_S1AP_ID, etc.
-          AssertFatal(0,"Some work needed there");
+        S1AP_DEBUG("Compare RX packet with packet: num %u  | original frame number %u failed\n",
+          packet->packet_number, packet->original_frame_number);
+        while (comp_results) {
+          S1AP_DEBUG("Result err code %s(%u) ASN1 struct name %s\n",
+              et_error_match2str(comp_results->err_code), comp_results->err_code, comp_results->name);
+          // (each asn1 rc <= 166 (enum e_S1ap_ProtocolIE_ID, in generated file S1ap_ProtocolIE_ID.h))
+          if (comp_results->err_code == COMPARE_ERR_CODE_NO_MATCH) {
+            //TODO MME_UE_S1AP_ID, etc.
+            // get latest error code
+            if (strcmp(comp_results->name, "S1ap-MME-UE-S1AP-ID") == 0) {
+              if (0 == et_handle_s1ap_mismatch((et_packet_t *const)packet, (et_packet_t *const)rx_packet)) {
+                packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
+                packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
+                return et_scenario_set_packet_received(packet);
+              }
+            } else {
+              AssertFatal(0,"Some work needed there");
+            }
+          }
+          comp_results2 = comp_results;
+          comp_results = comp_results2->next;
+          et_free_pointer(comp_results2);
         }
       }
     }

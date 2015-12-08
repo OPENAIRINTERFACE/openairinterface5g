@@ -36,7 +36,7 @@ def outputHeaderToFile(f, filename):
     f.write("""/*******************************************************************************
 
   Eurecom OpenAirInterface
-  Copyright(c) 1999 - 2013 Eurecom
+  Copyright(c) 1999 - 2015 Eurecom
 
   This program is free software; you can redistribute it and/or modify it
   under the terms and conditions of the GNU General Public License,
@@ -267,7 +267,7 @@ for key in iesDefs:
     f.write(" *  \\param %s Pointer to the ASN1 structure.\n" % (firstlower))
     f.write(" *  \\param %s Pointer to the ASN1 structure.\n" % (firstlower))
     f.write(" **/\n")
-    f.write("long %s_compare_%s(\n" % (fileprefix, keylowerunderscore))
+    f.write("asn_comp_rval_t *  %s_compare_%s(\n" % (fileprefix, keylowerunderscore))
     f.write("    %s_t *%s1,\n" % (re.sub('-', '_', key), lowerFirstCamelWord(re.sub('-', '_', key))))
     f.write("    %s_t *%s2);\n\n" % (re.sub('-', '_', key), lowerFirstCamelWord(re.sub('-', '_', key))))
 
@@ -311,7 +311,7 @@ for key in iesDefs:
     f.write(" *  \\param %s Pointer to the IES structure.\n" % (firstlower))
     f.write(" *  \\param %s Pointer to the IES structure.\n" % (firstlower))
     f.write(" **/\n")
-    f.write("long %s_compare_%s(\n" % (fileprefix, firstlower.lower()))
+    f.write("asn_comp_rval_t *  %s_compare_%s(\n" % (fileprefix, firstlower.lower()))
     f.write("    %sIEs_t *%s1,\n"    % (asn1cStruct, firstlower))
     f.write("    %sIEs_t *%s2);\n\n" % (asn1cStruct, firstlower))
 
@@ -761,11 +761,12 @@ for key in iesDefs:
     if len(iesDefs[key]["ies"]) == 0:
         continue
 
-    f.write("long %s_compare_%s(\n" % (fileprefix, re.sub('-', '_', structName.lower())))
+    f.write("asn_comp_rval_t * %s_compare_%s(\n" % (fileprefix, re.sub('-', '_', structName.lower())))
     f.write("    %s_t *%s1,\n" % (re.sub('-', '_', key), lowerFirstCamelWord(re.sub('-', '_', key))))
     f.write("    %s_t *%s2) {\n\n" % (re.sub('-', '_', key), lowerFirstCamelWord(re.sub('-', '_', key))))
 
-    f.write("    long rv = 0;\n\n")
+    f.write("    asn_comp_rval_t *rv = NULL;\n\n")
+    f.write("    asn_comp_rval_t *rv2 = NULL;\n\n")
 
     f.write("    assert(%s1 != NULL);\n" % (lowerFirstCamelWord(re.sub('-', '_', key))));
     f.write("    assert(%s2 != NULL);\n" % (lowerFirstCamelWord(re.sub('-', '_', key))));
@@ -784,7 +785,7 @@ for key in iesDefs:
             if loop == 1:
                 #f.write("    %s_IE_t *ie1 = NULL;\n" % (fileprefix_first_upper))
                 #f.write("    %s_IE_t *ie2 = NULL;\n" % (fileprefix_first_upper))
-                f.write("    if (%s1->presenceMask != %s2->presenceMask) return -1;\n" % (lowerFirstCamelWord(re.sub('-', '_', key)), lowerFirstCamelWord(re.sub('-', '_', key))))
+                f.write("    if (%s1->presenceMask != %s2->presenceMask) {rv=calloc(1,sizeof(asn_comp_rval_t));rv->name = asn_DEF_%s.name;rv->structure1 = %s1;rv->structure2 = %s2;rv->err_code = COMPARE_ERR_CODE_VALUE_NULL; return rv;}\n" % (lowerFirstCamelWord(re.sub('-', '_', key)), lowerFirstCamelWord(re.sub('-', '_', key)), ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), lowerFirstCamelWord(re.sub('-', '_', key))))
 
             if ie[3] == "optional":
                 f.write("    /* Optional field */\n")
@@ -795,25 +796,61 @@ for key in iesDefs:
 
             if ie[2] in ieofielist.keys():
                 f.write("        /* collection field */\n")
-                f.write("        rv = %s_compare_%s(&%s1->%s, &%s2->%s);\n" % (fileprefix, ietypeunderscore.lower(), lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
-                f.write("        if (rv != 0) {rv = rv << 8; rv |= %s_ProtocolIE_ID_id_%s; return rv;}\n" % (fileprefix_first_upper, ienameunderscore))
+                f.write("        rv2 = %s_compare_%s(&%s1->%s, &%s2->%s);\n" % (fileprefix, ietypeunderscore.lower(), lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
+                f.write("        if(rv2) {")
+                f.write("          if (NULL == rv) {")
+                f.write("            rv = rv2;")
+                f.write("          } else {")
+                f.write("            rv2->next = rv;")
+                f.write("            rv = rv2;")
+                f.write("          }")
+                f.write("          rv2 = NULL;")
+                f.write("        }")
             else:
                 f.write("        /* simple field */\n")
-                f.write("        rv = asn_DEF_%s.compare(&asn_DEF_%s, &%s1->%s, &asn_DEF_%s, &%s2->%s); \n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
-                f.write("        if (rv != 0) {rv = rv << 8; rv |= %s_ProtocolIE_ID_id_%s; return rv;}\n" % (fileprefix_first_upper, ienameunderscore))
+                f.write("        rv2 = asn_DEF_%s.compare(&asn_DEF_%s, &%s1->%s, &asn_DEF_%s, &%s2->%s); \n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
+                f.write("        if (rv2) {")
+                f.write("          if (NULL == rv) {")
+                f.write("            rv = rv2;")
+                f.write("          } else {")
+                f.write("            rv2->next = rv;")
+                f.write("            rv = rv2;")
+                f.write("          }")
+                f.write("          rv2 = NULL;")
+                f.write("          if (!rv->name) rv->name = asn_DEF_%s.name;" % (ietypeunderscore))
+                f.write("        }")
+
             f.write("        assert(0);\n");
             f.write("    }\n\n")
 
         else:
             if ie[2] in ieofielist.keys():
                 f.write("    /* Mandatory collection field */\n")
-                f.write("    rv = %s_compare_%s(&%s1->%s, &%s2->%s);\n" % (fileprefix, ietypeunderscore.lower(), lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
-                f.write("    if (rv != 0) {rv = rv << 8; rv |= %s_ProtocolIE_ID_id_%s; return rv;}\n" % (fileprefix_first_upper, ienameunderscore))
+                f.write("    rv2 = %s_compare_%s(&%s1->%s, &%s2->%s);\n" % (fileprefix, ietypeunderscore.lower(), lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
+                f.write("    if (rv2) {\n")
+                f.write("      if (NULL == rv) {\n")
+                f.write("        rv = rv2;\n")
+                f.write("      } else {\n")
+                f.write("        rv2->next = rv;\n")
+                f.write("        rv = rv2;\n")
+                f.write("      }\n")
+                f.write("      rv2 = NULL;\n")
+                f.write("    }\n")
+
             else:
                 f.write("    /* Mandatory simple field */\n")
-                f.write("    rv = asn_DEF_%s.compare(&asn_DEF_%s, &%s1->%s, &asn_DEF_%s, &%s2->%s);\n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
-                f.write("    if (rv != 0) {rv = rv << 8; rv |= %s_ProtocolIE_ID_id_%s; return rv;}\n" % (fileprefix_first_upper, ienameunderscore))
-    f.write("    return 0;\n")
+                f.write("    rv2 = asn_DEF_%s.compare(&asn_DEF_%s, &%s1->%s, &asn_DEF_%s, &%s2->%s);\n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', key)), ienamefirstwordlower ))
+                f.write("    if(rv2) {\n")
+                f.write("      if (NULL == rv) {\n")
+                f.write("        rv = rv2;\n")
+                f.write("      } else {\n")
+                f.write("        rv2->next = rv;\n")
+                f.write("        rv = rv2;\n")
+                f.write("      }\n")
+                f.write("      rv2 = NULL;\n")
+                f.write("      if (!rv->name) rv->name = asn_DEF_%s.name;\n" % (ietypeunderscore))
+                f.write("    }\n")
+    f.write("    return rv;\n")
     f.write("}\n\n")
 
 for (key, value) in iesDefs.items():
@@ -832,19 +869,29 @@ for (key, value) in iesDefs.items():
 
     f.write("extern asn_TYPE_descriptor_t asn_DEF_%s;\n" % (ietypeunderscore))
 
-    f.write("long %s_compare_%s(\n" % (fileprefix, re.sub('-', '_', i).lower()))
+    f.write("asn_comp_rval_t * %s_compare_%s(\n" % (fileprefix, re.sub('-', '_', i).lower()))
     f.write("    %sIEs_t *%sIEs1,\n" % (re.sub('-', '_', i), lowerFirstCamelWord(re.sub('-', '_', i))))
     f.write("    %sIEs_t *%sIEs2) {\n\n" % (re.sub('-', '_', i), lowerFirstCamelWord(re.sub('-', '_', i))))
     f.write("    int i;\n")
-    f.write("    long rv = 0;\n")
+    f.write("    asn_comp_rval_t *rv = NULL;\n\n")
+    f.write("    asn_comp_rval_t *rv2 = NULL;\n\n")
+
 
     f.write("    assert(%sIEs1 != NULL);\n" % (lowerFirstCamelWord(re.sub('-', '_', i))));
     f.write("    assert(%sIEs2 != NULL);\n\n" % (lowerFirstCamelWord(re.sub('-', '_', i))));
 
     f.write("    for (i = 0; i < %sIEs1->%s.count; i++) {\n" % (lowerFirstCamelWord(re.sub('-', '_', i)), re.sub('IEs', '', lowerFirstCamelWord(re.sub('-', '_', key)))))
-    f.write("        rv = asn_DEF_%s.compare(&asn_DEF_%s, %sIEs1->%s.array[i], &asn_DEF_%s, %sIEs2->%s.array[i]);\n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', i)), re.sub('IEs', '', lowerFirstCamelWord(re.sub('-', '_', key))), ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', i)), re.sub('IEs', '', lowerFirstCamelWord(re.sub('-', '_', key)))))
-    f.write("        if (rv != 0) return rv;\n")
+    f.write("        rv2 = asn_DEF_%s.compare(&asn_DEF_%s, %sIEs1->%s.array[i], &asn_DEF_%s, %sIEs2->%s.array[i]);\n" % (ietypeunderscore, ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', i)), re.sub('IEs', '', lowerFirstCamelWord(re.sub('-', '_', key))), ietypeunderscore, lowerFirstCamelWord(re.sub('-', '_', i)), re.sub('IEs', '', lowerFirstCamelWord(re.sub('-', '_', key)))))
+    f.write("        if(rv2) {")
+    f.write("          if (NULL == rv) {")
+    f.write("            rv = rv2;")
+    f.write("          } else {")
+    f.write("            rv2->next = rv;")
+    f.write("            rv = rv2;")
+    f.write("          }")
+    f.write("          rv2 = NULL;")
+    f.write("        }")
     f.write("    }\n")
-    f.write("    return 0;\n")
+    f.write("    return rv;\n")
     f.write("}\n\n")
 

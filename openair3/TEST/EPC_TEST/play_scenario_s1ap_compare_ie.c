@@ -58,9 +58,9 @@ extern et_scenario_t  *g_scenario;
 extern uint32_t        g_constraints;
 //------------------------------------------------------------------------------
 
-long et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints)
+asn_comp_rval_t * et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints)
 {
-  long ret = 0;
+  asn_comp_rval_t *ret = NULL;
   AssertFatal(m1 != NULL, "bad parameter m1");
   AssertFatal(m2 != NULL, "bad parameter m2");
   AssertFatal((present == S1AP_PDU_PR_initiatingMessage) ||
@@ -401,6 +401,8 @@ long et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1,
     case  S1ap_ProcedureCode_id_PrivateMessage:
     case  S1ap_ProcedureCode_id_eNBConfigurationTransfer:
     case  S1ap_ProcedureCode_id_MMEConfigurationTransfer:
+      AssertFatal(0, "TODO");
+      break;
 
     case  S1ap_ProcedureCode_id_CellTrafficTrace:
       ret = s1ap_compare_s1ap_celltraffictraceies(

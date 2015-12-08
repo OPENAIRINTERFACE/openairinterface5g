@@ -46,6 +46,7 @@
 #include "s1ap_ies_defs.h"
 #include "play_scenario_s1ap_eNB_defs.h"
 #include "hashtable.h"
+#include "asn_compare.h"
 
 // powers of 2
 #define ET_BIT_MASK_MATCH_SCTP_STREAM 1
@@ -179,8 +180,10 @@ typedef enum {
   ET_FSM_STATE_END
 } et_fsm_state_t;
 
+enum COMPARE_ERR_CODE_e;
+
 typedef enum {
-  ET_ERROR_MATCH_START = 1,
+  ET_ERROR_MATCH_START = COMPARE_ERR_CODE_END,
   ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE = ET_ERROR_MATCH_START,
   ET_ERROR_MATCH_PACKET_SCTP_PPID,
   ET_ERROR_MATCH_PACKET_SCTP_ASSOC_ID,
@@ -415,7 +418,8 @@ void et_s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p);
 struct s1ap_eNB_mme_data_s *et_s1ap_eNB_get_MME(s1ap_eNB_instance_t *instance_p,int32_t assoc_id, uint16_t cnx_id);
 s1ap_eNB_instance_t *et_s1ap_eNB_get_instance(instance_t instance);
 void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,uint32_t buffer_length, uint16_t stream);
-long et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
+int et_handle_s1ap_mismatch(et_packet_t * const spacket, et_packet_t * const rx_packet);
+asn_comp_rval_t* et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
 et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const s1ap_data_ind);
 int et_scenario_set_packet_received(et_packet_t * const packet);
 int  et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const sctp_data_ind);
@@ -451,10 +455,10 @@ void et_parse_sctp(xmlDocPtr doc, const xmlNode const *sctp_node, et_sctp_hdr_t 
 et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node);
 et_scenario_t* et_generate_scenario(const char  * const et_scenario_filename );
 //-------------------------
-long et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
+asn_comp_rval_t * et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
 //-------------------------
-long et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints);
-long et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints);
+asn_comp_rval_t * et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints);
+asn_comp_rval_t * et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints);
 //------------------------------------------------------------------------------
 void et_print_hex_octets(const unsigned char * const byte_stream, const unsigned long int num);
 int  et_is_file_exists ( const char const * file_nameP, const char const *file_roleP);

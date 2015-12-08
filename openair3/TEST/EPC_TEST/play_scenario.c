@@ -286,14 +286,26 @@ const char * const et_chunk_type_cid2str(const sctp_cid_t chunk_type)
 const char * const et_error_match2str(const int err)
 {
   switch (err) {
-    case  -ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE:       return "SCTP_CHUNK_TYPE"; break;
-    case  -ET_ERROR_MATCH_PACKET_SCTP_PPID:             return "SCTP_PPID"; break;
-    case  -ET_ERROR_MATCH_PACKET_SCTP_ASSOC_ID:         return "SCTP_ASSOC_ID"; break;
-    case  -ET_ERROR_MATCH_PACKET_SCTP_STREAM_ID:        return "SCTP_STREAM_ID"; break;
-    case  -ET_ERROR_MATCH_PACKET_SCTP_SSN:              return "SCTP_SSN"; break;
-    case  -ET_ERROR_MATCH_PACKET_S1AP_PRESENT:          return "S1AP_PRESENT"; break;
-    case  -ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE:   return "S1AP_PROCEDURE_CODE"; break;
-    case  -ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY:      return "S1AP_CRITICALITY"; break;
+    // from asn_compare.h
+    case  COMPARE_ERR_CODE_NO_MATCH:                   return "CODE_NO_MATCH"; break;
+    case  COMPARE_ERR_CODE_TYPE_MISMATCH:              return "TYPE_MISMATCH"; break;
+    case  COMPARE_ERR_CODE_TYPE_ARG_NULL:              return "TYPE_ARG_NULL"; break;
+    case  COMPARE_ERR_CODE_VALUE_NULL:                 return "VALUE_NULL"; break;
+    case  COMPARE_ERR_CODE_VALUE_ARG_NULL:             return "VALUE_ARG_NULL"; break;
+    case  COMPARE_ERR_CODE_CHOICE_NUM:                 return "CHOICE_NUM"; break;
+    case  COMPARE_ERR_CODE_CHOICE_PRESENT:             return "CHOICE_PRESENT"; break;
+    case  COMPARE_ERR_CODE_CHOICE_MALFORMED:           return "CHOICE_MALFORMED"; break;
+    case  COMPARE_ERR_CODE_SET_MALFORMED:              return "SET_MALFORMED"; break;
+    case  COMPARE_ERR_CODE_COLLECTION_NUM_ELEMENTS:    return "COLLECTION_NUM_ELEMENTS"; break;
+    // from play_scenario.h
+    case  ET_ERROR_MATCH_PACKET_SCTP_CHUNK_TYPE:       return "SCTP_CHUNK_TYPE"; break;
+    case  ET_ERROR_MATCH_PACKET_SCTP_PPID:             return "SCTP_PPID"; break;
+    case  ET_ERROR_MATCH_PACKET_SCTP_ASSOC_ID:         return "SCTP_ASSOC_ID"; break;
+    case  ET_ERROR_MATCH_PACKET_SCTP_STREAM_ID:        return "SCTP_STREAM_ID"; break;
+    case  ET_ERROR_MATCH_PACKET_SCTP_SSN:              return "SCTP_SSN"; break;
+    case  ET_ERROR_MATCH_PACKET_S1AP_PRESENT:          return "S1AP_PRESENT"; break;
+    case  ET_ERROR_MATCH_PACKET_S1AP_PROCEDURE_CODE:   return "S1AP_PROCEDURE_CODE"; break;
+    case  ET_ERROR_MATCH_PACKET_S1AP_CRITICALITY:      return "S1AP_CRITICALITY"; break;
     default:
       AssertFatal (0, "ERROR: Unknown match error %d!(TODO handle an1c error codes)\n", err);
   }
@@ -792,9 +804,9 @@ static void et_usage (
   fprintf (stdout, "Please report any bug to: %s\n",PACKAGE_BUGREPORT);
   fprintf (stdout, "Usage: %s [options]\n\n", argv[0]);
   fprintf (stdout, "\n");
-  fprintf (stdout, "Client options:\n");
-  fprintf (stdout, "\t-S | --server         <server network @>  File name (with no path) of a test scenario that has to be replayed (TODO in future?)\n");
-  fprintf (stdout, "Server options:\n");
+  //fprintf (stdout, "Client options:\n");
+  //fprintf (stdout, "\t-S | --server         <server network @>  File name (with no path) of a test scenario that has to be replayed (TODO in future?)\n");
+  //fprintf (stdout, "Server options:\n");
   fprintf (stdout, "\t-d | --test-dir       <dir>               Directory where a set of files related to a particular test are located\n");
   fprintf (stdout, "\t-c | --enb-conf-file  <file>              Provide an eNB config file, valid for the testbed\n");
   fprintf (stdout, "\t-s | --scenario       <file>              File name (with no path) of a test scenario that has to be replayed ()\n");
