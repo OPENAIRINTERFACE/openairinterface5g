@@ -555,17 +555,22 @@ function main() {
   #####################
   if [ "$OAI_TEST" = "1" ]; then
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
-    read -s -p "Enter Password: " mypassword
-    echo -e "\n"
+    echo_error "These scripts ASSUME that user is in /etc/sudoers and can execute commands without PASSWORD prompt"
+    echo_error "Add the following lines in /etc/sudoers file to make your __user_name__ sudo without password prompt"
+    echo_error " __your_user_name__ ALL = (ALL:ALL) NOPASSWD: ALL"
+    echo_error " __your_user_name__ ALL = (ALL) NOPASSWD: ALL "
     echo_info "The log file for the autotest script for debugging is located here: $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log "
     echo_info "The results of autotests results is located here: $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
     echo_info "You can hit CTRL-C any time to terminate the autotests..."
+    echo "Current User Name: $USER"
+    read -s -p "Enter Password: " mypassword
+    echo -e "\n"
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     if [ "$RUN_GROUP" -eq "1" ]; then
-        echo '$mypassword'  | $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     else
-        echo '$mypassword'  | $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     fi
     wait
   else

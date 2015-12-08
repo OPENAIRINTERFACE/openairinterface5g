@@ -400,12 +400,13 @@ else
 fi
 
 tmpfile=`mktemp`
-echo \'$passwd\' | sudo echo $HOME >& $tmpfile
+echo \'$passwd\' | $SUDO echo $HOME >& $tmpfile
 tstsudo=`cat $tmpfile`
 if [ "$tstsudo" != "$HOME" ]; then
-  echo "User might not have sudo privileges. Exiting" 
-  echo "tstsudo = $tstsudo"
+  echo "$USER might not have sudo privileges. Exiting" 
   exit
+else
+  echo "$USER has sudo privileges"
 fi
 echo "tstsudo = $tstsudo"
 rm -fr $tmpfile
