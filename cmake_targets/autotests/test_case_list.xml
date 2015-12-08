@@ -313,7 +313,7 @@
 
    <testCase id="010200">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
+      <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -325,14 +325,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6</main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 </main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -340,7 +334,7 @@
 
     <testCase id="010201">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors, segmentation fault or exit</desc>
+      <desc>Run OAISIM Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -352,14 +346,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -a 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -a 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -a 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -a 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5 -a 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5 -a 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5 -a 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -a 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -a</main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -a </main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -367,7 +355,7 @@
 
     <testCase id="010202">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
+      <desc>Run OAISIM Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -379,14 +367,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 </main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6    oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2</main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -406,14 +388,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -a</main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2  oaisim_nos1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6               oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -a</main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2  oaisim_nos1.tdd.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -433,14 +409,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -c26 
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5 -c26 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5 -c26 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5 -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -c26 </main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6     oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26</main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -460,14 +430,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -c26  -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5 -c26  -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5 -c26 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5 -c26  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -c26 -a </main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_nos1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6                oaisim_noS1.tdd.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -c26  -a</main_exec_args>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -475,7 +439,7 @@
 
     <testCase id="010300">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
+      <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -487,14 +451,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5 -F 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5 -F
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5 -F 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F</main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6     oaisim_noS1.FDD.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F</main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -502,7 +460,7 @@
 
     <testCase id="010301">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors</desc>
+      <desc>Run OAISIM Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -514,14 +472,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5 -F  -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5 -F -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5 -F  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -a</main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags> 
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -a</main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -529,7 +481,7 @@
 
     <testCase id="010302">
       <class>execution</class>
-      <desc> Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit</desc>
+      <desc> Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -541,14 +493,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -F
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5 -F 
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5 -F
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5 -F 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -F 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -F
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -F </main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6     oaisim_noS1.FDD.20MHz.TM6</tags> 
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F </main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 </tags> 
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -556,7 +502,7 @@
 
     <testCase id="010303">
       <class>execution</class>
-      <desc>Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors</desc>
+      <desc>Run OAISIM Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -568,14 +514,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 1 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 2 -F -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50  -x 2 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25  -x 5 -F  -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 5 -F -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 5 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -F  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -F -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -F -a</main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6 oaisim_noS1.FDD.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100  -x 2 -F -a</main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -583,7 +523,7 @@
 
     <testCase id="010304">
       <class>execution</class>
-      <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE, and for check for no packet losses</desc>
+      <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) without PHY_ABSTRACTION mode, ping from from eNB to UE, and for check for no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -595,14 +535,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -c26
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5 -F -c26
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5 -F -c26
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5 -F -c26 
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -c26
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -c26</main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26</main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -610,7 +544,7 @@
 
     <testCase id="010305">
       <class>execution</class>
-      <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE, and check for no packet losses</desc>
+      <desc>Run OAI Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION  mode, send ping from from eNB to UE, and check for no packet losses</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args>--oaisim --noS1  -c </compile_prog_args>
@@ -622,14 +556,8 @@
                        -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 1 -F -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 2 -F -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50  -x 2 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25  -x 5 -F -c26 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 5 -F -c26 -a
-                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 5 -F -c26  -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 25 -x 6 -F  -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 50 -x 6 -F -c26 -a
-                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100 -x 6 -F -c26 -a </main_exec_args>
-      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 oaisim_noS1.FDD.5MHz.TM5 oaisim_noS1.FDD.10MHz.TM5 oaisim_noS1.FDD.20MHz.TM5 oaisim_noS1.FDD.5MHz.TM6 oaisim_noS1.FDD.10MHz.TM6    oaisim_noS1.FDD.20MHz.TM6</tags>
+                      -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u1 -n100 -R 100  -x 2 -F -c26 -a</main_exec_args>
+      <tags>oaisim_noS1.FDD.5MHz.TM1 oaisim_noS1.FDD.10MHz.TM1 oaisim_noS1.FDD.20MHz.TM1 oaisim_noS1.FDD.5MHz.TM2 oaisim_noS1.FDD.10MHz.TM2 oaisim_noS1.FDD.20MHz.TM2 </tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
