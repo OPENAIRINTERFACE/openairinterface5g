@@ -428,11 +428,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                  dlsch0_harq->mimo_mode);
 	    
 	
-	if (rx_type>rx_standard) {
+	/*if (rx_type>rx_standard) {
 	  //	LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->mcs>>1)-1]);
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
-	else 
+	else */
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0])/2;
       }
     
@@ -1371,6 +1371,7 @@ void prec2A_TM3_128(__m128i *ch0,__m128i *ch1) {
 
 void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
   
+ // printf ("demod pmi=%d\n", pmi);
   // __m128i amp;
   // amp = _mm_set1_epi16(ONE_OVER_SQRT2_Q15);
   __m128i tmp0,tmp1;
@@ -1384,7 +1385,7 @@ void prec2A_TM4_128(int pmi,__m128i *ch0,__m128i *ch1) {
     ch0[0] = _mm_adds_epi16(tmp0,tmp1);
     ch1[0] = _mm_subs_epi16(tmp0,tmp1);
   }
-  else {
+  else { //ch0+j*ch1 ch0-j*ch1
     tmp0 = ch0[0];
     tmp1   = _mm_sign_epi16(ch1[0],*(__m128i*)&conjugate[0]);
     tmp1   = _mm_shufflelo_epi16(tmp1,_MM_SHUFFLE(2,3,0,1));
@@ -1619,9 +1620,6 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
   //printf("eNB_id %d, symbol %d: precoded CQI %d dB\n",eNB_id,symbol,
   //   phy_measurements->precoded_cqi_dB[eNB_id][0]);
-
-  _mm_empty();
-  _m_empty();
 
 #elif defined(__arm__)
 

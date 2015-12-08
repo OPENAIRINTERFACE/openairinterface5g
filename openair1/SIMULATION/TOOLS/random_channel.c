@@ -209,7 +209,7 @@ struct complex *R_sqrt_22_orthogonal[1]     = {R_sqrt_22_orthogonal_tap};
 struct complex R_sqrt_22_orth_eff_ch_TM4_prec_real_tap[16] = {{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, 
 							{0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {-0.70711,0.0},
 							{0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, 
-							{0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}};
+							{0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, {0.70711,0.0}};				
 struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_real[1]     = {R_sqrt_22_orth_eff_ch_TM4_prec_real_tap};
 
 

@@ -776,8 +776,6 @@ int main(int argc, char **argv)
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-
-
   printf("Channel Model= (%s,%d)\n",channel_model_input, channel_model);
   printf("SCM-A=%d, SCM-B=%d, SCM-C=%d, SCM-D=%d, EPA=%d, EVA=%d, ETU=%d, Rayleigh8=%d, Rayleigh1=%d, Rayleigh1_corr=%d, Rayleigh1_anticorr=%d, Rice1=%d, Rice8=%d, Rayleigh1_orthogonal=%d, Rayleigh1_orth_eff_ch_TM4_prec_real22=%d, Rayleigh1_orth_eff_ch_TM4_prec_imag=%d, Rayleigh8_orth_eff_ch_TM4_prec_real=%d,  Rayleigh8_orth_eff_ch_TM4_prec_imag=%d , TS_SHIFT=%d\n",
 	 SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8, Rayleigh1_orthogonal, Rayleigh1_orth_eff_ch_TM4_prec_real, Rayleigh1_orth_eff_ch_TM4_prec_imag, Rayleigh8_orth_eff_ch_TM4_prec_real, Rayleigh8_orth_eff_ch_TM4_prec_imag, TS_SHIFT);
@@ -788,17 +786,17 @@ int main(int argc, char **argv)
 	 sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_abstr_perf_ce.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
   	else
     	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_abstr.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
-  else
+  else //abstx=0
     if (perfect_ce==1)
-		sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_perf_ce.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
-		else
-    		sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
+	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_perf_ce.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
+   else
+        sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2);
   
   bler_fd = fopen(bler_fname,"w");
   fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; dci_err\n");
-  
-  if (test_perf != 0) {
+    if (test_perf != 0) {
     char hostname[1024];
+
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
     printf("Hostname: %s\n", hostname);
@@ -1792,6 +1790,7 @@ n(tikz_fname,"w");
 
 	  }
 	  
+	   printf ("TM4 with tpmi =%d\n", ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi);    
 	   if (((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) { // not a nice way to do it, fix later
 
 	    PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
@@ -1850,7 +1849,7 @@ n(tikz_fname,"w");
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 1;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
@@ -2748,7 +2747,7 @@ n(tikz_fname,"w");
 #endif
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 	      
-	      if ((SNR==snr0) && (trials==0) && (round==0))
+	      if ((SNR==snr0) && (trials==0) && (round==0) && (pmi_feedback==0))
 		printf("User %d, cw %d: Rate = %f (%f bits/dim) (G %d, TBS %d, mod %d, pdcch_sym %d, ndi %d)\n",
 		       k,cw,rate,rate*get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
 		       coded_bits_per_codeword,
@@ -2930,19 +2929,18 @@ n(tikz_fname,"w");
 	      else {
                 if (transmission_mode==4) {
                  r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)])+((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-                    r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1])+((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+                 r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1])+((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 
-                    r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)])-((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-                    r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1])-((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-             //   printf("r_re0 = %d\n",r_re[0][i]);
-		//printf("r_im0 = %d\n",r_im[0][i]);
-		//printf("r_re1 = %d\n",r_re[1][i]);
-		//printf("r_im1 = %d\n",r_im[1][i]);
-	//	r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-          //          r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-
-            //        r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-              //      r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+                 r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)])-((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+                 r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1])-((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		  //printf("r_re0 = %d\n",r_re[0][i]);
+		  //printf("r_im0 = %d\n",r_im[0][i]);
+		  //printf("r_re1 = %d\n",r_re[1][i]);
+		  //printf("r_im1 = %d\n",r_im[1][i]);
+		  //r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		  //r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		  //r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		  //r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 		    		    
 		}
      else {
@@ -3152,6 +3150,7 @@ n(tikz_fname,"w");
                                     subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti,
                                     1,
                                     0);
+		// printf ("Trial %d, Measurements are done \n", trials);
                 /*
                   debug_msg("RX RSSI %d dBm, digital (%d, %d) dB, linear (%d, %d), avg rx power %d dB (%d lin), RX gain %d dB\n",
                   PHY_vars_UE->PHY_measurements.rx_rssi_dBm[0] - ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx==2) ? 3 : 0),
@@ -3179,6 +3178,7 @@ n(tikz_fname,"w");
                   if (pmi_feedback == 1) {
                     pmi_feedback = 0;
                     hold_channel = 1;
+		//    printf ("trial %d pmi_feedback %d \n", trials, pmi_feedback);
                     goto PMI_FEEDBACK;
                   }
                 }
