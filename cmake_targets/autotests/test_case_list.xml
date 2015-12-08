@@ -413,7 +413,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -a</main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6               oaisim_noS1.tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2  oaisim_nos1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_noS1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6               oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"Received RRCConnectionReconfigurationComplete from UE 0" "Received RRCConnectionReconfigurationComplete from UE 1" "Received RRCConnectionReconfigurationComplete from UE 2"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -467,7 +467,7 @@
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 25 -x 6 -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 50 -x 6 -c26 -a
                       -O $OPENAIR_TARGETS/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf -A AWGN -b1 -u3 -n100 -R 100 -x 6 -c26 -a </main_exec_args>
-      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6                oaisim_noS1.tdd.20MHz.TM6</tags>
+      <tags>oaisim_noS1.tdd.5MHz.TM1 oaisim_noS1.tdd.10MHz.TM1 oaisim_noS1.tdd.20MHz.TM1 oaisim_noS1.tdd.5MHz.TM2 oaisim_noS1.tdd.10MHz.TM2 oaisim_noS1.tdd.20MHz.TM2 oaisim_noS1.tdd.5MHz.TM5 oaisim_noS1.tdd.10MHz.TM5 oaisim_nos1.tdd.20MHz.TM5 oaisim_noS1.tdd.5MHz.TM6 oaisim_noS1.tdd.10MHz.TM6                oaisim_noS1.tdd.20MHz.TM6</tags>
       <search_expr_true>"DL and UL loss rate below 10"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -893,7 +893,7 @@
       <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
-      <nruns>1</nruns>
+      <nruns>3</nruns>
     </testCase>
 
     <testCase id="015101">
@@ -919,7 +919,7 @@
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
-      <nruns>1</nruns>
+      <nruns>3</nruns>
     </testCase>
 
   <testCase id="015500" >
@@ -1226,9 +1226,9 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=5.0Mbits/sec max=5.0Mbits/sec average=5.0Mbits/sec duration=60.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec duration=60.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRP.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
@@ -1304,9 +1304,9 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=10.0Mbits/sec max=10.0Mbits/sec average=10.0Mbits/sec duration=60.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec duration=60.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRP.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
@@ -1382,7 +1382,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 120 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec duration=60.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
