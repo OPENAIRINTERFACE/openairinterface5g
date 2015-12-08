@@ -127,7 +127,7 @@ def start_ue () :
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
         os.system ('route add 192.172.0.1 ppp0')
-        os.system ('ping 192.172.0.1')
+        os.system ('ping -c 5 192.172.0.1')
         break
      except Exception, e:
         error = ' Interface ' + iface + 'does not exist...'

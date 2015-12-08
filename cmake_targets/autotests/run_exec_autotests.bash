@@ -400,12 +400,13 @@ else
 fi
 
 tmpfile=`mktemp`
-echo \'$passwd\' | sudo echo $HOME >& $tmpfile
+echo \'$passwd\' | $SUDO echo $HOME >& $tmpfile
 tstsudo=`cat $tmpfile`
 if [ "$tstsudo" != "$HOME" ]; then
-  echo "User might not have sudo privileges. Exiting" 
-  echo "tstsudo = $tstsudo"
+  echo "$USER might not have sudo privileges. Exiting" 
   exit
+else
+  echo "$USER has sudo privileges"
 fi
 echo "tstsudo = $tstsudo"
 rm -fr $tmpfile
@@ -495,6 +496,7 @@ for search_expr in "${test_case_array[@]}"
     if [ "$class" == "compilation" ]; then
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
+        $SUDO killall -q oaisim_nos1
         test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" 
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."
