@@ -73,7 +73,7 @@ void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
       if (desc->nb_taps==1)
         delay = desc->delays[l];
       else
-        delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
+        delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->sampling_rate;
 
       cos_lut[f+(n_samples>>1)][l] = cos(2*M_PI*freq*delay);
       sin_lut[f+(n_samples>>1)][l] = sin(2*M_PI*freq*delay);

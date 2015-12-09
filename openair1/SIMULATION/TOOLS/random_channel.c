@@ -42,23 +42,26 @@
 extern void print_shorts(char *s,__m128i *x);
 
 void fill_channel_desc(channel_desc_t *chan_desc,
-		       uint8_t nb_tx,
-		       uint8_t nb_rx, 
-		       uint8_t nb_taps, 
-		       uint8_t channel_length, 
-		       double *amps, 
-		       double *delays, 
-		       struct complex** R_sqrt, 
-		       double Td, 
-		       double BW, 
-		       double ricean_factor, 
-		       double aoa, 
-		       double forgetting_factor,
-		       double max_Doppler, 
-		       int32_t channel_offset, 
-		       double path_loss_dB,
-		       uint8_t random_aoa) {
-  
+                       uint8_t nb_tx,
+                       uint8_t nb_rx,
+                       uint8_t nb_taps,
+                       uint8_t channel_length,
+                       double *amps,
+                       double *delays,
+                       struct complex** R_sqrt,
+                       double Td,
+                       double sampling_rate,
+		       double channel_bandwidth,
+                       double ricean_factor,
+                       double aoa,
+                       double forgetting_factor,
+                       double max_Doppler,
+                       int32_t channel_offset,
+                       double path_loss_dB,
+                       uint8_t random_aoa)
+{
+
+
   uint16_t i,j;
   double delta_tau;
 
@@ -81,7 +84,8 @@ void fill_channel_desc(channel_desc_t *chan_desc,
     chan_desc->delays         = delays;
 
   chan_desc->Td             = Td;
-  chan_desc->BW             = BW;
+  chan_desc->sampling_rate             = sampling_rate;
+  chan_desc->channel_bandwidth         = channel_bandwidth;
   chan_desc->ricean_factor  = ricean_factor;
   chan_desc->aoa            = aoa;
   chan_desc->random_aoa  = random_aoa;
@@ -214,6 +218,7 @@ struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_real[1]     = {R_sqrt_22_orth_eff
 
 
 
+
 struct complex R_sqrt_22_orth_eff_ch_TM4_prec_imag_tap[16] = {{0.70711,0.0}, {0.0,0.0}, {0.0, -0.70711}, {0.0,0.0}, 
 							{0.0, 0.0}, {0.70711,0.0}, {0.0, 0.0}, {0.0,0.70711},
 							{0.0,-0.70711}, {0.0, 0.0}, {-0.70711,0.0}, {0.0, 0.0}, 
@@ -224,13 +229,15 @@ struct complex *R_sqrt_22_orth_eff_ch_TM4_prec_imag[1]     = {R_sqrt_22_orth_eff
 
 //Rayleigh1_orth_eff_ch_TM4
 
-channel_desc_t *new_channel_desc_scm(uint8_t nb_tx, 
-				     uint8_t nb_rx, 
-				     SCM_t channel_model, 
-				     double BW, 
-				     double forgetting_factor,
-				     int32_t channel_offset, 
-				     double path_loss_dB) {
+channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
+                                     uint8_t nb_rx,
+                                     SCM_t channel_model,
+                                     double sampling_rate,
+				     double channel_bandwidth,
+                                     double forgetting_factor,
+                                     int32_t channel_offset,
+                                     double path_loss_dB)
+{
 
   channel_desc_t *chan_desc = (channel_desc_t *)malloc(sizeof(channel_desc_t));
   uint16_t i,j;
@@ -238,14 +245,15 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
 
-  chan_desc->nb_tx          = nb_tx;
-  chan_desc->nb_rx          = nb_rx;
-  chan_desc->BW             = BW;
-  chan_desc->forgetting_factor = forgetting_factor;
-  chan_desc->channel_offset = channel_offset;
-  chan_desc->path_loss_dB   = path_loss_dB;
-  chan_desc->first_run      = 1;
-  chan_desc->ip             = 0.0;
+  chan_desc->nb_tx          		= nb_tx;
+  chan_desc->nb_rx          		= nb_rx;
+  chan_desc->sampling_rate              = sampling_rate;
+  chan_desc->channel_bandwidth          = channel_bandwidth;
+  chan_desc->forgetting_factor 		= forgetting_factor;
+  chan_desc->channel_offset 		= channel_offset;
+  chan_desc->path_loss_dB   		= path_loss_dB;
+  chan_desc->first_run      		= 1;
+  chan_desc->ip             			= 0.0;
 
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
 
@@ -261,7 +269,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case SCM_C:
     chan_desc->nb_taps        = 18;
     chan_desc->Td             = 4.625;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -312,7 +320,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
     LOG_W(OCM,"This is not the real SCM-D model! It is just SCM-C with an additional Rice factor!\n");
     chan_desc->nb_taps        = 18;
     chan_desc->Td             = 4.625;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -362,7 +370,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case EPA:
     chan_desc->nb_taps        = 7;
     chan_desc->Td             = .410;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -404,7 +412,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case EVA:
     chan_desc->nb_taps        = 9;
     chan_desc->Td             = 2.51;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -446,7 +454,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case ETU:
     chan_desc->nb_taps        = 9;
     chan_desc->Td             = 5.0;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -488,7 +496,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case MBSFN:
     chan_desc->nb_taps        = 18;
     chan_desc->Td             = 28.58;
-    chan_desc->channel_length = (int) (2*chan_desc->BW*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->BW*chan_desc->Td));
+    chan_desc->channel_length = (int) (2*chan_desc->sampling_rate*chan_desc->Td + 1 + 2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
     sum_amps = 0;
     chan_desc->amps           = (double*) malloc(chan_desc->nb_taps*sizeof(double));
     for (i = 0; i<chan_desc->nb_taps; i++) {
@@ -522,9 +530,10 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
     }
     break;
   case Rayleigh8:
+
       nb_taps = 8;
       Td = 0.8;
-      channel_length = (int)11+2*BW*Td;
+      channel_length = (int)11+2*sampling_rate*Td;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -538,6 +547,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			NULL,
 			NULL,
 			Td,
+			sampling_rate,
 			BW,
 			ricean_factor,
 			aoa,
@@ -551,7 +561,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   case Rice8:
       nb_taps = 8;
       Td = 0.8;
-      channel_length = (int)11+2*BW*Td;
+      channel_length = (int)11+2*sampling_rate*Td;
       ricean_factor = 0.1;
       aoa = .03;
       maxDoppler = 0;
@@ -564,6 +574,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -590,6 +601,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -616,6 +628,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -651,6 +664,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -686,6 +700,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -712,6 +727,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -738,6 +754,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -766,6 +783,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   ts_shift_delays,
 				   NULL,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -803,6 +821,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -838,6 +857,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -871,6 +891,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -904,6 +925,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -937,6 +959,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   R_sqrt_ptr2,
 				   Td,
+				   sampling_rate,
 				   BW,
 				   ricean_factor,
 				   aoa,
@@ -959,7 +982,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
     
       nb_taps = 8;
       Td = 0.8;
-      channel_length = (int)11+2*BW*Td;
+      channel_length = (int)11+2*sampling_rate*Td;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -973,6 +996,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			NULL,
 			R_sqrt_ptr2,
 			Td,
+			sampling_rate,
 			BW,
 			ricean_factor,
 			aoa,
@@ -987,7 +1011,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       case Rayleigh8_orth_eff_ch_TM4_prec_imag:
       nb_taps = 8;
       Td = 0.8;
-      channel_length = (int)11+2*BW*Td;
+      channel_length = (int)11+2*sampling_rate*Td;
       ricean_factor = 1;
       aoa = .03;
       maxDoppler = 0;
@@ -1007,6 +1031,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			NULL,
 			R_sqrt_ptr2,
 			Td,
+			sampling_rate,
 			BW,
 			ricean_factor,
 			aoa,
@@ -1137,36 +1162,34 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   //memset((void *)desc->ch[aarx+(aatx*desc->nb_rx)],0,(int)(desc->channel_length)*sizeof(struct complex));
   
   if (abstraction_flag==0) {
-  start_meas(&desc->interp_time);
-  for (aarx=0;aarx<desc->nb_rx;aarx++) {
-    for (aatx=0;aatx<desc->nb_tx;aatx++) {
-      if (desc->channel_length == 1) {
-	desc->ch[aarx+(aatx*desc->nb_rx)][0].x = desc->a[0][aarx+(aatx*desc->nb_rx)].x;
-	desc->ch[aarx+(aatx*desc->nb_rx)][0].y = desc->a[0][aarx+(aatx*desc->nb_rx)].y;
+    start_meas(&desc->interp_time);
+
+    for (aarx=0; aarx<desc->nb_rx; aarx++) {
+      for (aatx=0; aatx<desc->nb_tx; aatx++) {
+        if (desc->channel_length == 1) {
+          desc->ch[aarx+(aatx*desc->nb_rx)][0].x = desc->a[0][aarx+(aatx*desc->nb_rx)].x;
+          desc->ch[aarx+(aatx*desc->nb_rx)][0].y = desc->a[0][aarx+(aatx*desc->nb_rx)].y;
+        } else {
+
+          for (k=0; k<(int)desc->channel_length; k++) {
+            desc->ch[aarx+(aatx*desc->nb_rx)][k].x = 0.0;
+            desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
+
+            for (l=0; l<desc->nb_taps; l++) {
+              if ((k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
+                s = 1.0;
+              else
+                s = sin(M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET))/
+                    (M_PI*(k - (desc->delays[l]*desc->sampling_rate) - NB_SAMPLES_CHANNEL_OFFSET));
+
+              desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
+              desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
+              //    printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
+
+            } //nb_taps
+
 #ifdef DEBUG_CH
 	k=0;
-	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
-#endif
-
-      }
-      else {
-
-	for (k=0;k<(int)desc->channel_length;k++) {
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].x = 0.0;
-	  desc->ch[aarx+(aatx*desc->nb_rx)][k].y = 0.0;
-	  
-	  for (l=0;l<desc->nb_taps;l++) {
-	    if ((k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET) == 0)
-	      s = 1.0;
-	    else
-	      s = sin(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET))/
-		(M_PI*(k - (desc->delays[l]*desc->BW) - NB_SAMPLES_CHANNEL_OFFSET));
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].x += s*desc->a[l][aarx+(aatx*desc->nb_rx)].x;
-	    desc->ch[aarx+(aatx*desc->nb_rx)][k].y += s*desc->a[l][aarx+(aatx*desc->nb_rx)].y;
-	    //	  printf("l %d : desc->ch.x %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x);
-	    
-	  } //nb_taps
-#ifdef DEBUG_CH
 	printf("(%d,%d,%d)->(%f,%f)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].x,desc->ch[aarx+(aatx*desc->nb_rx)][k].y);
 #endif
 	}
@@ -1182,21 +1205,76 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   return (0);
 }
 
+double N_RB2sampling_rate(uint16_t N_RB)
+{
+  double sampling_rate;
+  switch (N_RB) {
+  case 6:
+    sampling_rate = 1.92;
+    break;
+    
+  case 25:
+    sampling_rate = 7.68;
+    break;
+    
+  case 50:
+    sampling_rate = 15.36;
+    break;
+    
+  case 100:
+    sampling_rate = 30.72;
+    break;
+    
+  default:
+    LOG_E(PHY,"Unknown N_PRB\n");
+    return(-1);  
+  }
+
+  return(sampling_rate);
+}
+
+double N_RB2channel_bandwidth(uint16_t N_RB)
+{
+  double channel_bandwidth;
+  switch (N_RB) {
+  case 6:
+    channel_bandwidth = 1.25;
+    break;
+    
+  case 25:
+    channel_bandwidth = 5.00;
+    break;
+    
+  case 50:
+    channel_bandwidth = 10.00;
+    break;
+    
+  case 100:
+    channel_bandwidth = 20.00;
+    break;
+    
+  default:
+    LOG_E(PHY,"Unknown N_PRB\n");
+    return(-1);  
+  }
+  return(channel_bandwidth);
+}
+
 #ifdef RANDOM_CHANNEL_MAIN
-#define BW 5.0
+#define sampling_rate 5.0
 #define Td 2.0
 main(int argc,char **argv) {
 
   double amps[8] = {.8,.2,.1,.04,.02,.01,.005};
-  struct complex ch[(int)(1+2*BW*Td)],phase;
+  struct complex ch[(int)(1+2*sampling_rate*Td)],phase;
   int i;
   
   randominit();
   phase.x = 1.0;
   phase.y = 0;
-  random_channel(amps,Td, 8,BW,ch,(double)1.0,&phase);
+  random_channel(amps,Td, 8,sampling_rate,ch,(double)1.0,&phase);
   /*
-  for (i=0;i<(11+2*BW*Td);i++){
+  for (i=0;i<(11+2*sampling_rate*Td);i++){
     printf("%f + sqrt(-1)*%f\n",ch[i].x,ch[i].y);
   }
   */
