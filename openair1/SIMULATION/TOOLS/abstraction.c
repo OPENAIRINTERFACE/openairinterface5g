@@ -340,7 +340,7 @@ void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples) {
 		    if (desc->nb_taps==1) 
 			  delay = desc->delays[l];
 		    else	    
-			  delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->BW;
+			  delay = desc->delays[l]+NB_SAMPLES_CHANNEL_OFFSET/desc->sampling_rate;
             desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].x+=(desc->a[l][aarx+(aatx*desc->nb_rx)].x*cos(2*M_PI*freq*delay)+
                                                       desc->a[l][aarx+(aatx*desc->nb_rx)].y*sin(2*M_PI*freq*delay));
             desc->chF[aarx+(aatx*desc->nb_rx)][f+n_samples/2].y+=(-desc->a[l][aarx+(aatx*desc->nb_rx)].x*sin(2*M_PI*freq*delay)+

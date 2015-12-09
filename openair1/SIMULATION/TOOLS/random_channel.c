@@ -81,23 +81,22 @@ void fill_channel_desc(channel_desc_t *chan_desc,
       chan_desc->delays[i] = ((double)i)*delta_tau;
   }
   else
-    chan_desc->delays         = delays;
-
-  chan_desc->Td             = Td;
-  chan_desc->sampling_rate             = sampling_rate;
-  chan_desc->channel_bandwidth         = channel_bandwidth;
-  chan_desc->ricean_factor  = ricean_factor;
-  chan_desc->aoa            = aoa;
-  chan_desc->random_aoa  = random_aoa;
-  chan_desc->forgetting_factor = forgetting_factor;
-  chan_desc->channel_offset = channel_offset;
-  chan_desc->path_loss_dB   = path_loss_dB;
-  chan_desc->first_run      = 1;
-  chan_desc->ip             = 0.0;
-  chan_desc->max_Doppler    = max_Doppler;
-  chan_desc->ch             = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
-  chan_desc->chF            = (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
-  chan_desc->a              = (struct complex**) malloc(nb_taps*sizeof(struct complex*));
+  chan_desc->delays         	 	= delays;
+  chan_desc->Td               	        = Td;
+  chan_desc->sampling_rate              = sampling_rate;
+  chan_desc->channel_bandwidth          = channel_bandwidth;
+  chan_desc->ricean_factor 		= ricean_factor;
+  chan_desc->aoa            		= aoa;
+  chan_desc->random_aoa  		= random_aoa;
+  chan_desc->forgetting_factor 		= forgetting_factor;
+  chan_desc->channel_offset 		= channel_offset;
+  chan_desc->path_loss_dB   		= path_loss_dB;
+  chan_desc->first_run      		= 1;
+  chan_desc->ip             		= 0.0;
+  chan_desc->max_Doppler    		= max_Doppler;
+  chan_desc->ch             		= (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+  chan_desc->chF            		= (struct complex**) malloc(nb_tx*nb_rx*sizeof(struct complex*));
+  chan_desc->a              		= (struct complex**) malloc(nb_taps*sizeof(struct complex*));
 
   LOG_D(OCM,"[CHANNEL] Filling ch \n");
 
@@ -548,7 +547,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			NULL,
 			Td,
 			sampling_rate,
-			BW,
+			channel_bandwidth,
 			ricean_factor,
 			aoa,
 			forgetting_factor,
@@ -575,7 +574,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -602,7 +601,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -629,7 +628,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -665,7 +664,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -701,7 +700,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -728,7 +727,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -755,7 +754,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -784,7 +783,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   NULL,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -822,7 +821,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -858,7 +857,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -892,7 +891,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -926,7 +925,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -960,7 +959,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   R_sqrt_ptr2,
 				   Td,
 				   sampling_rate,
-				   BW,
+				   channel_bandwidth,
 				   ricean_factor,
 				   aoa,
 				   forgetting_factor,
@@ -997,7 +996,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			R_sqrt_ptr2,
 			Td,
 			sampling_rate,
-			BW,
+			channel_bandwidth,
 			ricean_factor,
 			aoa,
 			forgetting_factor,
@@ -1032,7 +1031,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 			R_sqrt_ptr2,
 			Td,
 			sampling_rate,
-			BW,
+			channel_bandwidth,
 			ricean_factor,
 			aoa,
 			forgetting_factor,
