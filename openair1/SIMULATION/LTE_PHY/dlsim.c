@@ -3454,11 +3454,11 @@ n(tikz_fname,"w");
 	  //saving PMI in case of Transmission Mode > 5
 
 	  if(abstx){
-	    if (trials==0 && round==0 && transmission_mode>=5){
+	    if (trials==0 && round==0 && transmission_mode>=4){
 	      for (iii=0; iii<NB_RB; iii++){
 		//fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[iii]));
-		fprintf(csv_fd,"%x,%x,",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
-		printf("%x ",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
+		fprintf(csv_fd,"%x,",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
+		//printf("%x ",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
 	      }
 	    }
 	  }
