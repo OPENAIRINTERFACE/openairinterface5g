@@ -1875,7 +1875,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  </eNB_main_exec_args>
@@ -1954,7 +1954,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  </eNB_main_exec_args>
@@ -2010,7 +2010,7 @@
   <testCase id="015802" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>180</TimeOut_cmd>
@@ -2032,7 +2032,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  </eNB_main_exec_args>
@@ -2088,7 +2088,7 @@
   <testCase id="015803" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>180</TimeOut_cmd>
@@ -2110,7 +2110,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  </eNB_main_exec_args>
@@ -2165,7 +2165,7 @@
   <testCase id="015804" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>180</TimeOut_cmd>
@@ -2187,8 +2187,8 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
-    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
@@ -2242,7 +2242,7 @@
   <testCase id="015805" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>180</TimeOut_cmd>
@@ -2264,7 +2264,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec></eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.epc.conf  </eNB_main_exec_args>
@@ -2344,7 +2344,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2; dmesg|tail </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  </eNB_main_exec_args>
@@ -2423,7 +2423,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  </eNB_main_exec_args>
@@ -2501,7 +2501,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  </eNB_main_exec_args>
@@ -2579,7 +2579,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  </eNB_main_exec_args>
@@ -2656,7 +2656,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf </eNB_main_exec_args>
@@ -2733,7 +2733,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2</eNB_pre_exec>
+    <eNB_pre_exec>sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  </eNB_main_exec_args>
