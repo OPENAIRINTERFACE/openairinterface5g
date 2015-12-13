@@ -203,8 +203,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       multadd_complex_vector_real_scalar(dl_ch-(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1),
                                          phy_vars_ue->ch_est_alpha,dl_ch-(phy_vars_ue->lte_frame_parms.ofdm_symbol_size<<1),
                                          1,phy_vars_ue->lte_frame_parms.ofdm_symbol_size);
-
-
+#ifdef DEBUG_CH
+    printf("k %d, first_carrier %d\n",k,phy_vars_ue->lte_frame_parms.first_carrier_offset);
+#endif
     if ((phy_vars_ue->lte_frame_parms.N_RB_DL==6)  ||
         (phy_vars_ue->lte_frame_parms.N_RB_DL==50) ||
         (phy_vars_ue->lte_frame_parms.N_RB_DL==100)) {
@@ -213,7 +214,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      // printf("pilot 0 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#ifdef DEBUG_CH
+      printf("pilot 0 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fl,
                                          ch,
                                          dl_ch,
@@ -224,7 +227,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      // printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#ifdef DEBUG_CH
+      printf("pilot 1 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(f2l2,
                                          ch,
                                          dl_ch,
@@ -235,15 +240,13 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       for (pilot_cnt=2; pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-1); pilot_cnt+=2) {
 
-        // printf("%d\n",dl_ch-(int16_t *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
-
-        //  printf("pilot[%d][%d] (%d,%d)\n",p,pilot_cnt,pil[0],pil[1]);
-        //  printf("rx[%d] -> (%d,%d)\n", k, rxF[0], rxF[1]);
 
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15); //Re
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15); //Im
-        // printf("**rb %d %d\n",rb,dl_ch-(int16_t *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
+#ifdef DEBUG_CH
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
         multadd_real_vector_complex_scalar(f,
                                            ch,
                                            dl_ch,
@@ -254,13 +257,11 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
         rxF+=12;
         dl_ch+=8;
 
-        // printf("pilot[%d][%d] (%d,%d)\n",p,rb,pil[0],pil[1]);
-        // printf("rx[%d] -> (%d,%d)\n", k+6, rxF[0], rxF[1]);
-
-
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-        // printf("**rb %d %d\n",rb,dl_ch-(int16_t *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
+#ifdef DEBUG_CH
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
         multadd_real_vector_complex_scalar(f2,
                                            ch,
                                            dl_ch,
@@ -281,15 +282,17 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       rxF   = (int16_t *)&rxdataF[aarx][((symbol_offset+1+k))];
 
+#ifdef DEBUG_CH
+      printf("second half k %d\n",k);
+#endif
       for (pilot_cnt=0; pilot_cnt<((phy_vars_ue->lte_frame_parms.N_RB_DL)-3); pilot_cnt+=2) {
-        //  printf("pilot[%d][%d] (%d,%d)\n",p,pilot_cnt,pil[0],pil[1]);
-        //  printf("rx[%d] -> (%d,%d)\n", k+6, rxF[0], rxF[1]);
 
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-        //   printf("**rb %d %d\n",rb,dl_ch-(int16_t *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
+#ifdef DEBUG_CH
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
         multadd_real_vector_complex_scalar(f,
                                            ch,
                                            dl_ch,
@@ -300,8 +303,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-
-        //   printf("**rb %d %d\n",rb,dl_ch-(int16_T *)&dl_ch_estimates[(p<<1)+aarx][ch_offset]);
+#ifdef DEBUG_CH
+	printf("pilot %d : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
         multadd_real_vector_complex_scalar(f2,
                                            ch,
                                            dl_ch,
@@ -314,8 +318,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      //            printf("pilot 49: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
-
+#ifdef DEBUG_CH
+      printf("pilot %d: rxF -> (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(fr,
                                          ch,
                                          dl_ch,
@@ -326,7 +331,9 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-      //             printf("pilot 50: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#ifdef DEBUG_CH
+      printf("pilot %d: rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",pilot_cnt+1,rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
+#endif
       multadd_real_vector_complex_scalar(f2r2,
                                          ch,
                                          dl_ch,

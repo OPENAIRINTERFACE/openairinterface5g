@@ -3336,7 +3336,7 @@ PMI_FEEDBACK:
             PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
 
 
-            /*
+	                
             // calculate uncoded BLER
             uncoded_ber=0;
             for (i=0;i<coded_bits_per_codeword;i++)
@@ -3352,7 +3352,7 @@ PMI_FEEDBACK:
 
             if (n_frames==1)
               write_output("uncoded_ber_bit.m","uncoded_ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
-            */
+            
 
             start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);
             dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
@@ -3463,12 +3463,12 @@ PMI_FEEDBACK:
               }
 
               sprintf(fname,"rxsig0_r%d.m",round);
-              sprintf(vname,"rxs0_r%d.m",round);
+              sprintf(vname,"rxs0_r%d",round);
               write_output(fname,vname, &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsigF0_r%d.m",round);
-              sprintf(vname,"rxs0F_r%d.m",round);
+              sprintf(vname,"rxs0F_r%d",round);
               write_output(fname,vname, &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
-
+	     
               if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
                 sprintf(vname,"rxs1_r%d.m",round);
@@ -3479,14 +3479,14 @@ PMI_FEEDBACK:
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
-              sprintf(vname,"dl00_r%d.m",round);
+              sprintf(vname,"dl00_r%d",round);
               write_output(fname,vname,
                            &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
                            PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
-                sprintf(vname,"dl01_r%d.m",round);
+                sprintf(vname,"dl01_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][1][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
@@ -3494,7 +3494,7 @@ PMI_FEEDBACK:
 
               if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1) {
                 sprintf(fname,"dlsch10_r%d.m",round);
-                sprintf(vname,"dl10_r%d.m",round);
+                sprintf(vname,"dl10_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][2][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
@@ -3502,7 +3502,7 @@ PMI_FEEDBACK:
 
               if ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) && (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)) {
                 sprintf(fname,"dlsch11_r%d.m",round);
-                sprintf(vname,"dl11_r%d.m",round);
+                sprintf(vname,"dl11_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][3][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);

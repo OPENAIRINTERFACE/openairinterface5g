@@ -116,7 +116,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
     dlsch->max_turbo_iterations = max_turbo_iterations;
 
     for (i=0; i<Mdlharq; i++) {
-      //      msg("new_ue_dlsch: Harq process %d\n",i);
+      //      printf("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
 
       if (dlsch->harq_processes[i]) {
@@ -155,7 +155,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
       return(dlsch);
   }
 
-  msg("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(LTE_DL_UE_HARQ_t), exit_flag);
+  printf("new_ue_dlsch with size %zu: exit_flag = %u\n",sizeof(LTE_DL_UE_HARQ_t), exit_flag);
   free_ue_dlsch(dlsch);
 
   return(NULL);
@@ -204,22 +204,22 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                 time_stats_t *);
 
   if (!dlsch_llr) {
-    msg("dlsch_decoding.c: NULL dlsch_llr pointer\n");
+    printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(dlsch->max_turbo_iterations);
   }
 
   if (!harq_process) {
-    msg("dlsch_decoding.c: NULL harq_process pointer\n");
+    printf("dlsch_decoding.c: NULL harq_process pointer\n");
     return(dlsch->max_turbo_iterations);
   }
 
   if (!frame_parms) {
-    msg("dlsch_decoding.c: NULL frame_parms pointer\n");
+    printf("dlsch_decoding.c: NULL frame_parms pointer\n");
     return(dlsch->max_turbo_iterations);
   }
 
   if (subframe>9) {
-    msg("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
+    printf("dlsch_decoding.c: Illegal subframe index %d\n",subframe);
     return(dlsch->max_turbo_iterations);
   }
 
@@ -232,13 +232,13 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
   /*
   if (nb_rb > frame_parms->N_RB_DL) {
-    msg("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
+    printf("dlsch_decoding.c: Illegal nb_rb %d\n",nb_rb);
     return(max_turbo_iterations);
     }*/
 
   /*harq_pid = dlsch->current_harq_pid;
   if (harq_pid >= 8) {
-    msg("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
+    printf("dlsch_decoding.c: Illegal harq_pid %d\n",harq_pid);
     return(max_turbo_iterations);
   }
   */
@@ -250,7 +250,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   G = harq_process->G;
   //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
-  //  msg("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
+  //  printf("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
 
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
@@ -269,7 +269,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
   /*
   else {
-    msg("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
+    printf("dlsch_decoding.c: Ndi>0 not checked yet!!\n");
     return(max_turbo_iterations);
   }
   */
@@ -296,7 +296,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     break;
   }
 
-  if (harq_process->C >= MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
+  if (harq_process->C > MAX_NUM_DLSCH_SEGMENTS/bw_scaling) {
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_turbo_iterations));
   }
@@ -320,7 +320,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     else if (Kr_bytes <= 768)
       iind = 123 + ((Kr_bytes-256)>>3);
     else {
-      msg("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
+      printf("dlsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
       return(dlsch->max_turbo_iterations);
     }
 
