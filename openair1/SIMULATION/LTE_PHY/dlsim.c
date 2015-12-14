@@ -4033,7 +4033,7 @@ PMI_FEEDBACK:
         printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
       }
 
-      if (((double)errs[0]/(round_trials[0]))<1e-2)
+      if (((double)errs[0]/(round_trials[0]))<(10.0/n_frames))
         break;
     }// SNR
 
