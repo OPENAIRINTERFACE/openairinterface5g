@@ -111,7 +111,12 @@ compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   {
     rm -f $3
-    make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+    if [ "$VERBOSE_COMPILE" == "1" ]; then
+       make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+    else
+       make -j`nproc` $2
+    fi
+
   } > $dlog/$2.$REL.txt 2>&1
   echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
   if [ -s $3 ] ; then
@@ -158,22 +163,33 @@ install_gnutls_from_source(){
 
 
 check_install_usrp_uhd_driver(){
+        log_file=$OPENAIR_DIR/cmake_targets/log/check_install_usrp_uhd_driver_log.txt
+        echo_info "\nIn function: check_install_usrp_uhd_driver(). Installing USRP Drivers : The logfile for the installation is located here: $log_file "
+        (
         v=$(lsb_release -cs)
         $SUDO apt-add-repository "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         $SUDO apt-get update
         $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y install -t `lsb_release -cs` uhd --force-yes
+        ) >& $log_file
 }
 check_install_bladerf_driver(){
+        log_file=$OPENAIR_DIR/cmake_targets/log/check_install_bladerf_driver_log.txt
+        echo_info "\nIn function: check_install_bladerf_driver(). Install BLADERF drivers : The logfile for the installation is located here: $log_file "
+        (
 	$SUDO add-apt-repository -y ppa:bladerf/bladerf
 	$SUDO apt-get update
 	$SUDO apt-get install -y bladerf libbladerf-dev
-	$SUDO apt-get install bladerf-firmware-fx3
-	$SUDO apt-get install bladerf-fpga-hostedx40	
+	$SUDO apt-get install -y bladerf-firmware-fx3
+	$SUDO apt-get install -y bladerf-fpga-hostedx40	
 	bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img	
+        ) >& $log_file
 }
 
 check_install_additional_tools (){
+    log_file=$OPENAIR_DIR/cmake_targets/log/check_install_additional_tools_log.txt
+    echo_info "\nIn function: check_install_oai_software(). Installing optional OAI packages : The logfile for the installation is located here: $log_file "
+    (
     $SUDO apt-get update
     $SUDO apt-get install -y \
 	check \
@@ -194,27 +210,32 @@ check_install_additional_tools (){
 	unzip  \
 	valgrind  \
 	vlan	  \
-	ctags
+	ctags \
+        ntpdate
+      ) >& $log_file
 }
 
 check_install_oai_software() {
     
+    log_file=$OPENAIR_DIR/cmake_targets/log/check_install_oai_software_log.txt
+    echo_info "\nIn function: check_install_oai_software(). Installing mandatory OAI packages : The logfile for the installation is located here: $log_file "
+    (
     $SUDO apt-get update
     $SUDO apt-get install -y \
-    autoconf  \
+	autoconf  \
 	automake  \
 	bison  \
 	build-essential \
 	cmake \
 	cmake-curses-gui  \
 	doxygen \
-	doxygen-gui\
-	texlive-latex-base\
+	doxygen-gui \
+	texlive-latex-base \
 	ethtool \
 	flex  \
-    gccxml \
-    gdb  \
-    git \
+	gccxml \
+	gdb  \
+	git \
 	graphviz \
 	gtkwave \
 	guile-2.0-dev  \
@@ -233,7 +254,7 @@ check_install_oai_software() {
 	libgmp-dev \
 	libgtk-3-dev \
 	libidn2-0-dev  \
-    libidn11-dev \
+	libidn11-dev \
 	libmysqlclient-dev  \
 	liboctave-dev \
 	libpgm-5.1 \
@@ -255,7 +276,11 @@ check_install_oai_software() {
 	openssl \
 	python  \
 	subversion \
-        xmlstarlet
+	xmlstarlet \
+	python-pip \
+	pydb \
+	wvdial \
+        python-numpy
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
@@ -263,20 +288,29 @@ check_install_oai_software() {
     else
         $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin 
     fi
+    $SUDO pip install paramiko
+    $SUDO pip install pyroute2
+    ) > $log_file 2>&1
     install_asn1c_from_source
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
+    asn1_install_dir=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
+    echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_dir "
+    (
+    rm -rf /tmp/asn1c-r1516
     mkdir -p /tmp/asn1c-r1516
     cd /tmp/asn1c-r1516
-    rm -rf /tmp/asn1c-r1516/*
-    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 > /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
+    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 
+    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
     ./configure
-    make > /tmp/log_compile_asn1c 2>&1
-    $SUDO make install
+    make -j`nproc`
+    $SUDO make install 
+    ) > $asn1_install_dir 2>&1 
 }
 
 #################################################
@@ -318,4 +352,43 @@ set_openair_env(){
     export OPENAIR3_DIR=$openair_path/openair3
     export OPENAIR_TARGETS=$openair_path/targets
 }
+
+################################
+# Function to killall the subprocesses when Ctrl-C Key is hit
+###############################
+function handle_ctrl_c(){
+CURPID=$$
+ppid=$$
+arraycounter=1
+echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
+while true
+do
+        FORLOOP=FALSE
+        # Get all the child process id
+        for i in `ps -ef| awk '$3 == '$ppid' { print $2 }'`
+        do
+                if [ $i -ne $CURPID ] ; then
+                        procid[$arraycounter]=$i
+                        arraycounter=`expr $arraycounter + 1`
+                        ppid=$i
+                        FORLOOP=TRUE
+                fi
+        done
+        if [ "$FORLOOP" = "FALSE" ] ; then
+           arraycounter=`expr $arraycounter - 1`
+           ## We want to kill child process id first and then parent id's
+           while [ $arraycounter -ne 0 ]
+           do  
+             echo "first we send ctrl-c to program"
+             $SUDO kill -INT "${procid[$arraycounter]}"
+             sleep 5
+             echo "Now we force kill if that didn't work"
+             $SUDO kill -9 "${procid[$arraycounter]}" >/dev/null
+             arraycounter=`expr $arraycounter - 1`
+           done
+         exit
+        fi
+done
+}
+
 

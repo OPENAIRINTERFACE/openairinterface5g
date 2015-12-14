@@ -552,7 +552,6 @@ int main(int argc, char **argv)
   uint32_t *txptr;
   int aarx;
   int k;
-  double BW=5.0;
   uint32_t perfect_ce = 0;
 
   number_of_cards = 1;
@@ -840,28 +839,11 @@ int main(int argc, char **argv)
          subframe,NUMBER_OF_OFDM_CARRIERS,
          PHY_vars_eNB->lte_frame_parms.Ncp,PHY_vars_eNB->lte_frame_parms.samples_per_tti,nsymb);
 
-  switch (N_RB_DL) {
-  case 6:
-    BW = 1.25;
-    break;
-
-  case 25:
-    BW = 5.00;
-    break;
-
-  case 50:
-    BW = 10.00;
-    break;
-
-  case 100:
-    BW = 20.00;
-    break;
-  }
-
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
                                 0);

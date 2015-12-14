@@ -326,7 +326,7 @@ int main(int argc, char **argv)
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;
   int dci_length_bytes=0,dci_length=0;
-  double BW = 5.0;
+  //double channel_bandwidth = 5.0, sampling_rate=7.68;
   int common_flag=0,TPC=0;
 
   double cpu_freq_GHz;
@@ -680,35 +680,25 @@ int main(int argc, char **argv)
     switch (N_RB_DL) {
     case 6:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x3f;
-
-      BW = 1.25;
       num_pdcch_symbols = 3;
       break;
 
     case 25:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1fff;
-
-      BW = 5.00;
       break;
 
     case 50:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffff;
-
-      BW = 10.00;
       break;
 
     case 100:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffffff;
-
-      BW = 20.00;
       break;
     }
 
     NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
   } else
     NB_RB = 4;
-
-  NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
 
   if ((transmission_mode > 1) && (n_tx != 2))
     printf("n_tx must be >1 for transmission_mode %d\n",transmission_mode);
@@ -967,7 +957,8 @@ int main(int argc, char **argv)
   eNB2UE[0] = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                    PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                    channel_model,
-                                   BW,
+                                   N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				   N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                    forgetting_factor,
                                    rx_sample_offset,
                                    0);
@@ -977,8 +968,9 @@ int main(int argc, char **argv)
       eNB2UE[n] = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                        PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                        channel_model,
-                                       BW,
-                                       forgetting_factor,
+				       N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				       N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
+				       forgetting_factor,
                                        rx_sample_offset,
                                        0);
   }
@@ -2789,7 +2781,7 @@ PMI_FEEDBACK:
 
           // Multipath channel
           if (awgn_flag == 0) {
-            multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
+            multipath_channel(eNB2UE[round],s_re,s_im,r_re,r_im,
                               2*frame_parms->samples_per_tti,hold_channel);
 
             //      printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
