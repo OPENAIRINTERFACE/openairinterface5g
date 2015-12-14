@@ -435,7 +435,7 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "bladeRF")
-#set(LOWLATENCY False)
+set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
