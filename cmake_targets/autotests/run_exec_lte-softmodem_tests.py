@@ -840,7 +840,11 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
 
 #This function searches if test case is present in list of test cases that need to be executed by user
-def search_test_case_group(testcasename, testcasegroup):
+def search_test_case_group(testcasename, testcasegroup, search_test_case_group):
+    
+    if search_test_case_group.find(testcasename) >=0:
+       print "\nSkipping test case as it is found in black list: " + testcasename
+       return False
     if testcasegroup == '':
        return True
     testcaselist = testcasegroup.split()
@@ -980,6 +984,7 @@ CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
 CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
 Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
 MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
+TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
 print "GitOAI5GRepo = " + GitOAI5GRepo
@@ -1211,7 +1216,7 @@ for testcase in testcaseList:
     testcaseclass = testcase.findtext('class',default='')
     desc = testcase.findtext('desc',default='')
     #print "Machine list top level = " + ','.join(MachineList)
-    if search_test_case_group(testcasename, testcasegroup) == True:
+    if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
       if testcaseclass == 'lte-softmodem' :
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
