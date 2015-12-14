@@ -257,6 +257,22 @@ def update_config_file(oai, config_string, logdirRepo, python_script):
     return cmd
     #result = oai.send_recv(cmd)
 
+def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testcase, logdir_local_base):
+  while True:
+    try:
+       ssh = SSHSession(machine , username, key_file, password)
+       ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       break 
+    except Exception, e:
+       error=''
+       error = error + ' In Class = function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+       error = error + '\n username = ' + username + '\n machine = ' + machine + '\n logdir_remote = ' + logdir_remote_testcase + '\n logdir_local_base = ' + logdir_local_base 
+       error = error + traceback.format_exc()
+       print error
+       print " Trying again in 60 seconds"
+       time.sleep(60)
+       print "Continuing ..."
+
 
  
 #Function to clean old programs that might be running from earlier execution
@@ -366,8 +382,9 @@ class testCaseThread_generic (threading.Thread):
        #print "ThreadID = " + str(self.threadID) + "ThreadName: " + self.name + " testcasename: " + self.testcasename + "Execution Result = " + res
        write_file(logfile_task_testcasename, cmd, mode="w")
        #Now we copy all the remote files
-       ssh = SSHSession(self.machine , username=user, key_file=None, password=self.password)
-       ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       #ssh = SSHSession(self.machine , username=user, key_file=None, password=self.password)
+       #ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       SSHSessionWrapper(self.machine, user, None, self.password, logdir_remote_testcase, logdir_local_base)
        print "Finishing test case : " + self.testcasename + " On machine " + self.machine
        cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
        #oai.kill(user,mypassword)
@@ -378,9 +395,12 @@ class testCaseThread_generic (threading.Thread):
          error = error + '\n threadID = ' + str(self.threadID) + '\n threadName = ' + self.name + '\n testcasename = ' + self.testcasename + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n' + '\n timeout = ' + str(self.timeout)  
          error = error + traceback.format_exc()
          print error
-         sys.exit()
+         print "Continuing with next test case..."
+         #sys.exit()
 
 
+       
+   
 def addsudo (cmd, password=""):
   cmd = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
   return cmd
@@ -434,23 +454,26 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
      error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + ','.join(MachineList) + '\n timeout = ' + str(timeout) +  '\n'  
      error = error + traceback.format_exc()
      print error
-     sys.exit(1)
+     print "Continuing..."
+     #sys.exit(1)
 
 #Blocking wait for all threads related to generic testcase execution, class (compilation and execution)
 def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
+   threadListGenericNew=[]
    for param in threadListGeneric:
       thread_id = param["thread_id"]
       machine = param["Machine"]
       testcasenameold = param["testcasename"]
       thread_id.join(timeout)
       if thread_id.isAlive() == True:
+         threadListGenericNew.append(param)
          print "thread_id on machine: " + machine + "  is still alive: testcasename: " + testcasenameold
          print " Exiting now..."
          sys.exit(1)
       else:
          print "thread_id on machine: " + machine + "  is stopped: testcasename: " + testcasenameold
-         threadListGeneric.remove(param)
-   return threadListGeneric
+         #threadListGeneric.remove(param)
+   return threadListGenericNew
 
 #Function to handle test case class : lte-softmodem
 def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox):
@@ -760,16 +783,21 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
    
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
-    ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_EPC , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    #ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
+    #ssh.get_all(logdir_EPC , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(EPCMachine, user, None, password, logdir_EPC, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
 
     print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
-    ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    #ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
+    #ssh.get_all(logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
 
     print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
-    ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
-    ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
+    #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(UEMachine, user, None, password, logdir_UE, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+
+
     
     #Currently we only perform throughput tests
     tput_run_string=''
@@ -1159,6 +1187,10 @@ for t in threads_init_setup:
    sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
    sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
    index = index+1
+   
+   if os.path.exists(localfile) == 0:
+      print "Setup log file <" + localfile + "> missing for machine <" + MachineList[index] + ">.  Please check the setup log files. Exiting now"
+      sys.exit(1)
 
 #Now we process all the test cases
 #Now we check if there was error in setup files
@@ -1166,7 +1198,7 @@ for t in threads_init_setup:
 status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup*')
 if (out != '') :
   print "There is error in setup of machines"
-  print "status  = " + str(status) + "\n out = " + out
+  print "status  = " + str(status) + "\n Check files for error = " + out
   print sys.exit(1)
 
 
@@ -1207,7 +1239,8 @@ for testcase in testcaseList:
      error = error + '\n testcasename = ' + testcasename + '\n testcaseclass = ' + testcaseclass + '\n desc = ' + 'desc' + '\n'  
      error = error + traceback.format_exc()
      print error
-     sys.exit(1)
+     print "Continuing to next test case..."
+     #sys.exit(1)
 
 
 print "Exiting the test cases execution now..."
