@@ -820,9 +820,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dataout_tx%d_mcs%d_mcsi%d_chan%d_nsimus%d_R%d_abstr_perf_ce.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
+		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_nsimus%d_R%d_ab_perf_ce.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds);
  	else
-		 sprintf(csv_fname,"dataout_tx%d_mcs%d_mcsi%d_chan%d_nsimus%d_R%d_abstr.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
+		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_nsimus%d_R%d_ab.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds);
 
      // sprintf(csv_fname,"dataout_tx%d_mcs%d_mcs_interf%d_chan%d_nsimus%d_R%d_abstr_old.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
     csv_fd = fopen(csv_fname,"w");
@@ -2947,10 +2947,10 @@ n(tikz_fname,"w");
 		  //printf("r_im0 = %d\n",r_im[0][i]);
 		  //printf("r_re1 = %d\n",r_re[1][i]);
 		  //printf("r_im1 = %d\n",r_im[1][i]);
-		  //r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		  //r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-		  //r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		  //r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		  // r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		  // r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
+		  // r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
+		  // r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
 		    		    
 		}
      else {
@@ -4306,8 +4306,15 @@ n(tikz_fname,"w");
 	printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
       }
 	
-      if (((double)errs[0][0]/(round_trials[0]))<1e-2 && ((double)errs[1][0]/(round_trials[0]))<1e-2) 
-	break;
+	if (rx_type<rx_IC_dual_stream) {
+         if (((double)errs[0][0]/(round_trials[0]))<1e-2)
+	 break;
+	}
+	else{ 
+	 if (((double)errs[0][0]/(round_trials[0]))<1e-2 && ((double)errs[1][0]/(round_trials[0]))<1e-2)  
+	 break;
+	  
+	}
       
       if (n_frames==1)
 	break;

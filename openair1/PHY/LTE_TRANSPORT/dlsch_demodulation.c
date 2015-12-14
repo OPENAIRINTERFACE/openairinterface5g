@@ -428,11 +428,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                  dlsch0_harq->mimo_mode);
 	    
 	
-	/*if (rx_type>rx_standard) {
+	if (rx_type>rx_standard) {
 	  //	LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->mcs>>1)-1]);
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
-	else */
+	else
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0])/2;
       }
     
