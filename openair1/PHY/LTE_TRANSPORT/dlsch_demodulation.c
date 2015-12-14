@@ -61,6 +61,7 @@ int avg[4];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
+uint8_t intefr_unaw_shift;
 /*
 //original values from sebastion + same hand tuning
 unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{6,6,6},{6,6,6},{6,6,6},{5,5,5},{4,4,4},{1,2,4}, // QPSK
@@ -433,7 +434,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
 	else
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0])/2;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avg[0])/2)+intefr_unaw_shift;
       }
     
       dlsch_channel_compensation_TM34(frame_parms, 
