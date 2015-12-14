@@ -4,12 +4,12 @@
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
- <GitOAI5GRepoBranch>bugfix-56-UE_category3_throughput</GitOAI5GRepoBranch>
+ <GitOAI5GRepoBranch>enhancement-60-exmimo-tdd</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
  <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests* iperf</CleanUpOldProgs>	
  <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList></TestCaseExclusionList>
+ <TestCaseExclusionList>015502 015505  015506 015507 015508 015508 015509 015510 015511 016102 016105</TestCaseExclusionList>
  <MachineListGeneric>calisson stevens mozart nano amerique</MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
