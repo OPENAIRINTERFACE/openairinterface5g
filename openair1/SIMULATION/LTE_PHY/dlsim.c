@@ -4313,16 +4313,31 @@ n(tikz_fname,"w");
       } else if (test_perf !=0 ){
 	printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
       }
-	
-	if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
-        if (((double)errs[0][0]/(round_trials[0]))<1e-2 && ((double)errs[1][0]/(round_trials[0]))<1e-2)
-	 break;
+	if (abstx == 1) {
+	  if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-2 && ((double)errs[1][0]/(round_trials[0]))<1e-2)
+	    break;
+	  }
+	  else{ 
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-2) 
+	    break;
+	  
+	    }
 	}
-	else{ 
-	 if (((double)errs[0][0]/(round_trials[0]))<1e-2) 
-	break;
+	else {
+	  
+	   if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-3 && ((double)errs[1][0]/(round_trials[0]))<1e-3)
+	    break;
+	  }
+	  else{ 
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-3) 
+	    break;
+	  
+	    }
 	  
 	}
+	
       
       if (n_frames==1)
 	break;
