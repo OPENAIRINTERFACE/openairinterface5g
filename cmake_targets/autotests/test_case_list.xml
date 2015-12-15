@@ -9,7 +9,7 @@
  <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests* iperf</CleanUpOldProgs>	
  <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>015502 015505  015506 015507 015508 015508 015509 015510 015511 016102 016105</TestCaseExclusionList>
+ <TestCaseExclusionList>015502 015505  015506 015507 015508 015508 015509 015510 015511 015600 015700 016102 016105</TestCaseExclusionList>
  <MachineListGeneric>calisson stevens mozart nano amerique</MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
@@ -185,7 +185,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <tags>lte-softmodemEXMIMO.Rel10</tags>
+     <tags>lte-softmodem.EXMIMO.Rel10</tags>
      <nruns>1</nruns>
      </testCase> 
 
@@ -202,7 +202,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <tags>lte-softmodem.EXMIMO.Rel10</tags>
+     <tags>lte-softmodem.BLADERF.Rel10</tags>
      <nruns>1</nruns>
      </testCase> 
 
