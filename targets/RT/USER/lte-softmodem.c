@@ -418,7 +418,7 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  -C Set the downlink frequecny for all Component carrier\n");
+  printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
   printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
@@ -432,6 +432,7 @@ void help (void) {
   printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
   printf("  -S Skip the missed slots/subframes \n");    
   printf("  -t Set the maximum uplink MCS\n");
+  printf("  -T Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n");
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
@@ -964,6 +965,25 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
      if (subframe_select(&phy_vars_eNB->lte_frame_parms,subframe) == SF_S) {
        for (i=0; i<len; i++) {
 	 phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset++] = 0x00010001;
+       }
+     }
+
+     if ((((phy_vars_eNB->lte_frame_parms.tdd_config==0) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==1) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==2) ||
+	  (phy_vars_eNB->lte_frame_parms.tdd_config==6)) && 
+	  (subframe==0)) || (subframe==5)) {
+       // turn on tx switch N_TA_offset before
+       //LOG_D(HW,"subframe %d, time to switch to tx (N_TA_offset %d, slot_offset %d) \n",subframe,phy_vars_eNB->N_TA_offset,slot_offset);
+       for (i=0; i<phy_vars_eNB->N_TA_offset; i++) {
+	 tx_offset = (int)slot_offset+time_offset[aa]+i-phy_vars_eNB->N_TA_offset/2;
+	 if (tx_offset<0)
+	   tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
+	 
+	 if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti))
+	   tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
+	 
+	 phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset] = 0x00000000;
        }
      }
     }
@@ -2037,7 +2057,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:x:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2302,8 +2322,13 @@ static void get_options (int argc, char **argv)
         printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
         exit(-1);
       }
-
       break;
+
+    case 'T':
+      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+	frame_parms[CC_id]->frame_type = TDD;
+      break;
+
     case 'h':
       help ();
       exit (-1);
@@ -2463,12 +2488,10 @@ int main( int argc, char **argv )
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   set_latency_target();
 
-
-
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
-    frame_parms[CC_id]->frame_type         = FDD; /* TDD */
+    frame_parms[CC_id]->frame_type          = FDD;
     frame_parms[CC_id]->tdd_config          = 3;
     frame_parms[CC_id]->tdd_config_S        = 0;
     frame_parms[CC_id]->N_RB_DL             = 100;
@@ -2816,7 +2839,7 @@ int main( int argc, char **argv )
       }
 
 #else
-      //already taken care of in lte-softmodem
+      //already taken care of in lte-softmodem.c
       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
 #endif
 
@@ -2863,7 +2886,12 @@ int main( int argc, char **argv )
       openair0_cfg[card].tx_bw = 1.5e6;
       openair0_cfg[card].rx_bw = 1.5e6;
     }
-    
+
+    if (frame_parms[0]->frame_type==TDD)
+      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
+    else //FDD
+      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+
 #ifdef ETHERNET
 
     //calib needed
