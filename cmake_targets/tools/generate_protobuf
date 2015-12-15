@@ -1,0 +1,15 @@
+#!/bin/bash
+
+function main()
+{
+mkdir -p $1
+cd $1
+
+echo generate protobuf messages inside $1 $2
+
+protoc-c  --c_out=$1 $2
+protoc    --cpp_out=$1 $2
+
+}
+
+main "$@"
