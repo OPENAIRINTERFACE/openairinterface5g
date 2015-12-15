@@ -1,0 +1,176 @@
+package protocol;
+
+//
+// UE related statistics
+//
+
+// RLC buffer status for a specific logical channel of a UE
+message prp_rlc_bsr {
+	optional uint32 lc_id = 1;
+	optional uint32 tx_queue_size = 2;
+	optional uint32 tx_queue_hol_delay = 3;
+	optional uint32 retransmission_queue_size = 4;
+	optional uint32 retransmission_queue_hol_delay = 5;
+	optional uint32 status_pdu_size = 6;
+}
+
+// Flags for MAC Control Elements
+enum prp_ce_type {
+     PRPCET_TA = 1;
+     PRPCET_DRX = 2;
+     PRPCET_CR = 4;
+     PRPCET_CA = 8;
+}
+
+// Types of DL CSI reports
+enum prp_csi_type {
+     PRCSIT_P10 = 0;
+     PRCSIT_P11 = 1;
+     PRCSIT_P20 = 2;
+     PRCSIT_P21 = 3;
+     PRCSIT_A12 = 4;
+     PRCSIT_A22 = 5;
+     PRCSIT_A20 = 6;
+     PRCSIT_A30 = 7;
+     PRCSIT_A31 = 8;
+}
+
+// CSI type P10
+message prp_csi_p10 {
+	optional uint32 wb_cqi = 1;
+}
+
+// CSI type P11
+message prp_csi_p11 {
+	repeated uint32 wb_cqi = 1;
+	optional uint32 wb_pmi = 2;
+}
+
+// CSI type P20
+message prp_csi_p20 {
+	optional uint32 wb_cqi = 1;
+	optional uint32 sb_cqi = 2;
+	optional uint32 bandwidth_part_index = 3;
+	optional uint32 sb_index = 4;
+}
+
+// CSI type P21
+message prp_csi_p21 {
+	repeated uint32 wb_cqi = 1;
+	optional uint32 wb_pmi = 2;
+	repeated uint32 sb_cqi = 3;
+	optional uint32 badwidth_part_index = 4;
+	optional uint32 sb_index = 5;
+}
+
+// CSI type A12
+message prp_csi_a12 {
+	repeated uint32 wb_cqi = 1;
+	repeated uint32 sb_pmi = 2;
+}
+
+// CSI type A22
+message prp_csi_a22 {
+	repeated uint32 wb_cqi = 1;
+	repeated uint32 sb_cqi = 2;
+	optional uint32 wb_pmi = 3;
+	optional uint32 sb_pmi = 4;
+	repeated uint32 sb_list = 5;
+}
+
+// CSI type A20
+message prp_csi_a20 {
+	optional uint32 wb_cqi = 1;
+	optional uint32 sb_cqi = 2;
+	repeated uint32 sb_list = 3;
+}
+
+// CSI type A30
+message prp_csi_a30 {
+	optional uint32 wb_cqi = 1;
+	repeated uint32 sb_cqi = 2;
+}
+
+// CSI type A31
+message prp_csi_a31 {
+	repeated uint32 wb_cqi = 1;
+	repeated prp_msb_cqi sb_cqi = 2;
+	optional uint32 wb_pmi = 3;
+}
+
+// The CQI for the M-preffered subband
+message prp_msb_cqi {
+	repeated uint32 sb_cqi = 1;
+}
+
+// The CSI report of the UE for a specific servCellIndex
+message prp_dl_csi {
+	optional uint32 serv_cell_index = 1;
+	optional uint32 ri = 2;
+	optional prp_csi_type type = 3;
+	oneof report {
+	      prp_csi_p10 p10csi = 4;
+	      prp_csi_p11 p11csi = 5;
+	      prp_csi_p20 p20csi = 6;
+	      prp_csi_p21 p21csi = 7;
+	      prp_csi_a12 a12csi = 8;
+	      prp_csi_a22 a22csi = 9;
+	      prp_csi_a20 a20csi = 10;
+	      prp_csi_a30 a30csi = 11;
+	      prp_csi_a31 a31csi = 12;
+	}
+}
+
+// The full DL CQI report for all CC of a UE
+message prp_dl_cqi_report {
+	optional uint32 sfn_sn = 1;
+	repeated prp_dl_csi csi_report = 2;
+}
+
+// Paging message info
+message prp_paging_info {
+	optional uint32 paging_index = 1;
+	optional uint32 paging_message_size = 2;
+	optional uint32 paging_subframe = 3;
+	optional uint32 carrier_index = 4;
+}
+
+// Report for the paging buffer status
+message prp_paging_buffer_report {
+	repeated prp_paging_info paging_info = 1;
+}
+
+// The type of UL CQI
+enum prp_ul_cqi_type {
+     PRUCT_SRS = 0;
+     PRUCT_PUSCH = 1;
+     PRUCT_PUCCH_1 = 2;
+     PRUCT_PUCCH_2 = 3;
+     PRUCT_PRACH = 4;
+}
+
+// UL CQI report for a specific UE for a given report type
+message prp_ul_cqi {
+	optional prp_ul_cqi_type type = 1;
+	repeated uint32 sinr = 2;
+	optional uint32 serv_cell_index = 3;
+}
+
+// Full UL CQI report for a specific UE
+message prp_ul_cqi_report {
+	optional uint32 sfn_sn = 1;
+	repeated prp_ul_cqi cqi_meas = 2;
+}
+
+
+//
+// Cell related statistics
+//
+
+// The UL noise and interference report for a UE
+message prp_noise_interference_report {
+	optional uint32 sfn_sf = 1;
+	optional uint32 rip = 2;
+	optional uint32 tnp = 3;
+}
+

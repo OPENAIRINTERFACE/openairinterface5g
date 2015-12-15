@@ -1,0 +1,19 @@
+package protocol;
+
+message prp_header {
+	optional uint32 version = 1;
+	optional uint32 type = 2;
+	optional uint32 length = 3;
+	optional uint32 xid = 4;
+}
+
+enum prp_type {
+     // Discovery and maintenance messages
+     PRPT_HELLO = 0;
+     PRPT_ECHO_REQUEST = 1;
+     PRPT_ECHO_REPLY = 2;
+
+     // Statistics and measurement messages
+     PRPT_STATS_REQUEST = 3;
+     PRPT_STATS_REPLY = 4;
+}
