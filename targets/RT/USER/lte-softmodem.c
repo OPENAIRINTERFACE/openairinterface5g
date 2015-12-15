@@ -289,6 +289,8 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
+int chain_offset=0;
+
 #ifndef EXMIMO
 char ref[128] = "internal";
 char channels[128] = "0";
@@ -2057,7 +2059,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "a:C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2143,6 +2145,10 @@ static void get_options (int argc, char **argv)
 
       UE_scan=0;
 
+      break;
+
+    case 'a':
+      chain_offset = atoi(optarg);
       break;
 
     case 'd':
@@ -3053,7 +3059,7 @@ int main( int argc, char **argv )
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     rf_map[CC_id].card=0;
-    rf_map[CC_id].chain=CC_id;
+    rf_map[CC_id].chain=CC_id+chain_offset;
   }
 
   // connect the TX/RX buffers
