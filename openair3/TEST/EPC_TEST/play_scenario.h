@@ -48,6 +48,9 @@
 #include "hashtable.h"
 #include "asn_compare.h"
 
+#define ET_XPATH_EXPRESSION_MAX_LENGTH 400
+
+
 // powers of 2
 #define ET_BIT_MASK_MATCH_SCTP_STREAM 1
 #define ET_BIT_MASK_MATCH_SCTP_SSN    2
@@ -252,7 +255,7 @@ typedef struct et_s1ap_s {
   uint16_t             binary_stream_allocated_size;
   uint8_t             *binary_stream;
   s1ap_message         message; // decoded message: information elements
-  xmlNodePtr           xml_node; // XML representation of the S1AP PDU
+  xmlDocPtr            doc; // XML representation of the S1AP PDU
 } et_s1ap_t;
 
 

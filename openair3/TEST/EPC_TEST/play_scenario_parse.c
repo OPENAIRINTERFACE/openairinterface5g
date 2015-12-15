@@ -70,9 +70,12 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
   unsigned int          go_deeper_in_tree = 1;
 
   if ((NULL != s1ap_node) && (NULL != s1ap)) {
-    // seee http://www.xmlsoft.org/html/libxml-tree.html#xmlCopyNode
-    s1ap->xml_node = xmlCopyNode(s1ap_node, 1);
-    AssertFatal(NULL != s1ap->xml_node, "xmlCopyNode Failed");
+    // see http://www.xmlsoft.org/html/libxml-tree.html#xmlCopyNode
+    cur_node = xmlCopyNode(s1ap_node, 1);
+    AssertFatal(NULL != cur_node, "xmlCopyNode Failed");
+    s1ap->doc = xmlNewDoc(BAD_CAST "1.0");
+    xmlDocSetRootElement(s1ap->doc, cur_node);
+
     for (cur_node = (xmlNode *)s1ap_node; cur_node; cur_node = cur_node->next) {
       go_deeper_in_tree = 1;
       if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"field"))) {
