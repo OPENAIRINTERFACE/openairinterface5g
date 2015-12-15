@@ -61,6 +61,7 @@ extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
 extern uint8_t interf_unaw_shift0=0;
 extern uint8_t interf_unaw_shift1=0;
+extern uint8_t interf_unaw_shift=0;
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
@@ -385,7 +386,7 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:YXV:W:")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:YXV:W:J:")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -638,6 +639,9 @@ int main(int argc, char **argv)
       case 'W':
 	interf_unaw_shift1=atoi(optarg);
 	break;
+      case 'J':
+	interf_unaw_shift=atoi(optarg);
+	break;
       case 'h':
       default:
 	printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,3,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
@@ -785,14 +789,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1) 
     if (perfect_ce==1)
-	 sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_ab_perf_ce_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift0 );
+	 sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_ab_perf_ce_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift );
   	else
-    	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_ab_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift0);
+    	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_ab_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift);
   else //abstx=0
     if (perfect_ce==1)
-	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_perf_ce_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift0);
+	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_perf_ce_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2, interf_unaw_shift);
    else
-        sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2,interf_unaw_shift0);
+        sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_sh%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1, mcs2,interf_unaw_shift);
   
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -828,9 +832,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift0);
+		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift);
  	else
-		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift0);
+		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift);
 
      // sprintf(csv_fname,"dataout_tx%d_mcs%d_mcs_interf%d_chan%d_nsimus%d_R%d_abstr_old.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
     csv_fd = fopen(csv_fname,"w");
