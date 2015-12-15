@@ -68,7 +68,6 @@
 #define GS_IS_FILE                 1
 #define GS_IS_DIR                  2
 //------------------------------------------------------------------------------
-char                  *g_openair_dir = NULL;
 Enb_properties_array_t g_enb_properties;
 //------------------------------------------------------------------------------
 extern et_scenario_t  *g_scenario;
@@ -936,11 +935,6 @@ int main( int argc, char **argv )
   char             play_scenario_filename[NAME_MAX];
 
   memset(play_scenario_filename, 0, sizeof(play_scenario_filename));
-  g_openair_dir = getenv("OPENAIR_DIR");
-  if (NULL == g_openair_dir) {
-    fprintf(stderr, "ERROR: Could not get OPENAIR_DIR environment variable\n");
-    exit(1);
-  }
 
   // logging
   logInit();

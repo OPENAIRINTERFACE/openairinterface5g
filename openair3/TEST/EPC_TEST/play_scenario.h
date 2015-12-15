@@ -252,6 +252,7 @@ typedef struct et_s1ap_s {
   uint16_t             binary_stream_allocated_size;
   uint8_t             *binary_stream;
   s1ap_message         message; // decoded message: information elements
+  xmlNodePtr           xml_node; // XML representation of the S1AP PDU
 } et_s1ap_t;
 
 
@@ -418,7 +419,7 @@ void et_s1ap_eNB_insert_new_instance(s1ap_eNB_instance_t *new_instance_p);
 struct s1ap_eNB_mme_data_s *et_s1ap_eNB_get_MME(s1ap_eNB_instance_t *instance_p,int32_t assoc_id, uint16_t cnx_id);
 s1ap_eNB_instance_t *et_s1ap_eNB_get_instance(instance_t instance);
 void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,uint32_t buffer_length, uint16_t stream);
-int et_handle_s1ap_mismatch(et_packet_t * const spacket, et_packet_t * const rx_packet);
+int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t * const spacket, et_packet_t * const rx_packet);
 asn_comp_rval_t* et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints);
 et_packet_t* et_build_packet_from_s1ap_data_ind(et_event_s1ap_data_ind_t * const s1ap_data_ind);
 int et_scenario_set_packet_received(et_packet_t * const packet);

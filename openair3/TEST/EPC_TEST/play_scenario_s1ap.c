@@ -189,7 +189,7 @@ void et_s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 //------------------------------------------------------------------------------
-int et_handle_s1ap_mismatch(et_packet_t * const spacket, et_packet_t * const rx_packet)
+int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t * const spacket, et_packet_t * const rx_packet)
 {
   S1ap_MME_UE_S1AP_ID_t scenario_mme_ue_s1ap_id = 0;
   S1ap_MME_UE_S1AP_ID_t rx_mme_ue_s1ap_id       = 0;
@@ -512,7 +512,15 @@ int et_handle_s1ap_mismatch(et_packet_t * const spacket, et_packet_t * const rx_
     default:
       AssertFatal(0, "Unknown procedure code %ld", rx_packet->sctp_hdr.u.data_hdr.payload.message.procedureCode);
   }
-  return 0;
+  if (scenario_mme_ue_s1ap_id != rx_mme_ue_s1ap_id) {
+    et_packet_t * p = spacket;
+    while (p) {
+      et_s1ap_update_mme_ue_s1ap_id(p, scenario_mme_ue_s1ap_id, rx_mme_ue_s1ap_id);
+      p = p->next;
+    }
+    return 0;
+  }
+  return 1;
 }
 //------------------------------------------------------------------------------
 asn_comp_rval_t * et_s1ap_is_matching(et_s1ap_t * const s1ap1, et_s1ap_t * const s1ap2, const uint32_t constraints)
@@ -669,7 +677,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
             //TODO MME_UE_S1AP_ID, etc.
             // get latest error code
             if (strcmp(comp_results->name, "S1ap-MME-UE-S1AP-ID") == 0) {
-              if (0 == et_handle_s1ap_mismatch((et_packet_t *const)packet, (et_packet_t *const)rx_packet)) {
+              if (0 == et_handle_s1ap_mismatch_mme_ue_s1ap_id((et_packet_t *const)packet, (et_packet_t *const)rx_packet)) {
                 packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
                 packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
                 return et_scenario_set_packet_received(packet);

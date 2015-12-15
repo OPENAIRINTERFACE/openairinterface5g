@@ -58,7 +58,6 @@
 //------------------------------------------------------------------------------
 #define ENB_CONFIG_MAX_XSLT_PARAMS 32
 //------------------------------------------------------------------------------
-extern char                  *g_openair_dir;
 extern Enb_properties_array_t g_enb_properties;
 //------------------------------------------------------------------------------
 void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * const s1ap)
@@ -71,6 +70,9 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
   unsigned int          go_deeper_in_tree = 1;
 
   if ((NULL != s1ap_node) && (NULL != s1ap)) {
+    // seee http://www.xmlsoft.org/html/libxml-tree.html#xmlCopyNode
+    s1ap->xml_node = xmlCopyNode(s1ap_node, 1);
+    AssertFatal(NULL != s1ap->xml_node, "xmlCopyNode Failed");
     for (cur_node = (xmlNode *)s1ap_node; cur_node; cur_node = cur_node->next) {
       go_deeper_in_tree = 1;
       if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"field"))) {
@@ -497,17 +499,14 @@ int et_generate_xml_scenario(
     exit(1);
   }
 
-  memset(astring, 0, sizeof(astring));
-  strcat(astring, g_openair_dir);
-  strcat(astring, "/openair3/TEST/EPC_TEST/play_scenario.xsl");
 
   xmlSubstituteEntitiesDefault(1);
   xmlLoadExtDtdDefaultValue = 1;
-  cur = xsltParseStylesheetFile((const xmlChar *)astring);
+  cur = xsltParseStylesheetFile((const xmlChar *)"/usr/share/oai/xsl/play_scenario.xsl");
   if (NULL == cur) {
-    AssertFatal (0, "Could not parse stylesheet file %s (check OPENAIR_DIR env variable)!\n", astring);
+    AssertFatal (0, "Could not parse stylesheet file /usr/share/oai/xsl/play_scenario.xsl!\n");
   } else {
-    fprintf(stdout, "XSLT style sheet: %s\n", astring);
+    fprintf(stdout, "XSLT style sheet: /usr/share/oai/xsl/play_scenario.xsl\n");
   }
 
   doc = xmlParseFile(xml_in_scenario_filename);

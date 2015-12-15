@@ -97,7 +97,6 @@
 #define ENB_CONFIG_MAX_XSLT_PARAMS 32
 
 Enb_properties_array_t g_enb_properties;
-char                  *g_openair_dir      = NULL;
 char                  *g_test_dir         = NULL;
 char                  *g_pdml_in_origin   = NULL;
 extern int             xmlLoadExtDtdDefaultValue;
@@ -195,17 +194,13 @@ int generate_test_scenario(const char const * test_nameP, const char const * pdm
     exit(1);
   }
 
-  memset(astring, 0, sizeof(astring));
-  strcat(astring, g_openair_dir);
-  strcat(astring, "/openair3/TEST/EPC_TEST/generic_scenario.xsl");
-
   xmlSubstituteEntitiesDefault(1);
   xmlLoadExtDtdDefaultValue = 1;
-  cur = xsltParseStylesheetFile(astring);
+  cur = xsltParseStylesheetFile("/usr/share/oai/xsl/generic_scenario.xsl");
   if (NULL == cur) {
-    AssertFatal (0, "Could not parse stylesheet file %s (check OPENAIR_DIR env variable)!\n", astring);
+    AssertFatal (0, "Could not parse stylesheet file /usr/share/oai/xsl/generic_scenario.xsl!\n");
   } else {
-    fprintf(stdout, "XSLT style sheet: %s\n", astring);
+    fprintf(stdout, "XSLT style sheet: /usr/share/oai/xsl/generic_scenario.xsl\n");
   }
 
   doc = xmlParseFile(pdml_in_basenameP);
@@ -685,12 +680,6 @@ int main( int argc, char **argv )
 //------------------------------------------------------------------------------
 {
   int     actions = 0;
-
-  g_openair_dir = getenv("OPENAIR_DIR");
-  if (NULL == g_openair_dir) {
-    fprintf(stderr, "Error: Could not get OPENAIR_DIR environment variable\n");
-    exit(1);
-  }
 
   memset((char*) &g_enb_properties, 0 , sizeof(g_enb_properties));
 
