@@ -473,6 +473,9 @@ add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")
 add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
+
+add_boolean_option(ENB_AGENT                   True         "enable eNB agent to inteface with a SDN contrller")
+
 ########################
 # Include order
 ##########################
@@ -687,6 +690,16 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
+if (ENB_AGENT)
+  add_library(ASYNC_IF
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+    )
+  set(ASYNC_IF_LIB ASYNC_IF)
+endif()
+include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
@@ -1591,7 +1604,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${ASYNC_IF_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
