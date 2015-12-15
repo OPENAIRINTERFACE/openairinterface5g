@@ -61,9 +61,9 @@ int avg[4];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
-uint8_t intefr_unaw_shift0;
-uint8_t intefr_unaw_shift1;
-uint8_t intefr_unaw_shift;
+uint8_t interf_unaw_shift0;
+uint8_t interf_unaw_shift1;
+uint8_t interf_unaw_shift;
 //inferference-free case
 unsigned char interf_unaw_shift_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
 					 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
@@ -320,7 +320,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + intefr_unaw_shift;
+   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift;
     // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
     //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
