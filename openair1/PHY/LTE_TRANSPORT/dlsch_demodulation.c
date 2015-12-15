@@ -61,7 +61,12 @@ int avg[4];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
-uint8_t intefr_unaw_shift;
+uint8_t intefr_unaw_shift0;
+uint8_t intefr_unaw_shift1;
+//inferference-free case
+unsigned char interf_unaw_shift_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
+					 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
+
 /*
 //original values from sebastion + same hand tuning
 unsigned char offset_mumimo_llr_drange[29][3]={{8,8,8},{7,7,7},{7,7,7},{7,7,7},{6,6,6},{6,6,6},{6,6,6},{5,5,5},{4,4,4},{1,2,4}, // QPSK
@@ -434,7 +439,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
 	}
 	else
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avg[0])/2)+intefr_unaw_shift;
+	// to avoid tails in SNR/BLER curves
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2)+interf_unaw_shift_mcs[dlsch0_harq->mcs]; 
+	//printf("I-UA shift layer1 = %d\n",interf_unaw_shift_mcs[dlsch0_harq->mcs]); 
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2)+interf_unaw_shift_mcs[dlsch1_harq->mcs];
+	//printf("I-UA shift layer2 = %d\n",interf_unaw_shift_mcs[dlsch1_harq->mcs] );
       }
     
       dlsch_channel_compensation_TM34(frame_parms, 
@@ -448,7 +457,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                      dlsch0_harq->round,
                                      dlsch0_harq->mimo_mode,
                                      nb_rb, 
-                                     lte_ue_pdsch_vars[eNB_id]->log2_maxh); 
+                                     lte_ue_pdsch_vars[eNB_id]->log2_maxh0,
+				     lte_ue_pdsch_vars[eNB_id]->log2_maxh1); 
    	/*   
        if (symbol == 5) {
    
@@ -467,7 +477,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 
       //to be optimized (just take complex conjugate)
 
@@ -477,7 +487,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-				    lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
    }
@@ -1814,7 +1824,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                                     int round,
                                     MIMO_mode_t mimo_mode,
                                     unsigned short nb_rb,
-                                    unsigned char output_shift) {
+                                    unsigned char output_shift0,
+				    unsigned char output_shift1) {
 
 #if defined(__x86_64__) || defined(__i386__)
 
@@ -1924,10 +1935,10 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         // get channel amplitude if not QPSK
         
         mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch0_128[0]);  
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
                 
         mmtmpD1 = _mm_madd_epi16(dl_ch0_128[1],dl_ch0_128[1]);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
                 
         mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
                 
@@ -1946,7 +1957,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                 
         if (pilots==0) {
           mmtmpD0 = _mm_madd_epi16(dl_ch0_128[2],dl_ch0_128[2]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
                     
           mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
                     
@@ -1975,10 +1986,10 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         // get channel amplitude if not QPSK
         
         mmtmpD0 = _mm_madd_epi16(dl_ch1_128[0],dl_ch1_128[0]);  
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
                 
         mmtmpD1 = _mm_madd_epi16(dl_ch1_128[1],dl_ch1_128[1]);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift1);
                 
         mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
                 
@@ -1996,7 +2007,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                 
         if (pilots==0) {
           mmtmpD0 = _mm_madd_epi16(dl_ch1_128[2],dl_ch1_128[2]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
                     
           mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
                     
@@ -2033,10 +2044,10 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[0]);
            // print_ints("im",&mmtmpD1);
       // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
            // printf("Shift: %d\n",output_shift);
           // print_ints("re(shift)",&mmtmpD0);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
            // print_ints("im(shift)",&mmtmpD1);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
@@ -2056,8 +2067,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
       mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[1]);
       // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
+      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
@@ -2075,8 +2086,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
         mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[2]);
         // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
         mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
         mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
                 
@@ -2100,9 +2111,9 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
             //  print_ints("im",&mmtmpD1);
       mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[0]);
       // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
              // print_ints("re(shift)",&mmtmpD0);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift1);
              // print_ints("im(shift)",&mmtmpD1);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
@@ -2121,8 +2132,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
       mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
       mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[1]);
       // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
+      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift1);
       mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
       mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
@@ -2140,8 +2151,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
         mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[2]);
         // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift1);
         mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
         mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
         

@@ -979,7 +979,8 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 				    int round,
 				    MIMO_mode_t mimo_mode,
 				    unsigned short nb_rb,
-				    unsigned char output_shift);
+				    unsigned char output_shift0,
+				    unsigned char output_shift1);
 
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal

@@ -841,6 +841,10 @@ typedef struct {
   int16_t *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
+  int16_t log2_maxh0;
+    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
+  int16_t log2_maxh1;
   /// \brief LLR shifts for subband scaling.
   /// - first index: ? [0..168*N_RB_DL[
   uint8_t *llr_shifts;
