@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 
   int aarx,aatx;
   double channelx,channely;
-  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler;
+  double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler=0;
   double input_snr_step=.2,snr_int=30;
   double blerr;
 
@@ -180,7 +180,7 @@ int main(int argc, char **argv)
   unsigned int coded_bits_per_codeword,nsymb;
   int subframe=3;
   unsigned int tx_lev=0,tx_lev_dB,trials,errs[4]= {0,0,0,0},round_trials[4]= {0,0,0,0};
-  uint8_t transmission_mode=1,n_rx=1,n_tx=1;
+  uint8_t transmission_mode=1,n_rx=1;
 
   FILE *bler_fd=NULL;
   char bler_fname[512];
@@ -393,10 +393,6 @@ int main(int argc, char **argv)
           (transmission_mode!=2)) {
         msg("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
-      }
-
-      if (transmission_mode>1) {
-        n_tx = 1;
       }
 
       break;
@@ -690,8 +686,8 @@ int main(int argc, char **argv)
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
-    PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,N_RB_DL,0);
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    PHY_vars_eNB->dlsch_eNB[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(1,8,1827072,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
     if (!PHY_vars_eNB->dlsch_eNB[0][i]) {
       printf("Can't get eNB dlsch structures\n");
@@ -706,7 +702,7 @@ int main(int argc, char **argv)
     PHY_vars_eNB->dlsch_eNB[0][i]->rnti = 14;
     PHY_vars_UE->dlsch_ue[0][i]->rnti   = 14;
 
-  }
+  } 
 
 
   switch (PHY_vars_eNB->lte_frame_parms.N_RB_UL) {
@@ -894,11 +890,11 @@ int main(int argc, char **argv)
 
 
       harq_pid = subframe2harq_pid(&PHY_vars_UE->lte_frame_parms,PHY_vars_UE->frame_tx,subframe);
-
+      input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
+      input_buffer = (unsigned char *)malloc(input_buffer_length+4);
       //      printf("UL frame %d/subframe %d, harq_pid %d\n",PHY_vars_UE->frame,subframe,harq_pid);
       if (input_fdUL == NULL) {
-        input_buffer_length = PHY_vars_UE->ulsch_ue[0]->harq_processes[harq_pid]->TBS/8;
-        input_buffer = (unsigned char *)malloc(input_buffer_length+4);
+
 
         if (n_frames == 1) {
           trch_out_fdUL= fopen("ulsch_trchUL.txt","w");
@@ -920,7 +916,7 @@ int main(int argc, char **argv)
         i=0;
 
         while (!feof(input_fdUL)) {
-          fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+          ret=fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
 
           if ((i%4)==0) {
             ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
@@ -1250,6 +1246,7 @@ int main(int argc, char **argv)
           start_meas(&PHY_vars_eNB->phy_proc_rx);
           start_meas(&PHY_vars_eNB->ofdm_demod_stats);
           lte_eNB_I0_measurements(PHY_vars_eNB,
+				  subframe,
                                   0,
                                   1);
 
