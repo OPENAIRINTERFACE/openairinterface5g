@@ -59,9 +59,9 @@
 
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
-extern uint8_t interf_unaw_shift0=0;
-extern uint8_t interf_unaw_shift1=0;
-extern uint8_t interf_unaw_shift=0;
+extern uint8_t interf_unaw_shift0;
+extern uint8_t interf_unaw_shift1;
+extern uint8_t interf_unaw_shift;
 #ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
@@ -756,8 +756,9 @@ int main(int argc, char **argv)
   printf("n_frames = %d\n",n_frames);
   printf("Transmission mode %d with %dx%d antenna configuration, Extended Prefix %d\n",transmission_mode,n_tx,n_rx,extended_prefix_flag);
   printf("Using receiver type %d\n", rx_type);
-  printf("Using I_UA rec shift layer 1  %d\n", interf_unaw_shift0);
-  printf("Using I_UA rec shift layer 2  %d\n", interf_unaw_shift1);
+  printf("TM1 shift %d\n", interf_unaw_shift);
+  //printf("Using I_UA rec shift layer 1  %d\n", interf_unaw_shift0);
+  //printf("Using I_UA rec shift layer 2  %d\n", interf_unaw_shift1);
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
