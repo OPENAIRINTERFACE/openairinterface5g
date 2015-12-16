@@ -52,11 +52,6 @@ import re
 import numpy as np
 
 import log
-import case01
-import case02
-import case03
-import case04
-import case05
 
 from  openair import *
 
@@ -840,22 +835,33 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
 
 #This function searches if test case is present in list of test cases that need to be executed by user
-def search_test_case_group(testcasename, testcasegroup, search_test_case_group):
+def search_test_case_group(testcasename, testcasegroup, test_case_exclude):
     
-    if search_test_case_group.find(testcasename) >=0:
-       print "\nSkipping test case as it is found in black list: " + testcasename
-       return False
+    if test_case_exclude != "":
+       testcase_exclusion_list=test_case_exclude.split()
+       for entry in testcase_exclusion_list:
+          if entry.find('+') >=0:
+            match = re.search(entry, testcasename)
+            if match:
+               print "\nSkipping test case as it is found in black list: " + testcasename
+               return False
+          else:
+             match = entry.find(testcasename)
+             if match >=0:
+                print "\nSkipping test case as it is found in black list: " + testcasename
+                return False
     if testcasegroup == '':
-       return True
-    testcaselist = testcasegroup.split()
-    for entry in testcaselist:
-       if entry.find('+') >=0:
-          match = re.search(entry, testcasename)
-          if match:
-             return True
-       else:
-          match = testcasename.find(entry)
-          if match >=0:
+         return True
+    else:
+      testcaselist = testcasegroup.split()
+      for entry in testcaselist:
+        if entry.find('+') >=0:
+           match = re.search(entry, testcasename)
+           if match:
+              return True
+        else:
+           match = testcasename.find(entry)
+           if match >=0:
              return True
     return False
    
@@ -917,7 +923,8 @@ while i < len (sys.argv):
         print "-d:  low debug level"
         print "-dd: high debug level"
         print "-p:  set the prompt"
-        print "-r:  Remove the log directory in autotests/"
+        print "-r:  Remove the log directory in autotests"
+        print "-g:  Run test cases in a group"
         print "-w:  set the password for ssh to localhost"
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
