@@ -69,7 +69,9 @@ typedef struct {
   ///Maximum path delay in mus.
   double Td;
   ///Channel bandwidth in MHz.
-  double BW;
+  double channel_bandwidth;
+  ///System sampling rate in Msps.
+  double sampling_rate;
   ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
   double ricean_factor;
   ///Angle of arrival of wavefront (in radians). For Ricean channel only. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.
@@ -202,7 +204,8 @@ typedef enum {
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
-                                     double BW,
+				     double sampling_rate,
+                                     double channel_bandwidth,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB);
@@ -364,6 +367,10 @@ void multipath_tv_channel(channel_desc_t *desc,
 
 /**@} */
 /**@} */
+
+double N_RB2sampling_rate(uint16_t N_RB);
+double N_RB2channel_bandwidth(uint16_t N_RB);
+
 #endif
 
 
