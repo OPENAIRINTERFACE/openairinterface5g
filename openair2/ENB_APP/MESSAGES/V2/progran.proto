@@ -1,22 +1,35 @@
 package protocol;
 
 import "stats_messages.proto";
+import "header.proto"
+
+message progran_message {
+        oneof msg {
+              prp_hello hello_msg = 1;
+              prp_echo_request echo_request_msg = 2;
+	      prp_echo_reply echo_reply_msg = 3;
+	      prp_stats_request stats_request_msg = 4;
+	      prp_stats_reply stats_reply_msg = 5;
+	}
+}
+
 
 //
 // Maintenance and discovery messages
 //
 
-// Empty message. Does not really have to be used.
-// Could use only the header with the type set to PRPT_HELLO
 message prp_hello {
+	optional prp_header header = 1;
 }
 
 message prp_echo_request {
+	optional prp_header header = 1;
 	extensions 100 to 199;
 }
 
 
 message prp_echo_reply {
+	optional prp_header header = 1;
 	extensions 100 to 199;
 }
 
@@ -27,17 +40,19 @@ message prp_echo_reply {
 //
 
 message prp_stats_request {
-	optional prp_stats_type type = 1;
+	optional prp_header header = 1;
+	optional prp_stats_type type = 2;
 	oneof body {
-	      prp_complete_stats_request complete_stats_request = 2;
-	      prp_cell_stats_request cell_stats_request = 3;
-	      prp_ue_stats_request ue_stats_request = 4;
+	      prp_complete_stats_request complete_stats_request = 3;
+	      prp_cell_stats_request cell_stats_request = 4;
+	      prp_ue_stats_request ue_stats_request = 5;
 	}
 }
 
 message prp_stats_reply {
-	optional prp_ue_stats_report ue_report = 1;
-	optional prp_cell_stats_report cell_report = 2;
+	optional prp_header header = 1;
+	optional prp_ue_stats_report ue_report = 2;
+	optional prp_cell_stats_report cell_report = 3;
 }
 
 
@@ -54,16 +69,5 @@ message prp_echo_reply_latency {
 	       optional uint32 latency = 100;
 	}
 }
-
-
-//message progran_body {
-//        oneof msg {
-//              prp_hello hello_msg = 1;
-//              prp_echo_request echo_request_msg = 2;
-//	      prp_echo_reply echo_reply_msg = 3;
-//	      prp_stats_request stats_request_msg = 4;
-//	      prp_stats_reply stats_reply_msg = 5;
-//       }
-//}
 
 
