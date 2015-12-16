@@ -65,8 +65,10 @@ uint8_t interf_unaw_shift0=0;
 uint8_t interf_unaw_shift1=0;
 uint8_t interf_unaw_shift=0;
 //inferference-free case
-unsigned char interf_unaw_shift_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
-					 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
+unsigned char interf_unaw_shift_tm4_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
+					     1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
+unsigned char interf_unaw_shift_tm1_mcs[29]={5, 5, 4, 3, 3, 3, 2, 2, 4, 4, 2, 3, 3, 3, 0, 0, 
+					     1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ; // this is valid only till mcs13
 
 /*
 //original values from sebastion + same hand tuning
@@ -320,7 +322,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift;
+   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
+  // printf(" TM1 shift = %d\n",interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs]); 
     // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
     //      + log2_approx(frame_parms->nb_antennas_rx-1);
 
@@ -441,10 +444,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	}
 	else
 	// to avoid tails in SNR/BLER curves
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2)+interf_unaw_shift_mcs[dlsch0_harq->mcs]; 
-	//printf("I-UA shift layer1 = %d\n",interf_unaw_shift_mcs[dlsch0_harq->mcs]); 
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2)+interf_unaw_shift_mcs[dlsch1_harq->mcs];
-	//printf("I-UA shift layer2 = %d\n",interf_unaw_shift_mcs[dlsch1_harq->mcs] );
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2)+interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
+	//printf("TM4 I-UA shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]); 
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2)+interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
+	//printf("TM4 I-UA shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
       }
     
       dlsch_channel_compensation_TM34(frame_parms, 
