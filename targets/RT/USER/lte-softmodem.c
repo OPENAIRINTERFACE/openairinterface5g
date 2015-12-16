@@ -2854,8 +2854,8 @@ int main( int argc, char **argv )
     } else if (frame_parms[0]->N_RB_DL == 25) {
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 2.5e6;
-      openair0_cfg[card].rx_bw = 2.5e6;
+      openair0_cfg[card].tx_bw = 5e6;
+      openair0_cfg[card].rx_bw = 5e6;
 
     } else if (frame_parms[0]->N_RB_DL == 6) {
       openair0_cfg[card].sample_rate=1.92e6;
