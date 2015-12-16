@@ -712,8 +712,8 @@ if (ENB_AGENT)
     )
 
   set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
-  message("calling ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES}")
-  execute_process(COMMAND ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES})
+  #message("calling protoc_call=${protoc_call} PRPT_C_DIR=${PRPT_C_DIR} PRPT_MSG_FILES=${PRPT_MSG_FILES}")
+  execute_process(COMMAND ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_DIR} ${PRPT_MSG_FILES})
   file(GLOB PRPT_source ${PRPT_C_DIR}/*.c)
   set(PRPT_OAI_generated
     ${PRPT_C_DIR}/header.pb-c.c
@@ -729,7 +729,7 @@ if (ENB_AGENT)
     ${PRPT_OAI_generated}
     ${PRPT_source}
     )
-
+  set(PRPT_MSG_LIB PRPT_MSG)
   include_directories ("${PRPT_C_DIR}")
 
   add_library(ASYNC_IF
@@ -1647,7 +1647,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${ASYNC_IF_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})

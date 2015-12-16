@@ -1,7 +1,7 @@
 package protocol;
 
 import "stats_messages.proto";
-import "header.proto"
+import "header.proto";
 
 message progran_message {
         oneof msg {
