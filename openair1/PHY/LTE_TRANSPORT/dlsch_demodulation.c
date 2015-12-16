@@ -61,9 +61,9 @@ int avg[4];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
-uint8_t interf_unaw_shift0;
-uint8_t interf_unaw_shift1;
-uint8_t interf_unaw_shift;
+uint8_t interf_unaw_shift0=0;
+uint8_t interf_unaw_shift1=0;
+uint8_t interf_unaw_shift=0;
 //inferference-free case
 unsigned char interf_unaw_shift_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
 					 1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
