@@ -67,8 +67,8 @@ uint8_t interf_unaw_shift=0;
 //inferference-free case
 unsigned char interf_unaw_shift_tm4_mcs[29]={5, 3, 4, 3, 3, 2, 1, 1, 2, 0, 1, 1, 1, 1, 0, 0, 
 					     1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ;
-unsigned char interf_unaw_shift_tm1_mcs[29]={5, 5, 4, 3, 3, 3, 2, 2, 4, 4, 2, 3, 3, 3, 0, 0, 
-					     1, 1, 1, 1, 0, 2, 1, 0, 1, 0, 1, 0, 0} ; // this is valid only till mcs13
+unsigned char interf_unaw_shift_tm1_mcs[29]={5, 5, 4, 3, 3, 3, 2, 2, 4, 4, 2, 3, 3, 3, 1, 1, 
+					     0, 1, 1, 2, 5, 4, 4, 6, 5, 1, 0, 5, 6} ; // mcs 21, 26, 28 seem to be errorneous
 
 /*
 //original values from sebastion + same hand tuning
