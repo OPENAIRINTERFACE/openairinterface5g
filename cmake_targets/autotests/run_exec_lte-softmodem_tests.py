@@ -537,12 +537,16 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
   index_EPCMachine = MachineList.index(EPCMachine)
+  cmd = 'cd ' + logdirOAI5GRepo + '; source oaienv ; env|grep OPENAIR'
   oai_eNB = openair('localdomain', eNBMachine)
   oai_eNB.connect(user, password)
+  res= oai_eNB.send_recv(cmd)
   oai_UE = openair('localdomain', UEMachine)
   oai_UE.connect(user, password)
+  res = oai_eNB.send_recv(cmd)
   oai_EPC = openair('localdomain', EPCMachine)
   oai_EPC.connect(user, password)
+  res = oai_eNB.send_recv(cmd)
 
   cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
   cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
@@ -1123,6 +1127,7 @@ for index in oai_list:
       #cmd = cmd  + 'rm -fR ' +  logdir + '\n'
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
+      cmd = cmd + 'git config --global http.sslVerify false \n' 
       cmd = cmd + 'git clone '+ GitOAI5GRepo  + '\n'
       cmd = cmd + 'git clone '+ GitOpenaircnRepo   + '\n'
       cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
