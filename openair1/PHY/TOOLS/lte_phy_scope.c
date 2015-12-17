@@ -172,7 +172,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t *pusch_comp;
   int32_t *pucch1_comp;
   int32_t *pucch1_thres;
-  int16_t *pucch1ab_comp;
+  int32_t *pucch1ab_comp;
   float Re,Im,ymax;
   float *llr, *bit;
   float I[nsymb_ce*2], Q[nsymb_ce*2];
@@ -208,7 +208,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   pusch_comp = (int16_t*) phy_vars_enb->lte_eNB_pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
   pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t*) phy_vars_enb->pucch1_stats_thres[UE_id];
-  pucch1ab_comp = (int16_t*) phy_vars_enb->pucch1ab_stats[UE_id];
+  pucch1ab_comp = (int32_t*) phy_vars_enb->pucch1ab_stats[UE_id];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -339,8 +339,9 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   // PUSCH I/Q of MF Output
   if (pucch1ab_comp!=NULL) {
     for (ind=0; ind<10240; ind++) {
-      I_pucch[ind] = pucch1ab_comp[2*ind];
-      Q_pucch[ind] = pucch1ab_comp[2*ind+1];
+
+      I_pucch[ind] = (float)pucch1ab_comp[2*(ind)];
+      Q_pucch[ind] = (float)pucch1ab_comp[2*(ind)+1];
       A_pucch[ind] = 10*log10(pucch1_comp[ind]);
       B_pucch[ind] = ind;
       C_pucch[ind] = (float)pucch1_thres[ind]; 
@@ -348,7 +349,9 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     fl_set_xyplot_data(form->pucch_comp,I_pucch,Q_pucch,10240,"","","");
     fl_set_xyplot_data(form->pucch_comp1,B_pucch,A_pucch,1024,"","","");
     fl_add_xyplot_overlay(form->pucch_comp1,1,B_pucch,C_pucch,1024,FL_RED);
-    //    fl_set_xyplot_ybounds(form->pucch_comp,-100,100);
+    fl_set_xyplot_ybounds(form->pucch_comp,-5000,5000);
+    fl_set_xyplot_xbounds(form->pucch_comp,-5000,5000);
+
     fl_set_xyplot_ybounds(form->pucch_comp1,20,80);
   }
 
