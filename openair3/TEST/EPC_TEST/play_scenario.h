@@ -40,6 +40,7 @@
 #  include <time.h>
 #  include <stdint.h>
 #  include <libxml/tree.h>
+#  include <libxml/xpath.h>
 #  include <netinet/in.h>
 
 #include "S1AP-PDU.h"
@@ -460,6 +461,9 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node);
 et_scenario_t* et_generate_scenario(const char  * const et_scenario_filename );
 //-------------------------
 asn_comp_rval_t * et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
+void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, const S1ap_MME_UE_S1AP_ID_t new_id);
+void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xmlNodeSetPtr nodes, const S1ap_MME_UE_S1AP_ID_t new_id);
+int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_S1AP_ID_t old_id, const S1ap_MME_UE_S1AP_ID_t new_id);
 //-------------------------
 asn_comp_rval_t * et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_datahdr_t * const sctp2, const uint32_t constraints);
 asn_comp_rval_t * et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t * const sctp2, const uint32_t constraints);

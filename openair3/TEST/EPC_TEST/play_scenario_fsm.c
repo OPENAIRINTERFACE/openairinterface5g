@@ -47,6 +47,8 @@
 #include "timer.h"
 
 //------------------------------------------------------------------------------
+extern int                    g_max_speed;
+//------------------------------------------------------------------------------
 et_scenario_t    *g_scenario  = NULL;
 pthread_mutex_t   g_fsm_lock  = PTHREAD_MUTEX_INITIALIZER;
 et_fsm_state_t    g_fsm_state = ET_FSM_STATE_NULL;
@@ -86,13 +88,13 @@ int timeval_subtract (struct timeval * const result, struct timeval * const a, s
 //------------------------------------------------------------------------------
 void et_scenario_wait_rx_packet(et_packet_t * const packet)
 {
+  packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING;
+  g_fsm_state    = ET_FSM_STATE_WAITING_RX_EVENT;
   if (timer_setup (ET_FSM_STATE_WAITING_RX_EVENT_DELAY_SEC, 0, TASK_S1AP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                   NULL, &packet->timer_id) < 0) {
+        packet, &packet->timer_id) < 0) {
     AssertFatal(0, " Can not start waiting RX event timer\n");
   }
   LOG_D(ENB_APP, "Waiting RX packet num %d\n", packet->packet_number);
-  g_fsm_state = ET_FSM_STATE_WAITING_RX_EVENT;
-  packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING;
 }
 //------------------------------------------------------------------------------
 void et_scenario_schedule_tx_packet(et_packet_t * const packet)
@@ -133,14 +135,19 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
         we_are_too_early = timeval_subtract(&offset,&offset_last_rx_packet,&packet->time_relative_to_last_received_packet);
         LOG_D(ENB_APP, "we_are_too_early=%d, offset=%ld.%06d\n", we_are_too_early, offset.tv_sec, offset.tv_usec);
       }
-      if (we_are_too_early > 0) {
+      if ((0 < we_are_too_early) && (0 == g_max_speed)){
         // set timer
+        if (offset.tv_sec < 0) offset.tv_sec = -offset.tv_sec;
+        if (offset.tv_usec < 0) {
+          offset.tv_usec = offset.tv_usec + 1000000;
+          offset.tv_sec  -= 1;
+        }
+
         LOG_D(ENB_APP, "Send packet num %u original frame number %u in %ld.%06d sec\n",
             packet->packet_number, packet->original_frame_number, offset.tv_sec, offset.tv_usec);
 
         packet->status = ET_PACKET_STATUS_SCHEDULED_FOR_SENDING;
-        if (timer_setup (offset.tv_sec, offset.tv_usec, TASK_S1AP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                         NULL, &packet->timer_id) < 0) {
+        if (timer_setup (offset.tv_sec, offset.tv_usec, TASK_S1AP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,packet, &packet->timer_id) < 0) {
           AssertFatal(0, " Can not start TX event timer\n");
         }
         // Done g_fsm_state = ET_FSM_STATE_WAITING_TX_EVENT;

@@ -359,7 +359,7 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
           afloat = atof((const char*)xml_char);
           xmlFree(xml_char);
           packet->time_relative_to_first_packet.tv_sec   = (int)afloat;
-          packet->time_relative_to_first_packet.tv_usec  = (int)((afloat - packet->time_relative_to_first_packet.tv_sec)*1000000);
+          packet->time_relative_to_first_packet.tv_usec  = (int)((afloat - packet->time_relative_to_first_packet.tv_sec)*1000000.0);
 
           if (first_packet > 0) {
             initial_time = packet->time_relative_to_first_packet;
@@ -381,6 +381,13 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
                   &packet->time_relative_to_last_sent_packet);
               relative_last_sent_packet = packet->time_relative_to_first_packet;
             }
+            if (first_received_packet > 0) {
+              packet->time_relative_to_last_received_packet.tv_sec  = 0;
+              packet->time_relative_to_last_received_packet.tv_usec = 0;
+            } else {
+              timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
+                  &packet->time_relative_to_last_received_packet);
+            }
           } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
             if (first_received_packet > 0) {
               relative_last_received_packet.tv_sec = packet->time_relative_to_first_packet.tv_sec;
@@ -392,6 +399,13 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
               timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
                   &packet->time_relative_to_last_received_packet);
               relative_last_received_packet = packet->time_relative_to_first_packet;
+            }
+            if (first_sent_packet > 0) {
+              packet->time_relative_to_last_sent_packet.tv_sec  = 0;
+              packet->time_relative_to_last_sent_packet.tv_usec = 0;
+            } else {
+              timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
+                  &packet->time_relative_to_last_sent_packet);
             }
           }
 

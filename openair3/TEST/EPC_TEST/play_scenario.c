@@ -69,6 +69,7 @@
 #define GS_IS_DIR                  2
 //------------------------------------------------------------------------------
 Enb_properties_array_t g_enb_properties;
+int                    g_max_speed = 0;
 //------------------------------------------------------------------------------
 extern et_scenario_t  *g_scenario;
 extern int             xmlLoadExtDtdDefaultValue;
@@ -118,7 +119,7 @@ int et_strip_extension(char *in_filename)
 
   if (NULL != in_filename) {
     /* Check chars starting at end of string to find last '.' */
-    for (ssize_t i = strlen(in_filename); i > (name_min_len + max_ext_len); i--) {
+    for (ssize_t i = strlen(in_filename); i > name_min_len; i--) {
       if (in_filename[i] == '.') {
         in_filename[i] = '\0';
         return i;
@@ -833,6 +834,7 @@ et_config_parse_opt_line (
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
     LONG_OPTION_ENB_CONF_FILE,
     LONG_OPTION_SCENARIO_FILE,
+    LONG_OPTION_MAX_SPEED,
     LONG_OPTION_TEST_DIR,
     LONG_OPTION_HELP,
     LONG_OPTION_VERSION
@@ -841,6 +843,7 @@ et_config_parse_opt_line (
   static struct option long_options[] = {
     {"enb-conf-file",  required_argument, 0, LONG_OPTION_ENB_CONF_FILE},
     {"scenario ",      required_argument, 0, LONG_OPTION_SCENARIO_FILE},
+    {"max-speed ",     no_argument,       0, LONG_OPTION_MAX_SPEED},
     {"test-dir",       required_argument, 0, LONG_OPTION_TEST_DIR},
     {"help",           no_argument,       0, LONG_OPTION_HELP},
     {"version",        no_argument,       0, LONG_OPTION_VERSION},
@@ -850,7 +853,7 @@ et_config_parse_opt_line (
   /*
    * Parsing command line
    */
-  while ((option = getopt_long (argc, argv, "vhc:s:d:", long_options, NULL)) != -1) {
+  while ((option = getopt_long (argc, argv, "vhmc:s:d:", long_options, NULL)) != -1) {
     switch (option) {
       case LONG_OPTION_ENB_CONF_FILE:
       case 'c':
@@ -880,6 +883,11 @@ et_config_parse_opt_line (
           }
           printf("Test dir name is %s\n", *et_dir_name);
         }
+        break;
+
+      case LONG_OPTION_MAX_SPEED:
+      case 'm':
+        g_max_speed = 1;
         break;
 
       case LONG_OPTION_VERSION:

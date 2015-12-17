@@ -69,15 +69,16 @@ asn_comp_rval_t * et_sctp_data_is_matching(sctp_datahdr_t * const sctp1, sctp_da
       S1AP_WARN("No Matching SCTP stream %u %u\n", sctp1->stream, sctp2->stream);
     }
   }
-  if (sctp1->ssn != sctp2->ssn) {
-    if (constraints & ET_BIT_MASK_MATCH_SCTP_SSN) {
-      rv  = calloc(1, sizeof(asn_comp_rval_t));
-      rv->err_code = ET_ERROR_MATCH_PACKET_SCTP_SSN;
-      return rv;
-    } else {
-      S1AP_WARN("No Matching SCTP STREAM SN %u %u\n", sctp1->ssn, sctp2->ssn);
-    }
-  }
+  // We do not have SSN from lower layers
+//  if (sctp1->ssn != sctp2->ssn) {
+//    if (constraints & ET_BIT_MASK_MATCH_SCTP_SSN) {
+//      rv  = calloc(1, sizeof(asn_comp_rval_t));
+//      rv->err_code = ET_ERROR_MATCH_PACKET_SCTP_SSN;
+//      return rv;
+//    } else {
+//      S1AP_WARN("No Matching SCTP STREAM SN %u %u\n", sctp1->ssn, sctp2->ssn);
+//    }
+//  }
   return et_s1ap_is_matching(&sctp1->payload, &sctp2->payload,  constraints);
 }
 

@@ -682,6 +682,11 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
                 packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
                 return et_scenario_set_packet_received(packet);
               }
+            } else if (strcmp(comp_results->name, "S1ap-TransportLayerAddress") == 0) {
+              S1AP_WARN("Some work needed there for %s, TODO in generic_scenario.xsl, add epc conf file in the process\n",comp_results->name);
+              packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
+              packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
+              return et_scenario_set_packet_received(packet);
             } else {
               AssertFatal(0,"Some work needed there");
             }
@@ -1109,18 +1114,22 @@ void *et_s1ap_eNB_task(void *arg)
       {
         et_packet_t * packet = (et_packet_t*)TIMER_HAS_EXPIRED (received_msg).arg;
         et_event_t    event;
-        if (packet->status == ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING) {
-          memset((void*)&event, 0, sizeof(event));
-          event.code = ET_EVENT_RX_PACKET_TIME_OUT;
-          event.u.rx_packet_time_out = packet;
-          et_scenario_fsm_notify_event(event);
-        } else if (packet->status == ET_PACKET_STATUS_SCHEDULED_FOR_SENDING) {
-          memset((void*)&event, 0, sizeof(event));
-          event.code = ET_EVENT_TX_TIMED_PACKET;
-          event.u.tx_timed_packet = packet;
-          et_scenario_fsm_notify_event(event);
-        } else if ((packet->status != ET_PACKET_STATUS_SENT) && ((packet->status != ET_PACKET_STATUS_RECEIVED))) {
-          AssertFatal (0, "Bad status %d of packet timed out!\n", packet->status);
+        if (NULL != packet) {
+          if (packet->status == ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING) {
+            memset((void*)&event, 0, sizeof(event));
+            event.code = ET_EVENT_RX_PACKET_TIME_OUT;
+            event.u.rx_packet_time_out = packet;
+            et_scenario_fsm_notify_event(event);
+          } else if (packet->status == ET_PACKET_STATUS_SCHEDULED_FOR_SENDING) {
+            memset((void*)&event, 0, sizeof(event));
+            event.code = ET_EVENT_TX_TIMED_PACKET;
+            event.u.tx_timed_packet = packet;
+            et_scenario_fsm_notify_event(event);
+          } else if ((packet->status != ET_PACKET_STATUS_SENT) && ((packet->status != ET_PACKET_STATUS_RECEIVED))) {
+            AssertFatal (0, "Bad status %d of packet timed out!\n", packet->status);
+          }
+        } else {
+          LOG_W(S1AP, " Received TIMER_HAS_EXPIRED: timer_id %d, no packet attached to timer\n", TIMER_HAS_EXPIRED(received_msg).timer_id);
         }
       }
       if (TIMER_HAS_EXPIRED (received_msg).timer_id == g_scenario->enb_register_retry_timer_id) {

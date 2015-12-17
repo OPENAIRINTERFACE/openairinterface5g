@@ -38,8 +38,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <crypt.h>
+#include <errno.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 #include <libxml/xpath.h>
@@ -457,7 +459,7 @@ asn_comp_rval_t * et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_messag
 }
 
 
-static void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, xmlChar *new_id_hex, xmlChar *new_id_dec, xmlChar *showname)
+void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   xmlNode       *cur_node = NULL;
   xmlAttrPtr     attr     = NULL;
@@ -485,19 +487,47 @@ static void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *no
           xmlFree(xml_char);
           xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"size");
           if (NULL != xml_char) {
+            const xmlChar value_d[32];
+            const xmlChar value_h[20];
+            const xmlChar showname[64];
+            int           ret   = 0;
+            int           pos2  = 0;
+            char          val  = NULL;
+            char          hex[3] = {0,0,0};;
+
             size = strtoul((const char *)xml_char, NULL, 0);
             xmlFree(xml_char);
             // second: try to set value (always hex)
-            attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"value", new_id_hex);
-            attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"show", new_id_dec);
+            ret = snprintf((char *)value_d, 32, "%ld", new_id);
+            AssertFatal((ret < 0) || (ret > 32), "Could not convert int to dec str");
+            ret = snprintf((char *)value_h, 20, "C0%08X", new_id);
+            AssertFatal((ret < 0) || (ret > 20), "Could not convert int to hex str");
+            ret = snprintf((char *)showname, 64, "MME-UE-S1AP-ID: %d", new_id);
+            AssertFatal((ret < 0) || (ret > 64), "Could not convert int to dec str");
+
+            attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"value", value_h);
+            attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"show", value_d);
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"showname", showname);
             //TODO update s1ap->binary_stream @pos with new_id_hex, size
+            AssertFatal((pos+size) < s1ap->binary_stream_allocated_size, "Rewrite of mme_ue_s1ap_id out of bounds of binary_stream");
+            //avoid endianess issues
+            do {
+              hex[0] = value_h[pos2++];
+              hex[1] = value_h[pos2++];
+              hex[2] = 0;
+              val = (unsigned char)strtoul(hex, NULL, 16);
+              AssertFatal(errno != 0, "Conversion of hexstring %s failed", hex);
+              s1ap->binary_stream[pos++] = val;
+            } while (pos2 < (2*5));
+            // update ASN1
+            et_decode_s1ap(s1ap);
+            S1AP_DEBUG("Updated ASN1 for %s\n", showname);
           }
         }
       }
     }
     if (0 < go_deeper_in_tree) {
-      update_xpath_node_mme_ue_s1ap_id(s1ap, cur_node->children, new_id_hex, new_id_dec, showname);
+      update_xpath_node_mme_ue_s1ap_id(s1ap, cur_node->children, new_id);
     }
   }
 }
@@ -510,24 +540,14 @@ static void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *no
  * Prints the @nodes content to @output.
  * From http://www.xmlsoft.org/examples/#xpath2.c
  */
-static void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xmlNodeSetPtr nodes, const S1ap_MME_UE_S1AP_ID_t new_id)
+void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xmlNodeSetPtr nodes, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   int           size = 0;
   int           i    = 0;
-  int           ret  = 0;
-  const xmlChar value_d[32];
-  const xmlChar value_h[20];
-  const xmlChar showname[64];
   xmlNode      *s1ap_node = NULL;
 
   size = (nodes) ? nodes->nodeNr : 0;
 
-  ret = snprintf((char *)value_d, 32, "%ld", new_id);
-  AssertFatal((ret < 0) || (ret > 32), "Could not convert int to dec str");
-  ret = snprintf((char *)value_h, 20, "C0%X", new_id);
-  AssertFatal((ret < 0) || (ret > 20), "Could not convert int to hex str");
-  ret = snprintf((char *)showname, 64, "MME-UE-S1AP-ID: %d", new_id);
-  AssertFatal((ret < 0) || (ret > 64), "Could not convert int to dec str");
   /*
    * NOTE: the nodes are processed in reverse order, i.e. reverse document
    *       order because xmlNodeSetContent can actually free up descendant
@@ -539,7 +559,7 @@ static void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xm
   for(i = size - 1; i >= 0; i--) {
     s1ap_node = nodes->nodeTab[i];
     AssertFatal(NULL != s1ap_node, "One element of resultset of XPATH expression is NULL\n");
-    update_xpath_node_mme_ue_s1ap_id(s1ap_payload, s1ap_node, value_d, value_h, showname);
+    update_xpath_node_mme_ue_s1ap_id(s1ap_payload, s1ap_node, new_id);
     /*
      * All the elements returned by an XPath query are pointers to
      * elements from the tree *except* namespace nodes where the XPath
@@ -574,7 +594,7 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
   xmlXPathObjectPtr    xpath_obj = NULL;
 
   ret = snprintf(xpath_expression, ET_XPATH_EXPRESSION_MAX_LENGTH, "//field[@name=\"s1ap.MME_UE_S1AP_ID\"][@show=\"%d\"]", old_id);
-  AssertFatal((ret < 0) || (ret > ET_XPATH_EXPRESSION_MAX_LENGTH), "Could not build XPATH expression");
+  AssertFatal((ret > 0) && (ret < ET_XPATH_EXPRESSION_MAX_LENGTH), "Could not build XPATH expression err=%d", ret);
 
   doc = packet->sctp_hdr.u.data_hdr.payload.doc;
 

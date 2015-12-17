@@ -142,7 +142,7 @@ int strip_extension(char *in_filename)
 
   if (NULL != in_filename) {
     /* Check chars starting at end of string to find last '.' */
-    for (ssize_t i = strlen(in_filename); i > (name_min_len + max_ext_len); i--) {
+    for (ssize_t i = strlen(in_filename); i >= name_min_len; i--) {
       if (in_filename[i] == '.') {
         in_filename[i] = '\0';
         return i;
@@ -662,7 +662,7 @@ config_parse_opt_line (
       fprintf(stderr, "Error: eNB config file name %s is not found in dir %s\n", enb_config_file_name, g_test_dir);
     }
     enb_config_init(enb_config_file_name);
-    enb_config_display();
+    //enb_config_display();
 
     if (NULL == pdml_in_file_name) {
       fprintf(stderr, "Error: please provide the PDML file name that should be in %s\n", g_test_dir);
