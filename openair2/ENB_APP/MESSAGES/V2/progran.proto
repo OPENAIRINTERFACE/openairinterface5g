@@ -51,8 +51,8 @@ message prp_stats_request {
 
 message prp_stats_reply {
 	optional prp_header header = 1;
-	optional prp_ue_stats_report ue_report = 2;
-	optional prp_cell_stats_report cell_report = 3;
+	repeated prp_ue_stats_report ue_report = 2;
+	repeated prp_cell_stats_report cell_report = 3;
 }
 
 
