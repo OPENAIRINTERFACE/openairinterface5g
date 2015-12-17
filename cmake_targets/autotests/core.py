@@ -181,7 +181,8 @@ class core:
             rsp2 = self.prompt2
         self.wait_quiet()
         if sudo == True:
-          command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
+          #command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
+          command = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
         if self.send_cr:
             log.stats['cmd'] += 1
             self.oai.sendline(command)

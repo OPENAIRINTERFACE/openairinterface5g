@@ -273,7 +273,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testc
 #Function to clean old programs that might be running from earlier execution
 #oai - parameter for making connection to machine
 #programList - list of programs that must be terminated before execution of any test case 
-def cleanOldPrograms(oai, programList, CleanUpAluLteBox):
+def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   cmd = 'killall -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
@@ -285,7 +285,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox):
   result = oai.send_expect_false(cmd, 'Match found', False)
   print result
   res=oai.send_recv(CleanUpAluLteBox, True)
-
+  res = oai.send_recv(ExmimoRfStop, True)
 
 class myThread (threading.Thread):
     def __init__(self, threadID, name, counter):
@@ -327,7 +327,7 @@ class oaiThread (threading.Thread):
 
 #This class runs test cases with class execution, compilatation
 class testCaseThread_generic (threading.Thread):
-   def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, password, timeout):
+   def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, password, timeout, ExmimoRfStop):
        threading.Thread.__init__(self)
        self.threadID = threadID
        self.name = name
@@ -338,6 +338,7 @@ class testCaseThread_generic (threading.Thread):
        self.oldprogramList = oldprogramList
        self.CleanupAluLteBox = CleanupAluLteBox
        self.password=password
+       self.ExmimoRfStop = ExmimoRfStop
    def run(self):
      try:
        mypassword=''
@@ -347,7 +348,7 @@ class testCaseThread_generic (threading.Thread):
        print "Starting test case : " + self.testcasename + " On machine " + self.machine + " timeout = " + str(self.timeout) 
        oai = openair('localdomain',self.machine)
        oai.connect(user, self.password)
-       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
+       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
        logdir_local = os.environ.get('OPENAIR_DIR')
        logdir_local_testcase = logdir_local +'/cmake_targets/autotests/log/'+ self.testcasename
        logdir_local_base = logdir_local +'/cmake_targets/autotests/log/'
@@ -381,7 +382,7 @@ class testCaseThread_generic (threading.Thread):
        #ssh.get_all(logdir_remote_testcase , logdir_local_base)
        SSHSessionWrapper(self.machine, user, None, self.password, logdir_remote_testcase, logdir_local_base)
        print "Finishing test case : " + self.testcasename + " On machine " + self.machine
-       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox)
+       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
        #oai.kill(user,mypassword)
        oai.disconnect()
      except Exception, e:
@@ -400,7 +401,7 @@ def addsudo (cmd, password=""):
   cmd = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
   return cmd
 
-def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, password, CleanupAluLteBox,timeout):
+def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, password, CleanupAluLteBox,timeout, ExmimoRfStop):
   try:
     mypassword=password
     MachineListFree=[]
@@ -438,7 +439,7 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
        print "MachineListBusy = " + ','.join(MachineListBusy)
        print "MachineList = " + ','.join(MachineList)
     machine = MachineListFree[0]
-    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+ "machine_", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout)
+    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+ "machine_", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout, ExmimoRfStop)
     param={"thread_id":thread, "Machine":machine, "testcasename":testcasename}
     thread.start()
     threadListNew.append(param)
@@ -471,7 +472,7 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
    return threadListGenericNew
 
 #Function to handle test case class : lte-softmodem
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox, ExmimoRfStop):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -543,9 +544,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   oai_EPC = openair('localdomain', EPCMachine)
   oai_EPC.connect(user, password)
 
-  cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox)
-  cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
-  cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
+  cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+  cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+  cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
   logdir_eNB = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
   logdir_UE =  logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
   logdir_EPC = logdirOpenaircnRepo+'/TEST/autotests/log/'+ testcasename
@@ -759,9 +760,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        t.join()
     #Now we get the log files from remote machines on the local machine
 
-    cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox)
-    cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox)
-    cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox)
+    cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
     logfile_UE_stop_script_out = logdir_UE + '/UE_stop_script_out' + '_' + str(run) + '_.log'
     logfile_UE_stop_script = logdir_local_testcase + '/UE_stop_script' + '_' + str(run) + '_.log'
 
@@ -992,6 +993,7 @@ CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
 Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
 MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
+ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
 print "GitOAI5GRepo = " + GitOAI5GRepo
@@ -1056,7 +1058,7 @@ if localshell == 0:
            print "Sudo permissions..." + result
            
            print '\nCleaning Older running programs : ' + CleanUpOldProgs
-           cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox)
+           cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 
            result = oai_list[index].send('mount ' + NFSResultsDir, True)
            print "Mounting NFS Share " + NFSResultsDir + "..." + result
@@ -1236,11 +1238,11 @@ for testcase in testcaseList:
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox )
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox, ExmimoRfStop )
       elif (testcaseclass == 'compilation'): 
-        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution)
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
-        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution)
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,ExmimoRfStop)
       else :
         print "Unknown test case class: " + testcaseclass
         sys.exit()
