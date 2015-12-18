@@ -1,4 +1,4 @@
-#! /usr/bin/python
+w#! /usr/bin/python
 #******************************************************************************
 
 #    OpenAirInterface 
@@ -264,8 +264,8 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testc
        error = error + '\n username = ' + username + '\n machine = ' + machine + '\n logdir_remote = ' + logdir_remote_testcase + '\n logdir_local_base = ' + logdir_local_base 
        error = error + traceback.format_exc()
        print error
-       print " Trying again in 60 seconds"
-       time.sleep(60)
+       print " Trying again in 1 seconds"
+       time.sleep(1)
        print "Continuing ..."
 
 
