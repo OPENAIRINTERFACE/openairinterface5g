@@ -2986,7 +2986,12 @@ n(tikz_fname,"w");
 	  if (awgn_flag == 0) {	
 	    multipath_channel(eNB2UE[0],s_re,s_im,r_re,r_im,
 			      2*frame_parms->samples_per_tti,hold_channel);
-	    //	    printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
+	    if (PHY_vars_UE->perfect_ce==1){
+	      freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+                //  write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
+                //  write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL +1,1,8);
+	    }
+		  //	    printf("amc: ****************** eNB2UE[%d]->n_rx = %d,dd %d\n",round,eNB2UE[round]->nb_rx,eNB2UE[round]->channel_offset);
 	    if(abstx==1 && num_rounds>1)
 	      if(round==0 && hold_channel==0){
 		random_channel(eNB2UE[1],0);
@@ -3138,11 +3143,7 @@ n(tikz_fname,"w");
 
               if (PHY_vars_UE->perfect_ce==1) {
                 if (awgn_flag==0) {
-                  // fill in perfect channel estimates
-                  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-
-                  //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
-                  //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
+		  //fill the channel estimates
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -3159,9 +3160,24 @@ n(tikz_fname,"w");
                   for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
                       for (i=0; i<frame_parms->N_RB_DL*12; i++) {
+			
+			  if (transmission_mode==4) {
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+			    
+			  }
+			  else{
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
                         ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
                       }
+			
+		      }
                     }
                   }
                 }
