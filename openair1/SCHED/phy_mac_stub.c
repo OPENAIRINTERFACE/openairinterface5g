@@ -195,8 +195,8 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
       break;
     }
 
-  case 6:
     /*
+  case 6:
       DCI_pdu->Num_ue_spec_dci = 1;
       DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
       DCI_pdu->dci_alloc[0].L          = 2;
@@ -214,9 +214,10 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
       DLSCH_alloc_pdu1.rv1              = 0;
       DLSCH_alloc_pdu1.tpmi             = 0;
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
-    */
     break;
+    */
 
+  default:
   case 7:
     DCI_pdu->Num_ue_spec_dci = 1;
     DCI_pdu->dci_alloc[0].L          = 2;
@@ -234,7 +235,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         =   DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist];
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
+          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = subframe*3; //openair_daq_vars.target_ue_dl_mcs;
           //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
@@ -493,6 +494,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
       memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
       break;
     */
+    /*
   case 9:
     DCI_pdu->Num_ue_spec_dci = 1;
 
@@ -517,7 +519,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
     UL_alloc_pdu.dai     = 0;
     UL_alloc_pdu.cqi_req = 1;
     memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-
+    */
     // user 2
     /*
     DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
@@ -542,11 +544,11 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
     UL_alloc_pdu.dai     = 0;
     UL_alloc_pdu.cqi_req = 1;
     memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
+    break;
     */
-    break;
 
-  default:
-    break;
+    /*default:
+      break;*/
   }
 
   DCI_pdu->nCCE = 0;
