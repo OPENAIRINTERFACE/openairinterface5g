@@ -275,7 +275,17 @@ function main() {
       fi
   fi
 
-
+ if [ "$oaisim" = "1" ] ; then
+      # if [ "$HW" == "ETHERNET" ] ; then # to ask
+      #	  HW="NONE"   
+      #fi 
+      if [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
+	  HW="NO_VALUE"   
+      fi
+      if [ "$XFORMS" == "True" ] ; then 
+	  PRINT_STATS="True"
+      fi 
+  fi
   ############################################
   # setting and printing OAI envs, we should check here
   ############################################
@@ -324,19 +334,9 @@ function main() {
     check_install_additional_tools
   fi
 
-  if [ "$oaisim" = "1" ] ; then
-      # if [ "$HW" == "ETHERNET" ] ; then # to ask
-      #	  HW="NONE"   
-      #fi 
-      if [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
-	  HW="NO_VALUE"   
-      fi
-      if [ "$XFORMS" == "True" ] ; then 
-	  PRINT_STATS="True"
-      fi 
-  fi
+ 
   
-    echo_info "3. building the compilation directives ..."
+  echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
   if [ "$NOS1" =  "1" ] ; then
@@ -364,7 +364,6 @@ function main() {
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-    echo "set ( SHRLIBDEV ${SHRLIBDEV})"           >>  $cmake_file
     echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
@@ -577,17 +576,16 @@ function main() {
      
      echo_info "Compiling $rrh_exec ..."
     
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
+     mkdir -p $DIR/$rrh_build_dir/build
      cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
      echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
      echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
      echo "set(ENABLE_ITTI False )"     		 >>  $cmake_file
      echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
      echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
-     echo "set(SHRLIBDEV ${SHRLIBDEV})"           >>  $cmake_file
      echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
-     mkdir -p $DIR/$rrh_build_dir/build
+     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
      cmake ..
      compilations \
@@ -608,6 +606,7 @@ function main() {
       # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
       if [ "$HW" != "NO_VALUE" ] ; then
 	  rm -f liboai_device.so
+	  rm -f $dbin/liboai_device.so
 	  if [ -d "/usr/include/uhd" ] ; then
 	      compilations \
 		  $build_dir oai_usrpdevif \
@@ -622,15 +621,18 @@ function main() {
 	  #add exmimo compilation
 
 
-
+	  # link liboai_device.so with the selected RF device library
 	  if [ "$HW" == "EXMIMO" ] ; then
 	      ln -s liboai_exmimodevif.so liboai_device.so
+	      ln -s $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      ln -s liboai_usrpdevif.so liboai_device.so
+	      ln -s $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to USRP device library"        
 	  elif [ "$HW" == "OAI_BLADERF" ] ; then
 	      ln -s liboai_bladerfdevif.so liboai_device.so
+	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
 	  else 
 	      echo_info "liboai_device.so is not linked to any device library"	    
@@ -640,11 +642,14 @@ function main() {
       # build trasport protocol libraries (currently only ETHERNET is available)
       if [ "$TP" != "NO_VALUE" ] ; then
 	  rm -f liboai_transpro.so
+	  rm -f $dbin/liboai_transpro.so
+
 	  compilations \
               $build_dir oai_eth_transpro \
               liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
 	  if [ "$TP" == "ETHERNET" ] ; then
 	      ln -s liboai_eth_transpro.so liboai_transpro.so
+	      ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
 	  fi      
       fi
