@@ -130,6 +130,54 @@ int et_strip_extension(char *in_filename)
 }
 //------------------------------------------------------------------------------
 // return number of splitted items
+void et_get_shift_arg( char * line_argument, shift_packet_t * const shift)
+{
+  int  len       = strlen(line_argument);
+  int  i         = 0;
+  int  j         = 0;
+  int  num_milli = 0;
+  char my_num[64];
+  int  negative  = 0;
+
+
+  while ((line_argument[i] != ':') && (i < len)) {
+    my_num[i] = line_argument[i];
+    i += 1;
+  }
+  my_num[i++] = '\0';
+  shift->frame_number = atoi(my_num);
+  AssertFatal(i<len, "Shift argument %s bad format", line_argument);
+
+  if (line_argument[i] == '-') {
+    negative = 1;
+    i += 1;
+  } else if (line_argument[i] == '+') {
+    i += 1;
+  }
+  AssertFatal(i<len, "Shift argument %s bad format", line_argument);
+  while ((line_argument[i] != '.') && (i < len)) {
+    my_num[j++] = line_argument[i++];
+  }
+  my_num[j] = '\0';
+  j = 0;
+  i += 1;
+  shift->shift_seconds = atoi(my_num);
+  // may omit .mmm, accept .m or .mm or .mmm or ...
+  while ((i < len) && (num_milli++ < 3)){
+    my_num[j++] = line_argument[i++];
+  }
+  while (num_milli++ < 6){
+    my_num[j++] = '0';
+  }
+  my_num[j] = '\0';
+  shift->shift_microseconds = atoi(my_num);
+  if (negative == 1) {
+    shift->shift_seconds      = - shift->shift_seconds;
+    shift->shift_microseconds = - shift->shift_microseconds;
+  }
+}
+//------------------------------------------------------------------------------
+// return number of splitted items
 int split_path( char * pathP, char *** resP)
 {
   char *  saveptr1;
@@ -764,9 +812,168 @@ void *et_eNB_app_task(void *args_p)
 }
 
 //------------------------------------------------------------------------------
-int et_play_scenario(et_scenario_t* const scenario)
+int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s *shifts)
 {
-  et_event_t        event;
+  et_event_t             event;
+  struct shift_packet_s *shift                 = shifts;
+  et_packet_t           *packet                = NULL;
+  et_packet_t           *next_packet           = NULL;
+  struct timeval         shift_all_packets     = { .tv_sec = 0, .tv_usec = 0 };
+  struct timeval         relative_last_sent_packet     = { .tv_sec = 0, .tv_usec = 0 };
+  struct timeval         relative_last_received_packet = { .tv_sec = 0, .tv_usec = 0 };
+  struct timeval         initial_time          = { .tv_sec = 0, .tv_usec = 0 };
+  char                   first_packet          = 1;
+  char                   first_sent_packet     = 1;
+  char                   first_received_packet = 1;
+
+  // first apply timing shifts if requested
+  while (shift) {
+    packet = scenario->list_packet;
+    while (packet) {
+      fprintf(stdout, "*shift: %p\n", shift);
+      fprintf(stdout, "\tframe_number:       %p\n", shift->frame_number);
+      fprintf(stdout, "\tshift_seconds:      %ld\n", shift->shift_seconds);
+      fprintf(stdout, "\tshift_microseconds: %ld\n", shift->shift_microseconds);
+      fprintf(stdout, "\tsingle:             %d\n\n", shift->single);
+      fprintf(stdout, "\tshift_all_packets_seconds:      %ld\n", shift_all_packets.tv_sec);
+      fprintf(stdout, "\tshift_all_packets_microseconds: %ld\n", shift_all_packets.tv_usec);
+
+      AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
+          "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
+          packet->time_relative_to_first_packet.tv_sec,
+          packet->time_relative_to_first_packet.tv_usec,
+          packet->packet_number,
+          packet->original_frame_number);
+      AssertFatal((packet->time_relative_to_last_received_packet.tv_sec >= 0) && (packet->time_relative_to_last_received_packet.tv_usec >= 0),
+          "Bad timing result time_relative_to_last_received_packet=%d.%d packet num %u, original frame number %u",
+          packet->time_relative_to_last_received_packet.tv_sec,
+          packet->time_relative_to_last_received_packet.tv_usec,
+          packet->packet_number,
+          packet->original_frame_number);
+      AssertFatal((packet->time_relative_to_last_sent_packet.tv_sec >= 0) && (packet->time_relative_to_last_sent_packet.tv_usec >= 0),
+          "Bad timing result time_relative_to_last_sent_packet=%d.%d packet num %u, original frame number %u",
+          packet->time_relative_to_last_sent_packet.tv_sec,
+          packet->time_relative_to_last_sent_packet.tv_usec,
+          packet->packet_number,
+          packet->original_frame_number);
+      fprintf(stdout, "\tpacket num %u, original frame number %u time_relative_to_first_packet=%d.%d\n",
+          packet->packet_number,
+          packet->original_frame_number,
+          packet->time_relative_to_first_packet.tv_sec,
+          packet->time_relative_to_first_packet.tv_usec);
+      fprintf(stdout, "\tpacket num %u, original frame number %u time_relative_to_last_received_packet=%d.%d\n",
+          packet->packet_number,
+          packet->original_frame_number,
+          packet->time_relative_to_last_received_packet.tv_sec,
+          packet->time_relative_to_last_received_packet.tv_usec);
+      fprintf(stdout, "\tpacket num %u, original frame number %u time_relative_to_last_sent_packet=%d.%d\n",
+          packet->packet_number,
+          packet->original_frame_number,
+          packet->time_relative_to_last_sent_packet.tv_sec,
+          packet->time_relative_to_last_sent_packet.tv_usec);
+
+      if ((shift->single) && (shift->frame_number == packet->original_frame_number)) {
+        struct timeval t_offset     = { .tv_sec = shift->shift_seconds, .tv_usec = shift->shift_microseconds };
+        et_packet_shift_timing(packet, &t_offset);
+        next_packet = packet->next;
+        if (next_packet) {
+          t_offset.tv_sec  = -t_offset.tv_sec;
+          t_offset.tv_usec = -t_offset.tv_usec;
+
+          if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
+            timeval_add(&next_packet->time_relative_to_last_sent_packet, &next_packet->time_relative_to_last_sent_packet, &t_offset);
+          } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+            timeval_add(&next_packet->time_relative_to_last_received_packet, &next_packet->time_relative_to_last_received_packet, &t_offset);
+          }
+        }
+      }
+      if ((0 == shift->single) && (shift->frame_number == packet->original_frame_number)) {
+        shift_all_packets.tv_sec = shift->shift_seconds;
+        shift_all_packets.tv_usec = shift->shift_microseconds;
+        timeval_add(&packet->time_relative_to_first_packet, &packet->time_relative_to_first_packet, &shift_all_packets);
+        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
+            packet->packet_number,
+            packet->original_frame_number,
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec);
+        AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
+            "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec,
+            packet->packet_number,
+            packet->original_frame_number);
+      } else if ((0 == shift->single)  && (shift->frame_number < packet->original_frame_number)) {
+        timeval_add(&packet->time_relative_to_first_packet, &packet->time_relative_to_first_packet, &shift_all_packets);
+        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
+            packet->packet_number,
+            packet->original_frame_number,
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec);
+        AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
+            "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec,
+            packet->packet_number,
+            packet->original_frame_number);
+      }
+      packet = packet->next;
+    }
+    shift = shift->next;
+  }
+  // now recompute time_relative_to_last_received_packet, time_relative_to_last_sent_packet
+  if (shifts) {
+    packet = scenario->list_packet;
+    while (packet) {
+      if (first_packet > 0) {
+        initial_time = packet->time_relative_to_first_packet;
+        packet->time_relative_to_first_packet.tv_sec  = 0;
+        packet->time_relative_to_first_packet.tv_usec = 0;
+        first_packet = 0;
+      } else {
+        timersub(&packet->time_relative_to_first_packet, &initial_time,
+            &packet->time_relative_to_first_packet);
+      }
+      if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
+        if (first_sent_packet > 0) {
+          relative_last_sent_packet = packet->time_relative_to_first_packet;
+          packet->time_relative_to_last_sent_packet.tv_sec  = 0;
+          packet->time_relative_to_last_sent_packet.tv_usec = 0;
+          first_sent_packet = 0;
+        } else {
+          timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
+              &packet->time_relative_to_last_sent_packet);
+          relative_last_sent_packet = packet->time_relative_to_first_packet;
+        }
+        if (first_received_packet > 0) {
+          packet->time_relative_to_last_received_packet.tv_sec  = 0;
+          packet->time_relative_to_last_received_packet.tv_usec = 0;
+        } else {
+          timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
+              &packet->time_relative_to_last_received_packet);
+        }
+      } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+        if (first_received_packet > 0) {
+          relative_last_received_packet.tv_sec = packet->time_relative_to_first_packet.tv_sec;
+          relative_last_received_packet.tv_usec = packet->time_relative_to_first_packet.tv_usec;
+          packet->time_relative_to_last_received_packet.tv_sec  = 0;
+          packet->time_relative_to_last_received_packet.tv_usec = 0;
+          first_received_packet = 0;
+        } else {
+          timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
+              &packet->time_relative_to_last_received_packet);
+          relative_last_received_packet = packet->time_relative_to_first_packet;
+        }
+        if (first_sent_packet > 0) {
+          packet->time_relative_to_last_sent_packet.tv_sec  = 0;
+          packet->time_relative_to_last_sent_packet.tv_usec = 0;
+        } else {
+          timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
+              &packet->time_relative_to_last_sent_packet);
+        }
+      }
+      packet = packet->next;
+    }
+  }
   et_display_scenario(scenario);
 
   // create SCTP ITTI task: same as eNB code
@@ -804,16 +1011,16 @@ static void et_usage (
   fprintf (stdout, "Please report any bug to: %s\n",PACKAGE_BUGREPORT);
   fprintf (stdout, "Usage: %s [options]\n\n", argv[0]);
   fprintf (stdout, "\n");
-  //fprintf (stdout, "Client options:\n");
-  //fprintf (stdout, "\t-S | --server         <server network @>  File name (with no path) of a test scenario that has to be replayed (TODO in future?)\n");
-  //fprintf (stdout, "Server options:\n");
-  fprintf (stdout, "\t-d | --test-dir       <dir>               Directory where a set of files related to a particular test are located\n");
-  fprintf (stdout, "\t-c | --enb-conf-file  <file>              Provide an eNB config file, valid for the testbed\n");
-  fprintf (stdout, "\t-s | --scenario       <file>              File name (with no path) of a test scenario that has to be replayed ()\n");
+  fprintf (stdout, "\t-d | --test-dir       <dir>                  Directory where a set of files related to a particular test are located\n");
+  fprintf (stdout, "\t-c | --enb-conf-file  <file>                 Provide an eNB config file, valid for the testbed\n");
+  fprintf (stdout, "\t-f | --shift-packet   <frame:[+|-]seconds[.usec]> Shift the timing of a packet'\n");
+  fprintf (stdout, "\t-F | --shift-packets  <frame:[+|-]seconds[.usec]> Shift the timing of packets starting at frame 'frame' included\n");
+  fprintf (stdout, "\t-m | --max-speed                             Play scenario as fast as possible without respecting frame timings\n");
+  fprintf (stdout, "\t-s | --scenario       <file>                 File name (with no path) of a test scenario that has to be replayed ()\n");
   fprintf (stdout, "\n");
   fprintf (stdout, "Other options:\n");
-  fprintf (stdout, "\t-h | --help                               Print this help and return\n");
-  fprintf (stdout, "\t-v | --version                            Print informations about the version of this executable\n");
+  fprintf (stdout, "\t-h | --help                                  Print this help and return\n");
+  fprintf (stdout, "\t-v | --version                               Print informations about the version of this executable\n");
   fprintf (stdout, "\n");
 }
 
@@ -824,11 +1031,13 @@ et_config_parse_opt_line (
   char *argv[],
   char **et_dir_name,
   char **scenario_file_name,
-  char **enb_config_file_name)
+  char **enb_config_file_name,
+  shift_packet_t **shifts)
 //------------------------------------------------------------------------------
 {
-  int                           option;
-  int                           rv                   = 0;
+  int                 option   = 0;
+  int                 rv       = 0;
+  shift_packet_t      *shift   = NULL;
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
@@ -836,6 +1045,8 @@ et_config_parse_opt_line (
     LONG_OPTION_SCENARIO_FILE,
     LONG_OPTION_MAX_SPEED,
     LONG_OPTION_TEST_DIR,
+    LONG_OPTION_SHIFT_PACKET,
+    LONG_OPTION_SHIFT_PACKETS,
     LONG_OPTION_HELP,
     LONG_OPTION_VERSION
   };
@@ -845,6 +1056,8 @@ et_config_parse_opt_line (
     {"scenario ",      required_argument, 0, LONG_OPTION_SCENARIO_FILE},
     {"max-speed ",     no_argument,       0, LONG_OPTION_MAX_SPEED},
     {"test-dir",       required_argument, 0, LONG_OPTION_TEST_DIR},
+    {"shift-packet",   required_argument, 0, LONG_OPTION_SHIFT_PACKET},
+    {"shift-packets",  required_argument, 0, LONG_OPTION_SHIFT_PACKETS},
     {"help",           no_argument,       0, LONG_OPTION_HELP},
     {"version",        no_argument,       0, LONG_OPTION_VERSION},
      {NULL, 0, NULL, 0}
@@ -853,7 +1066,7 @@ et_config_parse_opt_line (
   /*
    * Parsing command line
    */
-  while ((option = getopt_long (argc, argv, "vhmc:s:d:", long_options, NULL)) != -1) {
+  while ((option = getopt_long (argc, argv, "vhmc:s:d:f:F", long_options, NULL)) != -1) {
     switch (option) {
       case LONG_OPTION_ENB_CONF_FILE:
       case 'c':
@@ -882,6 +1095,37 @@ et_config_parse_opt_line (
             exit(1);
           }
           printf("Test dir name is %s\n", *et_dir_name);
+        }
+        break;
+
+      case LONG_OPTION_SHIFT_PACKET:
+      case 'f':
+        if (optarg) {
+          if (NULL == *shifts) {
+            shift = calloc(1, sizeof (*shift));
+            *shifts = shift;
+          } else {
+            shift->next = calloc(1, sizeof (*shift));
+            shift = shift->next;
+          }
+          shift->single = 1;
+          et_get_shift_arg(optarg, shift);
+          printf("Arg Shift packet %s\n", optarg);
+        }
+        break;
+
+      case LONG_OPTION_SHIFT_PACKETS:
+      case 'F':
+        if (optarg) {
+          if (NULL == *shifts) {
+            shift = calloc(1, sizeof (*shift));
+            *shifts = shift;
+          } else {
+            shift->next = calloc(1, sizeof (*shift));
+            shift = shift->next;
+          }
+          et_get_shift_arg(optarg, shift);
+          printf("Arg Shift packets %s\n", optarg);
         }
         break;
 
@@ -938,6 +1182,7 @@ int main( int argc, char **argv )
   char            *et_dir_name          = NULL;
   char            *scenario_file_name   = NULL;
   char            *enb_config_file_name = NULL;
+  struct shift_packet_s *shifts         = NULL;
   int              ret                  = 0;
   et_scenario_t   *scenario             = NULL;
   char             play_scenario_filename[NAME_MAX];
@@ -957,11 +1202,11 @@ int main( int argc, char **argv )
   asn1_xer_print = 1;
 
   //parameters
-  actions = et_config_parse_opt_line (argc, argv, &et_dir_name, &scenario_file_name, &enb_config_file_name); //Command-line options
+  actions = et_config_parse_opt_line (argc, argv, &et_dir_name, &scenario_file_name, &enb_config_file_name, &shifts); //Command-line options
   if  (actions & PLAY_SCENARIO) {
     if (et_generate_xml_scenario(et_dir_name, scenario_file_name,enb_config_file_name, play_scenario_filename) == 0) {
       if (NULL != (scenario = et_generate_scenario(play_scenario_filename))) {
-        ret = et_play_scenario(scenario);
+        ret = et_play_scenario(scenario, shifts);
       } else {
         fprintf(stderr, "ERROR: Could not generate scenario from tsml file\n");
         ret = -1;

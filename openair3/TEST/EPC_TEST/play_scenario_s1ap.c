@@ -68,7 +68,6 @@ int et_s1ap_eNB_compare_assoc_id(
     if (p1->cnx_id < p2->cnx_id) {
       return -1;
     }
-
     if (p1->cnx_id > p2->cnx_id) {
       return 1;
     }
@@ -76,7 +75,6 @@ int et_s1ap_eNB_compare_assoc_id(
     if (p1->assoc_id < p2->assoc_id) {
       return -1;
     }
-
     if (p1->assoc_id > p2->assoc_id) {
       return 1;
     }

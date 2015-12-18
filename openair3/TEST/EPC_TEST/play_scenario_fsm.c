@@ -54,36 +54,35 @@ pthread_mutex_t   g_fsm_lock  = PTHREAD_MUTEX_INITIALIZER;
 et_fsm_state_t    g_fsm_state = ET_FSM_STATE_NULL;
 uint32_t          g_constraints = ET_BIT_MASK_MATCH_SCTP_STREAM | ET_BIT_MASK_MATCH_SCTP_SSN;
 //------------------------------------------------------------------------------
-int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b)
+// it is assumed that if a time is negative tv_sec and tv_usec are both negative
+void timeval_add (struct timeval * const result, const struct timeval * const a, const struct timeval * const b)
 {
-  struct timeval  b2;
-  int nsec = 0;
-  b2.tv_sec   = b->tv_sec;
-  b2.tv_usec = b->tv_usec;
-
-
-  /* Perform the carry for the later subtraction by updating y. */
-  if (a->tv_usec < b2.tv_usec) {
-    nsec = (b2.tv_usec - a->tv_usec) / 1000000 + 1;
-    b2.tv_usec -= 1000000 * nsec;
-    b2.tv_sec += nsec;
+  AssertFatal(((a->tv_sec <= 0) && (a->tv_usec <= 0)) || ((a->tv_sec >= 0) && (a->tv_usec >= 0)), " Bad time format arg a\n");
+  AssertFatal(((b->tv_sec <= 0) && (b->tv_usec <= 0)) || ((b->tv_sec >= 0) && (b->tv_usec >= 0)), " Bad time format arg b\n");
+  // may happen overflows but were are not dealing with very large timings
+  long long int r = a->tv_usec + b->tv_usec + (a->tv_sec + b->tv_sec) * 1000000;
+  result->tv_sec  = r / (long long int)1000000;
+  result->tv_usec = r % (long long int)1000000;
+  if ((result != a) && (result != b)) {
+    LOG_D(ENB_APP, "timeval_add(%ld.%06d, %ld.%06d)=%ld.%06d\n", a->tv_sec, a->tv_usec, b->tv_sec, b->tv_usec, result->tv_sec, result->tv_usec);
   }
-  if (a->tv_usec - b2.tv_usec > 1000000) {
-    nsec = (a->tv_usec - b2.tv_usec) / 1000000;
-    b2.tv_usec += 1000000 * nsec;
-    b2.tv_sec -= nsec;
-  }
-
-  /* Compute the time remaining to wait.
-     tv_usec is certainly positive. */
-  result->tv_sec = a->tv_sec - b2.tv_sec;
-  result->tv_usec = a->tv_usec - b2.tv_usec;
-
-  LOG_D(ENB_APP, "timeval_subtract(%ld.%06d, %ld.%06d)=%ld.%06d\n", a->tv_sec, a->tv_usec, b->tv_sec, b->tv_usec, result->tv_sec, result->tv_usec);
-
-  return a->tv_sec < b2.tv_sec;
 }
 
+//------------------------------------------------------------------------------
+// it is assumed that if a time is negative tv_sec and tv_usec are both negative
+int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b)
+{
+  AssertFatal(((a->tv_sec <= 0) && (a->tv_usec <= 0)) || ((a->tv_sec >= 0) && (a->tv_usec >= 0)), " Bad time format arg a\n");
+  AssertFatal(((b->tv_sec <= 0) && (b->tv_usec <= 0)) || ((b->tv_sec >= 0) && (b->tv_usec >= 0)), " Bad time format arg b\n");
+  // may happen overflows but were are not dealing with very large timings
+  long long int r = a->tv_usec - b->tv_usec + (a->tv_sec - b->tv_sec) * 1000000;
+  result->tv_sec  = r / (long long int)1000000;
+  result->tv_usec = r % (long long int)1000000;
+  if ((result != a) && (result != b)) {
+    LOG_D(ENB_APP, "timeval_subtract(%ld.%06d, %ld.%06d)=%ld.%06d\n", a->tv_sec, a->tv_usec, b->tv_sec, b->tv_usec, result->tv_sec, result->tv_usec);
+  }
+  return result->tv_sec < 0;
+}
 
 //------------------------------------------------------------------------------
 void et_scenario_wait_rx_packet(et_packet_t * const packet)
@@ -137,10 +136,9 @@ void et_scenario_schedule_tx_packet(et_packet_t * const packet)
       }
       if ((0 < we_are_too_early) && (0 == g_max_speed)){
         // set timer
-        if (offset.tv_sec < 0) offset.tv_sec = -offset.tv_sec;
-        if (offset.tv_usec < 0) {
-          offset.tv_usec = offset.tv_usec + 1000000;
-          offset.tv_sec  -= 1;
+        if (offset.tv_sec < 0) {
+          offset.tv_sec = -offset.tv_sec;
+          offset.tv_usec = -offset.tv_usec;
         }
 
         LOG_D(ENB_APP, "Send packet num %u original frame number %u in %ld.%06d sec\n",

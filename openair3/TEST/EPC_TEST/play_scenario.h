@@ -89,6 +89,15 @@
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
 
+typedef struct shift_packet_s {
+  unsigned int           frame_number;
+  int                    shift_seconds;
+  int                    shift_microseconds;
+  int                    single;            // only this packet
+  struct shift_packet_s *next;
+} shift_packet_t;
+
+
 typedef struct mme_ip_address_s {
   unsigned  ipv4:1;
   unsigned  ipv6:1;
@@ -445,6 +454,10 @@ int et_generate_xml_scenario(
     const char const * enb_config_filename,
           char const * tsml_out_scenario_filename);
 //-------------------------
+void timeval_add (struct timeval * const result, const struct timeval * const a, const struct timeval * const b);
+int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b);
+void et_scenario_wait_rx_packet(et_packet_t * const packet);
+void et_scenario_schedule_tx_packet(et_packet_t * const packet);
 et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event);
@@ -458,7 +471,7 @@ void et_parse_sctp_init_chunk(xmlDocPtr doc, const xmlNode const *sctp_node, sct
 void et_parse_sctp_init_ack_chunk(xmlDocPtr doc, const xmlNode const *sctp_node, sctp_initackhdr_t * const sctp_hdr);
 void et_parse_sctp(xmlDocPtr doc, const xmlNode const *sctp_node, et_sctp_hdr_t * const sctp_hdr);
 et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node);
-et_scenario_t* et_generate_scenario(const char  * const et_scenario_filename );
+et_scenario_t* et_generate_scenario(const char  * const et_scenario_filename);
 //-------------------------
 asn_comp_rval_t * et_s1ap_ies_is_matching(const S1AP_PDU_PR present, s1ap_message * const m1, s1ap_message * const m2, const uint32_t constraints);
 void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, const S1ap_MME_UE_S1AP_ID_t new_id);
@@ -471,6 +484,7 @@ asn_comp_rval_t * et_sctp_is_matching(et_sctp_hdr_t * const sctp1, et_sctp_hdr_t
 void et_print_hex_octets(const unsigned char * const byte_stream, const unsigned long int num);
 int  et_is_file_exists ( const char const * file_nameP, const char const *file_roleP);
 int  et_strip_extension( char *in_filename);
+void et_get_shift_arg( char * line_argument, shift_packet_t * const shift);
 int  et_split_path     ( char * pathP, char *** resP);
 void et_display_node   ( xmlNodePtr node, unsigned int indent);
 void et_display_tree   ( xmlNodePtr node, unsigned int indent);
@@ -486,6 +500,6 @@ void et_enb_config_init(const  char const * lib_config_file_name_pP);
 const Enb_properties_array_t *et_enb_config_get(void);
 void et_eNB_app_register(const Enb_properties_array_t *enb_properties);
 void *et_eNB_app_task(void *args_p);
-int et_play_scenario(et_scenario_t* const scenario);
+int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s *shifts);
 
 #endif /* PLAY_SCENARIO_H_ */

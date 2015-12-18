@@ -586,7 +586,6 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
 {
 
 
-  xmlNode              *cur_node = NULL;
   xmlChar              xpath_expression[ET_XPATH_EXPRESSION_MAX_LENGTH];
   int                  ret       = 0;
   xmlDocPtr            doc       = NULL;

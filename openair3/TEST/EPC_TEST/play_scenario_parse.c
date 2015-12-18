@@ -62,7 +62,7 @@ extern Enb_properties_array_t g_enb_properties;
 //------------------------------------------------------------------------------
 void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * const s1ap)
 {
-  xmlNode              *cur_node  = NULL;
+  xmlNodePtr            cur_node  = NULL;
   xmlChar              *xml_char  = NULL;
   xmlChar              *xml_char2  = NULL;
   unsigned int          size = 0;
@@ -329,9 +329,38 @@ void et_parse_sctp(xmlDocPtr doc, const xmlNode const *sctp_node, et_sctp_hdr_t 
   }
 }
 //------------------------------------------------------------------------------
-et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
+void et_packet_shift_timing(et_packet_t * const packet, const struct timeval * const shift)
+{
+  timeval_add(&packet->time_relative_to_first_packet, &packet->time_relative_to_first_packet, shift);
+  AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
+      "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
+      packet->time_relative_to_first_packet.tv_sec,
+      packet->time_relative_to_first_packet.tv_usec,
+      packet->packet_number,
+      packet->original_frame_number);
 
-  et_packet_t        *packet   = NULL;
+  timeval_add(&packet->time_relative_to_last_received_packet, &packet->time_relative_to_last_received_packet, shift);
+  AssertFatal((packet->time_relative_to_last_received_packet.tv_sec >= 0) && (packet->time_relative_to_last_received_packet.tv_usec >= 0),
+      "Bad timing result time_relative_to_last_received_packet=%d.%d packet num %u, original frame number %u",
+      packet->time_relative_to_last_received_packet.tv_sec,
+      packet->time_relative_to_last_received_packet.tv_usec,
+      packet->packet_number,
+      packet->original_frame_number);
+
+  timeval_add(&packet->time_relative_to_last_sent_packet, &packet->time_relative_to_last_sent_packet, shift);
+  AssertFatal((packet->time_relative_to_last_sent_packet.tv_sec >= 0) && (packet->time_relative_to_last_sent_packet.tv_usec >= 0),
+      "Bad timing result time_relative_to_last_sent_packet=%d.%d packet num %u, original frame number %u",
+      packet->time_relative_to_last_sent_packet.tv_sec,
+      packet->time_relative_to_last_sent_packet.tv_usec,
+      packet->packet_number,
+      packet->original_frame_number);
+}
+
+//------------------------------------------------------------------------------
+et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node)
+{
+
+  et_packet_t          *packet   = NULL;
   xmlNode              *cur_node = NULL;
   xmlChar              *xml_char = NULL;
   float                 afloat    = (float)0.0;
@@ -342,6 +371,7 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
   static char           first_sent_packet     = 1;
   static char           first_received_packet = 1;
   static unsigned int   packet_number = 1;
+
 
   if (NULL != node) {
     packet = calloc(1, sizeof(*packet));
@@ -441,15 +471,15 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node) {
 }
 //------------------------------------------------------------------------------
 et_scenario_t* et_generate_scenario(
-    const char  * const tsml_out_scenario_filename )
+    const char  * const tsml_out_scenario_filename)
 {
-  xmlDocPtr         doc      = NULL;
-  xmlNodePtr        root     = NULL;
-  xmlNodePtr        node     = NULL;
-  xmlChar          *xml_char = NULL;
-  et_scenario_t  *scenario = NULL;
-  et_packet_t    *packet   = NULL;
-  et_packet_t   **next_packet   = NULL;
+  xmlDocPtr            doc      = NULL;
+  xmlNodePtr           root     = NULL;
+  xmlNodePtr           node     = NULL;
+  xmlChar             *xml_char = NULL;
+  et_scenario_t       *scenario = NULL;
+  et_packet_t          *packet  = NULL;
+  et_packet_t         **next_packet   = NULL;
 
   doc = xmlParseFile(tsml_out_scenario_filename);
   if (NULL == doc) {
