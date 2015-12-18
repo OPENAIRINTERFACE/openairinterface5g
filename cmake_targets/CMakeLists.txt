@@ -164,6 +164,11 @@ set(CMAKE_C_FLAGS
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}"
 )
+
+
+#########################
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${OPENAIR_TARGETS}/bin")
+#########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
@@ -1450,11 +1455,11 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 
 #################################
 # add executables for operation
-#################################""
+#################################
 
 # lte-softmodem is both eNB and UE implementation
 ###################################################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${OPENAIR_CMAKE}/lte_build_oai/build/")
+
 add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
@@ -1490,7 +1495,6 @@ target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
 ###################################################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${OPENAIR_CMAKE}/lte_noS1_build_oai/build/")
 add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
@@ -1526,7 +1530,6 @@ target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 
 # rrh
 ################################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${OPENAIR_CMAKE}/rrh_gw/build/")
 #Note: only one RF type (USRP) is currently supported for RRH
 add_executable(rrh_gw
   ${OPENAIR_TARGETS}/RT/USER/rrh_gw.c
@@ -1534,14 +1537,11 @@ add_executable(rrh_gw
   ${OPENAIR_TARGETS}/RT/USER/UE_transport_IQ.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c		
-  ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-  ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_udp.c
-  ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   )
-# assert and common_lib.h
-target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti ${OPENAIR_TARGETS}/ARCH/COMMON )
+# assert
+target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
 target_link_libraries(rrh_gw
   -Wl,--start-group
   UTIL LFDS  
