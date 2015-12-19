@@ -869,8 +869,10 @@ def search_test_case_group(testcasename, testcasegroup, test_case_exclude):
            if match >=0:
              return True
     return False
-   
-       
+
+def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop):
+   for index in oai_list:
+      cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 
 #thread1 = myThread(1, "Thread-1", 1)
 debug = 0
@@ -884,7 +886,7 @@ xmlInputFile="./test_case_list.xml"
 NFSResultsDir = '/mnt/sradio'
 cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
 testcasegroup=''
-
+cleanUpRemoteMachines=False
 logdir = '/tmp/' + 'OAITestFrameWork-' + getpass.getuser() + '/'
 logdirOAI5GRepo = logdir + 'openairinterface5g/'
 logdirOpenaircnRepo = logdir + 'openair-cn/'
@@ -924,12 +926,15 @@ while i < len (sys.argv):
     elif arg == '-g' :
         testcasegroup = sys.argv[i+1].replace("\"","")
         i = i +1   
+    elif arg == '-c':
+        cleanUpRemoteMachines=True
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
         print "-p:  set the prompt"
         print "-r:  Remove the log directory in autotests"
         print "-g:  Run test cases in a group"
+        print "-c:  Run cleanup scripts on remote machines"
         print "-w:  set the password for ssh to localhost"
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
@@ -1131,7 +1136,12 @@ for index in oai_list:
       cmd = cmd + 'git clone '+ GitOAI5GRepo  + '\n'
       cmd = cmd + 'git clone '+ GitOpenaircnRepo   + '\n'
       cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
+      cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'                      
       cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
+      cmd = cmd + 'git_head = `git ls-remote |grep \"' + GitOAI5GRepoBranch + '\"'
+      cmd = cmd + 'git_head = ($git_head)'
+      cmd = cmd + 'git_head = ${git_head[0]}'
+      cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi '
       cmd = cmd + 'source oaienv'   + '\n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
@@ -1220,6 +1230,9 @@ if (out != '') :
   print "status  = " + str(status) + "\n Check files for error = " + out
   print sys.exit(1)
 
+if cleanUpRemoteMachines == True:
+  cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+  sys.exit(0)
 
 threadListGlobal=[]
 testcaseList=xmlRoot.findall('testCase')
@@ -1231,6 +1244,7 @@ for testcase in testcaseList:
     desc = testcase.findtext('desc',default='')
     #print "Machine list top level = " + ','.join(MachineList)
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
+      cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop)
       if testcaseclass == 'lte-softmodem' :
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
