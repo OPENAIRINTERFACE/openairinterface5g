@@ -135,6 +135,30 @@ uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t sched_su
   return(0);
 }
 
+void put_harq_pid_in_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
+{
+  DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->tail_freelist] = harq_pid;
+  DLSCH_ptr->tail_freelist = (DLSCH_ptr->tail_freelist + 1) % 10;
+}
+
+void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
+{
+  if (DLSCH_ptr->head_freelist == DLSCH_ptr->tail_freelist) {
+    LOG_E(PHY, "%s:%d: you cannot read this!\n", __FILE__, __LINE__);
+    abort();
+  }
+  /* basic check, in case several threads deal with the free list at the same time
+   * in normal situations it should not happen, that's also why we don't use any
+   * locking mechanism to protect the free list
+   * to be refined in case things don't work properly
+   */
+  if (harq_pid != DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist]) {
+    LOG_E(PHY, "%s:%d: critical error, get in touch with the authors\n", __FILE__, __LINE__);
+    abort();
+  }
+  DLSCH_ptr->head_freelist = (DLSCH_ptr->head_freelist + 1) % 10;
+}
+
 int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 {
   uint8_t i;
@@ -177,6 +201,7 @@ int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB, uint8_t abstraction_flag)
 {
   uint8_t i;
+  int j;
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
@@ -195,6 +220,13 @@ int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB, uint8_t abstraction
         //phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
         memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
         //  mac_exit_wrapper("Removing UE");
+
+        /* clear the harq pid freelist */
+        phy_vars_eNB->dlsch_eNB[i][0]->head_freelist = 0;
+        phy_vars_eNB->dlsch_eNB[i][0]->tail_freelist = 0;
+        for (j = 0; j < 8; j++)
+          put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[i][0], j);
+
         return(i);
       }
     }
@@ -223,14 +255,12 @@ int8_t find_next_ue_index(PHY_VARS_eNB *phy_vars_eNB)
 
 int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16_t rnti, const int frame, const uint8_t subframe,uint8_t *harq_pid,uint8_t *round,const uint8_t ul_flag)
 {
-
   LTE_eNB_DLSCH_t *DLSCH_ptr;
   LTE_eNB_ULSCH_t *ULSCH_ptr;
   uint8_t ulsch_subframe,ulsch_frame;
   uint8_t i;
   int8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][CC_id]);
   int sf1=(10*frame)+subframe,sf2,sfdiff,sfdiff_max=7;
-  int first_proc_found=0;
 
   if (UE_id==-1) {
     LOG_D(PHY,"Cannot find UE with rnti %x (Mod_id %d, CC_id %d)\n",rnti, Mod_id, CC_id);
@@ -246,18 +276,7 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
     for (i=0; i<DLSCH_ptr->Mdlharq; i++) {
       if (DLSCH_ptr->harq_processes[i]!=NULL) {
-	if (DLSCH_ptr->harq_processes[i]->status != ACTIVE) {
-	  // store first inactive process
-	  if (first_proc_found == 0) {
-	    first_proc_found = 1;
-	    *harq_pid = i;
-	    *round = 0;
-	    LOG_D(PHY,"process %d is first free process\n",i);
-	  }
-	  else {
-	    LOG_D(PHY,"process %d is free\n",i);
-	  }
-	} else {
+	if (DLSCH_ptr->harq_processes[i]->status == ACTIVE) {
 	  sf2 = (DLSCH_ptr->harq_processes[i]->frame*10) + DLSCH_ptr->harq_processes[i]->subframe;
 	  if (sf2<=sf1)
 	    sfdiff = sf1-sf2;
@@ -269,7 +288,6 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 	    sfdiff_max = sfdiff; 
 	    *harq_pid = i;
 	    *round = DLSCH_ptr->harq_processes[i]->round;
-	    first_proc_found = 1;
 	  }
 	}
       } else { // a process is not defined
@@ -277,6 +295,14 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 	return(-1);
       }
     }
+
+    /* if no active harq pid, get the oldest in the freelist, if any */
+    if (*harq_pid == 255 && DLSCH_ptr->head_freelist != DLSCH_ptr->tail_freelist) {
+      *harq_pid = DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist];
+      *round = 0;
+      LOG_D(PHY,"process %d is first free process\n", *harq_pid);
+    }
+
     LOG_D(PHY,"get_ue_active_harq_pid DL => Frame %d, Subframe %d : harq_pid %d\n",
 	  frame,subframe,*harq_pid);
   } else { // This is a UL request
@@ -294,7 +320,6 @@ int get_ue_active_harq_pid(const uint8_t Mod_id,const uint8_t CC_id,const uint16
 
   return(0);
 }
-
 
 int16_t get_target_pusch_rx_power(const module_id_t module_idP, const uint8_t CC_id)
 {
@@ -2745,6 +2770,7 @@ void process_HARQ_feedback(uint8_t UE_id,
               dlsch_harq_proc->round = 0;
               ue_stats->dlsch_l2_errors[dl_harq_pid[m]]++;
               dlsch_harq_proc->status = SCH_IDLE;
+              put_harq_pid_in_freelist(dlsch, dl_harq_pid[m]);
               dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
             }
           } else {
@@ -2757,6 +2783,7 @@ void process_HARQ_feedback(uint8_t UE_id,
             // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
             dlsch_harq_proc->round  = 0;
             dlsch_harq_proc->status = SCH_IDLE;
+            put_harq_pid_in_freelist(dlsch, dl_harq_pid[m]);
             dlsch->harq_ids[dl_subframe] = dlsch->Mdlharq;
 
             ue_stats->total_TBS = ue_stats->total_TBS +
@@ -3871,6 +3898,9 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->eNB_UE_stats[i].sr_received++;
 
             if (phy_vars_eNB->first_sr[i] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
+              /* is this test necessary? */
+              if (phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->status != SCH_IDLE)
+                put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[i][0], 0);
               phy_vars_eNB->first_sr[i] = 0;
               phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->round=0;
               phy_vars_eNB->dlsch_eNB[i][0]->harq_processes[0]->status=SCH_IDLE;

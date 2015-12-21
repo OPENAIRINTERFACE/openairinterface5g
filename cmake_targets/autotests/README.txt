@@ -139,7 +139,7 @@ Obj.#   Case#   Test#	Description
 01      62              lte-softmodem tests with EXMIMO RF as eNB and OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 01      63              lte-softmodem tests with EXMIMO RF as eNB and  OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
-01      58              lte-softmodem-noS1 tests
+01      64              lte-softmodem-noS1 tests
 
 02                      Functional test case
 
