@@ -280,7 +280,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else { //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,1,5);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -292,7 +292,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     // FDD, normal UL/DLSCH
     if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
       schedule_ulsch(module_idP,frameP,cooperation_flag,2,6);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -320,7 +320,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     } else { //FDD
 
       schedule_ulsch(module_idP,frameP,cooperation_flag,3,7);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -358,7 +358,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 	//        schedule_RA(module_idP,frameP, subframeP, 0);
 	schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8);
-	//	schedule_ue_spec(module_idP, frameP, subframeP,  mbsfn_status);
+	schedule_ue_spec(module_idP, frameP, subframeP,  mbsfn_status);
         fill_DLSCH_dci(module_idP, frameP, subframeP,   mbsfn_status);
       }
     }
@@ -428,7 +428,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else { //FDD
       //      schedule_ulsch(module_idP,frameP,cooperation_flag,6,0);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -457,7 +457,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else { //FDD
       //schedule_ulsch(module_idP,frameP,cooperation_flag,7,1);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -486,7 +486,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else { //FDD
       //schedule_ulsch(module_idP,frameP,cooperation_flag,8,2);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 
@@ -530,7 +530,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       }
     } else { //FDD
       //     schedule_ulsch(module_idP,frameP,cooperation_flag,9,3);
-      //      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
+      schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
 

@@ -111,6 +111,7 @@ schedule_SI(
       LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
 
       // Allocate 4 PRBs in a random location
+      /*
       while (1) {
 	first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
 	if ((vrb_map[first_rb] != 1) && 
@@ -119,6 +120,25 @@ schedule_SI(
 	    (vrb_map[first_rb+3] != 1))
 	  break;
       }
+      */
+      switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+      case 6:
+	first_rb = 0;
+	break;
+      case 15:
+	first_rb = 6;
+	break;
+      case 25:
+	first_rb = 11;
+	break;
+      case 50:
+	first_rb = 23;
+	break;
+      case 100:
+	first_rb = 48;
+	break;
+      }
+
       vrb_map[first_rb] = 1;
       vrb_map[first_rb+1] = 1;
       vrb_map[first_rb+2] = 1;

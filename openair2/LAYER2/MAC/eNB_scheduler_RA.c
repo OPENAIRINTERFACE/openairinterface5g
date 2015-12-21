@@ -302,6 +302,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
             //    msg("[MAC][eNB] Frame %d, subframeP %d: Generated DLSCH (Msg4) DCI, format 1A, for UE %d\n",frameP, subframeP,UE_id);
             // Schedule Reflection of Connection request
 
+	    /*
 	    // randomize frequency allocation for RA
 	    while (1) {
 	      first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
@@ -309,7 +310,9 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 	      if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+3] != 1))
 		break;
 	    }
-	    
+	    */
+	    first_rb=0;
+
 	    vrb_map[first_rb] = 1;
 	    vrb_map[first_rb+1] = 1;
 	    vrb_map[first_rb+2] = 1;
@@ -669,6 +672,7 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 	    ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->ndi=1;
 	  }
 	  
+	  /*
 	  // randomize frequency allocation for RA
 	  while (1) {
 	    first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
@@ -676,7 +680,8 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
 	    if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+3] != 1))
 	      break;
 	  }
-	  
+	  */
+	  first_rb=0;
 	  vrb_map[first_rb] = 1;
 	  vrb_map[first_rb+1] = 1;
 	  vrb_map[first_rb+2] = 1;

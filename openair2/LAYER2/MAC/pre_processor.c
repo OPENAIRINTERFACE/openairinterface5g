@@ -176,6 +176,7 @@ void assign_rbs_required (module_id_t Mod_id,
       eNB_UE_stats[CC_id]->DL_cqi[0], MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
+
       eNB_UE_stats[CC_id]->dlsch_mcs1 = cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
 
     }
@@ -729,6 +730,7 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   }
 }
 
+#define SF05_LIMIT 1
 
 void dlsch_scheduler_pre_processor_reset (int module_idP,
 					  int UE_id,
@@ -748,8 +750,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
   uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
   int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
-
-
+#ifdef SF05_LIMIT
+  int subframe05_limit=0;
+  int sf05_upper=-1,sf05_lower=-1;
+#endif
   // initialize harq_pid and round
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
@@ -762,13 +766,46 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
+#ifdef SF05_LIMIT  
+  switch (N_RBG) {
+  case 6:
+    sf05_lower=0;
+    sf05_upper=5;
+    break;
+  case 8:
+    sf05_lower=2;
+    sf05_upper=5;
+    break;
+  case 13:
+    sf05_lower=4;
+    sf05_upper=7;
+    break;
+  case 17:
+    sf05_lower=7;
+    sf05_upper=9;
+    break;
+  case 25:
+    sf05_lower=11;
+    sf05_upper=13;
+    break;
+  }
+#endif
   // Initialize Subbands according to VRB map
   for (i=0; i<N_RBG; i++) {
     ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
     rballoc_sub[CC_id][i] = 0;
+#ifdef SF05_LIMIT
+    // for avoiding 6+ PRBs around DC in subframe 0-5 (avoid excessive errors)
+
+    if ((subframeP==0 || subframeP==5) && 
+	(i>=sf05_lower && i<=sf05_upper))
+      rballoc_sub[CC_id][i]=1;
+#endif
+    // for SI-RNTI,RA-RNTI and P-RNTI allocations
     for (j=0;j<RBGsize;j++) {
-      if (vrb_map[j+(i*RBGsize)]!=0) {
+      if (vrb_map[j+(i*RBGsize)]!=0)  {
 	rballoc_sub[CC_id][i] = 1;
+	LOG_D(MAC,"Frame %d, subframe %d : vrb %d allocated\n",frameP,subframeP,j+(i*RBGsize));
 	break;
       }
     }

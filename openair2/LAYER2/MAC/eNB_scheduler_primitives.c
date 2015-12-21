@@ -1041,8 +1041,12 @@ int allocate_CCEs(int module_idP,
 	  }
 	} // fCCE>=0
 	else {
-	  if (DCI_pdu->num_pdcch_symbols == 3)
+	  if (DCI_pdu->num_pdcch_symbols == 3) {
 	    allocation_is_feasible = 0;
+	    LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
+		  subframeP,dci_alloc->rnti);
+
+	  }
 	  else {
 	    DCI_pdu->num_pdcch_symbols++;
 	    nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
