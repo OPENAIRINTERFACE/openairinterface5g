@@ -90,6 +90,11 @@ uint8_t config_smbv = 0;
 char smbv_ip[16];
 #endif
 
+#if defined(ENB_AGENT_SB_IF)
+#   include "enb_agent.h"
+#endif
+
+
 #include "oaisim_functions.h"
 
 #include "oaisim.h"
@@ -1331,6 +1336,10 @@ main (int argc, char **argv)
   smbv_init_config(smbv_fname, smbv_nframes);
   smbv_write_config_from_frame_parms(smbv_fname, &PHY_vars_eNB_g[0][0]->lte_frame_parms);
 #endif
+
+#if defined (ENB_AGENT_SB_IF)
+  enb_agent_start();
+#endif 
 
   // add events to future event list: Currently not used
   //oai_emulation.info.oeh_enabled = 1;

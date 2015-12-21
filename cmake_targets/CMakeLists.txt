@@ -477,7 +477,7 @@ add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequenc
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
 
-add_boolean_option(ENB_AGENT                   True         "enable eNB agent to inteface with a SDN contrller")
+add_boolean_option(ENB_AGENT_SB_IF             True         "enable eNB agent to inteface with a SDN contrller")
 
 ########################
 # Include order
@@ -693,7 +693,7 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
-if (ENB_AGENT)
+if (ENB_AGENT_SB_IF)
   # set the version of protobuf messages, V3 not supported yet
   add_list1_option(PRPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
   
@@ -730,7 +730,8 @@ if (ENB_AGENT)
     ${PRPT_source}
     )
   set(PRPT_MSG_LIB PRPT_MSG)
-  include_directories ("${PRPT_C_DIR}")
+  #message("prpt c dir is : ${PRPT_C_DIR}")
+  include_directories (${PRPT_C_DIR})
 
   add_library(ASYNC_IF
     ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
@@ -740,6 +741,18 @@ if (ENB_AGENT)
   set(ASYNC_IF_LIB ASYNC_IF)
   include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
 
+ add_library(ENB_AGENT
+    ${OPENAIR2_DIR}/ENB_APP/enb_agent_handler.c
+    ${OPENAIR2_DIR}/ENB_APP/enb_agent_common.c
+    ${OPENAIR2_DIR}/ENB_APP/enb_agent_mac.c
+    ${OPENAIR2_DIR}/ENB_APP/enb_agent.c
+    )
+  set(ENB_AGENT_LIB ENB_AGENT)
+  #include_directories(${OPENAIR2_DIR}/ENB_APP)
+  
+  set(PROTOBUF_LIB "protobuf-c")
+  
+  #set(PROTOBUF_LIB "protobuf") #for Cpp
 endif()
 
 
@@ -1647,15 +1660,16 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} 
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib}
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)
 
+#message("protobuflib is  ${PROTOBUF_LIB}")
 
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################

@@ -1,10 +1,12 @@
+//'syntax = "proto2";' 
 package protocol;
 
 import "stats_messages.proto";
 import "header.proto";
 
 message progran_message {
-        oneof msg {
+       required progran_direction msg_dir = 100;
+	oneof msg {
               prp_hello hello_msg = 1;
               prp_echo_request echo_request_msg = 2;
 	      prp_echo_reply echo_reply_msg = 3;
@@ -13,6 +15,32 @@ message progran_message {
 	}
 }
 
+enum progran_direction {
+     //option allow_alias = true;
+     NOT_SET = 0;
+     INITIATING_MESSAGE = 1;
+     SUCCESSFUL_OUTCOME=2;
+     UNSUCCESSFUL_OUTCOME=3;	
+}
+	
+enum progran_err {
+        option allow_alias = true;
+	// message errors
+	NO_ERR = 0;	
+	MSG_DEQUEUING = -1;
+	MSG_ENQUEUING = -2;
+	MSG_DECODING = -3;
+	MSG_ENCODING = -4;
+	MSG_BUILD = -5;
+	MSG_NOT_SUPPORTED = -6; 
+	MSG_NOT_HANDLED = -7;
+	MSG_NOT_VALIDATED = -8;
+	MSG_OUT_DATED = -9;
+
+
+	// other erros
+	UNEXPECTED = -100;	
+}	
 
 //
 // Maintenance and discovery messages
@@ -32,7 +60,6 @@ message prp_echo_reply {
 	optional prp_header header = 1;
 	extensions 100 to 199;
 }
-
 
 
 //

@@ -57,6 +57,10 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
+#if defined(ENB_AGENT_SB_IF)
+#   include "enb_agent.h"
+#endif
+
 extern unsigned char NB_eNB_INST;
 #endif
 
@@ -309,6 +313,11 @@ void *eNB_app_task(void *args_p)
     configure_phy(enb_id, enb_properties_p);
     configure_rrc(enb_id, enb_properties_p);
   }
+
+#if defined (ENB_AGENT_SB_IF)
+  printf("\n start enb agent\n");
+  enb_agent_start();
+#endif 
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
