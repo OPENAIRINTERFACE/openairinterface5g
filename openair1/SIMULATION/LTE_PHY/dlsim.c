@@ -700,7 +700,7 @@ int main(int argc, char **argv)
   } else
     NB_RB = 4;
 
-  NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL); ///??
+  NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL); 
 
   if ((transmission_mode > 1) && (n_tx != 2)) {
 
@@ -2960,11 +2960,7 @@ n(tikz_fname,"w");
 		  //printf("r_im0 = %d\n",r_im[0][i]);
 		  //printf("r_re1 = %d\n",r_re[1][i]);
 		  //printf("r_im1 = %d\n",r_im[1][i]);
-		  // r_re[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		  // r_im[0][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][0]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-		  // r_re[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)]);
-		  // r_im[1][i] = ((double)(((short *)PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id][1]))[(2*subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti) +(i<<1)+1]);
-		    		    
+		 		    		    
 		}
      else {
 		for (aarx=0;aarx<PHY_vars_UE->lte_frame_parms.nb_antennas_rx;aarx++) {
@@ -3157,33 +3153,30 @@ n(tikz_fname,"w");
                     }
                   }
                 } else {
-                  for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-                    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-                      for (i=0; i<frame_parms->N_RB_DL*12; i++) {
-			
-			  if (transmission_mode==4) {
+		   if (transmission_mode==4) {
+		    for (i=0; i<frame_parms->N_RB_DL*12; i++) {
 			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
-			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;//(short)(AMP);
-			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-			    
-			  }
-			  else{
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
-                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;
-                      }
-			
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][0])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][1])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][2])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+			((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=-(short)(AMP);
+                        ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][3])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0;
+			}
+		     }
+		   else{
+		    for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+		      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+			for (i=0; i<frame_parms->N_RB_DL*12; i++) {
+			  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=(short)(AMP);
+			  ((int16_t *) PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[0][(aa<<1)+aarx])[2*i+1+((l+(Ns%2)*pilot2)*frame_parms->ofdm_symbol_size+LTE_CE_FILTER_LENGTH)*2]=0/2;	
+			}
 		      }
-                    }
-                  }
-                }
-              }
-
-
+		    }
+		 }
+		}
+	      }
               if ((Ns==((2*subframe))) && (l==0)) {
                 lte_ue_measurements(PHY_vars_UE,
                                     subframe*PHY_vars_UE->lte_frame_parms.samples_per_tti,

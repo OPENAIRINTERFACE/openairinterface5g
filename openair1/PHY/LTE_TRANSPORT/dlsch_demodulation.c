@@ -439,15 +439,21 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	    
 	
 	if (rx_type>rx_standard) {
-	  //	LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->mcs>>1)-1]);
-	  lte_ue_pdsch_vars[eNB_id]->log2_maxh = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1];
+	  	// interf_unaw_shift_tm4_mcs is to avoid tails in SNR/BLER curves
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
+	//printf("TM4 I-A shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]);
+	//printf("TM4 I-A shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
+       
+	
+	  
 	}
 	else
 	// to avoid tails in SNR/BLER curves
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2)+interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
 	//printf("TM4 I-UA shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]); 
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2)+interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
-	//printf("TM4 I-UA shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
+	//printf("TM4 I-UA shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs]);
       }
     
       dlsch_channel_compensation_TM34(frame_parms, 
