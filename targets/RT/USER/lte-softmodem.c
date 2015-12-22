@@ -372,8 +372,8 @@ int16_t           osa_log_verbosity  = LOG_MED;
 char *rrh_UE_ip = "127.0.0.1";
 int rrh_UE_port = 51000;
 #endif
-/* flag given in runtime to specify if the RF head is local or remote*/
-uint8_t local_remote_RF;
+/* flag given in runtime to specify if the RF head is local or remote (default option is local RF)*/
+uint8_t local_remote_RF = BBU_LOCAL_RF_ENABLED;
  
 char uecap_xer[1024],uecap_xer_in=0;
 extern void *UE_thread(void *arg);
@@ -2951,8 +2951,8 @@ int main( int argc, char **argv )
       openair0_cfg[card].samples_per_packet = 1024;
 #ifdef OAI_USRP
 
-      openair0_cfg[card].tx_forward_nsamps = 70;
-      openair0_cfg[card].tx_delay = 5;
+      // openair0_cfg[card].tx_forward_nsamps = 70;
+      //openair0_cfg[card].tx_delay = 5;
 #endif
       //#elif OAI_BLADERF
       //openair0_cfg[card].tx_forward_nsamps = 0;
@@ -2975,14 +2975,15 @@ int main( int argc, char **argv )
     
 #ifdef ETHERNET
 
-    openair0_cfg[card].remote_addr = "192.168.12.242";
+    //openair0_cfg[card].remote_addr = "192.168.12.242";
     //openair0_cfg[card].remote_addr = "127.0.0.1";
     openair0_cfg[card].remote_addr = "74:d4:35:cc:88:45";
     openair0_cfg[card].remote_port = 50000;
-    openair0_cfg[card].my_addr = "192.168.12.31";
+    //openair0_cfg[card].my_addr = "192.168.12.31";
     //openair0_cfg[card].my_addr = "127.0.0.1";
-    openair0_cfg[card].my_addr = "d4:be:d9:22:0a:ac"; 
+    openair0_cfg[card].my_addr = "d4:be:d9:22:0a:ac";
     openair0_cfg[card].my_port = 50000; 
+    //openair0_cfg[card].my_port = 50001;
     openair0_cfg[card].tx_delay = 10;
     openair0_cfg[card].tx_forward_nsamps = 0;
     openair0_cfg[card].txlaunch_wait = 0;
@@ -3069,20 +3070,20 @@ int main( int argc, char **argv )
   openair0.host_type = BBU_HOST;
   /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
   openair0.type = NONE_DEV;
+  /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
   openair0_cfg[0].log_level = glog_level;
-
-  /* BBU can either have local or remote radio heads */
-  if (local_remote_RF == BBU_LOCAL_RF_ENABLED) {  /* radio heads are local so the corresponding device is initiated */
-
-    if ((mode!=loop_through_memory) && 
-	(openair0_device_load(&openair0, &openair0_cfg[0]) <0)) {
-      printf("Exiting, cannot initialize device\n");
-      exit(-1);
-    }
-    else if (mode==loop_through_memory) {    
-    }
-  } else if (local_remote_RF == BBU_REMOTE_RF_ENABLED) {/* radio heads are remote so the trasnsport protocol is initiated */
+  
+  /* BBU can either have local or remote radio heads - local radio head option is set by default so the corresponding device is initiated */
+  if ((mode!=loop_through_memory) && 
+      (openair0_device_load(&openair0, &openair0_cfg[0]) <0)) {
+    printf("Exiting, cannot initialize device\n");
+    exit(-1);
+  }
+  else if (mode==loop_through_memory) {    
+  }
+  /* radio heads are remote so the trasnsport protocol is initiated */
+  if (local_remote_RF == BBU_REMOTE_RF_ENABLED) {
     if ((mode!=loop_through_memory) && 
 	(openair0_transport_load(&openair0, &openair0_cfg[0]) <0)) {
       printf("Exiting, cannot initialize transport protocol\n");
@@ -3090,13 +3091,11 @@ int main( int argc, char **argv )
     }
     else if (mode==loop_through_memory) {    
     }
-  }
-//for EXMIMO
-//openair0_cfg[0].iq_rxrescale=15;  /* default value if build with EXMIMO */
-//rxrescale=openair0_cfg[0].iq_rxrescale; /* see comments near RX_IQRESCALELEN definition */
-
-
-
+  }   
+  //for EXMIMO
+  //openair0_cfg[0].iq_rxrescale=15;  /* default value if build with EXMIMO */
+  //rxrescale=openair0_cfg[0].iq_rxrescale; /* see comments near RX_IQRESCALELEN definition */
+  
   printf("Done\n");
 
   mac_xface = malloc(sizeof(MAC_xface));
@@ -3604,10 +3603,6 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
     }
 
 #endif
-
-
-
-
 
     // replace RX signal buffers with mmaped HW versions
 #ifdef EXMIMO
