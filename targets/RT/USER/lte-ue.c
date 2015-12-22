@@ -1003,7 +1003,7 @@ void *UE_thread(void *arg)
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
-  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*openair0_cfg[0].tx_scheduling_advance;
+  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=openair0_cfg[0].tx_scheduling_advance;
 #ifdef __AVX2__
   int dummy[2][spp] __attribute__((aligned(32)));
 #else
