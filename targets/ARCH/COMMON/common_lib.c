@@ -55,26 +55,21 @@ int set_device(openair0_device *device) {
     
   case EXMIMO_DEV:
     printf("[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
-    return 0;     
     break;
   case USRP_DEV:
     printf("[%s] has loaded USRP device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
-    return 0;
     break;
   case BLADERF_DEV:
     printf("[%s] has loaded BLADERF device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
-    return 0;
     break;
   case NONE_DEV:
     printf("[%s] has not loaded a HW device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
-    return 0; 
     break;    
   default:
     printf("[%s] invalid HW device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
     return -1;
-    break;
   }
-  
+  return 0;
 }
 
 int set_transport(openair0_device *device) {
