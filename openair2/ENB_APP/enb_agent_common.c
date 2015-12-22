@@ -64,7 +64,7 @@ int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage
   *msg = protocol__progran_message__unpack(NULL, size, data);
   if (*msg == NULL)
     goto error;
-  
+
   return 0;
   
  error:
@@ -118,6 +118,7 @@ int enb_agent_hello(uint32_t xid, Protocol__ProgranMessage **msg) {
   protocol__progran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG;
   (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->has_msg_dir = 1;
   (*msg)->hello_msg = hello_msg;
   return 0;
   
@@ -216,6 +217,7 @@ int enb_agent_echo_reply(uint32_t xid, Protocol__ProgranMessage **msg) {
   protocol__progran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG;
   (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  (*msg)->has_msg_dir = 1;
   (*msg)->echo_reply_msg = echo_reply_msg;
   return 0;
 
