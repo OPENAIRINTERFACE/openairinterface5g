@@ -318,7 +318,7 @@ int eth_set_dev_conf_udp(openair0_device *device) {
   /* a BBU client sents to RRH a set of configuration parameters (openair0_config_t)
      so that RF front end is configured appropriately and
      frame/packet size etc. can be set */ 
-  
+
   msg=malloc(sizeof(openair0_config_t));
   msg_len=sizeof(openair0_config_t);
   memcpy(msg,(void*)&device->openair0_cfg,msg_len);	
@@ -328,8 +328,6 @@ int eth_set_dev_conf_udp(openair0_device *device) {
     exit(0);
   }
 
-  /* printf("[RRHbbb] mod_%d socket %d connected to BBU %s:%d\n", Mod_id, eth->sockfd[Mod_id], inet_ntoa(dest_addr[Mod_id].sin_addr), */
-  /* 	ntohs(dest_addr[Mod_id].sin_port)); */
   return 0;
 }
 
@@ -347,10 +345,6 @@ int eth_get_dev_conf_udp(openair0_device *device) {
   inet_ntop(AF_INET, &(local_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN);
       inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN);
 
-  /* printf("[RRH] mod_%d socket %d connected to BBU %s:%d %s:%d\n", Mod_id, eth->sockfd[Mod_id], str1, */
-  /* 	 ntohs(dest_addr[Mod_id].sin_port),str, */
-  /* 	ntohs(local_addr[Mod_id].sin_port)); */
- 
   /* RRH receives from BBU openair0_config_t */
   if (recvfrom(eth->sockfd[Mod_id],
 	       msg,
@@ -361,19 +355,18 @@ int eth_get_dev_conf_udp(openair0_device *device) {
     perror("ETHERNET: ");
     exit(0);
   }
-		
    memcpy((void*)&device->openair0_cfg,msg,msg_len);
 
    /* get remote ip address and port */
-   inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN);
-   device->openair0_cfg.remote_port =ntohs(dest_addr[Mod_id].sin_port);
-   device->openair0_cfg.remote_addr =str1;
+   /* inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN); */
+   /* device->openair0_cfg.remote_port =ntohs(dest_addr[Mod_id].sin_port); */
+   /* device->openair0_cfg.remote_addr =str1; */
 
-   /* restore local ip address and port */
-   inet_ntop(AF_INET, &(local_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN);
-   device->openair0_cfg.my_port =ntohs(local_addr[Mod_id].sin_port);
-   device->openair0_cfg.my_addr =str;
+   /* /\* restore local ip address and port *\/ */
+   /* inet_ntop(AF_INET, &(local_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN); */
+   /* device->openair0_cfg.my_port =ntohs(local_addr[Mod_id].sin_port); */
+   /* device->openair0_cfg.my_addr =str; */
 
-   /* printf("[RRH2] mod_%d socket %d connected to BBU %s:%d  %s:%d\n", Mod_id, eth->sockfd[Mod_id],str1, device->openair0_cfg.remote_port, str, device->openair0_cfg.my_port); */
+   /*  printf("[RRH] mod_%d socket %d connected to BBU %s:%d  %s:%d\n", Mod_id, eth->sockfd[Mod_id],str1, device->openair0_cfg.remote_port, str, device->openair0_cfg.my_port);  */
    return 0;
 }
