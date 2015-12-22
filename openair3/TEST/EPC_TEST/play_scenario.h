@@ -90,10 +90,10 @@
 
 
 typedef struct shift_packet_s {
-  unsigned int           frame_number;
+  unsigned int           frame_number;      // original frame number
   int                    shift_seconds;
   int                    shift_microseconds;
-  int                    single;            // only this packet
+  int                    single;            // shift timing only for this packet (not also following packets)
   struct shift_packet_s *next;
 } shift_packet_t;
 
@@ -261,6 +261,7 @@ typedef enum {
 typedef struct et_s1ap_s {
   //et_s1ap_pdu_type_t pdu_type;
   S1AP_PDU_t           pdu; // decoded ASN1 C type: choice of initiatingMessage, successfulOutcome, unsuccessfulOutcome
+  uint16_t             xml_stream_pos_offset;
   uint16_t             binary_stream_pos;
   uint16_t             binary_stream_allocated_size;
   uint8_t             *binary_stream;
@@ -366,6 +367,8 @@ typedef struct et_scenario_s {
   et_packet_t            *last_rx_packet;         // Last packet received with all previous scenario RX packet received.
   et_packet_t            *last_tx_packet;         // Last sent packet
   et_packet_t            *next_packet;            // Next packet to be handled in the scenario (RX or TX packet)
+
+  int                     timer_count;
 } et_scenario_t;
 
 
@@ -457,7 +460,7 @@ int et_generate_xml_scenario(
 void timeval_add (struct timeval * const result, const struct timeval * const a, const struct timeval * const b);
 int timeval_subtract (struct timeval * const result, struct timeval * const a, struct timeval * const b);
 void et_scenario_wait_rx_packet(et_packet_t * const packet);
-void et_scenario_schedule_tx_packet(et_packet_t * const packet);
+void et_scenario_schedule_tx_packet(et_packet_t * packet);
 et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_tx(et_event_t event);
 et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event);

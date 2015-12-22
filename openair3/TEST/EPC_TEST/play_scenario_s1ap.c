@@ -362,8 +362,16 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t * const spacket, et_packe
 
     case  S1ap_ProcedureCode_id_UEContextRelease:
       if (present == S1AP_PDU_PR_initiatingMessage) {
-        //rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.mme_ue_s1ap_id;
-        //scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.mme_ue_s1ap_id;
+        switch (rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.uE_S1AP_IDs.present) {
+          case S1ap_UE_S1AP_IDs_PR_uE_S1AP_ID_pair:
+            rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.uE_S1AP_IDs.choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
+            scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.uE_S1AP_IDs.choice.uE_S1AP_ID_pair.mME_UE_S1AP_ID;
+            break;
+          case S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
+            rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.uE_S1AP_IDs.choice.mME_UE_S1AP_ID;
+            scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCommandIEs.uE_S1AP_IDs.choice.mME_UE_S1AP_ID;
+            break;
+        }
       } else  {
         rx_mme_ue_s1ap_id       = rx_packet->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCompleteIEs.mme_ue_s1ap_id;
         scenario_mme_ue_s1ap_id = spacket->sctp_hdr.u.data_hdr.payload.message.msg.s1ap_UEContextReleaseCompleteIEs.mme_ue_s1ap_id;
@@ -511,6 +519,7 @@ int et_handle_s1ap_mismatch_mme_ue_s1ap_id(et_packet_t * const spacket, et_packe
       AssertFatal(0, "Unknown procedure code %ld", rx_packet->sctp_hdr.u.data_hdr.payload.message.procedureCode);
   }
   if (scenario_mme_ue_s1ap_id != rx_mme_ue_s1ap_id) {
+    S1AP_DEBUG("%s() Updating  mme_ue_s1ap_id %u -> %u \n", __FUNCTION__, scenario_mme_ue_s1ap_id, rx_mme_ue_s1ap_id);
     et_packet_t * p = spacket;
     while (p) {
       et_s1ap_update_mme_ue_s1ap_id(p, scenario_mme_ue_s1ap_id, rx_mme_ue_s1ap_id);
@@ -615,6 +624,7 @@ int et_scenario_set_packet_received(et_packet_t * const packet)
   if (0 != packet->timer_id) {
     rc = timer_remove(packet->timer_id);
     AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %d unknown", packet->packet_number);
+    g_scenario->timer_count--;
     return rc;
   }
   return 1;
@@ -656,7 +666,8 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     packet = g_scenario->last_rx_packet->next;
   }
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
-  while ((NULL != packet) && (not_found < 5)) {
+  while ((NULL != packet) && (not_found < 7)) {
+    S1AP_DEBUG("%s() Considering packet num %d original frame number %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number);
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
       comp_results = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
       if (NULL == comp_results) {
@@ -681,11 +692,15 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
                 return et_scenario_set_packet_received(packet);
               }
             } else if (strcmp(comp_results->name, "S1ap-TransportLayerAddress") == 0) {
-              S1AP_WARN("Some work needed there for %s, TODO in generic_scenario.xsl, add epc conf file in the process\n",comp_results->name);
+              S1AP_WARN("Some work needed there for %s, TODO in generic_scenario.xsl, add epc conf file in the process, anyway continuing...\n",comp_results->name);
               packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
               packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
               return et_scenario_set_packet_received(packet);
             } else {
+              S1AP_WARN("\n\nRX PACKET:\n");
+              et_display_packet_sctp(&rx_packet->sctp_hdr);
+              S1AP_WARN("\n\nWAITED PACKET:\n");
+              et_display_packet_sctp(&packet->sctp_hdr);
               AssertFatal(0,"Some work needed there");
             }
           }
@@ -1112,6 +1127,7 @@ void *et_s1ap_eNB_task(void *arg)
       {
         et_packet_t * packet = (et_packet_t*)TIMER_HAS_EXPIRED (received_msg).arg;
         et_event_t    event;
+        g_scenario->timer_count--;
         if (NULL != packet) {
           if (packet->status == ET_PACKET_STATUS_SCHEDULED_FOR_RECEIVING) {
             memset((void*)&event, 0, sizeof(event));
@@ -1123,6 +1139,10 @@ void *et_s1ap_eNB_task(void *arg)
             event.code = ET_EVENT_TX_TIMED_PACKET;
             event.u.tx_timed_packet = packet;
             et_scenario_fsm_notify_event(event);
+
+            et_event_t continue_event;
+            continue_event.code = ET_EVENT_TICK;
+            et_scenario_fsm_notify_event(continue_event);
           } else if ((packet->status != ET_PACKET_STATUS_SENT) && ((packet->status != ET_PACKET_STATUS_RECEIVED))) {
             AssertFatal (0, "Bad status %d of packet timed out!\n", packet->status);
           }

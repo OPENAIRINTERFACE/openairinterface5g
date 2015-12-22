@@ -71,10 +71,15 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
 
   if ((NULL != s1ap_node) && (NULL != s1ap)) {
     // see http://www.xmlsoft.org/html/libxml-tree.html#xmlCopyNode
-    cur_node = xmlCopyNode(s1ap_node, 1);
-    AssertFatal(NULL != cur_node, "xmlCopyNode Failed");
-    s1ap->doc = xmlNewDoc(BAD_CAST "1.0");
-    xmlDocSetRootElement(s1ap->doc, cur_node);
+    if (NULL == s1ap->doc) {
+      xmlUnlinkNode(s1ap_node);
+      //cur_node = xmlCopyNodeList(s1ap_node);
+      //  arg2: if 1 do a recursive copy (properties, namespaces and children when applicable) if 2 copy properties and namespaces (when applicable)
+      //cur_node = xmlCopyNode(s1ap_node, 1);
+      //AssertFatal(NULL != cur_node, "xmlCopyNode Failed");
+      s1ap->doc = xmlNewDoc(BAD_CAST "1.0");
+      xmlDocSetRootElement(s1ap->doc, s1ap_node);
+    }
 
     for (cur_node = (xmlNode *)s1ap_node; cur_node; cur_node = cur_node->next) {
       go_deeper_in_tree = 1;
@@ -97,17 +102,17 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
             xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
             if (NULL != xml_char) {
               xml_char2 = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"name");
-              fprintf(stdout, "s1ap %p field %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
+              fprintf(stdout, "s1ap %p field name %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
               xmlFree(xml_char2);
               // if success to get value, do not parse children
               //AssertFatal ((xmlStrlen(xml_char) == size), "ERROR %s() mismatch in size %d and strlen %d\n", __FUNCTION__, size, xmlStrlen(xml_char));
               //if (xmlStrlen(xml_char) == size) {
               AssertFatal ((s1ap->binary_stream_pos+xmlStrlen(xml_char)/2) <= s1ap->binary_stream_allocated_size,
-                "ERROR %s() in buffer size: binary_stream_pos %d xmlStrlen(xml_char)/2=%d\n", __FUNCTION__, s1ap->binary_stream_pos, xmlStrlen(xml_char)/2);
+                "ERROR in buffer size: binary_stream_pos %d xmlStrlen(xml_char)/2=%d\n", s1ap->binary_stream_pos, xmlStrlen(xml_char)/2);
               rc = et_hex2data( &s1ap->binary_stream[s1ap->binary_stream_pos], xml_char, xmlStrlen(xml_char));
               s1ap->binary_stream_pos += xmlStrlen(xml_char)/2;
-              et_display_node(cur_node, 0);
-              AssertFatal (rc >= 0, "ERROR %s() in converting hex string %s len %d size %d rc %d\n", __FUNCTION__, xml_char, xmlStrlen(xml_char), size, rc);
+              //et_display_node(cur_node, 0);
+              AssertFatal (rc >= 0, "ERROR in converting hex string %s len %d size %d rc %d\n", xml_char, xmlStrlen(xml_char), size, rc);
               go_deeper_in_tree = 0;
               //}
               xmlFree(xml_char);
@@ -274,15 +279,23 @@ void et_parse_sctp(xmlDocPtr doc, const xmlNode const *sctp_node, et_sctp_hdr_t 
       if (NULL != xml_char) {
         if ((!xmlStrcmp(xml_char, (const xmlChar *)"s1ap"))) {
           xmlFree(xml_char);
-          xml_char2 = xmlGetProp((xmlNode *)sctp_node, (const xmlChar *)"size");
-          if (NULL != xml_char2) {
-            sctp_hdr->u.data_hdr.payload.binary_stream_allocated_size = strtoul((const char *)xml_char2, NULL, 0);
-            sctp_hdr->u.data_hdr.payload.binary_stream = calloc(1, sctp_hdr->u.data_hdr.payload.binary_stream_allocated_size);
-            xmlFree(xml_char2);
+          xml_char = xmlGetProp((xmlNode *)sctp_node, (const xmlChar *)"pos");
+          if (NULL != xml_char) {
+            sctp_hdr->u.data_hdr.payload.xml_stream_pos_offset = strtoul((const char *)xml_char, NULL, 0);
+            xmlFree(xml_char);
+
+            xml_char2 = xmlGetProp((xmlNode *)sctp_node, (const xmlChar *)"size");
+            if (NULL != xml_char2) {
+              sctp_hdr->u.data_hdr.payload.binary_stream_allocated_size = strtoul((const char *)xml_char2, NULL, 0);
+              sctp_hdr->u.data_hdr.payload.binary_stream     = calloc(1, sctp_hdr->u.data_hdr.payload.binary_stream_allocated_size);
+              sctp_hdr->u.data_hdr.payload.binary_stream_pos = 0;
+              fprintf(stdout, "Allocating payload of sctp_hdr %p %u bytes\n", sctp_hdr, sctp_hdr->u.data_hdr.payload.binary_stream_allocated_size);
+              xmlFree(xml_char2);
+            }
+            et_parse_s1ap(doc, sctp_node, &sctp_hdr->u.data_hdr.payload);
+            et_decode_s1ap(&sctp_hdr->u.data_hdr.payload);
+            return;
           }
-          et_parse_s1ap(doc, sctp_node, &sctp_hdr->u.data_hdr.payload);
-          et_decode_s1ap(&sctp_hdr->u.data_hdr.payload);
-          return;
         }
         xmlFree(xml_char);
       }
@@ -388,6 +401,7 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node)
           xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
           afloat = atof((const char*)xml_char);
           xmlFree(xml_char);
+          fprintf(stdout, "Parsing packet frame.time_relative: %f\n", afloat);
           packet->time_relative_to_first_packet.tv_sec   = (int)afloat;
           packet->time_relative_to_first_packet.tv_usec  = (int)((afloat - packet->time_relative_to_first_packet.tv_sec)*1000000.0);
 
@@ -400,48 +414,10 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node)
             timersub(&packet->time_relative_to_first_packet, &initial_time,
                 &packet->time_relative_to_first_packet);
           }
-          if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
-            if (first_sent_packet > 0) {
-              relative_last_sent_packet = packet->time_relative_to_first_packet;
-              packet->time_relative_to_last_sent_packet.tv_sec  = 0;
-              packet->time_relative_to_last_sent_packet.tv_usec = 0;
-              first_sent_packet = 0;
-            } else {
-              timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
-                  &packet->time_relative_to_last_sent_packet);
-              relative_last_sent_packet = packet->time_relative_to_first_packet;
-            }
-            if (first_received_packet > 0) {
-              packet->time_relative_to_last_received_packet.tv_sec  = 0;
-              packet->time_relative_to_last_received_packet.tv_usec = 0;
-            } else {
-              timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
-                  &packet->time_relative_to_last_received_packet);
-            }
-          } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-            if (first_received_packet > 0) {
-              relative_last_received_packet.tv_sec = packet->time_relative_to_first_packet.tv_sec;
-              relative_last_received_packet.tv_usec = packet->time_relative_to_first_packet.tv_usec;
-              packet->time_relative_to_last_received_packet.tv_sec  = 0;
-              packet->time_relative_to_last_received_packet.tv_usec = 0;
-              first_received_packet = 0;
-            } else {
-              timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
-                  &packet->time_relative_to_last_received_packet);
-              relative_last_received_packet = packet->time_relative_to_first_packet;
-            }
-            if (first_sent_packet > 0) {
-              packet->time_relative_to_last_sent_packet.tv_sec  = 0;
-              packet->time_relative_to_last_sent_packet.tv_usec = 0;
-            } else {
-              timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
-                  &packet->time_relative_to_last_sent_packet);
-            }
-          }
-
         } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"frame.number"))) {
           xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
           packet->original_frame_number = strtoul((const char *)xml_char, NULL, 0);
+          fprintf(stdout, "Parsing packet frame.number: %u\n", packet->original_frame_number);
           xmlFree(xml_char);
         } else if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"ip.src"))) {
           xml_char = xmlNodeListGetString(doc, cur_node->xmlChildrenNode, 1);
@@ -473,13 +449,14 @@ et_packet_t* et_parse_xml_packet(xmlDocPtr doc, xmlNodePtr node)
 et_scenario_t* et_generate_scenario(
     const char  * const tsml_out_scenario_filename)
 {
-  xmlDocPtr            doc      = NULL;
-  xmlNodePtr           root     = NULL;
-  xmlNodePtr           node     = NULL;
-  xmlChar             *xml_char = NULL;
-  et_scenario_t       *scenario = NULL;
-  et_packet_t          *packet  = NULL;
-  et_packet_t         **next_packet   = NULL;
+  xmlDocPtr            doc           = NULL;
+  xmlNodePtr           root          = NULL;
+  xmlNodePtr           node          = NULL;
+  xmlChar             *xml_char      = NULL;
+  et_scenario_t       *scenario      = NULL;
+  et_packet_t          *last_packet  = NULL;
+  et_packet_t          *packet       = NULL;
+  et_packet_t         **next_packet  = NULL;
 
   doc = xmlParseFile(tsml_out_scenario_filename);
   if (NULL == doc) {
@@ -503,6 +480,14 @@ et_scenario_t* et_generate_scenario(
         if ((!xmlStrcmp(node->name, (const xmlChar *)"packet"))) {
           packet = et_parse_xml_packet(doc, node);
           if (NULL != packet) {
+            // special case: S1AP same frame for 2 packets
+            if (NULL != last_packet) {
+              if (last_packet->original_frame_number == packet->original_frame_number) {
+                // updating because these informations are not in 2nd sctp header (same IP packet)
+                packet->sctp_hdr.dst_port = last_packet->sctp_hdr.dst_port;
+                packet->sctp_hdr.src_port = last_packet->sctp_hdr.src_port;
+              }
+            }
             *next_packet = packet;
             next_packet = &packet->next;
           } else {
@@ -510,6 +495,7 @@ et_scenario_t* et_generate_scenario(
             et_display_node(node, 0);
           }
         }
+        last_packet = packet;
       }
     }
   } else {

@@ -467,6 +467,8 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
   int            size     = 0;
   int            pos      = 0;
   int            go_deeper_in_tree = 1;
+  S1AP_DEBUG("%s() mme_ue_s1ap_id %u\n", __FUNCTION__, new_id);
+
   // modify
   for (cur_node = (xmlNode *)node; cur_node; cur_node = cur_node->next) {
     go_deeper_in_tree = 1;
@@ -484,6 +486,8 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
         xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"pos");
         if (NULL != xml_char) {
           pos = strtoul((const char *)xml_char, NULL, 0);
+          pos -= s1ap->xml_stream_pos_offset;
+          AssertFatal(pos >= 0, "Bad pos %d xml_stream_pos_offset %d", pos, s1ap->xml_stream_pos_offset);
           xmlFree(xml_char);
           xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"size");
           if (NULL != xml_char) {
@@ -499,11 +503,11 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
             xmlFree(xml_char);
             // second: try to set value (always hex)
             ret = snprintf((char *)value_d, 32, "%ld", new_id);
-            AssertFatal((ret < 0) || (ret > 32), "Could not convert int to dec str");
+            AssertFatal((ret > 0) && (ret < 32), "Could not convert int to dec str");
             ret = snprintf((char *)value_h, 20, "C0%08X", new_id);
-            AssertFatal((ret < 0) || (ret > 20), "Could not convert int to hex str");
+            AssertFatal((ret > 0) && (ret < 20), "Could not convert int to hex str");
             ret = snprintf((char *)showname, 64, "MME-UE-S1AP-ID: %d", new_id);
-            AssertFatal((ret < 0) || (ret > 64), "Could not convert int to dec str");
+            AssertFatal((ret > 0) && (ret < 64), "Could not convert int to dec str");
 
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"value", value_h);
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"show", value_d);
@@ -592,11 +596,12 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
   xmlXPathContextPtr   xpath_ctx = NULL;
   xmlXPathObjectPtr    xpath_obj = NULL;
 
+  S1AP_DEBUG("%s() packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number, old_id, new_id);
+
   ret = snprintf(xpath_expression, ET_XPATH_EXPRESSION_MAX_LENGTH, "//field[@name=\"s1ap.MME_UE_S1AP_ID\"][@show=\"%d\"]", old_id);
   AssertFatal((ret > 0) && (ret < ET_XPATH_EXPRESSION_MAX_LENGTH), "Could not build XPATH expression err=%d", ret);
 
   doc = packet->sctp_hdr.u.data_hdr.payload.doc;
-
   // Create xpath evaluation context
   xpath_ctx = xmlXPathNewContext(doc);
   if(xpath_ctx == NULL) {
