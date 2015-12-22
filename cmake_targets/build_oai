@@ -276,12 +276,10 @@ function main() {
   fi
 
  if [ "$oaisim" = "1" ] ; then
-      # if [ "$HW" == "ETHERNET" ] ; then # to ask
-      #	  HW="NONE"   
-      #fi 
-      if [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
-	  HW="NO_VALUE"   
-      fi
+     # there is no RF device and no transport protocol 
+     HW="NO_VALUE" 
+     TP="NO_VALUE"
+  
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
       fi 
