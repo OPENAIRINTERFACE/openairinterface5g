@@ -49,6 +49,7 @@
 
 typedef int (*enb_agent_message_decoded_callback)(
 	uint32_t xid,
+	const void *params,
 	Protocol__ProgranMessage **msg
 );
 
@@ -59,13 +60,13 @@ int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage
 
 int prp_create_header(uint32_t xid, Protocol__PrpType type, Protocol__PrpHeader **header);
 
-int enb_agent_hello(uint32_t xid, Protocol__ProgranMessage **msg);
+int enb_agent_hello(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_hello(Protocol__ProgranMessage *msg);
 
-int enb_agent_echo_request(uint32_t xid, Protocol__ProgranMessage **msg);
+int enb_agent_echo_request(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg);
 
-int enb_agent_echo_reply(uint32_t xid, Protocol__ProgranMessage **msg);
+int enb_agent_echo_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg);
 
 

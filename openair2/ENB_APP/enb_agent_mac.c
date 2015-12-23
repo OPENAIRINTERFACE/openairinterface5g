@@ -40,7 +40,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "log.h"
 
-int enb_agent_mac_reply(uint32_t xid, Protocol__ProgranMessage **msg){
+int enb_agent_mac_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg){
   
   void *buffer;
   int size;

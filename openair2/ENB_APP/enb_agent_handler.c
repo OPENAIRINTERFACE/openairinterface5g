@@ -83,7 +83,7 @@ Protocol__ProgranMessage* enb_agent_handle_message (uint32_t xid,
 
   }
 
-  err_code= ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(xid, &reply_message));
+  err_code= ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(xid, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
   }

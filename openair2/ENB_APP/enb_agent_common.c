@@ -98,7 +98,7 @@ int prp_create_header(uint32_t xid, Protocol__PrpType type,  Protocol__PrpHeader
 }
 
 
-int enb_agent_hello(uint32_t xid, Protocol__ProgranMessage **msg) {
+int enb_agent_hello(uint32_t xid, const void *params, Protocol__ProgranMessage **msg) {
  
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_HELLO, &header) != 0)
@@ -150,7 +150,7 @@ int enb_agent_destroy_hello_message(Protocol__ProgranMessage *msg) {
 }
 
 
-int enb_agent_echo_request(uint32_t xid, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_request(uint32_t xid, const void* params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REQUEST, &header) != 0)
     goto error;
@@ -199,7 +199,7 @@ int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg) {
 
 
 
-int enb_agent_echo_reply(uint32_t xid, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REPLY, &header) != 0)
     goto error;
