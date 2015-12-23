@@ -40,70 +40,126 @@
 #include "LAYER2/RLC/rlc.h"
 #include "log.h"
 
-int enb_agent_mac_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg){
+int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__ProgranMessage **msg){
   
+  // TODO: Must deal with sanitization of input
+  // TODO: Must check if RNTIs and cell ids of the request actually exist
+
+  int i;
   void *buffer;
   int size;
   err_code_t err_code;
-  // test code 
+  
+  //TODO: We do not deal with multiple CCs at the moment and eNB id is 0 
+  int cc_id = 0;
+  int enb_id = 0;
 
+  eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
+  UE_list_t *eNB_UE_list= &eNB->UE_list;
 
-  // Create and serialize a stats reply message. This would be done by one of the agents
-  // Let's assume that we want the power headroom, the pending CEs for UEs 1 & 2 and their
-  // DL CQI reports as well as the noise and interference for cell 1
   report_config_t report_config;
 
-  // We set the flags indicating what kind of stats we need for each UE. Both UEs will have
-  // the same flags in this example
   uint32_t ue_flags = 0;
-  // Set the power headroom flag
-  ue_flags |= PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PRH;
-  // Set the pending CEs flag
-  ue_flags |= PROTOCOL__PRP_UE_STATS_TYPE__PRUST_MAC_CE_BS;
-  // Set the DL CQI report flag
-  ue_flags |= PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI;
-
-  // We do the same with the Cell flags
   uint32_t c_flags = 0;
-  // Set the noise and interference flag
-  c_flags |= PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE;
 
-  // We create the appropriate configurations
-  ue_report_type_t ue_configs[2];
-  cc_report_type_t cell_configs[1];
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
 
-  // Create the config for UE with RNTI 1
-  ue_report_type_t ue1_config;
-  ue1_config.ue_rnti = 1;
-  ue1_config.ue_report_flags = ue_flags;
+  Protocol__PrpStatsRequest *stats_req = input->stats_request_msg;
 
-  // Do the same for UE with RNTI 2
-  ue_report_type_t ue2_config;
-  ue2_config.ue_rnti = 2;
-  ue2_config.ue_report_flags = ue_flags;
-
-  // Add them to the UE list
-  ue_configs[0] = ue1_config;
-  ue_configs[1] = ue2_config;
-  
-  // Do the same for cell with id 1  
-  cc_report_type_t c1_config;
-  c1_config.cc_id = 1;
-  c1_config.cc_report_flags = c_flags;
-
-  // Add them to the cell list
-  cell_configs[0] = c1_config;
-
-  //Create the full report configuration
-  report_config.nr_ue = 2;
-  report_config.nr_cc = 1;
-  report_config.ue_report_type = ue_configs;
-  report_config.cc_report_type = cell_configs;
+  // Check the type of request that is made
+  switch(stats_req->body_case) {
+  case PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
+    Protocol__PrpCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
+    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) {
+      //TODO: Must create a periodic report. Implement once the
+      // timer functionality is supported
+      return -1;
+    } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
+      //TODO: Must create an event based report mechanism
+      return -1;
+    } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
+      //TODO: Must implement to deactivate the event based reporting
+    } else { //One-off reporting
+      //Set the proper flags
+      ue_flags = comp_req->ue_report_flags;
+      c_flags = comp_req->cell_report_flags;
+      //Create a list of all eNB RNTIs and cells
+      
+      //Set the number of UEs and create list with their RNTIs stats configs
+      report_config.nr_ue = eNB_UE_list->num_UEs;
+      report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
+      if (report_config.ue_report_type == NULL) {
+	// TODO: Add appropriate error code
+	err_code = -100;
+	goto error;
+      }
+      for (i = 0; i < report_config.nr_ue; i++) {
+	report_config.ue_report_type[i].ue_rnti = eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
+	report_config.ue_report_type[i].ue_report_flags = ue_flags;
+      }
+      //Set the number of CCs and create a list with the cell stats configs
+      report_config.nr_cc = MAX_NUM_CCs;
+      report_config.cc_report_type = (cc_report_type_t *) malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
+      if (report_config.cc_report_type == NULL) {
+	// TODO: Add appropriate error code
+	err_code = -100;
+	goto error;
+      }
+      for (i = 0; i < report_config.nr_cc; i++) {
+	//TODO: Must fill in the proper cell ids
+	report_config.cc_report_type[i].cc_id = i;
+	report_config.cc_report_type[i].cc_report_flags = c_flags;
+      }
+    }
+    break;
+  case PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST:;
+    Protocol__PrpCellStatsRequest *cell_req = stats_req->cell_stats_request;
+    // UE report config will be blank
+    report_config.nr_ue = 0;
+    report_config.ue_report_type = NULL;
+    report_config.nr_cc = cell_req->n_cell;
+    report_config.cc_report_type = (cc_report_type_t *) malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
+    if (report_config.cc_report_type == NULL) {
+      // TODO: Add appropriate error code
+      err_code = -100;
+      goto error;
+    }
+    for (i = 0; i < report_config.nr_cc; i++) {
+	//TODO: Must fill in the proper cell ids
+      report_config.cc_report_type[i].cc_id = cell_req->cell[i];
+      report_config.cc_report_type[i].cc_report_flags = cell_req->flags;
+    }
+    break;
+  case PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST:;
+    Protocol__PrpUeStatsRequest *ue_req = stats_req->ue_stats_request;
+    // Cell report config will be blank
+    report_config.nr_cc = 0;
+    report_config.cc_report_type = NULL;
+    report_config.nr_ue = ue_req->n_rnti;
+    report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
+    if (report_config.ue_report_type == NULL) {
+      // TODO: Add appropriate error code
+      err_code = -100;
+      goto error;
+    }
+    for (i = 0; i < report_config.nr_ue; i++) {
+      report_config.ue_report_type[i].ue_rnti = ue_req->rnti[i];
+      report_config.ue_report_type[i].ue_report_flags = ue_req->flags;
+    }
+    break;
+  default:
+    //TODO: Add appropriate error code
+    err_code = -100;
+    goto error;
+  }
 
   if (enb_agent_mac_stats_reply(xid, &report_config, msg) < 0 ){
     err_code = PROTOCOL__PROGRAN_ERR__MSG_BUILD;
     goto error;
   }
+
+  free(report_config.ue_report_type);
+  free(report_config.cc_report_type);
 
   return 0;
 

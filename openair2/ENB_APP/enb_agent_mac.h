@@ -68,7 +68,7 @@ typedef struct {
 } report_config_t;
 
 
-int enb_agent_mac_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
 
 int enb_agent_mac_stats_reply(uint32_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
 
