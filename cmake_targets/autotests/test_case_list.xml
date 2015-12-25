@@ -8,7 +8,7 @@
  <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
  <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests* iperf</CleanUpOldProgs>	
  <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
-<ExmimoRfStop>cd $OPENAIR_DIR/cmake_targets/autotests/tools/exmimo; sudo -E -S octave ./exmimo_stop.m</ExmimoRfStop>
+<ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>0104+ 015502 015505  015506 015507 015508 015508 015509 015510 015511 015600 015700 016102 016105</TestCaseExclusionList>
  <MachineListGeneric>calisson stevens mozart nano amerique</MachineListGeneric>
@@ -1012,7 +1012,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=2.0Mbits/sec max=2.0Mbits/sec average=2.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
@@ -1095,7 +1095,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=4.0Mbits/sec average=4.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
@@ -2001,7 +2001,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=2.0Mbits/sec max=2.0Mbits/sec average=2.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
@@ -2079,7 +2079,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=4.0Mbits/sec average=4.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
@@ -2470,7 +2470,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=2.0Mbits/sec max=2.0Mbits/sec average=2.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
@@ -2548,7 +2548,7 @@
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
-    <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=4.0Mbits/sec average=4.0Mbits/sec duration=300.0s </EPC_search_expr_true>
+    <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>

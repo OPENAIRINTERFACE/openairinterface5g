@@ -94,7 +94,7 @@ static inline void cmacc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
   cmac_tmp    = _mm_sign_epi16(b,*(__m128i*)reflip);
   //  cmac_tmp    = _mm_shufflelo_epi16(b,_MM_SHUFFLE(2,3,0,1));
   //  cmac_tmp    = _mm_shufflehi_epi16(cmac_tmp,_MM_SHUFFLE(2,3,0,1));
-  cmac_tmp = _mm_shuffle_epi8(b,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
+  cmac_tmp = _mm_shuffle_epi8(cmac_tmp,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
   cmac_tmp_im32  = _mm_madd_epi16(cmac_tmp,a);
 
   *re32 = _mm_add_epi32(*re32,cmac_tmp_re32);
