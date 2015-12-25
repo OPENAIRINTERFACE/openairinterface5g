@@ -38,7 +38,7 @@ xUnit_fail() {
 }
 
 ## Call this after the testcase finished successfully.
-# \sa xUnit_fail()
+# \sa xUnit_success()
 # \pre xUnit_start() must have been called before
 # \param $1 classname
 # \param $2 testcase name

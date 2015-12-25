@@ -58,23 +58,11 @@
 
 extern unsigned short dftsizes[33];
 extern short *ul_ref_sigs[30][2][33];
-//#define AWGN
-//#define NO_DCI
 
-#define BW 7.68
-//#define ABSTRACTION
-//#define PERFECT_CE
-
-/*
-  #define RBmask0 0x00fc00fc
-  #define RBmask1 0x0
-  #define RBmask2 0x0
-  #define RBmask3 0x0
-*/
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
 
-#define MCS_COUNT 23//added for PHY abstraction
+//#define MCS_COUNT 23//added for PHY abstraction
 
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
@@ -155,11 +143,6 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
 
 
-#define UL_RB_ALLOC 0x1ff;
-
-
-
-
 int main(int argc, char **argv)
 {
 
@@ -171,8 +154,6 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=10,SNR,SNR2,snr0=-2.0,snr1,SNRmeas,rate,saving_bler;
   double input_snr_step=.2,snr_int=30;
   double blerr;
-
-  //int **txdataF, **txdata;
 
   int **txdata;
 
@@ -214,6 +195,7 @@ int main(int argc, char **argv)
   //  FILE *rx_frame_file;
   FILE *csv_fdUL=NULL;
 
+  /*
   FILE *fperen=NULL;
   char fperen_name[512];
 
@@ -222,6 +204,7 @@ int main(int argc, char **argv)
 
   FILE *flogeren=NULL;
   char flogeren_name[512];
+  */
 
   /* FILE *ftxlev;
      char ftxlev_name[512];
@@ -598,6 +581,7 @@ int main(int argc, char **argv)
     time_meas_fd = fopen(time_meas_fname,"w");
   }
 
+  /*
   if(abstx) {
     sprintf(fperen_name,"ULchan_estims_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
     fperen = fopen(fperen_name,"a+");
@@ -614,6 +598,7 @@ int main(int argc, char **argv)
     fprintf(flogeren,"mag_f = [");
     fclose(flogeren);
   }
+  */
 
   /*
     sprintf(ftxlev_name,"txlevel_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
@@ -626,6 +611,10 @@ int main(int argc, char **argv)
     // CSV file
     sprintf(csv_fname,"EULdataout_tx%d_mcs%d_nbrb%d_chan%d_nsimus%d_eren.m",transmission_mode,mcs,nb_rb,chMod,n_frames);
     csv_fdUL = fopen(csv_fname,"w");
+    if (csv_fdUL == NULL) {
+      fprintf(stderr,"Problem opening file %s\n",csv_fname);
+      exit(-1);
+    }
     fprintf(csv_fdUL,"data_all%d=[",mcs);
   }
 
@@ -680,7 +669,8 @@ int main(int argc, char **argv)
   UE2eNB = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
-                                BW,
+				N_RB2sampling_rate(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
+				N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_UL),
                                 forgetting_factor,
                                 delay,
                                 0);
@@ -1270,11 +1260,13 @@ int main(int argc, char **argv)
 
           PHY_vars_eNB->ulsch_eNB[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
 
+	  /*
           if(abstx) {
             namepointer_log2 = &flogeren_name;
             namepointer_chMag = &fmageren_name;
             //namepointer_txlev = &ftxlev;
           }
+	  */
 
           start_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
           rx_ulsch(PHY_vars_eNB,
@@ -1285,6 +1277,7 @@ int main(int argc, char **argv)
                    cooperation_flag);
           stop_meas(&PHY_vars_eNB->ulsch_demodulation_stats);
 
+	  /*
           if(abstx) {
             namepointer_chMag = NULL;
 
@@ -1296,8 +1289,7 @@ int main(int argc, char **argv)
               // flagMag = 1;
             }
           }
-
-          ///////
+	  */
 
           start_meas(&PHY_vars_eNB->ulsch_decoding_stats);
           ret= ulsch_decoding(PHY_vars_eNB,
@@ -1816,6 +1808,7 @@ int main(int argc, char **argv)
 
   }//ch realization
 
+  /*
   if(abstx) {
     fperen = fopen(fperen_name,"a+");
     fprintf(fperen,"];\n");
@@ -1829,6 +1822,7 @@ int main(int argc, char **argv)
     fprintf(flogeren,"];\n");
     fclose(flogeren);
   }
+  */
 
   // ftxlev = fopen(ftxlev_name,"a+");
   //fprintf(ftxlev,"];\n");
