@@ -950,7 +950,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
         ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
 #ifdef EXMIMO
           ((short*)dummy_tx_b)[2*i]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	((short*)dummy_tx_b)[2*i];
 #else
           ((short*)dummy_tx_b)[2*i]<<4;
@@ -958,7 +958,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	  ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
 #ifdef EXMIMO
 	    ((short*)dummy_tx_b)[2*i+1]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	  ((short*)dummy_tx_b)[2*i+1];
 #else
 	  ((short*)dummy_tx_b)[2*i+1]<<4;
@@ -2935,11 +2935,9 @@ int main( int argc, char **argv )
       openair0_cfg[card].remote_ip   = &rrh_eNB_ip[0];
       openair0_cfg[card].remote_port = rrh_eNB_port;
     }
-openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
 #endif
-    openair0_cfg[card].sample_rate = sample_rate;
-    openair0_cfg[card].tx_bw = bw;
-    openair0_cfg[card].rx_bw = bw;
+
     // in the case of the USRP, the following variables need to be initialized before the init
     // since the USRP only supports one CC (for the moment), we initialize all the cards with first CC.
     // in the case of EXMIMO2, these values are overwirtten in the function setup_eNB/UE_buffer

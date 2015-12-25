@@ -208,7 +208,8 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
-  // init required params for BRF
+  // init required params for [97448.145250] lte-softmodem-n[20648]: segfault at 0 ip           (null) sp 00007fff220167b8 error 14 in lte-softmodem-nos1[400000+3bc000]
+
   //  The number of buffers to use in the underlying data stream
   brf->num_buffers   = 128;
   // the size of the underlying stream buffers, in samples
@@ -254,11 +255,11 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     printf("[BRF] set RX sample rate to %u, %u\n", (unsigned int) openair0_cfg[card].sample_rate, actual_value);
  
 
-  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_bw, &actual_value)) != 0){
+  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg[card].rx_bw*2, &actual_value)) != 0){
     fprintf(stderr,"Failed to set RX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set RX bandwidth to %u, %u\n",(unsigned int)openair0_cfg[card].rx_bw, actual_value);
+    printf("[BRF] set RX bandwidth to %u, %u\n",(unsigned int)openair0_cfg[card].rx_bw*2, actual_value);
  
   if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_RX, (int) openair0_cfg[card].rx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set RX gain: %s\n",bladerf_strerror(status));
@@ -280,11 +281,11 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   }else 
     printf("[BRF] set TX sampling rate to %u \n", (unsigned int) openair0_cfg[card].sample_rate);
 
-  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_TX,(unsigned int)openair0_cfg[card].tx_bw, NULL)) != 0){
+  if ((status=bladerf_set_bandwidth(brf->dev, BLADERF_MODULE_TX,(unsigned int)openair0_cfg[card].tx_bw*2, NULL)) != 0){
     fprintf(stderr, "Failed to set TX bandwidth: %s\n", bladerf_strerror(status));
     brf_error(status);
   }else 
-    printf("[BRF] set TX bandwidth to %u \n", (unsigned int) openair0_cfg[card].tx_bw);
+    printf("[BRF] set TX bandwidth to %u \n", (unsigned int) openair0_cfg[card].tx_bw*2);
 
   if ((status=bladerf_set_gain(brf->dev, BLADERF_MODULE_TX, (int) openair0_cfg[card].tx_gain[0])) != 0) {
     fprintf(stderr,"Failed to set TX gain: %s\n",bladerf_strerror(status));
