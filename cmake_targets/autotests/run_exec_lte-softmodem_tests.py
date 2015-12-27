@@ -693,7 +693,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
 
     task_EPC_compile = ' ( uname -a ; date \n'
     task_EPC_compile = task_EPC_compile + 'array_exec_pid=()' + '\n'
-    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + '\n'
+    task_EPC_compile = task_EPC_compile + 'cd ' + logdirOpenaircnRepo + ' ; source oaienv \n'
     task_EPC_compile = task_EPC_compile + update_config_file(oai_EPC, EPC_config_file, logdirOpenaircnRepo, logdirOpenaircnRepo+'/TEST/autotests/tools/search_repl.py') + '\n'
     task_EPC_compile = task_EPC_compile +  'source BUILD/TOOLS/build_helper \n'
     if EPC_compile_prog != "":
@@ -705,7 +705,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     
     task_EPC = ' ( uname -a ; date \n'
     task_EPC = task_EPC + 'array_exec_pid=()' + '\n'
-    task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '\n'
+    task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '; source oaienv\n'
     task_EPC = task_EPC +  'source BUILD/TOOLS/build_helper \n'
     if EPC_pre_exec != "":
        task_EPC  = task_EPC +  ' ( date; ' + EPC_pre_exec + ' '+ EPC_pre_exec_args + ' ) > ' + logfile_pre_exec_EPC + ' 2>&1 \n'
