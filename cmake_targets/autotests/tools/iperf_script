@@ -10,7 +10,7 @@ iface=${args[1]}
 iperf_args=(${args[@]:2})
 
 #array=${1:-1}
-echo "args =  $array"
+echo "args =  ${args[@]}"
 echo "timeout = $timeout"
 echo "iface = $iface"
 echo "iperf_args = ${iperf_args[@]}"
