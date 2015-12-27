@@ -1,14 +1,14 @@
  <testCaseList>
 
-<MachineList>stevens calisson mozart nano amerique</MachineList>
+<MachineList>calisson mozart stevens nano amerique</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>develop</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>feature-17-test_framework</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests* iperf</CleanUpOldProgs>	
+ <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* iperf* hss hss_sim configure_cots_bandrich_ue* wvdial* run_exec_autotests* iperf iperf_client iperf_server</CleanUpOldProgs>	
  <CleanUpAluLteBox>/opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
-<ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2</ExmimoRfStop>
+<ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>0104+ 015502 015505  015506 015507 015508 015508 015509 015510 015511 015600 015700 016102 016105</TestCaseExclusionList>
  <MachineListGeneric>calisson stevens mozart nano amerique</MachineListGeneric>
@@ -858,7 +858,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -902,7 +902,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -942,7 +942,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -986,7 +986,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1025,7 +1025,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1069,7 +1069,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1108,7 +1108,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1176,7 +1176,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1190,7 +1190,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1259,7 +1259,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1273,7 +1273,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1342,7 +1342,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1357,7 +1357,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1401,7 +1401,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1441,7 +1441,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1485,7 +1485,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1524,7 +1524,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1568,7 +1568,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1607,7 +1607,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1676,7 +1676,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1690,7 +1690,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1759,7 +1759,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1773,7 +1773,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
@@ -1842,7 +1842,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1857,7 +1857,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  mobile_country_code \"208\"
@@ -1896,7 +1896,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1936,7 +1936,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310..conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  mobile_country_code \"208\"
@@ -1975,7 +1975,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2014,7 +2014,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  mobile_country_code \"208\"
@@ -2053,7 +2053,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2092,7 +2092,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  mobile_country_code \"208\"
@@ -2155,7 +2155,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2169,7 +2169,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  mobile_country_code \"208\"
@@ -2232,7 +2232,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2246,7 +2246,7 @@
     <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.epc.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.epc.conf  mobile_country_code \"208\"
@@ -2309,7 +2309,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2326,7 +2326,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2365,7 +2365,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2405,7 +2405,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2444,7 +2444,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2483,7 +2483,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2522,7 +2522,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 300 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2561,7 +2561,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2624,7 +2624,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2638,7 +2638,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2701,7 +2701,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2715,7 +2715,7 @@
     <eNB>calisson</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
-    <TimeOut_cmd>360</TimeOut_cmd>
+    <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  mobile_country_code \"208\"
@@ -2778,7 +2778,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 300 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>

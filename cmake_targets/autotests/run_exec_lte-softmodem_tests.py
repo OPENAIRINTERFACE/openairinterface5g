@@ -1,4 +1,4 @@
-w#! /usr/bin/python
+#! /usr/bin/python
 #******************************************************************************
 
 #    OpenAirInterface 
@@ -285,7 +285,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   result = oai.send_expect_false(cmd, 'Match found', False)
   print result
   res=oai.send_recv(CleanUpAluLteBox, True)
-  res = oai.send_recv(ExmimoRfStop, True)
+  res = oai.send_recv(ExmimoRfStop, False)
 
 class myThread (threading.Thread):
     def __init__(self, threadID, name, counter):
@@ -548,9 +548,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   oai_EPC.connect(user, password)
   res = oai_eNB.send_recv(cmd)
 
-  cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-  cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-  cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+  #cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+  #cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+  #cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
   logdir_eNB = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
   logdir_UE =  logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
   logdir_EPC = logdirOpenaircnRepo+'/TEST/autotests/log/'+ testcasename
@@ -616,13 +616,13 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_eNB = task_eNB + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
 
     if eNB_pre_exec != "":
-       task_eNB  = task_eNB +  ' ( ' + eNB_pre_exec + ' '+ eNB_pre_exec_args + ' ) > ' + logfile_pre_exec_eNB + ' 2>&1 \n'
+       task_eNB  = task_eNB +  ' ( date; ' + eNB_pre_exec + ' '+ eNB_pre_exec_args + ' ) > ' + logfile_pre_exec_eNB + ' 2>&1 \n'
     if eNB_main_exec != "":
-       task_eNB = task_eNB + ' ( ' + addsudo(eNB_main_exec + ' ' + eNB_main_exec_args, mypassword) + ' ) > ' + logfile_exec_eNB + ' 2>&1 & \n'
+       task_eNB = task_eNB + ' ( date; ' + addsudo(eNB_main_exec + ' ' + eNB_main_exec_args, mypassword) + ' ) > ' + logfile_exec_eNB + ' 2>&1 & \n'
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_main_exec PID = $! \n'
     if eNB_traffic_exec != "":
-       task_eNB = task_eNB + ' ( ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n '
+       task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n '
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
@@ -662,13 +662,13 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_UE = task_UE + 'source cmake_targets/tools/build_helper \n'
     task_UE = task_UE + 'env |grep OPENAIR  \n'
     if UE_pre_exec != "":
-       task_UE  = task_UE +  ' ( ' + UE_pre_exec + ' '+ UE_pre_exec_args + ' ) > ' + logfile_pre_exec_UE + ' 2>&1 \n'
+       task_UE  = task_UE +  ' ( date; ' + UE_pre_exec + ' '+ UE_pre_exec_args + ' ) > ' + logfile_pre_exec_UE + ' 2>&1 \n'
     if UE_main_exec != "":
-       task_UE = task_UE + ' ( ' + addsudo(UE_main_exec + ' ' + UE_main_exec_args, mypassword)  + ' ) > ' + logfile_exec_UE + ' 2>&1 & \n'
+       task_UE = task_UE + ' ( date;  ' + addsudo(UE_main_exec + ' ' + UE_main_exec_args, mypassword)  + ' ) > ' + logfile_exec_UE + ' 2>&1 & \n'
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_main_exec PID = $! \n'
     if UE_traffic_exec != "":
-       task_UE = task_UE + ' ( ' + UE_traffic_exec + ' ' + UE_traffic_exec_args + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
+       task_UE = task_UE + ' ( date;  ' + UE_traffic_exec + ' ' + UE_traffic_exec_args + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_traffic_exec PID = $! \n'
     #terminate the UE test case after timeout_cmd seconds
@@ -708,17 +708,17 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '\n'
     task_EPC = task_EPC +  'source BUILD/TOOLS/build_helper \n'
     if EPC_pre_exec != "":
-       task_EPC  = task_EPC +  ' ( ' + EPC_pre_exec + ' '+ EPC_pre_exec_args + ' ) > ' + logfile_pre_exec_EPC + ' 2>&1 \n'
+       task_EPC  = task_EPC +  ' ( date; ' + EPC_pre_exec + ' '+ EPC_pre_exec_args + ' ) > ' + logfile_pre_exec_EPC + ' 2>&1 \n'
     if HSS_main_exec !=  "":
-       task_EPC  = task_EPC + '(' + addsudo (HSS_main_exec + ' ' + HSS_main_exec_args, mypassword) + ' ) > ' + logfile_exec_HSS  +  ' 2>&1   & \n'
+       task_EPC  = task_EPC + '( date; ' + addsudo (HSS_main_exec + ' ' + HSS_main_exec_args, mypassword) + ' ) > ' + logfile_exec_HSS  +  ' 2>&1   & \n'
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
        task_EPC = task_EPC + 'echo HSS_main_exec PID = $! \n'
     if EPC_main_exec !=  "":
-       task_EPC  = task_EPC + '(' + addsudo (EPC_main_exec + ' ' + EPC_main_exec_args, mypassword) + ' ) > ' + logfile_exec_EPC  +  ' 2>&1   & \n'
+       task_EPC  = task_EPC + '( date; ' + addsudo (EPC_main_exec + ' ' + EPC_main_exec_args, mypassword) + ' ) > ' + logfile_exec_EPC  +  ' 2>&1   & \n'
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
        task_EPC = task_EPC + 'echo EPC_main_exec PID = $! \n'
     if EPC_traffic_exec !=  "":
-       task_EPC  = task_EPC + '(' + EPC_traffic_exec + ' ' + EPC_traffic_exec_args + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
+       task_EPC  = task_EPC + '( date; ' + EPC_traffic_exec + ' ' + EPC_traffic_exec_args + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'  
        task_EPC = task_EPC + 'echo EPC_traffic_exec PID = $! \n'
     #terminate the EPC test case after timeout_cmd seconds   
@@ -882,6 +882,7 @@ dlsim=0
 localshell=0
 is_compiled = 0
 timeout=2000
+GitOAI5GRepoBranch=''
 xmlInputFile="./test_case_list.xml"
 NFSResultsDir = '/mnt/sradio'
 cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
@@ -928,6 +929,9 @@ while i < len (sys.argv):
         i = i +1   
     elif arg == '-c':
         cleanUpRemoteMachines=True
+    elif arg == '-5GRepoBranch':
+        GitOAI5GRepoBranch = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -938,6 +942,7 @@ while i < len (sys.argv):
         print "-w:  set the password for ssh to localhost"
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
+        print "-5GRepoBranch:  Branch for OAI 5G Repository to run tests (overrides the branch in test_case_list.xml)"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -995,7 +1000,10 @@ MachineList = xmlRoot.findtext('MachineList',default='')
 NFSResultsShare = xmlRoot.findtext('NFSResultsShare',default='')
 GitOpenaircnRepo = xmlRoot.findtext('GitOpenair-cnRepo',default='')
 GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
-GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
+
+if GitOAI5GRepoBranch == '':
+   GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
+
 GitOpenaircnRepoBranch = xmlRoot.findtext('GitOpenair-cnRepoBranch',default='')
 CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
 CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
@@ -1011,9 +1019,14 @@ print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
 print "NFSResultsShare = " + NFSResultsShare
 cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
 GitOAI5GHeadVersion = subprocess.check_output ([cmd], shell=True)
+GitOAI5GHeadVersion=GitOAI5GHeadVersion.replace("\n","")
 print "GitOAI5GHeadVersion = " + GitOAI5GHeadVersion
 print "CleanUpOldProgs = " + CleanUpOldProgs
 print "Timeout_execution = " + str(Timeout_execution)
+
+if GitOAI5GHeadVersion == '':
+  print "Error getting the OAI5GBranch Head version...Exiting"
+  sys.exit()
 
 MachineList = MachineList.split()
 MachineListGeneric = MachineListGeneric.split()
@@ -1123,7 +1136,7 @@ for index in oai_list:
       #print oai_list[oai].send_recv('sudo su')
       #print oai_list[oai].send_recv('who am i') 
       #cleanUpPrograms(oai_list[oai]
-      cmd =  'mkdir -p ' + logdir + ' ; rm -fr ' + logdir + '/*'
+      cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
       result = oai_list[index].send_recv(cmd)
      
       setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
@@ -1133,28 +1146,30 @@ for index in oai_list:
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
       cmd = cmd + 'git config --global http.sslVerify false \n' 
-      cmd = cmd + 'git clone '+ GitOAI5GRepo  + '\n'
-      cmd = cmd + 'git clone '+ GitOpenaircnRepo   + '\n'
+      cmd = cmd + 'git clone --depth 1 '+ GitOAI5GRepo  + ' -b ' + GitOAI5GRepoBranch +' \n'
+      cmd = cmd + 'git clone '+ GitOpenaircnRepo + ' -b ' +GitOpenaircnRepoBranch +  ' \n'
       cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
       cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'                      
-      cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
-      cmd = cmd + 'git_head = `git ls-remote |grep \"' + GitOAI5GRepoBranch + '\"'
-      cmd = cmd + 'git_head = ($git_head)'
-      cmd = cmd + 'git_head = ${git_head[0]}'
-      cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi '
+      #cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
+      cmd = cmd + 'git_head=`git ls-remote |grep \'' + GitOAI5GRepoBranch + '\'` \n'
+      cmd = cmd + 'git_head=($git_head) \n'
+      cmd = cmd + 'git_head=${git_head[0]} \n'
+      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
+      cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
+      cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
       cmd = cmd + 'source oaienv'   + '\n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
       cmd = cmd +  'env |grep OPENAIR'  + '\n'
       cmd = cmd + ' cd ' + logdir   + '\n'
-      cmd = cmd + ' ) > ' +  setuplogfile + ' 2>&1   '
+      cmd = cmd + ' ) > ' +  setuplogfile + ' 2>&1 \n'
       #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
       #result = oai_list[index].send_recv(cmd, False, 300 )
       write_file(setup_script, cmd, mode="w")
       tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 300)
       threads_init_setup.append(tempThread )
       tempThread.start()
-
+      
       #localfile = locallogdir + '/setup_log_' + MachineList[index] + '_.txt'
       #remotefile = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
 
@@ -1215,8 +1230,10 @@ for t in threads_init_setup:
    paramList.append ( {"operation":'put', "localfile":localfile, "remotefile":remotefile} )
    sftp_log = os.path.expandvars(locallogdir + '/sftp_module.log')
    sftp_module (user, pw, MachineList[index], port, paramList, sftp_log)
-   index = index+1
-   
+
+   cmd =  '  cd ' + logdirOAI5GRepo + ' ; source oaienv ; env|grep OPENAIR \n'
+   res = oai_list[index].send_recv(cmd)
+   index  = index +1
    if os.path.exists(localfile) == 0:
       print "Setup log file <" + localfile + "> missing for machine <" + MachineList[index] + ">.  Please check the setup log files. Exiting now"
       sys.exit(1)
@@ -1224,14 +1241,14 @@ for t in threads_init_setup:
 #Now we process all the test cases
 #Now we check if there was error in setup files
 
-status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup*')
+status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdir + '/setup_log*')
 if (out != '') :
   print "There is error in setup of machines"
   print "status  = " + str(status) + "\n Check files for error = " + out
   print sys.exit(1)
 
 if cleanUpRemoteMachines == True:
-  cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+  cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
   sys.exit(0)
 
 threadListGlobal=[]
@@ -1244,7 +1261,7 @@ for testcase in testcaseList:
     desc = testcase.findtext('desc',default='')
     #print "Machine list top level = " + ','.join(MachineList)
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
-      cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+      cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
       if testcaseclass == 'lte-softmodem' :
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
