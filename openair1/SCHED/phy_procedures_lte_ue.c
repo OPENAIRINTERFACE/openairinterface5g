@@ -1553,7 +1553,9 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 
 #else
 #ifndef OAI_USRP
+  #ifndef OAI_BLADERF
     phy_adjust_gain (phy_vars_ue,0);
+  #endif
 #endif
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
