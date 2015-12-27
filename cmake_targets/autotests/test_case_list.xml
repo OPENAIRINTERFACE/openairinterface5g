@@ -902,7 +902,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -926,7 +926,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -986,7 +986,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1010,7 +1010,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1069,7 +1069,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1093,7 +1093,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1152,7 +1152,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -1176,7 +1176,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1234,7 +1234,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1259,7 +1259,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1317,7 +1317,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1342,7 +1342,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1401,7 +1401,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1425,7 +1425,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1485,7 +1485,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1509,7 +1509,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=2.0Mbits/sec max=2.0Mbits/sec average=2.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1568,7 +1568,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1592,7 +1592,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script  5 lo  -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=4.0Mbits/sec average=4.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1651,7 +1651,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1676,7 +1676,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1734,7 +1734,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1759,7 +1759,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script  60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1817,7 +1817,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1842,7 +1842,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -1896,7 +1896,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1920,7 +1920,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1975,7 +1975,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1999,7 +1999,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2053,7 +2053,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0  -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2077,7 +2077,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script  5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2131,7 +2131,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2155,7 +2155,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2208,7 +2208,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2232,7 +2232,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2285,7 +2285,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2309,7 +2309,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2365,7 +2365,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2389,7 +2389,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2444,7 +2444,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2468,7 +2468,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2522,7 +2522,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;  iperf -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -u -c  192.172.0.1 -b 10Mbits/s -t 330 -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -2546,7 +2546,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 5; iperf -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2600,7 +2600,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2624,7 +2624,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2677,7 +2677,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2701,7 +2701,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
@@ -2754,7 +2754,7 @@
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
     <UE_main_exec_args></UE_main_exec_args>
-    <UE_traffic_exec>while true; do var=`ifconfig ppp0` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5;   iperf -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
@@ -2778,7 +2778,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>sleep 60; iperf -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
