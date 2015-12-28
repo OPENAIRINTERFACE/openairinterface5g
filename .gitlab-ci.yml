@@ -4,3 +4,5 @@ job1:
    - echo $USER
    - echo $OAI_USER
    - git rev-parse --abbrev-ref HEAD
+   - git symbolic-ref HEAD
+   - git branch 
