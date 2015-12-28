@@ -1,2 +1,2 @@
 job1:
-  script: "echo $PWD"
+  script: "echo $PWD; echo $USER"
