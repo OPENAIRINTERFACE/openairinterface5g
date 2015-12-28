@@ -6,3 +6,4 @@ job1:
    - git rev-parse --abbrev-ref HEAD
    - git rev-parse HEAD
    - git branch 
+   - git show-ref --head
