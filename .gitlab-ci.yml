@@ -1,2 +1,6 @@
 job1:
-  script: "echo $PWD; echo $USER ; echo $OAI_USER"
+  script:
+   - echo $PWD
+   - echo $USER
+   - echo $OAI_USER
+   - git rev-parse --abbrev-ref HEAD
