@@ -111,8 +111,8 @@ class openair(core):
             error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
             error = error + traceback.format_exc()
             print error
-            print "Retrying again in 60 seconds"
-            time.sleep(60)
+            print "Retrying again in 1  seconds"
+            time.sleep(1)
             #sys.exit(1)
                 
     def connect2(self, username, password, prompt='$'):

@@ -240,8 +240,9 @@ class core:
     #    print rsp
         if  (rsp.find(expect) == -1):
             return 'OK'
-
-        raise log.err(self.failed(command, expect,debug))
+        else:
+            print "command = " + cmd + "expect  = " + expect + "rsp = " + rsp
+            raise log.err(self.failed(command, expect,debug))
 
     
     # **************************send_wait*************************    
