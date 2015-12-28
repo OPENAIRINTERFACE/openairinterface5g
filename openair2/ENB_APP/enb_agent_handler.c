@@ -50,6 +50,15 @@ enb_agent_message_decoded_callback messages_callback[][3] = {
 
 };
 
+enb_agent_message_destruction_callback message_destruction_callback[] = {
+  enb_agent_destroy_hello,
+  enb_agent_destroy_echo_request,
+  enb_agent_destroy_echo_reply,
+  0, /*No stats request message is created in the agent. No need for a callback*/
+  enb_agent_mac_destroy_stats_reply,
+  
+};
+
 static const char *enb_agent_direction2String[] = {
   "", /* not_set  */
   "originating message", /* originating message */
@@ -114,7 +123,7 @@ void * enb_agent_send_message(uint32_t xid,
   
   // free the msg --> later keep this in the data struct and just update the values
   //TODO call proper destroy function
-  //  enb_agent_mac_destroy_stats_reply(msg);
+  err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
   
   DevAssert(buffer !=NULL);
 
