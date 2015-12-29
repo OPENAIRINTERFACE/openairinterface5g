@@ -927,6 +927,7 @@ GitOAI5GHeadVersion=''
 user=''
 pw=''
 NFSResultsShare=''
+cleanUpRemoteMachines=False
 openairdir_local = os.environ.get('OPENAIR_DIR')
 if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
@@ -1039,7 +1040,6 @@ xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_l
 NFSResultsDir = '/mnt/sradio'
 cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
 testcasegroup=''
-cleanUpRemoteMachines=False
 logdir = '/tmp/' + 'OAITestFrameWork-' + user + '/'
 logdirOAI5GRepo = logdir + 'openairinterface5g/'
 logdirOpenaircnRepo = logdir + 'openair-cn/'
