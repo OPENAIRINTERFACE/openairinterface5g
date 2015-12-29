@@ -905,7 +905,7 @@ def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, Exmim
    threadList=[]
    for oai in oai_list:
       threadName="cleanup_thread_"+str(threadId)
-      thread=append(oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop))
+      thread=oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
       threadList.append(thread)
       thread.start()
       threadId = threadId + 1
@@ -926,6 +926,7 @@ GitOAI5GRepoBranch=''
 GitOAI5GHeadVersion=''
 user=''
 pw=''
+NFSResultsShare=''
 openairdir_local = os.environ.get('OPENAIR_DIR')
 if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
@@ -979,6 +980,9 @@ while i < len (sys.argv):
     elif arg == '-p': 
         pw = sys.argv[i+1]
         i = i +1
+    elif arg == '-n': 
+        NFSResultsShare = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -992,6 +996,7 @@ while i < len (sys.argv):
         print "-5GRepoHeadVersion:  Head commit on which to run tests (overrides the branch in test_case_list.xml)"
         print "-u:  use the user name passed as argument"
         print "-p:  use the password passed as an argument"
+        print "-n:  Set the NFS share passed as an argument"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1016,9 +1021,7 @@ except KeyError:
    print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
    sys.exit(1)
 
-paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
-res=os.system(' echo > ' + paramiko_logfile)
-paramiko.util.log_to_file(paramiko_logfile)
+
 
 # get the oai object
 host = os.uname()[1]
@@ -1028,7 +1031,7 @@ oai_list = []
 #start_time = time.time()  # datetime.datetime.now()
 if user=='':
   user = getpass.getuser()
-if password=='':
+if pw=='':
   pw = getpass.getpass()
 print "host = " + host 
 print "user = " + user
@@ -1044,6 +1047,10 @@ logdirOpenaircnRepo = logdir + 'openair-cn/'
 if flag_remove_logdir == True:
    print "Removing directory: " + locallogdir
    os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+
+paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
+res=os.system(' echo > ' + paramiko_logfile)
+paramiko.util.log_to_file(paramiko_logfile)
 
 #pw=getpass.getpass()
 
@@ -1092,7 +1099,7 @@ if GitOAI5GHeadVersion == '':
 
 NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion + '/'
 
-print "NFSResultsShareDir = " + NFSResultsShareDir
+print "NFSTestsResultsDir = " + NFSTestsResultsDir
 
 MachineList = MachineList.split()
 MachineListGeneric = MachineListGeneric.split()
@@ -1193,7 +1200,7 @@ print "cpu freq(MHz): " + str(cpu_freq) + "timeout(s): " + str(timeout)
 #print result
 
 #We now prepare the machines for testing
-#index=0
+index=0
 threads_init_setup=[]
 for oai in oai_list:
   try:
@@ -1203,7 +1210,7 @@ for oai in oai_list:
       #print oai_list[oai].send_recv('who am i') 
       #cleanUpPrograms(oai_list[oai]
       cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
-      result = oai[index].send_recv(cmd)
+      result = oai.send_recv(cmd)
      
       setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
       setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
@@ -1267,6 +1274,7 @@ for oai in oai_list:
 
       #print '\nCleaning Older running programs : ' + CleanUpOldProgs
       #cleanOldPrograms(oai_list[index], CleanUpOldProgs)
+      index = index + 1
   except Exception, e:
          print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
          error=''
@@ -1377,7 +1385,7 @@ print "Deleting NFSTestResults Dir..." + res
 print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
 #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-SSHSessionWrapper(UEMachine, user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
+SSHSessionWrapper('localhost', user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
 
