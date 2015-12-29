@@ -14,3 +14,12 @@ job1:
    - echo $git_branch
    - source oaienv
    - echo $OPENAIR_DIR
+   - NFS_TEST_RESULTS_DIR=$NFS_SHARE_DIR/$git_branch/$git_head
+   - EXTERNAL_SHARE_RESULTS_DIR=$EXTERNAL_SHARE_DIR/$git_branch/$git_head
+   - echo $NFS_TEST_RESULTS_DIR
+   - echo $EXTERNAL_SHARE_RESULTS_DIR
+   - sshpass -p "$OAI_PASS" rsync $OPENAIR_DIR/cmake_targets/autotests/log/ $OAI_USER@localhost:$NFS_TEST_RESULTS_DIR
+   - sshpass -p "$OAI_PASS" rsync $OPENAIR_DIR/cmake_targets/autotests/log/ $OAI_USER@localhost:$EXTERNAL_SHARE_DIR
+   #$OPENAIR_DIR/cmake_targets/autotests/run_exec_lte-softmodem_tests.py -r $OAI_EXTRA_ARGS >& $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log
+   #mv $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest.log
+
