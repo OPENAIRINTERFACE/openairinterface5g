@@ -905,7 +905,7 @@ def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, Exmim
    threadList=[]
    for oai in oai_list:
       threadName="cleanup_thread_"+str(threadId)
-      thread=append(oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop))
+      thread=oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
       threadList.append(thread)
       thread.start()
       threadId = threadId + 1
@@ -926,6 +926,7 @@ GitOAI5GRepoBranch=''
 GitOAI5GHeadVersion=''
 user=''
 pw=''
+NFSResultsShare=''
 openairdir_local = os.environ.get('OPENAIR_DIR')
 if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
@@ -979,6 +980,9 @@ while i < len (sys.argv):
     elif arg == '-p': 
         pw = sys.argv[i+1]
         i = i +1
+    elif arg == '-n': 
+        NFSResultsShare = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -992,6 +996,7 @@ while i < len (sys.argv):
         print "-5GRepoHeadVersion:  Head commit on which to run tests (overrides the branch in test_case_list.xml)"
         print "-u:  use the user name passed as argument"
         print "-p:  use the password passed as an argument"
+        print "-n:  Set the NFS share passed as an argument"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1380,7 +1385,7 @@ print "Deleting NFSTestResults Dir..." + res
 print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
 #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-SSHSessionWrapper(UEMachine, user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
+SSHSessionWrapper('localhost', user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
 
