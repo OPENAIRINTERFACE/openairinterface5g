@@ -703,24 +703,28 @@ int lte_dl_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
   void (*idft)(int16_t *,int16_t *, int);
 
-  switch (phy_vars_ue->lte_frame_parms.log2_symbol_size) {
-  case 7:
+  switch (phy_vars_ue->lte_frame_parms.ofdm_symbol_size) {
+  case 128:
     idft = idft128;
     break;
 
-  case 8:
+  case 256:
     idft = idft256;
     break;
 
-  case 9:
+  case 512:
     idft = idft512;
     break;
 
-  case 10:
+  case 1024:
     idft = idft1024;
     break;
 
-  case 11:
+  case 1536:
+    idft = idft1536;
+    break;
+
+  case 2048:
     idft = idft2048;
     break;
 
