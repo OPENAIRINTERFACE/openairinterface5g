@@ -892,7 +892,7 @@ class oaiCleanOldProgramThread (threading.Thread):
         self.ExmimoRfStop = ExmimoRfStop
     def run(self):
         try:
-          cleanOldPrograms(oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+          cleanOldPrograms(self.oai, self.CleanUpOldProgs, self.CleanUpAluLteBox, self.ExmimoRfStop)
         except Exception, e:
            error=''
            error = error + ' In class oaiCleanOldProgramThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
