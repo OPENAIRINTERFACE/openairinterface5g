@@ -3,7 +3,22 @@ job1:
    - echo $PWD
    - echo $USER
    - echo $OAI_USER
+   - echo $NFS_SHARE_DIR
+   - echo $EXTERNAL_SHARE_DIR
    - git rev-parse --abbrev-ref HEAD
-   - git rev-parse HEAD
-   - git branch 
-   - git show-ref --head
+   - git_head=`git rev-parse HEAD`
+   - echo $git_head
+   - tmp=`git show-ref --head | grep $git_head`
+   - tmp=(${tmp///// })
+   - git_branch=${tmp[@]:(-1)}
+   - echo $git_branch
+   - source oaienv
+   - env|grep OPENAIR
+   - #$OPENAIR_DIR/cmake_targets/autotests/run_exec_lte-softmodem_tests.py -r $OAI_EXTRA_ARGS >& $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log
+   - mv $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest.log
+   - NFS_TEST_RESULTS_DIR=$NFS_SHARE_DIR/$git_branch/$git_head
+   - EXTERNAL_SHARE_RESULTS_DIR=$EXTERNAL_SHARE_DIR/$git_branch/$git_head
+   - echo $NFS_TEST_RESULTS_DIR
+   - echo $EXTERNAL_SHARE_RESULTS_DIR
+   - sshpass -p "$OAI_PASS" rsync $OPENAIR_DIR/cmake_targets/autotests/log/ $OAI_USER@localhost:$NFS_TEST_RESULTS_DIR
+   - sshpass -p "$OAI_PASS" rsync $OPENAIR_DIR/cmake_targets/autotests/log/ $OAI_USER@localhost:$EXTERNAL_SHARE_DIR
