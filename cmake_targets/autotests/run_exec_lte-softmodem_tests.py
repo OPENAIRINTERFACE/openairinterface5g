@@ -1016,9 +1016,7 @@ except KeyError:
    print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
    sys.exit(1)
 
-paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
-res=os.system(' echo > ' + paramiko_logfile)
-paramiko.util.log_to_file(paramiko_logfile)
+
 
 # get the oai object
 host = os.uname()[1]
@@ -1044,6 +1042,10 @@ logdirOpenaircnRepo = logdir + 'openair-cn/'
 if flag_remove_logdir == True:
    print "Removing directory: " + locallogdir
    os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+
+paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
+res=os.system(' echo > ' + paramiko_logfile)
+paramiko.util.log_to_file(paramiko_logfile)
 
 #pw=getpass.getpass()
 
