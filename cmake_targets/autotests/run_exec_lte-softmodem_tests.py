@@ -1026,7 +1026,7 @@ oai_list = []
 #start_time = time.time()  # datetime.datetime.now()
 if user=='':
   user = getpass.getuser()
-if password=='':
+if pw=='':
   pw = getpass.getpass()
 print "host = " + host 
 print "user = " + user
@@ -1094,7 +1094,7 @@ if GitOAI5GHeadVersion == '':
 
 NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion + '/'
 
-print "NFSResultsShareDir = " + NFSResultsShareDir
+print "NFSTestsResultsDir = " + NFSTestsResultsDir
 
 MachineList = MachineList.split()
 MachineListGeneric = MachineListGeneric.split()
@@ -1195,7 +1195,7 @@ print "cpu freq(MHz): " + str(cpu_freq) + "timeout(s): " + str(timeout)
 #print result
 
 #We now prepare the machines for testing
-#index=0
+index=0
 threads_init_setup=[]
 for oai in oai_list:
   try:
@@ -1205,7 +1205,7 @@ for oai in oai_list:
       #print oai_list[oai].send_recv('who am i') 
       #cleanUpPrograms(oai_list[oai]
       cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
-      result = oai[index].send_recv(cmd)
+      result = oai.send_recv(cmd)
      
       setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
       setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
@@ -1269,6 +1269,7 @@ for oai in oai_list:
 
       #print '\nCleaning Older running programs : ' + CleanUpOldProgs
       #cleanOldPrograms(oai_list[index], CleanUpOldProgs)
+      index = index + 1
   except Exception, e:
          print 'There is error in one of the commands to setup the machine '+ MachineList[index] 
          error=''
