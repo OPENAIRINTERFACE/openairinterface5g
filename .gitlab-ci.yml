@@ -8,4 +8,9 @@ job1:
    - git rev-parse --abbrev-ref HEAD
    - git_head=`git rev-parse HEAD`
    - echo $git_head
-
+   - tmp=`git show-ref --head | grep $git_head`
+   - tmp=(${tmp///// })
+   - git_branch=${tmp[@]:(-1)}
+   - echo $git_branch
+   - source oaienv
+   - echo $OPENAIR_DIR
