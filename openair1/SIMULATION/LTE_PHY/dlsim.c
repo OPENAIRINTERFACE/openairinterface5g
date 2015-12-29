@@ -2483,7 +2483,7 @@ PMI_FEEDBACK:
                 }
               }
             }
-	    /*
+	    
             num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci,
                                                    num_common_dci,
                                                    dci_alloc,
@@ -2492,7 +2492,7 @@ PMI_FEEDBACK:
                                                    &PHY_vars_eNB->lte_frame_parms,
                                                    PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                                                    subframe);
-	    */
+	    
             if (num_pdcch_symbols_2 > num_pdcch_symbols) {
               msg("Error: given num_pdcch_symbols not big enough (%d > %d)\n",num_pdcch_symbols_2,num_pdcch_symbols);
               exit(-1);
