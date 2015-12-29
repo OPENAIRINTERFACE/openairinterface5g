@@ -73,12 +73,16 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
     if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) {
       //TODO: Must create a periodic report. Implement once the
       // timer functionality is supported
-      return -1;
+      *msg = NULL;
+      return 0;
     } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
       //TODO: Must create an event based report mechanism
-      return -1;
+      *msg = NULL;
+      return 0;
     } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
       //TODO: Must implement to deactivate the event based reporting
+      *msg = NULL;
+      return 0;
     } else { //One-off reporting
       //Set the proper flags
       ue_flags = comp_req->ue_report_flags;
