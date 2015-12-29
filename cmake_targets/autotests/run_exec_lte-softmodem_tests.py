@@ -273,9 +273,12 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testc
        error = error + '\n username = ' + username + '\n machine = ' + machine + '\n logdir_remote = ' + logdir_remote_testcase + '\n logdir_local_base = ' + logdir_local_base 
        error = error + traceback.format_exc()
        print error
-       print " Trying again in 1 seconds"
+       print " Retrying again in 1 seconds"
        time.sleep(1)
        print "Continuing ..."
+       if i ==max_tries:
+          print "Fatal Error: Max no of retries reached. Exiting now..."
+          sys.exit(1)
 
 
  
