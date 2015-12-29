@@ -252,11 +252,20 @@ def update_config_file(oai, config_string, logdirRepo, python_script):
     return cmd
     #result = oai.send_recv(cmd)
 
-def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testcase, logdir_local_base):
-  while True:
+def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testcase, logdir_local_base, operation):
+  max_tries = 100
+  i=0
+  while i <= max_tries:
+    i = i +1
     try:
        ssh = SSHSession(machine , username, key_file, password)
-       ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       if operation == "get_all":
+          ssh.get_all(logdir_remote_testcase , logdir_local_base)
+       elif operation == "put_all":
+          ssh.put_all(logdir_remote_testcase , logdir_local_base)
+       else:
+          print "Error: Uknown operation in SSHSessionWrapper. Exiting now..."
+          sys.exit(1)
        break 
     except Exception, e:
        error=''
@@ -311,7 +320,7 @@ class oaiThread (threading.Thread):
     def run(self):
         try:
           oai = openair('localdomain',self.machine)
-          oai.connect(user, self.password)
+          oai.connect(self.username, self.password)
           print "Starting " + self.threadname + " on machine " + self.machine
           result = oai.send_recv(self.cmd, self.sudo, self.timeout)
           print "result = " + result
@@ -320,14 +329,14 @@ class oaiThread (threading.Thread):
         except Exception, e:
            error=''
            error = error + ' In class oaiThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n'  
+           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n username = ' + self.username + '\n'  
            error = error + traceback.format_exc()
            print error
 
 
 #This class runs test cases with class execution, compilatation
 class testCaseThread_generic (threading.Thread):
-   def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, password, timeout, ExmimoRfStop):
+   def __init__(self, threadID, name, machine, logdirOAI5GRepo, testcasename,oldprogramList, CleanupAluLteBox, user, password, timeout, ExmimoRfStop):
        threading.Thread.__init__(self)
        self.threadID = threadID
        self.name = name
@@ -339,16 +348,17 @@ class testCaseThread_generic (threading.Thread):
        self.CleanupAluLteBox = CleanupAluLteBox
        self.password=password
        self.ExmimoRfStop = ExmimoRfStop
+       self.user = user
    def run(self):
      try:
        mypassword=''
        #addsudo = 'echo \'' + mypassword + '\' | sudo -S -E '
        addpass = 'echo \'' + mypassword + '\' | '
-       user = getpass.getuser()
+       #user = getpass.getuser()
        print "Starting test case : " + self.testcasename + " On machine " + self.machine + " timeout = " + str(self.timeout) 
        oai = openair('localdomain',self.machine)
-       oai.connect(user, self.password)
-       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
+       oai.connect(self.user, self.password)
+       #cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
        logdir_local = os.environ.get('OPENAIR_DIR')
        logdir_local_testcase = logdir_local +'/cmake_targets/autotests/log/'+ self.testcasename
        logdir_local_base = logdir_local +'/cmake_targets/autotests/log/'
@@ -380,15 +390,15 @@ class testCaseThread_generic (threading.Thread):
        #Now we copy all the remote files
        #ssh = SSHSession(self.machine , username=user, key_file=None, password=self.password)
        #ssh.get_all(logdir_remote_testcase , logdir_local_base)
-       SSHSessionWrapper(self.machine, user, None, self.password, logdir_remote_testcase, logdir_local_base)
+       SSHSessionWrapper(self.machine, self.user, None, self.password, logdir_remote_testcase, logdir_local_base, "get_all")
        print "Finishing test case : " + self.testcasename + " On machine " + self.machine
-       cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
+       #cleanOldPrograms(oai, self.oldprogramList, self.CleanupAluLteBox, self.ExmimoRfStop)
        #oai.kill(user,mypassword)
        oai.disconnect()
      except Exception, e:
          error=''
          error = error + ' In Class = testCaseThread_generic,  function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-         error = error + '\n threadID = ' + str(self.threadID) + '\n threadName = ' + self.name + '\n testcasename = ' + self.testcasename + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n' + '\n timeout = ' + str(self.timeout)  
+         error = error + '\n threadID = ' + str(self.threadID) + '\n threadName = ' + self.name + '\n testcasename = ' + self.testcasename + '\n machine = ' + self.machine + '\n logdirOAI5GRepo = ' + self.logdirOAI5GRepo +  '\n' + '\n timeout = ' + str(self.timeout)  + '\n user = ' + self.user
          error = error + traceback.format_exc()
          print error
          print "Continuing with next test case..."
@@ -401,7 +411,7 @@ def addsudo (cmd, password=""):
   cmd = 'echo \'' + password + '\' | sudo -S -E bash -c \' ' + cmd + '\' '
   return cmd
 
-def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, password, CleanupAluLteBox,timeout, ExmimoRfStop):
+def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramList, logdirOAI5GRepo, MachineList, user, password, CleanupAluLteBox,timeout, ExmimoRfStop):
   try:
     mypassword=password
     MachineListFree=[]
@@ -439,7 +449,7 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
        print "MachineListBusy = " + ','.join(MachineListBusy)
        print "MachineList = " + ','.join(MachineList)
     machine = MachineListFree[0]
-    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+ "machine_", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, password, timeout, ExmimoRfStop)
+    thread = testCaseThread_generic(1,"Generic Thread_"+testcasename+"_"+ "machine_", machine, logdirOAI5GRepo, testcasename, oldprogramList, CleanupAluLteBox, user, password, timeout, ExmimoRfStop)
     param={"thread_id":thread, "Machine":machine, "testcasename":testcasename}
     thread.start()
     threadListNew.append(param)
@@ -447,7 +457,7 @@ def handle_testcaseclass_generic (testcasename, threadListGeneric, oldprogramLis
   except Exception, e:
      error=''
      error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-     error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + ','.join(MachineList) + '\n timeout = ' + str(timeout) +  '\n'  
+     error = error + '\n testcasename = ' + testcasename + '\n logdirOAI5GRepo = ' + logdirOAI5GRepo + '\n MachineList = ' + ','.join(MachineList) + '\n timeout = ' + str(timeout) +  '\n' + 'user = ' + user
      error = error + traceback.format_exc()
      print error
      print "Continuing..."
@@ -472,14 +482,14 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
    return threadListGenericNew
 
 #Function to handle test case class : lte-softmodem
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, password, CleanUpAluLteBox, ExmimoRfStop):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
   mypassword=''
   #addsudo = 'echo \'' + mypassword + '\' | sudo -S -E '
   addpass = 'echo \'' + mypassword + '\' | '
-  user = getpass.getuser()
+  #user = getpass.getuser()
   testcasename = testcase.get('id')
   testcaseclass = testcase.findtext('class',default='')
   timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
@@ -763,10 +773,11 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     for t in threads:
        t.join()
     #Now we get the log files from remote machines on the local machine
+    cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
 
-    cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-    cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-    cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    #cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    #cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    #cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
     logfile_UE_stop_script_out = logdir_UE + '/UE_stop_script_out' + '_' + str(run) + '_.log'
     logfile_UE_stop_script = logdir_local_testcase + '/UE_stop_script' + '_' + str(run) + '_.log'
 
@@ -785,17 +796,17 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     #ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
     #ssh.get_all(logdir_EPC , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-    SSHSessionWrapper(EPCMachine, user, None, password, logdir_EPC, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(EPCMachine, user, None, password, logdir_EPC, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
     print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
     #ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
     #ssh.get_all(logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-    SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
     print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
     #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
     #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-    SSHSessionWrapper(UEMachine, user, None, password, logdir_UE, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+    SSHSessionWrapper(UEMachine, user, None, password, logdir_UE, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
 
     
@@ -870,9 +881,39 @@ def search_test_case_group(testcasename, testcasegroup, test_case_exclude):
              return True
     return False
 
+class oaiCleanOldProgramThread (threading.Thread):
+    def __init__(self, threadID, threadname, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.threadname = threadname
+        self.oai = oai
+        self.CleanUpOldProgs = CleanUpOldProgs
+        self.CleanUpAluLteBox = CleanUpAluLteBox
+        self.ExmimoRfStop = ExmimoRfStop
+    def run(self):
+        try:
+          cleanOldPrograms(oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+        except Exception, e:
+           error=''
+           error = error + ' In class oaiCleanOldProgramThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n CleanUpOldProgs = ' + self.CleanUpOldProgs + '\n CleanUpAluLteBox = ' + self.CleanUpAluLteBox + '\n ExmimoRfStop = ' + self.ExmimoRfStop + '\n'  
+           error = error + traceback.format_exc()
+           print error
+
 def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop):
-   for index in oai_list:
-      cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+   threadId=0
+   threadList=[]
+   for oai in oai_list:
+      threadName="cleanup_thread_"+str(threadId)
+      thread=append(oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop))
+      threadList.append(thread)
+      thread.start()
+      threadId = threadId + 1
+   for t in threadList:
+      t.join()
+
+
+
 
 #thread1 = myThread(1, "Thread-1", 1)
 debug = 0
@@ -880,18 +921,11 @@ pw =''
 i = 0
 dlsim=0
 localshell=0
-is_compiled = 0
 timeout=2000
 GitOAI5GRepoBranch=''
-xmlInputFile="./test_case_list.xml"
-NFSResultsDir = '/mnt/sradio'
-cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
-testcasegroup=''
-cleanUpRemoteMachines=False
-logdir = '/tmp/' + 'OAITestFrameWork-' + getpass.getuser() + '/'
-logdirOAI5GRepo = logdir + 'openairinterface5g/'
-logdirOpenaircnRepo = logdir + 'openair-cn/'
-
+GitOAI5GHeadVersion=''
+user=''
+pw=''
 openairdir_local = os.environ.get('OPENAIR_DIR')
 if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
@@ -907,9 +941,6 @@ while i < len (sys.argv):
         debug = 1
     elif arg == '-dd':
         debug = 2
-    elif arg == '-p' :
-        prompt2 = sys.argv[i+1]
-        i = i +1
     elif arg == '-r':
         flag_remove_logdir=True 
     elif arg == '-w' :
@@ -919,8 +950,6 @@ while i < len (sys.argv):
         dlsim = 1
     elif arg == '-l' :
         localshell = 1
-    elif arg == '-c' :
-        is_compiled = 1
     elif arg == '-t' :
         timeout = sys.argv[i+1]
         i = i +1  
@@ -932,10 +961,27 @@ while i < len (sys.argv):
     elif arg == '-5GRepoBranch':
         GitOAI5GRepoBranch = sys.argv[i+1]
         i = i +1
+    elif arg == '-5GRepoHeadVersion':
+        GitOAI5GHeadVersion = sys.argv[i+1]
+        #We now find the branch that corresponds to this Git Head Commit
+        cmd = "git show-ref --head " + " | grep " + GitOAI5GHeadVersion
+        cmd_out = subprocess.check_output ([cmd], shell=True)
+        cmd_out=cmd_out.replace("\n","")
+        cmd_out = cmd_out.split('/')
+        GitOAI5GRepoBranch = cmd_out[-1]
+        if GitOAI5GRepoBranch == '':
+           print "Error extracting GitBranch from head commit. Exiting now..."
+           sys.exit(1)
+        i = i +1
+    elif arg == '-u':
+        user = sys.argv[i+1]
+        i = i +1
+    elif arg == '-p': 
+        pw = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
-        print "-p:  set the prompt"
         print "-r:  Remove the log directory in autotests"
         print "-g:  Run test cases in a group"
         print "-c:  Run cleanup scripts on remote machines"
@@ -943,6 +989,9 @@ while i < len (sys.argv):
         print "-l:  use local shell instead of ssh connection"
         print "-t:  set the time out in second for commands"
         print "-5GRepoBranch:  Branch for OAI 5G Repository to run tests (overrides the branch in test_case_list.xml)"
+        print "-5GRepoHeadVersion:  Head commit on which to run tests (overrides the branch in test_case_list.xml)"
+        print "-u:  use the user name passed as argument"
+        print "-p:  use the password passed as an argument"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -967,12 +1016,6 @@ except KeyError:
    print "Please set the environment variable OPENAIR_TARGETS in the .bashrc"
    sys.exit(1)
 
-if flag_remove_logdir == True:
-   print "Removing directory: " + locallogdir
-   os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
-
-
-
 paramiko_logfile = os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/log/paramiko.log')
 res=os.system(' echo > ' + paramiko_logfile)
 paramiko.util.log_to_file(paramiko_logfile)
@@ -980,14 +1023,29 @@ paramiko.util.log_to_file(paramiko_logfile)
 # get the oai object
 host = os.uname()[1]
 #oai = openair('localdomain','calisson')
-oai_list = {}
-
+oai_list = []
 
 #start_time = time.time()  # datetime.datetime.now()
-user = getpass.getuser()
+if user=='':
+  user = getpass.getuser()
+if password=='':
+  pw = getpass.getpass()
 print "host = " + host 
 print "user = " + user
-pw=getpass.getpass()
+xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_list.xml"
+NFSResultsDir = '/mnt/sradio'
+cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
+testcasegroup=''
+cleanUpRemoteMachines=False
+logdir = '/tmp/' + 'OAITestFrameWork-' + user + '/'
+logdirOAI5GRepo = logdir + 'openairinterface5g/'
+logdirOpenaircnRepo = logdir + 'openair-cn/'
+
+if flag_remove_logdir == True:
+   print "Removing directory: " + locallogdir
+   os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
+
+#pw=getpass.getpass()
 
 #Now we parse the xml file for basic configuration
 xmlTree = ET.parse(xmlInputFile)
@@ -1011,15 +1069,19 @@ Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
 MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
 ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
+
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
 print "GitOAI5GRepo = " + GitOAI5GRepo
 print "GitOAI5GBranch = " + GitOAI5GRepoBranch
 print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
 print "NFSResultsShare = " + NFSResultsShare
-cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
-GitOAI5GHeadVersion = subprocess.check_output ([cmd], shell=True)
-GitOAI5GHeadVersion=GitOAI5GHeadVersion.replace("\n","")
+
+if GitOAI5GHeadVersion == '':
+  cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
+  GitOAI5GHeadVersion = subprocess.check_output ([cmd], shell=True)
+  GitOAI5GHeadVersion=GitOAI5GHeadVersion.replace("\n","")
+
 print "GitOAI5GHeadVersion = " + GitOAI5GHeadVersion
 print "CleanUpOldProgs = " + CleanUpOldProgs
 print "Timeout_execution = " + str(Timeout_execution)
@@ -1028,13 +1090,17 @@ if GitOAI5GHeadVersion == '':
   print "Error getting the OAI5GBranch Head version...Exiting"
   sys.exit()
 
+NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion + '/'
+
+print "NFSResultsShareDir = " + NFSResultsShareDir
+
 MachineList = MachineList.split()
 MachineListGeneric = MachineListGeneric.split()
 
-index=0
+#index=0
 for machine in MachineList: 
-  oai_list[index] = openair('localdomain',machine)
-  index = index + 1
+  oai_list.append( openair('localdomain',machine))
+  #index = index + 1
 
 
 #myThread (1,"sddsf", 1)
@@ -1129,7 +1195,7 @@ print "cpu freq(MHz): " + str(cpu_freq) + "timeout(s): " + str(timeout)
 #We now prepare the machines for testing
 #index=0
 threads_init_setup=[]
-for index in oai_list:
+for oai in oai_list:
   try:
       print "setting up machine: " + MachineList[index]
       #print oai_list[oai].send_recv('echo \''+pw+'\' |sudo -S -v')
@@ -1137,7 +1203,7 @@ for index in oai_list:
       #print oai_list[oai].send_recv('who am i') 
       #cleanUpPrograms(oai_list[oai]
       cmd = 'sudo -S -E rm -fr ' + logdir + ' ; mkdir -p ' + logdir 
-      result = oai_list[index].send_recv(cmd)
+      result = oai[index].send_recv(cmd)
      
       setuplogfile  = logdir  + '/setup_log_' + MachineList[index] + '_.txt'
       setup_script  = locallogdir  + '/setup_script_' + MachineList[index] +  '_.txt'
@@ -1274,11 +1340,11 @@ for testcase in testcaseList:
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, pw, CleanUpAluLteBox, ExmimoRfStop )
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop )
       elif (testcaseclass == 'compilation'): 
-        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
-        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, pw, CleanUpAluLteBox,ExmimoRfStop)
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,ExmimoRfStop)
       else :
         print "Unknown test case class: " + testcaseclass
         sys.exit()
@@ -1297,6 +1363,21 @@ print "Exiting the test cases execution now..."
 
 for t in threadListGlobal:
    t.join
+
+cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+os.system('cmd')
+
+print "Now copying files to NFS Share"
+oai_localhost = openair('localdomain','localhost')
+oai_localhost.connect(user,pw)
+cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+res = oai_localhost.send_recv(cmd)
+print "Deleting NFSTestResults Dir..." + res
+
+print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+#ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
+#ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
+SSHSessionWrapper(UEMachine, user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
 
