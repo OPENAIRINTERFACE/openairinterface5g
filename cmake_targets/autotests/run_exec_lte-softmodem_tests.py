@@ -938,7 +938,7 @@ if openairdir_local is None:
    sys.exit()
 locallogdir = openairdir_local + '/cmake_targets/autotests/log'
 MachineList = ''
-MachinneListGeneric=''
+MachineListGeneric=''
 #Remove  the contents of local log directory
 #os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
 flag_remove_logdir=False
