@@ -1,6 +1,6 @@
  <testCaseList>
 
-<MachineList>mozart calisson stevens nano amerique </MachineList>
+<MachineList>mozart calisson stevens nano </MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
@@ -11,7 +11,7 @@
 <ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>0104+ 015502 015505  015506 015507 015508 015508 015509 015510 015511 015600 015700 016102 016105</TestCaseExclusionList>
- <MachineListGeneric>mozart calisson stevens nano amerique</MachineListGeneric>
+ <MachineListGeneric>mozart calisson stevens nano </MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
