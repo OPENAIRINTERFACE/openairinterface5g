@@ -262,7 +262,7 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote_testc
        if operation == "get_all":
           ssh.get_all(logdir_remote_testcase , logdir_local_base)
        elif operation == "put_all":
-          ssh.put_all(logdir_remote_testcase , logdir_local_base)
+          ssh.put_all(logdir_local_base, logdir_remote_testcase )
        else:
           print "Error: Uknown operation in SSHSessionWrapper. Exiting now..."
           sys.exit(1)
@@ -929,13 +929,16 @@ GitOAI5GRepoBranch=''
 GitOAI5GHeadVersion=''
 user=''
 pw=''
+testcasegroup=''
 NFSResultsShare=''
 cleanUpRemoteMachines=False
 openairdir_local = os.environ.get('OPENAIR_DIR')
 if openairdir_local is None:
    print "Environment variable OPENAIR_DIR not set correctly"
    sys.exit()
-locallogdir = openairdir_local + '/cmake_targets/autotests/log/'
+locallogdir = openairdir_local + '/cmake_targets/autotests/log'
+MachineList = ''
+MachinneListGeneric=''
 #Remove  the contents of local log directory
 #os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
 flag_remove_logdir=False
@@ -987,6 +990,16 @@ while i < len (sys.argv):
     elif arg == '-n': 
         NFSResultsShare = sys.argv[i+1]
         i = i +1
+    elif arg == '-MachineList':
+        MachineList =  sys.argv[i+1]
+        MachineList = MachineList.replace("\"","")
+        MachineList = MachineList.replace("\'","")
+        i = i +1
+    elif arg == '-MachineListGeneric':
+        MachineListGeneric =  sys.argv[i+1]
+        MachineListGeneric = MachineListGeneric.replace("\"","")
+        MachineListGeneric = MachineListGeneric.replace("\'","")
+        i = i +1
     elif arg == '-h' :
         print "-d:  low debug level"
         print "-dd: high debug level"
@@ -1001,6 +1014,8 @@ while i < len (sys.argv):
         print "-u:  use the user name passed as argument"
         print "-p:  use the password passed as an argument"
         print "-n:  Set the NFS share passed as an argument"
+        print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
+        print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1042,7 +1057,6 @@ print "user = " + user
 xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_list.xml"
 NFSResultsDir = '/mnt/sradio'
 cleanupOldProgramsScript = '$OPENAIR_DIR/cmake_targets/autotests/tools/remove_old_programs.bash'
-testcasegroup=''
 logdir = '/tmp/' + 'OAITestFrameWork-' + user + '/'
 logdirOAI5GRepo = logdir + 'openairinterface5g/'
 logdirOpenaircnRepo = logdir + 'openair-cn/'
@@ -1063,8 +1077,8 @@ xmlRoot = xmlTree.getroot()
 
 
 
-
-MachineList = xmlRoot.findtext('MachineList',default='')
+if MachineList =='':
+   MachineList = xmlRoot.findtext('MachineList',default='')
 NFSResultsShare = xmlRoot.findtext('NFSResultsShare',default='')
 GitOpenaircnRepo = xmlRoot.findtext('GitOpenair-cnRepo',default='')
 GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
@@ -1076,7 +1090,8 @@ GitOpenaircnRepoBranch = xmlRoot.findtext('GitOpenair-cnRepoBranch',default='')
 CleanUpOldProgs = xmlRoot.findtext('CleanUpOldProgs',default='')
 CleanUpAluLteBox = xmlRoot.findtext('CleanUpAluLteBox',default='')
 Timeout_execution = int (xmlRoot.findtext('Timeout_execution'))
-MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
+if MachineListGeneric == '':
+   MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
 ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
 
@@ -1100,7 +1115,7 @@ if GitOAI5GHeadVersion == '':
   print "Error getting the OAI5GBranch Head version...Exiting"
   sys.exit()
 
-NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion + '/'
+NFSTestsResultsDir = NFSResultsShare + '/'+ GitOAI5GRepoBranch + '/' + GitOAI5GHeadVersion
 
 print "NFSTestsResultsDir = " + NFSTestsResultsDir
 
@@ -1338,7 +1353,6 @@ for testcase in testcaseList:
     desc = testcase.findtext('desc',default='')
     #print "Machine list top level = " + ','.join(MachineList)
     if search_test_case_group(testcasename, testcasegroup, TestCaseExclusionList) == True:
-      cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
       if testcaseclass == 'lte-softmodem' :
         eNBMachine = testcase.findtext('eNB',default='')
         UEMachine = testcase.findtext('UE',default='')
@@ -1351,11 +1365,12 @@ for testcase in testcaseList:
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
+        cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
         handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop )
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
-        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,ExmimoRfStop)
+        threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox, Timeout_execution, ExmimoRfStop)
       else :
         print "Unknown test case class: " + testcaseclass
         sys.exit()
@@ -1370,13 +1385,15 @@ for testcase in testcaseList:
      #sys.exit(1)
 
 
-print "Exiting the test cases execution now..."
+print "Exiting the test cases execution now. Waiting for existing threads to complete..."
 
-for t in threadListGlobal:
-   t.join
+for param in threadListGlobal:
+   thread_id = param["thread_id"]
+   thread_id.join()
 
+print "Creating xml file for overall results..."
 cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
-os.system('cmd')
+res=os.system(cmd)
 
 print "Now copying files to NFS Share"
 oai_localhost = openair('localdomain','localhost')
@@ -1388,7 +1405,7 @@ print "Deleting NFSTestResults Dir..." + res
 print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
 #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
-SSHSessionWrapper('localhost', user, None, password, NFSTestsResultsDir , locallogdir, "put_all")
+SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
 
