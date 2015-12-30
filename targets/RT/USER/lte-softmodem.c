@@ -235,6 +235,7 @@ static int                      time_offset[4] = {0,0,0,0};
 static char                     UE_flag=0;
 //static uint8_t                  eNB_id=0,UE_id=0;
 
+static char                     threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -909,13 +910,13 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
       if (phy_vars_eNB->lte_frame_parms.Ncp == EXTENDED) {
         PHY_ofdm_mod(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
                      dummy_tx_b,
-                     phy_vars_eNB->lte_frame_parms.log2_symbol_size,
+                     phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                      6,
                      phy_vars_eNB->lte_frame_parms.nb_prefix_samples,
                      CYCLIC_PREFIX);
         PHY_ofdm_mod(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F+slot_sizeF],
                      dummy_tx_b+(phy_vars_eNB->lte_frame_parms.samples_per_tti>>1),
-                     phy_vars_eNB->lte_frame_parms.log2_symbol_size,
+                     phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                      6,
                      phy_vars_eNB->lte_frame_parms.nb_prefix_samples,
                      CYCLIC_PREFIX);
@@ -2060,7 +2061,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "A:a:C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2161,6 +2162,10 @@ static void get_options (int argc, char **argv)
       do_forms=1;
       printf("Running with XFORMS!\n");
 #endif
+      break;
+      
+    case 'E':
+      threequarter_fs=1;
       break;
 
     case 'K':
@@ -2671,6 +2676,7 @@ int main( int argc, char **argv )
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
     init_ul_hopping(frame_parms[CC_id]);
     init_frame_parms(frame_parms[CC_id],1);
     //   phy_init_top(frame_parms[CC_id]);
@@ -2876,10 +2882,18 @@ int main( int argc, char **argv )
   for (card=0; card<MAX_CARDS; card++) {
 
     if(frame_parms[0]->N_RB_DL == 100) {
-      openair0_cfg[card].sample_rate=30.72e6;
-      openair0_cfg[card].samples_per_frame = 307200; 
-      openair0_cfg[card].tx_bw = 10e6;
-      openair0_cfg[card].rx_bw = 10e6;
+      if (frame_parms[0]->threequarter_fs) {
+	openair0_cfg[card].sample_rate=23.04e6;
+	openair0_cfg[card].samples_per_frame = 230400; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+      else {
+	openair0_cfg[card].sample_rate=30.72e6;
+	openair0_cfg[card].samples_per_frame = 307200; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
