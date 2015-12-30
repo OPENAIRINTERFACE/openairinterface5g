@@ -20,6 +20,7 @@ job1:
    - EXTERNAL_SHARE_RESULTS_DIR=$EXTERNAL_SHARE_DIR/$git_branch/$git_head
    - echo $NFS_TEST_RESULTS_DIR
    - echo $EXTERNAL_SHARE_RESULTS_DIR
+   - mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
    - $OPENAIR_DIR/cmake_targets/autotests/run_exec_lte-softmodem_tests.py -r -5GRepoHeadVersion $git_head -n $NFS_SHARE_DIR -u $OAI_USER -p $OAI_PASS `echo $OAI_EXTRA_ARGS` -g $OAI_TEST_CASE_GROUP >& $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log
    - mv $OPENAIR_DIR/cmake_targets/autotests/python_autotest.log $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest.log
    - sshpass -p "$OAI_PASS" rsync -az -e "ssh -o StrictHostKeyChecking=no "  --rsync-path="mkdir -p $NFS_TEST_RESULTS_DIR && rsync" $OPENAIR_DIR/cmake_targets/autotests/log $OAI_USER@localhost:$NFS_TEST_RESULTS_DIR
