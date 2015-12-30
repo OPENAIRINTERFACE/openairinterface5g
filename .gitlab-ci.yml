@@ -6,6 +6,7 @@ job1:
    - echo $OAI_EXTRA_ARGS
    - echo $NFS_SHARE_DIR
    - echo $EXTERNAL_SHARE_DIR
+   - echo $SHELL
    - git rev-parse --abbrev-ref HEAD
    - git_head=`git rev-parse HEAD`
    - echo $git_head
