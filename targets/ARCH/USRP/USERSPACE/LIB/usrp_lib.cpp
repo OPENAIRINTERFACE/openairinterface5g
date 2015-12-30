@@ -446,28 +446,38 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     // set master clock rate and sample rate for tx & rx for streaming
 
     device->type = USRP_B200_IF;
-    s->usrp->set_master_clock_rate(30.72e6);
+
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
 
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
+      s->usrp->set_master_clock_rate(30.72e6);
             // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
+    case 23040000:
+      s->usrp->set_master_clock_rate(46.08e6);
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 113;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
     case 15360000:
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 70;//103;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 40;
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
