@@ -943,6 +943,10 @@ MachineListGeneric=''
 #os.system(' rm -fr ' + locallogdir + '; mkdir -p ' +  locallogdir  )
 flag_remove_logdir=False
 i=1
+
+print "Number of arguments argc = " + str(len(sys.argv))
+print "Argv = " + " ".join(sys.argv) 
+
 while i < len (sys.argv):
     arg=sys.argv[i]
     if arg == '-d':
