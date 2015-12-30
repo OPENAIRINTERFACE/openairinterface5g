@@ -316,7 +316,9 @@ typedef struct {
 //
 //    In TDD mode, there are two ways to control the RX/TX switch:
 //    1. using the LSB from the TX data (TXRXSWITCH_LSB)
+//       only the LSB from RF chain set in the ACTIVE_RF register controls the switch on all the chains
 //    2. using FPGA logic, based on switch_offset[0..3]
+//       this mode is not tested well and should be used with care
 #define DUPLEXMODE_MASK   (1<<0)
 #define DUPLEXMODE_FDD     0
 #define DUPLEXMODE_TDD    (1<<0)
@@ -330,6 +332,11 @@ typedef struct {
 #define SWITCHSTATE_1     (1<<3)
 #define TEST_ADACLOOP_MASK  (1<<4)
 #define TEST_ADACLOOP_EN    (1<<4)
+#define RF_ACTIVE_MASK      (15<<5)
+#define RF_ACTIVE_1         (1<<5)
+#define RF_ACTIVE_2         (2<<5)
+#define RF_ACTIVE_3         (4<<5)
+#define RF_ACTIVE_4         (8<<5)
 
 typedef enum {
   BW5,

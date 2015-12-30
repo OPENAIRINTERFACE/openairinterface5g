@@ -152,6 +152,9 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;
 
+    dlsch->head_freelist = 0;
+    dlsch->tail_freelist = 0;
+
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
       LOG_T(PHY, "Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
@@ -192,6 +195,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
         msg("Can't get harq_p %d\n",i);
         exit_flag=3;
       }
+
+      put_harq_pid_in_freelist(dlsch, i);
     }
 
     if (exit_flag==0) {
