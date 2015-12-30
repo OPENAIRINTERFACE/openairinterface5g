@@ -3,6 +3,7 @@ job1:
    - echo $PWD
    - echo $USER
    - echo $OAI_USER
+   - echo $OAI_EXTRA_ARGS
    - echo $NFS_SHARE_DIR
    - echo $EXTERNAL_SHARE_DIR
    - git rev-parse --abbrev-ref HEAD
