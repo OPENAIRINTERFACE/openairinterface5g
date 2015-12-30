@@ -1,6 +1,6 @@
  <testCaseList>
 
-<MachineList>mozart calisson stevens nano </MachineList>
+<MachineList>mozart calisson stevens nano amerique </MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
@@ -11,7 +11,7 @@
 <ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>0104+ 015502 015505  015506 015507 015508 015508 015509 015510 015511 015600 015700 016102 016105</TestCaseExclusionList>
- <MachineListGeneric>mozart calisson stevens nano </MachineListGeneric>
+ <MachineListGeneric>mozart calisson stevens nano amerique</MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
@@ -128,7 +128,7 @@
      <main_exec_args></main_exec_args>
      <search_expr_true></search_expr_true>
      <search_expr_false></search_expr_false>
-     <tags>lte-softmodem_noS1.EXMIMO.Rel10</tags>
+     <tags>lte-softmodem_noS1.BLADERF.Rel10</tags>
      <nruns>1</nruns>
      </testCase> 
 
