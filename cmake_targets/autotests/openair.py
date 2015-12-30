@@ -112,6 +112,7 @@ class openair(core):
         except Exception, e:
             error=''
             error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+            error = error + 'address = "'+ self.address +' username = ' + username
             error = error + traceback.format_exc()
             print error
             print "Retrying again in 1  seconds"
