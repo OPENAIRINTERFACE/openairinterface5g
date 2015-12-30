@@ -115,8 +115,9 @@ Options
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
 --disable-deadline
-   Disables deadline scheduler of Linux kernel (>=3.14.x). The deadline scheduler is enabled by default
-
+   Disables deadline scheduler of Linux kernel (>=3.14.x).
+--enable-deadline
+   Disables deadline scheduler of Linux kernel (>=3.14.x). 
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -232,6 +233,11 @@ function main() {
             LOWLATENCY_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
             shift 1;;
+       --enable-deadline)
+            LOWLATENCY_FLAG_USER="True"
+            echo_info "Enabling the usage of deadline scheduler"
+            shift 1;;
+
         -h | --help)
             print_help
             exit 1;;
