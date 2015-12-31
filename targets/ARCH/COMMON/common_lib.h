@@ -65,7 +65,7 @@ typedef enum {
 } duplex_mode_t;
 
 
-/** @addtogroup _PHY_RF_INTERFACE_
+/** @addtogroup _GENERIC_PHY_RF_INTERFACE_
  * @{
  */
 
@@ -299,15 +299,15 @@ extern "C"
  */
   int openair0_device_init(openair0_device* device, openair0_config_t *openair0_cfg);
   
-  //USRP
-  /*! \brief Get the current timestamp of USRP 
+ /*! \brief Get current timestamp of USRP
   * \param device the hardware to use
   */
   openair0_timestamp get_usrp_time(openair0_device *device);
   
-  /*! \brief Set the RX frequency of USRP RF TARGET 
+ /*! \brief Set RX frequencies 
   * \param device the hardware to use
   * \param openair0_cfg RF frontend parameters set by application
+  * \returns 0 in success 
   */
   int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
   
