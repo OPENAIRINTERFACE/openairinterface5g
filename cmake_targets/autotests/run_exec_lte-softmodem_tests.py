@@ -1318,8 +1318,8 @@ if (out != '') :
   print "status  = " + str(status) + "\n Check files for error = " + out
   print sys.exit(1)
 
+cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 if cleanUpRemoteMachines == True:
-  cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
   sys.exit(0)
 
 threadListGlobal=[]
