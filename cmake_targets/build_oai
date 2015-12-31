@@ -53,7 +53,7 @@ VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
-
+BUILD_DOXYGEN=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -113,6 +113,8 @@ Options
    Shows detailed compilation instructions in makefile
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
+--build-doxygen
+   Builds doxygen based documentation.
 
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
@@ -225,6 +227,10 @@ function main() {
             CFLAGS_PROCESSOR_USER=$2
             echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
+       --build-doxygen)
+	    BUILD_DOXYGEN=1
+            echo_info "Will build doxygen support"
+            shift;;     
         -h | --help)
             print_help
             exit 1;;
@@ -550,7 +556,22 @@ function main() {
       rrh_gw $dbin/rrh_gw
   fi
 
-  
+  # Doxygen Support
+  #####################
+  if [ "$BUILD_DOXYGEN" = "1" ] ;then
+    doxygen_log=$OPENAIR_DIR/cmake_targets/log/doxygen.log
+    echo_info "Building doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/targets/DOCS/html/index.html"
+    echo_info "Doxygen Generation log is located here: $doxygen_log"
+    echo_info "Generating doxygen files....please wait"
+    (
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
+    mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
+    cd $OPENAIR_DIR/cmake_targets/doxygen/build
+    cmake ..
+    make doc
+    ) >& $doxygen_log
+  fi
+
   # Auto-tests
   #####################
   if [ "$OAI_TEST" = "1" ]; then
