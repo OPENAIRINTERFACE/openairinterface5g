@@ -96,6 +96,8 @@ int timer_handle_signal(siginfo_t *info)
   // LG: To many traces for msc timer:
   // TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
 
+#if defined(ENABLE_ITTI)
+
   task_id = timer_p->task_id;
   instance = timer_p->instance;
   message_p = itti_alloc_new_message(TASK_TIMER, TIMER_HAS_EXPIRED);
@@ -104,6 +106,7 @@ int timer_handle_signal(siginfo_t *info)
 
   timer_expired_p->timer_id = (long)timer_p->timer;
   timer_expired_p->arg      = timer_p->timer_arg;
+#endif
 
   /* Timer is a one shot timer, remove it */
   if (timer_p->type == TIMER_ONE_SHOT) {
@@ -120,13 +123,14 @@ int timer_handle_signal(siginfo_t *info)
       TMR_DEBUG("Failed to delete timer 0x%lx\n", (long)timer_p->timer);
     }
   }
-
+#ifdefined ENABLE_ITTI
   /* Notify task of timer expiry */
   if (itti_send_msg_to_task(task_id, instance, message_p) < 0) {
     TMR_DEBUG("Failed to send msg TIMER_HAS_EXPIRED to task %u\n", task_id);
     free(message_p);
     return -1;
   }
+#endif 
 
   return 0;
 }
