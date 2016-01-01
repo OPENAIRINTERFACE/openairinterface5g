@@ -59,16 +59,12 @@ unsigned long long threegpplte_interleaver_tmp;
 #if defined(__x86_64__) || defined(__i386__)
 struct treillis {
   union {
-    __m64 systematic_64[3];
-    char systematic_8[24];
-  };
-  union {
-    __m64 parity1_64[3];
-    char parity1_8[24];
+    __m64 systematic_andp1_64[3];
+    uint8_t systematic_andp1_8[24];
   };
   union {
     __m64 parity2_64[3];
-    char parity2_8[24];
+    uint8_t parity2_8[24];
   };
   int exit_state;
 }  __attribute__ ((aligned(64)));
@@ -77,12 +73,8 @@ struct treillis {
 
 struct treillis {
   union {
-    uint8x8_t systematic_64[3];
-    char systematic_8[24];
-  }__attribute__((aligned(64)));
-  union {
-    uint8x8_t parity1_64[3];
-    char parity1_8[24];
+    uint8x8_t systematic_andp1_64[3];
+    char systematic_andp1_8[24];
   }__attribute__((aligned(64)));
   union {
     uint8x8_t parity2_64[3];
@@ -93,6 +85,7 @@ struct treillis {
 #endif
 
 struct treillis all_treillis[8][256];
+
 int all_treillis_initialized=0;
 
 static inline unsigned char threegpplte_rsc(unsigned char input,unsigned char *state)
@@ -118,18 +111,20 @@ void treillis_table_init(void)
   unsigned char v, current_state;
 
   // clear all_treillis
-  for (i=0; i<8; i++)
+  for (i=0; i<8; i++) {
     bzero( all_treillis[i], sizeof(all_treillis[0]) );
+  }
 
   for (i=0; i<8; i++) { //all possible initial states
     for (j=0; j<=255; j++) { // all possible values of a byte
       current_state=i;
 
       for (b=0; b<8 ; b++ ) { // pre-compute the image of the byte j in _m128i vector right place
-        all_treillis[i][j].systematic_8[b*3]= (j&(1<<(7-b)))>>(7-b);
-        v=threegpplte_rsc( all_treillis[i][j].systematic_8[b*3] ,
+        all_treillis[i][j].systematic_andp1_8[b*3]= (j&(1<<(7-b)))>>(7-b);
+        v=threegpplte_rsc( all_treillis[i][j].systematic_andp1_8[b*3] ,
                            &current_state);
-        all_treillis[i][j].parity1_8[b*3+1]=v; // for the yparity1
+	all_treillis[i][j].systematic_andp1_8[b*3+1]=v; // for the yparity1
+	//        all_treillis[i][j].parity1_8[b*3+1]=v; // for the yparity1
         all_treillis[i][j].parity2_8[b*3+2]=v; // for the yparity2
       }
 
@@ -236,10 +231,12 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   if ((n&31) > 0)
     loop++;
 #endif
+
+  
   for (i=0; i<loop ; i++ ) {
-    /* int cur_byte=i<<3; */
-    /* for (b=0;b<8;b++) */
-    /*   expandInput[cur_byte+b] = (input[i]&(1<<(7-b)))>>(7-b); */
+    // int cur_byte=i<<3; 
+    // for (b=0;b<8;b++) 
+    //   expandInput[cur_byte+b] = (input[i]&(1<<(7-b)))>>(7-b); 
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifndef __AVX2__
@@ -419,6 +416,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     i_128++;
 #endif
   }
+  
 
   short * ptr_intl=base_interleaver;
 #if defined(__x86_64) || defined(__i386__)
@@ -438,7 +436,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   uint8x16_t Powers= vld1q_u8(_Powers);
   uint8_t *systematic2_ptr=(uint8_t *) output;
 #endif
-#ifndef __AVX2
+#ifndef __AVX2__
   int input_length_words=n>>1;
 #else
   int input_length_words=n>>2;
@@ -473,6 +471,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],2);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],1);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],0);
+
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+7);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+6);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+5);
@@ -481,6 +480,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+2);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+1);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],8+0);
+
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+7);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+6);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+5);
@@ -488,7 +488,8 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+3);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+2);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+1);
-    tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+0);
+    tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],16+0);
+
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+7);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+6);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+5);
@@ -497,6 +498,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+2);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+1);
     tmp=_mm256_insert_epi8(tmp,expandInput[*ptr_intl++],24+0);
+
     *systematic2_ptr++=(unsigned int)_mm256_movemask_epi8(tmp);
 #endif
 #elif defined(__arm__)
@@ -552,8 +554,9 @@ void threegpplte_turbo_encoder(unsigned char *input,
   unsigned short input_length_bits = input_length_bytes<<3;
   short * base_interleaver;
 
-  if (  all_treillis_initialized == 0 )
+  if (  all_treillis_initialized == 0 ) {
     treillis_table_init();
+  }
 
   // look for f1 and f2 precomputed interleaver values
   for (i=0; i < 188 && f1f2mat[i].nb_bits != input_length_bits; i++);
@@ -566,7 +569,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
   }
 
 
-  unsigned char systematic2[768];
+  unsigned char systematic2[768] __attribute__((aligned(32)));
   interleave_compact_byte(base_interleaver,input,systematic2,input_length_bytes);
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -580,22 +583,26 @@ void threegpplte_turbo_encoder(unsigned char *input,
   for ( state0=state1=i=0 ; i<input_length_bytes; i++ ) {
     cur_s1=input[i];
     cur_s2=systematic2[i];
-
+      
     for ( code_rate=0; code_rate<3; code_rate++) {
 #if defined(__x86_64__) || defined(__i386__)
-      *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_64[code_rate],
-                                  _mm_add_pi8(all_treillis[state0][cur_s1].parity1_64[code_rate],
-                                              all_treillis[state1][cur_s2].parity2_64[code_rate]));
+      /*
+       *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_64[code_rate],
+       _mm_add_pi8(all_treillis[state0][cur_s1].parity1_64[code_rate],
+	 all_treillis[state1][cur_s2].parity2_64[code_rate]));
+	*/
+      *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
+				  all_treillis[state1][cur_s2].parity2_64[code_rate]);
+	
+	
 #elif defined(__arm__)
-      uint8x8_t ptmp = vadd_u8(all_treillis[state0][cur_s1].parity1_64[code_rate],
-                               all_treillis[state1][cur_s2].parity2_64[code_rate]);
-      *ptr_output++ = vadd_u8(all_treillis[state0][cur_s1].systematic_64[code_rate],
-                              ptmp);
+	*ptr_output++ = vadd_u8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
+				all_treillis[state0][cur_s1].parity1_64[code_rate]);
 #endif
-    }
-
-    state0=all_treillis[state0][cur_s1].exit_state;
-    state1=all_treillis[state1][cur_s2].exit_state;
+      }
+      
+      state0=all_treillis[state0][cur_s1].exit_state;
+      state1=all_treillis[state1][cur_s2].exit_state;
   }
 
   x=output+(input_length_bits*3);
