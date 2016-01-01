@@ -53,6 +53,10 @@ typedef int (*enb_agent_message_decoded_callback)(
 	Protocol__ProgranMessage **msg
 );
 
+typedef int (*enb_agent_message_destruction_callback)(
+	Protocol__ProgranMessage *msg
+);
+
 typedef int32_t  err_code_t; 
 
 int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size);

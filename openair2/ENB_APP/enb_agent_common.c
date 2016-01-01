@@ -134,7 +134,7 @@ int enb_agent_hello(uint32_t xid, const void *params, Protocol__ProgranMessage *
 }
 
 
-int enb_agent_destroy_hello_message(Protocol__ProgranMessage *msg) {
+int enb_agent_destroy_hello(Protocol__ProgranMessage *msg) {
   
   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG)
     goto error;
