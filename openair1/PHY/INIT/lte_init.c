@@ -895,7 +895,9 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms)
 
   init_td8();
   init_td16();
-
+#ifdef __AVX2__
+  init_td16avx2();
+#endif
 
   lte_sync_time_init(lte_frame_parms);
 

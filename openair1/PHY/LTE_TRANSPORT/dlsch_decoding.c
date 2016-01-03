@@ -187,6 +187,27 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
+#ifdef __AVX2__
+  int Kr_last,skipped_last=0;
+  uint8_t (*tc_2cw)(int16_t *y,
+		    int16_t *y2,
+		    uint8_t *,
+		    uint8_t *,
+		    uint16_t,
+		    uint16_t,
+		    uint16_t,
+		    uint8_t,
+		    uint8_t,
+		    uint8_t,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *,
+		    time_stats_t *);
+
+#endif
   uint8_t (*tc)(int16_t *y,
                 uint8_t *,
                 uint16_t,
@@ -202,6 +223,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                 time_stats_t *,
                 time_stats_t *,
                 time_stats_t *);
+
+
+
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -223,8 +247,12 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     return(dlsch->max_turbo_iterations);
   }
 
-  if (llr8_flag == 0)
+  if (llr8_flag == 0) {
+#ifdef __AVX2__
+    tc_2cw = phy_threegpplte_turbo_decoder16avx2;
+#endif
     tc = phy_threegpplte_turbo_decoder16;
+  }
   else
     tc = phy_threegpplte_turbo_decoder8;
 
@@ -300,6 +328,10 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_turbo_iterations));
   }
+#ifdef DEBUG_DLSCH_DECODING
+  printf("Segmentation: C %d, Cminus %d, Kminus %d, Kplus %d\n",harq_process->C,harq_process->Cminus,harq_process->Kminus,harq_process->Kplus);
+#endif
+
   for (r=0; r<harq_process->C; r++) {
 
     
@@ -414,15 +446,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     printf("\n");
     */
 
+#ifndef __AVX2__
     if (err_flag == 0) {
 
       start_meas(dlsch_turbo_decoding_stats);
-#ifdef TURBO_S
-      ret = phy_threegpplte_turbo_decoder_scalar
-#else
-
       ret = tc
-#endif
             (&harq_process->d[r][96],
              harq_process->c[r],
              Kr,
@@ -442,7 +470,130 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
       stop_meas(dlsch_turbo_decoding_stats);
     }
+#else
+    if ((harq_process->C == 1) ||  
+	((r==harq_process->C-1) && (skipped_last==0))) { // last segment with odd number of segments
 
+      start_meas(dlsch_turbo_decoding_stats);
+      ret = tc
+            (&harq_process->d[r][96],
+             harq_process->c[r],
+             Kr,
+             f1f2mat_old[iind*2],
+             f1f2mat_old[(iind*2)+1],
+             dlsch->max_turbo_iterations,
+             crc_type,
+             (r==0) ? harq_process->F : 0,
+             &phy_vars_ue->dlsch_tc_init_stats,
+             &phy_vars_ue->dlsch_tc_alpha_stats,
+             &phy_vars_ue->dlsch_tc_beta_stats,
+             &phy_vars_ue->dlsch_tc_gamma_stats,
+             &phy_vars_ue->dlsch_tc_ext_stats,
+             &phy_vars_ue->dlsch_tc_intl1_stats,
+             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+      stop_meas(dlsch_turbo_decoding_stats);
+      //      printf("single decode, exit\n");
+      //      exit(-1);
+    }
+    else {
+    // we can merge code segments
+      if ((skipped_last == 0) && (r<harq_process->C-1)) {
+	skipped_last = 1;
+	Kr_last = Kr;
+      }
+      else {
+	skipped_last=0;
+	
+	if (Kr_last == Kr) { // decode 2 code segments with AVX2 version
+#ifdef DEBUG_DLSCH_DECODING
+	  printf("single decoding segment %d (%p)\n",r-1,&harq_process->d[r-1][96]);
+#endif
+	  start_meas(dlsch_turbo_decoding_stats);
+#ifdef DEBUG_DLSCH_DECODING
+	  printf("double decoding segments %d,%d (%p,%p)\n",r-1,r,&harq_process->d[r-1][96],&harq_process->d[r][96]);
+#endif
+	  ret = tc_2cw
+            (&harq_process->d[r-1][96],
+	     &harq_process->d[r][96],
+             harq_process->c[r-1],
+             harq_process->c[r],
+             Kr,
+             f1f2mat_old[iind*2],
+             f1f2mat_old[(iind*2)+1],
+             dlsch->max_turbo_iterations,
+             crc_type,
+             (r==0) ? harq_process->F : 0,
+             &phy_vars_ue->dlsch_tc_init_stats,
+             &phy_vars_ue->dlsch_tc_alpha_stats,
+             &phy_vars_ue->dlsch_tc_beta_stats,
+             &phy_vars_ue->dlsch_tc_gamma_stats,
+             &phy_vars_ue->dlsch_tc_ext_stats,
+             &phy_vars_ue->dlsch_tc_intl1_stats,
+             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+	  /*
+	  ret = tc
+            (&harq_process->d[r-1][96],
+             harq_process->c[r-1],
+             Kr_last,
+             f1f2mat_old[iind*2],
+             f1f2mat_old[(iind*2)+1],
+             dlsch->max_turbo_iterations,
+             crc_type,
+             (r==0) ? harq_process->F : 0,
+             &phy_vars_ue->dlsch_tc_init_stats,
+             &phy_vars_ue->dlsch_tc_alpha_stats,
+             &phy_vars_ue->dlsch_tc_beta_stats,
+             &phy_vars_ue->dlsch_tc_gamma_stats,
+             &phy_vars_ue->dlsch_tc_ext_stats,
+             &phy_vars_ue->dlsch_tc_intl1_stats,
+             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+
+	     exit(-1);*/
+	  stop_meas(dlsch_turbo_decoding_stats);
+	} 
+	else { // Kr_last != Kr
+	  start_meas(dlsch_turbo_decoding_stats);
+	  ret = tc
+            (&harq_process->d[r-1][96],
+             harq_process->c[r-1],
+             Kr_last,
+             f1f2mat_old[iind*2],
+             f1f2mat_old[(iind*2)+1],
+             dlsch->max_turbo_iterations,
+             crc_type,
+             (r==0) ? harq_process->F : 0,
+             &phy_vars_ue->dlsch_tc_init_stats,
+             &phy_vars_ue->dlsch_tc_alpha_stats,
+             &phy_vars_ue->dlsch_tc_beta_stats,
+             &phy_vars_ue->dlsch_tc_gamma_stats,
+             &phy_vars_ue->dlsch_tc_ext_stats,
+             &phy_vars_ue->dlsch_tc_intl1_stats,
+             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+	  stop_meas(dlsch_turbo_decoding_stats);
+	  
+	  start_meas(dlsch_turbo_decoding_stats);
+	  ret = tc
+            (&harq_process->d[r][96],
+             harq_process->c[r],
+             Kr,
+             f1f2mat_old[iind*2],
+             f1f2mat_old[(iind*2)+1],
+             dlsch->max_turbo_iterations,
+             crc_type,
+             (r==0) ? harq_process->F : 0,
+             &phy_vars_ue->dlsch_tc_init_stats,
+             &phy_vars_ue->dlsch_tc_alpha_stats,
+             &phy_vars_ue->dlsch_tc_beta_stats,
+             &phy_vars_ue->dlsch_tc_gamma_stats,
+             &phy_vars_ue->dlsch_tc_ext_stats,
+             &phy_vars_ue->dlsch_tc_intl1_stats,
+             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+	  stop_meas(dlsch_turbo_decoding_stats);
+	  
+	}
+      }
+    }
+#endif
 
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_turbo_iterations))) {// a Code segment is in error so break;

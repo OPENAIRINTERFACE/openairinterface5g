@@ -134,7 +134,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
   endif()
   if (CPUINFO MATCHES "sse4_2")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2 -msse4.2")
   endif()
   if (CPUINFO MATCHES "sse4_1")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
@@ -168,7 +168,7 @@ set(CMAKE_CXX_FLAGS
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O3") 
 
 # Below has been put in comment because does not work with
 # SVN authentication.
@@ -840,6 +840,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_8bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
