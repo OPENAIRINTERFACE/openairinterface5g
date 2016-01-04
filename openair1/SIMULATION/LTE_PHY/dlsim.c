@@ -4341,11 +4341,11 @@ n(tikz_fname,"w");
 	else {
 	  
 	   if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
-	    if (((double)errs[0][0]/(round_trials[0]))<1e-2 && ((double)errs[1][0]/(round_trials[0]))<1e-2)
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-3 && ((double)errs[1][0]/(round_trials[0]))<1e-3)
 	    break;
 	  }
 	  else{ 
-	    if (((double)errs[0][0]/(round_trials[0]))<1e-2) 
+	    if (((double)errs[0][0]/(round_trials[0]))<1e-3) 
 	    break;
 	  
 	    }
