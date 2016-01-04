@@ -420,11 +420,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        
 	 
 	 // scaling interfering channel (following for TM56)
-	/*dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+	dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			    frame_parms,
 			    dlsch_ue,
 			    symbol,
-			    nb_rb);*/
+			    nb_rb);
 	
 	        
       if (first_symbol_flag==1) {
@@ -451,7 +451,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	}
 	else
 	// to avoid tails in SNR/BLER curves
-	avg[0] = log2_approx(avg[0]) - interf_unaw_shift;
+	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0);
 	//printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
