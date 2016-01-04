@@ -420,11 +420,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        
 	 
 	 // scaling interfering channel (following for TM56)
-	dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+	/*dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			    frame_parms,
 			    dlsch_ue,
 			    symbol,
-			    nb_rb);
+			    nb_rb);*/
 	
 	        
       if (first_symbol_flag==1) {
@@ -440,6 +440,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	
 	if (rx_type>rx_standard) {
 	  	// interf_unaw_shift_tm4_mcs is to avoid tails in SNR/BLER curves
+	avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->Qm>>1)-1];  
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
 	//printf("TM4 I-A shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]);
@@ -450,8 +451,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	}
 	else
 	// to avoid tails in SNR/BLER curves
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
+	avg[0] = log2_approx(avg[0]) - 13 + interf_unaw_shift;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
+	printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
+	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
+	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
 	//printf("TM4 I-UA shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]); 
 	//printf("TM4 I-UA shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs]);
       }
@@ -3073,7 +3077,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
     dl_ch1_128 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
 
     for (rb=0; rb<nb_rb; rb++) {
-
+      avg128D = _mm_setzero_si128();
+      
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[0]);
 
