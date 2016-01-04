@@ -454,7 +454,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	avg[0] = log2_approx(avg[0]) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0);
-	printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
+	//printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
 	//printf("TM4 I-UA shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]); 
