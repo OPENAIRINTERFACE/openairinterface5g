@@ -189,10 +189,13 @@ typedef struct enb_agent_timer_element_s{
   long timer_id;  /* Timer id returned by the timer API*/
   
   enb_agent_timer_callback_t cb;
-  void* timer_args;
+  // void* timer_args;
   
 } enb_agent_timer_element_t;
 
+typedef struct enb_agent_timer_instance_s{
+  RB_HEAD(enb_agent_map, enb_agent_timer_element_s) enb_agent_head;
+}enb_agent_timer_instance_t;
 
 err_code_t enb_agent_init_timer(void);
 
@@ -214,11 +217,11 @@ err_code_t enb_agent_restart_timer(long *timer_id);
 
 struct enb_agent_timer_element_s * get_timer_entry(long timer_id);
 
-int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b);
+
 
 err_code_t enb_agent_process_timeout(long timer_id, void* timer_args);
 
-RB_HEAD(enb_agent_map, enb_agent_timer_element_s) enb_agent_head;
+int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b);
 
 /* RB_PROTOTYPE is for .h files */
 RB_PROTOTYPE(enb_agent_map, enb_agent_timer_element_s, entry, enb_agent_compare_timer);

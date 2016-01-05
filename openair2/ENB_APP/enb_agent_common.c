@@ -312,25 +312,12 @@ int get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
 
 
 //struct enb_agent_map agent_map;
-
-/* The timer_id might not be the best choice for the comparison */
-int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b){
-
-  //if (a->timer_id) return 0;
-  //if (b->timer_id) return 0;
-  
-  if (a->timer_id < b->timer_id) return -1;
-  if (a->timer_id > b->timer_id) return 1;
-
-  // equal timers
-  return 0;
-}
-
-RB_GENERATE(enb_agent_map,enb_agent_timer_element_s, entry, enb_agent_compare_timer);
-
+enb_agent_timer_instance_t timer_instance;
 err_code_t enb_agent_init_timer(void){
+  
+  LOG_I(ENB_AGENT, "init RB tree\n");
 
-  RB_INIT(&enb_agent_head);
+  RB_INIT(&timer_instance.enb_agent_head);
  
   /*
     struct enb_agent_timer_element_s e;
@@ -338,6 +325,18 @@ err_code_t enb_agent_init_timer(void){
   RB_INSERT(enb_agent_map, &agent_map, &e); 
   */
  return PROTOCOL__PROGRAN_ERR__NO_ERR;
+}
+
+RB_GENERATE(enb_agent_map,enb_agent_timer_element_s, entry, enb_agent_compare_timer);
+
+/* The timer_id might not be the best choice for the comparison */
+int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b){
+
+  if (a->timer_id < b->timer_id) return -1;
+  if (a->timer_id > b->timer_id) return 1;
+
+  // equal timers
+  return 0;
 }
 
 err_code_t enb_agent_create_timer(uint32_t interval_sec,
@@ -349,7 +348,9 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
 				  void*    timer_args,
 				  long *timer_id){
   
-  struct enb_agent_timer_element_s e;
+  struct enb_agent_timer_element_s *e = calloc(1, sizeof(*e));
+  DevAssert(e != NULL);
+  
 //uint32_t timer_id;
   int ret=-1;
   
@@ -368,7 +369,7 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
 		      timer_args,
 		      timer_id);
     
-    e.type = TIMER_ONE_SHOT;
+    e->type = TIMER_ONE_SHOT;
   }
   else if (timer_type  ==   ENB_AGENT_TIMER_TYPE_PERIODIC ){
     ret = timer_setup(interval_sec, 
@@ -379,32 +380,25 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
 		      timer_args,
 		      timer_id);
     
-    e.type = TIMER_PERIODIC;
+    e->type = TIMER_PERIODIC;
   }
   
   if (ret < 0 ) {
     return TIMER_SETUP_FAILED; 
   }
 
-  e.agent_id = agent_id;
-  e.instance = instance;
-  e.state = ENB_AGENT_TIMER_STATE_ACTIVE;
-  e.timer_id = *timer_id;
-  e.timer_args = timer_args; 
-  e.cb = cb;
-
-  LOG_I(ENB_AGENT,"created a timer with id 0x%lx  for agent %d, instance %d \n",
-	e.timer_id, e.agent_id, e.instance);
-
-  RB_INSERT(enb_agent_map, &enb_agent_head, &e); 
+  e->agent_id = agent_id;
+  e->instance = instance;
+  e->state = ENB_AGENT_TIMER_STATE_ACTIVE;
+  e->timer_id = *timer_id;
+  //  e->timer_args = timer_args; 
+  e->cb = cb;
+  /*element should be a real pointer*/
+  RB_INSERT(enb_agent_map, &timer_instance.enb_agent_head, e); 
   
-   
-  /*
-  struct enb_agent_timer_element_s search;
-  search.timer_id = *timer_id;
-  printf("search 1: %p (expected %p)\n", RB_FIND(enb_agent_map, &enb_agent_head, &search), &e);
-  printf("search 1: %p (expected %p)\n", get_timer_entry(e.timer_id), &e);
-  */      
+  LOG_I(ENB_AGENT,"Created a new timer with id 0x%lx for agent %d, instance %d \n",
+	e->timer_id, e->agent_id, e->instance);
+ 
   return 0; 
 }
 
@@ -413,7 +407,7 @@ err_code_t enb_agent_destroy_timer(long timer_id){
   struct enb_agent_timer_element_s *e = get_timer_entry(timer_id);
 
   if (e != NULL ) {
-    RB_REMOVE(enb_agent_map, &enb_agent_head, &e);
+    RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, &e);
     free(e);
   }
   
@@ -431,8 +425,8 @@ err_code_t enb_agent_destroy_timers(void){
   
   struct enb_agent_timer_element_s *e = NULL;
   
-  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
-    RB_REMOVE(enb_agent_map, &enb_agent_head, e);
+  RB_FOREACH(e, enb_agent_map, &timer_instance.enb_agent_head) {
+    RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
     timer_remove(e->timer_id); 
     free(e);
   }  
@@ -443,11 +437,10 @@ err_code_t enb_agent_destroy_timers(void){
 
 struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
   
-  struct enb_agent_timer_element_s search, *e;
-  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
-  search.timer_id = timer_id;
- 
-  return RB_FIND(enb_agent_map, &enb_agent_head, &search); 
+  struct enb_agent_timer_element_s *search= calloc(1,sizeof(*search));
+  search->timer_id = timer_id;
+
+  return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, search); 
 }
 
 /*

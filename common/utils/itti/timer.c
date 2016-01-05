@@ -95,8 +95,7 @@ int timer_handle_signal(siginfo_t *info)
 
   // LG: To many traces for msc timer:
   TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
-  printf("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
-
+  
   task_id = timer_p->task_id;
   instance = timer_p->instance;
   message_p = itti_alloc_new_message(TASK_TIMER, TIMER_HAS_EXPIRED);
@@ -206,11 +205,6 @@ int timer_setup(
   /* Simply set the timer_id argument. so it can be used by caller */
   *timer_id = (long)timer;
   TMR_DEBUG("Requesting new %s timer with id 0x%lx that expires within "
-            "%d sec and %d usec\n",
-            type == TIMER_PERIODIC ? "periodic" : "single shot",
-            *timer_id, interval_sec, interval_us);
-
-  printf("Requesting new %s timer with id 0x%lx that expires within "
             "%d sec and %d usec\n",
             type == TIMER_PERIODIC ? "periodic" : "single shot",
             *timer_id, interval_sec, interval_us);

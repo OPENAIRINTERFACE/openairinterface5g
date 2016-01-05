@@ -40,6 +40,7 @@
 
 #include "assertions.h"
 
+//#define TEST_TIMER
 
 enb_agent_instance_t enb_agent[NUM_MAX_ENB_AGENT];
 msg_context_t shared_ctxt[NUM_MAX_ENB_AGENT];
@@ -327,8 +328,10 @@ int enb_agent_stop(mid_t mod_id){
 
 err_code_t enb_agent_timeout(void* args){
 
+  //  enb_agent_timer_args_t *timer_args = calloc(1, sizeof(*timer_args));
+  //memcpy (timer_args, args, sizeof(*timer_args));
   enb_agent_timer_args_t *timer_args = (enb_agent_timer_args_t *) args;
-
+  
   LOG_I(ENB_AGENT, "enb_agent %d timeout\n", timer_args->mod_id);
   LOG_I(ENB_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
   LOG_I(ENB_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);

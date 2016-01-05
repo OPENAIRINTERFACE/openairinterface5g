@@ -141,15 +141,15 @@ void * enb_agent_send_message(xid_t xid,
 
 err_code_t enb_agent_process_timeout(long timer_id, void* timer_args){
     
-  struct enb_agent_timer_element_s *e = get_timer_entry(timer_id);
+  struct enb_agent_timer_element_s *found = get_timer_entry(timer_id);
+ 
+  if (found == NULL ) goto error;
+  LOG_I(ENB_AGENT, "Found the entry (%p): timer_id is 0x%lx  0x%lx\n", found, timer_id, found->timer_id);
   
-  LOG_I(ENB_AGENT, "element %p: timer_id is 0x%lx  0x%lx\n", e, timer_id, e->timer_id);
-   
-  if (e == NULL ) goto error;
   if (timer_args == NULL)
     LOG_W(ENB_AGENT,"null timer args\n");
   
-  return e->cb(timer_args);
+  return found->cb(timer_args);
   
 
  error:
