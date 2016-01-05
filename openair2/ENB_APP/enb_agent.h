@@ -28,9 +28,9 @@
 
  *******************************************************************************/
 
-/*! \file 
- * \brief 
- * \author 
+/*! \file enb_agent.h
+ * \brief top level enb agent  
+ * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
@@ -38,10 +38,13 @@
 #ifndef ENB_AGENT_H_
 #define ENB_AGENT_H_
 
+#include "enb_config.h" // for enb properties
+#include "enb_agent_common.h"
 
-int enb_agent_start();
+int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
 
-int enb_agent_stop();
+int enb_agent_stop(mid_t mod_id);
 
+void *enb_agent_task(void *args);
 
 #endif

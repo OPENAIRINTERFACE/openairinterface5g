@@ -203,6 +203,9 @@ typedef struct Enb_properties_s {
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
+  char               *enb_agent_interface_name;
+  in_addr_t           enb_agent_ipv4_address;
+  tcp_udp_port_t      enb_agent_port;
   // otg config
   /* Nb of OTG elements */
   uint8_t            num_otg_elements;

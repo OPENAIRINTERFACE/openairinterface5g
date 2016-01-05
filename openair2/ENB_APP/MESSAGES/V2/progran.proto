@@ -37,7 +37,7 @@ enum progran_err {
 	MSG_NOT_VALIDATED = -8;
 	MSG_OUT_DATED = -9;
 
-
+	
 	// other erros
 	UNEXPECTED = -100;	
 }	

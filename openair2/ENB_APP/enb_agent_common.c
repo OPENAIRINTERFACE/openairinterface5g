@@ -27,9 +27,9 @@
 
  *******************************************************************************/
 
-/*! \file 
- * \brief 
- * \author 
+/*! \file enb_agent_common.c
+ * \brief common primitives for all agents 
+ * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
@@ -38,6 +38,12 @@
 #include "enb_agent_common.h"
 #include "log.h"
 
+
+void * enb[NUM_MAX_ENB_AGENT];
+void * enb_ue[NUM_MAX_ENB_AGENT];
+/*
+ * message primitives
+ */
 
 int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size) {
 
@@ -52,7 +58,7 @@ int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *
   return 0;
   
  error:
-  LOG_E(ENB_APP, "an error occured\n"); // change the com
+  LOG_E(ENB_AGENT, "an error occured\n"); // change the com
   return -1;
 }
 
@@ -74,9 +80,7 @@ int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage
 
 
 
-
-
-int prp_create_header(uint32_t xid, Protocol__PrpType type,  Protocol__PrpHeader **header) {
+int prp_create_header(xid_t xid, Protocol__PrpType type,  Protocol__PrpHeader **header) {
   
   *header = malloc(sizeof(Protocol__PrpHeader));
   if(*header == NULL)
@@ -98,7 +102,7 @@ int prp_create_header(uint32_t xid, Protocol__PrpType type,  Protocol__PrpHeader
 }
 
 
-int enb_agent_hello(uint32_t xid, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_hello(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg) {
  
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_HELLO, &header) != 0)
@@ -150,7 +154,7 @@ int enb_agent_destroy_hello(Protocol__ProgranMessage *msg) {
 }
 
 
-int enb_agent_echo_request(uint32_t xid, const void* params, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_request(mid_t mod_id, xid_t xid, const void* params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REQUEST, &header) != 0)
     goto error;
@@ -199,7 +203,7 @@ int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg) {
 
 
 
-int enb_agent_echo_reply(uint32_t xid, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_reply(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REPLY, &header) != 0)
     goto error;
@@ -246,3 +250,263 @@ int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg) {
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
+
+/*
+ * get generic info from RAN
+ */
+
+void set_enb_vars(mid_t mod_id, ran_name_t ran){
+
+  switch (ran){
+  case RAN_LTE_OAI :
+    enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
+    enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
+    break;
+  default :
+    goto error;
+  }
+
+  return; 
+
+ error:
+  LOG_E(ENB_AGENT, "unknown RAN name %d\n", ran);
+}
+
+int get_current_time_ms (mid_t mod_id, int subframe_flag){
+
+  if (subframe_flag == 1){
+    return ((eNB_MAC_INST *)enb[mod_id])->frame*10 + ((eNB_MAC_INST *)enb[mod_id])->subframe;
+  }else {
+    return ((eNB_MAC_INST *)enb[mod_id])->frame*10;
+  }
+   
+}
+
+int get_num_ues (mid_t mod_id){
+
+  return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;
+}
+
+int get_ue_crnti (mid_t mod_id, mid_t ue_id){
+
+  return  ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].crnti;
+}
+
+int get_ue_bsr (mid_t mod_id, mid_t ue_id, lcid_t lcid) {
+
+  return ((UE_list_t *)enb_ue[mod_id])->UE_template[UE_PCCID(mod_id,ue_id)][ue_id].bsr_info[lcid];
+}
+
+int get_ue_phr (mid_t mod_id, mid_t ue_id) {
+
+  return ((UE_list_t *)enb_ue[mod_id])->UE_template[UE_PCCID(mod_id,ue_id)][ue_id].phr_info;
+}
+
+int get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
+
+  return ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].dl_cqi;
+}
+/*
+ * timer primitives
+ */
+
+
+//struct enb_agent_map agent_map;
+
+/* The timer_id might not be the best choice for the comparison */
+int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b){
+
+  //if (a->timer_id) return 0;
+  //if (b->timer_id) return 0;
+  
+  if (a->timer_id < b->timer_id) return -1;
+  if (a->timer_id > b->timer_id) return 1;
+
+  // equal timers
+  return 0;
+}
+
+RB_GENERATE(enb_agent_map,enb_agent_timer_element_s, entry, enb_agent_compare_timer);
+
+err_code_t enb_agent_init_timer(void){
+
+  RB_INIT(&enb_agent_head);
+ 
+  /*
+    struct enb_agent_timer_element_s e;
+  memset(&e, 0, sizeof(enb_agent_timer_element_t));
+  RB_INSERT(enb_agent_map, &agent_map, &e); 
+  */
+ return PROTOCOL__PROGRAN_ERR__NO_ERR;
+}
+
+err_code_t enb_agent_create_timer(uint32_t interval_sec,
+				  uint32_t interval_usec,
+				  agent_id_t     agent_id,
+				  instance_t     instance,
+				  uint32_t timer_type,
+				  enb_agent_timer_callback_t cb,
+				  void*    timer_args,
+				  long *timer_id){
+  
+  struct enb_agent_timer_element_s e;
+//uint32_t timer_id;
+  int ret=-1;
+  
+  if ((interval_sec == 0) && (interval_usec == 0 ))
+    return TIMER_NULL;
+  
+  if (timer_type >= ENB_AGENT_TIMER_TYPE_MAX)
+    return TIMER_TYPE_INVALIDE;
+  
+  if (timer_type  ==   ENB_AGENT_TIMER_TYPE_ONESHOT){ 
+    ret = timer_setup(interval_sec, 
+		      interval_usec, 
+		      TASK_ENB_AGENT, 
+		      instance, 
+		      TIMER_ONE_SHOT,
+		      timer_args,
+		      timer_id);
+    
+    e.type = TIMER_ONE_SHOT;
+  }
+  else if (timer_type  ==   ENB_AGENT_TIMER_TYPE_PERIODIC ){
+    ret = timer_setup(interval_sec, 
+		      interval_usec, 
+		      TASK_ENB_AGENT, 
+		      instance, 
+		      TIMER_PERIODIC,
+		      timer_args,
+		      timer_id);
+    
+    e.type = TIMER_PERIODIC;
+  }
+  
+  if (ret < 0 ) {
+    return TIMER_SETUP_FAILED; 
+  }
+
+  e.agent_id = agent_id;
+  e.instance = instance;
+  e.state = ENB_AGENT_TIMER_STATE_ACTIVE;
+  e.timer_id = *timer_id;
+  e.timer_args = timer_args; 
+  e.cb = cb;
+
+  LOG_I(ENB_AGENT,"created a timer with id 0x%lx  for agent %d, instance %d \n",
+	e.timer_id, e.agent_id, e.instance);
+
+  RB_INSERT(enb_agent_map, &enb_agent_head, &e); 
+  
+   
+  /*
+  struct enb_agent_timer_element_s search;
+  search.timer_id = *timer_id;
+  printf("search 1: %p (expected %p)\n", RB_FIND(enb_agent_map, &enb_agent_head, &search), &e);
+  printf("search 1: %p (expected %p)\n", get_timer_entry(e.timer_id), &e);
+  */      
+  return 0; 
+}
+
+err_code_t enb_agent_destroy_timer(long timer_id){
+  
+  struct enb_agent_timer_element_s *e = get_timer_entry(timer_id);
+
+  if (e != NULL ) {
+    RB_REMOVE(enb_agent_map, &enb_agent_head, &e);
+    free(e);
+  }
+  
+  if (timer_remove(timer_id) < 0 ) 
+    goto error;
+  
+  return 0;
+
+ error:
+  LOG_E(ENB_AGENT, "timer can't be removed\n");
+  return TIMER_REMOVED_FAILED ;
+}
+
+err_code_t enb_agent_destroy_timers(void){
+  
+  struct enb_agent_timer_element_s *e = NULL;
+  
+  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
+    RB_REMOVE(enb_agent_map, &enb_agent_head, e);
+    timer_remove(e->timer_id); 
+    free(e);
+  }  
+
+  return 0;
+
+}
+
+struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
+  
+  struct enb_agent_timer_element_s search, *e;
+  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
+  search.timer_id = timer_id;
+ 
+  return RB_FIND(enb_agent_map, &enb_agent_head, &search); 
+}
+
+/*
+ int i =0;
+  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
+    printf("%d: %p\n", i, e); i++;
+    }
+*/
+
+/*
+err_code_t enb_agent_stop_timer(uint32_t timer_id){
+  
+  struct enb_agent_timer_element_s *e=NULL;
+  
+  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
+    if (e->timer_id == timer_id)
+      break;
+  }
+
+  if (e != NULL ) {
+    e->state =  ENB_AGENT_TIMER_STATE_STOPPED;
+  }
+  
+  timer_remove(timer_id);
+  
+  return 0;
+
+}
+
+// this will change the timer_id
+err_code_t enb_agent_restart_timer(uint32_t *timer_id){
+  
+  struct enb_agent_timer_element_s *e=NULL;
+    
+  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
+    if (e->timer_id == timer_id)
+      break;
+  }
+
+  if (e != NULL ) {
+    e->state =  ENB_AGENT_TIMER_STATE_ACTIVE;
+  }
+  
+  ret = timer_setup(e->interval_sec, 
+		    e->interval_usec, 
+		    e->agent_id, 
+		    e->instance, 
+		    e->type,
+		    e->timer_args,
+		    &timer_id);
+    
+  }
+
+  if (ret < 0 ) {
+    return PROTOCOL__PROGRAN_ERR__TIMER_SETUP_FAILED; 
+  }
+  
+  return 0;
+
+}
+
+*/

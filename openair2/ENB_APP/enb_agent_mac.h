@@ -27,9 +27,9 @@
 
  *******************************************************************************/
 
-/*! \file 
- * \brief 
- * \author 
+/*! \file enb_agent_mac.h
+ * \brief enb agent message handler APIs for MAC layer
+ * \author  Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
@@ -41,6 +41,8 @@
 #include "progran.pb-c.h"
 #include "stats_messages.pb-c.h"
 #include "stats_common.pb-c.h"
+
+#include "enb_agent_common.h"
 
 
 /* These types will be used to give
@@ -68,9 +70,9 @@ typedef struct {
 } report_config_t;
 
 
-int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg);
 
-int enb_agent_mac_stats_reply(uint32_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
+int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
 
 int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg);
 

@@ -27,20 +27,18 @@
 
  *******************************************************************************/
 
-/*! \file 
- * \brief 
- * \author 
+/*! \file enb_agent_mac.c
+ * \brief enb agent message handler for MAC layer
+ * \author Navid Nikaein and Xenofon Foukas
  * \date 2016
  * \version 0.1
  */
 
 #include "enb_agent_mac.h"
-#include "enb_agent_common.h"
-#include "LAYER2/MAC/extern.h"
-#include "LAYER2/RLC/rlc.h"
+
 #include "log.h"
 
-int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__ProgranMessage **msg){
+int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg){
   
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
@@ -52,11 +50,11 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
   
   //TODO: We do not deal with multiple CCs at the moment and eNB id is 0 
   int cc_id = 0;
-  int enb_id = 0;
+  int enb_id = mod_id;
 
-  eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
-  UE_list_t *eNB_UE_list= &eNB->UE_list;
-
+  //eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
+  //UE_list_t *eNB_UE_list=  &eNB->UE_list;
+  
   report_config_t report_config;
 
   uint32_t ue_flags = 0;
@@ -90,7 +88,7 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
       //Create a list of all eNB RNTIs and cells
       
       //Set the number of UEs and create list with their RNTIs stats configs
-      report_config.nr_ue = eNB_UE_list->num_UEs;
+      report_config.nr_ue = get_num_ues(mod_id); //eNB_UE_list->num_UEs
       report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
       if (report_config.ue_report_type == NULL) {
 	// TODO: Add appropriate error code
@@ -98,7 +96,7 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
 	goto error;
       }
       for (i = 0; i < report_config.nr_ue; i++) {
-	report_config.ue_report_type[i].ue_rnti = eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
+	report_config.ue_report_type[i].ue_rnti = get_ue_crnti(enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
 	report_config.ue_report_type[i].ue_report_flags = ue_flags;
       }
       //Set the number of CCs and create a list with the cell stats configs
@@ -157,7 +155,7 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
     goto error;
   }
 
-  if (enb_agent_mac_stats_reply(xid, &report_config, msg) < 0 ){
+  if (enb_agent_mac_stats_reply(enb_id, xid, &report_config, msg) < 0 ){
     err_code = PROTOCOL__PROGRAN_ERR__MSG_BUILD;
     goto error;
   }
@@ -168,19 +166,20 @@ int enb_agent_mac_handle_stats(uint32_t xid, const void *params, Protocol__Progr
   return 0;
 
  error :
-  LOG_E(ENB_APP, "errno %d occured\n", err_code);
+  LOG_E(ENB_AGENT, "errno %d occured\n", err_code);
   return err_code;
 }
 
-int enb_agent_mac_stats_reply(uint32_t xid,
+int enb_agent_mac_stats_reply(mid_t mod_id,
+			      xid_t xid,
 			      const report_config_t *report_config, 
 			      Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   int i, j, k;
   int cc_id = 0;
-  int enb_id = 0;
-  eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
-  UE_list_t *eNB_UE_list= &eNB->UE_list;
+  int enb_id = mod_id;
+  //eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
+  //UE_list_t *eNB_UE_list=  &eNB->UE_list;
   
   
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REPLY, &header) != 0)
@@ -226,7 +225,7 @@ int enb_agent_mac_stats_reply(uint32_t xid,
 	for (j = 0; j++; j < ue_report[i]->n_bsr) {
 	  // Set the actual BSR for LCG j of the current UE
 	  // NN: we need to know the cc_id here, consider the first one
-	  elem[j] = eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].bsr_info[j];
+	  elem[j] = get_ue_bsr (enb_id, i, j); //eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].bsr_info[j];
 	}
 	ue_report[i]->bsr = elem;
       }
@@ -234,7 +233,7 @@ int enb_agent_mac_stats_reply(uint32_t xid,
       /* Check flag for creation of PRH report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PRH) {
 	// TODO: Fill in the actual power headroom value for the RNTI
-	ue_report[i]->phr = eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
+	ue_report[i]->phr = get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
 	ue_report[i]->has_phr = 1;
       }
 
@@ -297,7 +296,7 @@ int enb_agent_mac_stats_reply(uint32_t xid,
 	  goto error;
 	protocol__prp_dl_cqi_report__init(dl_report);
 	//TODO:Set the SFN and SF of the last report held in the agent.
-	dl_report->sfn_sn = eNB->frame*10 + eNB->subframe;
+	dl_report->sfn_sn = get_current_time_ms(enb_id, 1);
 	dl_report->has_sfn_sn = 1;
 	//TODO:Set the number of DL CQI reports for this UE. One for each CC
 	dl_report->n_csi_report = 1;
@@ -331,7 +330,7 @@ int enb_agent_mac_stats_reply(uint32_t xid,
 	  protocol__prp_csi_p10__init(csi10);
 	  //TODO: set the wideband value
 	  // NN: this is also depends on cc_id
-	  csi10->wb_cqi = eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
+	  csi10->wb_cqi = get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
 	  csi10->has_wb_cqi = 1;
 	  //Add the type of measurements to the csi report in the proper union type
 	  csi_reports[j]->p10csi = csi10;

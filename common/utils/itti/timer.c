@@ -94,9 +94,8 @@ int timer_handle_signal(siginfo_t *info)
   timer_p = (struct timer_elm_s *)info->si_ptr;
 
   // LG: To many traces for msc timer:
-  // TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
-
-#if defined(ENABLE_ITTI)
+  TMR_DEBUG("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
+  printf("Timer with id 0x%lx has expired\n", (long)timer_p->timer);
 
   task_id = timer_p->task_id;
   instance = timer_p->instance;
@@ -106,7 +105,6 @@ int timer_handle_signal(siginfo_t *info)
 
   timer_expired_p->timer_id = (long)timer_p->timer;
   timer_expired_p->arg      = timer_p->timer_arg;
-#endif
 
   /* Timer is a one shot timer, remove it */
   if (timer_p->type == TIMER_ONE_SHOT) {
@@ -123,13 +121,16 @@ int timer_handle_signal(siginfo_t *info)
       TMR_DEBUG("Failed to delete timer 0x%lx\n", (long)timer_p->timer);
     }
   }
-#ifdefined ENABLE_ITTI
+
   /* Notify task of timer expiry */
   if (itti_send_msg_to_task(task_id, instance, message_p) < 0) {
     TMR_DEBUG("Failed to send msg TIMER_HAS_EXPIRED to task %u\n", task_id);
     free(message_p);
     return -1;
   }
+
+#if defined(ENB_AGENT_SB_IF)
+
 #endif 
 
   return 0;
@@ -205,6 +206,11 @@ int timer_setup(
   /* Simply set the timer_id argument. so it can be used by caller */
   *timer_id = (long)timer;
   TMR_DEBUG("Requesting new %s timer with id 0x%lx that expires within "
+            "%d sec and %d usec\n",
+            type == TIMER_PERIODIC ? "periodic" : "single shot",
+            *timer_id, interval_sec, interval_us);
+
+  printf("Requesting new %s timer with id 0x%lx that expires within "
             "%d sec and %d usec\n",
             type == TIMER_PERIODIC ? "periodic" : "single shot",
             *timer_id, interval_sec, interval_us);

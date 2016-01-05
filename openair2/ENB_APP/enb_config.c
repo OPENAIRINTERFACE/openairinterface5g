@@ -170,6 +170,11 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
+#define ENB_CONFIG_STRING_NETWORK_CONTROLLER_CONFIG     "NETWORK_CONTROLLER"
+#define ENB_CONFIG_STRING_ENB_AGENT_INTERFACE_NAME      "ENB_AGENT_INTERFACE_NAME"
+#define ENB_CONFIG_STRING_ENB_AGENT_IPV4_ADDRESS        "ENB_AGENT_IPV4_ADDRESS"
+#define ENB_CONFIG_STRING_ENB_AGENT_PORT                "ENB_AGENT_PORT"
+
 
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
@@ -274,6 +279,14 @@ static void enb_config_display(void)
     } else {
       printf( "\tMNC:                \t%02"PRIu16":\n",enb_properties.properties[i]->mnc);
     }
+
+#if defined(ENB_AGENT_SB_IF)
+    printf( "\nENB AGENT CONFIG : \n\n");
+    printf( "\tInterface name:           \t%s:\n",enb_properties.properties[i]->enb_agent_interface_name);
+    printf( "\tInterface IP Address:     \t%s:\n",enb_properties.properties[i]->enb_agent_ipv4_address);
+    printf( "\tInterface PORT:           \t%d:\n\n",enb_properties.properties[i]->enb_agent_port);
+    
+#endif 
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
       printf( "\teutra band for CC %d:         \t%"PRId16":\n",j,enb_properties.properties[i]->eutra_band[j]);
@@ -571,6 +584,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char             *astring                       = NULL;
+  char*             enb_agent_interface_name      = NULL;
+  char*             enb_agent_ipv4_address        = NULL;
+  libconfig_int     enb_agent_port                = 0;
   libconfig_int     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -2190,6 +2206,33 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               }
             }
           }
+	  
+	  // Network Controller 
+	  subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
+
+          if (subsetting != NULL) {
+            if (  (
+                   config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_AGENT_INTERFACE_NAME,
+                                                 (const char **)&enb_agent_interface_name)
+                   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_AGENT_IPV4_ADDRESS,
+                                                    (const char **)&enb_agent_ipv4_address)
+                   && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_ENB_AGENT_PORT,
+                                                &enb_agent_port)
+                 )
+              ) {
+              enb_properties.properties[enb_properties_index]->enb_agent_interface_name = strdup(enb_agent_interface_name);
+              cidr = enb_agent_ipv4_address;
+              address = strtok(cidr, "/");
+	      enb_properties.properties[enb_properties_index]->enb_agent_ipv4_address = strdup(address);
+	      /*  if (address) {
+                IPV4_STR_ADDR_TO_INT_NWBO (address, enb_properties.properties[enb_properties_index]->enb_agent_ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB Agent !\n" );
+		}*/
+
+              enb_properties.properties[enb_properties_index]->enb_agent_port = enb_agent_port;
+             
+            }
+          }
+	  
 
           // OTG _CONFIG
           setting_otg = config_setting_get_member (setting_enb, ENB_CONF_STRING_OTG_CONFIG);

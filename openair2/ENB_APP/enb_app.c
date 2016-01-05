@@ -315,8 +315,11 @@ void *eNB_app_task(void *args_p)
   }
 
 #if defined (ENB_AGENT_SB_IF)
-  printf("\n start enb agent\n");
-  enb_agent_start();
+  
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    printf("\n start enb agent %d\n", enb_id);
+    enb_agent_start(enb_id, enb_properties_p);
+  }
 #endif 
 
 # if defined(ENABLE_USE_MME)

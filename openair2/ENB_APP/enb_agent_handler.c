@@ -27,9 +27,9 @@
 
  *******************************************************************************/
 
-/*! \file 
- * \brief 
- * \author 
+/*! \file enb_agent_handler.c
+ * \brief enb agent tx and rx message handler 
+ * \author Navid Nikaein and Xenofon Foukas 
  * \date 2016
  * \version 0.1
  */
@@ -67,7 +67,8 @@ static const char *enb_agent_direction2String[] = {
 };
 
 
-Protocol__ProgranMessage* enb_agent_handle_message (uint32_t xid, 
+Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
+						    xid_t xid, 
 						    uint8_t *data, 
 						    uint32_t size){
   
@@ -92,7 +93,7 @@ Protocol__ProgranMessage* enb_agent_handle_message (uint32_t xid,
 
   }
 
-  err_code= ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(xid, (void *) decoded_message, &reply_message));
+  err_code = ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, xid, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
   }
@@ -102,16 +103,16 @@ Protocol__ProgranMessage* enb_agent_handle_message (uint32_t xid,
   return reply_message;
   
 error:
-  LOG_E(ENB_APP,"errno %d occured\n",err_code);
-  return err_code;
+  LOG_E(ENB_AGENT,"errno %d occured\n",err_code);
+  return NULL;
 
 }
 
 
 
-void * enb_agent_send_message(uint32_t xid, 
-			   Protocol__ProgranMessage *msg, 
-			   uint32_t * size){
+void * enb_agent_send_message(xid_t xid, 
+			      Protocol__ProgranMessage *msg, 
+			      uint32_t * size){
 
   void * buffer;
   err_code_t err_code = PROTOCOL__PROGRAN_ERR__NO_ERR;
@@ -126,21 +127,32 @@ void * enb_agent_send_message(uint32_t xid,
   err_code = ((*message_destruction_callback[msg->msg_case-1])(msg));
   
   DevAssert(buffer !=NULL);
-
-  LOG_D(ENB_APP,"Serilized the enb mac stats reply (size %d)\n", *size);
-
+  
+  LOG_D(ENB_AGENT,"Serilized the enb mac stats reply (size %d)\n", *size);
+  
   return buffer;
-
-error :
-LOG_E(ENB_APP,"errno %d occured\n",err_code);
-return NULL; 
+  
+ error : 
+  LOG_E(ENB_AGENT,"errno %d occured\n",err_code);
+  
+  return NULL; 
   
 }
 
+err_code_t enb_agent_process_timeout(long timer_id, void* timer_args){
+    
+  struct enb_agent_timer_element_s *e = get_timer_entry(timer_id);
+  
+  LOG_I(ENB_AGENT, "element %p: timer_id is 0x%lx  0x%lx\n", e, timer_id, e->timer_id);
+   
+  if (e == NULL ) goto error;
+  if (timer_args == NULL)
+    LOG_W(ENB_AGENT,"null timer args\n");
+  
+  return e->cb(timer_args);
+  
 
-
-
-
-
-
-
+ error:
+  LOG_E(ENB_AGENT, "can't get the timer element\n");
+  return TIMER_ELEMENT_NOT_FOUND;
+}
