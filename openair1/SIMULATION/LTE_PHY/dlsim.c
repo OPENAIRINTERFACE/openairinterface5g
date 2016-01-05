@@ -790,14 +790,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1) 
     if (perfect_ce==1)
-	 sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_ab_perf_ce_sh%d_3mod.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+	 sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_ab_perf_ce_sh%d_div2.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
   	else
-    	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_3mod.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+    	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_div2.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
   else //abstx=0
     if (perfect_ce==1)
-	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_perf_ce_sh%d_3mod.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
+	sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_perf_ce_sh%d_div2.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
    else
-        sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_3mod.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
+        sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_div2.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
   
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -833,9 +833,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d_3mod_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d_div2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
  	else
-		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d_3mod_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d_div2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
 
      // sprintf(csv_fname,"dataout_tx%d_mcs%d_mcs_interf%d_chan%d_nsimus%d_R%d_abstr_old.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
     csv_fd = fopen(csv_fname,"w");

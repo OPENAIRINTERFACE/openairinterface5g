@@ -442,7 +442,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// !!!!! Right now in testing mode for -gS channel ONLY. We investigate if any
 	// additional gain/penalty needs to be introduced in comparison with I-UA receiver
 	// by comparing performances if run with -u2 and -u0.
-	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 3. 
+	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13. 
 	// MCS-dependent LUT will be introduced. 
 	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
@@ -459,7 +459,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	}
 	else
 	// to avoid tails in SNR/BLER curves. -13 is needed to make shift a positive number. 
-	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 3.
+	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13.
 	// MCS-dependent LUT will be introduced.
 	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
