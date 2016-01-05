@@ -439,10 +439,18 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	    
 	
 	if (rx_type>rx_standard) {
-	  	// interf_unaw_shift_tm4_mcs is to avoid tails in SNR/BLER curves
-	avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->Qm>>1)-1];  
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
+	// !!!!! Right now in testing mode for -gS channel ONLY. We investigate if any
+	// additional gain/penalty needs to be introduced in comparison with I-UA receiver
+	// by comparing performances if run with -u2 and -u0.
+	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 3. 
+	// MCS-dependent LUT will be introduced. 
+	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0); 
+	
+	//avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->Qm>>1)-1];  
+	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
+	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
 	//printf("TM4 I-A shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]);
 	//printf("TM4 I-A shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
        
@@ -450,7 +458,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	  
 	}
 	else
-	// to avoid tails in SNR/BLER curves
+	// to avoid tails in SNR/BLER curves. -13 is needed to make shift a positive number. 
+	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 3.
+	// MCS-dependent LUT will be introduced.
 	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0);
