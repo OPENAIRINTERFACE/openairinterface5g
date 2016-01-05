@@ -104,6 +104,10 @@ void set_enb_vars(mid_t mod_id, ran_name_t ran);
 
 int get_current_time_ms (mid_t mod_id, int subframe_flag);
 
+int get_current_frame(mid_t mod_id);
+
+int get_current_subframe(mid_t mod_id);
+
 int get_num_ues(mid_t mod_id);
 
 int get_ue_crnti (mid_t mod_id, mid_t ue_id);

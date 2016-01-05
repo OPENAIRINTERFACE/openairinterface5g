@@ -282,6 +282,18 @@ int get_current_time_ms (mid_t mod_id, int subframe_flag){
    
 }
 
+int get_current_frame (mid_t mod_id) {
+  
+  return ((eNB_MAC_INST *)enb[mod_id])->frame;
+  
+}
+
+int get_current_subframe (mid_t mod_id) {
+
+  return ((eNB_MAC_INST *)enb[mod_id])->subframe;
+  
+}
+
 int get_num_ues (mid_t mod_id){
 
   return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;
