@@ -172,7 +172,7 @@ void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag) {
 	mod_enb->devs->openair0_cfg.tx_delay = 8;
       }
     }
-    else if (mod_enb->devs->type == USRP_IF) {
+    else if ((mod_enb->devs->type == USRP_B200_IF )||(mod_enb->devs->type == USRP_X300_IF )) {
       if ( mod_enb->devs->openair0_cfg.num_rb_dl == 100 ) {
 	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
 	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 175;
