@@ -296,7 +296,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__prp_dl_cqi_report__init(dl_report);
 	//TODO:Set the SFN and SF of the last report held in the agent.
-	dl_report->sfn_sn = get_current_time_ms(enb_id, 1);
+	dl_report->sfn_sn = get_sfn_sf(enb_id);
 	dl_report->has_sfn_sn = 1;
 	//TODO:Set the number of DL CQI reports for this UE. One for each CC
 	dl_report->n_csi_report = 1;
@@ -391,7 +391,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__prp_ul_cqi_report__init(full_ul_report);
 	//TODO:Set the SFN and SF of the generated report
-	full_ul_report->sfn_sn = 100;
+	full_ul_report->sfn_sn = get_sfn_sf(enb_id);
 	full_ul_report->has_sfn_sn = 1;
 	//TODO:Set the number of UL measurement reports based on the types of measurements
 	//configured for this UE and on the servCellIndex
@@ -461,7 +461,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__prp_noise_interference_report__init(ni_report);
 	// Current frame and subframe number
-	ni_report->sfn_sf = 0;
+	ni_report->sfn_sf = get_sfn_sf(enb_id);
 	ni_report->has_sfn_sf = 1;
 	// Received interference power in dbm
 	ni_report->rip = 0;

@@ -108,6 +108,10 @@ int get_current_frame(mid_t mod_id);
 
 int get_current_subframe(mid_t mod_id);
 
+/*Return the frame and subframe number in compact 16-bit format.
+  Bits 0-3 frame, rest for subframe. Required by progRAN protocol*/
+uint16_t get_sfn_sf (mid_t mod_id);
+
 int get_num_ues(mid_t mod_id);
 
 int get_ue_crnti (mid_t mod_id, mid_t ue_id);

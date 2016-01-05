@@ -294,6 +294,17 @@ int get_current_subframe (mid_t mod_id) {
   
 }
 
+uint16_t get_sfn_sf (mid_t mod_id) {
+  
+  uint16_t frame, subframe;
+  uint16_t sfn_sf;
+  
+  frame = (uint16_t) get_current_frame(mod_id);
+  subframe = (uint16_t) get_current_subframe(mod_id);
+  sfn_sf = (frame << 12) | subframe;
+  return sfn_sf;
+}
+
 int get_num_ues (mid_t mod_id){
 
   return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;
