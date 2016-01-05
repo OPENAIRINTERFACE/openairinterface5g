@@ -833,9 +833,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d_3mod.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift);
+		sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_perf_ce_sh%d_3mod_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
  	else
-		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d_3mod.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift);
+		 sprintf(csv_fname,"dataout_tx%d_rec%d_mcs%d_mcsi%d_chan%d_ns%d_R%d_ab_sh%d_3mod_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
 
      // sprintf(csv_fname,"dataout_tx%d_mcs%d_mcs_interf%d_chan%d_nsimus%d_R%d_abstr_old.m",transmission_mode,mcs1,mcs2,channel_model,n_frames,num_rounds);
     csv_fd = fopen(csv_fname,"w");

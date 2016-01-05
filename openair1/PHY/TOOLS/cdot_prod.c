@@ -114,12 +114,11 @@ int32_t dot_product(int16_t *x,
   //  print_shorts("mmtmp7",&mmtmp7);
   // convert back to integer
   result = _mm_cvtsi64_si32(mmtmp7);
-
-  return(result);
-
+  
   _mm_empty();
   _m_empty();
-
+ 
+  return(result);
 #elif defined(__arm__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;
