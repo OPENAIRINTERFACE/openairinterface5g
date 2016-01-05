@@ -746,6 +746,7 @@ if (ENB_AGENT_SB_IF)
     ${OPENAIR2_DIR}/ENB_APP/enb_agent_common.c
     ${OPENAIR2_DIR}/ENB_APP/enb_agent_mac.c
     ${OPENAIR2_DIR}/ENB_APP/enb_agent.c
+    ${OPENAIR2_DIR}/ENB_APP/enb_agent_task_manager.c
     )
   set(ENB_AGENT_LIB ENB_AGENT)
   #include_directories(${OPENAIR2_DIR}/ENB_APP)
