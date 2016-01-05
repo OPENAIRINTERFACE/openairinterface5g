@@ -135,7 +135,7 @@ void et_scenario_schedule_tx_packet(et_packet_t * packet)
       } else {
         LOG_D(ENB_APP, "last_packet_was_tx\n");
         we_are_too_late = timeval_subtract(&offset,&offset_last_tx_packet,&packet->time_relative_to_last_sent_packet);
-        LOG_D(ENB_APP, "we_are_too_early=%d, offset=%ld.%06d\n", we_are_too_late, offset.tv_sec, offset.tv_usec);
+        LOG_D(ENB_APP, "we_are_too_late=%d, offset=%ld.%06d\n", we_are_too_late, offset.tv_sec, offset.tv_usec);
       }
       if ((0 == we_are_too_late) && (0 == g_max_speed)){
         // set timer

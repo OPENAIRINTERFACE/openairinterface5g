@@ -494,10 +494,11 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
             const xmlChar value_d[32];
             const xmlChar value_h[20];
             const xmlChar showname[64];
-            int           ret   = 0;
-            int           pos2  = 0;
-            char          val  = NULL;
-            char          hex[3] = {0,0,0};;
+            int           ret     = 0;
+            int           pos2    = 0;
+            unsigned long int uli = 0;
+            char          hex[3]  = {0,0,0};
+            char         *end_ptr = NULL;
 
             size = strtoul((const char *)xml_char, NULL, 0);
             xmlFree(xml_char);
@@ -518,10 +519,11 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
             do {
               hex[0] = value_h[pos2++];
               hex[1] = value_h[pos2++];
-              hex[2] = 0;
-              val = (unsigned char)strtoul(hex, NULL, 16);
-              AssertFatal(errno != 0, "Conversion of hexstring %s failed", hex);
-              s1ap->binary_stream[pos++] = val;
+              hex[2] = '\0';
+              end_ptr = hex;
+              uli = strtoul(hex, &end_ptr, 16);
+              AssertFatal((uli != ULONG_MAX) && (end_ptr != NULL) && (*end_ptr == '\0'), "Conversion of hexstring %s failed returned %ld errno %d", hex, uli, errno);
+              s1ap->binary_stream[pos++] = (unsigned char)uli;
             } while (pos2 < (2*5));
             // update ASN1
             et_decode_s1ap(s1ap);

@@ -921,58 +921,56 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
     shift = shift->next;
   }
   // now recompute time_relative_to_last_received_packet, time_relative_to_last_sent_packet
-  if (shifts) {
-    packet = scenario->list_packet;
-    while (packet) {
-      if (first_packet > 0) {
-        initial_time = packet->time_relative_to_first_packet;
-        packet->time_relative_to_first_packet.tv_sec  = 0;
-        packet->time_relative_to_first_packet.tv_usec = 0;
-        first_packet = 0;
-      } else {
-        timersub(&packet->time_relative_to_first_packet, &initial_time,
-            &packet->time_relative_to_first_packet);
-      }
-      if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
-        if (first_sent_packet > 0) {
-          relative_last_sent_packet = packet->time_relative_to_first_packet;
-          packet->time_relative_to_last_sent_packet.tv_sec  = 0;
-          packet->time_relative_to_last_sent_packet.tv_usec = 0;
-          first_sent_packet = 0;
-        } else {
-          timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
-              &packet->time_relative_to_last_sent_packet);
-          relative_last_sent_packet = packet->time_relative_to_first_packet;
-        }
-        if (first_received_packet > 0) {
-          packet->time_relative_to_last_received_packet.tv_sec  = 0;
-          packet->time_relative_to_last_received_packet.tv_usec = 0;
-        } else {
-          timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
-              &packet->time_relative_to_last_received_packet);
-        }
-      } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
-        if (first_received_packet > 0) {
-          relative_last_received_packet.tv_sec = packet->time_relative_to_first_packet.tv_sec;
-          relative_last_received_packet.tv_usec = packet->time_relative_to_first_packet.tv_usec;
-          packet->time_relative_to_last_received_packet.tv_sec  = 0;
-          packet->time_relative_to_last_received_packet.tv_usec = 0;
-          first_received_packet = 0;
-        } else {
-          timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
-              &packet->time_relative_to_last_received_packet);
-          relative_last_received_packet = packet->time_relative_to_first_packet;
-        }
-        if (first_sent_packet > 0) {
-          packet->time_relative_to_last_sent_packet.tv_sec  = 0;
-          packet->time_relative_to_last_sent_packet.tv_usec = 0;
-        } else {
-          timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
-              &packet->time_relative_to_last_sent_packet);
-        }
-      }
-      packet = packet->next;
+  packet = scenario->list_packet;
+  while (packet) {
+    if (first_packet > 0) {
+      initial_time = packet->time_relative_to_first_packet;
+      packet->time_relative_to_first_packet.tv_sec  = 0;
+      packet->time_relative_to_first_packet.tv_usec = 0;
+      first_packet = 0;
+    } else {
+      timersub(&packet->time_relative_to_first_packet, &initial_time,
+          &packet->time_relative_to_first_packet);
     }
+    if (packet->action == ET_PACKET_ACTION_S1C_SEND) {
+      if (first_sent_packet > 0) {
+        relative_last_sent_packet = packet->time_relative_to_first_packet;
+        packet->time_relative_to_last_sent_packet.tv_sec  = 0;
+        packet->time_relative_to_last_sent_packet.tv_usec = 0;
+        first_sent_packet = 0;
+      } else {
+        timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
+            &packet->time_relative_to_last_sent_packet);
+        relative_last_sent_packet = packet->time_relative_to_first_packet;
+      }
+      if (first_received_packet > 0) {
+        packet->time_relative_to_last_received_packet.tv_sec  = 0;
+        packet->time_relative_to_last_received_packet.tv_usec = 0;
+      } else {
+        timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
+            &packet->time_relative_to_last_received_packet);
+      }
+    } else if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
+      if (first_received_packet > 0) {
+        relative_last_received_packet.tv_sec = packet->time_relative_to_first_packet.tv_sec;
+        relative_last_received_packet.tv_usec = packet->time_relative_to_first_packet.tv_usec;
+        packet->time_relative_to_last_received_packet.tv_sec  = 0;
+        packet->time_relative_to_last_received_packet.tv_usec = 0;
+        first_received_packet = 0;
+      } else {
+        timersub(&packet->time_relative_to_first_packet, &relative_last_received_packet,
+            &packet->time_relative_to_last_received_packet);
+        relative_last_received_packet = packet->time_relative_to_first_packet;
+      }
+      if (first_sent_packet > 0) {
+        packet->time_relative_to_last_sent_packet.tv_sec  = 0;
+        packet->time_relative_to_last_sent_packet.tv_usec = 0;
+      } else {
+        timersub(&packet->time_relative_to_first_packet, &relative_last_sent_packet,
+            &packet->time_relative_to_last_sent_packet);
+      }
+    }
+    packet = packet->next;
   }
   et_display_scenario(scenario);
 
