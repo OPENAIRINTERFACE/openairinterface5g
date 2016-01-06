@@ -445,14 +445,14 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13. 
 	// MCS-dependent LUT will be introduced. 
 	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
+	avg[1] = (log2_approx(avg[1])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0); 
-	
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[1],0);
 	//avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->Qm>>1)-1];  
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
 	//printf("TM4 I-A shift layer1 = %d\n",interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]);
-	//printf("TM4 I-A shift layer2 = %d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
+	//printf("TM4 I-A shift layer2 = %dlsch_channel_level_TM34d\n",interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs] );
        
 	
 	  
@@ -462,8 +462,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13.
 	// MCS-dependent LUT will be introduced.
 	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
+	avg[1] = (log2_approx(avg[1])/2) - 13 + interf_unaw_shift;
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[1],0);
 	//printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
@@ -3086,9 +3087,11 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     dl_ch0_128 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     dl_ch1_128 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
-
+    
+    avg128D = _mm_setzero_si128();
+    
     for (rb=0; rb<nb_rb; rb++) {
-      avg128D = _mm_setzero_si128();
+      
       
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[0]);
@@ -3151,7 +3154,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   }
 
   // choose maximum of the 2 effective channels
-  avg[0] = cmax(avg[0],avg[1]);
+ // avg[0] = cmax(avg[0],avg[1]);
 
   _mm_empty();
   _m_empty();
