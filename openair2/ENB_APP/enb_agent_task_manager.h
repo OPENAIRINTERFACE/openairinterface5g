@@ -43,6 +43,8 @@
 
 #include "progran.pb-c.h"
 
+#include "enb_agent_common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -65,6 +67,7 @@ typedef struct enb_agent_task_s {
  * Priority Queue Structure for tasks
  */
 typedef struct enb_agent_task_queue_s {
+  mid_t mod_id;
   /* The amount of allocated memory for agent tasks in the heap*/
   volatile size_t capacity;
   /* The actual size of the tasks heap at a certain time */
@@ -76,7 +79,7 @@ typedef struct enb_agent_task_queue_s {
   /* An array of prioritized tasks stored in a heap */
   enb_agent_task_t **task;
   /* A pointer to a comparator function, used to prioritize elements */
-  int (*cmp)(const enb_agent_task_t *t1, const enb_agent_task_t *t2);
+  int (*cmp)(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2);
   pthread_mutex_t *mutex;
 } enb_agent_task_queue_t;
 
@@ -103,13 +106,13 @@ void enb_agent_task_destroy(enb_agent_task_t *task);
 /**
  * Allocate initial memory for storing the tasks
  */
-enb_agent_task_queue_t *enb_agent_task_queue_init(size_t capacity,
-						int (*cmp)(const enb_agent_task_t *t1, const enb_agent_task_t *t2));
+  enb_agent_task_queue_t *enb_agent_task_queue_init(mid_t mod_id, size_t capacity,
+						    int (*cmp)(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2));
 
 /**
  * Allocate initial memory for storing the tasks using default parameters
  */
-enb_agent_task_queue_t *enb_agent_task_queue_default_init();  
+enb_agent_task_queue_t *enb_agent_task_queue_default_init(mid_t mod_id);  
   
 /**
  * De-allocate memory for the tasks queue
@@ -148,8 +151,9 @@ int _enb_agent_task_queue_realloc_heap(enb_agent_task_queue_t *queue);
  * returns 0 if tasks t1, t2 have the same priority
  * return negative value if t1 needs to be executed after t2
  * return positive value if t1 preceeds t2
+ * Need to give eNB id for the comparisson based on the current frame-subframe
  */
-int _enb_agent_task_queue_cmp(const enb_agent_task_t *t1, const enb_agent_task_t *t2);
+  int _enb_agent_task_queue_cmp(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2);
 
 #ifdef __cplusplus
 }

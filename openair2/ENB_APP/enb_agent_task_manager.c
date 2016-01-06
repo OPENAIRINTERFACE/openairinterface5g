@@ -40,6 +40,7 @@
 #include <stdio.h>
 
 #include "enb_agent_task_manager.h"
+#include "enb_agent_common.c"
 
 
 /* Util macros */
@@ -74,8 +75,8 @@ void enb_agent_task_destroy(enb_agent_task_t *task) {
   free(task);
 }
 
-enb_agent_task_queue_t *enb_agent_task_queue_init(size_t capacity,
-						int (*cmp)(const enb_agent_task_t *t1, const enb_agent_task_t *t2)) {
+enb_agent_task_queue_t *enb_agent_task_queue_init(mid_t mod_id, size_t capacity,
+						  int (*cmp)(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2)) {
   enb_agent_task_queue_t *queue = NULL;
 
   queue = malloc(sizeof(enb_agent_task_queue_t));
@@ -87,6 +88,8 @@ enb_agent_task_queue_t *enb_agent_task_queue_init(size_t capacity,
     queue->cmp = _enb_agent_task_queue_cmp;
   else
     queue->cmp = cmp;
+
+  queue->mod_id = mod_id;
 
   queue->first_frame = 0;
   queue->first_subframe = 0;
@@ -115,8 +118,8 @@ enb_agent_task_queue_t *enb_agent_task_queue_init(size_t capacity,
   return NULL;
 }
 
-enb_agent_task_queue_t *enb_agent_task_queue_default_init() {
-  return enb_agent_task_queue_init(DEFAULT_CAPACITY, NULL);
+enb_agent_task_queue_t *enb_agent_task_queue_default_init(mid_t mod_id) {
+  return enb_agent_task_queue_init(mod_id, DEFAULT_CAPACITY, NULL);
 }
 
 void enb_agent_task_queue_destroy(enb_agent_task_queue_t *queue) {
@@ -157,7 +160,7 @@ int enb_agent_task_queue_put(enb_agent_task_queue_t *queue, enb_agent_task_t *ta
   i = queue->count;
   queue->count++;
   /*Swap elements to maintain heap properties*/
-  while(i > 0 && queue->cmp(queue->task[i], queue->task[PARENT(i)]) > 0) {
+  while(i > 0 && queue->cmp(queue->mod_id, queue->task[i], queue->task[PARENT(i)]) > 0) {
     tmp = queue->task[i];
     queue->task[i] = queue->task[PARENT(i)];
     queue->task[PARENT(i)] = tmp;
@@ -178,11 +181,6 @@ int enb_agent_task_queue_put(enb_agent_task_queue_t *queue, enb_agent_task_t *ta
 
 int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_agent_task_t **task) {
   int err_code;
-
-  /*TODO*/
-  /* Find current frame and subframe number */
-  uint16_t curr_frame=1;
-  uint8_t curr_subframe=1;
   
   if (pthread_mutex_lock(queue->mutex)) {
     /*TODO*/
@@ -195,6 +193,11 @@ int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_age
     err_code = HEAP_EMPTY;
     goto error;
   }
+
+  /* Find current frame and subframe number */
+  uint16_t curr_frame=get_current_frame(queue->mod_id);
+  uint8_t curr_subframe=get_current_subframe(queue->mod_id);
+
   /* If no task is scheduled for the current subframe, return without any task */
   if(queue->task[0]->frame_num != curr_frame || queue->task[0]->subframe_num != curr_subframe) {
     *task = NULL;
@@ -206,7 +209,16 @@ int enb_agent_task_queue_get_current_task(enb_agent_task_queue_t *queue, enb_age
   queue->count--;
   /* Restore heap property */
   _enb_agent_task_queue_heapify(queue, 0);
-
+  
+  /*If queue has no element*/
+  if (queue->count < 1) {
+    queue->first_frame = 0;
+    queue->first_subframe = 0;
+  } else {
+    queue->first_frame = queue->task[0]->frame_num;
+    queue->first_subframe = queue->task[0]->subframe_num;
+  }
+  
   if (pthread_mutex_unlock(queue->mutex)) {
     // LOG_E(MAC, "%s:%d:%s: fatal error\n", __FILE__, __LINE__, __FUNCTION__);
     exit(1);
@@ -228,14 +240,14 @@ void _enb_agent_task_queue_heapify(enb_agent_task_queue_t *queue, size_t idx) {
   r_idx = RIGHT(idx);
 
   /* Left child exists, compare left child with its parent */
-  if (l_idx < queue->count && queue->cmp(queue->task[l_idx], queue->task[idx]) > 0) {
+  if (l_idx < queue->count && queue->cmp(queue->mod_id, queue->task[l_idx], queue->task[idx]) > 0) {
     lrg_idx = l_idx;
   } else {
     lrg_idx = idx;
   }
 
   /* Right child exists, compare right child with the largest element */
-  if (r_idx < queue->count && queue->cmp(queue->task[r_idx], queue->task[lrg_idx]) > 0) {
+  if (r_idx < queue->count && queue->cmp(queue->mod_id, queue->task[r_idx], queue->task[lrg_idx]) > 0) {
     lrg_idx = r_idx;
   }
 
@@ -266,12 +278,12 @@ int _enb_agent_task_queue_realloc_heap(enb_agent_task_queue_t *queue) {
   return HEAP_NOREALLOC;
 }
 
-int _enb_agent_task_queue_cmp(const enb_agent_task_t *t1, const enb_agent_task_t *t2) {
+int _enb_agent_task_queue_cmp(mid_t mod_id, const enb_agent_task_t *t1, const enb_agent_task_t *t2) {
   if ((t1->frame_num == t2->frame_num) && (t1->subframe_num == t2->subframe_num))
     return 0;
-  /* TODO: need to get current frame and subframe number */
-  uint16_t curr_frame = 0;
-  uint8_t curr_subframe = 7;
+
+  uint16_t curr_frame = get_current_frame(mod_id);
+  uint8_t curr_subframe = get_current_subframe(mod_id);
 
   int f_offset, sf_offset, tmp1, tmp2;
 
@@ -295,9 +307,4 @@ int _enb_agent_task_queue_cmp(const enb_agent_task_t *t1, const enb_agent_task_t
   /*Subframe position matters only if f_offset is 0. Multiply f_offset by 100
     to be the only comparisson parameter in all other cases */
   return f_offset*100 + sf_offset;
-}
-
-
-int main(int argc, char **argv) {
-  return 0;
 }
