@@ -68,7 +68,6 @@ static const char *enb_agent_direction2String[] = {
 
 
 Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
-						    xid_t xid, 
 						    uint8_t *data, 
 						    uint32_t size){
   
@@ -93,7 +92,7 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
 
   }
 
-  err_code = ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, xid, (void *) decoded_message, &reply_message));
+  err_code = ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
   }
@@ -110,8 +109,7 @@ error:
 
 
 
-void * enb_agent_send_message(xid_t xid, 
-			      Protocol__ProgranMessage *msg, 
+void * enb_agent_send_message(Protocol__ProgranMessage *msg, 
 			      uint32_t * size){
 
   void * buffer;

@@ -38,7 +38,7 @@
 
 #include "log.h"
 
-int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg){
+int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
   
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
@@ -47,6 +47,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Prot
   void *buffer;
   int size;
   err_code_t err_code;
+  xid_t xid;
   
   //TODO: We do not deal with multiple CCs at the moment and eNB id is 0 
   int cc_id = 0;
@@ -63,6 +64,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Prot
   Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
 
   Protocol__PrpStatsRequest *stats_req = input->stats_request_msg;
+  xid = (stats_req->header)->xid;
 
   // Check the type of request that is made
   switch(stats_req->body_case) {

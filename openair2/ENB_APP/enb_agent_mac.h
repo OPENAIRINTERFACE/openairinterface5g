@@ -70,7 +70,7 @@ typedef struct {
 } report_config_t;
 
 
-int enb_agent_mac_handle_stats(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 
 int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
 

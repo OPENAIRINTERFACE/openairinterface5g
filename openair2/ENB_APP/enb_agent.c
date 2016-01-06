@@ -140,7 +140,7 @@ void *receive_thread(void *args) {
     LOG_D(ENB_AGENT,"received message with size %d\n", size);
   
     
-    msg=enb_agent_handle_message(d->mod_id, d->rx_xid, data, size);
+    msg=enb_agent_handle_message(d->mod_id, data, size);
 
     free(data);
     
@@ -149,7 +149,7 @@ void *receive_thread(void *args) {
   
     // check if there is something to send back to the controller
     if (msg != NULL){
-      data=enb_agent_send_message(d->tx_xid,msg,&size);
+      data=enb_agent_send_message(msg,&size);
      
       if (message_put(d->tx_mq, data, size, priority)){
 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;

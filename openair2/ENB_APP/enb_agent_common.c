@@ -102,9 +102,11 @@ int prp_create_header(xid_t xid, Protocol__PrpType type,  Protocol__PrpHeader **
 }
 
 
-int enb_agent_hello(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
  
   Protocol__PrpHeader *header;
+  /*TODO: Need to set random xid or xid from received hello message*/
+  xid_t xid = 1;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_HELLO, &header) != 0)
     goto error;
 
@@ -154,8 +156,10 @@ int enb_agent_destroy_hello(Protocol__ProgranMessage *msg) {
 }
 
 
-int enb_agent_echo_request(mid_t mod_id, xid_t xid, const void* params, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_request(mid_t mod_id, const void* params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
+  /*TODO: Need to set a random xid*/
+  xid_t xid = 1;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REQUEST, &header) != 0)
     goto error;
 
@@ -203,7 +207,13 @@ int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg) {
 
 
 
-int enb_agent_echo_reply(mid_t mod_id, xid_t xid, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  
+  xid_t xid;
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpEchoRequest *echo_req = input->echo_request_msg;
+  xid = (echo_req->header)->xid;
+
   Protocol__PrpHeader *header;
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_ECHO_REPLY, &header) != 0)
     goto error;
