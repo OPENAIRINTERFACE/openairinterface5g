@@ -58,6 +58,8 @@
 //#define DEBUG_DLSCH_DEMOD 1
 
 int avg[4]; 
+int avg_0[4];
+int avg_1[4];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
@@ -301,7 +303,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   dlsch_ue,
   symbol,
   nb_rb);
-  */
+  
   if (first_symbol_flag==1) {
     dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
@@ -352,7 +354,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     LOG_D(PHY,"[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
     LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
 #endif
-  }
+ // }
 
   aatx = frame_parms->nb_antennas_tx_eNB;
   aarx = frame_parms->nb_antennas_rx;
@@ -420,11 +422,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        
 	 
 	 // scaling interfering channel (following for TM56)
-	dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+	/*dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			    frame_parms,
 			    dlsch_ue,
 			    symbol,
-			    nb_rb);
+			    nb_rb);*/
 	
 	        
       if (first_symbol_flag==1) {
@@ -432,7 +434,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         dlsch_channel_level_TM34(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext, 
                                  frame_parms,
 				 lte_ue_pdsch_vars[eNB_id]->pmi_ext,
-                                 avg,
+                                 avg_0,
+				 avg_1,
 				 symbol,
 				 nb_rb,
                                  dlsch0_harq->mimo_mode);
@@ -444,10 +447,13 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// by comparing performances if run with -u2 and -u0.
 	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13. 
 	// MCS-dependent LUT will be introduced. 
-	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
-	avg[1] = (log2_approx(avg[1])/2) - 13 + interf_unaw_shift;
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[1],0);
+	avg_0[0] = (log2_approx(avg_0[0])/2) -13 + interf_unaw_shift;
+	avg_1[0] = (log2_approx(avg_1[0])/2) -13 + interf_unaw_shift;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
+	
+	//printf("log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
+	//printf("log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
 	//avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(dlsch1_harq->Qm>>1)-1];  
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs];//+offset_mumimo_llr_drange[dlsch0_harq->mcs][(get_Qm(dlsch1_harq->mcs)>>1)-1]; 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];//+offset_mumimo_llr_drange[dlsch1_harq->mcs][(get_Qm(dlsch0_harq->mcs)>>1)-1];
@@ -457,14 +463,18 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	
 	  
 	}
-	else
+	else {
 	// to avoid tails in SNR/BLER curves. -13 is needed to make shift a positive number. 
 	// this is valid only if same mcs are used. We calibrate for mcs 4. Best shift value is 13.
 	// MCS-dependent LUT will be introduced.
-	avg[0] = (log2_approx(avg[0])/2) - 13 + interf_unaw_shift;
-	avg[1] = (log2_approx(avg[1])/2) - 13 + interf_unaw_shift;
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg[1],0);
+	avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + interf_unaw_shift;
+	avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + interf_unaw_shift;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
+	//printf("log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
+	//printf("log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
+      }
+	
 	//printf("TM4 I-UA shift = %d\n",interf_unaw_shift); 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch0_harq->mcs]; 
 	//lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = (log2_approx(avg[0])/2) +interf_unaw_shift_tm4_mcs[dlsch1_harq->mcs];
@@ -3056,8 +3066,9 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
 //compute average channel_level of effective (precoded) channel
 void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
                               LTE_DL_FRAME_PARMS *frame_parms,
-			       unsigned char *pmi_ext,
-                              int *avg,
+			      unsigned char *pmi_ext,
+                              int *avg_0,
+			      int *avg_1,
                               uint8_t symbol,
                               unsigned short nb_rb,
                               MIMO_mode_t mimo_mode){
@@ -3067,14 +3078,15 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 
   short rb;
   unsigned char aarx,nre=12,symbol_mod;
-  __m128i *dl_ch0_128,*dl_ch1_128, dl_ch0_128_tmp, dl_ch1_128_tmp,avg128D;
+  __m128i *dl_ch0_128,*dl_ch1_128, dl_ch0_128_tmp, dl_ch1_128_tmp, avg_0_128D, avg_1_128D;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   //clear average level
-  avg128D = _mm_setzero_si128();
-  avg[0] = 0;
-  avg[1] = 0;
+  avg_0[0] = 0;
+  avg_0[1] = 0;
+  avg_1[0] = 0;
+  avg_1[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
 
   if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0))
@@ -3088,11 +3100,12 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
     dl_ch0_128 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     dl_ch1_128 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
     
-    avg128D = _mm_setzero_si128();
-    
+    avg_0_128D = _mm_setzero_si128();
+    avg_1_128D = _mm_setzero_si128();
     for (rb=0; rb<nb_rb; rb++) {
-      
-      
+              // printf("rb %d : \n",rb);
+              // print_shorts("ch0\n",&dl_ch0_128[0]);
+	       //print_shorts("ch1\n",&dl_ch1_128[0]);
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[0]);
 
@@ -3106,8 +3119,10 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
         prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
 
       //      mmtmpD0 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
-      avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
-
+      avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+      
+      avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));
+      
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[1]);
       dl_ch1_128_tmp = _mm_load_si128(&dl_ch1_128[1]);
 
@@ -3121,7 +3136,9 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
         prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
 
       //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
-      avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+      avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+      
+      avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));
 
       if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->mode1_flag==0)) {
         dl_ch0_128+=2;  
@@ -3140,21 +3157,33 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 	else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
 	  prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
         //      mmtmpD2 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
-        avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+	
+        avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+      
+	avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));
 
         dl_ch0_128+=3;  
         dl_ch1_128+=3;
       }          
     }
 
-    avg[aarx] = (((int*)&avg128D)[0])/(nb_rb*nre) +
-      (((int*)&avg128D)[1])/(nb_rb*nre) +
-      (((int*)&avg128D)[2])/(nb_rb*nre) +
-      (((int*)&avg128D)[3])/(nb_rb*nre);
+    avg_0[aarx] = (((int*)&avg_0_128D)[0])/(nb_rb*nre) +
+      (((int*)&avg_0_128D)[1])/(nb_rb*nre) +
+      (((int*)&avg_0_128D)[2])/(nb_rb*nre) +
+      (((int*)&avg_0_128D)[3])/(nb_rb*nre);
+    //  printf("From Chan_level aver stream 0 %d =%d\n", aarx, avg_0[aarx]);
+      
+    avg_1[aarx] = (((int*)&avg_1_128D)[0])/(nb_rb*nre) +
+      (((int*)&avg_1_128D)[1])/(nb_rb*nre) +
+      (((int*)&avg_1_128D)[2])/(nb_rb*nre) +
+      (((int*)&avg_1_128D)[3])/(nb_rb*nre);   
+    //  printf("From Chan_level aver stream 1 %d =%d\n", aarx, avg_1[aarx]);
   }
 
+  
   // choose maximum of the 2 effective channels
- // avg[0] = cmax(avg[0],avg[1]);
+  avg_0[0] = cmax(avg_0[0], avg_0[1]);
+  avg_1[0] = cmax(avg_1[0], avg_1[1]);
 
   _mm_empty();
   _m_empty();
