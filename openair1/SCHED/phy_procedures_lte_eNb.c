@@ -3122,7 +3122,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   int16_t n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3;
   uint8_t do_SR = 0;
   uint8_t pucch_sel = 0;
-  int32_t metric0=0,metric1=0;
+  int32_t metric0=0,metric1=0,metric0_SR=0;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
   uint8_t nPRS;
@@ -3664,7 +3664,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                             harq_pid,
                             &phy_vars_eNB->ulsch_eNB[i]->Msg3_flag);
 
-          // false msg3 detection by MAC: empty PDU
+          // one-shot msg3 detection by MAC: empty PDU (e.g. CRNTI)
           if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 0 ) {
             phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
             mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
@@ -3868,24 +3868,24 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
           phy_vars_eNB->eNB_UE_stats[i].sr_total++;
 
           if (abstraction_flag == 0)
-            metric0 = rx_pucch(phy_vars_eNB,
-                               pucch_format1,
-                               i,
-                               phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
-                               0, // n2_pucch
-                               0, // shortened format, should be use_srs flag, later
-                               &SR_payload,
-                               subframe,
-                               PUCCH1_THRES);
+            metric0_SR = rx_pucch(phy_vars_eNB,
+				  pucch_format1,
+				  i,
+				  phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
+				  0, // n2_pucch
+				  0, // shortened format, should be use_srs flag, later
+				  &SR_payload,
+				  subframe,
+				  PUCCH1_THRES);
 
 #ifdef PHY_ABSTRACTION
           else {
-            metric0 = rx_pucch_emul(phy_vars_eNB,
-                                    i,
-                                    pucch_format1,
-                                    0,
-                                    &SR_payload,
-                                    sched_subframe);
+            metric0_SR = rx_pucch_emul(phy_vars_eNB,
+				       i,
+				       pucch_format1,
+				       0,
+				       &SR_payload,
+				       sched_subframe);
             LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR (UE SR %d/%d)\n",phy_vars_eNB->Mod_id,
                   phy_vars_eNB->ulsch_eNB[i]->rnti,frame,subframe,SR_payload,phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex);
           }
@@ -3921,20 +3921,35 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
         } else if (phy_vars_eNB->lte_frame_parms.frame_type==FDD) { // FDD
           // if SR was detected, use the n1_pucch from SR, else use n1_pucch0
-          n1_pucch0 = (SR_payload==1) ? phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex:n1_pucch0;
+	  //          n1_pucch0 = (SR_payload==1) ? phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex:n1_pucch0;
 
 	  LOG_D(PHY,"Demodulating PUCCH for ACK/NAK: n1_pucch0 %d (%d), SR_payload %d\n",n1_pucch0,phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,SR_payload);
 
-          if (abstraction_flag == 0)
+          if (abstraction_flag == 0) {
+
+
+
             metric0 = rx_pucch(phy_vars_eNB,
                                pucch_format1a,
                                i,
                                (uint16_t)n1_pucch0,
                                0, //n2_pucch
-                               1, // shortened format
+                               0, // shortened format
                                pucch_payload0,
                                subframe,
                                PUCCH1a_THRES);
+
+            if (metric0 < metric0_SR)
+	      metric0=rx_pucch(phy_vars_eNB,
+			       pucch_format1a,
+			       i,
+			       phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
+			       0, //n2_pucch
+			       0, // shortened format
+			       pucch_payload0,
+			       subframe,
+			       PUCCH1a_THRES);
+	  }
           else {
 #ifdef PHY_ABSTRACTION
             metric0 = rx_pucch_emul(phy_vars_eNB,i,
@@ -3986,15 +4001,15 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 #endif
 
             if (abstraction_flag == 0)
-              metric0 = rx_pucch(phy_vars_eNB,
-                                 format,
-                                 i,
-                                 phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
-                                 0, //n2_pucch
-                                 1, // shortened format
-                                 pucch_payload0,
-                                 subframe,
-                                 PUCCH1a_THRES);
+              metric0_SR = rx_pucch(phy_vars_eNB,
+				    format,
+				    i,
+				    phy_vars_eNB->scheduling_request_config[i].sr_PUCCH_ResourceIndex,
+				    0, //n2_pucch
+				    0, // shortened format
+				    pucch_payload0,
+				    subframe,
+				    PUCCH1a_THRES);
             else {
 #ifdef PHY_ABSTRACTION
               metric0 = rx_pucch_emul(phy_vars_eNB,i,
@@ -4022,7 +4037,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                    i,
                                    (uint16_t)n1_pucch0,
                                    0, // n2_pucch
-                                   1, // shortened format
+                                   0, // shortened format
                                    pucch_payload0,
                                    subframe,
                                    PUCCH1a_THRES);
@@ -4045,7 +4060,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                    i,
                                    (uint16_t)n1_pucch1,
                                    0, //n2_pucch
-                                   1, // shortened format
+                                   0, // shortened format
                                    pucch_payload1,
                                    subframe,
                                    PUCCH1a_THRES);

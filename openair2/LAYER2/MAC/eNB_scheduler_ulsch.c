@@ -88,6 +88,7 @@ void rx_sdu(
   int ii,j;
   eNB_MAC_INST *eNB = &eNB_mac_inst[enb_mod_idP];
   UE_list_t *UE_list= &eNB->UE_list;
+  int crnti_rx=0;
 
   start_meas(&eNB->rx_ulsch_sdu);
 
@@ -128,9 +129,9 @@ void rx_sdu(
     case CRNTI:
       UE_id = find_UE_id(enb_mod_idP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
       LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], i,num_ce,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
-
+      crnti_rx=1;
       payload_ptr+=2;
-      /* we don't process this CE yet */
+
       if (msg3_flagP != NULL) {
 	*msg3_flagP = 0;
       }
@@ -144,6 +145,9 @@ void rx_sdu(
       LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received short BSR LCGID = %u bsr = %d\n",
 	    enb_mod_idP, CC_idP, rx_ces[i], lcgid, payload_ptr[0] & 0x3f);
 
+      if (crnti_rx==1)
+	LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : Received short BSR LCGID = %u bsr = %d\n",
+	      enb_mod_idP, CC_idP, rx_ces[i], lcgid, payload_ptr[0] & 0x3f);
       if (UE_id  != -1) {
 
         UE_list->UE_template[CC_idP][UE_id].bsr_info[lcgid] = (payload_ptr[0] & 0x3f);
@@ -168,6 +172,15 @@ void rx_sdu(
           ((payload_ptr[1] & 0x0F) << 2) | ((payload_ptr[2] & 0xC0) >> 6);
         UE_list->UE_template[CC_idP][UE_id].bsr_info[LCGID3] = (payload_ptr[2] & 0x3F);
         LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d: Received long BSR LCGID0 = %u LCGID1 = "
+              "%u LCGID2 = %u LCGID3 = %u\n",
+              enb_mod_idP, CC_idP,
+              rx_ces[i],
+              UE_list->UE_template[CC_idP][UE_id].bsr_info[LCGID0],
+              UE_list->UE_template[CC_idP][UE_id].bsr_info[LCGID1],
+              UE_list->UE_template[CC_idP][UE_id].bsr_info[LCGID2],
+              UE_list->UE_template[CC_idP][UE_id].bsr_info[LCGID3]);
+      if (crnti_rx==1)
+        LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d: Received long BSR LCGID0 = %u LCGID1 = "
               "%u LCGID2 = %u LCGID3 = %u\n",
               enb_mod_idP, CC_idP,
               rx_ces[i],

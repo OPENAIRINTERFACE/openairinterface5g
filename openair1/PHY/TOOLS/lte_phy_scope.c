@@ -160,7 +160,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
                    int UE_id)
 {
   int eNB_id = 0;
-  int i,arx,atx,ind,k;
+  int i,i2,arx,atx,ind,k;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->lte_frame_parms;
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
@@ -181,6 +181,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float chest_t_abs[nb_antennas_rx][frame_parms->ofdm_symbol_size];
   float *chest_f_abs;
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
+  float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
   int frame = phy_vars_enb->proc[0].frame_tx;
   uint32_t total_dlsch_bitrate = phy_vars_enb->total_dlsch_bitrate;
@@ -238,19 +239,21 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
 
     if (chest_t[0] !=NULL) {
       for (i=0; i<(frame_parms->ofdm_symbol_size); i++) {
-        chest_t_abs[0][i] = 10*log10((float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]));
+	i2 = (i+(frame_parms->ofdm_symbol_size>>1))%frame_parms->ofdm_symbol_size;
+	time2[i] = (float)(i-(frame_parms->ofdm_symbol_size>>1));
+        chest_t_abs[0][i] = 10*log10((float) (1+chest_t[0][2*i2]*chest_t[0][2*i2]+chest_t[0][2*i2+1]*chest_t[0][2*i2+1]));
 
         if (chest_t_abs[0][i] > ymax)
           ymax = chest_t_abs[0][i];
       }
 
-      fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size),"","","");
+      fl_set_xyplot_data(form->chest_t,time2,chest_t_abs[0],(frame_parms->ofdm_symbol_size),"","","");
     }
 
     for (arx=1; arx<nb_antennas_rx; arx++) {
       if (chest_t[arx] !=NULL) {
         for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-          chest_t_abs[arx][i] = 10*log10((float) (chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
+          chest_t_abs[arx][i] = 10*log10((float) (1+chest_t[arx][2*i]*chest_t[arx][2*i]+chest_t[arx][2*i+1]*chest_t[arx][2*i+1]));
  
           if (chest_t_abs[arx][i] > ymax)
             ymax = chest_t_abs[arx][i];
