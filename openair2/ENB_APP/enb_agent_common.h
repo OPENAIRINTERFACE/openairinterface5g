@@ -39,6 +39,7 @@
 #ifndef ENB_AGENT_COMMON_H_
 #define ENB_AGENT_COMMON_H_
 
+#include <time.h>
 
 #include "header.pb-c.h"
 #include "progran.pb-c.h"
@@ -227,6 +228,9 @@ struct enb_agent_timer_element_s * get_timer_entry(long timer_id);
 err_code_t enb_agent_process_timeout(long timer_id, void* timer_args);
 
 int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b);
+
+/*Specify a delay in nanoseconds to timespec and sleep until then*/
+void enb_agent_sleep_until(struct timespec *ts, int delay);
 
 /* RB_PROTOTYPE is for .h files */
 RB_PROTOTYPE(enb_agent_map, enb_agent_timer_element_s, entry, enb_agent_compare_timer);

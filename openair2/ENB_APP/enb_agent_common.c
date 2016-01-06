@@ -476,6 +476,15 @@ struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
   return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, search); 
 }
 
+void enb_agent_sleep_until(struct timespec *ts, int delay) {
+  ts->tv_nsec += delay;
+  if(ts->tv_nsec >= 1000*1000*1000){
+    ts->tv_nsec -= 1000*1000*1000;
+    ts->tv_sec++;
+  }
+  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ts,  NULL);
+}
+
 /*
  int i =0;
   RB_FOREACH(e, enb_agent_map, &enb_agent_head) {

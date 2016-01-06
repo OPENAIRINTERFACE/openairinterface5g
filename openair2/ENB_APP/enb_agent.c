@@ -50,7 +50,7 @@ enb_agent_info_t  enb_agent_info;
 char in_ip[40];
 static uint16_t in_port;
 
-//void *send_thread(void *args);
+void *send_thread(void *args);
 void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
 err_code_t enb_agent_timeout(void* args);
@@ -100,20 +100,35 @@ void *enb_agent_task(void *args){
 
   return NULL;
 }
-/*
+
 void *send_thread(void *args) {
+
+#ifdef TEST_TIMER
 
   msg_context_t         *d = args;
   void                  *data;
   int                   size;
   int                   priority;
 
-  
-  while (1) {
+  struct timeval t1, t2;
+  long long t;
+  struct timespec ts;
+  unsigned int delay = 250*1000;
+  while(1) {
+    gettimeofday(&t1, NULL);
+    enb_agent_sleep_until(&ts, delay);
+    gettimeofday(&t2, NULL);
+    t = ((t2.tv_sec * 1000000) + t2.tv_usec) - ((t1.tv_sec * 1000000) + t1.tv_usec);
+    LOG_I(ENB_AGENT, "Call to sleep_until(%d) took %lld us\n", delay, t);
+    sleep(1);
+  }
+
+#endif
+  /* while (1) {
     // need logic for the timer, and 
     usleep(10);
     if (message_put(d->tx_mq, data, size, priority)) goto error;
-  }
+    }*/
 
   return NULL;
 
@@ -121,7 +136,7 @@ error:
   printf("receive_thread: there was an error\n");
   return NULL;
 }
-*/
+
 void *receive_thread(void *args) {
 
   msg_context_t         *d = args;
@@ -293,9 +308,10 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   enb_agent_create_timer(1, 0, ENB_AGENT_DEFAULT, mod_id, ENB_AGENT_TIMER_TYPE_PERIODIC, enb_agent_timeout,(void*)&timer_args, &timer_id);
 #endif 
 
-  //  new_thread(send_thread, &shared_ctxt);
+  new_thread(send_thread, &shared_ctxt);
 
   //while (1) pause();
+ 
 
   LOG_I(ENB_AGENT,"client ends\n");
   return 0;
