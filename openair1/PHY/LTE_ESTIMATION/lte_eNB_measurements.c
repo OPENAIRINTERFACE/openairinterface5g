@@ -107,7 +107,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
 	  //  + (k2*phy_measurements->n0_subband_power[aarx][rb]));  
 	  
 	phy_measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(phy_measurements->n0_subband_power[aarx][rb]);
-	//	printf("subframe %d (%d): eNb %d, aarx %d, rb %d len %d: energy %d (%d dB)\n",subframe,offset,eNB_id,aarx,rb,len,signal_energy_nodc(ul_ch,len),  
+	//		printf("subframe %d (%d): eNb %d, aarx %d, rb %d len %d: energy %d (%d dB)\n",subframe,offset,eNB_id,aarx,rb,len,signal_energy_nodc(ul_ch,len),  
 	//	       phy_measurements->n0_subband_power_dB[aarx][rb]);
 	n0_power_tot += phy_measurements->n0_subband_power[aarx][rb];
       }

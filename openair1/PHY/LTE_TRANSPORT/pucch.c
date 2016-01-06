@@ -786,7 +786,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 #endif
 
 #ifdef DEBUG_PUCCH_RX
-    LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
+    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
     phy_vars_eNB->pucch1_stats[UE_id][(subframe<<10)+phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;
@@ -807,7 +807,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {
       *payload = 1;
       *Po_PUCCH1_above = ((*Po_PUCCH1_above<<9) + (stat_max<<9)+1024)>>10;
-      //      LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm,pucch1_thres,phase_max);
+      //LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm,pucch1_thres,phase_max);
     }
     else {
       *payload = 0;

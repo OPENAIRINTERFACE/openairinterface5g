@@ -267,6 +267,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
     UE_list->ordered_ULCCids[0][UE_id]             = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id]                         = TRUE;
+    memset((void*)&UE_list->UE_sched_ctrl[UE_id],0,sizeof(UE_sched_ctrl));
 
     for (j=0; j<8; j++) {
       UE_list->UE_template[cc_idP][UE_id].oldNDI[j]    = (j==0)?1:0;   // 1 because first transmission is with format1A (Msg4) for harq_pid 0

@@ -447,7 +447,6 @@ schedule_ue_spec(
   //  uint16_t              pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   int                   mcs;
   uint16_t              min_rb_unit[MAX_NUM_CCs];
-  short                 ta_update        = 0;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
   UE_list_t            *UE_list  = &eNB->UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
@@ -804,29 +803,7 @@ schedule_ue_spec(
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-        //#ifndef EXMIMO_IOT
-        // to be checked by RK, NN, FK
-        uint8_t update_TA=4;
-
-        switch (frame_parms[CC_id]->N_RB_DL) {
-        case 6:
-          update_TA = 1;
-          break;
-
-        case 25:
-          update_TA = 4;
-          break;
-
-        case 50:
-          update_TA = 8;
-          break;
-
-        case 100:
-          update_TA = 16;
-          break;
-        }
-
-        ta_len = ((eNB_UE_stats->timing_advance_update/update_TA)!=0) ? 2 : 0;
+        ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
 
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
@@ -1074,11 +1051,6 @@ schedule_ue_spec(
             post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len ; // 1 is for the postpadding header
           }
 
-          //#ifndef EXMIMO_IOT
-          ta_update = eNB_UE_stats->timing_advance_update/update_TA;
-          /*#else
-          ta_update = 0;
-          #endif*/
 
           offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                                          // offset = generate_dlsch_header((unsigned char*)eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0],
@@ -1086,17 +1058,17 @@ schedule_ue_spec(
                                          sdu_lengths,  //
                                          sdu_lcids,
                                          255,                                   // no drx
-                                         ta_update, // timing advance
+                                         ue_sched_ctl->ta_update, // timing advance
                                          NULL,                                  // contention res id
                                          padding,
                                          post_padding);
 
           //#ifdef DEBUG_eNB_SCHEDULER
-          if (ta_update) {
+          if (ue_sched_ctl->ta_update) {
             LOG_I(MAC,
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
-                  ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
+                  ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
           }
 
           //#endif

@@ -126,10 +126,8 @@ void rx_sdu(
       break;
 
     case CRNTI:
-      LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): Received CRNTI %2.2x%2.2x\n",
-            enb_mod_idP, CC_idP, rx_ces[i], i,num_ce, payload_ptr[0], payload_ptr[1]);
       UE_id = find_UE_id(enb_mod_idP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
-      LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], (((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
+      LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], i,num_ce,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
 
       payload_ptr+=2;
       /* we don't process this CE yet */

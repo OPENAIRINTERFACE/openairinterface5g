@@ -577,10 +577,14 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 		   phy_vars_eNB->rb_mask_ul[0],
 		   phy_vars_eNB->rb_mask_ul[1],phy_vars_eNB->rb_mask_ul[2],phy_vars_eNB->rb_mask_ul[3]);
 
-    for (i=0; i<phy_vars_eNB->lte_frame_parms.N_RB_UL; i++)
+    for (i=0; i<phy_vars_eNB->lte_frame_parms.N_RB_UL; i++) {
       len += sprintf(&buffer[len],"%4d ",
                      phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
+      if ((i>0) && ((i%25) == 0)) 
+	len += sprintf(&buffer[len],"\n                                 ",
+                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
 
+    }
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
     /*

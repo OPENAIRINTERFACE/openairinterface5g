@@ -754,13 +754,50 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
 #endif
+  LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
   // initialize harq_pid and round
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],
 				    &ue_sched_ctl->round[CC_id],
 				    0);
+  if (ue_sched_ctl->ta_timer == 0) {
 
+    // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
+
+    ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
+    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+    case 6:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
+      break;
+      
+    case 15:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/2;
+      break;
+      
+    case 25:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/4;
+      break;
+      
+    case 50:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/8;
+      break;
+      
+    case 75:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/12;
+      break;
+      
+    case 100:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
+      break;
+    }
+    // clear the update in case PHY does not have a new measurement after timer expiry
+    eNB_UE_stats->timing_advance_update =  0;
+  }
+  else {
+    ue_sched_ctl->ta_timer--;
+    ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
+  }
   nb_rbs_required[CC_id][UE_id]=0;
   ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
