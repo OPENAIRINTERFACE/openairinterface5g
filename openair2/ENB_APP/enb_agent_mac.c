@@ -48,6 +48,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   int size;
   err_code_t err_code;
   xid_t xid;
+  uint32_t usec_interval, sec_interval;
   
   //TODO: We do not deal with multiple CCs at the moment and eNB id is 0 
   int cc_id = 0;
@@ -70,12 +71,13 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   switch(stats_req->body_case) {
   case PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
     Protocol__PrpCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
-    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) {
-      //TODO: Must create a periodic report. Implement once the
-      // timer functionality is supported
-      *msg = NULL;
-      return 0;
-    } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
+    /* if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) { */
+    /*   //TODO: Must create a periodic report. Implement once the */
+    /*   // timer functionality is supported */
+    /*   *msg = NULL; */
+    /*   return 0; */
+    /* } else */
+    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
       //TODO: Must create an event based report mechanism
       *msg = NULL;
       return 0;
@@ -83,7 +85,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
       //TODO: Must implement to deactivate the event based reporting
       *msg = NULL;
       return 0;
-    } else { //One-off reporting
+    } else { //One-off or periodical reporting
       //Set the proper flags
       ue_flags = comp_req->ue_report_flags;
       c_flags = comp_req->cell_report_flags;
@@ -113,6 +115,33 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	//TODO: Must fill in the proper cell ids
 	report_config.cc_report_type[i].cc_id = i;
 	report_config.cc_report_type[i].cc_report_flags = c_flags;
+      }
+      /* Check if request was periodical */
+      if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) {
+	/* Create a one off progran message as an argument for the periodical task */
+	Protocol__ProgranMessage *timer_msg;
+	stats_request_config_t request_config;
+	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
+	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
+	request_config.period = 0; 
+	request_config.config = &report_config;
+	enb_agent_mac_stats_request(enb_id, xid, &request_config, &timer_msg);
+	/* Create a timer */
+	long timer_id = 0;
+	enb_agent_timer_args_t *timer_args;
+	timer_args = malloc(sizeof(enb_agent_timer_args_t));
+	memset (timer_args, 0, sizeof(enb_agent_timer_args_t));
+	timer_args->mod_id = enb_id;	
+	timer_args->msg = timer_msg;
+	/*Convert subframes to usec time*/
+	usec_interval = 1000*comp_req->sf;
+	sec_interval = 0;
+	/*add seconds if required*/
+	if (usec_interval >= 1000*1000) {
+	  sec_interval = usec_interval/(1000*1000);
+	  usec_interval = usec_interval%(1000*1000);
+	}
+	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
       }
     }
     break;
@@ -170,6 +199,132 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
  error :
   LOG_E(ENB_AGENT, "errno %d occured\n", err_code);
   return err_code;
+}
+
+int enb_agent_mac_stats_request(mid_t mod_id,
+				xid_t xid,
+				const stats_request_config_t *report_config, 
+				Protocol__ProgranMessage **msg) {
+  Protocol__PrpHeader *header;
+  int i;
+   
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REQUEST, &header) != 0)
+    goto error;
+  
+  Protocol__PrpStatsRequest *stats_request_msg;
+  stats_request_msg = malloc(sizeof(Protocol__PrpStatsRequest));
+  if(stats_request_msg == NULL)
+    goto error;
+
+  protocol__prp_stats_request__init(stats_request_msg);
+  stats_request_msg->header = header;
+  
+  stats_request_msg->type = report_config->report_type;
+  stats_request_msg->has_type = 1;
+  
+  switch (report_config->report_type) {
+  case PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS:
+    stats_request_msg->body_case =  PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST;
+    Protocol__PrpCompleteStatsRequest *complete_stats;
+    complete_stats = malloc(sizeof(Protocol__PrpCompleteStatsRequest));
+    if(complete_stats == NULL)
+      goto error;
+    protocol__prp_complete_stats_request__init(complete_stats);
+    complete_stats->report_frequency = report_config->report_frequency;
+    complete_stats->has_report_frequency = 1;
+    complete_stats->sf = report_config->period;
+    complete_stats->has_sf = 1;
+    complete_stats->has_cell_report_flags = 1;
+    complete_stats->has_ue_report_flags = 1;
+    if (report_config->config->nr_cc > 0) {
+      complete_stats->cell_report_flags = report_config->config->cc_report_type[0].cc_report_flags;
+    }
+    if (report_config->config->nr_ue > 0) {
+      complete_stats->ue_report_flags = report_config->config->ue_report_type[0].ue_report_flags;
+    }
+    stats_request_msg->complete_stats_request = complete_stats;
+    break;
+  case  PROTOCOL__PRP_STATS_TYPE__PRST_CELL_STATS:
+    stats_request_msg->body_case = PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST;
+     Protocol__PrpCellStatsRequest *cell_stats;
+     cell_stats = malloc(sizeof(Protocol__PrpCellStatsRequest));
+    if(cell_stats == NULL)
+      goto error;
+    protocol__prp_cell_stats_request__init(cell_stats);
+    cell_stats->n_cell = report_config->config->nr_cc;
+    cell_stats->has_flags = 1;
+    if (cell_stats->n_cell > 0) {
+      uint32_t *cells;
+      cells = (uint32_t *) malloc(sizeof(uint32_t)*cell_stats->n_cell);
+      for (i = 0; i < cell_stats->n_cell; i++) {
+	cells[i] = report_config->config->cc_report_type[i].cc_id;
+      }
+      cell_stats->cell = cells;
+      cell_stats->flags = report_config->config->cc_report_type[i].cc_report_flags;
+    }
+    stats_request_msg->cell_stats_request = cell_stats;
+    break;
+  case PROTOCOL__PRP_STATS_TYPE__PRST_UE_STATS:
+    stats_request_msg->body_case = PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST;
+     Protocol__PrpUeStatsRequest *ue_stats;
+     ue_stats = malloc(sizeof(Protocol__PrpUeStatsRequest));
+    if(ue_stats == NULL)
+      goto error;
+    protocol__prp_ue_stats_request__init(ue_stats);
+    ue_stats->n_rnti = report_config->config->nr_ue;
+    ue_stats->has_flags = 1;
+    if (ue_stats->n_rnti > 0) {
+      uint32_t *ues;
+      ues = (uint32_t *) malloc(sizeof(uint32_t)*ue_stats->n_rnti);
+      for (i = 0; i < ue_stats->n_rnti; i++) {
+	ues[i] = report_config->config->ue_report_type[i].ue_rnti;
+      }
+      ue_stats->rnti = ues;
+      ue_stats->flags = report_config->config->ue_report_type[i].ue_report_flags;
+    }
+    stats_request_msg->ue_stats_request = ue_stats;
+    break;
+  default:
+    goto error;
+  }
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG;
+  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->stats_request_msg = stats_request_msg;
+  return 0;
+  
+ error:
+  // TODO: Need to make proper error handling
+  if (header != NULL)
+    free(header);
+  if (stats_request_msg != NULL)
+    free(stats_request_msg);
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg) {
+   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG)
+    goto error;
+  free(msg->stats_request_msg->header);
+  if (msg->stats_request_msg->body_case == PROTOCOL__PRP_STATS_REQUEST__BODY_CELL_STATS_REQUEST) {
+    free(msg->stats_request_msg->cell_stats_request->cell);
+  }
+  if (msg->stats_request_msg->body_case == PROTOCOL__PRP_STATS_REQUEST__BODY_UE_STATS_REQUEST) {
+    free(msg->stats_request_msg->ue_stats_request->rnti);
+  }
+  free(msg->stats_request_msg);
+  free(msg);
+  return 0;
+  
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_mac_stats_reply(mid_t mod_id,

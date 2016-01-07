@@ -311,7 +311,7 @@ uint16_t get_sfn_sf (mid_t mod_id) {
   
   frame = (uint16_t) get_current_frame(mod_id);
   subframe = (uint16_t) get_current_subframe(mod_id);
-  sfn_sf = (frame << 12) | subframe;
+  sfn_sf = (subframe << 12) | frame;
   return sfn_sf;
 }
 

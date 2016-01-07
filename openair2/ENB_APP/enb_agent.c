@@ -53,13 +53,20 @@ static uint16_t in_port;
 void *send_thread(void *args);
 void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
-err_code_t enb_agent_timeout(void* args);
+Protocol__ProgranMessage *enb_agent_timeout(void* args);
 
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
  * and can interact with other itti tasks
 */
 void *enb_agent_task(void *args){
+
+  msg_context_t         *d = (msg_context_t *) args;
+  Protocol__ProgranMessage *msg;
+  void *data;
+  int size;
+  err_code_t err_code;
+  int                   priority;
 
   MessageDef                     *msg_p           = NULL;
   const char                     *msg_name        = NULL;
@@ -86,7 +93,15 @@ void *enb_agent_task(void *args){
       break;
     
     case TIMER_HAS_EXPIRED:
-      enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, &msg_p->ittiMsg.timer_has_expired.arg);
+      msg = enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
+      if (msg != NULL){
+	data=enb_agent_send_message(msg,&size);
+	if (message_put(d->tx_mq, data, size, priority)){
+	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+	  goto error;
+	}
+	LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+      }
       break;
 
     default:
@@ -96,46 +111,49 @@ void *enb_agent_task(void *args){
 
     result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+    continue;
+  error:
+    LOG_E(ENB_AGENT,"enb_agent_task: error %d occured\n",err_code);
   } while (1);
 
   return NULL;
 }
 
-void *send_thread(void *args) {
+/* void *send_thread(void *args) { */
 
-#ifdef TEST_TIMER
+/* #ifdef TEST_TIMER */
 
-  msg_context_t         *d = args;
-  void                  *data;
-  int                   size;
-  int                   priority;
+/*   msg_context_t         *d = args; */
+/*   void                  *data; */
+/*   int                   size; */
+/*   int                   priority; */
 
-  struct timeval t1, t2;
-  long long t;
-  struct timespec ts;
-  unsigned int delay = 250*1000;
-  while(1) {
-    gettimeofday(&t1, NULL);
-    enb_agent_sleep_until(&ts, delay);
-    gettimeofday(&t2, NULL);
-    t = ((t2.tv_sec * 1000000) + t2.tv_usec) - ((t1.tv_sec * 1000000) + t1.tv_usec);
-    LOG_I(ENB_AGENT, "Call to sleep_until(%d) took %lld us\n", delay, t);
-    sleep(1);
-  }
+/*   struct timeval t1, t2; */
+/*   long long t; */
+/*   struct timespec ts; */
+/*   unsigned int delay = 250*1000; */
+/*   while(1) { */
+/*     gettimeofday(&t1, NULL); */
+/*     enb_agent_sleep_until(&ts, delay); */
+/*     gettimeofday(&t2, NULL); */
+/*     t = ((t2.tv_sec * 1000000) + t2.tv_usec) - ((t1.tv_sec * 1000000) + t1.tv_usec); */
+/*     LOG_I(ENB_AGENT, "Call to sleep_until(%d) took %lld us\n", delay, t); */
+/*     sleep(1); */
+/*   } */
 
-#endif
-  /* while (1) {
-    // need logic for the timer, and 
-    usleep(10);
-    if (message_put(d->tx_mq, data, size, priority)) goto error;
-    }*/
+/* #endif */
+/*   /\* while (1) { */
+/*     // need logic for the timer, and  */
+/*     usleep(10); */
+/*     if (message_put(d->tx_mq, data, size, priority)) goto error; */
+/*     }*\/ */
 
-  return NULL;
+/*   return NULL; */
 
-error:
-  printf("receive_thread: there was an error\n");
-  return NULL;
-}
+/* error: */
+/*   printf("receive_thread: there was an error\n"); */
+/*   return NULL; */
+/* } */
 
 void *receive_thread(void *args) {
 
@@ -290,25 +308,25 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
    * start the enb agent task for tx and interaction with the underlying network function
    */ 
   
-  if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, NULL) < 0) {
+  if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &shared_ctxt[mod_id]) < 0) {
     LOG_E(ENB_AGENT, "Create task for eNB Agent failed\n");
     return -1;
   }
 
 
-#ifdef TEST_TIMER
+  //#ifdef TEST_TIMER
   long timer_id=0;
   enb_agent_timer_args_t timer_args;
   memset (&timer_args, 0, sizeof(enb_agent_timer_args_t));
   timer_args.mod_id = mod_id;
-  timer_args.cc_actions= ENB_AGENT_ACTION_APPLY;
-  timer_args.cc_report_flags = PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE;
-  timer_args.ue_actions =  ENB_AGENT_ACTION_SEND;
-  timer_args.ue_report_flags = PROTOCOL__PRP_UE_STATS_TYPE__PRUST_BSR | PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI;
+  //timer_args.cc_actions= ENB_AGENT_ACTION_APPLY;
+  //timer_args.cc_report_flags = PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE;
+  //timer_args.ue_actions =  ENB_AGENT_ACTION_SEND;
+  //timer_args.ue_report_flags = PROTOCOL__PRP_UE_STATS_TYPE__PRUST_BSR | PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI;
   enb_agent_create_timer(1, 0, ENB_AGENT_DEFAULT, mod_id, ENB_AGENT_TIMER_TYPE_PERIODIC, enb_agent_timeout,(void*)&timer_args, &timer_id);
-#endif 
+  //#endif 
 
-  new_thread(send_thread, &shared_ctxt);
+  //new_thread(send_thread, &shared_ctxt);
 
   //while (1) pause();
  
@@ -342,15 +360,15 @@ int enb_agent_stop(mid_t mod_id){
 
 
 
-err_code_t enb_agent_timeout(void* args){
+Protocol__ProgranMessage *enb_agent_timeout(void* args){
 
   //  enb_agent_timer_args_t *timer_args = calloc(1, sizeof(*timer_args));
   //memcpy (timer_args, args, sizeof(*timer_args));
   enb_agent_timer_args_t *timer_args = (enb_agent_timer_args_t *) args;
   
   LOG_I(ENB_AGENT, "enb_agent %d timeout\n", timer_args->mod_id);
-  LOG_I(ENB_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
-  LOG_I(ENB_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);
+  //LOG_I(ENB_AGENT, "eNB action %d ENB flags %d \n", timer_args->cc_actions,timer_args->cc_report_flags);
+  //LOG_I(ENB_AGENT, "UE action %d UE flags %d \n", timer_args->ue_actions,timer_args->ue_report_flags);
   
-  return 0;
+  return NULL;
 }

@@ -69,11 +69,24 @@ typedef struct {
   cc_report_type_t *cc_report_type;
 } report_config_t;
 
+typedef struct {
+  uint8_t report_type;
+  uint8_t report_frequency;
+  uint16_t period; /*In number of subframes*/
+  report_config_t *config;
+} stats_request_config_t;
+
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+
+int enb_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__ProgranMessage **msg);
+
+int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg);
 
 int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__ProgranMessage **msg);
 
 int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg);
+
+
 
 #endif

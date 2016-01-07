@@ -133,11 +133,28 @@ void * enb_agent_send_message(Protocol__ProgranMessage *msg,
  error : 
   LOG_E(ENB_AGENT,"errno %d occured\n",err_code);
   
-  return NULL; 
-  
+  return NULL;   
 }
 
-err_code_t enb_agent_process_timeout(long timer_id, void* timer_args){
+Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args) {
+  err_code_t err_code;
+  enb_agent_timer_args_t *timer_args = (enb_agent_timer_args_t *) args;
+
+  Protocol__ProgranMessage *timed_task, *reply_message;
+  timed_task = timer_args->msg;
+   err_code = ((*messages_callback[timed_task->msg_case-1][timed_task->msg_dir-1])(timer_args->mod_id, (void *) timed_task, &reply_message));
+  if ( err_code < 0 ){
+    goto error;
+  }
+
+  return reply_message;
+  
+ error:
+  LOG_E(ENB_AGENT,"errno %d occured\n",err_code);
+  return NULL;
+}
+
+Protocol__ProgranMessage* enb_agent_process_timeout(long timer_id, void* timer_args){
     
   struct enb_agent_timer_element_s *found = get_timer_entry(timer_id);
  
@@ -148,7 +165,6 @@ err_code_t enb_agent_process_timeout(long timer_id, void* timer_args){
     LOG_W(ENB_AGENT,"null timer args\n");
   
   return found->cb(timer_args);
-  
 
  error:
   LOG_E(ENB_AGENT, "can't get the timer element\n");

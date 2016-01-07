@@ -86,6 +86,8 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
 						    uint8_t *data, 
 						    uint32_t size);
 
+Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args);
+
 void * enb_agent_send_message(Protocol__ProgranMessage *msg, 
 			      uint32_t * size);
 
@@ -107,7 +109,7 @@ int get_current_frame(mid_t mod_id);
 int get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
-  Bits 0-3 frame, rest for subframe. Required by progRAN protocol*/
+  Bits 0-3 subframe, rest for frame. Required by progRAN protocol*/
 uint16_t get_sfn_sf (mid_t mod_id);
 
 int get_num_ues(mid_t mod_id);
@@ -137,7 +139,7 @@ int get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 
 
 /* Type of the callback executed when the timer expired */
-typedef err_code_t (*enb_agent_timer_callback_t)(void*);
+typedef Protocol__ProgranMessage *(*enb_agent_timer_callback_t)(void*);
 
 typedef enum {
   /* oneshot timer:  */
@@ -169,13 +171,7 @@ typedef enum {
 
 typedef struct enb_agent_timer_args_s{
   mid_t            mod_id;
-
-  agent_action_t   cc_actions;
-  uint32_t         cc_report_flags;
-
-  agent_action_t   ue_actions;
-  uint32_t         ue_report_flags;
-
+  Protocol__ProgranMessage *msg;
 } enb_agent_timer_args_t;
 
 
@@ -225,7 +221,7 @@ struct enb_agent_timer_element_s * get_timer_entry(long timer_id);
 
 
 
-err_code_t enb_agent_process_timeout(long timer_id, void* timer_args);
+Protocol__ProgranMessage * enb_agent_process_timeout(long timer_id, void* timer_args);
 
 int enb_agent_compare_timer(struct enb_agent_timer_element_s *a, struct enb_agent_timer_element_s *b);
 
