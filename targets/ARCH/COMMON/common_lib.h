@@ -60,6 +60,11 @@ typedef enum {
   max_gain=0,med_gain,byp_gain
 } rx_gain_t;
 
+typedef enum {
+  duplex_mode_TDD=1,duplex_mode_FDD=0
+} duplex_mode_t;
+
+
 /** @addtogroup _PHY_RF_INTERFACE_
  * @{
  */
@@ -76,6 +81,8 @@ typedef struct {
   int Mod_id;
   // device log level
   int log_level;
+  //! duplexing mode
+  duplex_mode_t duplex_mode;
   //! number of downlink resource blocks
   int num_rb_dl;
   //! number of samples per frame 
@@ -84,10 +91,10 @@ typedef struct {
   double sample_rate;
   //! number of samples per RX/TX packet (USRP + Ethernet)
   int samples_per_packet;
-  // delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
-  int tx_delay;
-  //! adjust the position of the samples after delay when sending   
-  unsigned int	tx_forward_nsamps;
+  //! delay in sending samples (write)  due to hardware access, softmodem processing and fronthaul delay if exist
+  int tx_scheduling_advance;
+  //! offset in samples between TX and RX paths
+  int tx_sample_advance;
   //! number of RX channels (=RX antennas)
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
@@ -98,6 +105,10 @@ typedef struct {
   //! \brief Center frequency in Hz for TX.
   //! index: [0..rx_num_channels[ !!! see lte-ue.c:427 FIXME iterates over rx_num_channels
   double tx_freq[4];
+
+  //! \brief Pointer to Calibration table for RX gains
+  rx_gain_calib_table_t *rx_gain_calib_table;
+
   //! mode for rxgain (ExpressMIMO2) 
   rx_gain_t rxg_mode[4];
   //! \brief Gain for RX in dB.
@@ -147,8 +158,10 @@ typedef enum {
   ETH_IF,
   /*!\brief device is ExpressMIMO */
   EXMIMO_IF,
-  /*!\brief device is USRP*/
-  USRP_IF,
+  /*!\brief device is USRP B200/B210*/
+  USRP_B200_IF,
+  /*!\brief device is USRP X300/X310*/
+  USRP_X300_IF,
   /*!\brief device is BLADE RF*/
   BLADERF_IF,
   /*!\brief device is NONE*/
@@ -180,7 +193,7 @@ struct openair0_device_t {
   func_type_t func_type;
 
   /* RF frontend parameters set by application */
-  openair0_config_t openair0_cfg;
+  openair0_config_t *openair0_cfg;
 
   /* Can be used by driver to hold internal structure*/
   void *priv;

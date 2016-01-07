@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-set(OAI_NW_DRIVER_TYPE_ETHERNET True)
-set(OAI_NW_DRIVER_USE_NETLINK True)
-set(NAS_NETLINK True)
-include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)

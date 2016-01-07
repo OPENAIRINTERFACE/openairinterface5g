@@ -303,8 +303,8 @@ void do_DL_sig(double **r_re0,double **r_im0,
             10*log10(rx_pwr*(double)frame_parms->N_RB_DL*12),next_slot,next_slot>>1);
       LOG_D(OCM,"[SIM][DL] UE %d : rx_pwr (noise) -132 dBm/RE (N0fs = %.1f dBm, N0B = %.1f dBm) for slot %d (subframe %d)\n",
             UE_id,
-            10*log10(eNB2UE[eNB_id][UE_id][CC_id]->BW*1e6)-174,
-            10*log10(eNB2UE[eNB_id][UE_id][CC_id]->BW*1e6*12*frame_parms->N_RB_DL/(double)frame_parms->ofdm_symbol_size)-174,
+            10*log10(eNB2UE[eNB_id][UE_id][CC_id]->sampling_rate*1e6)-174,
+            10*log10(eNB2UE[eNB_id][UE_id][CC_id]->sampling_rate*1e6*12*frame_parms->N_RB_DL/(double)frame_parms->ofdm_symbol_size)-174,
             next_slot,next_slot>>1);
 #endif
 
@@ -342,7 +342,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
                    r_im0,
                    nb_antennas_rx,
                    frame_parms->samples_per_tti>>1,
-                   1e3/eNB2UE[eNB_id][UE_id][CC_id]->BW,  // sampling time (ns)
+                   1e3/eNB2UE[eNB_id][UE_id][CC_id]->sampling_rate,  // sampling time (ns)
                    (double)PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 
 #ifdef DEBUG_SIM
@@ -584,7 +584,7 @@ void do_UL_sig(double **r_re0,double **r_im0,double **r_re,double **r_im,double 
                    r_im,
                    nb_antennas_rx,
                    frame_parms->samples_per_tti>>1,
-                   1e3/UE2eNB[0][eNB_id][CC_id]->BW,  // sampling time (ns)
+                   1e3/UE2eNB[0][eNB_id][CC_id]->sampling_rate,  // sampling time (ns)
                    (double)PHY_vars_eNB_g[eNB_id][CC_id]->rx_total_gain_eNB_dB - 66.227);   // rx_gain (dB) (66.227 = 20*log10(pow2(11)) = gain from the adc that will be applied later)
 
 #ifdef DEBUG_SIM
