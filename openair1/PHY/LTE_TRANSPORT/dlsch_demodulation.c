@@ -585,7 +585,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
     } 
-    else {
+    else if (dlsch0_harq->dl_power_off==1) {
       
         dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			frame_parms,
