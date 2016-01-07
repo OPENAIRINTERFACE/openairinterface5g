@@ -308,8 +308,8 @@ double pbch_bler(double sinr)
   //printf ("sinr %f bler %f\n",sinr,bler);
   return(bler);
 
-}
-*/
+}*/
+
 #include <math.h>
 #include <cblas.h>
 #include <stdio.h>
