@@ -2975,7 +2975,8 @@ int main( int argc, char **argv )
       else {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;// - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
       }
-      
+
+#if 0  // UHD 3.8     
       switch(frame_parms[0]->N_RB_DL) {
       case 6:
         openair0_cfg[card].rx_gain[i] -= 12;
@@ -2996,7 +2997,7 @@ int main( int argc, char **argv )
       default:
         break;
       }
-      
+#endif      
 
     }
 

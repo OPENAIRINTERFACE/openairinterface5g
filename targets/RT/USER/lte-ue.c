@@ -279,7 +279,7 @@ static void *UE_thread_synch(void *arg)
 #ifdef OAI_USRP
         openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 
-	
+#if 0 // UHD 3.8	
         switch(UE->lte_frame_parms.N_RB_DL) {
         case 6:
           openair0_cfg[card].rx_gain[i] -= 12;
@@ -301,7 +301,7 @@ static void *UE_thread_synch(void *arg)
           printf( "Unknown number of RBs %d\n", UE->lte_frame_parms.N_RB_DL );
           break;
         }
-	
+#endif
         printf( "UE synch: setting RX gain (%d,%d) to %f\n", card, i, openair0_cfg[card].rx_gain[i] );
 #endif
       }
@@ -357,7 +357,8 @@ static void *UE_thread_synch(void *arg)
           openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i];
 #ifdef OAI_USRP
           openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;  // 65 calibrated for USRP B210 @ 2.6 GHz
-	  
+
+#if 0 // UHD 3.8	  
           switch(UE->lte_frame_parms.N_RB_DL) {
           case 6:
             openair0_cfg[card].rx_gain[i] -= 12;
@@ -379,7 +380,7 @@ static void *UE_thread_synch(void *arg)
             printf("Unknown number of RBs %d\n",UE->lte_frame_parms.N_RB_DL);
             break;
           }
-	  
+#endif	  
 
           printf("UE synch: setting RX gain (%d,%d) to %f\n",card,i,openair0_cfg[card].rx_gain[i]);
 #endif
@@ -423,25 +424,25 @@ static void *UE_thread_synch(void *arg)
 	    openair0_cfg[0].sample_rate =1.92e6;
 	    openair0_cfg[0].rx_bw          =.96e6;
 	    openair0_cfg[0].tx_bw          =.96e6;
-            openair0_cfg[0].rx_gain[0] -= 12;
+	    //            openair0_cfg[0].rx_gain[0] -= 12;
 	    break;
 	  case 25:
 	    openair0_cfg[0].sample_rate =7.68e6;
 	    openair0_cfg[0].rx_bw          =2.5e6;
 	    openair0_cfg[0].tx_bw          =2.5e6;
-            openair0_cfg[0].rx_gain[0] -= 6;
+	    //            openair0_cfg[0].rx_gain[0] -= 6;
 	    break;
 	  case 50:
 	    openair0_cfg[0].sample_rate =15.36e6;
 	    openair0_cfg[0].rx_bw          =5.0e6;
 	    openair0_cfg[0].tx_bw          =5.0e6;
-            openair0_cfg[0].rx_gain[0] -= 3;
+	    //            openair0_cfg[0].rx_gain[0] -= 3;
 	    break;
 	  case 100:
 	    openair0_cfg[0].sample_rate=30.72e6;
 	    openair0_cfg[0].rx_bw=10.0e6;
 	    openair0_cfg[0].tx_bw=10.0e6;
-            openair0_cfg[0].rx_gain[0] -= 0;
+	    //            openair0_cfg[0].rx_gain[0] -= 0;
 	    break;
 	  }
 #ifndef EXMIMO
