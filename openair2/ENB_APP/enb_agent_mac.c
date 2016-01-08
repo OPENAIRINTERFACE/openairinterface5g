@@ -71,18 +71,12 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   switch(stats_req->body_case) {
   case PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
     Protocol__PrpCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
-    /* if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_PERIODICAL) { */
-    /*   //TODO: Must create a periodic report. Implement once the */
-    /*   // timer functionality is supported */
-    /*   *msg = NULL; */
-    /*   return 0; */
-    /* } else */
     if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
       //TODO: Must create an event based report mechanism
       *msg = NULL;
       return 0;
     } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
-      //TODO: Must implement to deactivate the event based reporting
+      enb_agent_destroy_timer_by_task_id(xid);
       *msg = NULL;
       return 0;
     } else { //One-off or periodical reporting
@@ -141,7 +135,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	  sec_interval = usec_interval/(1000*1000);
 	  usec_interval = usec_interval%(1000*1000);
 	}
-	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
+	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, xid, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
       }
     }
     break;

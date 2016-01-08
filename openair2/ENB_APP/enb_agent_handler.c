@@ -54,9 +54,8 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_destroy_hello,
   enb_agent_destroy_echo_request,
   enb_agent_destroy_echo_reply,
-  0, /*No stats request message is created in the agent. No need for a callback*/
+  enb_agent_mac_destroy_stats_request,
   enb_agent_mac_destroy_stats_reply,
-  
 };
 
 static const char *enb_agent_direction2String[] = {
@@ -169,4 +168,8 @@ Protocol__ProgranMessage* enb_agent_process_timeout(long timer_id, void* timer_a
  error:
   LOG_E(ENB_AGENT, "can't get the timer element\n");
   return TIMER_ELEMENT_NOT_FOUND;
+}
+
+err_code_t enb_agent_destroy_progran_message(Protocol__ProgranMessage *msg) {
+  return ((*message_destruction_callback[msg->msg_case-1])(msg));
 }

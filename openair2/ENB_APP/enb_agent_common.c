@@ -377,6 +377,7 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
 				  agent_id_t     agent_id,
 				  instance_t     instance,
 				  uint32_t timer_type,
+				  xid_t xid,
 				  enb_agent_timer_callback_t cb,
 				  void*    timer_args,
 				  long *timer_id){
@@ -424,7 +425,8 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
   e->instance = instance;
   e->state = ENB_AGENT_TIMER_STATE_ACTIVE;
   e->timer_id = *timer_id;
-  //  e->timer_args = timer_args; 
+  e->xid = xid;
+  e->timer_args = timer_args; 
   e->cb = cb;
   /*element should be a real pointer*/
   RB_INSERT(enb_agent_map, &timer_instance.enb_agent_head, e); 
@@ -440,7 +442,8 @@ err_code_t enb_agent_destroy_timer(long timer_id){
   struct enb_agent_timer_element_s *e = get_timer_entry(timer_id);
 
   if (e != NULL ) {
-    RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, &e);
+    RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
+    enb_agent_destroy_progran_message(e->timer_args->msg);
     free(e);
   }
   
@@ -454,27 +457,40 @@ err_code_t enb_agent_destroy_timer(long timer_id){
   return TIMER_REMOVED_FAILED ;
 }
 
+err_code_t enb_agent_destroy_timer_by_task_id(xid_t xid) {
+  struct enb_agent_timer_element_s *e = NULL;
+  long timer_id;
+  RB_FOREACH(e, enb_agent_map, &timer_instance.enb_agent_head) {
+    if (e->xid == xid) {
+      timer_id = e->timer_id;
+      RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
+      enb_agent_destroy_progran_message(e->timer_args->msg);
+      free(e);
+      if (timer_remove(timer_id) < 0 ) { 
+	goto error;
+      }
+    }
+  }
+  return 0;
+
+ error:
+  LOG_E(ENB_AGENT, "timer can't be removed\n");
+  return TIMER_REMOVED_FAILED ;
+}
+
 err_code_t enb_agent_destroy_timers(void){
   
   struct enb_agent_timer_element_s *e = NULL;
   
   RB_FOREACH(e, enb_agent_map, &timer_instance.enb_agent_head) {
     RB_REMOVE(enb_agent_map, &timer_instance.enb_agent_head, e);
-    timer_remove(e->timer_id); 
+    timer_remove(e->timer_id);
+    enb_agent_destroy_progran_message(e->timer_args->msg);
     free(e);
   }  
 
   return 0;
 
-}
-
-struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
-  
-  struct enb_agent_timer_element_s search;
-  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
-  search.timer_id = timer_id;
-
-  return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, &search); 
 }
 
 void enb_agent_sleep_until(struct timespec *ts, int delay) {
@@ -493,15 +509,15 @@ void enb_agent_sleep_until(struct timespec *ts, int delay) {
     }
 */
 
-/*
-err_code_t enb_agent_stop_timer(uint32_t timer_id){
+
+err_code_t enb_agent_stop_timer(long timer_id){
   
   struct enb_agent_timer_element_s *e=NULL;
-  
-  RB_FOREACH(e, enb_agent_map, &enb_agent_head) {
-    if (e->timer_id == timer_id)
-      break;
-  }
+  struct enb_agent_timer_element_s search;
+  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
+  search.timer_id = timer_id;
+
+  e = RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, &search);
 
   if (e != NULL ) {
     e->state =  ENB_AGENT_TIMER_STATE_STOPPED;
@@ -510,9 +526,18 @@ err_code_t enb_agent_stop_timer(uint32_t timer_id){
   timer_remove(timer_id);
   
   return 0;
-
 }
 
+struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
+  
+  struct enb_agent_timer_element_s search;
+  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
+  search.timer_id = timer_id;
+
+  return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, &search); 
+}
+
+/*
 // this will change the timer_id
 err_code_t enb_agent_restart_timer(uint32_t *timer_id){
   

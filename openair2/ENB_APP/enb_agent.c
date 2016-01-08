@@ -313,19 +313,6 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
     return -1;
   }
 
-
-  //#ifdef TEST_TIMER
-  long timer_id=0;
-  enb_agent_timer_args_t timer_args;
-  memset (&timer_args, 0, sizeof(enb_agent_timer_args_t));
-  timer_args.mod_id = mod_id;
-  //timer_args.cc_actions= ENB_AGENT_ACTION_APPLY;
-  //timer_args.cc_report_flags = PROTOCOL__PRP_CELL_STATS_TYPE__PRCST_NOISE_INTERFERENCE;
-  //timer_args.ue_actions =  ENB_AGENT_ACTION_SEND;
-  //timer_args.ue_report_flags = PROTOCOL__PRP_UE_STATS_TYPE__PRUST_BSR | PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI;
-  enb_agent_create_timer(1, 0, ENB_AGENT_DEFAULT, mod_id, ENB_AGENT_TIMER_TYPE_PERIODIC, enb_agent_timeout,(void*)&timer_args, &timer_id);
-  //#endif 
-
   //new_thread(send_thread, &shared_ctxt);
 
   //while (1) pause();

@@ -70,6 +70,8 @@ typedef int (*enb_agent_message_destruction_callback)(
 int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size);
 int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage **msg);
 
+err_code_t enb_agent_destroy_progran_message(Protocol__ProgranMessage *msg);
+
 int prp_create_header(xid_t xid, Protocol__PrpType type, Protocol__PrpHeader **header);
 
 int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
@@ -189,9 +191,11 @@ typedef struct enb_agent_timer_element_s{
   uint32_t interval_usec;
 
   long timer_id;  /* Timer id returned by the timer API*/
+  xid_t xid; /*The id of the task as received by the controller
+	       message*/
   
   enb_agent_timer_callback_t cb;
-  // void* timer_args;
+  enb_agent_timer_args_t *timer_args;
   
 } enb_agent_timer_element_t;
 
@@ -206,20 +210,20 @@ err_code_t enb_agent_create_timer(uint32_t interval_sec,
 				  agent_id_t     agent_id,
 				  instance_t     instance,
 				  uint32_t timer_type,
+				  xid_t xid,
 				  enb_agent_timer_callback_t cb,
 				  void*    timer_args,
 				  long *timer_id);
 
 err_code_t enb_agent_destroy_timers(void);
 err_code_t enb_agent_destroy_timer(long timer_id);
+err_code_t enb_agent_destroy_timer_by_task_id(xid_t xid);
 
 err_code_t enb_agent_stop_timer(long timer_id);
 
 err_code_t enb_agent_restart_timer(long *timer_id);
 
 struct enb_agent_timer_element_s * get_timer_entry(long timer_id);
-
-
 
 Protocol__ProgranMessage * enb_agent_process_timeout(long timer_id, void* timer_args);
 
