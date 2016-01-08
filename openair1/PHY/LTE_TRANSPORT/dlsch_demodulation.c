@@ -197,10 +197,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       return(-1);
     }
   }
-  
-#ifdef DEBUG_PHY
-    LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
-#endif
 
   //printf("rx_pdsch: harq_pid=%d, round=%d\n",harq_pid,round);
 
@@ -301,34 +297,43 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   }
 
 
+#ifdef DEBUG_PHY
+    LOG_D(PHY,"[DLSCH] log2_maxh = %d (%d,%d)\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh,avg[0],avgs);
+    LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
+#endif
+
   aatx = frame_parms->nb_antennas_tx_eNB;
   aarx = frame_parms->nb_antennas_rx;
 
   if (dlsch0_harq->mimo_mode<LARGE_CDD) {// SISO or ALAMOUTI
-      
-    dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-			frame_parms,
-			dlsch_ue,
-			symbol,
-			nb_rb);
+    
+      dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+			  frame_parms,
+			  dlsch_ue,
+			  symbol,
+			  nb_rb);
   
-    if (first_symbol_flag==1) {
-    dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+      if (first_symbol_flag==1) {
+	dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
                         avg,
                         symbol,
                         nb_rb);
-    
+#ifdef DEBUG_PHY
+    LOG_D(PHY,"[DLSCH] avg[0] %d\n",avg[0]);
+#endif
+
     avgs = 0;
 
     for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
+    //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
-    // printf(" TM1 shift = %d\n",interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs]); 
-
-    }
+   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
+    
+      }
+    
     
     	dlsch_channel_compensation(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -388,7 +393,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     //   LOG_I(PHY,"Running PDSCH RX for TM3\n");
 	      
     if (frame_parms->nb_antennas_tx_eNB == 2) {
- 
+       
+	 
+	 // scaling interfering channel (following for TM56)
 	dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 			    frame_parms,
 			    dlsch_ue,
@@ -408,7 +415,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                  dlsch0_harq->mimo_mode);
 	    
 	
-	 if (rx_type>rx_standard) {
+	if (rx_type>rx_standard) {
 	// Shifts are needed to avoid tails in SNR/BLER curves.
 	// LUT will be introduced with mcs-dependent shift
 	avg_0[0] = (log2_approx(avg_0[0])/2) -13 + interf_unaw_shift;
@@ -430,8 +437,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	//printf("TM4 I-UA log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	//printf("TM4 I-UA log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
         }
-	
-     }
+      }
     
       dlsch_channel_compensation_TM34(frame_parms, 
                                      lte_ue_pdsch_vars[eNB_id],
@@ -485,7 +491,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   }
   else if (dlsch0_harq->mimo_mode<DUALSTREAM_UNIFORM_PRECODING1) {// single-layer precoding (TM5, TM6)
    //    printf("Channel compensation for precoding\n");
-    if ((rx_type==rx_IC_single_stream) && (eNB_id_i==phy_vars_ue->n_connected_eNB)) {  // TM5 two-user
+    if ((rx_type==rx_IC_single_stream) && (eNB_id_i==phy_vars_ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {  // TM5 two-user
 
       // Scale the channel estimates for interfering stream
 
@@ -512,7 +518,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
         //printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }
-
+   
       dlsch_channel_compensation_TM56(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                       lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                       lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
@@ -552,7 +558,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
         //    printf("pmi %d, pmi_i %d\n",lte_ue_pdsch_vars[eNB_id]->pmi_ext[rb],lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[rb]);
 
       }
-
+    
+  
       dlsch_channel_compensation_TM56(lte_ue_pdsch_vars[eNB_id_i]->rxdataF_ext,
                                       lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                                       lte_ue_pdsch_vars[eNB_id_i]->dl_ch_mag0,
@@ -584,40 +591,36 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round], 
                                     lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
-    } 
-    else if (dlsch0_harq->dl_power_off==1) {
+    } else if (dlsch0_harq->dl_power_off==1)  {
       
-        dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-			frame_parms,
-			dlsch_ue,
-			symbol,
-			nb_rb);
-  
-    if (first_symbol_flag==1) {
-      
-	dlsch_channel_level_TM56(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+        dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+                          frame_parms,
+                          dlsch_ue,
+                          symbol,
+                          nb_rb);     
+
+      /* compute new log2_maxh for effective channel */
+      if (first_symbol_flag==1) {
+
+        // effective channel of desired user is always stronger than interfering eff. channel
+       dlsch_channel_level_TM56(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 				frame_parms,
 				lte_ue_pdsch_vars[eNB_id]->pmi_ext,
 				avg,
 				symbol,
 				nb_rb);
-    
-    avgs = 0;
 
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
-      for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
-        avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
+        //    LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1]);
+        avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1];
 
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
-    
-    if ((dlsch0_harq->mimo_mode>=UNIFORM_PRECODING11) &&
-        (dlsch0_harq->mimo_mode< DUALSTREAM_UNIFORM_PRECODING1) &&
-        (dlsch0_harq->dl_power_off==1)) // we are in TM 6
+        lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
+	
+        //printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+      }
       
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
-    // printf(" TM6 log2_maxh = %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh); 
-
-    }
+      
+      
       dlsch_channel_compensation_TM56(lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
                                       lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                       lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
@@ -3297,6 +3300,8 @@ void dlsch_channel_level_TM56(int **dl_ch_estimates_ext,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
+  //clear average level
+  avg128D = _mm_setzero_si128();
   avg[0] = 0;
   avg[1] = 0;
   // 5 is always a symbol with no pilots for both normal and extended prefix
@@ -3311,9 +3316,7 @@ void dlsch_channel_level_TM56(int **dl_ch_estimates_ext,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     dl_ch0_128 = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     dl_ch1_128 = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
-    
-    avg128D = _mm_setzero_si128();
-    
+
     for (rb=0; rb<nb_rb; rb++) {
 
       dl_ch0_128_tmp = _mm_load_si128(&dl_ch0_128[0]);
