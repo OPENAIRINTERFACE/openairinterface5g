@@ -470,10 +470,11 @@ err_code_t enb_agent_destroy_timers(void){
 
 struct enb_agent_timer_element_s * get_timer_entry(long timer_id) {
   
-  struct enb_agent_timer_element_s *search= calloc(1,sizeof(*search));
-  search->timer_id = timer_id;
+  struct enb_agent_timer_element_s search;
+  memset(&search, 0, sizeof(struct enb_agent_timer_element_s));
+  search.timer_id = timer_id;
 
-  return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, search); 
+  return  RB_FIND(enb_agent_map, &timer_instance.enb_agent_head, &search); 
 }
 
 void enb_agent_sleep_until(struct timespec *ts, int delay) {
