@@ -833,9 +833,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_nofix_pce_sh%d_d2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_fix_pce_sh%d_d2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
  	else
-		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_nofix_sh%d_d2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_fix_sh%d_d2_%d.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
 
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);
