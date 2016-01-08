@@ -494,6 +494,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     if ((rx_type==rx_IC_single_stream) && (eNB_id_i==phy_vars_ue->n_connected_eNB) && (dlsch0_harq->dl_power_off==0)) {  // TM5 two-user
 
       // Scale the channel estimates for interfering stream
+      
+       dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                          frame_parms,
+                          dlsch_ue,
+                          symbol,
+                          nb_rb); 
 
       dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
                           frame_parms,
@@ -593,7 +599,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
     } else if (dlsch0_harq->dl_power_off==1)  {
       
-        dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id_i]->dl_ch_estimates_ext,
+        dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                           frame_parms,
                           dlsch_ue,
                           symbol,
@@ -609,9 +615,14 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				avg,
 				symbol,
 				nb_rb);
+       avgs = 0;
+
+    for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
+      for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
+        avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
 
         //    LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1]);
-        avg[0] = log2_approx(avg[0]) - 13 + offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1];
+        lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
 
         lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
 	lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
