@@ -1003,7 +1003,7 @@ void *UE_thread(void *arg)
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
-  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*openair0_cfg[0].tx_scheduling_advance;
+  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=openair0_cfg[0].tx_scheduling_advance;
 #ifdef __AVX2__
   int dummy[2][spp] __attribute__((aligned(32)));
 #else
@@ -1019,6 +1019,10 @@ void *UE_thread(void *arg)
   unsigned int rxs;
 
   openair0_timestamp timestamp;
+
+#ifdef NAS_UE
+  MessageDef *message_p;
+#endif
 
 #ifdef RTAI
   RT_TASK *task = rt_task_init_schmod(nam2num("UE thread"), 0, 0, 0, SCHED_FIFO, 0xF);
@@ -1074,6 +1078,11 @@ void *UE_thread(void *arg)
   printf("unlocked sync_mutex, waiting (UE_thread)\n");
 
   printf("starting UE thread\n");
+
+#ifdef NAS_UE
+  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
+#endif
 
   T0 = rt_get_time_ns();
   first_rx = 1;

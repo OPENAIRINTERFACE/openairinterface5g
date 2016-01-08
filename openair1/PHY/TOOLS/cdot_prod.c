@@ -119,6 +119,7 @@ int32_t dot_product(int16_t *x,
   _m_empty();
  
   return(result);
+
 #elif defined(__arm__)
   int16x4_t *x_128=(int16x4_t*)x;
   int16x4_t *y_128=(int16x4_t*)y;

@@ -27,24 +27,24 @@ Obj.#   Case#   Test#	Description
 
 
 
-01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      02      00      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      01      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      02      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      02      03      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      02      04      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation
+01      02      00      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      02      01      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      02      02      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      02      03      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      02      04      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      02      05      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      02      05      Run OAISIM-NOS1 Rel10 TDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
-01      03              Run OAISIM-NOS1 Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2,5,6), and check the operation
-01      03      00      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      01      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      02      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) and search for errors, segmentation fault or exit
-01      03      03      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION mode and search for errors
-01      03      04      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) without PHY_ABSTRACTION mode, ping from from eNB to UE,
+01      03              Run OAISIM-NOS1 Rel10 (FDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation
+01      03      00      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE 1 eNB (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      03      01      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      03      02      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) and search for errors, segmentation fault or exit
+01      03      03      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 3 UEs (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION mode and search for errors
+01      03      04      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) without PHY_ABSTRACTION mode, ping from from eNB to UE,
                         and for check for no packet losses
-01      03      05      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2,5,6) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
+01      03      05      Run OAISIM-NOS1 Rel10 FDD, 1 eNB + 1 UE (5 MHz/10MHz/20MHz), (TM 1,2) in PHY_ABSTRACTION  mode, send ping from from eNB to UE,
                         and check for no packet losses
 
 
@@ -97,31 +97,49 @@ Obj.#   Case#   Test#	Description
 01      51      06      mbmssim (TBD)
 
 
-01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
+01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX, 2TX/2RX
 01      55      00      Band 7 FDD 5MHz UL Throughput for 60 sec for 1TX/1RX
-01      55      00      Band 7 FDD 10MHz UL Throughput for 60 sec
-01      55      00      Band 7 FDD 20MHz UL Throughput for 60 sec
-01      55      00      Band 7 FDD 5MHz DL Throughput for 60 sec
-01      55      00      Band 7 FDD 10MHz DL Throughput for 60 sec
-01      55      00      Band 7 FDD 20MHz DL Throughput for 60 sec
-
+01      55      01      Band 7 FDD 10MHz UL Throughput for 60 sec for 1TX/1RX
+01      55      02      Band 7 FDD 20MHz UL Throughput for 60 sec for 1TX/1RX
+01      55      03      Band 7 FDD 5MHz DL Throughput for 60 sec for 1TX/1RX
+01      55      04      Band 7 FDD 10MHz DL Throughput for 60 sec for 1TX/1RX
+01      55      05      Band 7 FDD 20MHz DL Throughput for 60 sec for 1TX/1RX
+01      55      06      Band 7 FDD 5MHz UL Throughput for 60 sec for 2TX/2RX
+01      55      07      Band 7 FDD 10MHz UL Throughput for 60 sec for 2TX/2RX
+01      55      08      Band 7 FDD 20MHz UL Throughput for 60 sec for 2TX/2RX
+01      55      09      Band 7 FDD 5MHz DL Throughput for 60 sec for 2TX/2RX
+01      55      10      Band 7 FDD 10MHz DL Throughput for 60 sec for 2TX/2RX
+01      55      11      Band 7 FDD 20MHz DL Throughput for 60 sec for 2TX/2RX
 
 01      56              lte-softmodem tests with USRP B210  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 
 
 01      57              lte-softmodem tests with USRP B210 RF as eNB and OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
-01      58               lte-softmodem tests with USRP X310 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 1TX/2RX, 2TX/1RX 2TX/2RX
+01      58               lte-softmodem tests with USRP X310 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 2TX/2RX
+01      58      00      Band 7 FDD 5MHz UL Throughput for 60 sec for 1TX/1RX
+01      58      01      Band 7 FDD 10MHz UL Throughput for 60 sec for 1TX/1RX
+01      58      02      Band 7 FDD 20MHz UL Throughput for 60 sec for 1TX/1RX
+01      58      03      Band 7 FDD 5MHz DL Throughput for 60 sec for 1TX/1RX
+01      58      04      Band 7 FDD 10MHz DL Throughput for 60 sec for 1TX/1RX
+01      58      05      Band 7 FDD 20MHz DL Throughput for 60 sec for 1TX/1RX
 
 01      59              lte-softmodem tests with USRP X310  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 
 01      61              lte-softmodem tests with USRP X310 RF as eNB and OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
-01      61              lte-softmodem tests with EXMIMO RF as eNB and ALU EPC w/ Bandrich COTS UE
+01      61              lte-softmodem tests with EXMIMO RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 2TX/2RX
+01      61      00      Band 7 FDD 5MHz UL Throughput for 60 sec for 1TX/1RX
+01      61      01      Band 7 FDD 10MHz UL Throughput for 60 sec for 1TX/1RX
+01      61      02      Band 7 FDD 20MHz UL Throughput for 60 sec for 1TX/1RX
+01      61      03      Band 7 FDD 5MHz DL Throughput for 60 sec for 1TX/1RX
+01      61      04      Band 7 FDD 10MHz DL Throughput for 60 sec for 1TX/1RX
+01      61      05      Band 7 FDD 20MHz DL Throughput for 60 sec for 1TX/1RX
+
 01      62              lte-softmodem tests with EXMIMO RF as eNB and OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 01      63              lte-softmodem tests with EXMIMO RF as eNB and  OAI EPC (eNB and EPC are on different machines) w/ Bandrich COTS UE
 
-01      58              lte-softmodem-noS1 tests
+01      64              lte-softmodem-noS1 tests
 
 02                      Functional test case
 
