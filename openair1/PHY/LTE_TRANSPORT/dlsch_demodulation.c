@@ -471,6 +471,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
+	
+	//printf("rho stream1 =%d\n", &lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
 
       //to be optimized (just take complex conjugate)
 
@@ -481,6 +483,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
+     // printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
    }
@@ -3180,8 +3183,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 
   
   // choose maximum of the 2 effective channels
-  avg_0[0] = cmax(avg_0[0], avg_0[1]);
-  avg_1[0] = cmax(avg_1[0], avg_1[1]);
+  avg_0[0] = avg_0[0] + avg_0[1];
+  avg_1[0] = avg_1[0] + avg_1[1];
 
   _mm_empty();
   _m_empty();
