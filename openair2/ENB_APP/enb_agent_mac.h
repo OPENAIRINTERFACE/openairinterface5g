@@ -88,5 +88,19 @@ int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *re
 int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg);
 
 
+/**********************************
+ * eNB agent - technology mac API
+ **********************************/
+
+/*Set DCI for particular RNTI in defined subframe (UL/DL)*/
+int enb_agent_mac_dl_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+
+int enb_agent_mac_ul_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+
+/*Push controller configurations to the eNB for cells and UEs*/
+int enb_agent_set_cell_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+
+int enb_agent_set_ue_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+
 
 #endif
