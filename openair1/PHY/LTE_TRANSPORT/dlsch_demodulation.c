@@ -430,10 +430,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	else {
 	// Shifts are needed to avoid tails in SNR/BLER curves.
 	// LUT will be introduced with mcs-dependent shift
-	avg_0[0] = (log2_approx(avg_0[0])/2) + (log2_approx(avg_0[1])/2) - 13 + interf_unaw_shift;
-	avg_1[0] = (log2_approx(avg_1[0])/2) + (log2_approx(avg_1[1])/2) - 13 + interf_unaw_shift;
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
+	avg_0[0] = (log2_approx(avg_0[0])/2) - 13 + interf_unaw_shift;
+	avg_1[0] = (log2_approx(avg_1[0])/2) - 13 + interf_unaw_shift;
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],avg_1[0]);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],avg_1[0]);
 	//printf("TM4 I-UA log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	//printf("TM4 I-UA log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
         }
@@ -3182,8 +3182,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   }
 
   
-//  avg_0[0] = avg_0[0] + avg_0[1];
- // avg_1[0] = avg_1[0] + avg_1[1];
+  avg_0[0] = avg_0[0] + avg_0[1];
+  avg_1[0] = avg_1[0] + avg_1[1];
 
   _mm_empty();
   _m_empty();
