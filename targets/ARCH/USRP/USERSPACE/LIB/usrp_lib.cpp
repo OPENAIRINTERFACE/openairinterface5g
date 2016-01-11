@@ -305,11 +305,11 @@ int trx_usrp_stop(int card) {
 
 
 rx_gain_calib_table_t calib_table_b210[] = {
-  {3500000000.0,47.0},
-  {2660000000.0,53.0},
-  {2300000000.0,54.0},
-  {1880000000.0,55.0},
-  {816000000.0,62.0},
+  {3500000000.0,44.0},
+  {2660000000.0,49.0},
+  {2300000000.0,50.0},
+  {1880000000.0,53.0},
+  {816000000.0,58.0},
   {-1,0}};
 
 rx_gain_calib_table_t calib_table_b210_38[] = {
@@ -507,7 +507,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     case 30720000:
       s->usrp->set_master_clock_rate(30.72e6);
             // from usrp_time_offset
-      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].samples_per_packet    = 4096;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
