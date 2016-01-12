@@ -12,6 +12,7 @@ message progran_message {
 	      prp_echo_reply echo_reply_msg = 3;
 	      prp_stats_request stats_request_msg = 4;
 	      prp_stats_reply stats_reply_msg = 5;
+	      prp_ul_sr_info ul_sr_info_msg = 6;
 	}
 }
 
@@ -82,6 +83,15 @@ message prp_stats_reply {
 	repeated prp_cell_stats_report cell_report = 3;
 }
 
+//
+// Asynchronous messages
+//
+
+message prp_ul_sr_info {
+	optional prp_header header = 1;
+	optional uint32 sfn_sf = 2;
+	repeated uint32 rnti = 3;
+}
 
 // Extensions of the echo request and reply
 // messages for carrying a latency value in ms
