@@ -760,3 +760,124 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
   //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
+
+int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  Protocol__PrpHeader *header;
+  int i;
+  const int xid = *((int *)params);
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UL_SR_INFO, &header) != 0)
+    goto error;
+
+  Protocol__PrpUlSrInfo *ul_sr_info_msg;
+  ul_sr_info_msg = malloc(sizeof(Protocol__PrpUlSrInfo));
+  if (ul_sr_info_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_ul_sr_info__init(ul_sr_info_msg);
+  
+  ul_sr_info_msg->header = header;
+  ul_sr_info_msg->has_sfn_sf = 1;
+  ul_sr_info_msg->sfn_sf = get_sfn_sf(mod_id);
+  /*TODO: Set the number of UEs that sent an SR */
+  ul_sr_info_msg->n_rnti = 1;
+  ul_sr_info_msg->rnti = (uint32_t *) malloc(ul_sr_info_msg->n_rnti * sizeof(uint32_t));
+
+  if(ul_sr_info_msg->rnti == NULL) {
+    goto error;
+  }
+  /*TODO:Set the rnti of the UEs that sent an SR */
+  for (i = 0; i < ul_sr_info_msg->n_rnti; i++) {
+    ul_sr_info_msg->rnti[i] = 1;
+  }
+    
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG;
+  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->ul_sr_info_msg = ul_sr_info_msg;
+  return 0;
+  
+ error:
+  // TODO: Need to make proper error handling
+  if (header != NULL)
+    free(header);
+  if (ul_sr_info_msg != NULL) {
+    free(ul_sr_info_msg->rnti);
+    free(ul_sr_info_msg);
+  }
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg) {
+   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG)
+     goto error;
+
+   free(msg->ul_sr_info_msg->header);
+   free(msg->ul_sr_info_msg->rnti);
+   free(msg->ul_sr_info_msg);
+   free(msg);
+   return 0;
+
+ error:
+   //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+   return -1;
+}
+
+void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
+  int size;
+  Protocol__ProgranMessage *msg;
+  void *data;
+  int priority;
+  err_code_t err_code;
+
+  /*TODO: Must use a proper xid*/
+  int xid = 1;
+  err_code = enb_agent_mac_sr_info(mod_id, (void *) &xid, &msg);
+  if (err_code < 0) {
+    goto error;
+  }
+
+  if (msg != NULL){
+    data=enb_agent_pack_message(msg, &size);
+    
+    if (message_put(context->tx_mq, data, size, priority)){
+      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      goto error;
+    }
+    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+  }
+ error:
+  LOG_D(ENB_AGENT, "Could not send sr message\n");
+}
+
+int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
+  if (!mac_agent_registered[mod_id]) {
+    LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+
+  xface->agent_ctxt = &shared_ctxt[mod_id];
+  xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
+
+  mac_agent_registered[mod_id] = 1;
+  return 1;
+}
+
+int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
+  
+  if(mac_agent_registered[mod_id]) {
+    LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  
+  xface->agent_ctxt = NULL;
+  xface->enb_agent_send_sr_info = NULL;
+
+  mac_agent_registered[mod_id] = NULL;
+  return 1;
+}

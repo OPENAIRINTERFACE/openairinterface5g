@@ -43,7 +43,10 @@
 #include "stats_common.pb-c.h"
 
 #include "enb_agent_common.h"
+#include "enb_agent_extern.h"
 
+/*Flags showing if a mac agent has already been registered*/
+unsigned int mac_agent_registered[NUM_MAX_ENB_AGENT];
 
 /* These types will be used to give
    instructions for the type of stats reports
@@ -87,20 +90,22 @@ int enb_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *re
 
 int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg);
 
+int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+
+int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg);
+
 
 /**********************************
  * eNB agent - technology mac API
  **********************************/
 
-/*Set DCI for particular RNTI in defined subframe (UL/DL)*/
-int enb_agent_mac_dl_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+/*Inform controller about received scheduling requests during a subframe*/
+void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context);
 
-int enb_agent_mac_ul_config(mid_t mod_id, Protocol__ProgranMessage *msg);
+/*Register technology specific interface callbacks*/
+int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
 
-/*Push controller configurations to the eNB for cells and UEs*/
-int enb_agent_set_cell_config(mid_t mod_id, Protocol__ProgranMessage *msg);
-
-int enb_agent_set_ue_config(mid_t mod_id, Protocol__ProgranMessage *msg);
-
+/*Unregister technology specific callbacks*/
+int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface*xface);
 
 #endif
