@@ -188,7 +188,6 @@ check_install_additional_tools (){
 	libboost-all-dev \
 	libpthread-stubs0-dev \
 	openvpn \
-	phpmyadmin \
 	pkg-config \
 	python-dev  \
 	python-pexpect \
