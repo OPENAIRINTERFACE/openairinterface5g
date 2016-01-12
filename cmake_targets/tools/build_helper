@@ -280,6 +280,9 @@ check_install_oai_software() {
 }
 
 install_asn1c_from_source(){
+    asn1_install_dir=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
+    echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_dir "
+    (
     rm -rf /tmp/asn1c-r1516
     mkdir -p /tmp/asn1c-r1516
     cd /tmp/asn1c-r1516
@@ -289,7 +292,8 @@ install_asn1c_from_source(){
     patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
     ./configure
     make -j`nproc`
-    $SUDO make install 
+    $SUDO make install
+    ) > $asn1_install_dir 2>&1
 }
 
 #################################################
