@@ -67,8 +67,16 @@ typedef int (*enb_agent_message_destruction_callback)(
 	Protocol__ProgranMessage *msg
 );
 
+/**********************************
+ * progRAN protocol messages helper 
+ * functions and generic handlers
+ **********************************/
+
 int enb_agent_serialize_message(Protocol__ProgranMessage *msg, void **buf, int *size);
 int enb_agent_deserialize_message(void *data, int size, Protocol__ProgranMessage **msg);
+
+void * enb_agent_pack_message(Protocol__ProgranMessage *msg, 
+			      uint32_t * size);
 
 err_code_t enb_agent_destroy_progran_message(Protocol__ProgranMessage *msg);
 
@@ -89,11 +97,6 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
 						    uint32_t size);
 
 Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args);
-
-void * enb_agent_send_message(Protocol__ProgranMessage *msg, 
-			      uint32_t * size);
-
-
 
 
 

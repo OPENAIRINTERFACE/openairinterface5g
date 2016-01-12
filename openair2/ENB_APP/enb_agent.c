@@ -38,6 +38,8 @@
 #include "log.h"
 #include "enb_agent.h"
 
+#include "enb_agent_extern.h"
+
 #include "assertions.h"
 
 //#define TEST_TIMER
@@ -95,7 +97,7 @@ void *enb_agent_task(void *args){
     case TIMER_HAS_EXPIRED:
       msg = enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
       if (msg != NULL){
-	data=enb_agent_send_message(msg,&size);
+	data=enb_agent_pack_message(msg,&size);
 	if (message_put(d->tx_mq, data, size, priority)){
 	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	  goto error;
@@ -182,7 +184,7 @@ void *receive_thread(void *args) {
   
     // check if there is something to send back to the controller
     if (msg != NULL){
-      data=enb_agent_send_message(msg,&size);
+      data=enb_agent_pack_message(msg,&size);
      
       if (message_put(d->tx_mq, data, size, priority)){
 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;

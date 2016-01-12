@@ -56,6 +56,7 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_destroy_echo_reply,
   enb_agent_mac_destroy_stats_request,
   enb_agent_mac_destroy_stats_reply,
+  enb_agent_mac_destroy_sr_info,
 };
 
 static const char *enb_agent_direction2String[] = {
@@ -108,7 +109,7 @@ error:
 
 
 
-void * enb_agent_send_message(Protocol__ProgranMessage *msg, 
+void * enb_agent_pack_message(Protocol__ProgranMessage *msg, 
 			      uint32_t * size){
 
   void * buffer;
