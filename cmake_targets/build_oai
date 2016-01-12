@@ -46,6 +46,7 @@ XFORMS="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 LOWLATENCY_FLAG_USER="False"
+FORCE_LOWLATENCY_FLAG_USER=""
 REL="Rel10"
 HW="EXMIMO"
 NOS1=0
@@ -230,11 +231,11 @@ function main() {
             echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
        --disable-deadline)
-            LOWLATENCY_FLAG_USER="False"
+            FORCE_LOWLATENCY_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
             shift 1;;
        --enable-deadline)
-            LOWLATENCY_FLAG_USER="True"
+            FORCE_LOWLATENCY_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
 
@@ -247,6 +248,31 @@ function main() {
             break;;
    esac
   done
+
+  #Now we set flags to enable deadline scheduler settings
+  #By default: USRP: disable, 
+  #By default: BLADERF: enable,
+  #By default: EXMIMO: enable
+  if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
+     if [ "$HW" = "EXMIMO" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "ETHERNET" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "OAI_USRP" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "OAI_BLADERF" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "None" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     else 
+        echo_error "Unknown HW type $HW. Exiting now..."
+        exit 
+     fi
+  else
+     LOWLATENCY_FLAG_USER=$FORCE_LOWLATENCY_FLAG_USER
+  fi
+
+  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
 
   ############################################
   # setting and printing OAI envs, we should check here
