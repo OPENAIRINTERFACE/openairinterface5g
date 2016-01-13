@@ -952,6 +952,14 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
                                    int **dl_ch_rho_ext,
                                    unsigned char output_shift);
 
+void dlsch_dual_stream_correlation_opposite(LTE_DL_FRAME_PARMS *frame_parms,
+                                   unsigned char symbol,
+                                   unsigned short nb_rb,
+                                   int **dl_ch_estimates_ext,
+                                   int **dl_ch_estimates_ext_i,
+                                   int **dl_ch_rho_ext,
+                                   unsigned char output_shift);
+
 void dlsch_channel_compensation_TM56(int **rxdataF_ext,
                                      int **dl_ch_estimates_ext,
                                      int **dl_ch_mag,
