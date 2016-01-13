@@ -2723,8 +2723,16 @@ PMI_FEEDBACK:
                 random_channel(eNB2UE[2],0);
                 random_channel(eNB2UE[3],0);
               }
-          }
-
+	    
+	    if (PHY_vars_UE->perfect_ce==1) {
+                  // fill in perfect channel estimates
+                  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+		  /*
+		  write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
+                  write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1,1,8);
+		  */
+	    }
+	  }
 
           if(abstx) {
             if (trials==0 && round==0) {
@@ -2870,11 +2878,6 @@ PMI_FEEDBACK:
 
               if (PHY_vars_UE->perfect_ce==1) {
                 if (awgn_flag==0) {
-                  // fill in perfect channel estimates
-                  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-
-                  //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
-                  //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
