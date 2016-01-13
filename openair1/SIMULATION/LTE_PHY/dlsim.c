@@ -151,7 +151,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 
   //  phy_init_top(lte_frame_parms); //allocation
 
-  PHY_vars_UE->is_secondary_ue = 0;2
+  PHY_vars_UE->is_secondary_ue = 0;
   PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
   PHY_vars_eNB->lte_frame_parms = *lte_frame_parms;
 
@@ -798,7 +798,7 @@ int main(int argc, char **argv)
 	sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_pce_sh%d_d2_expcomp.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
    else
         sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_d2_expcomp.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
-
+  
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
     fprintf(stderr,"Cannot create file %s!\n",bler_fname);
@@ -836,7 +836,6 @@ int main(int argc, char **argv)
 		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_fix_pce_sh%d_d2_%d_expcomp.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
  	else
 		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_ab_fix_sh%d_d2_%d_expcomp.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
-
 
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);
