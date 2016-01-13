@@ -468,7 +468,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     symbol,
                                     nb_rb,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    0,
+                                    NULL,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
@@ -480,7 +480,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     symbol,
                                     nb_rb,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				    0,
+				    NULL,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
