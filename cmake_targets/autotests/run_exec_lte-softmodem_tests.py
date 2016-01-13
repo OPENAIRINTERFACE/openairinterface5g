@@ -546,7 +546,8 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
 # \param password password with which to login
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop):
+# \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -560,7 +561,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   timeout_cmd = int(float(timeout_cmd))
   #Timeout_thread is more than that of cmd to have room for compilation time, etc
   timeout_thread = timeout_cmd + 300 
-  nruns = testcase.findtext('nruns',default='')
+  if nruns_lte_softmodem == '':
+    nruns = testcase.findtext('nruns',default='')
+  else:
+    nruns = nruns_lte_softmodem
   nruns = int(float(nruns))
   tags = testcase.findtext('tags',default='')
   eNBMachine = testcase.findtext('eNB',default='')
@@ -1148,6 +1152,7 @@ if MachineListGeneric == '':
    MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
 ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
+nruns_lte_softmodem = xmlRoot.findtext('nruns_lte-softmodem',default='')
 
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
@@ -1155,6 +1160,7 @@ print "GitOAI5GRepo = " + GitOAI5GRepo
 print "GitOAI5GBranch = " + GitOAI5GRepoBranch
 print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
 print "NFSResultsShare = " + NFSResultsShare
+print "nruns_lte_softmodem = " + nruns_lte_softmodem
 
 if GitOAI5GHeadVersion == '':
   cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
@@ -1345,7 +1351,7 @@ for testcase in testcaseList:
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop )
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem )
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
