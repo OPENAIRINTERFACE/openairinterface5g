@@ -1099,7 +1099,7 @@ except KeyError:
    sys.exit(1)
 
 print "Killing zombie ssh sessions from earlier sessions..."
-cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 \''
+cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
 os.system(cmd)
 
 
@@ -1114,6 +1114,12 @@ if user=='':
   user = getpass.getuser()
 if pw=='':
   pw = getpass.getpass()
+
+print "Killing zombie ssh sessions from earlier sessions..."
+cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+cmd = cmd + '; ps aux |grep \"/usr/bin/ssh -q -l ' + user + '\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
+os.system(cmd)
+
 print "host = " + host 
 print "user = " + user
 xmlInputFile=os.environ.get('OPENAIR_DIR')+"/cmake_targets/autotests/test_case_list.xml"
