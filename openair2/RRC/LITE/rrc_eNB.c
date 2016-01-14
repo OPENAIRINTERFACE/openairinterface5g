@@ -540,8 +540,8 @@ rrc_eNB_get_next_transaction_identifier(
 
 
 //-----------------------------------------------------------------------------
-// return 1 if there is already an UE with ue_identityP, 0 otherwise
-static int
+// return the ue context if there is already an UE with ue_identityP, NULL otherwise
+static struct rrc_eNB_ue_context_s*
 rrc_eNB_ue_context_random_exist(
   const protocol_ctxt_t* const ctxt_pP,
   const uint64_t               ue_identityP
@@ -551,9 +551,28 @@ rrc_eNB_ue_context_random_exist(
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
     if (ue_context_p->ue_context.random_ue_identity == ue_identityP)
-      return 1;
+      return ue_context_p;
   }
-  return 0;
+  return NULL;
+}
+//-----------------------------------------------------------------------------
+// return the ue context if there is already an UE with the same S-TMSI(MMEC+M-TMSI), NULL otherwise
+static struct rrc_eNB_ue_context_s*
+rrc_eNB_ue_context_stmsi_exist(
+  const protocol_ctxt_t* const ctxt_pP,
+  const mme_code_t             mme_codeP,
+  const m_tmsi_t               m_tmsiP
+)
+//-----------------------------------------------------------------------------
+{
+  struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+    if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE)
+      if (ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi == m_tmsiP)
+        if (ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code == mme_codeP)
+          return ue_context_p;
+  }
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -3670,30 +3689,60 @@ rrc_eNB_decode_ccch(
       } else {
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
-          if (rrcConnectionRequest->ue_Identity.present != InitialUE_Identity_PR_randomValue) {
+          if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
+            AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
+                        "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
+                        rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+            memcpy(((uint8_t*) & random_value) + 3,
+                   rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
+                   rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+            /* if there is already a registered UE (with another RNTI) with this random_value,
+             * the current one must be removed from MAC/PHY (zombie UE)
+             */
+            if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
+              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+              ue_context_p = NULL;
+            } else {
+              ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+            }
+          } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
+            /* Save s-TMSI */
+            S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
+            mme_code_t mme_code = BIT_STRING_to_uint8(&s_TMSI.mmec);
+            m_tmsi_t   m_tmsi   = BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
+            random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
+            if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
+              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+              ue_context_p = NULL;
+            } else {
+              ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
+            }
+            ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
+            ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
+            ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
+
+            MSC_LOG_RX_MESSAGE(
+              MSC_RRC_ENB,
+              MSC_RRC_UE,
+              Srb_info->Rx_buffer.Payload,
+              dec_rval.consumed,
+              MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u (s-TMSI mmec %u m_TMSI %u random UE id (0x%" PRIx64 ")",
+              MSC_AS_TIME_ARGS(ctxt_pP),
+              ue_context_p->ue_context.rnti,
+              dec_rval.consumed,
+              ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
+              ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+              ue_context_p->ue_context.random_ue_identity);
+          } else {
             LOG_E(RRC,
-                  PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionRequest with S-TMSI not supported yet, let's reject the UE\n",
+                  PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionRequest without random UE identity or S-TMSI not supported, let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
             rrc_eNB_generate_RRCConnectionReject(ctxt_pP,
                              rrc_eNB_get_ue_context(&eNB_rrc_inst[ctxt_pP->module_id], ctxt_pP->rnti),
                              CC_id);
             break;
           }
-          AssertFatal(rrcConnectionRequest->ue_Identity.choice.randomValue.size == 5,
-                      "wrong InitialUE-Identity randomValue size, expected 5, provided %d",
-                      rrcConnectionRequest->ue_Identity.choice.randomValue.size);
-          memcpy(((uint8_t*) & random_value) + 3,
-                 rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
-                 rrcConnectionRequest->ue_Identity.choice.randomValue.size);
-          /* if there is already a registered UE (with another RNTI) with this random_value,
-           * the current one must be removed from MAC/PHY (zombie UE)
-           */
-          if (rrc_eNB_ue_context_random_exist(ctxt_pP, random_value)) {
-            AssertFatal(0 == 1, "TODO: remove UE fro MAC/PHY (how?)");
-            ue_context_p = NULL;
-          } else {
-            ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
-          }
+
         }
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" UE context: %X\n",
@@ -3704,47 +3753,7 @@ rrc_eNB_decode_ccch(
 
 
 #if defined(ENABLE_ITTI)
-          /* Check s-TMSI presence in message */
-          ue_context_p->ue_context.Initialue_identity_s_TMSI.presence =
-            (rrcConnectionRequest->ue_Identity.present == InitialUE_Identity_PR_s_TMSI);
-
-          if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence) {
-            /* Save s-TMSI */
-            S_TMSI_t                            s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
-
-            ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code =
-              BIT_STRING_to_uint8(&s_TMSI.mmec);
-            ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi =
-              BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
-
-            MSC_LOG_RX_DISCARDED_MESSAGE(
-              MSC_RRC_ENB,
-              MSC_RRC_UE,
-              Srb_info->Rx_buffer.Payload,
-              dec_rval.consumed,
-              MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u (s-TMSI mmec %u m_TMSI %u random UE id (0x%" PRIx64 ")",
-              MSC_AS_TIME_ARGS(ctxt_pP),
-              ue_context_p->ue_context.rnti,
-              dec_rval.consumed,
-              s_TMSI.mmec,
-              s_TMSI.m_TMSI,
-              ue_context_p->ue_context.random_ue_identity);
-
-          } else {
-            MSC_LOG_RX_DISCARDED_MESSAGE(
-              MSC_RRC_ENB,
-              MSC_RRC_UE,
-              Srb_info->Rx_buffer.Payload,
-              dec_rval.consumed,
-              MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u random UE id (0x%" PRIx64 ")",
-              MSC_AS_TIME_ARGS(ctxt_pP),
-              ue_context_p->ue_context.rnti,
-              dec_rval.consumed,
-              ue_context_p->ue_context.random_ue_identity);
-          }
-
-          ue_context_p->ue_context.establishment_cause =
-            rrcConnectionRequest->establishmentCause;
+          ue_context_p->ue_context.establishment_cause = rrcConnectionRequest->establishmentCause;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE random UE identity (0x%" PRIx64 ") MME code %u TMSI %u cause %u\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 ue_context_p->ue_context.random_ue_identity,

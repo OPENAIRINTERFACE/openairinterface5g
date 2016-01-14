@@ -163,7 +163,13 @@ typedef uint32_t           mbms_session_id_t;
 typedef uint16_t           mbms_service_id_t;
 typedef uint16_t           rnti_t;
 typedef uint8_t            rrc_enb_index_t;
+typedef uint8_t            mme_code_t;
+typedef uint32_t           m_tmsi_t;
 
+//Random UE identity length = 40 bits
+#if ! defined(NOT_A_RANDOM_UE_IDENTITY)
+#define NOT_A_RANDOM_UE_IDENTITY (uint64_t)0xFFFFFFFF
+#endif
 #if ! defined(NOT_A_RNTI)
 #define NOT_A_RNTI (rnti_t)0
 #endif
