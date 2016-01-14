@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 set(PACKAGE_NAME "unitary_tests_simulators")
 set(PHYSIM True)
 set(RF_BOARD None)
-set(XFORMS True)
+set(XFORMS False)
 
 set(DEBUG_PHY False)
 set(MU_RECIEVER False)
