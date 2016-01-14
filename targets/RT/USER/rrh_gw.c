@@ -216,7 +216,7 @@ static rrh_module_t new_module (unsigned int id) {
   LOG_I(RRH,"Setting RF device to EXMIMO\n");	   
 #elif OAI_USRP
   rrh_mod.devs=oai_dv;	
-  rrh_mod.devs->type=USRP_IF;
+  rrh_mod.devs->type=USRP_B200_IF;
   LOG_I(RRH,"Setting RF device to USRP\n");    	 
 #elif OAI_BLADERF
   rrh_mod.devs=oai_dv;	

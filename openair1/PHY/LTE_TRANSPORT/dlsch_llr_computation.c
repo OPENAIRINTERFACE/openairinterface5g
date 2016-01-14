@@ -662,16 +662,17 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->mode1_flag==0)
-      len = (nb_rb*8);// - (2*pbch_pss_sss_adjust/3);
+      len = (nb_rb*8)- (2*pbch_pss_sss_adjust/3);
     else
-      len = (nb_rb*10);// - (5*pbch_pss_sss_adjust/6);
+      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
   } else {
-    len = (nb_rb*12);// - pbch_pss_sss_adjust;
+    len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
 
-//  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+  //  printf("dlsch_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
+    //    printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
     rxF++;
     llr32++;
   }

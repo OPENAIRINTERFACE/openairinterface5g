@@ -1102,8 +1102,12 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     dlsch[0]->harq_ids[subframe] = harq_pid;
 
-    if (dlsch0_harq->round == 0)
+    if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch[0], harq_pid);
       dlsch0_harq->status = ACTIVE;
+    }
 
     break;
 
@@ -1237,6 +1241,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch[0], harq_pid);
       dlsch0_harq->status = ACTIVE;
       //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
       // MCS and TBS don't change across HARQ rounds
@@ -1605,10 +1612,16 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     // reset HARQ process if this is the first transmission
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
     }
 
     if (dlsch1_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status = ACTIVE;
     }
 
@@ -1986,10 +1999,16 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     // reset HARQ process if this is the first transmission
     if ((dlsch0->active==1) && (dlsch0_harq->round == 0)) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
     }
 
     if ((dlsch1->active==1) && (dlsch1_harq->round == 0)) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status = ACTIVE;
     }
 
@@ -2131,16 +2150,23 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     // check if either TB is disabled (see 36-213 V8.6 p. 26)
 
 
-    if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0))
+    if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0)) {
+      LOG_W(PHY, "what to do with respect to remove_harq_pid_from_freelist?\n");
       dlsch0_harq->status = DISABLED;
+    }
 
-    if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0))
+    if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0)) {
+      LOG_W(PHY, "what to do with respect to remove_harq_pid_from_freelist?\n");
       dlsch1_harq->status = DISABLED;
+    }
 
     dlsch0_harq->Nl        = 1;
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
@@ -2305,11 +2331,17 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if ((dlsch0_harq->round == 0) && (dlsch0->active == 1) ) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status      = ACTIVE;
       dlsch0_harq->mcs         = mcs1;
     }
 
     if ((dlsch1_harq->round == 0) && (dlsch1->active == 1) ) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status      = ACTIVE;
       dlsch1_harq->mcs         = mcs2;
     }
@@ -2473,6 +2505,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
@@ -2602,6 +2637,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     //    dlsch0_harq->Ndi         = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi;
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
