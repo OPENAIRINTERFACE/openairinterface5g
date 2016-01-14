@@ -468,7 +468,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     symbol,
                                     nb_rb,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                    NULL,
+                                      &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
@@ -476,12 +476,12 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 
       //to be optimized (just take complex conjugate)
 
-      dlsch_dual_stream_correlation_opposite(frame_parms,
+      dlsch_dual_stream_correlation(frame_parms,
                                     symbol,
                                     nb_rb,
+				     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				    NULL,
-                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
@@ -2598,7 +2598,7 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
       //      print_ints("c0",&mmtmpD2);
       //      print_ints("c1",&mmtmpD3);
       dl_ch_rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-     //print_shorts("rho 0:",dl_ch_rho128);
+    // print_shorts("rho 0:",dl_ch_rho128);
       // multiply by conjugated channel
       mmtmpD0 = _mm_madd_epi16(dl_ch128[1],dl_ch128i[1]);
       // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
@@ -2643,117 +2643,6 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 
   }
     
-  _mm_empty();
-  _m_empty();
-
-#elif defined(__arm__)
-
-#endif
-}
-
-void dlsch_dual_stream_correlation_opposite(LTE_DL_FRAME_PARMS *frame_parms,
-                                   unsigned char symbol,
-                                   unsigned short nb_rb,
-                                   int **dl_ch_estimates_ext,
-                                   int **dl_ch_estimates_ext_i,
-                                   int **dl_ch_rho_ext,
-                                   unsigned char output_shift)
-{
-
-#if defined(__x86_64__)||defined(__i386__)
-
-  unsigned short rb;
-  __m128i *dl_ch128,*dl_ch128i,*dl_ch_rho128,mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
-  unsigned char aarx,symbol_mod,pilots=0;
-
-  //    printf("dlsch_dual_stream_correlation: symbol %d\n",symbol);
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    pilots=1;
-  }
-
-  //  printf("Dual stream correlation (%p)\n",dl_ch_estimates_ext_i);
-
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    //printf ("antenna %d", aarx);
-
-    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-
-    if (dl_ch_estimates_ext_i == NULL) // TM3/4
-      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_DL*12];
-    else
-      dl_ch128i         = (__m128i *)&dl_ch_estimates_ext_i[aarx][symbol*frame_parms->N_RB_DL*12];
-
-    dl_ch_rho128      = (__m128i *)&dl_ch_rho_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-
-
-    for (rb=0; rb<nb_rb; rb++) {
-      // multiply by conjugated channel
-      mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128i[0]);
-      //      print_ints("re",&mmtmpD0);
-      // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpD1 = _mm_shufflelo_epi16(dl_ch128i[0],_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
-      mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128[0]);
-      //      print_ints("im",&mmtmpD1);
-      // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-      //      print_ints("re(shift)",&mmtmpD0);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-      //      print_ints("im(shift)",&mmtmpD1);
-      mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-      mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-      //      print_ints("c0",&mmtmpD2);
-      //      print_ints("c1",&mmtmpD3);
-      dl_ch_rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-     // print_shorts("rho 2:",dl_ch_rho128);
-      // multiply by conjugated channel
-      mmtmpD0 = _mm_madd_epi16(dl_ch128[1],dl_ch128i[1]);
-      // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpD1 = _mm_shufflelo_epi16(dl_ch128i[1],_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-      mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128[1]);
-      // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-      mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-      mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-      mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-      dl_ch_rho128[1] =_mm_packs_epi32(mmtmpD2,mmtmpD3);
-
-            
-      if (pilots==0) {  
-
-        // multiply by conjugated channel
-        mmtmpD0 = _mm_madd_epi16(dl_ch128[2],dl_ch128i[2]);
-        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpD1 = _mm_shufflelo_epi16(dl_ch128i[2],_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-        mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch128[2]);
-        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-        dl_ch_rho128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-	
-       dl_ch128+=3;
-        dl_ch128i+=3;
-        dl_ch_rho128+=3;
-      } else {
-
-        dl_ch128+=2;
-        dl_ch128i+=2;
-        dl_ch_rho128+=2;
-      }
-    }           
-
-  }
-
   _mm_empty();
   _m_empty();
 
@@ -2917,7 +2806,7 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
   int **rxdataF_comp0 		=lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1 		=lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
-  int **dl_ch_rho_ext 		=lte_ue_pdsch_vars->dl_ch_rho_ext[harq_pid][round];
+  int **dl_ch_rho_ext 		=lte_ue_pdsch_vars->dl_ch_rho_ext[harq_pid][round]; //for first stream
   int **dl_ch_rho2_ext 		=lte_ue_pdsch_vars->dl_ch_rho2_ext;
   int **dl_ch_mag0            	= lte_ue_pdsch_vars->dl_ch_mag0;
   int **dl_ch_mag1            	= lte_ue_pdsch_vars->dl_ch_mag1;
@@ -2927,14 +2816,12 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   
   if (frame_parms->nb_antennas_rx>1) {
       
-    for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++) {
-
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp0[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp0[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
-      dl_ch_mag128_0      = (__m128i *)&dl_ch_mag0[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-      dl_ch_mag128_1      = (__m128i *)&dl_ch_mag0[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
-      dl_ch_mag128_0b     = (__m128i *)&dl_ch_magb0[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];  
-      dl_ch_mag128_1b     = (__m128i *)&dl_ch_magb0[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];  
+      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12];  
+      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_0      = (__m128i *)&dl_ch_mag0[0][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_1      = (__m128i *)&dl_ch_mag0[1][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_0b     = (__m128i *)&dl_ch_magb0[0][symbol*frame_parms->N_RB_DL*12];  
+      dl_ch_mag128_1b     = (__m128i *)&dl_ch_magb0[1][symbol*frame_parms->N_RB_DL*12];  
 
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
       for (i=0;i<nb_rb*3;i++) {
@@ -2945,8 +2832,7 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 	// print_shorts("mrc compens0:",&rxdataF_comp128_0[i]);
 	// print_shorts("mrc mag128_0:",&dl_ch_mag128_0[i]);
 	// print_shorts("mrc mag128_0b:",&dl_ch_mag128_0b[i]);
-      }
-    }
+      }    }
 
    // if (rho) {
       rho128_0 = (__m128i *) &dl_ch_rho_ext[0][symbol*frame_parms->N_RB_DL*12];
@@ -2980,7 +2866,7 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 	//print_shorts("mrc mag128_i0b:",&dl_ch_mag128_i0b[i]);
       }
     }
-  }
+ 
 
   _mm_empty();
   _m_empty();
