@@ -37,17 +37,17 @@
 #include "enb_agent_net_comm.h"
 #include "log.h"
 
-enb_agent_channel_t *agent_channel[ENB_AGENT_MAX];
+enb_agent_channel_t *agent_channel[NUM_MAX_ENB_AGENT][ENB_AGENT_MAX];
 enb_agent_channel_instance_t channel_instance;
 int enb_agent_channel_id = 0;
 
-int enb_agent_msg_send(void *data, int size, int priority, agent_id_t agent_id) {
+int enb_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
   }
   enb_agent_channel_t *channel;
-  channel = agent_channel[agent_id];
+  channel = agent_channel[mod_id][agent_id];
   
   /*Check if agent has a channel registered*/
   if (channel == NULL) {
@@ -61,13 +61,13 @@ int enb_agent_msg_send(void *data, int size, int priority, agent_id_t agent_id) 
   return -1;
 }
 
-int enb_agent_msg_recv(void **data, int *size, int *priority, agent_id_t agent_id) {
+int enb_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
   }
   enb_agent_channel_t *channel;
-  channel = agent_channel[agent_id];
+  channel = agent_channel[mod_id][agent_id];
   
   /*Check if agent has a channel registered*/
   if (channel == NULL) {
@@ -81,7 +81,7 @@ int enb_agent_msg_recv(void **data, int *size, int *priority, agent_id_t agent_i
   return -1;
 }
 
-int enb_agent_register_channel(enb_agent_channel_t *channel, agent_id_t agent_id) {
+int enb_agent_register_channel(mid_t mod_id, enb_agent_channel_t *channel, agent_id_t agent_id) {
   int i;
 
   if (channel == NULL) {
@@ -90,23 +90,23 @@ int enb_agent_register_channel(enb_agent_channel_t *channel, agent_id_t agent_id
 
   if (agent_id == ENB_AGENT_MAX) {
     for (i = 0; i < ENB_AGENT_MAX; i++) {
-      agent_channel[i] = channel;
+      agent_channel[mod_id][i] = channel;
     }
   } else {
-    agent_channel[agent_id] = channel;
+    agent_channel[mod_id][agent_id] = channel;
   }
   return 0;
 }
 
-void enb_agent_unregister_channel(agent_id_t agent_id) {
+void enb_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id) {
   int i;
 
   if (agent_id == ENB_AGENT_MAX) {
     for (i = 0; i < ENB_AGENT_MAX; i++) {
-      agent_channel[i] = NULL;
+      agent_channel[mod_id][i] = NULL;
     }
   } else {
-    agent_channel[agent_id] = NULL;
+    agent_channel[mod_id][agent_id] = NULL;
   }
 }
 
@@ -132,7 +132,7 @@ int enb_agent_create_channel(void *channel_info,
 }
 
 int enb_agent_destroy_channel(int channel_id) {
-  int i;
+  int i, j;
 
   /*Check to see if channel exists*/
   struct enb_agent_channel_s *e = NULL;
@@ -146,10 +146,12 @@ int enb_agent_destroy_channel(int channel_id) {
   }
 
   /*Unregister the channel from all agents*/
-  for (i = 0; i < ENB_AGENT_MAX; i++) {
-    if (agent_channel[i] != NULL) {
-      if (agent_channel[i]->channel_id == e->channel_id) {
-	agent_channel[i] == NULL;
+  for (i = 0; i < NUM_MAX_ENB_AGENT; i++) {
+    for (j = 0; j < ENB_AGENT_MAX; j++) {
+      if (agent_channel[i][j] != NULL) {
+	if (agent_channel[i][j]->channel_id == e->channel_id) {
+	  agent_channel[i][j] == NULL;
+	}
       }
     }
   }
@@ -163,13 +165,15 @@ int enb_agent_destroy_channel(int channel_id) {
 }
 
 err_code_t enb_agent_init_channel_container(void) {
-  int i;
+  int i, j;
   LOG_I(ENB_AGENT, "init RB tree for channel container\n");
 
   RB_INIT(&channel_instance.enb_agent_head);
-
-  for (i = 0; i < ENB_AGENT_MAX; i++) {
-    agent_channel[i] == NULL;
+  
+  for (i = 0; i < NUM_MAX_ENB_AGENT; i++) {
+    for (j = 0; j < ENB_AGENT_MAX; j++) {
+    agent_channel[i][j] == NULL;
+    }
   }
 
   return 0;

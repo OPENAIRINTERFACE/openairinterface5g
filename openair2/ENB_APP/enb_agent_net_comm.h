@@ -56,16 +56,16 @@ typedef struct enb_agent_channel_instance_s{
 } enb_agent_channel_instance_t;
 
 /*Send and receive messages using the channel registered for a specific agent*/
-int enb_agent_msg_send(void *data, int size, int priority, agent_id_t agent_id);
+int enb_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority);
 
-int enb_agent_msg_recv(void **data, int *size, int *priority, agent_id_t agent_id);
+int enb_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority);
 
 /*Register a channel to an agent. Use ENB_AGENT_MAX to register the
  *same channel to all agents*/
-int enb_agent_register_channel(enb_agent_channel_t *channel, agent_id_t agent_id);
+int enb_agent_register_channel(mid_t mod_id, enb_agent_channel_t *channel, agent_id_t agent_id);
 
 /*Unregister the current channel of an agent. Use ENB_AGENT_MAX to unregister all channels*/
-void enb_agent_unregister_channel(agent_id_t agent_id);
+void enb_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id);
 
 /*Create a new channel. Returns the id of the new channel or negative number otherwise*/
 int enb_agent_create_channel(void *channel_info,
