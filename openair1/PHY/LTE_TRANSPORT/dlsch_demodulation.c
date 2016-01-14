@@ -420,8 +420,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	// LUT will be introduced with mcs-dependent shift
 	avg_0[0] = (log2_approx(avg_0[0])/2) -13 + interf_unaw_shift;
 	avg_1[0] = (log2_approx(avg_1[0])/2) -13 + interf_unaw_shift;
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],0);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh0 = cmax(avg_0[0],avg_1[0]);
+	lte_ue_pdsch_vars[eNB_id]->log2_maxh1 = cmax(avg_1[0],avg_1[0]);
 	
 	//printf("TM4 I-A log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	//printf("TM4 I-A log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
@@ -468,7 +468,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     symbol,
                                     nb_rb,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                                      &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
+                                    &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
@@ -479,7 +479,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       dlsch_dual_stream_correlation(frame_parms,
                                     symbol,
                                     nb_rb,
-				     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
+				    &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
