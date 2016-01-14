@@ -45,6 +45,8 @@ MSC_GEN="False"
 XFORMS="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
+LOWLATENCY_FLAG_USER="False"
+FORCE_LOWLATENCY_FLAG_USER=""
 REL="Rel10"
 HW="EXMIMO"
 NOS1=0
@@ -113,7 +115,10 @@ Options
    Shows detailed compilation instructions in makefile
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
-
+--disable-deadline
+   Disables deadline scheduler of Linux kernel (>=3.14.x).
+--enable-deadline
+   Disables deadline scheduler of Linux kernel (>=3.14.x). 
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -225,6 +230,15 @@ function main() {
             CFLAGS_PROCESSOR_USER=$2
             echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
+       --disable-deadline)
+            FORCE_LOWLATENCY_FLAG_USER="False"
+            echo_info "Disabling the usage of deadline scheduler"
+            shift 1;;
+       --enable-deadline)
+            FORCE_LOWLATENCY_FLAG_USER="True"
+            echo_info "Enabling the usage of deadline scheduler"
+            shift 1;;
+
         -h | --help)
             print_help
             exit 1;;
@@ -234,6 +248,31 @@ function main() {
             break;;
    esac
   done
+
+  #Now we set flags to enable deadline scheduler settings
+  #By default: USRP: disable, 
+  #By default: BLADERF: enable,
+  #By default: EXMIMO: enable
+  if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
+     if [ "$HW" = "EXMIMO" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "ETHERNET" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "OAI_USRP" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "OAI_BLADERF" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "None" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     else 
+        echo_error "Unknown HW type $HW. Exiting now..."
+        exit 
+     fi
+  else
+     LOWLATENCY_FLAG_USER=$FORCE_LOWLATENCY_FLAG_USER
+  fi
+
+  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
 
   ############################################
   # setting and printing OAI envs, we should check here
@@ -321,6 +360,7 @@ function main() {
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo "set(PACKAGE_NAME \"${lte_exec}\")"     >>  $cmake_file
+    echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -539,6 +579,7 @@ function main() {
     echo "set(ENABLE_ITTI False )"     					 >>  $cmake_file
     echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo 'set(PACKAGE_NAME "\"rrh_gw\"")' >>  $cmake_file
+    echo "set(LOWLATENCY \"${LOWLATENCY_FLAG_USER}\")"    >>$cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
 
     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build
