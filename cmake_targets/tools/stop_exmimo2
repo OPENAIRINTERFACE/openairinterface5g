@@ -6,6 +6,7 @@ if [ "$OPENAIR_DIR" == "" ]; then
   echo "Is the OPENAIR_DIR path set correctly? Exiting now"
   exit
 fi
+sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches'
 
 #load the module
 sudo -E $OPENAIR_DIR/cmake_targets/tools/init_exmimo2

@@ -1099,7 +1099,6 @@ except KeyError:
    sys.exit(1)
 
 
-
 # get the oai object
 host = os.uname()[1]
 #oai = openair('localdomain','calisson')
@@ -1208,6 +1207,11 @@ if localshell == 0:
            result = oai_list[index].send_expect_false('sudo -S -v','may not run sudo',True)
            print "Sudo permissions..." + result
            
+           print "Killing zombie ssh sessions from earlier sessions..."     
+           cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 \''
+           result=oai_list[index].send_recv(cmd, True)
+           print result
+  
            print '\nCleaning Older running programs : ' + CleanUpOldProgs
            cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 
