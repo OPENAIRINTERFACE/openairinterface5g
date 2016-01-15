@@ -828,6 +828,209 @@ int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg) {
    return -1;
 }
 
+int enb_agent_mac_dl_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  Protocol__PrpHeader *header;
+  int i,j;
+  const int xid = *((int *)params);
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_DL_TRIGGER, &header) != 0)
+    goto error;
+
+  Protocol__PrpDlTrigger *dl_trigger_msg;
+  dl_trigger_msg = malloc(sizeof(Protocol__PrpDlTrigger));
+  if (dl_trigger_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_dl_trigger__init(dl_trigger_msg);
+  
+  dl_trigger_msg->header = header;
+  dl_trigger_msg->has_sfn_sf = 1;
+  dl_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
+
+  /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
+   *transmitting UEs
+   */
+  dl_trigger_msg->n_dl_info = get_num_ues(mod_id);
+  
+  Protocol__PrpDlInfo **dl_info = NULL;
+
+  if (dl_trigger_msg->n_dl_info > 0) {
+    dl_info = malloc(sizeof(Protocol__PrpDlInfo *) * dl_trigger_msg->n_dl_info);
+    if(dl_info == NULL)
+      goto error;
+    //Fill the status of the current HARQ process for each UE
+    for(i = 0; i++; i < dl_trigger_msg->n_dl_info) {
+      dl_info[i] = malloc(sizeof(Protocol__PrpDlInfo));
+      if(dl_info[i] == NULL)
+	goto error;
+      protocol__prp_dl_info__init(dl_info[i]);
+      dl_info[i]->rnti = get_ue_crnti(mod_id, i);
+      dl_info[i]->has_rnti = 1;
+      /*TODO: fill in the right id of this round's HARQ process for this UE*/
+      dl_info[i]->harq_process_id = 1;
+      dl_info[i]->has_harq_process_id = 1;
+      /*TODO: fill in the status of the HARQ process (2 TBs)*/
+      dl_info[i]->n_harq_status = 2;
+      dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
+      for (j = 0; j < dl_info[j]->n_harq_status; j++) {
+	dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+      }
+      /*TODO: fill in the serving cell index for this UE */
+      dl_info[i]->serv_cell_index = 0;
+      dl_info[i]->has_serv_cell_index = 1;
+    }
+  }
+  
+  dl_trigger_msg->dl_info = dl_info;
+  
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_DL_TRIGGER_MSG;
+  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->dl_trigger_msg = dl_trigger_msg;
+  return 0;
+  
+ error:
+  if (header != NULL)
+    free(header);
+  if (dl_trigger_msg != NULL) {
+    for (i = 0; i < dl_trigger_msg->n_dl_info; i++) {
+      free(dl_trigger_msg->dl_info[i]->harq_status);
+    }
+    free(dl_trigger_msg->dl_info);
+    free(dl_trigger_msg);
+  }
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int enb_agent_mac_destroy_dl_trigger(Protocol__ProgranMessage *msg) {
+  int i;
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_DL_TRIGGER_MSG)
+    goto error;
+  
+  free(msg->dl_trigger_msg->header);
+  for (i = 0; i < msg->dl_trigger_msg->n_dl_info; i++) {
+    free(msg->dl_trigger_msg->dl_info[i]->harq_status);
+  }
+  free(msg->dl_trigger_msg->dl_info);
+  free(msg->dl_trigger_msg);
+  free(msg);
+  
+  return 0;
+
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int enb_agent_mac_ul_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  Protocol__PrpHeader *header;
+  int i,j;
+  const int xid = *((int *)params);
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UL_TRIGGER, &header) != 0)
+    goto error;
+
+  Protocol__PrpUlTrigger *ul_trigger_msg;
+  ul_trigger_msg = malloc(sizeof(Protocol__PrpUlTrigger));
+  if (ul_trigger_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_ul_trigger__init(ul_trigger_msg);
+  
+  ul_trigger_msg->header = header;
+  ul_trigger_msg->has_sfn_sf = 1;
+  /*TODO: Must fix this to get the proper subframe number*/
+  ul_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
+
+  /*TODO: Fill in the number of UL reception status related info, based on the number of currently
+   *transmitting UEs
+   */
+  ul_trigger_msg->n_ul_info = get_num_ues(mod_id);
+  
+  Protocol__PrpUlInfo **ul_info = NULL;
+
+  if (ul_trigger_msg->n_ul_info > 0) {
+    ul_info = malloc(sizeof(Protocol__PrpUlInfo *) * ul_trigger_msg->n_ul_info);
+    if(ul_info == NULL)
+      goto error;
+    //Fill the reception info for each transmitting UE
+    for(i = 0; i++; i < ul_trigger_msg->n_ul_info) {
+      ul_info[i] = malloc(sizeof(Protocol__PrpUlInfo));
+      if(ul_info[i] == NULL)
+	goto error;
+      protocol__prp_ul_info__init(ul_info[i]);
+      ul_info[i]->rnti = get_ue_crnti(mod_id, i);
+      ul_info[i]->has_rnti = 1;
+      /*TODO: fill in the Tx power control command for this UE (if available)*/
+      ul_info[i]->tpc = 1;
+      ul_info[i]->has_tpc = 0;
+      /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the 
+	given logical channel*/
+      ul_info[i]->n_ul_reception = 11;
+      ul_info[i]->ul_reception = malloc(sizeof(uint32_t) * ul_info[i]->n_ul_reception);
+      for (j = 0; j < ul_info[j]->n_ul_reception; j++) {
+	ul_info[i]->ul_reception[j] = 100;
+      }
+      /*TODO: Fill in the reception status for each UEs data*/
+      ul_info[i]->reception_status = PROTOCOL__PRP_RECEPTION_STATUS__PRRS_OK;
+      ul_info[i]->has_reception_status = 1;
+      /*TODO: fill in the serving cell index for this UE */
+      ul_info[i]->serv_cell_index = 0;
+      ul_info[i]->has_serv_cell_index = 1;
+    }
+  }
+  
+  ul_trigger_msg->ul_info = ul_info;
+  
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UL_TRIGGER_MSG;
+  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->ul_trigger_msg = ul_trigger_msg;
+  return 0;
+  
+ error:
+  if (header != NULL)
+    free(header);
+  if (ul_trigger_msg != NULL) {
+    for (i = 0; i < ul_trigger_msg->n_ul_info; i++) {
+      free(ul_trigger_msg->ul_info[i]->reception_status);
+    }
+    free(ul_trigger_msg->ul_info);
+    free(ul_trigger_msg);
+  }
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
+int enb_agent_mac_destroy_ul_trigger(Protocol__ProgranMessage *msg) {
+  int i;
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UL_TRIGGER_MSG)
+    goto error;
+  
+  free(msg->ul_trigger_msg->header);
+  for (i = 0; i < msg->ul_trigger_msg->n_ul_info; i++) {
+    free(msg->ul_trigger_msg->ul_info[i]->reception_status);
+  }
+  free(msg->ul_trigger_msg->ul_info);
+  free(msg->ul_trigger_msg);
+  free(msg);
+  
+  return 0;
+
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
+}
+
 void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
   int size;
   Protocol__ProgranMessage *msg;
@@ -849,14 +1052,64 @@ void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
       goto error;
     }
 
-    /* if (message_put(context->tx_mq, data, size, priority)){ */
-    /*   err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
-    /*   goto error; */
-    /* } */
     LOG_D(ENB_AGENT,"sent message with size %d\n", size);
   }
  error:
   LOG_D(ENB_AGENT, "Could not send sr message\n");
+}
+
+void enb_agent_send_dl_trigger(mid_t mod_id, msg_context_t *context) {
+  int size;
+  Protocol__ProgranMessage *msg;
+  void *data;
+  int priority;
+  err_code_t err_code;
+
+  /*TODO: Must use a proper xid*/
+  err_code = enb_agent_mac_dl_trigger(mod_id, (void *) &(context->tx_xid), &msg);
+  if (err_code < 0) {
+    goto error;
+  }
+
+  if (msg != NULL){
+    data=enb_agent_pack_message(msg, &size);
+    /*Send sr info using the MAC channel of the eNB*/
+    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      goto error;
+    }
+
+    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+  }
+ error:
+  LOG_D(ENB_AGENT, "Could not send dl trigger message\n");
+}
+
+void enb_agent_send_ul_trigger(mid_t mod_id, msg_context_t *context) {
+  int size;
+  Protocol__ProgranMessage *msg;
+  void *data;
+  int priority;
+  err_code_t err_code;
+
+  /*TODO: Must use a proper xid*/
+  err_code = enb_agent_mac_ul_trigger(mod_id, (void *) &(context->tx_xid), &msg);
+  if (err_code < 0) {
+    goto error;
+  }
+
+  if (msg != NULL){
+    data=enb_agent_pack_message(msg, &size);
+    /*Send sr info using the MAC channel of the eNB*/
+    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      goto error;
+    }
+    
+    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+  }
+ error:
+  LOG_D(ENB_AGENT, "Could not send ul trigger message\n");
 }
 
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {

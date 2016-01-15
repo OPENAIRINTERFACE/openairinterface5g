@@ -59,8 +59,8 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_destroy_echo_reply,
   enb_agent_mac_destroy_stats_request,
   enb_agent_mac_destroy_stats_reply,
-  0,
-  0,
+  enb_agent_mac_destroy_dl_trigger,
+  enb_agent_mac_destroy_ul_trigger,
   enb_agent_mac_destroy_sr_info,
 };
 
