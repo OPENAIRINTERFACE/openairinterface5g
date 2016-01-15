@@ -63,6 +63,7 @@ sys.path.append('/opt/ssh')
 
 import ssh
 from ssh import SSHSession
+import argparse
 
 # \brief write a string to a file
 # \param filename name of file
