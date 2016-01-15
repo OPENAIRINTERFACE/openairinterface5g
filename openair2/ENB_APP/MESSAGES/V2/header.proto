@@ -15,8 +15,12 @@ enum prp_type {
      // Statistics and measurement messages
      PRPT_STATS_REQUEST = 3;
      PRPT_STATS_REPLY = 4;
+     
+     // Time indication messages
+     PRPT_DL_TRIGGER = 5;
+     PRPT_UL_TRIGGER = 6;
 
      //Asynchronous messages
-     PRPT_UL_SR_INFO = 5;
+     PRPT_UL_SR_INFO = 7;
 }
 

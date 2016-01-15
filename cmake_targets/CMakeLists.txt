@@ -709,6 +709,7 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_MSG_DIR}/progran.proto
     ${PRPT_MSG_DIR}/stats_common.proto
     ${PRPT_MSG_DIR}/stats_messages.proto
+    ${PRPT_MSG_DIR}/time_common.proto
     )
 
   set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
@@ -720,6 +721,7 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_C_DIR}/progran.pb-c.c
     ${PRPT_C_DIR}/stats_common.pb-c.c
     ${PRPT_C_DIR}/stats_messages.pb-c.c
+    ${PRPT_C_DIR}/time_common.pb-c.c
     )
   
   file(GLOB prpt_h ${PRPT_C_DIR}/*.h)

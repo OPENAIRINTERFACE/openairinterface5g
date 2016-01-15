@@ -47,6 +47,9 @@ enb_agent_message_decoded_callback messages_callback[][3] = {
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG*/ //Must add handler when receiving echo reply
   {enb_agent_mac_handle_stats, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG*/
   {0,0,0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
+  {0,0,0}, /*DL_TRIGGER*/
+  {0,0,0}, /*UL_TRIGGER*/
+  {0,0,0}, /*SR_INFO*/
 
 };
 
@@ -56,6 +59,8 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_destroy_echo_reply,
   enb_agent_mac_destroy_stats_request,
   enb_agent_mac_destroy_stats_reply,
+  0,
+  0,
   enb_agent_mac_destroy_sr_info,
 };
 
