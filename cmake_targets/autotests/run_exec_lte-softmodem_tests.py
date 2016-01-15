@@ -1018,10 +1018,13 @@ MachineList = ''
 MachineListGeneric=''
 flag_remove_logdir=False
 flag_start_testcase=False
-i=1
+
 
 print "Number of arguments argc = " + str(len(sys.argv))
+for index in range(1,len(sys.argv) ):
+  print "argv_" + str(index) + " : " + sys.argv[index]
 
+i=1
 while i < len (sys.argv):
     arg=sys.argv[i]
     if arg == '-r':
