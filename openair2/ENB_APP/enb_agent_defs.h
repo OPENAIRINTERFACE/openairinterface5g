@@ -133,8 +133,8 @@ typedef struct {
 
 typedef struct {
   mid_t                  mod_id;
-  message_queue_t       *tx_mq;
-  message_queue_t       *rx_mq;
+  // message_queue_t       *tx_mq;
+  // message_queue_t       *rx_mq;
   xid_t                  tx_xid;
   xid_t                  rx_xid; 
 } msg_context_t;

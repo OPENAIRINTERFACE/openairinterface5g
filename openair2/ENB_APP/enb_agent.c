@@ -42,6 +42,9 @@
 
 #include "assertions.h"
 
+#include "enb_agent_net_comm.h"
+#include "enb_agent_async.h"
+
 //#define TEST_TIMER
 
 enb_agent_instance_t enb_agent[NUM_MAX_ENB_AGENT];
@@ -98,10 +101,15 @@ void *enb_agent_task(void *args){
       msg = enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
       if (msg != NULL){
 	data=enb_agent_pack_message(msg,&size);
-	if (message_put(d->tx_mq, data, size, priority)){
+	if (enb_agent_msg_send(d->mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
+
+	/* if (message_put(d->tx_mq, data, size, priority)){ */
+	/*   err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
+	/*   goto error; */
+	/* } */
 	LOG_D(ENB_AGENT,"sent message with size %d\n", size);
       }
       break;
@@ -121,42 +129,6 @@ void *enb_agent_task(void *args){
   return NULL;
 }
 
-/* void *send_thread(void *args) { */
-
-/* #ifdef TEST_TIMER */
-
-/*   msg_context_t         *d = args; */
-/*   void                  *data; */
-/*   int                   size; */
-/*   int                   priority; */
-
-/*   struct timeval t1, t2; */
-/*   long long t; */
-/*   struct timespec ts; */
-/*   unsigned int delay = 250*1000; */
-/*   while(1) { */
-/*     gettimeofday(&t1, NULL); */
-/*     enb_agent_sleep_until(&ts, delay); */
-/*     gettimeofday(&t2, NULL); */
-/*     t = ((t2.tv_sec * 1000000) + t2.tv_usec) - ((t1.tv_sec * 1000000) + t1.tv_usec); */
-/*     LOG_I(ENB_AGENT, "Call to sleep_until(%d) took %lld us\n", delay, t); */
-/*     sleep(1); */
-/*   } */
-
-/* #endif */
-/*   /\* while (1) { */
-/*     // need logic for the timer, and  */
-/*     usleep(10); */
-/*     if (message_put(d->tx_mq, data, size, priority)) goto error; */
-/*     }*\/ */
-
-/*   return NULL; */
-
-/* error: */
-/*   printf("receive_thread: there was an error\n"); */
-/*   return NULL; */
-/* } */
-
 void *receive_thread(void *args) {
 
   msg_context_t         *d = args;
@@ -168,10 +140,15 @@ void *receive_thread(void *args) {
   Protocol__ProgranMessage *msg;
   
   while (1) {
-    if (message_get(d->rx_mq, &data, &size, &priority)){
+    if (enb_agent_msg_recv(d->mod_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
       err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING;
       goto error;
     }
+
+    /* if (message_get(d->rx_mq, &data, &size, &priority)){ */
+    /*   err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING; */
+    /*   goto error; */
+    /* } */
     LOG_D(ENB_AGENT,"received message with size %d\n", size);
   
     
@@ -186,10 +163,15 @@ void *receive_thread(void *args) {
     if (msg != NULL){
       data=enb_agent_pack_message(msg,&size);
      
-      if (message_put(d->tx_mq, data, size, priority)){
+      if (enb_agent_msg_send(d->mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	goto error;
       }
+      
+      /* if (message_put(d->tx_mq, data, size, priority)){ */
+      /* 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
+      /* 	goto error; */
+      /* } */
       LOG_D(ENB_AGENT,"sent message with size %d\n", size);
     }
     
@@ -229,7 +211,9 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 }
 
 int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
-
+  
+  int channel_id;
+  
   // 
   set_enb_vars(mod_id, RAN_LTE_OAI);
   enb_agent[mod_id].mod_id = mod_id;
@@ -255,56 +239,84 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
 	in_ip,
 	in_port);
 
-  //#define TEST_TIMER 0    
-#if !defined TEST_TIMER
+  /*
+   * Initialize the channel container
+   */
+  enb_agent_init_channel_container();
 
-  /* 
-   * create a socket 
-   */ 
-  enb_agent[mod_id].link = new_link_client(in_ip, in_port);
-  if (enb_agent[mod_id].link == NULL) goto error;
-  
-  LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
-	enb_agent[mod_id].mod_id,
-	in_ip,
-	in_port);
-  /* 
-   * create a message queue
-   */ 
-  
-  enb_agent[mod_id].send_queue = new_message_queue();
-  if (enb_agent[mod_id].send_queue == NULL) goto error;
-  enb_agent[mod_id].receive_queue = new_message_queue();
-  if (enb_agent[mod_id].receive_queue == NULL) goto error;
-  
-  /* 
-   * create a link manager 
-   */ 
-  
-  enb_agent[mod_id].manager = create_link_manager(enb_agent[mod_id].send_queue, enb_agent[mod_id].receive_queue, enb_agent[mod_id].link);
-  if (enb_agent[mod_id].manager == NULL) goto error;
+  /*Create the async channel info*/
+  enb_agent_instance_t *channel_info = enb_agent_async_channel_info(mod_id, in_ip, in_port);
 
-  memset(&shared_ctxt, 0, sizeof(msg_context_t));
+  /*Create a channel using the async channel info*/
+  channel_id = enb_agent_create_channel((void *) channel_info, 
+					enb_agent_async_msg_send, 
+					enb_agent_async_msg_recv,
+					enb_agent_async_release);
+
   
-  shared_ctxt[mod_id].mod_id = mod_id;
-  shared_ctxt[mod_id].tx_mq =  enb_agent[mod_id].send_queue;
-  shared_ctxt[mod_id].rx_mq =  enb_agent[mod_id].receive_queue;
+  if (channel_id <= 0) {
+    goto error;
+  }
+
+  enb_agent_channel_t *channel = get_channel(channel_id);
+  
+  if (channel == NULL) {
+    goto error;
+  }
+
+  /*Register the channel for all underlying agents (use ENB_AGENT_MAX)*/
+  enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAX);
+
+  /*Example of registration for a specific agent(MAC):
+   *enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAC);
+   */
+
+  /* /\*  */
+  /*  * create a socket  */
+  /*  *\/  */
+  /* enb_agent[mod_id].link = new_link_client(in_ip, in_port); */
+  /* if (enb_agent[mod_id].link == NULL) goto error; */
+  
+  /* LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",   */
+  /* 	enb_agent[mod_id].mod_id, */
+  /* 	in_ip, */
+  /* 	in_port); */
+  /* /\*  */
+  /*  * create a message queue */
+  /*  *\/  */
+  
+  /* enb_agent[mod_id].send_queue = new_message_queue(); */
+  /* if (enb_agent[mod_id].send_queue == NULL) goto error; */
+  /* enb_agent[mod_id].receive_queue = new_message_queue(); */
+  /* if (enb_agent[mod_id].receive_queue == NULL) goto error; */
+  
+  /* /\*  */
+  /*  * create a link manager  */
+  /*  *\/  */
+  
+  /* enb_agent[mod_id].manager = create_link_manager(enb_agent[mod_id].send_queue, enb_agent[mod_id].receive_queue, enb_agent[mod_id].link); */
+  /* if (enb_agent[mod_id].manager == NULL) goto error; */
+
+  /* memset(&shared_ctxt, 0, sizeof(msg_context_t)); */
+  
+  /* shared_ctxt[mod_id].mod_id = mod_id; */
+  /* shared_ctxt[mod_id].tx_mq =  enb_agent[mod_id].send_queue; */
+  /* shared_ctxt[mod_id].rx_mq =  enb_agent[mod_id].receive_queue; */
 
   /* 
    * start the enb agent rx thread 
    */ 
   
+  memset(&shared_ctxt, 0, sizeof(msg_context_t));
+  shared_ctxt[mod_id].mod_id = mod_id;
+  
   new_thread(receive_thread, &shared_ctxt[mod_id]);
-
-#endif 
   
   /* 
    * initilize a timer 
    */ 
   
   enb_agent_init_timer();
-  
-  
   
   /* 
    * start the enb agent task for tx and interaction with the underlying network function
@@ -313,12 +325,7 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &shared_ctxt[mod_id]) < 0) {
     LOG_E(ENB_AGENT, "Create task for eNB Agent failed\n");
     return -1;
-  }
-
-  //new_thread(send_thread, &shared_ctxt);
-
-  //while (1) pause();
- 
+  } 
 
   LOG_I(ENB_AGENT,"client ends\n");
   return 0;

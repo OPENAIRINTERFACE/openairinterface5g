@@ -836,19 +836,23 @@ void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
   err_code_t err_code;
 
   /*TODO: Must use a proper xid*/
-  int xid = 1;
-  err_code = enb_agent_mac_sr_info(mod_id, (void *) &xid, &msg);
+  err_code = enb_agent_mac_sr_info(mod_id, (void *) &(context->tx_xid), &msg);
   if (err_code < 0) {
     goto error;
   }
 
   if (msg != NULL){
     data=enb_agent_pack_message(msg, &size);
-    
-    if (message_put(context->tx_mq, data, size, priority)){
+    /*Send sr info using the MAC channel of the eNB*/
+    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
       err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
       goto error;
     }
+
+    /* if (message_put(context->tx_mq, data, size, priority)){ */
+    /*   err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
+    /*   goto error; */
+    /* } */
     LOG_D(ENB_AGENT,"sent message with size %d\n", size);
   }
  error:
