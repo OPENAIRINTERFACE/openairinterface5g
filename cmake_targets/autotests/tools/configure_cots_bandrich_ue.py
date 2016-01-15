@@ -10,6 +10,7 @@ import threading
 import signal
 import traceback
 import os
+import commands
 
 # configure the serial connections (the parameters differs on the device you are connecting to)
 #First we find an open port to work with
@@ -34,8 +35,7 @@ def find_open_port():
    ser = serial.Serial(port=serial_port)
    return
 
-find_open_port()
-print 'Using Serial port : ' + serial_port  
+
     
 #serial_port = '/dev/ttyUSB2'
 bandrich_ppd_config = os.environ.get('OPENAIR_DIR') + '/cmake_targets/autotests/tools/wdial.bandrich.conf'
@@ -127,7 +127,7 @@ def start_ue () :
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
         os.system ('route add 192.172.0.1 ppp0')
-        os.system ('ping -c 5 192.172.0.1')
+        os.system ('ping 192.172.0.1')
         break
      except Exception, e:
         error = ' Interface ' + iface + 'does not exist...'
@@ -144,11 +144,63 @@ def stop_ue():
    send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
    send_command('AT+CFUN=4' , 'OK' , timeout)
 
+
+#reset the USB BUS of Bandrich UE
+def reset_ue():
+  stringIdBandrich='BandRich, Inc. 4G LTE adapter'
+  status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
+  if (out == '') :
+     print "Bandrich 4G LTE Adapter not found. Exiting now..."
+     sys.exit()
+  p=re.compile('Bus\s*(\w+)\s*Device\s*(\w+):\s*ID\s*(\w+):(\w+)')
+  res=p.findall(out)
+  BusId=res[0][0]
+  DeviceId=res[0][1]
+  VendorId=res[0][2]
+  ProductId=res[0][3]
+  usb_dir= find_usb_path(VendorId, ProductId)
+  print usb_dir
+  cmd = "sudo sh -c \"echo 0 > " + usb_dir + "/authorized\""
+  os.system(cmd + " ; sleep 5" )
+  cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
+  os.system(cmd + " ; sleep 5" )
+
+def read_file(filename):
+  try:
+    file = open(filename, 'r')
+    return file.read()
+  except Exception, e:
+    #error = ' Filename ' + filename 
+    #error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+    #error = error + traceback.format_exc()
+    #print error
+    return ''
+
+
+def find_usb_path(idVendor, idProduct):
+  for root, dirs, files in os.walk("/sys/bus/usb/devices", topdown=False):
+    for name in dirs:
+        tmpdir= os.path.join(root, name)
+        tmpidVendor = read_file(tmpdir+'/idVendor').replace("\n","")
+        tmpidProduct = read_file(tmpdir+'/idProduct').replace("\n","")
+        #print "tmpdir = " + tmpdir + " tmpidVendor = " + tmpidVendor + " tmpidProduct = " + tmpidProduct
+        if tmpidVendor == idVendor and tmpidProduct == idProduct:
+            return tmpdir
+  return ''
+
 for arg in sys.argv[1:]:
     if arg == '--start-ue' :
+        find_open_port()
+        print 'Using Serial port : ' + serial_port  
         start_ue()
     elif arg == '--stop-ue' :
+        find_open_port()
+        print 'Using Serial port : ' + serial_port  
         stop_ue()
+    elif arg == '--reset-ue' :
+        reset_ue()
     else :
         print " Script called with wrong arguments, arg = " + arg
         sys.exit()
+
+

@@ -1262,7 +1262,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #else
                            &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
 #endif
-                           frame_parms->log2_symbol_size,
+                           frame_parms->ofdm_symbol_size,
                            nsymb,
                            frame_parms->nb_prefix_samples,
                            CYCLIC_PREFIX);

@@ -67,11 +67,12 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 
   if ((mode == normal_txrx) || (mode == no_L2_connect)) {
     len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
-     len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE\n",
+     len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE (NF %.1f dB)\n",
 		    10*log10(phy_vars_ue->PHY_measurements.rsrp[0])-phy_vars_ue->rx_total_gain_dB,
 		    10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB, 
 		    10*log10(phy_vars_ue->PHY_measurements.rsrq[0]),
-		    phy_vars_ue->PHY_measurements.n0_power_tot_dBm);
+		    phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		    (double)phy_vars_ue->PHY_measurements.n0_power_tot_dBm+132.24);
 
     /*
     len += sprintf(&buffer[len],
