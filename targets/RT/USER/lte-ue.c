@@ -401,7 +401,7 @@ static void *UE_thread_synch(void *arg)
  
     case pbch:
 
-      
+      LOG_I(PHY,"[UE thread Synch] Running Initial Synch\n");
       if (initial_sync( UE, UE->mode ) == 0) {
 
         hw_slot_offset = (UE->rx_offset<<1) / UE->lte_frame_parms.samples_per_tti;
@@ -521,10 +521,6 @@ static void *UE_thread_synch(void *arg)
           for (i=0; i<openair0_cfg[card].rx_num_channels; i++) {
             openair0_cfg[card].rx_freq[i] = downlink_frequency[card][i]+freq_offset;
             openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i]+freq_offset;
-#ifdef OAI_USRP
-            openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-	    
-	    
 #ifndef EXMIMO
 	    openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
 	    
@@ -532,6 +528,12 @@ static void *UE_thread_synch(void *arg)
 	    openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
 	    
 #endif
+
+#ifdef OAI_USRP
+            openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+	    
+	    
+
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;
@@ -1105,10 +1107,10 @@ void *UE_thread(void *arg)
 
       for (int i=0; i<UE->lte_frame_parms.nb_antennas_rx; i++)
         rxp[i] = (dummy_dump==0) ? (void*)&rxdata[i][rxpos] : (void*)dummy[i];
-      /*
-      if (dummy_dump == 0)
-      	printf("writing %d samples to %d (first_rx %d)\n",spp - ((first_rx==1) ? rx_off_diff : 0),rxpos,first_rx);
-      */
+      
+      /*      if (dummy_dump == 0)
+	      printf("writing %d samples to %d (first_rx %d)\n",spp - ((first_rx==1) ? rx_off_diff : 0),rxpos,first_rx);*/
+      
       if (UE->mode != loop_through_memory) {
 	rxs = openair0.trx_read_func(&openair0,
 				     &timestamp,
@@ -1117,8 +1119,11 @@ void *UE_thread(void *arg)
 				     UE->lte_frame_parms.nb_antennas_rx);
 
 	if (rxs != (spp- ((first_rx==1) ? rx_off_diff : 0))) {
-	  exit_fun("problem in rx");
-	  return &UE_thread_retval;
+	  printf("rx error: asked %d got %d ",spp - ((first_rx==1) ? rx_off_diff : 0),rxs);
+	  if (UE->is_synchronized == 1) {
+	    exit_fun("problem in rx");
+	    return &UE_thread_retval;
+	  }
 	}
       }
 
@@ -1335,6 +1340,7 @@ void *UE_thread(void *arg)
 
 #ifndef USRP_DEBUG
 	    if (UE->mode != loop_through_memory) {
+	      LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
 	      rxs = openair0.trx_read_func(&openair0,
 					   &timestamp,
 					   (void**)rxdata,
