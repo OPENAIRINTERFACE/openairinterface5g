@@ -63,6 +63,7 @@ sys.path.append('/opt/ssh')
 
 import ssh
 from ssh import SSHSession
+import argparse
 
 # \brief write a string to a file
 # \param filename name of file
@@ -1016,14 +1017,20 @@ locallogdir = openairdir_local + '/cmake_targets/autotests/log'
 MachineList = ''
 MachineListGeneric=''
 flag_remove_logdir=False
-i=1
+flag_start_testcase=False
+
 
 print "Number of arguments argc = " + str(len(sys.argv))
+for index in range(1,len(sys.argv) ):
+  print "argv_" + str(index) + " : " + sys.argv[index]
 
+i=1
 while i < len (sys.argv):
     arg=sys.argv[i]
     if arg == '-r':
-        flag_remove_logdir=True 
+        flag_remove_logdir=True
+    elif arg == '-s' :
+        flag_start_testcase=True
     elif arg == '-g' :
         testcasegroup = sys.argv[i+1].replace("\"","")
         i = i +1   
@@ -1064,6 +1071,7 @@ while i < len (sys.argv):
         MachineListGeneric = MachineListGeneric.replace("\'","")
         i = i +1
     elif arg == '-h' :
+        print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
         print "-g:  Run test cases in a group"
         print "-c:  Run cleanup scripts on remote machines and exit"
@@ -1102,7 +1110,9 @@ print "Killing zombie ssh sessions from earlier sessions..."
 cmd='ps aux |grep \"/usr/bin/ssh -q -l guptar\"|tr -s \" \" :|cut -f 2 -d :|xargs kill -9 '
 os.system(cmd)
 
-
+if flag_start_testcase == False:
+  print "You need to start the testcase by passing option -s. Use -h to see all options. Aborting now..."
+  sys.exit(1)
 
 # get the oai object
 host = os.uname()[1]
