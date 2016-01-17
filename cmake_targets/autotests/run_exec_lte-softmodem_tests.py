@@ -1018,11 +1018,11 @@ MachineList = ''
 MachineListGeneric=''
 flag_remove_logdir=False
 flag_start_testcase=False
-
+nruns_lte_softmodem=''
 
 print "Number of arguments argc = " + str(len(sys.argv))
-for index in range(1,len(sys.argv) ):
-  print "argv_" + str(index) + " : " + sys.argv[index]
+#for index in range(1,len(sys.argv) ):
+#  print "argv_" + str(index) + " : " + sys.argv[index]
 
 i=1
 while i < len (sys.argv):
@@ -1060,6 +1060,9 @@ while i < len (sys.argv):
     elif arg == '-n': 
         NFSResultsShare = sys.argv[i+1]
         i = i +1
+    elif arg == '--nrun_lte_softmodem': 
+        nruns_lte_softmodem = sys.argv[i+1]
+        i = i +1
     elif arg == '-MachineList':
         MachineList =  sys.argv[i+1]
         MachineList = MachineList.replace("\"","")
@@ -1080,6 +1083,7 @@ while i < len (sys.argv):
         print "-u:  use the user name passed as argument"
         print "-p:  use the password passed as an argument"
         print "-n:  Set the NFS share passed as an argument"
+        print "--nrun_lte_softmodem:  Set the number of runs for lte-softmodem test case class"
         print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
         sys.exit()
@@ -1172,7 +1176,8 @@ if MachineListGeneric == '':
    MachineListGeneric = xmlRoot.findtext('MachineListGeneric',default='')
 TestCaseExclusionList = xmlRoot.findtext('TestCaseExclusionList',default='')
 ExmimoRfStop = xmlRoot.findtext('ExmimoRfStop',default='')
-nruns_lte_softmodem = xmlRoot.findtext('nruns_lte-softmodem',default='')
+if nruns_lte_softmodem == '':
+   nruns_lte_softmodem = xmlRoot.findtext('nruns_lte-softmodem',default='')
 
 print "MachineList = " + MachineList
 print "GitOpenair-cnRepo = " + GitOpenaircnRepo
