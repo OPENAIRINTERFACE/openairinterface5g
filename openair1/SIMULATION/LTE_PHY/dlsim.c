@@ -107,88 +107,6 @@ void handler(int sig)
   exit(1);
 }
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t fdd_flag, uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL,
-                    uint8_t osf,uint32_t perfect_ce)
-{
-
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-  int i;
-
-
-  printf("Start lte_param_init\n");
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  srand(0);
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = Nid_cell%6;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource         = one;
-  lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;44
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-  //  phy_init_top(lte_frame_parms); //allocation
-
-  PHY_vars_UE->is_secondary_ue = 0;
-  PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
-  PHY_vars_eNB->lte_frame_parms = *lte_frame_parms;
-
-  phy_init_lte_top(lte_frame_parms);
-  dump_frame_parms(lte_frame_parms);
-
-  PHY_vars_UE->PHY_measurements.n_adj_cells=0;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
-
-  for (i=0; i<3; i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-  generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-  generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-
-  // DL power control init
-  if (transmission_mode == 1) {
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->lte_frame_parms).pdsch_config_common).p_b = 0;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->lte_frame_parms).pdsch_config_common).p_b = 0;
-  } else { // rho_a = rhob
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->lte_frame_parms).pdsch_config_common).p_b = 1;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->lte_frame_parms).pdsch_config_common).p_b = 1;
-  }
-
-  PHY_vars_UE->perfect_ce = perfect_ce;
-
-  printf("Done lte_param_init\n");
-
-
-}
 
 
 //DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
@@ -214,7 +132,7 @@ void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LT
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                    &txdata[aa][slot_offset],         // output
-                   frame_parms->log2_symbol_size,                // log2_fft_size
+                   frame_parms->ofdm_symbol_size,
                    6,                 // number of symbols
                    frame_parms->nb_prefix_samples,               // number of prefix samples
                    CYCLIC_PREFIX);
@@ -318,7 +236,7 @@ int main(int argc, char **argv)
   double blerr[4],uncoded_ber,avg_ber;
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
-  uint8_t fdd_flag = 0;
+  frame_t frame_type = FDD;
 #ifdef XFORMS
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
@@ -350,6 +268,8 @@ int main(int argc, char **argv)
   FILE    *proc_fd = NULL;
   char buf[64];
 
+  int threequarter_fs=0;
+
   opp_enabled=1; // to enable the time meas
 
 #if defined(__arm__)
@@ -378,11 +298,15 @@ int main(int argc, char **argv)
   num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
       channel_model = AWGN;
+      break;
+
+    case 'A':
+      abstx = 1;
       break;
 
     case 'b':
@@ -393,8 +317,57 @@ int main(int argc, char **argv)
       N_RB_DL=atoi(optarg);
       break;
 
+    case 'c':
+      num_pdcch_symbols=atoi(optarg);
+      break;
+
+    case 'C':
+      Nid_cell = atoi(optarg);
+      break;
+
     case 'd':
       dci_flag = 1;
+      break;
+
+    case 'D':
+      frame_type=TDD;
+      break;
+
+    case 'e':
+      num_rounds=1;
+      common_flag = 1;
+      TPC = atoi(optarg);
+      break;
+      
+    case 'E':
+      threequarter_fs=1;
+      break;
+
+    case 'f':
+      input_snr_step= atof(optarg);
+      break;
+
+    case 'F':
+      forgetting_factor = atof(optarg);
+      break;
+
+    case 'i':
+      input_fd = fopen(optarg,"r");
+      input_file=1;
+      dci_flag = 1;
+      break;
+
+    case 'I':
+      input_trch_fd = fopen(optarg,"r");
+      input_trch_file=1;
+      break;
+
+    case 'L':
+      llr8_flag=1;
+      break;
+
+    case 'l':
+      offset_mumimo_llr_drange_fix=atoi(optarg);
       break;
 
     case 'm':
@@ -403,6 +376,11 @@ int main(int argc, char **argv)
 
     case 'M':
       mcs2 = atoi(optarg);
+      break;
+
+    case 'O':
+      test_perf=atoi(optarg);
+      //print_perf =1;
       break;
 
     case 't':
@@ -414,25 +392,14 @@ int main(int argc, char **argv)
       n_frames = atoi(optarg);
       break;
 
-    case 'C':
-      Nid_cell = atoi(optarg);
-      break;
 
     case 'o':
       rx_sample_offset = atoi(optarg);
       break;
 
-    case 'D':
-      fdd_flag = 1;
-      break;
-
     case 'r':
       DLSCH_RB_ALLOC = atoi(optarg);
       rballocset = 1;
-      break;
-
-    case 'F':
-      forgetting_factor = atof(optarg);
       break;
 
     case 's':
@@ -443,13 +410,6 @@ int main(int argc, char **argv)
       snr_int = atof(optarg);
       break;
 
-    case 'f':
-      input_snr_step= atof(optarg);
-      break;
-
-    case 'A':
-      abstx = 1;
-      break;
 
     case 'N':
       n_ch_rlz= atof(optarg);
@@ -457,10 +417,6 @@ int main(int argc, char **argv)
 
     case 'p':
       extended_prefix_flag=1;
-      break;
-
-    case 'c':
-      num_pdcch_symbols=atoi(optarg);
       break;
 
     case 'g':
@@ -530,62 +486,6 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'x':
-      transmission_mode=atoi(optarg);
-
-      if ((transmission_mode!=1) &&
-          (transmission_mode!=2) &&
-          (transmission_mode!=3) &&
-          (transmission_mode!=4) &&
-          (transmission_mode!=5) &&
-          (transmission_mode!=6)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
-        exit(-1);
-      }
-
-      if (transmission_mode>1) {
-        n_tx = 2;
-      }
-
-      break;
-
-    case 'y':
-      n_tx=atoi(optarg);
-
-      if ((n_tx==0) || (n_tx>2)) {
-        msg("Unsupported number of tx antennas %d\n",n_tx);
-        exit(-1);
-      }
-
-      break;
-
-    case 'z':
-      n_rx=atoi(optarg);
-
-      if ((n_rx==0) || (n_rx>2)) {
-        msg("Unsupported number of rx antennas %d\n",n_rx);
-        exit(-1);
-      }
-
-      break;
-
-    case 'I':
-      input_trch_fd = fopen(optarg,"r");
-      input_trch_file=1;
-      break;
-
-    case 'i':
-      input_fd = fopen(optarg,"r");
-      input_file=1;
-      dci_flag = 1;
-      break;
-
-    case 'e':
-      num_rounds=1;
-      common_flag = 1;
-      TPC = atoi(optarg);
-      break;
-
     case 'R':
       num_rounds=atoi(optarg);
       break;
@@ -623,26 +523,54 @@ int main(int argc, char **argv)
       print_perf=1;
       break;
 
-    case 'L':
-      llr8_flag=1;
+    case 'x':
+      transmission_mode=atoi(optarg);
+
+      if ((transmission_mode!=1) &&
+          (transmission_mode!=2) &&
+          (transmission_mode!=3) &&
+          (transmission_mode!=4) &&
+          (transmission_mode!=5) &&
+          (transmission_mode!=6)) {
+        msg("Unsupported transmission mode %d\n",transmission_mode);
+        exit(-1);
+      }
+
+      if (transmission_mode>1) {
+        n_tx = 2;
+      }
+
       break;
 
-    case 'l':
-      offset_mumimo_llr_drange_fix=atoi(optarg);
+    case 'y':
+      n_tx=atoi(optarg);
+
+      if ((n_tx==0) || (n_tx>2)) {
+        msg("Unsupported number of tx antennas %d\n",n_tx);
+        exit(-1);
+      }
+
       break;
 
-    case 'O':
-      test_perf=atoi(optarg);
-      //print_perf =1;
+    case 'Y':
+      perfect_ce=1;
+      break;
+
+    case 'z':
+      n_rx=atoi(optarg);
+
+      if ((n_rx==0) || (n_rx>2)) {
+        msg("Unsupported number of rx antennas %d\n",n_rx);
+        exit(-1);
+      }
+
       break;
 
     case 'Z':
       dump_table=1;
       break;
 
-    case 'Y':
-      perfect_ce=1;
-      break;
+
 
     case 'h':
     default:
@@ -723,8 +651,10 @@ int main(int argc, char **argv)
     printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf,perfect_ce);
+  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,tdd_config,N_RB_DL,threequarter_fs,osf,perfect_ce);
 
+
+    
   eNB_id_i = PHY_vars_UE->n_connected_eNB;
 
   printf("Setting mcs1 = %d\n",mcs1);
@@ -2553,7 +2483,7 @@ PMI_FEEDBACK:
                 }
               }
             }
-
+	    
             num_pdcch_symbols_2 = generate_dci_top(num_ue_spec_dci,
                                                    num_common_dci,
                                                    dci_alloc,
@@ -2562,7 +2492,7 @@ PMI_FEEDBACK:
                                                    &PHY_vars_eNB->lte_frame_parms,
                                                    PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                                                    subframe);
-
+	    
             if (num_pdcch_symbols_2 > num_pdcch_symbols) {
               msg("Error: given num_pdcch_symbols not big enough (%d > %d)\n",num_pdcch_symbols_2,num_pdcch_symbols);
               exit(-1);
@@ -2667,6 +2597,7 @@ PMI_FEEDBACK:
               }
 
               start_meas(&PHY_vars_eNB->dlsch_modulation_stats);
+	      
               re_allocated = dlsch_modulation(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id],
                                               AMP,
                                               subframe,
@@ -2674,6 +2605,7 @@ PMI_FEEDBACK:
                                               num_pdcch_symbols,
                                               PHY_vars_eNB->dlsch_eNB[k][0],
                                               PHY_vars_eNB->dlsch_eNB[k][1]);
+	      
               stop_meas(&PHY_vars_eNB->dlsch_modulation_stats);
               /*
               if (trials==0 && round==0)
@@ -2791,8 +2723,16 @@ PMI_FEEDBACK:
                 random_channel(eNB2UE[2],0);
                 random_channel(eNB2UE[3],0);
               }
-          }
-
+	    
+	    if (PHY_vars_UE->perfect_ce==1) {
+                  // fill in perfect channel estimates
+                  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
+		  /*
+		  write_output("channel.m","ch",eNB2UE[round]->ch[0],eNB2UE[round]->channel_length,1,8);
+                  write_output("channelF.m","chF",eNB2UE[round]->chF[0],12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1,1,8);
+		  */
+	    }
+	  }
 
           if(abstx) {
             if (trials==0 && round==0) {
@@ -2938,11 +2878,6 @@ PMI_FEEDBACK:
 
               if (PHY_vars_UE->perfect_ce==1) {
                 if (awgn_flag==0) {
-                  // fill in perfect channel estimates
-                  freq_channel(eNB2UE[round],PHY_vars_UE->lte_frame_parms.N_RB_DL,12*PHY_vars_UE->lte_frame_parms.N_RB_DL + 1);
-
-                  //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
-                  //write_output("channelF.m","chF",desc1->chF[0],nb_samples,1,8);
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

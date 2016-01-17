@@ -197,7 +197,7 @@ int32_t signal_energy(int32_t *input,uint32_t length)
   for (i=0; i<length>>1; i++) {
 
     tmpE = vqaddq_s32(tmpE,vshrq_n_s32(vmull_s16(*in,*in),shift));
-    tmpDC = vaddw_s16(tmpDC,vshr_n_s16(*in++,shift_DC));
+    //tmpDC = vaddw_s16(tmpDC,vshr_n_s16(*in++,shift_DC));
 
   }
 
