@@ -680,6 +680,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_task_eNB_out = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
     logfile_task_eNB = logdir_local_testcase + '/eNB_task' + '_' + str(run) + '_.log'
     logfile_local_traffic_eNB_out = logdir_local_testcase + '/eNB_traffic' + '_' + str(run) + '_.log' 
+    logfile_tshark_eNB = logdir_eNB + '/eNB_tshark' + '_' + str(run) + '_.log'
+    logfile_pcap_eNB = logdir_eNB + '/eNB_tshark' + '_' + str(run) + '_.pcap'
 
     task_eNB_compile = ' ( uname -a ; date \n'
     task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
@@ -704,6 +706,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n '
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
+    task_eNB = task_eNB + ' (date;  sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_eNB+ ' ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+    task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
+    task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
     task_eNB  = task_eNB + finalize_deploy_script (timeout_cmd, eNB_terminate_missing_procs) + ' \n'
     #task_eNB  = task_eNB + 'sleep ' +  str(timeout_cmd) + ' \n'
@@ -861,6 +866,19 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       thread_UE.start()
       thread_UE.join()
    
+    #Now we change the permissions of the logfiles to avoid some of them being with root permissions
+    cmd = 'sudo -E chown -R ' + user + ' ' + logdir_eNB
+    res= oai_eNB.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_eNB + "> in eNB machine..." + res
+
+    cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_UE
+    res= oai_UE.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_UE + "> in UE machine..." + res
+
+    cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_EPC
+    res= oai_EPC.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_EPC + "> in EPC machine..." + res
+
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     #ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
