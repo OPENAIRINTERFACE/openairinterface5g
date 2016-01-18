@@ -1963,11 +1963,11 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
       }
       
         else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING) {
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[0],&dl_ch1_128[0]);
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[1],&dl_ch1_128[1]);
+        prec2A_TM4_128(0,&dl_ch0_128[0],&dl_ch1_128[0]);
+        prec2A_TM4_128(0,&dl_ch0_128[1],&dl_ch1_128[1]);
         
         if (pilots==0) {
-          prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128[2],&dl_ch1_128[2]); 
+          prec2A_TM4_128(0,&dl_ch0_128[2],&dl_ch1_128[2]); 
         }
       }
       
@@ -3238,6 +3238,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
     avg_0_128D = _mm_setzero_si128();
     avg_1_128D = _mm_setzero_si128();
     for (rb=0; rb<nb_rb; rb++) {
+     // printf("pmi[rb%d] =%d \n", rb, pmi_ext[rb]);
               // printf("rb %d : \n",rb);
               // print_shorts("ch0\n",&dl_ch0_128[0]);
 	       //print_shorts("ch1\n",&dl_ch1_128[0]);
@@ -3251,7 +3252,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
         prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
       else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
 
       //      mmtmpD0 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
       avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
@@ -3268,7 +3269,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
         prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
       else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-        prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+        prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
 
       //      mmtmpD1 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);          
       avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
@@ -3290,7 +3291,7 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
         else if (mimo_mode==DUALSTREAM_UNIFORM_PRECODINGj)
           prec2A_TM4_128(1,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
 	else if (mimo_mode==DUALSTREAM_PUSCH_PRECODING)
-	  prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
+	  prec2A_TM4_128(0,&dl_ch0_128_tmp,&dl_ch1_128_tmp);
         //      mmtmpD2 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
 	
         avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
