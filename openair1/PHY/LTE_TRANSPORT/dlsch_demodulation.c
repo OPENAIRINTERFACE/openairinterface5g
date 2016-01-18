@@ -3216,6 +3216,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   //clear average level
+ // avg_0_128D = _mm_setzero_si128();
+ // avg_1_128D = _mm_setzero_si128();
   avg_0[0] = 0;
   avg_0[1] = 0;
   avg_1[0] = 0;
@@ -3312,14 +3314,15 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       (((int*)&avg_1_128D)[3])/(nb_rb*nre);   
     //  printf("From Chan_level aver stream 1 %d =%d\n", aarx, avg_1[aarx]);
   }
-avg_0[0] = max(avg_0[0],avg_0[1]);
-avg_1[0] = max(avg_1[0],avg_1[1]);
-avg_0[0]= max(avg_0[0], avg_1[0]);
-avg_1[0]=avg_0[0];
- //avg_0[0]=max (avg_0[0], avg_0[1]); 
-//  avg_0[0] = avg_0[0] + avg_0[1];
-//  avg_1[0] = avg_1[0] + avg_1[1];
+//avg_0[0] = max(avg_0[0],avg_0[1]);
+//avg_1[0] = max(avg_1[0],avg_1[1]);
+//avg_0[0]= max(avg_0[0], avg_1[0]);
 
+  avg_0[0] = avg_0[0] + avg_0[1];
+  avg_1[0] = avg_1[0] + avg_1[1];
+  avg_0[0] = max (avg_0[0], avg_1[0]);
+  avg_1[0] = avg_0[0];
+  
   _mm_empty();
   _m_empty();
 
@@ -4101,8 +4104,6 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
           else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
             skip_half=2;
         }
-
-
 
         if (rb_alloc_ind==1) {
 #ifdef DEBUG_DLSCH_DEMOD	 
