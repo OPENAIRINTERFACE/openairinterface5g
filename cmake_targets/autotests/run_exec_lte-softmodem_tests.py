@@ -704,10 +704,11 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_main_exec PID = $! \n'
     if eNB_traffic_exec != "":
-       task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n '
+       task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
-       task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; mv ' + logfile_pcap_tmp_eNB + '  ' + logfile_pcap_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+
+    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; mv ' + logfile_pcap_tmp_eNB + '  ' + logfile_pcap_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
     task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
     task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
