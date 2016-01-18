@@ -68,33 +68,57 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
     break;
 
   default:
-    msg("Illegal oversampling %d\n",osf);
+    printf("Illegal oversampling %d\n",osf);
     return(-1);
   }
 
   switch (frame_parms->N_RB_DL) {
+
   case 100:
     if (osf>1) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      printf("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
 
-    frame_parms->ofdm_symbol_size = 2048;
-    frame_parms->log2_symbol_size = 11;
-    frame_parms->samples_per_tti = 30720;
-    frame_parms->first_carrier_offset = 2048-600;
+    if (frame_parms->threequarter_fs) {
+      frame_parms->ofdm_symbol_size = 1536;
+      frame_parms->samples_per_tti = 23040;
+      frame_parms->first_carrier_offset = 1536-600;
+      frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
+      frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
+    }
+    else {
+      frame_parms->ofdm_symbol_size = 2048;
+      frame_parms->samples_per_tti = 30720;
+      frame_parms->first_carrier_offset = 2048-600;
+    }
+    frame_parms->N_RBGS = 4;
+    frame_parms->N_RBG = 25;
+    break;
+
+  case 75:
+    if (osf>1) {
+      printf("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      return(-1);
+    }
+
+
+    frame_parms->ofdm_symbol_size = 1536;
+    frame_parms->samples_per_tti = 23040;
+    frame_parms->first_carrier_offset = 1536-450;
+    frame_parms->nb_prefix_samples=(frame_parms->nb_prefix_samples*3)>>2;
+    frame_parms->nb_prefix_samples0=(frame_parms->nb_prefix_samples0*3)>>2;
     frame_parms->N_RBGS = 4;
     frame_parms->N_RBG = 25;
     break;
 
   case 50:
     if (osf>1) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      printf("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
 
     frame_parms->ofdm_symbol_size = 1024*osf;
-    frame_parms->log2_symbol_size = 10+log2_osf;
     frame_parms->samples_per_tti = 15360*osf;
     frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 300;
     frame_parms->nb_prefix_samples>>=(1-log2_osf);
@@ -105,13 +129,13 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   case 25:
     if (osf>2) {
-      msg("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
+      printf("Illegal oversampling %d for N_RB_DL %d\n",osf,frame_parms->N_RB_DL);
       return(-1);
     }
 
     frame_parms->ofdm_symbol_size = 512*osf;
 
-    frame_parms->log2_symbol_size = 9+log2_osf;
+
     frame_parms->samples_per_tti = 7680*osf;
     frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 150;
     frame_parms->nb_prefix_samples>>=(2-log2_osf);
@@ -124,7 +148,6 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   case 15:
     frame_parms->ofdm_symbol_size = 256*osf;
-    frame_parms->log2_symbol_size = 8+log2_osf;
     frame_parms->samples_per_tti = 3840*osf;
     frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 90;
     frame_parms->nb_prefix_samples>>=(3-log2_osf);
@@ -135,7 +158,6 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
   case 6:
     frame_parms->ofdm_symbol_size = 128*osf;
-    frame_parms->log2_symbol_size = 7+log2_osf;
     frame_parms->samples_per_tti = 1920*osf;
     frame_parms->first_carrier_offset = frame_parms->ofdm_symbol_size - 36;
     frame_parms->nb_prefix_samples>>=(4-log2_osf);
@@ -145,7 +167,7 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
     break;
 
   default:
-    msg("init_frame_parms: Error: Number of resource blocks (N_RB_DL %d) undefined, frame_parms = %p \n",frame_parms->N_RB_DL, frame_parms);
+    printf("init_frame_parms: Error: Number of resource blocks (N_RB_DL %d) undefined, frame_parms = %p \n",frame_parms->N_RB_DL, frame_parms);
     return(-1);
     break;
   }
@@ -159,23 +181,22 @@ int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf)
 
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms)
 {
-  msg("frame_parms->N_RB_DL=%d\n",frame_parms->N_RB_DL);
-  msg("frame_parms->N_RB_UL=%d\n",frame_parms->N_RB_UL);
-  msg("frame_parms->Nid_cell=%d\n",frame_parms->Nid_cell);
-  msg("frame_parms->Ncp=%d\n",frame_parms->Ncp);
-  msg("frame_parms->Ncp_UL=%d\n",frame_parms->Ncp_UL);
-  msg("frame_parms->nushift=%d\n",frame_parms->nushift);
-  msg("frame_parms->frame_type=%d\n",frame_parms->frame_type);
-  msg("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
-  msg("frame_parms->tdd_config_S=%d\n",frame_parms->tdd_config_S);
-  msg("frame_parms->mode1_flag=%d\n",frame_parms->mode1_flag);
-  msg("frame_parms->nb_antennas_tx=%d\n",frame_parms->nb_antennas_tx);
-  msg("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
-  msg("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
-  msg("frame_parms->log2_symbol_size=%d\n",frame_parms->log2_symbol_size);
-  msg("frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
-  msg("frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
-  msg("frame_parms->first_carrier_offset=%d\n",frame_parms->first_carrier_offset);
-  msg("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
-  msg("frame_parms->symbols_per_tti=%d\n",frame_parms->symbols_per_tti);
+  printf("frame_parms->N_RB_DL=%d\n",frame_parms->N_RB_DL);
+  printf("frame_parms->N_RB_UL=%d\n",frame_parms->N_RB_UL);
+  printf("frame_parms->Nid_cell=%d\n",frame_parms->Nid_cell);
+  printf("frame_parms->Ncp=%d\n",frame_parms->Ncp);
+  printf("frame_parms->Ncp_UL=%d\n",frame_parms->Ncp_UL);
+  printf("frame_parms->nushift=%d\n",frame_parms->nushift);
+  printf("frame_parms->frame_type=%d\n",frame_parms->frame_type);
+  printf("frame_parms->tdd_config=%d\n",frame_parms->tdd_config);
+  printf("frame_parms->tdd_config_S=%d\n",frame_parms->tdd_config_S);
+  printf("frame_parms->mode1_flag=%d\n",frame_parms->mode1_flag);
+  printf("frame_parms->nb_antennas_tx=%d\n",frame_parms->nb_antennas_tx);
+  printf("frame_parms->nb_antennas_rx=%d\n",frame_parms->nb_antennas_rx);
+  printf("frame_parms->ofdm_symbol_size=%d\n",frame_parms->ofdm_symbol_size);
+  printf("frame_parms->nb_prefix_samples=%d\n",frame_parms->nb_prefix_samples);
+  printf("frame_parms->nb_prefix_samples0=%d\n",frame_parms->nb_prefix_samples0);
+  printf("frame_parms->first_carrier_offset=%d\n",frame_parms->first_carrier_offset);
+  printf("frame_parms->samples_per_tti=%d\n",frame_parms->samples_per_tti);
+  printf("frame_parms->symbols_per_tti=%d\n",frame_parms->symbols_per_tti);
 }
