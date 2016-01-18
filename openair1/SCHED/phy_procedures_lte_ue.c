@@ -1262,7 +1262,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #else
                            &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
 #endif
-                           frame_parms->log2_symbol_size,
+                           frame_parms->ofdm_symbol_size,
                            nsymb,
                            frame_parms->nb_prefix_samples,
                            CYCLIC_PREFIX);
@@ -1553,7 +1553,9 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 
 #else
 #ifndef OAI_USRP
+  #ifndef OAI_BLADERF
     phy_adjust_gain (phy_vars_ue,0);
+  #endif
 #endif
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);

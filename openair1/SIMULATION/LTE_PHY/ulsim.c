@@ -89,60 +89,6 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t N_RB_DL,uint8_t frame_type,uint8_t tdd_config,uint8_t osf)
-{
-
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-
-  printf("Start lte_param_init\n");
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->frame_type         = frame_type;
-  lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Ncp_UL             = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = 10;
-  lte_frame_parms->nushift            = 0;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-  lte_frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
-
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-
-  PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
-
-  phy_init_lte_top(lte_frame_parms);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-  printf("Done lte_param_init\n");
-
-
-}
-
-
-
-
 int main(int argc, char **argv)
 {
 
@@ -516,7 +462,16 @@ int main(int argc, char **argv)
     }
   }
 
-  lte_param_init(1,n_rx,1,extended_prefix_flag,N_RB_DL,frame_type,tdd_config,osf);
+  lte_param_init(1,
+		 n_rx,
+		 1,
+		 extended_prefix_flag,
+		 frame_type,
+		 0,
+		 tdd_config,
+		 N_RB_DL,
+		 osf,
+		 0);
 
   if (nb_rb_set == 0)
     nb_rb = PHY_vars_eNB->lte_frame_parms.N_RB_UL;
@@ -1105,7 +1060,7 @@ int main(int argc, char **argv)
               if (frame_parms->Ncp == 1)
                 PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
                              &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],         // output
-                             PHY_vars_UE->lte_frame_parms.log2_symbol_size,                // log2_fft_size
+                             PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,
                              nsymb,                 // number of symbols
                              PHY_vars_UE->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
                              CYCLIC_PREFIX);

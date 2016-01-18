@@ -235,6 +235,7 @@ static int                      time_offset[4] = {0,0,0,0};
 static char                     UE_flag=0;
 //static uint8_t                  eNB_id=0,UE_id=0;
 
+static char                     threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -909,13 +910,13 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
       if (phy_vars_eNB->lte_frame_parms.Ncp == EXTENDED) {
         PHY_ofdm_mod(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F],
                      dummy_tx_b,
-                     phy_vars_eNB->lte_frame_parms.log2_symbol_size,
+                     phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                      6,
                      phy_vars_eNB->lte_frame_parms.nb_prefix_samples,
                      CYCLIC_PREFIX);
         PHY_ofdm_mod(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][slot_offset_F+slot_sizeF],
                      dummy_tx_b+(phy_vars_eNB->lte_frame_parms.samples_per_tti>>1),
-                     phy_vars_eNB->lte_frame_parms.log2_symbol_size,
+                     phy_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                      6,
                      phy_vars_eNB->lte_frame_parms.nb_prefix_samples,
                      CYCLIC_PREFIX);
@@ -950,7 +951,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
         ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
 #ifdef EXMIMO
           ((short*)dummy_tx_b)[2*i]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	((short*)dummy_tx_b)[2*i];
 #else
           ((short*)dummy_tx_b)[2*i]<<4;
@@ -958,7 +959,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	  ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
 #ifdef EXMIMO
 	    ((short*)dummy_tx_b)[2*i+1]<<4;
-#elif OAI_BLADRF
+#elif OAI_BLADERF
 	  ((short*)dummy_tx_b)[2*i+1];
 #else
 	  ((short*)dummy_tx_b)[2*i+1]<<4;
@@ -1016,6 +1017,7 @@ static void* eNB_thread_tx( void* param )
   eNB_proc_t *proc = (eNB_proc_t*)param;
   FILE  *tx_time_file;
   char tx_time_name[101];
+
   if (opp_enabled == 1) {
     snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf_%d", "eNB", proc->subframe);
     tx_time_file = fopen(tx_time_name,"w");
@@ -1155,7 +1157,20 @@ static void* eNB_thread_tx( void* param )
     }
 
     do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
-
+    /*
+    short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
+    int i;
+    for (i=0;i<7680*2;i+=8) {
+      txdata[i] = 2047;
+      txdata[i+1] = 0;
+      txdata[i+2] = 0;
+      txdata[i+3] = 2047;
+      txdata[i+4] = -2047;
+      txdata[i+5] = 0;
+      txdata[i+6] = 0;
+      txdata[i+7] = -2047;
+    }
+    */
     if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc %d\n", proc->subframe );
       exit_fun("nothing to add");
@@ -1839,7 +1854,8 @@ static void* eNB_thread( void* arg )
       rt_sleep_ns(1000000);
 #endif
 
-      if ((tx_launched == 0) &&
+      if ((frame>50) &&
+	  (tx_launched == 0) &&
           (rx_pos >= (((2*hw_subframe)+1)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))) {
         tx_launched = 1;
 
@@ -1908,52 +1924,53 @@ static void* eNB_thread( void* arg )
 #else
       int sf = hw_subframe;
 #endif
-
-      for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      if (frame>50) {
+	for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 #ifdef EXMIMO
-
-        if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_tx) != 0) {
-          LOG_E(PHY,"[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n",sf,PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx);
-        } else {
-          //          LOG_I(PHY,"[eNB] Waking up eNB process %d (IC %d)\n",sf,PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt);
-          PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx++;
-          pthread_mutex_unlock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_tx);
-
-          if (PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx == 0) {
-            if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_tx) != 0) {
-              LOG_E(PHY,"[eNB] ERROR pthread_cond_signal for eNB TX thread %d\n",sf);
+	  
+	  if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_tx) != 0) {
+	    LOG_E(PHY,"[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n",sf,PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx);
+	  } else {
+	    //          LOG_I(PHY,"[eNB] Waking up eNB process %d (IC %d)\n",sf,PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt);
+	    PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx++;
+	    pthread_mutex_unlock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_tx);
+	    
+	    if (PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_tx == 0) {
+	      if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_tx) != 0) {
+		LOG_E(PHY,"[eNB] ERROR pthread_cond_signal for eNB TX thread %d\n",sf);
+		exit_fun("nothing to add");
+	      }
+	    } else {
+	      LOG_W(PHY,"[eNB] Frame %d, eNB TX thread %d busy!!\n",PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_tx,sf);
 	      exit_fun("nothing to add");
-            }
-          } else {
-            LOG_W(PHY,"[eNB] Frame %d, eNB TX thread %d busy!!\n",PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_tx,sf);
-            exit_fun("nothing to add");
-          }
-        }
-
+	    }
+	  }
+	  
 #endif
 
-        if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx) != 0) {
-          LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RX thread %d (IC %d)\n", sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx );
-          exit_fun( "error locking mutex_rx" );
-          break;
-        }
-
-        int cnt_rx = ++PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx;
-
-        pthread_mutex_unlock( &PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx );
-
-        if (cnt_rx == 0) {
-          // the thread was presumably waiting where it should and can now be woken up
-          if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_rx) != 0) {
-            LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RX thread %d\n", sf );
-            exit_fun( "ERROR pthread_cond_signal" );
-            break;
-          }
-        } else {
-          LOG_W( PHY, "[eNB] Frame %d, eNB RX thread %d busy!! instance_cnt %d CC_id %d\n", PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_rx, sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx, CC_id );
-          exit_fun( "RX thread busy" );
-          break;
-        }
+	  if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx) != 0) {
+	    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RX thread %d (IC %d)\n", sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx );
+	    exit_fun( "error locking mutex_rx" );
+	    break;
+	  }
+	  
+	  int cnt_rx = ++PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx;
+	  
+	  pthread_mutex_unlock( &PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx );
+	  
+	  if (cnt_rx == 0) {
+	    // the thread was presumably waiting where it should and can now be woken up
+	    if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_rx) != 0) {
+	      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RX thread %d\n", sf );
+	      exit_fun( "ERROR pthread_cond_signal" );
+	      break;
+	    }
+	  } else {
+	    LOG_W( PHY, "[eNB] Frame %d, eNB RX thread %d busy!! instance_cnt %d CC_id %d\n", PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_rx, sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx, CC_id );
+	    exit_fun( "RX thread busy" );
+	    break;
+	  }
+	}
       }
     }
 
@@ -2062,7 +2079,7 @@ static void get_options (int argc, char **argv)
     {NULL, 0, NULL, 0}
   };
 
-  while ((c = getopt_long (argc, argv, "A:a:C:dK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
+  while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
@@ -2163,6 +2180,10 @@ static void get_options (int argc, char **argv)
       do_forms=1;
       printf("Running with XFORMS!\n");
 #endif
+      break;
+      
+    case 'E':
+      threequarter_fs=1;
       break;
 
     case 'K':
@@ -2673,6 +2694,7 @@ int main( int argc, char **argv )
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
     frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
     init_ul_hopping(frame_parms[CC_id]);
     init_frame_parms(frame_parms[CC_id],1);
     //   phy_init_top(frame_parms[CC_id]);
@@ -2878,10 +2900,18 @@ int main( int argc, char **argv )
   for (card=0; card<MAX_CARDS; card++) {
 
     if(frame_parms[0]->N_RB_DL == 100) {
-      openair0_cfg[card].sample_rate=30.72e6;
-      openair0_cfg[card].samples_per_frame = 307200; 
-      openair0_cfg[card].tx_bw = 10e6;
-      openair0_cfg[card].rx_bw = 10e6;
+      if (frame_parms[0]->threequarter_fs) {
+	openair0_cfg[card].sample_rate=23.04e6;
+	openair0_cfg[card].samples_per_frame = 230400; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+      else {
+	openair0_cfg[card].sample_rate=30.72e6;
+	openair0_cfg[card].samples_per_frame = 307200; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
     } else if(frame_parms[0]->N_RB_DL == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
@@ -2890,9 +2920,8 @@ int main( int argc, char **argv )
     } else if (frame_parms[0]->N_RB_DL == 25) {
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 5e6;
-      openair0_cfg[card].rx_bw = 5e6;
-
+      openair0_cfg[card].tx_bw = 2.5e6;
+      openair0_cfg[card].rx_bw = 2.5e6;
     } else if (frame_parms[0]->N_RB_DL == 6) {
       openair0_cfg[card].sample_rate=1.92e6;
       openair0_cfg[card].samples_per_frame = 19200;
@@ -2961,9 +2990,10 @@ int main( int argc, char **argv )
 	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_eNB_dB;
       }
       else {
-	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;// - USRP_GAIN_OFFSET;  // calibrated for USRP B210 @ 2.6 GHz, 30.72 MS/s
+	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;
       }
-      
+
+#if 0  // UHD 3.8     
       switch(frame_parms[0]->N_RB_DL) {
       case 6:
         openair0_cfg[card].rx_gain[i] -= 12;
@@ -2984,7 +3014,7 @@ int main( int argc, char **argv )
       default:
         break;
       }
-      
+#endif      
 
     }
 

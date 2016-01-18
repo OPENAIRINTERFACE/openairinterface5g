@@ -58,98 +58,6 @@ PHY_VARS_UE *PHY_vars_UE;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 #define DLSCH_RB_ALLOC ((uint16_t)0x1fbf) // igore DC component,RB13
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL,
-                    lte_frame_type_t frame_type,uint8_t osf,uint32_t perfect_ce)
-{
-
-  unsigned int i;
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-
-  printf("Start lte_param_init (Nid_cell %d, extended_prefix %d, transmission_mode %d, N_tx %d, N_rx %d)\n",
-         Nid_cell, extended_prefix_flag,transmission_mode,N_tx,N_rx);
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB1 = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB2 = malloc(sizeof(PHY_VARS_eNB));
-
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = Nid_cell%6;
-  lte_frame_parms->nb_antennas_tx_eNB     = N_tx;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->phich_config_common.phich_resource = one; //half
-  lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->frame_type         = frame_type;
-
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-
-  memcpy(&PHY_vars_UE->lte_frame_parms,lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-
-
-  phy_init_lte_top(lte_frame_parms);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-  memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB1->lte_frame_parms.nushift=(Nid_cell+1)%6;
-  PHY_vars_eNB1->lte_frame_parms.Nid_cell=Nid_cell+1;
-
-  memcpy((void*)&PHY_vars_eNB2->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB2->lte_frame_parms.nushift=(Nid_cell+2)%6;
-  PHY_vars_eNB2->lte_frame_parms.Nid_cell=Nid_cell+2;
-
-  phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB2,0,0,0);
-
-  phy_init_lte_top(lte_frame_parms);
-
-  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
-  PHY_vars_UE->perfect_ce = perfect_ce;
-
-  for (i=0; i<3; i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);
-
-  generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-  generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-
-  printf("Done lte_param_init\n");
-
-  CCCH_alloc_pdu.type               = 1;
-  CCCH_alloc_pdu.vrb_type           = 0;
-  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.ndi      = 1;
-  CCCH_alloc_pdu.mcs      = 1;
-  CCCH_alloc_pdu.harq_pid = 0;
-
-}
-
-
-
 DCI_PDU DCI_pdu;
 
 DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2Lcommon, uint8_t format_selector, uint32_t rnti)
@@ -800,9 +708,10 @@ int main(int argc, char **argv)
                  n_rx,
                  transmission_mode,
                  extended_prefix_flag,
+		 frame_type,
                  Nid_cell,
                  tdd_config,
-                 N_RB_DL,frame_type,
+                 N_RB_DL,
                  osf,
                  perfect_ce);
 
@@ -1093,7 +1002,7 @@ int main(int argc, char **argv)
           if (PHY_vars_eNB->lte_frame_parms.Ncp == 1)
             PHY_ofdm_mod(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],        // input,
                          &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],         // output
-                         PHY_vars_eNB->lte_frame_parms.log2_symbol_size,                // log2_fft_size
+                         PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                          2*nsymb,                 // number of symbols
                          PHY_vars_eNB->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
                          CYCLIC_PREFIX);

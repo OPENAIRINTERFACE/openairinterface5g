@@ -421,7 +421,7 @@ elseif (${RF_BOARD} STREQUAL "OAI_USRP")
     ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
   LINK_DIRECTORIES("/opt/lib")
   set(option_HW_lib "uhd")
-  set(LOWLATENCY False)
+  #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
@@ -432,14 +432,14 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "bladeRF")
-#set(LOWLATENCY False)
+ #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
     )
-  set(LOWLATENCY True)
+  #set(LOWLATENCY True)
   
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
@@ -451,6 +451,7 @@ endif (${RF_BOARD} STREQUAL "EXMIMO")
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
+Message("LOWLATENCY flag  is ${LOWLATENCY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -843,6 +844,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
+  ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
