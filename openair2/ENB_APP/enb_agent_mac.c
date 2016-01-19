@@ -595,7 +595,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
     // Fill in the Cell reports
     for (i = 0; i < report_config->nr_cc; i++) {
       cell_report[i] = malloc(sizeof(Protocol__PrpCellStatsReport));
-      if(ue_report[i] == NULL)
+      if(cell_report[i] == NULL)
 	goto error;
       protocol__prp_cell_stats_report__init(cell_report[i]);
       cell_report[i]->carrier_index = report_config->cc_report_type[i].cc_id;
