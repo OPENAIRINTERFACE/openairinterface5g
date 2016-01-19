@@ -891,7 +891,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
@@ -907,7 +907,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -931,7 +931,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec duration=300.0s </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.5MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
