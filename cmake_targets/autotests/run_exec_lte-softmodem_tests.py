@@ -709,7 +709,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
 
-    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
     task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
     task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
