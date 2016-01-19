@@ -292,13 +292,18 @@ int get_current_time_ms (mid_t mod_id, int subframe_flag){
    
 }
 
-int get_current_frame (mid_t mod_id) {
-  
+unsigned int get_current_frame (mid_t mod_id) {
+
+  #warning "SFN will not be in [0-1023] when oaisim is used"
   return ((eNB_MAC_INST *)enb[mod_id])->frame;
   
 }
 
-int get_current_subframe (mid_t mod_id) {
+unsigned int get_current_system_frame_num(mid_t mod_id) {
+  return (get_current_frame(mod_id) %1024);
+}
+
+unsigned int get_current_subframe (mid_t mod_id) {
 
   return ((eNB_MAC_INST *)enb[mod_id])->subframe;
   
@@ -306,12 +311,16 @@ int get_current_subframe (mid_t mod_id) {
 
 uint16_t get_sfn_sf (mid_t mod_id) {
   
-  uint16_t frame, subframe;
-  uint16_t sfn_sf;
+  frame_t frame;
+  sub_frame_t subframe;
+  uint16_t sfn_sf, frame_mask, sf_mask;
   
-  frame = (uint16_t) get_current_frame(mod_id);
-  subframe = (uint16_t) get_current_subframe(mod_id);
-  sfn_sf = (subframe << 12) | frame;
+  frame = (frame_t) get_current_system_frame_num(mod_id);
+  subframe = (sub_frame_t) get_current_subframe(mod_id);
+  frame_mask = ((1<<12) - 1);
+  sf_mask = ((1<<4) -1);
+  sfn_sf = (subframe & sf_mask) | ((frame & frame_mask) << 4);
+  
   return sfn_sf;
 }
 

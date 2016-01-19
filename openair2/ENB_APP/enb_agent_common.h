@@ -109,9 +109,15 @@ void set_enb_vars(mid_t mod_id, ran_name_t ran);
 
 int get_current_time_ms (mid_t mod_id, int subframe_flag);
 
-int get_current_frame(mid_t mod_id);
+/*Return the current frame number
+ *Could be using implementation specific numbering of frames
+ */
+unsigned int get_current_frame(mid_t mod_id);
 
-int get_current_subframe(mid_t mod_id);
+/*Return the current SFN (0-1023)*/ 
+unsigned int get_current_system_frame_num(mid_t mod_id);
+
+unsigned int get_current_subframe(mid_t mod_id);
 
 /*Return the frame and subframe number in compact 16-bit format.
   Bits 0-3 subframe, rest for frame. Required by progRAN protocol*/
