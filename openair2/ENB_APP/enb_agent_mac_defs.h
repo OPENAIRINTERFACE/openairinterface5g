@@ -48,8 +48,7 @@ typedef struct {
   void (*enb_agent_send_sr_info)(mid_t mod_id, msg_context_t *context);
   
   /// Inform the controller about the current UL/DL subframe
-  void (*enb_agent_send_dl_trigger)(mid_t mod_id, msg_context_t *context);
-  void (*enb_agent_send_ul_trigger)(mid_t mod_id, msg_context_t *context);
+  void (*enb_agent_send_sf_trigger)(mid_t mod_id, msg_context_t *context);
 
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 

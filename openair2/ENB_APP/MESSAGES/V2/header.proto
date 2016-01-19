@@ -17,10 +17,9 @@ enum prp_type {
      PRPT_STATS_REPLY = 4;
      
      // Time indication messages
-     PRPT_DL_TRIGGER = 5;
-     PRPT_UL_TRIGGER = 6;
+     PRPT_SF_TRIGGER = 5;
 
      //Asynchronous messages
-     PRPT_UL_SR_INFO = 7;
+     PRPT_UL_SR_INFO = 6;
 }
 

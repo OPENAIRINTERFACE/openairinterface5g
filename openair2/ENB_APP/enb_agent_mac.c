@@ -828,37 +828,37 @@ int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg) {
    return -1;
 }
 
-int enb_agent_mac_dl_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   int i,j;
   const int xid = *((int *)params);
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_DL_TRIGGER, &header) != 0)
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_SF_TRIGGER, &header) != 0)
     goto error;
 
-  Protocol__PrpDlTrigger *dl_trigger_msg;
-  dl_trigger_msg = malloc(sizeof(Protocol__PrpDlTrigger));
-  if (dl_trigger_msg == NULL) {
+  Protocol__PrpSfTrigger *sf_trigger_msg;
+  sf_trigger_msg = malloc(sizeof(Protocol__PrpSfTrigger));
+  if (sf_trigger_msg == NULL) {
     goto error;
   }
-  protocol__prp_dl_trigger__init(dl_trigger_msg);
+  protocol__prp_sf_trigger__init(sf_trigger_msg);
   
-  dl_trigger_msg->header = header;
-  dl_trigger_msg->has_sfn_sf = 1;
-  dl_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
+  sf_trigger_msg->header = header;
+  sf_trigger_msg->has_sfn_sf = 1;
+  sf_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
 
   /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
    *transmitting UEs
    */
-  dl_trigger_msg->n_dl_info = get_num_ues(mod_id);
+  sf_trigger_msg->n_dl_info = get_num_ues(mod_id);
   
   Protocol__PrpDlInfo **dl_info = NULL;
 
-  if (dl_trigger_msg->n_dl_info > 0) {
-    dl_info = malloc(sizeof(Protocol__PrpDlInfo *) * dl_trigger_msg->n_dl_info);
+  if (sf_trigger_msg->n_dl_info > 0) {
+    dl_info = malloc(sizeof(Protocol__PrpDlInfo *) * sf_trigger_msg->n_dl_info);
     if(dl_info == NULL)
       goto error;
     //Fill the status of the current HARQ process for each UE
-    for(i = 0; i++; i < dl_trigger_msg->n_dl_info) {
+    for(i = 0; i++; i < sf_trigger_msg->n_dl_info) {
       dl_info[i] = malloc(sizeof(Protocol__PrpDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
@@ -880,85 +880,21 @@ int enb_agent_mac_dl_trigger(mid_t mod_id, const void *params, Protocol__Progran
     }
   }
   
-  dl_trigger_msg->dl_info = dl_info;
-  
-  *msg = malloc(sizeof(Protocol__ProgranMessage));
-  if(*msg == NULL)
-    goto error;
-  protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_DL_TRIGGER_MSG;
-  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
-  (*msg)->dl_trigger_msg = dl_trigger_msg;
-  return 0;
-  
- error:
-  if (header != NULL)
-    free(header);
-  if (dl_trigger_msg != NULL) {
-    for (i = 0; i < dl_trigger_msg->n_dl_info; i++) {
-      free(dl_trigger_msg->dl_info[i]->harq_status);
-    }
-    free(dl_trigger_msg->dl_info);
-    free(dl_trigger_msg);
-  }
-  if(*msg != NULL)
-    free(*msg);
-  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-  return -1;
-}
+  sf_trigger_msg->dl_info = dl_info;
 
-int enb_agent_mac_destroy_dl_trigger(Protocol__ProgranMessage *msg) {
-  int i;
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_DL_TRIGGER_MSG)
-    goto error;
-  
-  free(msg->dl_trigger_msg->header);
-  for (i = 0; i < msg->dl_trigger_msg->n_dl_info; i++) {
-    free(msg->dl_trigger_msg->dl_info[i]->harq_status);
-  }
-  free(msg->dl_trigger_msg->dl_info);
-  free(msg->dl_trigger_msg);
-  free(msg);
-  
-  return 0;
-
- error:
-  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-  return -1;
-}
-
-int enb_agent_mac_ul_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  Protocol__PrpHeader *header;
-  int i,j;
-  const int xid = *((int *)params);
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UL_TRIGGER, &header) != 0)
-    goto error;
-
-  Protocol__PrpUlTrigger *ul_trigger_msg;
-  ul_trigger_msg = malloc(sizeof(Protocol__PrpUlTrigger));
-  if (ul_trigger_msg == NULL) {
-    goto error;
-  }
-  protocol__prp_ul_trigger__init(ul_trigger_msg);
-  
-  ul_trigger_msg->header = header;
-  ul_trigger_msg->has_sfn_sf = 1;
-  /*TODO: Must fix this to get the proper subframe number*/
-  ul_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
-
-  /*TODO: Fill in the number of UL reception status related info, based on the number of currently
+    /*TODO: Fill in the number of UL reception status related info, based on the number of currently
    *transmitting UEs
    */
-  ul_trigger_msg->n_ul_info = get_num_ues(mod_id);
+  sf_trigger_msg->n_ul_info = get_num_ues(mod_id);
   
   Protocol__PrpUlInfo **ul_info = NULL;
 
-  if (ul_trigger_msg->n_ul_info > 0) {
-    ul_info = malloc(sizeof(Protocol__PrpUlInfo *) * ul_trigger_msg->n_ul_info);
+  if (sf_trigger_msg->n_ul_info > 0) {
+    ul_info = malloc(sizeof(Protocol__PrpUlInfo *) * sf_trigger_msg->n_ul_info);
     if(ul_info == NULL)
       goto error;
     //Fill the reception info for each transmitting UE
-    for(i = 0; i++; i < ul_trigger_msg->n_ul_info) {
+    for(i = 0; i++; i < sf_trigger_msg->n_ul_info) {
       ul_info[i] = malloc(sizeof(Protocol__PrpUlInfo));
       if(ul_info[i] == NULL)
 	goto error;
@@ -984,26 +920,30 @@ int enb_agent_mac_ul_trigger(mid_t mod_id, const void *params, Protocol__Progran
     }
   }
   
-  ul_trigger_msg->ul_info = ul_info;
-  
+  sf_trigger_msg->ul_info = ul_info;
+
   *msg = malloc(sizeof(Protocol__ProgranMessage));
   if(*msg == NULL)
     goto error;
   protocol__progran_message__init(*msg);
-  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UL_TRIGGER_MSG;
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG;
   (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
-  (*msg)->ul_trigger_msg = ul_trigger_msg;
+  (*msg)->sf_trigger_msg = sf_trigger_msg;
   return 0;
   
  error:
   if (header != NULL)
     free(header);
-  if (ul_trigger_msg != NULL) {
-    for (i = 0; i < ul_trigger_msg->n_ul_info; i++) {
-      free(ul_trigger_msg->ul_info[i]->reception_status);
+  if (sf_trigger_msg != NULL) {
+    for (i = 0; i < sf_trigger_msg->n_dl_info; i++) {
+      free(sf_trigger_msg->dl_info[i]->harq_status);
     }
-    free(ul_trigger_msg->ul_info);
-    free(ul_trigger_msg);
+    free(sf_trigger_msg->dl_info);
+    for (i = 0; i < sf_trigger_msg->n_ul_info; i++) {
+      free(sf_trigger_msg->ul_info[i]->reception_status);
+    }
+    free(sf_trigger_msg->ul_info);
+    free(sf_trigger_msg);
   }
   if(*msg != NULL)
     free(*msg);
@@ -1011,17 +951,21 @@ int enb_agent_mac_ul_trigger(mid_t mod_id, const void *params, Protocol__Progran
   return -1;
 }
 
-int enb_agent_mac_destroy_ul_trigger(Protocol__ProgranMessage *msg) {
+int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   int i;
-  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UL_TRIGGER_MSG)
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG)
     goto error;
   
-  free(msg->ul_trigger_msg->header);
-  for (i = 0; i < msg->ul_trigger_msg->n_ul_info; i++) {
-    free(msg->ul_trigger_msg->ul_info[i]->reception_status);
+  free(msg->sf_trigger_msg->header);
+  for (i = 0; i < msg->sf_trigger_msg->n_dl_info; i++) {
+    free(msg->sf_trigger_msg->dl_info[i]->harq_status);
   }
-  free(msg->ul_trigger_msg->ul_info);
-  free(msg->ul_trigger_msg);
+  free(msg->sf_trigger_msg->dl_info);
+  for (i = 0; i < msg->sf_trigger_msg->n_ul_info; i++) {
+    free(msg->sf_trigger_msg->ul_info[i]->reception_status);
+  }
+  free(msg->sf_trigger_msg->ul_info);
+  free(msg->sf_trigger_msg);
   free(msg);
   
   return 0;
@@ -1058,7 +1002,7 @@ void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
   LOG_D(ENB_AGENT, "Could not send sr message\n");
 }
 
-void enb_agent_send_dl_trigger(mid_t mod_id, msg_context_t *context) {
+void enb_agent_send_sf_trigger(mid_t mod_id, msg_context_t *context) {
   int size;
   Protocol__ProgranMessage *msg;
   void *data;
@@ -1066,7 +1010,7 @@ void enb_agent_send_dl_trigger(mid_t mod_id, msg_context_t *context) {
   err_code_t err_code;
 
   /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_dl_trigger(mod_id, (void *) &(context->tx_xid), &msg);
+  err_code = enb_agent_mac_sf_trigger(mod_id, (void *) &(context->tx_xid), &msg);
   if (err_code < 0) {
     goto error;
   }
@@ -1082,34 +1026,7 @@ void enb_agent_send_dl_trigger(mid_t mod_id, msg_context_t *context) {
     LOG_D(ENB_AGENT,"sent message with size %d\n", size);
   }
  error:
-  LOG_D(ENB_AGENT, "Could not send dl trigger message\n");
-}
-
-void enb_agent_send_ul_trigger(mid_t mod_id, msg_context_t *context) {
-  int size;
-  Protocol__ProgranMessage *msg;
-  void *data;
-  int priority;
-  err_code_t err_code;
-
-  /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_ul_trigger(mod_id, (void *) &(context->tx_xid), &msg);
-  if (err_code < 0) {
-    goto error;
-  }
-
-  if (msg != NULL){
-    data=enb_agent_pack_message(msg, &size);
-    /*Send sr info using the MAC channel of the eNB*/
-    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
-      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
-      goto error;
-    }
-    
-    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
-  }
- error:
-  LOG_D(ENB_AGENT, "Could not send ul trigger message\n");
+  LOG_D(ENB_AGENT, "Could not send sf trigger message\n");
 }
 
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
@@ -1120,6 +1037,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   xface->agent_ctxt = &shared_ctxt[mod_id];
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
+  xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
 
   mac_agent_registered[mod_id] = 1;
   return 1;
@@ -1134,6 +1052,7 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   
   xface->agent_ctxt = NULL;
   xface->enb_agent_send_sr_info = NULL;
+  xface->enb_agent_send_sf_trigger = NULL;
 
   mac_agent_registered[mod_id] = NULL;
   return 1;

@@ -13,9 +13,8 @@ message progran_message {
 	      prp_echo_reply echo_reply_msg = 3;
 	      prp_stats_request stats_request_msg = 4;
 	      prp_stats_reply stats_reply_msg = 5;
-	      prp_dl_trigger dl_trigger_msg = 6;
-	      prp_ul_trigger ul_trigger_msg = 7;
-	      prp_ul_sr_info ul_sr_info_msg = 8;
+	      prp_sf_trigger sf_trigger_msg = 6;
+	      prp_ul_sr_info ul_sr_info_msg = 7;
 	}
 }
 
@@ -90,16 +89,11 @@ message prp_stats_reply {
 // Time indication messages
 //
 
-message prp_dl_trigger {
+message prp_sf_trigger {
 	optional prp_header header = 1;
 	optional uint32 sfn_sf = 2;
 	repeated prp_dl_info dl_info = 3;
-}
-
-message prp_ul_trigger {
-	optional prp_header header = 1;
-	optional uint32 sfn_sf = 2;
-	repeated prp_ul_info ul_info = 3;
+	repeated prp_ul_info ul_info = 4;	
 }
 
 //

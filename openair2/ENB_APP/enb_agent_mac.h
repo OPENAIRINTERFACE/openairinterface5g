@@ -94,13 +94,9 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
 
 int enb_agent_mac_destroy_sr_info(Protocol__ProgranMessage *msg);
 
-int enb_agent_mac_dl_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 
-int enb_agent_mac_destroy_dl_trigger(Protocol__ProgranMessage *msg);
-
-int enb_agent_mac_ul_trigger(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
-
-int enb_agent_mac_destroy_ul_trigger(Protocol__ProgranMessage *msg);
+int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg);
 
 
 /**********************************
@@ -111,9 +107,7 @@ int enb_agent_mac_destroy_ul_trigger(Protocol__ProgranMessage *msg);
 void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context);
 
 /*Inform the controller about the current UL/DL subframe*/
-void enb_agent_send_dl_trigger(mid_t mod_id, msg_context_t *context);
-
-void enb_agent_send_ul_trigger(mid_t mod_id, msg_context_t *context);
+void enb_agent_send_sf_trigger(mid_t mod_id, msg_context_t *context);
 
 /*Register technology specific interface callbacks*/
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
