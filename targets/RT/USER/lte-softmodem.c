@@ -1674,6 +1674,10 @@ static void* eNB_thread( void* arg )
   tx_pos     = openair0_cfg[0].tx_scheduling_advance;
 #endif
 
+#if defined(ENABLE_ITTI)
+  wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+#endif 
+
   while (!oai_exit) {
     start_meas( &softmodem_stats_mt );
 
@@ -3188,15 +3192,15 @@ int main( int argc, char **argv )
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
 
-#if defined(ENABLE_ITTI)
+  /*  this is moved to the eNB main thread */ 
 
+//#if defined(ENABLE_ITTI)
   // Wait for eNB application initialization to be complete (eNB registration to MME)
-  if (UE_flag==0) {
-    printf("Waiting for eNB application to be ready\n");
-    wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-  }
-
-#endif
+  //  if (UE_flag==0) {
+  // printf("Waiting for eNB application to be ready\n");
+    //wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+  // }
+  //#endif
 
 
   // this starts the DMA transfers
