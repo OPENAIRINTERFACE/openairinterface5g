@@ -56,58 +56,6 @@ PHY_VARS_UE *PHY_vars_UE;
 
 
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,uint16_t Nid_cell,uint8_t N_RB_DL,uint8_t osf)
-{
-
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-
-  printf("Start lte_param_init\n");
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = 0;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-  lte_frame_parms->tdd_config = 1;
-  lte_frame_parms->frame_type = 1;
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-
-  PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
-
-  phy_init_lte_top(lte_frame_parms);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-
-
-
-
-  printf("Done lte_param_init\n");
-
-}
-
 extern uint16_t prach_root_sequence_map0_3[838];
 
 int main(int argc, char **argv)
@@ -370,7 +318,16 @@ int main(int argc, char **argv)
   if (transmission_mode==2)
     n_tx=2;
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,Nid_cell,N_RB_DL,osf);
+  lte_param_init(n_tx,
+		 n_rx,
+		 transmission_mode,
+		 extended_prefix_flag,
+		 FDD,
+		 Nid_cell,
+		 3,
+		 N_RB_DL,
+		 osf,
+		 0);
 
 
   if (snr1set==0) {

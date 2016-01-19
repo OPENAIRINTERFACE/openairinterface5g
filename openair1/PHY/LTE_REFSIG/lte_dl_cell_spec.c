@@ -72,7 +72,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    msg("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
+    printf("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
@@ -94,9 +94,9 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
     output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
-    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
               Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;
@@ -151,7 +151,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    msg("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
+    printf("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
@@ -177,9 +177,9 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
     output[k] = qpsk[(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
 #ifdef DEBUG_DL_CELL_SPEC
-    msg("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
         Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    printf("index = %d (k %d)\n",(phy_vars_eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
 #endif
 
     mprime++;

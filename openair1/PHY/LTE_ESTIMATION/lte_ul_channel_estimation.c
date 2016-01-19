@@ -432,7 +432,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
         in_fft_ptr_0 = &temp_in_fft_0[0];
         in_fft_ptr_1 = &temp_in_fft_1[0];
 
-        for(j=0; j<(1<<(frame_parms->log2_symbol_size))/12; j++) {
+        for(j=0; j<(frame_parms->ofdm_symbol_size)/12; j++) {
           if (j>19) {
             ((int16_t*)in_fft_ptr_0)[-40+(2*j)] = ((int16_t*)temp_out_ifft_0)[-80+(2*j)]*rx_power_correction;
             ((int16_t*)in_fft_ptr_0)[-40+(2*j)+1] = ((int16_t*)temp_out_ifft_0)[-80+(2*j+1)]*rx_power_correction;

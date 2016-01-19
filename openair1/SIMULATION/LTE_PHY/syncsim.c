@@ -1189,7 +1189,7 @@ int main(int argc, char **argv)
       if (frame_parms->Ncp == 1)
         PHY_ofdm_mod(txdataF2[aa],        // input
                      txdata[aa],         // output
-                     PHY_vars_eNB->lte_frame_parms.log2_symbol_size,                // log2_fft_size
+                     PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,                // log2_fft_size
                      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,                 // number of symbols
                      PHY_vars_eNB->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
                      PHY_vars_eNB->lte_frame_parms.twiddle_ifft,  // IFFT twiddle factors
@@ -1218,7 +1218,7 @@ int main(int argc, char **argv)
       if (frame_parms->Ncp == 1)
         PHY_ofdm_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa],        // input,
                      txdata[aa],         // output
-                     frame_parms->log2_symbol_size,                // log2_fft_size
+                     frame_parms->ofdm_symbol_size,                // log2_fft_size
                      LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,                 // number of symbols
                      frame_parms->nb_prefix_samples,               // number of prefix samples
                      frame_parms->twiddle_ifft,  // IFFT twiddle factors
@@ -1240,7 +1240,7 @@ int main(int argc, char **argv)
         if (frame_parms->Ncp == 1)
           PHY_ofdm_mod(PHY_vars_eNB1->lte_eNB_common_vars.txdataF[eNb_id][aa],        // input,
                        PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id][aa],         // output
-                       frame_parms->log2_symbol_size,                // log2_fft_size
+                       frame_parms->ofdm_symbol_size,                // log2_fft_size
                        LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,                 // number of symbols
                        frame_parms->nb_prefix_samples,               // number of prefix samples
                        frame_parms->twiddle_ifft,  // IFFT twiddle factors
@@ -1260,7 +1260,7 @@ int main(int argc, char **argv)
         if (frame_parms->Ncp == 1)
           PHY_ofdm_mod(PHY_vars_eNB2->lte_eNB_common_vars.txdataF[eNb_id][aa],        // input,
                        PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id][aa],         // output
-                       frame_parms->log2_symbol_size,                // log2_fft_size
+                       frame_parms->ofdm_symbol_size,                // log2_fft_size
                        LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,                 // number of symbols
                        frame_parms->nb_prefix_samples,               // number of prefix samples
                        frame_parms->twiddle_ifft,  // IFFT twiddle factors
