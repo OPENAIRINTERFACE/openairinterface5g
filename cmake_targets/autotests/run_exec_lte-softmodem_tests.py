@@ -1040,6 +1040,7 @@ MachineListGeneric=''
 flag_remove_logdir=False
 flag_start_testcase=False
 nruns_lte_softmodem=''
+flag_skip_git_head_check=False
 
 print "Number of arguments argc = " + str(len(sys.argv))
 #for index in range(1,len(sys.argv) ):
@@ -1094,6 +1095,8 @@ while i < len (sys.argv):
         MachineListGeneric = MachineListGeneric.replace("\"","")
         MachineListGeneric = MachineListGeneric.replace("\'","")
         i = i +1
+    elif arg == '--skip-git-head-check':
+        flag_skip_git_head_check=True
     elif arg == '-h' :
         print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
@@ -1107,6 +1110,7 @@ while i < len (sys.argv):
         print "--nrun_lte_softmodem:  Set the number of runs for lte-softmodem test case class"
         print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
+        print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1310,7 +1314,10 @@ for oai in oai_list:
       cmd = cmd + 'git_head=${git_head[0]} \n'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
-      cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
+      if flag_skip_git_head_check==True:
+         cmd = cmd + 'print \"skipping GitHead check...\" '
+      else:
+         cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
       cmd = cmd + 'source oaienv'   + '\n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
