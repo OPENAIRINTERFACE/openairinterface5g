@@ -258,9 +258,9 @@ def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
 # \param logdirRepo directory of remote repository
 # \param python_script python script location
 def update_config_file(oai, config_string, logdirRepo, python_script):
+  cmd=""
   if config_string :
     stringArray = config_string.splitlines()
-    cmd=""
     #python_script = '$OPENAIR_DIR/targets/autotests/tools/search_repl.py'
     for string in stringArray:
        #split the string based on space now
