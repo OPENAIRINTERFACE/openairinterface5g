@@ -1914,16 +1914,16 @@
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
                      BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"</EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
     <EPC_pre_exec>sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
-    <EPC_main_exec>/SCRIPTS/run_epc  </EPC_main_exec>
+    <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
