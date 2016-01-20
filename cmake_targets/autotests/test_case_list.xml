@@ -1881,7 +1881,7 @@
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig ; $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sleep 10; $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
