@@ -470,7 +470,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
+			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
 	//printf("rho stream1 =%d\n", &lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
 
@@ -482,7 +482,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				    &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
 				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
-				    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
+				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
