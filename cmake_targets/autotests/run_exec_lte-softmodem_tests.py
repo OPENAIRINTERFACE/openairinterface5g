@@ -267,8 +267,8 @@ def update_config_file(oai, config_string, logdirRepo, python_script):
        string1=string.split()
        cmd = cmd + 'python ' + python_script + ' ' + logdirRepo+'/'+string1[0] + '  ' + string1[1] +  ' '+ string1[2] + '\n'
        #cmd = cmd + 'perl -p -i  -e \'s/'+ string1[1] + '\\s*=\\s*"\\S*"\\s*/' + string1[1] + ' = "' + string1[2] +'"' + '/g\'   ' + logdirRepo + '/' +string1[0] + '\n'
-    return cmd
-    #result = oai.send_recv(cmd)
+  return cmd
+  #result = oai.send_recv(cmd)
 
 # \brief thread safe sshsession wrapper due to occasional connection issues with ssh
 # \param machine name of machine
@@ -323,7 +323,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   #result = oai.send_recv(cmd)
   #print result
   result = oai.send_expect_false(cmd, 'Match found', False)
-  print result
+  print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
   res = oai.send_recv(ExmimoRfStop, False)
 
