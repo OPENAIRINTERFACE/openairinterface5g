@@ -1157,7 +1157,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
-    <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec duration=60.0s </UE_search_expr_true>
+    <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec duration=300.0s </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1961,9 +1961,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -1996,16 +1996,16 @@
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
                      BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"</EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
     <EPC_pre_exec>sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
-    <EPC_main_exec>/SCRIPTS/run_epc  </EPC_main_exec>
+    <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2039,13 +2039,13 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.0.2/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -2078,16 +2078,16 @@
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
                      BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"</EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
     <EPC_pre_exec>sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
-    <EPC_main_exec>/SCRIPTS/run_epc  </EPC_main_exec>
+    <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2097,6 +2097,89 @@
     <tags>USRPb210.OAI_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
    </testCase>
+
+  <testCase id="015603" >
+    <class>lte-softmodem</class>
+    <desc></desc>
+    <eNB>calisson</eNB>
+    <UE>stevens</UE>
+    <EPC>calisson</EPC>
+    <TimeOut_cmd>390</TimeOut_cmd>
+    <eNB_working_dir>/tmp</eNB_working_dir>
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  N_RB_DL 25
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mme_ip_address "ipv4=\"192.170.0.1\";ipv6=\"192:168:30::17\";active=\"yes\";preference=\"ipv4\";"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  downlink_frequency 2660000000L
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  uplink_frequency_offset -120000000
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tx_gain 90
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  rx_gain 125
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+    <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
+    <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
+    <eNB_pre_exec>sleep 15; sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec_args></eNB_pre_exec_args>
+    <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
+    <eNB_traffic_exec></eNB_traffic_exec>
+    <eNB_traffic_exec_args></eNB_traffic_exec_args>
+    <eNB_search_expr_true></eNB_search_expr_true>
+    <eNB_search_expr_false></eNB_search_expr_false>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
+
+    <UE_working_dir>/tmp</UE_working_dir>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
+    <UE_pre_exec></UE_pre_exec>
+    <UE_pre_exec_args></UE_pre_exec_args>
+    <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
+    <UE_main_exec_args></UE_main_exec_args>
+    <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
+    <UE_traffic_exec_args></UE_traffic_exec_args>
+    <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec duration=300.0s </UE_search_expr_true>
+    <UE_search_expr_false></UE_search_expr_false>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
+    <UE_stop_script>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
+
+    <EPC_working_dir>/tmp</EPC_working_dir>
+    <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
+                     BUILD/EPC/epc.conf.in  MNC \"92\"
+                     BUILD/EPC/epc.conf.in  TAC \"1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"</EPC_config_file>
+    <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
+    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
+    <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
+    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+
+    <EPC_pre_exec>sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec_args></EPC_pre_exec_args>
+    <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
+    <EPC_main_exec_args> -i -r </EPC_main_exec_args>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec_args></HSS_main_exec_args>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s -t 330 -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec_args></EPC_traffic_exec_args>
+    <EPC_search_expr_true></EPC_search_expr_true>
+    <EPC_search_expr_false></EPC_search_expr_false>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
+    <tags>USRPb210.OAI_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
+    <nruns>10</nruns>
+   </testCase>
+
 
   <testCase id="015800" >
     <class>lte-softmodem</class>
