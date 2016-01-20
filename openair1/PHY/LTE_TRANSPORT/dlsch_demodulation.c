@@ -1982,10 +1982,10 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         // get channel amplitude if not QPSK
         
         mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch0_128[0]);  
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
                 
         mmtmpD1 = _mm_madd_epi16(dl_ch0_128[1],dl_ch0_128[1]);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
                 
         mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
                 
@@ -2004,7 +2004,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                 
         if (pilots==0) {
           mmtmpD0 = _mm_madd_epi16(dl_ch0_128[2],dl_ch0_128[2]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
                     
           mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
                     
@@ -2033,10 +2033,10 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
         // get channel amplitude if not QPSK
         
         mmtmpD0 = _mm_madd_epi16(dl_ch1_128[0],dl_ch1_128[0]);  
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
                 
         mmtmpD1 = _mm_madd_epi16(dl_ch1_128[1],dl_ch1_128[1]);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift1);
                 
         mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
                 
@@ -2054,7 +2054,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
                 
         if (pilots==0) {
           mmtmpD0 = _mm_madd_epi16(dl_ch1_128[2],dl_ch1_128[2]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift1);
                     
           mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
                     
@@ -3320,8 +3320,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 
   avg_0[0] = avg_0[0] + avg_0[1];
   avg_1[0] = avg_1[0] + avg_1[1];
-  avg_0[0] = max (avg_0[0], avg_1[0]);
-  avg_1[0] = avg_0[0];
+ // avg_0[0] = max (avg_0[0], avg_1[0]);
+ // avg_1[0] = avg_0[0];
   
   _mm_empty();
   _m_empty();
