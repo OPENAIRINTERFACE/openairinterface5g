@@ -1433,7 +1433,7 @@ cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
 res = oai_localhost.send_recv(cmd)
 print "Deleting NFSTestResults Dir..." + res
 
-print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
