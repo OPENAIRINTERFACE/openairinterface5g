@@ -359,7 +359,7 @@ class oaiThread (threading.Thread):
         except Exception, e:
            error=''
            error = error + ' In class oaiThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n username = ' + self.username + '\n'  
+           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + str(self.timeout) + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n username = ' + self.username + '\n'  
            error = error + traceback.format_exc()
            print error
 
@@ -548,7 +548,7 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
 # \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, timeout_cmd):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -558,7 +558,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   #user = getpass.getuser()
   testcasename = testcase.get('id')
   testcaseclass = testcase.findtext('class',default='')
-  timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
+  if timeout_cmd == '':
+     timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
   timeout_cmd = int(float(timeout_cmd))
   #Timeout_thread is more than that of cmd to have room for compilation time, etc
   timeout_thread = timeout_cmd + 300 
@@ -580,6 +581,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
   eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
+  if re.compile('\w+').match(eNB_search_expr_true) != None:
+      eNB_search_expr_true = eNB_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's' 
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -594,6 +597,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
+  if re.compile('\w+').match(UE_search_expr_true) != None:
+      UE_search_expr_true = UE_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's'
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -612,6 +617,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
   EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
+  if re.compile('\w+').match(EPC_search_expr_true) != None:
+     EPC_search_expr_true = EPC_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's'
 
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
@@ -705,7 +712,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_main_exec PID = $! \n'
     if eNB_traffic_exec != "":
-       task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
+       cmd_traffic = eNB_traffic_exec + ' ' + eNB_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+       task_eNB = task_eNB + ' (date;  ' + cmd_traffic + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
 
@@ -755,7 +765,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_main_exec PID = $! \n'
     if UE_traffic_exec != "":
-       task_UE = task_UE + ' ( date;  ' + UE_traffic_exec + ' ' + UE_traffic_exec_args + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
+       cmd_traffic = UE_traffic_exec + ' ' + UE_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+       task_UE = task_UE + ' ( date;  ' + cmd_traffic + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_traffic_exec PID = $! \n'
     #terminate the UE test case after timeout_cmd seconds
@@ -805,7 +818,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
        task_EPC = task_EPC + 'echo EPC_main_exec PID = $! \n'
     if EPC_traffic_exec !=  "":
-       task_EPC  = task_EPC + '( date; ' + EPC_traffic_exec + ' ' + EPC_traffic_exec_args + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
+       cmd_traffic = EPC_traffic_exec + ' ' + EPC_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+       task_EPC  = task_EPC + '( date; ' + cmd_traffic + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'  
        task_EPC = task_EPC + 'echo EPC_traffic_exec PID = $! \n'
     #terminate the EPC test case after timeout_cmd seconds   
@@ -1041,7 +1057,7 @@ flag_remove_logdir=False
 flag_start_testcase=False
 nruns_lte_softmodem=''
 flag_skip_git_head_check=False
-
+Timeout_cmd=''
 print "Number of arguments argc = " + str(len(sys.argv))
 #for index in range(1,len(sys.argv) ):
 #  print "argv_" + str(index) + " : " + sys.argv[index]
@@ -1097,6 +1113,9 @@ while i < len (sys.argv):
         i = i +1
     elif arg == '--skip-git-head-check':
         flag_skip_git_head_check=True
+    elif arg == '--timeout_cmd': 
+        Timeout_cmd = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
@@ -1111,6 +1130,7 @@ while i < len (sys.argv):
         print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
         print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
+        print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1211,6 +1231,7 @@ print "GitOAI5GBranch = " + GitOAI5GRepoBranch
 print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
 print "NFSResultsShare = " + NFSResultsShare
 print "nruns_lte_softmodem = " + nruns_lte_softmodem
+print "Timeout_cmd = " + Timeout_cmd
 
 if GitOAI5GHeadVersion == '':
   cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
@@ -1315,7 +1336,7 @@ for oai in oai_list:
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
       if flag_skip_git_head_check==True:
-         cmd = cmd + 'print \"skipping GitHead check...\" '
+         cmd = cmd + 'echo \"skipping GitHead check...\" \n '
       else:
          cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
       cmd = cmd + 'source oaienv'   + '\n'
@@ -1403,8 +1424,8 @@ for testcase in testcaseList:
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
-        cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem )
+        #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
