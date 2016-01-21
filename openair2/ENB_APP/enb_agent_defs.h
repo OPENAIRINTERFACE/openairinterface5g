@@ -44,6 +44,7 @@
 #include "link_manager.h"
 
 #define NUM_MAX_ENB_AGENT 2
+#define NUM_MAX_UE 2048
 #define DEFAULT_ENB_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_ENB_AGENT_PORT          2210
 
