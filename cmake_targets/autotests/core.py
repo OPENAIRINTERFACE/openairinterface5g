@@ -192,6 +192,7 @@ class core:
         if index == 0 or index == 1 :
             return self.oai.before
         else:
+            print "command = " + command + "rsp1  = " + rsp1 + " rsp2 = " + rsp2 + " index = " + str(index)
             raise log.err(self.failed(command, rsp1 + ' or ' + rsp2,debug))
 
            
@@ -240,7 +241,7 @@ class core:
         if  (rsp.find(expect) == -1):
             return 'OK'
         else:
-            print "command = " + cmd + "expect  = " + expect + "rsp = " + rsp
+            print "command = " + command + "expect  = " + expect + "rsp = " + rsp
             raise log.err(self.failed(command, expect,debug))
 
     

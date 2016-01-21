@@ -126,8 +126,8 @@ def start_ue () :
           break
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
-        os.system ('route add 192.172.0.1 ppp0')
-        os.system ('ping 192.172.0.1')
+        os.system ('route add ' + gw + ' ppp0')
+        os.system ('ping ' + gw)
         break
      except Exception, e:
         error = ' Interface ' + iface + 'does not exist...'
@@ -188,7 +188,10 @@ def find_usb_path(idVendor, idProduct):
             return tmpdir
   return ''
 
-for arg in sys.argv[1:]:
+i=1
+gw='192.172.0.1'
+while i <  len(sys.argv):
+    arg=sys.argv[i]
     if arg == '--start-ue' :
         find_open_port()
         print 'Using Serial port : ' + serial_port  
@@ -199,8 +202,17 @@ for arg in sys.argv[1:]:
         stop_ue()
     elif arg == '--reset-ue' :
         reset_ue()
+    elif arg == '-gw' :
+        gw = sys.argv[i+1]
+        i=i+1
+    elif arg == '-h' :
+        print "--reset-ue:  Reset the UE on USB Bus. Similar to unplugging and plugging the UE"
+        print "--stop-ue:  Stop the UE. Send DETACH command" 
+        print "--start-ue:  Start the UE. Send ATTACH command"
+        print "-gw:  Specify the default gw as sometimes the gateway/route arguments are not set properly via wvdial"
     else :
         print " Script called with wrong arguments, arg = " + arg
         sys.exit()
+    i = i +1
 
 
