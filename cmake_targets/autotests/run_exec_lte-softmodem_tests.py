@@ -582,7 +582,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
   if re.compile('\w+').match(eNB_search_expr_true) != None:
-      eNB_search_expr_true = eNB_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's' 
+      eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -598,7 +598,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
   if re.compile('\w+').match(UE_search_expr_true) != None:
-      UE_search_expr_true = UE_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's'
+      UE_search_expr_true = UE_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -618,7 +618,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
   if re.compile('\w+').match(EPC_search_expr_true) != None:
-     EPC_search_expr_true = EPC_search_expr_true + 'duration=' + str(timeout_cmd-90) + 's'
+     EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
@@ -714,7 +714,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     if eNB_traffic_exec != "":
        cmd_traffic = eNB_traffic_exec + ' ' + eNB_traffic_exec_args
        if cmd_traffic.find('-c') >= 0:
-          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
        task_eNB = task_eNB + ' (date;  ' + cmd_traffic + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
@@ -767,7 +767,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     if UE_traffic_exec != "":
        cmd_traffic = UE_traffic_exec + ' ' + UE_traffic_exec_args
        if cmd_traffic.find('-c') >= 0:
-          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
        task_UE = task_UE + ' ( date;  ' + cmd_traffic + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_traffic_exec PID = $! \n'
@@ -820,7 +820,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     if EPC_traffic_exec !=  "":
        cmd_traffic = EPC_traffic_exec + ' ' + EPC_traffic_exec_args
        if cmd_traffic.find('-c') >= 0:
-          cmd_traffic = cmd_traffic + '-t ' + str(timeout_cmd - 60)
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
        task_EPC  = task_EPC + '( date; ' + cmd_traffic + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'  
        task_EPC = task_EPC + 'echo EPC_traffic_exec PID = $! \n'
@@ -1130,7 +1130,7 @@ while i < len (sys.argv):
         print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
         print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
-        print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120
+        print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
