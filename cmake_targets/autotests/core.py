@@ -241,7 +241,7 @@ class core:
         if  (rsp.find(expect) == -1):
             return 'OK'
         else:
-            print "command = " + cmd + "expect  = " + expect + "rsp = " + rsp
+            print "command = " + command + "expect  = " + expect + "rsp = " + rsp
             raise log.err(self.failed(command, expect,debug))
 
     
