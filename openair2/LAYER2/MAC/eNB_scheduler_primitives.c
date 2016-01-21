@@ -997,7 +997,7 @@ int allocate_CCEs(int module_idP,
   DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
   int nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
   int fCCE;
-  int i;
+  int i,j;
   int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
 
@@ -1046,7 +1046,15 @@ int allocate_CCEs(int module_idP,
 	    allocation_is_feasible = 0;
 	    LOG_I(MAC,"subframe %d: Dropping Allocation for RNTI %x\n",
 		  subframeP,dci_alloc->rnti);
-
+	    for (j=0;j<=i;j++){
+	     
+	      LOG_I(MAC,"DCI %d/%d (%d,%d) : rnti %x dci format %d, aggreg %d nCCE %d / %d (num_pdcch_symbols %d)\n",
+		    i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
+		    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
+		    DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
+		    1<<DCI_pdu->dci_alloc[j].L,
+		    DCI_pdu->nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
+	    }
 	  }
 	  else {
 	    DCI_pdu->num_pdcch_symbols++;
