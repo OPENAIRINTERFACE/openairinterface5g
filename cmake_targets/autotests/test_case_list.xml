@@ -2440,7 +2440,7 @@
     <nruns>10</nruns>
    </testCase>
 
-  <testCase id="015601" >
+  <testCase id="015701" >
     <class>lte-softmodem</class>
     <desc></desc>
     <eNB>calisson</eNB>
@@ -2529,7 +2529,7 @@
     <desc></desc>
     <eNB>calisson</eNB>
     <UE>stevens</UE>
-    <EPC>calisson</EPC>
+    <EPC>nano</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
@@ -2613,7 +2613,7 @@
     <desc></desc>
     <eNB>calisson</eNB>
     <UE>stevens</UE>
-    <EPC>calisson</EPC>
+    <EPC>nano</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
     <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
