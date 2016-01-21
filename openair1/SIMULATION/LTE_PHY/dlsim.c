@@ -185,7 +185,7 @@ int main(int argc, char **argv)
   unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
 
   unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[4]= {0,0,0,0},errs2[4]= {0,0,0,0},round_trials[4]= {0,0,0,0},dci_errors=0,dlsch_active=0;//,num_layers;
-  //  int re_allocated;
+  int re_allocated;
   char fname[32],vname[32];
   FILE *bler_fd;
   char bler_fname[256];
