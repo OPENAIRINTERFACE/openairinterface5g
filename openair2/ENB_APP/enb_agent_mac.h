@@ -45,9 +45,6 @@
 #include "enb_agent_common.h"
 #include "enb_agent_extern.h"
 
-/*Flags showing if a mac agent has already been registered*/
-unsigned int mac_agent_registered[NUM_MAX_ENB_AGENT];
-
 /* These types will be used to give
    instructions for the type of stats reports
    we need to create */
@@ -72,13 +69,12 @@ typedef struct {
   cc_report_type_t *cc_report_type;
 } report_config_t;
 
-typedef struct {
+typedef struct stats_request_config_s{
   uint8_t report_type;
   uint8_t report_frequency;
   uint16_t period; /*In number of subframes*/
   report_config_t *config;
 } stats_request_config_t;
-
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 
@@ -104,10 +100,14 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg);
  **********************************/
 
 /*Inform controller about received scheduling requests during a subframe*/
-void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context);
+void enb_agent_send_sr_info(mid_t mod_id);
 
 /*Inform the controller about the current UL/DL subframe*/
-void enb_agent_send_sf_trigger(mid_t mod_id, msg_context_t *context);
+void enb_agent_send_sf_trigger(mid_t mod_id);
+
+/// Send to the controller all the mac stat updates that occured during this subframe
+/// based on the stats request configuration
+void enb_agent_send_update_mac_stats(mid_t mod_id);
 
 /*Register technology specific interface callbacks*/
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
