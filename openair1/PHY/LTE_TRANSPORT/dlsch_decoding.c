@@ -81,7 +81,7 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
   }
 }
 
-LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag)
+LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag)
 {
 
   LTE_UE_DLSCH_t *dlsch;
@@ -113,6 +113,7 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint8_t max_turbo_ite
     memset(dlsch,0,sizeof(LTE_UE_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    dlsch->Nsoft = Nsoft;
     dlsch->max_turbo_iterations = max_turbo_iterations;
 
     for (i=0; i<Mdlharq; i++) {
@@ -353,7 +354,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                                    (uint8_t*)&dummy_w[r][0],
                                    dlsch_llr+r_offset,
                                    harq_process->C,
-                                   NSOFT,
+                                   dlsch->Nsoft,
                                    dlsch->Mdlharq,
                                    dlsch->Kmimo,
                                    harq_process->rvidx,

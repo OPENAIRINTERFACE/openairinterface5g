@@ -3700,7 +3700,8 @@ rrc_eNB_decode_ccch(
              * the current one must be removed from MAC/PHY (zombie UE)
              */
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
-              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+#warning "TODO: random_exist: remove UE from MAC/PHY (how?)"
+	      //              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
               ue_context_p = NULL;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
@@ -3712,7 +3713,8 @@ rrc_eNB_decode_ccch(
             m_tmsi_t   m_tmsi   = BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
-              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
+#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
+	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
               ue_context_p = NULL;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);

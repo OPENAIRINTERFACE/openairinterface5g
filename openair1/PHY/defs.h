@@ -313,6 +313,8 @@ typedef struct PHY_VARS_eNB_s {
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
 
+  uint32_t rb_mask_ul[4];
+
   /// Information regarding TM5
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
@@ -374,12 +376,13 @@ typedef struct PHY_VARS_eNB_s {
 #ifdef LOCALIZATION
   /// time state for localization
   time_stats_t localization_stats;
-#endif
+#endif 
 
   int32_t pucch1_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1_stats[NUMBER_OF_UE_MAX][10*1024];
+  int32_t pucch1_stats_thres[NUMBER_OF_UE_MAX][10*1024];
   int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
-  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][10*1024];
+  int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][2*10*1024];
 
 #if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
