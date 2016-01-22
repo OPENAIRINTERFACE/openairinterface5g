@@ -5877,14 +5877,16 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
     else if (rank==1) {
       for (aarx=0; aarx<meas->nb_antennas_rx; aarx++) {
         pmi_re += meas->subband_pmi_re[eNB_id][i][aarx];
+	//printf("meas->subband_pmi_re[eNB_id][i][%d]=%d\n", aarx, meas->subband_pmi_re[eNB_id][i][aarx]);
         pmi_im += meas->subband_pmi_im[eNB_id][i][aarx];
+	//printf("meas->subband_pmi_im[eNB_id][i][%d]=%d\n",aarx, meas->subband_pmi_im[eNB_id][i][aarx]);
       }
-      if (((pmi_re > pmi_im) && (pmi_re > -pmi_im)) || ((pmi_re < pmi_im) && (pmi_re < -pmi_im)))
+      if (((pmi_re >= pmi_im) && (pmi_re >= -pmi_im)) || ((pmi_re < pmi_im) && (pmi_re < -pmi_im)))
 	pmiq = PMI_2A_R1_11;
       else 
 	pmiq = PMI_2A_R1_1j;
       
-     // printf("subband %d, pmi_re %d, pmi_im %d, pmiq %d \n",i,pmi_re,pmi_im,pmiq);
+    //  printf("subband %d, pmi_re %d, pmi_im %d, pmiq %d \n",i,pmi_re,pmi_im,pmiq);
      // printf("subband %d, pmi%d \n",i,pmiq);
       //According to Section 7.2.4 of 36.213
       

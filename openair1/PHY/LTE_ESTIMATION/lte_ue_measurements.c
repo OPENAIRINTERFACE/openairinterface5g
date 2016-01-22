@@ -577,6 +577,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
       }
 
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+	//printf("aarx=%d", aarx);
         // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -634,9 +635,29 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
 	       //   print_ints("mm_madd_epi16",&mmtmpPMI1);
             // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
             pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
-	       //   print_ints(" pmi128_re",&pmi128_re);
+	     //   print_ints(" pmi128_re 0",&pmi128_re);
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
-	       //   print_ints(" pmi128_im",&pmi128_im);
+	       //   print_ints(" pmi128_im 0 ",&pmi128_im);
+	    
+	    mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+            mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
+	    
+	    mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[1],dl_ch1_128[1]);
+	         //  print_ints("re",&mmtmpPMI0);
+            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[1],_MM_SHUFFLE(2,3,0,1));
+              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
+	        //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate);
+	       //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[1]);
+	       //   print_ints("mm_madd_epi16",&mmtmpPMI1);
+            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
+            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
+	        //  print_ints(" pmi128_re 1",&pmi128_re);
+            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
+	    //print_ints(" pmi128_im 1 ",&pmi128_im);
+	    
 #elif defined(__arm__)
 
             mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
