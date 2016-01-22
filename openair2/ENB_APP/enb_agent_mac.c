@@ -35,14 +35,22 @@
  */
 
 #include "enb_agent_mac.h"
+#include "enb_agent_extern.h"
+#include "enb_agent_common.h"
+#include "enb_agent_mac_internal.h"
 
 #include "log.h"
+
+
+/*Flags showing if a mac agent has already been registered*/
+unsigned int mac_agent_registered[NUM_MAX_ENB];
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
   
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
-
+  // TODO: Must resolve conflicts among stats requests
+  
   int i;
   void *buffer;
   int size;
@@ -71,15 +79,13 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
   switch(stats_req->body_case) {
   case PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST: ;
     Protocol__PrpCompleteStatsRequest *comp_req = stats_req->complete_stats_request;
-    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
-      //TODO: Must create an event based report mechanism
-      *msg = NULL;
-      return 0;
-    } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
+    if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_OFF) {
+      /*Disable both periodic and continuous updates*/
+      enb_agent_disable_cont_mac_stats_update(mod_id);
       enb_agent_destroy_timer_by_task_id(xid);
       *msg = NULL;
       return 0;
-    } else { //One-off or periodical reporting
+    } else { //One-off, periodical or continuous reporting
       //Set the proper flags
       ue_flags = comp_req->ue_report_flags;
       c_flags = comp_req->cell_report_flags;
@@ -136,6 +142,16 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	  usec_interval = usec_interval%(1000*1000);
 	}
 	enb_agent_create_timer(sec_interval, usec_interval, ENB_AGENT_DEFAULT, enb_id, ENB_AGENT_TIMER_TYPE_PERIODIC, xid, enb_agent_handle_timed_task,(void*) timer_args, &timer_id);
+      } else if (comp_req->report_frequency == PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_CONTINUOUS) {
+	/*If request was for continuous updates, disable the previous configuration and
+	  set up a new one*/
+	enb_agent_disable_cont_mac_stats_update(mod_id);
+	stats_request_config_t request_config;
+	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
+	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
+	request_config.period = 0; 
+	request_config.config = &report_config;
+	enb_agent_enable_cont_mac_stats_update(enb_id, xid, &request_config);
       }
     }
     break;
@@ -453,7 +469,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	dl_report->n_csi_report = 1;
 	//TODO:Create the actual CSI reports.
 	Protocol__PrpDlCsi **csi_reports;
-	csi_reports = malloc(sizeof(Protocol__PrpDlCsi *));
+	csi_reports = malloc(sizeof(Protocol__PrpDlCsi *)*dl_report->n_csi_report);
 	if (csi_reports == NULL)
 	  goto error;
 	for (j = 0; j < dl_report->n_csi_report; j++) {
@@ -505,7 +521,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	paging_report->n_paging_info = 1;
 	//Provide a report for each pending paging message
 	Protocol__PrpPagingInfo **p_info;
-	p_info = malloc(sizeof(Protocol__PrpPagingInfo *));
+	p_info = malloc(sizeof(Protocol__PrpPagingInfo *) * paging_report->n_paging_info);
 	if (p_info == NULL)
 	  goto error;
 	for (j = 0; j < paging_report->n_paging_info; j++) {
@@ -975,15 +991,21 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
+/***********************************************
+ * eNB agent - technology mac API implementation
+ ***********************************************/
+
+void enb_agent_send_sr_info(mid_t mod_id) {
   int size;
   Protocol__ProgranMessage *msg;
   void *data;
   int priority;
   err_code_t err_code;
 
+  int xid = 0;
+
   /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_sr_info(mod_id, (void *) &(context->tx_xid), &msg);
+  err_code = enb_agent_mac_sr_info(mod_id, (void *) &xid, &msg);
   if (err_code < 0) {
     goto error;
   }
@@ -997,20 +1019,23 @@ void enb_agent_send_sr_info(mid_t mod_id, msg_context_t *context) {
     }
 
     LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    return;
   }
  error:
   LOG_D(ENB_AGENT, "Could not send sr message\n");
 }
 
-void enb_agent_send_sf_trigger(mid_t mod_id, msg_context_t *context) {
+void enb_agent_send_sf_trigger(mid_t mod_id) {
   int size;
   Protocol__ProgranMessage *msg;
   void *data;
   int priority;
   err_code_t err_code;
 
+  int xid = 0;
+  
   /*TODO: Must use a proper xid*/
-  err_code = enb_agent_mac_sf_trigger(mod_id, (void *) &(context->tx_xid), &msg);
+  err_code = enb_agent_mac_sf_trigger(mod_id, (void *) &xid, &msg);
   if (err_code < 0) {
     goto error;
   }
@@ -1024,6 +1049,60 @@ void enb_agent_send_sf_trigger(mid_t mod_id, msg_context_t *context) {
     }
 
     LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    return;
+  }
+ error:
+  LOG_D(ENB_AGENT, "Could not send sf trigger message\n");
+}
+
+void enb_agent_send_update_mac_stats(mid_t mod_id) {
+
+  Protocol__ProgranMessage *current_report, *msg;
+  void *data;
+  int size;
+  err_code_t err_code;
+  int priority;
+  
+  mac_stats_updates_context_t stats_context = mac_stats_context[mod_id];
+
+  if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+  
+  /*Create a fresh report with the required flags*/
+  err_code = enb_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
+  if (err_code < 0) {
+    goto error;
+  }
+
+  /*TODO:Check if a previous reports exists and if yes, generate a report 
+   *that is the diff between the old and the new report,
+   *respecting the thresholds. Otherwise send the new report*/
+  if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
+
+    msg = enb_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply);
+
+    /*Destroy the old stats*/
+     enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
+  }
+  /*Use the current report for future comparissons*/
+  mac_stats_context[mod_id].prev_stats_reply = current_report;
+  
+  
+  if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+  
+  if (msg != NULL){
+    data=enb_agent_pack_message(msg, &size);
+    /*Send any stats updates using the MAC channel of the eNB*/
+    if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
+      err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+      goto error;
+    }
+
+    LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+    return;
   }
  error:
   LOG_D(ENB_AGENT, "Could not send sf trigger message\n");
@@ -1035,12 +1114,14 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
     return -1;
   }
 
-  xface->agent_ctxt = &shared_ctxt[mod_id];
+  //xface->agent_ctxt = &shared_ctxt[mod_id];
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
+  xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
 
   mac_agent_registered[mod_id] = 1;
-  return 1;
+
+  return 0;
 }
 
 int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
@@ -1050,10 +1131,97 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
     return -1;
   }
   
-  xface->agent_ctxt = NULL;
+  //xface->agent_ctxt = NULL;
   xface->enb_agent_send_sr_info = NULL;
   xface->enb_agent_send_sf_trigger = NULL;
 
+  return 0;
+}
+
+
+/******************************************************
+ *Implementations of enb_agent_mac_internal.h functions
+ ******************************************************/
+
+err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id) {
+  
+  /*Initialize the Mac stats update structure*/
+  /*Initially the continuous update is set to false*/
+  mac_stats_context[mod_id].cont_update = 0;
+  mac_stats_context[mod_id].is_initialized = 1;
+  mac_stats_context[mod_id].stats_req = NULL;
+  mac_stats_context[mod_id].prev_stats_reply = NULL;
+  mac_stats_context[mod_id].mutex = calloc(1, sizeof(pthread_mutex_t));
+  if (mac_stats_context[mod_id].mutex == NULL)
+    goto error;
+  if (pthread_mutex_init(mac_stats_context[mod_id].mutex, NULL))
+    goto error;;
+  
+  return 0;
+  
+ error:
+  return -1;
+}
+
+err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
+  /*Disable the continuous updates for the MAC*/
+  mac_stats_context[mod_id].cont_update = 0;
+  mac_stats_context[mod_id].is_initialized = 0;
+  enb_agent_destroy_progran_message(mac_stats_context[mod_id].stats_req);
+  enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
+  free(mac_stats_context[mod_id].mutex);
+  
   mac_agent_registered[mod_id] = NULL;
   return 1;
+}
+
+
+err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
+						  xid_t xid, stats_request_config_t *stats_req) {
+  /*Enable the continuous updates for the MAC*/
+  if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+
+  Protocol__ProgranMessage *req_msg;
+
+  enb_agent_mac_stats_request(mod_id, xid, stats_req, &req_msg);
+  mac_stats_context[mod_id].stats_req = req_msg;
+  mac_stats_context[mod_id].prev_stats_reply = NULL;
+  
+  mac_stats_context[mod_id].cont_update = 1;
+  mac_stats_context[mod_id].xid = xid;
+  
+  if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+  return 0;
+  
+ error:
+  LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
+  return -1;
+}
+
+err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
+  /*Disable the continuous updates for the MAC*/
+  if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+  mac_stats_context[mod_id].cont_update = 0;
+  mac_stats_context[mod_id].xid = 0;
+  if (mac_stats_context[mod_id].stats_req != NULL) {
+    enb_agent_destroy_progran_message(mac_stats_context[mod_id].stats_req);
+  }
+  if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
+    enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
+  }
+  if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
+    goto error;
+  }
+  return 0;
+
+ error:
+  LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
+  return -1;
+  
 }
