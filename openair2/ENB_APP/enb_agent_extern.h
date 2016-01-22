@@ -41,10 +41,11 @@
 #include "enb_agent_defs.h"
 #include "enb_agent_mac_defs.h"
 
-extern msg_context_t shared_ctxt[NUM_MAX_ENB_AGENT];
 
-extern AGENT_MAC_xface *agent_mac_xface;
+//extern msg_context_t shared_ctxt[NUM_MAX_ENB][ENB_AGENT_MAX];
 
-extern unsigned int mac_agent_registered[NUM_MAX_ENB_AGENT];
+extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB][ENB_AGENT_MAX];
+
+extern unsigned int mac_agent_registered[NUM_MAX_ENB];
 
 #endif

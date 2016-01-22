@@ -43,7 +43,7 @@
 
 #include "link_manager.h"
 
-#define NUM_MAX_ENB_AGENT 2
+#define NUM_MAX_ENB 2
 #define NUM_MAX_UE 2048
 #define DEFAULT_ENB_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_ENB_AGENT_PORT          2210
@@ -108,36 +108,25 @@ typedef uint8_t mid_t;  // module or enb id
 typedef uint8_t lcid_t;
 typedef int32_t  err_code_t; 
 
-// tx and rx shared context 
-typedef struct {
-  mid_t            mod_id;
-  socket_link_t   *link;
-  message_queue_t *send_queue;
-  message_queue_t *receive_queue;
-  link_manager_t  *manager;
-}enb_agent_instance_t;
+
 
 typedef struct {
   /* general info */ 
-  uint32_t   nb_modules;
-  
-
+ 
   /* stats */
 
   uint32_t total_rx_msg;
   uint32_t total_tx_msg;
    
-  uint32_t rx_msg[NUM_MAX_ENB_AGENT];
-  uint32_t tx_msg[NUM_MAX_ENB_AGENT];
+  uint32_t rx_msg[NUM_MAX_ENB];
+  uint32_t tx_msg[NUM_MAX_ENB];
 
 }enb_agent_info_t;
 
 typedef struct {
-  mid_t                  mod_id;
-  // message_queue_t       *tx_mq;
-  // message_queue_t       *rx_mq;
-  xid_t                  tx_xid;
-  xid_t                  rx_xid; 
-} msg_context_t;
+  mid_t enb_id;
+  enb_agent_info_t agent_info;
+  
+}enb_agent_instance_t;
 
 #endif 

@@ -37,6 +37,7 @@
 #include "enb_agent_common.h"
 #include "log.h"
 #include "enb_agent.h"
+#include "enb_agent_mac_defs.h"
 
 #include "enb_agent_extern.h"
 
@@ -47,10 +48,7 @@
 
 //#define TEST_TIMER
 
-enb_agent_instance_t enb_agent[NUM_MAX_ENB_AGENT];
-msg_context_t shared_ctxt[NUM_MAX_ENB_AGENT];
-/* this could also go into enb_agent struct*/ 
-enb_agent_info_t  enb_agent_info;
+enb_agent_instance_t enb_agent[NUM_MAX_ENB];
 
 char in_ip[40];
 static uint16_t in_port;
@@ -66,7 +64,7 @@ Protocol__ProgranMessage *enb_agent_timeout(void* args);
 */
 void *enb_agent_task(void *args){
 
-  msg_context_t         *d = (msg_context_t *) args;
+  enb_agent_instance_t         *d = (enb_agent_instance_t *) args;
   Protocol__ProgranMessage *msg;
   void *data;
   int size;
@@ -101,15 +99,11 @@ void *enb_agent_task(void *args){
       msg = enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
       if (msg != NULL){
 	data=enb_agent_pack_message(msg,&size);
-	if (enb_agent_msg_send(d->mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+	if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
 
-	/* if (message_put(d->tx_mq, data, size, priority)){ */
-	/*   err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
-	/*   goto error; */
-	/* } */
 	LOG_D(ENB_AGENT,"sent message with size %d\n", size);
       }
       break;
@@ -131,7 +125,7 @@ void *enb_agent_task(void *args){
 
 void *receive_thread(void *args) {
 
-  msg_context_t         *d = args;
+  enb_agent_instance_t         *d = args;
   void                  *data;
   int                   size;
   int                   priority;
@@ -140,38 +134,27 @@ void *receive_thread(void *args) {
   Protocol__ProgranMessage *msg;
   
   while (1) {
-    if (enb_agent_msg_recv(d->mod_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
+    if (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
       err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING;
       goto error;
     }
 
-    /* if (message_get(d->rx_mq, &data, &size, &priority)){ */
-    /*   err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING; */
-    /*   goto error; */
-    /* } */
     LOG_D(ENB_AGENT,"received message with size %d\n", size);
   
     
-    msg=enb_agent_handle_message(d->mod_id, data, size);
+    msg=enb_agent_handle_message(d->enb_id, data, size);
 
     free(data);
     
-    d->rx_xid = ((d->rx_xid)+1)%4;
-    d->tx_xid = d->rx_xid;
-  
     // check if there is something to send back to the controller
     if (msg != NULL){
       data=enb_agent_pack_message(msg,&size);
      
-      if (enb_agent_msg_send(d->mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+      if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	goto error;
       }
       
-      /* if (message_put(d->tx_mq, data, size, priority)){ */
-      /* 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING; */
-      /* 	goto error; */
-      /* } */
       LOG_D(ENB_AGENT,"sent message with size %d\n", size);
     }
     
@@ -214,10 +197,8 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   
   int channel_id;
   
-  // 
   set_enb_vars(mod_id, RAN_LTE_OAI);
-  enb_agent[mod_id].mod_id = mod_id;
-  enb_agent_info.nb_modules+=1;
+  enb_agent[mod_id].enb_id = mod_id;
   
   /* 
    * check the configuration
@@ -235,7 +216,7 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
     in_port = DEFAULT_ENB_AGENT_PORT ;
   }
   LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
-	enb_agent[mod_id].mod_id,
+	enb_agent[mod_id].enb_id,
 	in_ip,
 	in_port);
 
@@ -271,46 +252,10 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
    *enb_agent_register_channel(mod_id, channel, ENB_AGENT_MAC);
    */
 
-  /* /\*  */
-  /*  * create a socket  */
-  /*  *\/  */
-  /* enb_agent[mod_id].link = new_link_client(in_ip, in_port); */
-  /* if (enb_agent[mod_id].link == NULL) goto error; */
+  /*Initialize the continuous MAC stats update mechanism*/
+  enb_agent_init_cont_mac_stats_update(mod_id);
   
-  /* LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",   */
-  /* 	enb_agent[mod_id].mod_id, */
-  /* 	in_ip, */
-  /* 	in_port); */
-  /* /\*  */
-  /*  * create a message queue */
-  /*  *\/  */
-  
-  /* enb_agent[mod_id].send_queue = new_message_queue(); */
-  /* if (enb_agent[mod_id].send_queue == NULL) goto error; */
-  /* enb_agent[mod_id].receive_queue = new_message_queue(); */
-  /* if (enb_agent[mod_id].receive_queue == NULL) goto error; */
-  
-  /* /\*  */
-  /*  * create a link manager  */
-  /*  *\/  */
-  
-  /* enb_agent[mod_id].manager = create_link_manager(enb_agent[mod_id].send_queue, enb_agent[mod_id].receive_queue, enb_agent[mod_id].link); */
-  /* if (enb_agent[mod_id].manager == NULL) goto error; */
-
-  /* memset(&shared_ctxt, 0, sizeof(msg_context_t)); */
-  
-  /* shared_ctxt[mod_id].mod_id = mod_id; */
-  /* shared_ctxt[mod_id].tx_mq =  enb_agent[mod_id].send_queue; */
-  /* shared_ctxt[mod_id].rx_mq =  enb_agent[mod_id].receive_queue; */
-
-  /* 
-   * start the enb agent rx thread 
-   */ 
-  
-  memset(&shared_ctxt, 0, sizeof(msg_context_t));
-  shared_ctxt[mod_id].mod_id = mod_id;
-  
-  new_thread(receive_thread, &shared_ctxt[mod_id]);
+  new_thread(receive_thread, &enb_agent[mod_id]);
   
   /* 
    * initilize a timer 
@@ -322,7 +267,7 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
    * start the enb agent task for tx and interaction with the underlying network function
    */ 
   
-  if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &shared_ctxt[mod_id]) < 0) {
+  if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &enb_agent[mod_id]) < 0) {
     LOG_E(ENB_AGENT, "Create task for eNB Agent failed\n");
     return -1;
   } 
@@ -338,21 +283,21 @@ error:
 
 
 
-int enb_agent_stop(mid_t mod_id){
+/* int enb_agent_stop(mid_t mod_id){ */
   
-  int i=0;
+/*   int i=0; */
 
-  enb_agent_destroy_timers();
-  for ( i =0; i < enb_agent_info.nb_modules; i++) {
+/*   enb_agent_destroy_timers(); */
+/*   for ( i =0; i < enb_agent_info.nb_modules; i++) { */
   
-    destroy_link_manager(enb_agent[i].manager);
+/*     destroy_link_manager(enb_agent[i].manager); */
   
-    destroy_message_queue(enb_agent[i].send_queue);
-    destroy_message_queue(enb_agent[i].receive_queue);
+/*     destroy_message_queue(enb_agent[i].send_queue); */
+/*     destroy_message_queue(enb_agent[i].receive_queue); */
   
-    close_link(enb_agent[i].link);
-  }
-}
+/*     close_link(enb_agent[i].link); */
+/*   } */
+/* } */
 
 
 

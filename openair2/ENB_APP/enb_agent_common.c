@@ -39,8 +39,8 @@
 #include "log.h"
 
 
-void * enb[NUM_MAX_ENB_AGENT];
-void * enb_ue[NUM_MAX_ENB_AGENT];
+void * enb[NUM_MAX_ENB];
+void * enb_ue[NUM_MAX_ENB];
 /*
  * message primitives
  */

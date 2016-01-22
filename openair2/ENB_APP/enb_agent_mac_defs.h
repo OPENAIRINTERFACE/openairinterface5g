@@ -42,14 +42,18 @@
 
 /* ENB AGENT-MAC Interface */
 typedef struct {
-  msg_context_t *agent_ctxt;
+  //msg_context_t *agent_ctxt;
 
   /// Inform the controller about the scheduling requests received during the subframe
-  void (*enb_agent_send_sr_info)(mid_t mod_id, msg_context_t *context);
+  void (*enb_agent_send_sr_info)(mid_t mod_id);
   
   /// Inform the controller about the current UL/DL subframe
-  void (*enb_agent_send_sf_trigger)(mid_t mod_id, msg_context_t *context);
+  void (*enb_agent_send_sf_trigger)(mid_t mod_id);
 
+  /// Send to the controller all the mac stat updates that occured during this subframe
+  /// based on the stats request configuration
+  void (*enb_agent_send_update_mac_stats)(mid_t mod_id);
+  
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;

@@ -43,9 +43,6 @@
 #include "enb_agent_common.h"
 
 
-/*Flags showing if a mac agent has already been registered*/
-unsigned int mac_agent_registered[NUM_MAX_ENB_AGENT];
-
 /*This will be used for producing continuous status updates for the MAC
  *Needs to be thread-safe
  */
@@ -61,7 +58,7 @@ typedef struct {
 } mac_stats_updates_context_t;
 
 /*Array holding the last stats reports for each eNB. Used for continuous reporting*/
-mac_stats_updates_context_t mac_stats_context[NUM_MAX_ENB_AGENT];
+mac_stats_updates_context_t mac_stats_context[NUM_MAX_ENB];
 
 /*Functions to initialize and destroy the struct required for the
  *continuous stats update report*/
