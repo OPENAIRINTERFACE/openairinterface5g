@@ -39,7 +39,15 @@
 
 #include "enb_agent_net_comm.h"
 
-enb_agent_instance_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port);
+typedef struct {
+  mid_t            enb_id;
+  socket_link_t   *link;
+  message_queue_t *send_queue;
+  message_queue_t *receive_queue;
+  link_manager_t  *manager;
+} enb_agent_async_channel_t;
+
+enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port);
 
 int enb_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 

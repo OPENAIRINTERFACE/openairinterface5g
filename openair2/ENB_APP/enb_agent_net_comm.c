@@ -37,7 +37,7 @@
 #include "enb_agent_net_comm.h"
 #include "log.h"
 
-enb_agent_channel_t *agent_channel[NUM_MAX_ENB_AGENT][ENB_AGENT_MAX];
+enb_agent_channel_t *agent_channel[NUM_MAX_ENB][ENB_AGENT_MAX];
 enb_agent_channel_instance_t channel_instance;
 int enb_agent_channel_id = 0;
 
@@ -146,7 +146,7 @@ int enb_agent_destroy_channel(int channel_id) {
   }
 
   /*Unregister the channel from all agents*/
-  for (i = 0; i < NUM_MAX_ENB_AGENT; i++) {
+  for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
       if (agent_channel[i][j] != NULL) {
 	if (agent_channel[i][j]->channel_id == e->channel_id) {
@@ -170,7 +170,7 @@ err_code_t enb_agent_init_channel_container(void) {
 
   RB_INIT(&channel_instance.enb_agent_head);
   
-  for (i = 0; i < NUM_MAX_ENB_AGENT; i++) {
+  for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
     agent_channel[i][j] == NULL;
     }

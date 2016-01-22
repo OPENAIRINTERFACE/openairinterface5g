@@ -39,21 +39,21 @@
 
 #include "log.h"
 
-enb_agent_instance_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
+enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port) {
 
-  enb_agent_instance_t *channel;
-  channel = (enb_agent_instance_t *) malloc(sizeof(enb_agent_instance_t));
+  enb_agent_async_channel_t *channel;
+  channel = (enb_agent_async_channel_t *) malloc(sizeof(enb_agent_channel_t));
   
   if (channel == NULL)
     goto error;
 
-  channel->mod_id = mod_id;
+  channel->enb_id = mod_id;
   /*Create a socket*/
   channel->link = new_link_client(dst_ip, dst_port);
   if (channel->link == NULL) goto error;
   
   LOG_I(ENB_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
-	channel->mod_id,
+	channel->enb_id,
 	dst_ip,
 	dst_port);
   
@@ -80,22 +80,22 @@ enb_agent_instance_t * enb_agent_async_channel_info(mid_t mod_id, char *dst_ip, 
 }
 
 int enb_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
-  enb_agent_instance_t *channel;
-  channel = (enb_agent_instance_t *)channel_info;
+  enb_agent_async_channel_t *channel;
+  channel = (enb_agent_channel_t *)channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }
 
 int enb_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info) {
-  enb_agent_instance_t *channel;
-  channel = (enb_agent_instance_t *)channel_info;
+  enb_agent_async_channel_t *channel;
+  channel = (enb_agent_async_channel_t *)channel_info;
 
   return message_get(channel->receive_queue, data, size, priority);
 }
 
 void enb_agent_async_release(enb_agent_channel_t *channel) {
-  enb_agent_instance_t *channel_info;
-  channel_info = (enb_agent_instance_t *) channel->channel_info;
+  enb_agent_async_channel_t *channel_info;
+  channel_info = (enb_agent_async_channel_t *) channel->channel_info;
 
   destroy_link_manager(channel_info->manager);
   
