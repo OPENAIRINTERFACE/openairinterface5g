@@ -133,9 +133,6 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   if (CPUINFO MATCHES "avx2")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
   endif()
-  if (CPUINFO MATCHES "sse4_2")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2")
-  endif()
   if (CPUINFO MATCHES "sse4_1")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
   endif()
@@ -149,8 +146,8 @@ set(C_FLAGS_PROCESSOR " ${C_FLAGS_PROCESSOR} ${CFLAGS_PROCESSOR_USER}")
 Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
-  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.2")) )
-    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1 -msse4.2. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -msse4.2\" ")
+  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) )
+    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1\" ")
   endif()
 endif()
 
@@ -424,7 +421,7 @@ elseif (${RF_BOARD} STREQUAL "OAI_USRP")
     ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
   LINK_DIRECTORIES("/opt/lib")
   set(option_HW_lib "uhd")
-  set(LOWLATENCY False)
+  #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
@@ -435,14 +432,14 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "bladeRF")
-#set(LOWLATENCY False)
+ #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
     )
-  set(LOWLATENCY True)
+  #set(LOWLATENCY True)
   
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
@@ -454,6 +451,7 @@ endif (${RF_BOARD} STREQUAL "EXMIMO")
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
+Message("LOWLATENCY flag  is ${LOWLATENCY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -846,6 +844,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
+  ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c

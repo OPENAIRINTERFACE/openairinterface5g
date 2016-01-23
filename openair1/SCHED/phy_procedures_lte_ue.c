@@ -168,7 +168,7 @@ void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe)
                                   1,
                                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
                                   phy_vars_ue->frame_rx,subframe);
-  LOG_I(PHY,"[UE %d] Dumping dlsch_SI : ofdm_symbol_size %d, nsymb %d, nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
+  LOG_D(PHY,"[UE %d] Dumping dlsch_SI : ofdm_symbol_size %d, nsymb %d, nb_rb %d, mcs %d, nb_rb %d, num_pdcch_symbols %d,G %d\n",
         phy_vars_ue->Mod_id,
 	phy_vars_ue->lte_frame_parms.ofdm_symbol_size,
 	nsymb,
@@ -1262,7 +1262,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #else
                            &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
 #endif
-                           frame_parms->log2_symbol_size,
+                           frame_parms->ofdm_symbol_size,
                            nsymb,
                            frame_parms->nb_prefix_samples,
                            CYCLIC_PREFIX);
@@ -1553,7 +1553,9 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 
 #else
 #ifndef OAI_USRP
+  #ifndef OAI_BLADERF
     phy_adjust_gain (phy_vars_ue,0);
+  #endif
 #endif
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
@@ -2061,9 +2063,9 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
 #endif
 
-#ifdef DEBUG_PHY_PROC
+  //#ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[UE  %d] Frame %d, slot %d, Mode %s: DCI found %i\n",phy_vars_ue->Mod_id,frame_rx,slot_rx,mode_string[phy_vars_ue->UE_mode[eNB_id]],dci_cnt);
-#endif
+  //#endif
 
   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->dci_received += dci_cnt;
   /*
@@ -2101,10 +2103,10 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
 #ifdef DEBUG_PHY_PROC
 
-    if (subframe_rx == 9) { //( frame_rx % 100 == 0)   {
+    //    if (subframe_rx == 9) { //( frame_rx % 100 == 0)   {
       LOG_D(PHY,"frame %d, subframe %d, rnti %x: dci %d/%d\n",frame_rx,subframe_rx,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,i,dci_cnt);
       //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-    }
+      //    }
 
 #endif
 
@@ -2444,7 +2446,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
     else
       openair_daq_vars.use_ia_receiver = (openair_daq_vars.use_ia_receiver+1)%3;
 
-    LOG_I(PHY,"[MYEMOS] frame %d, IA receiver %d, MCS %d, bitrate %d\n",
+    LOG_D(PHY,"[MYEMOS] frame %d, IA receiver %d, MCS %d, bitrate %d\n",
           frame_rx,
           openair_daq_vars.use_ia_receiver,
           phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[phy_vars_ue->dlsch_ue[eNB_id][0]->current_harq_pid]->mcs,
@@ -2622,13 +2624,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
         phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
 
-#ifdef DEBUG_PHY_PROC
+	//#ifdef DEBUG_PHY_PROC
         LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d Scheduling DLSCH decoding\n",
               phy_vars_ue->Mod_id,
               phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
               harq_pid,
               (subframe_prev == 9) ? (frame_rx-1) : frame_rx,subframe_prev);
-#endif
+	//#endif
 
         if (phy_vars_ue->dlsch_ue[eNB_id][0]) {
           if (abstraction_flag == 0) {
@@ -2674,17 +2676,18 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
           if (ret == (1+phy_vars_ue->dlsch_ue[eNB_id][0]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_errors[eNB_id]++;
 
-#ifdef DEBUG_PHY_PROC
-            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d)\n",
+	    //#ifdef DEBUG_PHY_PROC
+            LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
                   harq_pid,frame_rx,subframe_prev,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
-                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs);
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
+                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
 
             //      if (abstraction_flag ==0 )
-            //dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
-            //mac_xface->macphy_exit("");
-#endif
+            dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
+            mac_xface->macphy_exit("");
+	    //#endif
           } else {
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d (slot_rx %d): Received DLSCH (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
@@ -2799,7 +2802,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                     frame_rx,subframe_prev);
 
 #ifdef DEBUG_PHY_PROC
-            LOG_I(PHY,"Decoding DLSCH_SI : rb_alloc %x : nb_rb %d G %d TBS %d, num_pdcch_sym %d\n",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[0],
+            LOG_D(PHY,"Decoding DLSCH_SI : rb_alloc %x : nb_rb %d G %d TBS %d, num_pdcch_sym %d\n",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[0],
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->nb_rb,
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->G,
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->TBS,
@@ -2847,7 +2850,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
           if (ret == (1+phy_vars_ue->dlsch_ue_SI[eNB_id]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_SI_errors[eNB_id]++;
 #ifdef DEBUG_PHY_PROC
-            LOG_I(PHY,"[UE  %d] Frame %d, subframe %d, received SI in error (TBS %d, mcs %d, rvidx %d, rballoc %X.%X.%X.%X\n",
+            LOG_D(PHY,"[UE  %d] Frame %d, subframe %d, received SI in error (TBS %d, mcs %d, rvidx %d, rballoc %X.%X.%X.%X\n",
 		  phy_vars_ue->Mod_id,
 		  frame_rx,
 		  subframe_prev,
@@ -3280,7 +3283,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
   }
 
   if (is_pmch_subframe((subframe_rx==9?-1:0)+frame_rx,subframe_rx,&phy_vars_ue->lte_frame_parms)) {
-    LOG_I(PHY,"ue calling pmch subframe ..\n ");
+    LOG_D(PHY,"ue calling pmch subframe ..\n ");
 
     if ((slot_rx%2)==1) {
       LOG_D(PHY,"[UE %d] Frame %d, subframe %d: Querying for PMCH demodulation(%d)\n",
@@ -3428,7 +3431,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
             phy_vars_rn->sync_area[subframe_rx] = sync_area; // this could also go the harq data struct
             phy_vars_rn->dlsch_rn_MCH[subframe_rx]->harq_processes[0]->TBS = phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->TBS;
             phy_vars_rn->dlsch_rn_MCH[subframe_rx]->harq_processes[0]->mcs = phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0]->mcs;
-            LOG_I(PHY,"[RN/UE %d] Frame %d subframe %d: store the MCH PDU for MBSFN sync area %d (MCS %d, TBS %d)\n",
+            LOG_D(PHY,"[RN/UE %d] Frame %d subframe %d: store the MCH PDU for MBSFN sync area %d (MCS %d, TBS %d)\n",
                   phy_vars_ue->Mod_id, frame_rx,subframe_rx,sync_area,
                   phy_vars_rn->dlsch_rn_MCH[subframe_rx]->harq_processes[0]->mcs,
                   phy_vars_rn->dlsch_rn_MCH[subframe_rx]->harq_processes[0]->TBS>>3);

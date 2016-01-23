@@ -72,9 +72,8 @@ void
 schedule_SI(
   module_id_t   module_idP,
   frame_t       frameP,
-  unsigned int* nprbP,
-  unsigned int* nCCEP
-)
+  sub_frame_t   subframeP)
+
 //------------------------------------------------------------------------------
 {
 
@@ -85,12 +84,19 @@ schedule_SI(
   void *BCCH_alloc_pdu;
   int CC_id;
   eNB_MAC_INST *eNB = &eNB_mac_inst[module_idP];
+  uint8_t *vrb_map;
+  int first_rb;
+  int rballoc[MAX_NUM_CCs];
+  int sizeof1A_bytes,sizeof1A_bits;
+  DCI_PDU *DCI_pdu;
 
   start_meas(&eNB->schedule_si);
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-    BCCH_alloc_pdu=(void*)&eNB->common_channels[CC_id].BCCH_alloc_pdu;
+    
+    BCCH_alloc_pdu  = (void*)&eNB->common_channels[CC_id].BCCH_alloc_pdu;
+    DCI_pdu         = (void*)&eNB->common_channels[CC_id].DCI_pdu;
+    vrb_map         = (void*)&eNB->common_channels[CC_id].vrb_map;
 
     bcch_sdu_length = mac_rrc_data_req(module_idP,
                                        CC_id,
@@ -104,7 +110,41 @@ schedule_SI(
     if (bcch_sdu_length > 0) {
       LOG_D(MAC,"[eNB %d] Frame %d : BCCH->DLSCH CC_id %d, Received %d bytes \n",module_idP,frameP,CC_id,bcch_sdu_length);
 
+      // Allocate 4 PRBs in a random location
+      /*
+      while (1) {
+	first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
+	if ((vrb_map[first_rb] != 1) && 
+	    (vrb_map[first_rb+1] != 1) && 
+	    (vrb_map[first_rb+2] != 1) && 
+	    (vrb_map[first_rb+3] != 1))
+	  break;
+      }
+      */
+      switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+      case 6:
+	first_rb = 0;
+	break;
+      case 15:
+	first_rb = 6;
+	break;
+      case 25:
+	first_rb = 11;
+	break;
+      case 50:
+	first_rb = 23;
+	break;
+      case 100:
+	first_rb = 48;
+	break;
+      }
 
+      vrb_map[first_rb] = 1;
+      vrb_map[first_rb+1] = 1;
+      vrb_map[first_rb+2] = 1;
+      vrb_map[first_rb+3] = 1;
+
+      // Get MCS for length of SI
       if (bcch_sdu_length <= (mac_xface->get_TBS_DL(0,3))) {
         mcs=0;
       } else if (bcch_sdu_length <= (mac_xface->get_TBS_DL(1,3))) {
@@ -125,44 +165,151 @@ schedule_SI(
         mcs=8;
       }
 
+
+
       if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
         switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_1_5MHz_TDD_1_6_t);
+	  sizeof1A_bits = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
           break;
 
         case 25:
           ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          break;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_5MHz_TDD_1_6_t);
+	  sizeof1A_bits = sizeof_DCI1A_5MHz_TDD_1_6_t;
+	  break;
 
         case 50:
           ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
+	  sizeof1A_bits = sizeof_DCI1A_10MHz_TDD_1_6_t;
           break;
 
         case 100:
           ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->mcs = mcs;
-          break;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
+	  sizeof1A_bits = sizeof_DCI1A_20MHz_TDD_1_6_t; 
+         break;
         }
 
       } else {
         switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
         case 6:
           ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
+
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
+	  sizeof1A_bits = sizeof_DCI1A_1_5MHz_FDD_t;
           break;
 
         case 25:
           ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
+
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_5MHz_FDD_t);
+	  sizeof1A_bits = sizeof_DCI1A_5MHz_FDD_t;
           break;
 
         case 50:
           ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
+
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
+	  sizeof1A_bytes = sizeof(DCI1A_10MHz_FDD_t);
+	  sizeof1A_bits = sizeof_DCI1A_10MHz_FDD_t;
           break;
 
         case 100:
           ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->mcs = mcs;
-          break;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
+          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
+
+          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
+ 	  sizeof1A_bytes = sizeof(DCI1A_20MHz_FDD_t);
+	  sizeof1A_bits = sizeof_DCI1A_20MHz_FDD_t;
+	  break;
 
         }
+      }
+
+      if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,2,SI_RNTI)) {
+	add_common_dci(DCI_pdu,
+		       BCCH_alloc_pdu,
+		       SI_RNTI,
+		       sizeof1A_bytes,
+		       2,
+		       sizeof1A_bits,
+		       format1A,0);
+      }
+      else {
+	LOG_E(MAC,"[eNB %d] CCid %d Frame %d, subframe %d : Cannot add DCI 1A for SI\n",module_idP, CC_id,frameP,subframeP);
       }
 
       if (opt_enabled == 1) {
@@ -194,17 +341,13 @@ schedule_SI(
               mac_xface->get_TBS_DL(mcs,3));
       }
 
-      eNB->common_channels[CC_id].bcch_active=1;
-      nprbP[CC_id]=3;
-      nCCEP[CC_id]=4;
+
       eNB->eNB_stats[CC_id].total_num_bcch_pdu+=1;
       eNB->eNB_stats[CC_id].bcch_buffer=bcch_sdu_length;
       eNB->eNB_stats[CC_id].total_bcch_buffer+=bcch_sdu_length;
       eNB->eNB_stats[CC_id].bcch_mcs=mcs;
     } else {
-      eNB->common_channels[CC_id].bcch_active=0;
-      nprbP[CC_id]=0;
-      nCCEP[CC_id]=0;
+
       //LOG_D(MAC,"[eNB %d] Frame %d : BCCH not active \n",Mod_id,frame);
     }
   }

@@ -76,7 +76,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (j=0; j<2; j++) {
-      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_DL,abstraction_flag);
+      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL,abstraction_flag);
 
       if (!PHY_vars_eNB->dlsch_eNB[i][j]) {
         LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
@@ -128,11 +128,11 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     exit(-1);
   }
 
-  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
-  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
-  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_DL, 0);
+  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL, 0);
   LOG_D(PHY,"eNB %d : MCH %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_MCH);
 
 
@@ -169,7 +169,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
     for (j=0; j<2; j++) {
-      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+      PHY_vars_UE->dlsch_ue[i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
       if (!PHY_vars_UE->dlsch_ue[i][j]) {
         LOG_E(PHY,"Can't get ue dlsch structures\n");
@@ -187,15 +187,15 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
       exit(-1);
     }
 
-    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
-    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+    PHY_vars_UE->dlsch_ue_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
+    PHY_vars_UE->dlsch_ue_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, abstraction_flag);
 
     PHY_vars_UE->transmission_mode[i] = transmission_mode;
   }
 
   PHY_vars_UE->lte_frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
-  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL,0);
 
   return (PHY_vars_UE);
 }
@@ -211,11 +211,11 @@ PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (eMBMS_active_state == multicast_relay) {
     for (i=0; i < 10 ; i++) { // num SF in a frame
-      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL, 0);
+      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS_MBSFN,NSOFT,frame_parms->N_RB_DL, 0);
       LOG_D(PHY,"eNB %d : MCH[%d] %p\n",RN_id,i,PHY_vars_RN->dlsch_rn_MCH[i]);
     }
   } else {
-    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, 0);
+    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,NSOFT,frame_parms->N_RB_DL, 0);
     LOG_D(PHY,"eNB %d : MCH[0] %p\n",RN_id,PHY_vars_RN->dlsch_rn_MCH[0]);
   }
 

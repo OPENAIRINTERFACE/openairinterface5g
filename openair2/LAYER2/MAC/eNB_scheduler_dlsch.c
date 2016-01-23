@@ -422,16 +422,13 @@ schedule_ue_spec(
   module_id_t   module_idP,
   frame_t       frameP,
   sub_frame_t   subframeP,
-  unsigned int  *nb_rb_used0,
-  unsigned int  *nCCE_used,
-  int*           mbsfn_flag
+  int*          mbsfn_flag
 )
 //------------------------------------------------------------------------------
 {
 
   uint8_t               CC_id;
   int                   UE_id;
-  uint16_t              nCCE[MAX_NUM_CCs];
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
@@ -450,7 +447,6 @@ schedule_ue_spec(
   //  uint16_t              pre_nb_available_rbs[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   int                   mcs;
   uint16_t              min_rb_unit[MAX_NUM_CCs];
-  short                 ta_update        = 0;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[module_idP];
   UE_list_t            *UE_list  = &eNB->UE_list;
   LTE_DL_FRAME_PARMS   *frame_parms[MAX_NUM_CCs];
@@ -459,6 +455,7 @@ schedule_ue_spec(
   int32_t                 tpc=1;
   static int32_t          tpc_accumulated=0;
   UE_sched_ctrl           *ue_sched_ctl;
+  int i;
 
   if (UE_list->head==-1) {
     return;
@@ -473,15 +470,18 @@ schedule_ue_spec(
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id]=get_min_rb_unit(module_idP,CC_id);
     frame_parms[CC_id] = mac_xface->get_lte_frame_parms(module_idP,CC_id);
-    total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL - nb_rb_used0[CC_id];
-    nCCE[CC_id] = mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE_used[CC_id];
+    // get number of PRBs less those used by common channels
+    total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL;
+    for (i=0;i<frame_parms[CC_id]->N_RB_DL;i++)
+      if (eNB->common_channels[CC_id].vrb_map[i]!=0)
+	total_nb_available_rb[CC_id]--;
+
     N_RBG[CC_id] = frame_parms[CC_id]->N_RBG;
 
     // store the global enb stats:
     eNB->eNB_stats[CC_id].num_dlactive_UEs =  UE_list->num_UEs;
     eNB->eNB_stats[CC_id].available_prbs =  total_nb_available_rb[CC_id];
     eNB->eNB_stats[CC_id].total_available_prbs +=  total_nb_available_rb[CC_id];
-    eNB->eNB_stats[CC_id].available_ncces = nCCE[CC_id];
     eNB->eNB_stats[CC_id].dlsch_bytes_tx=0;
     eNB->eNB_stats[CC_id].dlsch_pdus_tx=0;
   }
@@ -523,9 +523,11 @@ schedule_ue_spec(
         continue_flag=1;
       }
 
-      if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) || (nCCE[CC_id] < (1<<aggregation))) {
+      if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||  // no RBs allocated 
+	  CCE_allocation_infeasible(module_idP,CC_id,0,subframeP,aggregation,rnti)
+	  ) {
         LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
-              module_idP, frameP, UE_id, CC_id, nb_rb_used0[CC_id], ue_sched_ctl->pre_nb_available_rbs[CC_id], nCCE[CC_id], aggregation);
+              module_idP, frameP, UE_id, CC_id);
         //if(mac_xface->get_transmission_mode(module_idP,rnti)==5)
         continue_flag=1; //to next user (there might be rbs availiable for other UEs in TM5
         // else
@@ -540,7 +542,6 @@ schedule_ue_spec(
                     UE_list);
         // update UL DAI after DLSCH scheduling
         set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
-
       }
 
       if (continue_flag == 1 ) {
@@ -587,11 +588,10 @@ schedule_ue_spec(
         UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = 0;
       }
 
-      LOG_D(MAC,"[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, ncc %d, rrc %d)\n",
+      LOG_D(MAC,"[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n",
             module_idP, frameP, UE_id,CC_id,rnti,harq_pid, round,nb_available_rb,
             eNB_UE_stats->DL_cqi[0], eNB_UE_stats->dlsch_mcs1,
-            nCCE[CC_id],
-            UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status);
+	    UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status);
 
 
       // Note this code is for a specific DCI format
@@ -641,8 +641,6 @@ schedule_ue_spec(
 
           nb_available_rb -= nb_rb;
           aggregation = process_ue_cqi(module_idP,UE_id);
-          nCCE[CC_id]-=(1<<aggregation); // adjust the remaining nCCE
-          nCCE_used[CC_id] += (1<<aggregation);
 
 
           PHY_vars_eNB_g[module_idP][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
@@ -789,7 +787,6 @@ schedule_ue_spec(
           UE_list->eNB_UE_stats[CC_id][UE_id].num_retransmission+=1;
           UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx=nb_rb;
           UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_retx+=nb_rb;
-          UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx=nCCE[CC_id];
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=eNB_UE_stats->dlsch_mcs1;
         } else {
@@ -806,29 +803,7 @@ schedule_ue_spec(
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
 
-        //#ifndef EXMIMO_IOT
-        // to be checked by RK, NN, FK
-        uint8_t update_TA=4;
-
-        switch (frame_parms[CC_id]->N_RB_DL) {
-        case 6:
-          update_TA = 1;
-          break;
-
-        case 25:
-          update_TA = 4;
-          break;
-
-        case 50:
-          update_TA = 8;
-          break;
-
-        case 100:
-          update_TA = 16;
-          break;
-        }
-
-        ta_len = ((eNB_UE_stats->timing_advance_update/update_TA)!=0) ? 2 : 0;
+        ta_len = (ue_sched_ctl->ta_update!=0) ? 2 : 0;
 
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
@@ -1076,11 +1051,6 @@ schedule_ue_spec(
             post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len ; // 1 is for the postpadding header
           }
 
-          //#ifndef EXMIMO_IOT
-          ta_update = eNB_UE_stats->timing_advance_update/update_TA;
-          /*#else
-          ta_update = 0;
-          #endif*/
 
           offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                                          // offset = generate_dlsch_header((unsigned char*)eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0],
@@ -1088,17 +1058,17 @@ schedule_ue_spec(
                                          sdu_lengths,  //
                                          sdu_lcids,
                                          255,                                   // no drx
-                                         ta_update, // timing advance
+                                         ue_sched_ctl->ta_update, // timing advance
                                          NULL,                                  // contention res id
                                          padding,
                                          post_padding);
 
           //#ifdef DEBUG_eNB_SCHEDULER
-          if (ta_update) {
+          if (ue_sched_ctl->ta_update) {
             LOG_I(MAC,
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
-                  ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
+                  ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
           }
 
           //#endif
@@ -1130,8 +1100,6 @@ schedule_ue_spec(
           }
 
           aggregation = process_ue_cqi(module_idP,UE_id);
-          nCCE[CC_id]-=(1<<aggregation); // adjust the remaining nCCE
-          nCCE_used[CC_id]+=(1<<aggregation); // adjust the remaining nCCE
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 
           add_ue_dlsch_info(module_idP,
@@ -1145,7 +1113,6 @@ schedule_ue_spec(
 
           UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
           UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
-          UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used = nCCE[CC_id];
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=mcs;
           UE_list->eNB_UE_stats[CC_id][UE_id].TBS = TBS;
@@ -1166,7 +1133,7 @@ schedule_ue_spec(
           // this is the normalized RX power
 	  eNB_UE_stats =  mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
 	  normalized_rx_power = eNB_UE_stats->Po_PUCCH_dBm; 
-	  target_rx_power = mac_xface->get_target_pucch_rx_power(module_idP,CC_id) + 10;
+	  target_rx_power = mac_xface->get_target_pucch_rx_power(module_idP,CC_id) + 20;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -1178,6 +1145,7 @@ schedule_ue_spec(
 
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame=frameP;
 	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe=subframeP;
+	      
 	      if (normalized_rx_power>(target_rx_power+1)) {
 		tpc = 0; //-1
 		tpc_accumulated--;
@@ -1187,9 +1155,11 @@ schedule_ue_spec(
 	      } else {
 		tpc = 1; //0
 	      }
-	      LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+	      /*	      
+	      LOG_I(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
 		    module_idP,frameP, subframeP,harq_pid,tpc,
-		    tpc_accumulated,normalized_rx_power,target_rx_power);
+		    tpc_accumulated,normalized_rx_power,target_rx_power);*/
+
 	    } // Po_PUCCH has been updated 
 	    else {
 	      tpc = 1; //0
@@ -1495,10 +1465,9 @@ schedule_ue_spec(
       if (frame_parms[CC_id]->frame_type == TDD) {
         set_ul_DAI(module_idP,UE_id,CC_id,frameP,subframeP,frame_parms);
       }
-    }
-  }
 
-  //printf("MAC nCCE : %d\n",*nCCE_used);
+    } // UE_id loop
+  }  // CC_id loop
 
 
   stop_meas(&eNB->schedule_dlsch);
@@ -1509,13 +1478,11 @@ schedule_ue_spec(
 //------------------------------------------------------------------------------
 void
 fill_DLSCH_dci(
-  module_id_t module_idP,
-  frame_t frameP,
-  sub_frame_t subframeP,
-  uint32_t* RBallocP,
-  uint8_t RA_scheduledP,
-  int* mbsfn_flagP
-)
+	       module_id_t module_idP,
+	       frame_t frameP,
+	       sub_frame_t subframeP,
+	       int* mbsfn_flagP
+	       )
 //------------------------------------------------------------------------------
 {
 
@@ -1523,10 +1490,9 @@ fill_DLSCH_dci(
   int   UE_id = -1;
   uint8_t            first_rb,nb_rb=3;
   rnti_t        rnti;
-  unsigned char vrb_map[100];
+  unsigned char *vrb_map;
   uint8_t            rballoc_sub[25];
   //uint8_t number_of_subbands=13;
-  uint32_t           *rballoc=RBallocP;
 
   unsigned char round;
   unsigned char harq_pid;
@@ -1549,598 +1515,8 @@ fill_DLSCH_dci(
     if (mbsfn_flagP[CC_id]>0)
       continue;
 
-    DCI_pdu  = &eNB->common_channels[CC_id].DCI_pdu;
-    BCCH_alloc_pdu=(void*)&eNB->common_channels[CC_id].BCCH_alloc_pdu;
-    // clear vrb_map
-    memset(vrb_map,0,100);
-
-
-    // SI DLSCH
-    //  printf("BCCH check\n");
-    if (eNB->common_channels[CC_id].bcch_active == 1) {
-      eNB->common_channels[CC_id].bcch_active = 0;
-      LOG_D(MAC,"[eNB %d] CC_id %d Frame %d subframeP %d: BCCH active\n", module_idP, CC_id, frameP, subframeP);
-      // randomize frequency allocation for SI
-      first_rb = 10;//(unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
-
-      /*  Where is this from, should be removed!!!!
-
-      if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-
-      }
-      else {
-      BCCH_alloc_pdu_fdd.rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-      rballoc[CC_id] |= mac_xface->get_rballoc(BCCH_alloc_pdu_fdd.vrb_type,BCCH_alloc_pdu_fdd.rballoc);
-      }
-      */
-
-
-      vrb_map[first_rb] = 1;
-      vrb_map[first_rb+1] = 1;
-      vrb_map[first_rb+2] = 1;
-      vrb_map[first_rb+3] = 1;
-
-      if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-        switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-        case 6:
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_1_5MHz_TDD_1_6_t),
-                         2,
-                         sizeof_DCI1A_1_5MHz_TDD_1_6_t,
-                         format1A,0);
-          break;
-
-        case 25:
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_5MHz_TDD_1_6_t),
-                         2,
-                         sizeof_DCI1A_5MHz_TDD_1_6_t,
-                         format1A,0);
-          break;
-
-        case 50:
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_10MHz_TDD_1_6_t),
-                         2,
-                         sizeof_DCI1A_10MHz_TDD_1_6_t,
-                         format1A,0);
-          break;
-
-        case 100:
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->padding = 0;
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_TDD_1_6_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_20MHz_TDD_1_6_t),
-                         2,
-                         sizeof_DCI1A_20MHz_TDD_1_6_t,
-                         format1A,0);
-          break;
-        }
-      } else {
-        switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-        case 6:
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_1_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_1_5MHz_FDD_t),
-                         2,
-                         sizeof_DCI1A_1_5MHz_FDD_t,
-                         format1A,0);
-          break;
-
-        case 25:
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_5MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_5MHz_FDD_t),
-                         2,
-                         sizeof_DCI1A_5MHz_FDD_t,
-                         format1A,0);
-          break;
-
-        case 50:
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_10MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_10MHz_FDD_t),
-                         2,
-                         sizeof_DCI1A_10MHz_FDD_t,
-                         format1A,0);
-          break;
-
-        case 100:
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->type = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->vrb_type = 0;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->ndi = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rv = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->harq_pid = 0;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->TPC = 1;
-          ((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->padding = 0;
-
-          rballoc[CC_id] |= mac_xface->get_rballoc(0,((DCI1A_20MHz_FDD_t*)BCCH_alloc_pdu)->rballoc);
-          add_common_dci(DCI_pdu,
-                         BCCH_alloc_pdu,
-                         SI_RNTI,
-                         sizeof(DCI1A_20MHz_FDD_t),
-                         2,
-                         sizeof_DCI1A_20MHz_FDD_t,
-                         format1A,0);
-          break;
-        }
-      }
-    }
-
-    if (RA_scheduledP == 1) {
-      for (i=0; i<NB_RA_PROC_MAX; i++) {
-
-        RA_template = &eNB->common_channels[CC_id].RA_template[i];
-
-        if (RA_template->generate_rar == 1) {
-
-          //FK: postponed to fill_rar
-          //RA_template->generate_rar = 0;
-
-          LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI (proc %d), RA_active %d format 1A (%d,%d))\n",
-                module_idP, CC_id, frameP, subframeP,i,
-                RA_template->RA_active,
-                RA_template->RA_dci_fmt1,
-                RA_template->RA_dci_size_bits1);
-
-          // randomize frequency allocation for RA
-          while (1) {
-            first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
-
-            if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+3] != 1))
-              break;
-          }
-
-          vrb_map[first_rb] = 1;
-          vrb_map[first_rb+1] = 1;
-          vrb_map[first_rb+2] = 1;
-          vrb_map[first_rb+3] = 1;
-
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-            case 6:
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 25:
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 50:
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 100:
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            default:
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-            }
-          } else {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-            case 6:
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 25:
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_UL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 50:
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            case 100:
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->type=1;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->ndi=1;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rv=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->mcs=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->harq_pid=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->TPC=1;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->padding=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->vrb_type,
-                                ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu1[0])->rballoc);
-              break;
-
-            default:
-              break;
-            }
-          }
-
-          add_common_dci(DCI_pdu,
-                         (void*)&RA_template->RA_alloc_pdu1[0],
-                         RA_template->RA_rnti,
-                         RA_template->RA_dci_size_bytes1,
-                         2,
-                         RA_template->RA_dci_size_bits1,
-                         RA_template->RA_dci_fmt1,
-                         1);
-
-
-
-          LOG_D(MAC,"[eNB %d] CC_id %d Frame %d: Adding common dci for RA%d (RAR) RA_active %d\n",
-                module_idP,CC_id,frameP,i, RA_template->RA_active);
-        }
-
-        if (RA_template->generate_Msg4_dci == 1) {
-
-          // randomize frequency allocation for RA
-          while (1) {
-            first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
-
-            if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+3] != 1))
-              break;
-          }
-
-          vrb_map[first_rb] = 1;
-          vrb_map[first_rb+1] = 1;
-          vrb_map[first_rb+2] = 1;
-          vrb_map[first_rb+3] = 1;
-
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-            case 6:
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_1_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 25:
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 50:
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_10MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 100:
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_20MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            default:
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-            }
-          } else {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
-
-            case 6:
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_1_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 25:
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 50:
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_10MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            case 100:
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->padding=0;
-              ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_20MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-
-            default:
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->type=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rv=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->harq_pid=0;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->TPC=1;
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc= mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-              break;
-            }
-          }
-
-          add_ue_spec_dci(DCI_pdu,
-                          (void*)&RA_template->RA_alloc_pdu2[0],
-                          RA_template->rnti,
-                          RA_template->RA_dci_size_bytes2,
-                          1,
-                          RA_template->RA_dci_size_bits2,
-                          RA_template->RA_dci_fmt2,
-                          0);
-          LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Adding ue specific dci (rnti %x) for Msg4\n",
-                module_idP,CC_id,frameP,subframeP,RA_template->rnti);
-          RA_template->generate_Msg4_dci=0;
-
-        } else if (RA_template->wait_ack_Msg4==1) {
-          // check HARQ status and retransmit if necessary
-          LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 was acknowledged: \n",
-                module_idP,CC_id,frameP,subframeP);
-          // Get candidate harq_pid from PHY
-          mac_xface->get_ue_active_harq_pid(module_idP,CC_id,RA_template->rnti,frameP,subframeP,&harq_pid,&round,0);
-
-          if (round>0) {
-            //RA_template->wait_ack_Msg4++;
-            // we have to schedule a retransmission
-            if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->ndi=1;
-            } else {
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->ndi=1;
-            }
-
-            // randomize frequency allocation for RA
-            while (1) {
-              first_rb = (unsigned char)(taus()%(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL-4));
-
-              if ((vrb_map[first_rb] != 1) && (vrb_map[first_rb+3] != 1))
-                break;
-            }
-
-            vrb_map[first_rb] = 1;
-            vrb_map[first_rb+1] = 1;
-            vrb_map[first_rb+2] = 1;
-            vrb_map[first_rb+3] = 1;
-
-            if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-              ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_UL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_TDD_1_6_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-            } else {
-              ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc = mac_xface->computeRIV(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_UL,first_rb,4);
-              rballoc[CC_id] |= mac_xface->get_rballoc(((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->vrb_type,
-                                ((DCI1A_5MHz_FDD_t*)&RA_template->RA_alloc_pdu2[0])->rballoc);
-            }
-
-            add_ue_spec_dci(DCI_pdu,
-                            (void*)&RA_template->RA_alloc_pdu2[0],
-                            RA_template->rnti,
-                            RA_template->RA_dci_size_bytes2,
-                            2,
-                            RA_template->RA_dci_size_bits2,
-                            RA_template->RA_dci_fmt2,
-                            0);
-            LOG_W(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Msg4 not acknowledged, adding ue specific dci (rnti %x) for RA (Msg4 Retransmission)\n",
-                  module_idP,CC_id,frameP,subframeP,RA_template->rnti);
-          } else {
-            /*      msg4 not received
-            if ((round == 0) && (RA_template->wait_ack_Msg4>1){
-            remove UE instance across all the layers: mac_xface->cancel_RA();
-              }
-            */
-            LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",module_idP,CC_id,frameP,subframeP);
-            RA_template->wait_ack_Msg4=0;
-            RA_template->RA_active=FALSE;
-            UE_id = find_UE_id(module_idP,RA_template->rnti);
-            DevAssert( UE_id != -1 );
-            eNB_mac_inst[module_idP].UE_list.UE_template[UE_PCCID(module_idP,UE_id)][UE_id].configured=TRUE;
-
-          }
-        }
-      }
-    } // RA is scheduled in this subframeP
-
+    DCI_pdu         = &eNB->common_channels[CC_id].DCI_pdu;
+    
 
     // UE specific DCIs
     for (UE_id=UE_list->head; UE_id>=0; UE_id=UE_list->next[UE_id]) {
@@ -2161,11 +1537,6 @@ fill_DLSCH_dci(
         /// Synchronizing rballoc with rballoc_sub
         for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RBG; i++) {
           rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
-
-          if(rballoc_sub[i] == 1) {
-            rballoc[CC_id] |= (0x0001<<i);  // TO be FIXED!!!!!!
-          }
-
         }
 
         switch(mac_xface->get_transmission_mode(module_idP,CC_id,rnti)) {
@@ -2174,7 +1545,7 @@ fill_DLSCH_dci(
         case 1:
 
         case 2:
-          LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS (rb alloc: %x) \n",module_idP, CC_id, UE_id, nb_rb,rballoc);
+          LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS \n",module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
             switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
@@ -2267,7 +1638,7 @@ fill_DLSCH_dci(
 
         case 3:
           LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
-                module_idP, CC_id, UE_id, nb_rb,rballoc);
+                module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
             switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {

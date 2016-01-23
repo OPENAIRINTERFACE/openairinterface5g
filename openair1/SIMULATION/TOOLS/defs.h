@@ -354,8 +354,8 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
-void freq_channel(channel_desc_t *desc,uint16_t nb_rb, int16_t n_samples);
-void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples);
+int freq_channel(channel_desc_t *desc,uint16_t nb_rb, int16_t n_samples);
+int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples);
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc);
 void multipath_tv_channel(channel_desc_t *desc,
                           double **tx_sig_re,

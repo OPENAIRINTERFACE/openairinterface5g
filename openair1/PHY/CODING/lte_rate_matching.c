@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #endif
 #include "PHY/defs.h"
+#include "assertions.h"
 
 //#define cmin(a,b) ((a)<(b) ? (a) : (b))
 
@@ -515,16 +516,14 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   // if (rvidx==3)
   //  for (cnt=0;cnt<Ncb;cnt++)
   //    counter_buffer[rvidx][cnt]=0;
-  if (Ncb<(3*(RTC<<5))) {
-    msg("Exiting, RM condition (Nir %d, Nsoft %d, Kw %d\n",Nir,Nsoft,3*(RTC<<5));
-    return(0);
-  }
+  AssertFatal(Ncb>=(3*RTC<<5),"Exiting, RM condition (Ncb %d, Nir/C %d, Nsoft %d, Kw %d\n",Ncb,Nir/C,Nsoft,3*(RTC<<5));
+  
 
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
 #ifdef RM_DEBUG
-  printf("lte_rate_matching_turbo: Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",3*(RTC<<5),rvidx, G, Qm,Nl,r);
+  printf("lte_rate_matching_turbo: Ncb %d, Kw %d, Nir/C %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,3*(RTC<<5),Nir/C,rvidx, G, Qm,Nl,r);
 #endif
 
   if (r < (C-(GpmodC)))

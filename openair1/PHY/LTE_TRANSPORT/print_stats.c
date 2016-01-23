@@ -50,7 +50,7 @@
 #endif
 
 extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
-#if defined(OAI_USRP) || defined(EXMIMO)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF)
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 #endif
@@ -67,11 +67,12 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 
   if ((mode == normal_txrx) || (mode == no_L2_connect)) {
     len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",phy_vars_ue->Mod_id, phy_vars_ue->lte_ue_pdcch_vars[0]->crnti);
-     len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE\n",
+     len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE (NF %.1f dB)\n",
 		    10*log10(phy_vars_ue->PHY_measurements.rsrp[0])-phy_vars_ue->rx_total_gain_dB,
 		    10*log10(phy_vars_ue->PHY_measurements.rssi)-phy_vars_ue->rx_total_gain_dB, 
 		    10*log10(phy_vars_ue->PHY_measurements.rsrq[0]),
-		    phy_vars_ue->PHY_measurements.n0_power_tot_dBm);
+		    phy_vars_ue->PHY_measurements.n0_power_tot_dBm,
+		    (double)phy_vars_ue->PHY_measurements.n0_power_tot_dBm+132.24);
 
     /*
     len += sprintf(&buffer[len],
@@ -96,10 +97,10 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 #ifdef EXMIMO
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, openair0_cfg[0].rxg_mode[0],(int)openair0_cfg[0].rx_gain[0]);
 #endif
-#ifdef OAI_USRP
+#if defined(OAI_USRP) || defined(OAI_BLADERF)
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF)
     len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d), estimated carrier frequency %f Hz\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset,openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset);
 #endif
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
@@ -573,12 +574,18 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[0],
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[1]);
 
-    len += sprintf(&buffer[len],"[eNB PROC] Subband I0: ");
+    len += sprintf(&buffer[len],"[eNB PROC] PRB I0 (%X.%X.%X.%X): ",
+		   phy_vars_eNB->rb_mask_ul[0],
+		   phy_vars_eNB->rb_mask_ul[1],phy_vars_eNB->rb_mask_ul[2],phy_vars_eNB->rb_mask_ul[3]);
 
-    for (i=0; i<25; i++)
-      len += sprintf(&buffer[len],"%2d ",
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dB[i]);
+    for (i=0; i<phy_vars_eNB->lte_frame_parms.N_RB_UL; i++) {
+      len += sprintf(&buffer[len],"%4d ",
+                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
+      if ((i>0) && ((i%25) == 0)) 
+	len += sprintf(&buffer[len],"\n                                 ",
+                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
 
+    }
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
     /*
@@ -634,11 +641,11 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                      dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[1]),
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[0],
                      phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
 		     phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm, //-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
                      phy_vars_eNB->eNB_UE_stats[UE_id].sector);
 
       for(i=0; i<8; i++)

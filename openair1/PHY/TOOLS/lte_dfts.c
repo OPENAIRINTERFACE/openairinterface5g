@@ -45,8 +45,10 @@
 #define debug_msg
 #define ONE_OVER_SQRT2_Q15 23170
 
+
 #endif
 
+#define ONE_OVER_SQRT3_Q15 18919
 
 #include "PHY/sse_intrin.h"
 
@@ -94,7 +96,7 @@ static inline void cmacc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
   cmac_tmp    = _mm_sign_epi16(b,*(__m128i*)reflip);
   //  cmac_tmp    = _mm_shufflelo_epi16(b,_MM_SHUFFLE(2,3,0,1));
   //  cmac_tmp    = _mm_shufflehi_epi16(cmac_tmp,_MM_SHUFFLE(2,3,0,1));
-  cmac_tmp = _mm_shuffle_epi8(b,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
+  cmac_tmp = _mm_shuffle_epi8(cmac_tmp,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
   cmac_tmp_im32  = _mm_madd_epi16(cmac_tmp,a);
 
   *re32 = _mm_add_epi32(*re32,cmac_tmp_re32);
@@ -3180,6 +3182,8 @@ void idft1536(int16_t *input, int16_t *output)
   int i,i2,j;
   uint32_t tmp[3][512 ]__attribute__((aligned(16)));
   uint32_t tmpo[3][512] __attribute__((aligned(16)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
 
   for (i=0,j=0; i<512; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3190,17 +3194,6 @@ void idft1536(int16_t *input, int16_t *output)
   idft512((int16_t*)(tmp[0]),(int16_t*)(tmpo[0]),1);
   idft512((int16_t*)(tmp[1]),(int16_t*)(tmpo[1]),1);
   idft512((int16_t*)(tmp[2]),(int16_t*)(tmpo[2]),1);
-  /*
-  for (i=1; i<512; i++) {
-    tmpo[0][i] = tmpo[0][i<<1];
-    tmpo[1][i] = tmpo[1][i<<1];
-    tmpo[2][i] = tmpo[2][i<<1];
-    }*/
-
-  //  write_output("in.m","in",input,6144,1,1);
-  //  write_output("out0.m","o0",tmpo[0],2048,1,1);
-  //  write_output("out1.m","o1",tmpo[1],2048,1,1);
-  //  write_output("out2.m","o2",tmpo[2],2048,1,1);
 
   for (i=0,i2=0; i<1024; i+=8,i2+=4)  {
     ibfly3((simd_q15_t*)(&tmpo[0][i2]),(simd_q15_t*)(&tmpo[1][i2]),((simd_q15_t*)&tmpo[2][i2]),
@@ -3208,6 +3201,26 @@ void idft1536(int16_t *input, int16_t *output)
           (simd_q15_t*)(twa1536+i),(simd_q15_t*)(twb1536+i));
   }
 
+
+  for (i=0; i<24; i++) {
+    y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+    y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+    y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+    y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+    y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+    y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+    y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+    y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+    y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+    y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+    y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+    y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+    y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+    y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+    y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+    y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+    y128p+=16;
+  }
 
   _mm_empty();
   _m_empty();
