@@ -223,6 +223,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
                                     0b00000001};
 #endif
  
+
 #ifndef __AVX2__
   if ((n&15) > 0)
     loop++;

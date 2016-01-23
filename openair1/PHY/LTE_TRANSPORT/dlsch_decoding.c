@@ -446,7 +446,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     printf("\n");
     */
 
-#ifndef __AVX2__
+    //#ifndef __AVX2__
+#if 1
     if (err_flag == 0) {
 
       start_meas(dlsch_turbo_decoding_stats);

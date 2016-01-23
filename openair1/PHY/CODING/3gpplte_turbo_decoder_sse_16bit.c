@@ -144,12 +144,25 @@ void compute_gamma16(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity
   fprintf(fdsse4,"compute_gamma (sse_16bit), %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
 #endif
 
+#ifndef __AVX2__
   K1=frame_length>>3;
+#else
+  if ((frame_length&15) > 0)
+    K1=(frame_length+1)>>4;
+  else
+    K1=frame_length>>4;
+#endif
 
   for (k=0; k<K1; k++) {
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef __AVX2__
     m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
     m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
+#else
+    ((__m256i*)m11_128)[k] = _mm256_srai_epi16(_mm256_adds_epi16(((__m256i*)systematic128)[k],((__m256i*)y_parity128)[k]),1);
+    //    ((__m256i*)m10_128)[k] = _mm256_srai_epi16(_mm256_subs_epi16(((__m256i*)y_parity128)[k],((__m256i*)systematic128)[k]),1);
+    ((__m256i*)m10_128)[k] = _mm256_srai_epi16(_mm256_subs_epi16(((__m256i*)systematic128)[k],((__m256i*)y_parity128)[k]),1);
+#endif
 #elif defined(__arm__)
     m11_128[k] = vhaddq_s16(systematic128[k],y_parity128[k]);
     m10_128[k] = vhsubq_s16(systematic128[k],y_parity128[k]);
@@ -164,13 +177,19 @@ void compute_gamma16(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity
 #endif
   }
 
+  k=frame_length>>3;
   // Termination
 #if defined(__x86_64__) || defined(__i386__)
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+  //#ifndef __AVX2__
+#if 1
   m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+#else
+  m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(y_parity128[k],systematic128[k+term_flag]),1);
+#endif
 #elif defined(__arm__)
   m11_128[k] = vhaddq_s16(systematic128[k+term_flag],y_parity128[k]);
-m10_128[k] = vhsubq_s16(systematic128[k+term_flag],y_parity128[k]);
+  m10_128[k] = vhsubq_s16(systematic128[k+term_flag],y_parity128[k]);
 #endif
 
 #ifdef DEBUG_LOGMAP
@@ -188,11 +207,21 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 {
   int k,l,l2,K1,rerun_flag=0;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
-  __m128i a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
+  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr,*m11p,*m10p;
+  //#ifndef __AVX2__
+#if 1
+  __m128i a0,a1,a2,a3,a4,a5,a6,a7;
   __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   __m128i new0,new1,new2,new3,new4,new5,new6,new7;
   __m128i alpha_max;
+#else
+  __m256i *alpha256=(__m256i *)alpha,*alpha_ptr256,m11,m10;
+  __m256i a01,a23,a45,a67,a02,a13,a64,a75;
+  __m256i m_b01,m_b23,m_b45,m_b67,new01,new23,new45,new67;
+  __m256i m11m10_256;
+  __m256i alpha_max;
+#endif
+
 #elif defined(__arm__)
   int16x8_t *alpha128=(int16x8_t *)alpha,*alpha_ptr;
   int16x8_t a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
@@ -208,6 +237,10 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
   for (l=K1;; l=l2,rerun_flag=1) {
 #if defined(__x86_64__) || defined(__i386__)
     alpha128 = (__m128i *)alpha;
+    //#ifdef __AVX2__
+#if 0
+    alpha256 = (__m256i *)alpha;
+#endif
 #elif defined(__arm__)
     alpha128 = (int16x8_t *)alpha;
 #endif
@@ -288,6 +321,11 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
     }
 
     alpha_ptr = &alpha128[0];
+    //#ifdef __AVX2__
+#if 0
+    alpha_ptr256 = &alpha256[0];
+#endif
+
 #if defined(__x86_64__) || defined(__i386__)
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
@@ -300,6 +338,8 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
          k++) {
 
 #if defined(__x86_64__) || defined(__i386__)
+      //#ifndef __AVX2__
+#if 1
       a1=_mm_load_si128(&alpha_ptr[1]);
       a3=_mm_load_si128(&alpha_ptr[3]);
       a5=_mm_load_si128(&alpha_ptr[5]);
@@ -344,6 +384,37 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha_max = _mm_max_epi16(alpha_max,a5);
       alpha_max = _mm_max_epi16(alpha_max,a6);
       alpha_max = _mm_max_epi16(alpha_max,a7);
+#else
+      a02=_mm256_load_si256(&alpha_ptr256[0]);
+      a13=_mm256_load_si256(&alpha_ptr256[1]);
+      a64=_mm256_load_si256(&alpha_ptr256[2]);
+      a75=_mm256_load_si256(&alpha_ptr256[3]);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,*m11p,0);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,*m10p,1);
+
+
+      m_b01 = _mm256_adds_epi16(a13,m11m10_256); //negative m10
+      m_b23 = _mm256_subs_epi16(a75,m11m10_256); //negative m10
+      m_b45 = _mm256_subs_epi16(a13,m11m10_256); //negative m10
+      m_b67 = _mm256_adds_epi16(a75,m11m10_256); //negative m10
+
+      new01 = _mm256_subs_epi16(a02,m11m10_256);  //negative m10
+      new23 = _mm256_adds_epi16(a64,m11m10_256);  //negative m10
+      new45 = _mm256_adds_epi16(a02,m11m10_256);  //negative m10
+      new67 = _mm256_subs_epi16(a64,m11m10_256);  //negative m10
+
+      a01   = _mm256_max_epi16(m_b01,new01);
+      a23   = _mm256_max_epi16(m_b23,new23);
+      a45   = _mm256_max_epi16(m_b45,new45);
+      a67   = _mm256_max_epi16(m_b67,new67);
+
+      alpha_max = _mm256_max_epi16(a01,a23);
+      alpha_max = _mm256_max_epi16(alpha_max,a45);
+      alpha_max = _mm256_max_epi16(alpha_max,a67);
+      alpha_max = _mm256_max_epi16(alpha_max,_mm256_permutevar8x32_epi32(alpha_max,_mm256_set_epi32(3,2,1,0,7,6,5,4)));
+      
+      
+#endif
 #elif defined(__arm__)
       m_b0 = vqaddq_s16(alpha_ptr[1],*m11p);  // m11
       m_b4 = vqsubq_s16(alpha_ptr[1],*m11p);  // m00=-m11
@@ -383,9 +454,15 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #endif
 
       alpha_ptr+=8;
+      //#ifdef __AVX2__
+#if 0
+      alpha_ptr256+=4;
+#endif
       m11p++;
       m10p++;
 #if defined(__x86_64__) || defined(__i386__)
+      //#ifndef __AVX2__
+#if 1
       alpha_ptr[0] = _mm_subs_epi16(a0,alpha_max);
       alpha_ptr[1] = _mm_subs_epi16(a1,alpha_max);
       alpha_ptr[2] = _mm_subs_epi16(a2,alpha_max);
@@ -394,6 +471,18 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha_ptr[5] = _mm_subs_epi16(a5,alpha_max);
       alpha_ptr[6] = _mm_subs_epi16(a6,alpha_max);
       alpha_ptr[7] = _mm_subs_epi16(a7,alpha_max);
+#else
+
+      a01   = _mm256_subs_epi16(a01,alpha_max);
+      a23   = _mm256_subs_epi16(a23,alpha_max);
+      a45   = _mm256_subs_epi16(a45,alpha_max);
+      a67   = _mm256_subs_epi16(a67,alpha_max);
+
+      alpha_ptr256[0] = _mm256_permute2x128_si256(a01,a23,0x20);  //a02
+      alpha_ptr256[1] = _mm256_permute2x128_si256(a01,a23,0x13);  //a13
+      alpha_ptr256[2] = _mm256_permute2x128_si256(a45,a67,0x02);  //a64
+      alpha_ptr256[3] = _mm256_permute2x128_si256(a45,a67,0x31);  //a75
+#endif
 #elif defined(__arm__)
       alpha_ptr[0] = vqsubq_s16(a0,alpha_max);
       alpha_ptr[1] = vqsubq_s16(a1,alpha_max);
@@ -488,8 +577,12 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
 
   //  fprintf(fdsse4,"beta init: offset8 %d\n",offset8_flag);
   m11=(int16_t)m_11[2+frame_length];
+  //#ifndef __AVX2__
+#if 1
   m10=(int16_t)m_10[2+frame_length];
-
+#else
+  m10=-(int16_t)m_10[2+frame_length];
+#endif
 #ifdef DEBUG_LOGMAP
   fprintf(fdsse4,"m11,m10 %d,%d\n",m11,m10);
 #endif
@@ -643,6 +736,9 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       m11_128=((__m128i*)m_11)[k];
       m10_128=((__m128i*)m_10)[k];
 
+
+      //#ifndef __AVX2__
+#if 1
       m_b0 = _mm_adds_epi16(beta_ptr[4],m11_128);  //m11
       m_b1 = _mm_subs_epi16(beta_ptr[4],m11_128);  //m00
       m_b2 = _mm_subs_epi16(beta_ptr[5],m10_128);  //m01
@@ -651,6 +747,7 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       m_b5 = _mm_subs_epi16(beta_ptr[6],m10_128);  //m01
       m_b6 = _mm_subs_epi16(beta_ptr[7],m11_128);  //m00
       m_b7 = _mm_adds_epi16(beta_ptr[7],m11_128);  //m11
+
 
       new0 = _mm_subs_epi16(beta_ptr[0],m11_128);  //m00
       new1 = _mm_adds_epi16(beta_ptr[0],m11_128);  //m11
@@ -661,8 +758,29 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       new6 = _mm_adds_epi16(beta_ptr[3],m11_128);  //m11
       new7 = _mm_subs_epi16(beta_ptr[3],m11_128);  //m00
 
+#else
+      b01=_mm256_load_si256(&((_m256i*)beta_ptr)[0]);
+      b23=_mm256_load_si256(&((_m256i*)beta_ptr)[1]);
+      b45=_mm256_load_si256(&((_m256i*)beta_ptr)[2]);
+      b67=_mm256_load_si256(&((_m256i*)beta_ptr)[3]);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,m11_128,0);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,m10_128,1);
+
+
+      m_b02 = _mm256_adds_epi16(b45,m11m10_256); //negative m10
+      m_b13 = _mm256_subs_epi16(b45,m11m10_256); //negative m10
+      m_b64 = _mm256_subs_epi16(b67,m11m10_256); //negative m10
+      m_b75 = _mm256_adds_epi16(b67,m11m10_256); //negative m10
+      new02 = _mm256_subs_epi16(b01,m11m10_256);  //negative m10
+      new13 = _mm256_adds_epi16(b01,m11m10_256);  //negative m10
+      new64 = _mm256_adds_epi16(b23,m11m10_256);  //negative m10
+      new75 = _mm256_subs_epi16(b24,m11m10_256);  //negative m10
+#endif
+
       beta_ptr-=8;
 
+      //#ifndef __AVX2__
+#if 1
       beta_ptr[0] = _mm_max_epi16(m_b0,new0);
       beta_ptr[1] = _mm_max_epi16(m_b1,new1);
       beta_ptr[2] = _mm_max_epi16(m_b2,new2);
@@ -688,6 +806,28 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       beta_ptr[5] = _mm_subs_epi16(beta_ptr[5],beta_max);
       beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max);
       beta_ptr[7] = _mm_subs_epi16(beta_ptr[7],beta_max);
+#else
+      b02   = _mm256_max_epi16(m_b02,new02);
+      b13   = _mm256_max_epi16(m_b13,new13);
+      b64   = _mm256_max_epi16(m_b64,new64);
+      b75   = _mm256_max_epi16(m_b75,new75);
+      
+      beta_max = _mm256_max_epi16(b02,b13);
+      beta_max = _mm256_max_epi16(beta_max,b64);
+      beta_max = _mm256_max_epi16(beta_max,b75);
+      beta_max = _mm256_max_epi16(beta_max,_mm256_permutevar8x32_epi32(betaa_max,_mm256_set_epi32(3,2,1,0,7,6,5,4)));
+
+      b02   = _mm256_subs_epi16(b02,beta_max);
+      b13   = _mm256_subs_epi16(b13,beta_max);
+      b64   = _mm256_subs_epi16(b64,beta_max);
+      b75   = _mm256_subs_epi16(b75,beta_max);
+
+      ((_m256i*)beta_ptr)[0]) = _mm256_permute2x128_si256(b02,b13,0x02);  //b01
+      ((_m256i*)beta_ptr)[1]) = _mm256_permute2x128_si256(b02,b13,0x31);  //b23
+      ((_m256i*)beta_ptr)[2]) = _mm256_permute2x128_si256(b64,b75,0x13);  //b45
+      ((_m256i*)beta_ptr)[3]) = _mm256_permute2x128_si256(b64,b75,0x20);  //b67
+#endif
+
 #elif defined(__arm__)
       m11_128=((int16x8_t*)m_11)[k];
       m10_128=((int16x8_t*)m_10)[k];
@@ -820,6 +960,9 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
       print_shorts("b6:",&beta_ptr[6]);
       print_shorts("b7:",&beta_ptr[7]);
     */
+
+    //#ifndef __AVX2__
+#if 1
     m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
     m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
     m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
@@ -836,6 +979,32 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
     m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
     m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
     m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
+#else
+
+
+    m00_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
+    m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
+    m11_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
+    m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
+
+    m11_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
+    m01_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
+    m00_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
+    m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
+
+    m11_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
+    m01_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
+    m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
+    m10_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
+
+    m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
+    m10_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
+    m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
+    m01_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
+
+
+#endif
+
     /*
       print_shorts("m11_1:",&m11_1);
       print_shorts("m11_2:",&m11_2);
@@ -1030,19 +1199,19 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       n is the size in bits of the coded block, with the tail */
 
 
-  llr_t systematic0[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic1[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic2[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity1[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity2[n+16] __attribute__ ((aligned(16)));
+  llr_t systematic0[n+16] __attribute__ ((aligned(32)));
+  llr_t systematic1[n+16] __attribute__ ((aligned(32)));
+  llr_t systematic2[n+16] __attribute__ ((aligned(32)));
+  llr_t yparity1[n+16] __attribute__ ((aligned(32)));
+  llr_t yparity2[n+16] __attribute__ ((aligned(32)));
 
-  llr_t ext[n+128] __attribute__((aligned(16)));
-  llr_t ext2[n+128] __attribute__((aligned(16)));
+  llr_t ext[n+128] __attribute__((aligned(32)));
+  llr_t ext2[n+128] __attribute__((aligned(32)));
 
-  llr_t alpha[(n+16)*8] __attribute__ ((aligned(16)));
-  llr_t beta[(n+16)*8] __attribute__ ((aligned(16)));
-  llr_t m11[n+16] __attribute__ ((aligned(16)));
-  llr_t m10[n+16] __attribute__ ((aligned(16)));
+  llr_t alpha[(n+16)*8] __attribute__ ((aligned(32)));
+  llr_t beta[(n+16)*8] __attribute__ ((aligned(32)));
+  llr_t m11[n+32] __attribute__ ((aligned(32)));
+  llr_t m10[n+32] __attribute__ ((aligned(32)));
 
 
   int *pi2_p,*pi4_p,*pi5_p,*pi6_p;

@@ -186,12 +186,16 @@ void compute_alpha16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,uint16
   __m256i new0,new1,new2,new3,new4,new5,new6,new7;
   __m256i alpha_max;
 
+  unsigned long long timein,timeout;
+
   l2 = L>>3;
   K1 = (frame_length>>3);
 #ifdef DEBUG_LOGMAP
   fprintf(fdavx2,"Compute alpha (avx2_16bit)\n");
   fprintf(fdavx2b,"Compute alpha (avx2_16bit)\n");
 #endif
+  timein = rdtsc_oai();
+
   for (l=K1;; l=l2,rerun_flag=1) {
     alpha128 = (__m256i *)alpha;
 
@@ -378,6 +382,9 @@ void compute_alpha16avx2(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,uint16
     if (rerun_flag==1)
       break;
   }
+  timeout = rdtsc_oai();
+  printf("alpha: inner loop time %llu\n",timeout-timein);
+
 }
 
 
@@ -386,9 +393,10 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 
   int k,rerun_flag=0;
 
-  __m256i m11_128,m10_128;
-  __m256i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
-  __m256i new0,new1,new2,new3,new4,new5,new6,new7;
+  __m256i *m11p,*m10p;
+  register __m256i b0,b1,b2,b3,b4,b5,b6,b7;
+  register __m256i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
+  register __m256i new0,new1,new2,new3,new4,new5,new6,new7;
 
   __m256i *beta128,*alpha128,*beta_ptr;
   __m256i beta_max;
@@ -397,6 +405,8 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
   llr_t m11_cw2,m10_cw2,beta0_cw2_16,beta1_cw2_16,beta2_cw2_16,beta3_cw2_16,beta4_cw2_16,beta5_cw2_16,beta6_cw2_16,beta7_cw2_16,beta0_2_cw2,beta1_2_cw2,beta2_2_cw2,beta3_2_cw2,beta_m_cw2;
   llr_t beta0,beta1;
   llr_t beta0_cw2,beta1_cw2;
+
+  unsigned long long timein,timeout;
 
 #ifdef DEBUG_LOGMAP
   fprintf(fdavx2,"compute_beta (avx2_16bit), %p,%p,%p,%p,framelength %d,F %d\n",
@@ -590,56 +600,74 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 #endif
     int loopval=((rerun_flag==0)?0:((frame_length-L)>>3));
 
+    printf("beta: rerun %d => loopval %d\n",rerun_flag,loopval);
+
+    timein = rdtsc_oai();
+
+    m11p = (frame_length>>3)-1+(__m256i*)m_11;
+    m10p = (frame_length>>3)-1+(__m256i*)m_10;
+
     for (k=(frame_length>>3)-1; k>=loopval; k--) {
 
-      m11_128=((__m256i*)m_11)[k];
-      m10_128=((__m256i*)m_10)[k];
+      
+      b4 = _mm256_load_si256(&beta_ptr[4]);
+      b5 = _mm256_load_si256(&beta_ptr[5]);
+      b6 = _mm256_load_si256(&beta_ptr[6]);
+      b7 = _mm256_load_si256(&beta_ptr[7]);
 
-      m_b0 = _mm256_adds_epi16(beta_ptr[4],m11_128);  //m11
-      m_b1 = _mm256_subs_epi16(beta_ptr[4],m11_128);  //m00
-      m_b2 = _mm256_subs_epi16(beta_ptr[5],m10_128);  //m01
-      m_b3 = _mm256_adds_epi16(beta_ptr[5],m10_128);  //m10
-      m_b4 = _mm256_adds_epi16(beta_ptr[6],m10_128);  //m10
-      m_b5 = _mm256_subs_epi16(beta_ptr[6],m10_128);  //m01
-      m_b6 = _mm256_subs_epi16(beta_ptr[7],m11_128);  //m00
-      m_b7 = _mm256_adds_epi16(beta_ptr[7],m11_128);  //m11
+      m_b0 = _mm256_adds_epi16(b4,*m11p);  //m11
+      m_b1 = _mm256_subs_epi16(b4,*m11p);  //m00
+      m_b2 = _mm256_subs_epi16(b5,*m10p);  //m01
+      m_b3 = _mm256_adds_epi16(b5,*m10p);  //m10
+      m_b4 = _mm256_adds_epi16(b6,*m10p);  //m10
+      m_b5 = _mm256_subs_epi16(b6,*m10p);  //m01
+      m_b6 = _mm256_subs_epi16(b7,*m11p);  //m00
+      m_b7 = _mm256_adds_epi16(b7,*m11p);  //m11
 
-      new0 = _mm256_subs_epi16(beta_ptr[0],m11_128);  //m00
-      new1 = _mm256_adds_epi16(beta_ptr[0],m11_128);  //m11
-      new2 = _mm256_adds_epi16(beta_ptr[1],m10_128);  //m10
-      new3 = _mm256_subs_epi16(beta_ptr[1],m10_128);  //m01
-      new4 = _mm256_subs_epi16(beta_ptr[2],m10_128);  //m01
-      new5 = _mm256_adds_epi16(beta_ptr[2],m10_128);  //m10
-      new6 = _mm256_adds_epi16(beta_ptr[3],m11_128);  //m11
-      new7 = _mm256_subs_epi16(beta_ptr[3],m11_128);  //m00
+      b0 = _mm256_load_si256(&beta_ptr[0]);
+      b1 = _mm256_load_si256(&beta_ptr[1]);
+      b2 = _mm256_load_si256(&beta_ptr[2]);
+      b3 = _mm256_load_si256(&beta_ptr[3]);
+
+      new0 = _mm256_subs_epi16(b0,*m11p);  //m00
+      new1 = _mm256_adds_epi16(b0,*m11p);  //m11
+      new2 = _mm256_adds_epi16(b1,*m10p);  //m10
+      new3 = _mm256_subs_epi16(b1,*m10p);  //m01
+      new4 = _mm256_subs_epi16(b2,*m10p);  //m01
+      new5 = _mm256_adds_epi16(b2,*m10p);  //m10
+      new6 = _mm256_adds_epi16(b3,*m11p);  //m11
+      new7 = _mm256_subs_epi16(b3,*m11p);  //m00
+
+
+      b0 = _mm256_max_epi16(m_b0,new0);
+      b1 = _mm256_max_epi16(m_b1,new1);
+      b2 = _mm256_max_epi16(m_b2,new2);
+      b3 = _mm256_max_epi16(m_b3,new3);
+      b4 = _mm256_max_epi16(m_b4,new4);
+      b5 = _mm256_max_epi16(m_b5,new5);
+      b6 = _mm256_max_epi16(m_b6,new6);
+      b7 = _mm256_max_epi16(m_b7,new7);
+
+      beta_max = _mm256_max_epi16(b0,b1);
+      beta_max = _mm256_max_epi16(beta_max   ,b2);
+      beta_max = _mm256_max_epi16(beta_max   ,b3);
+      beta_max = _mm256_max_epi16(beta_max   ,b4);
+      beta_max = _mm256_max_epi16(beta_max   ,b5);
+      beta_max = _mm256_max_epi16(beta_max   ,b6);
+      beta_max = _mm256_max_epi16(beta_max   ,b7);
 
       beta_ptr-=8;
+      m11p--;
+      m10p--;
 
-      beta_ptr[0] = _mm256_max_epi16(m_b0,new0);
-      beta_ptr[1] = _mm256_max_epi16(m_b1,new1);
-      beta_ptr[2] = _mm256_max_epi16(m_b2,new2);
-      beta_ptr[3] = _mm256_max_epi16(m_b3,new3);
-      beta_ptr[4] = _mm256_max_epi16(m_b4,new4);
-      beta_ptr[5] = _mm256_max_epi16(m_b5,new5);
-      beta_ptr[6] = _mm256_max_epi16(m_b6,new6);
-      beta_ptr[7] = _mm256_max_epi16(m_b7,new7);
-
-      beta_max = _mm256_max_epi16(beta_ptr[0],beta_ptr[1]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[2]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[3]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[4]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[5]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[6]);
-      beta_max = _mm256_max_epi16(beta_max   ,beta_ptr[7]);
-
-      beta_ptr[0] = _mm256_subs_epi16(beta_ptr[0],beta_max);
-      beta_ptr[1] = _mm256_subs_epi16(beta_ptr[1],beta_max);
-      beta_ptr[2] = _mm256_subs_epi16(beta_ptr[2],beta_max);
-      beta_ptr[3] = _mm256_subs_epi16(beta_ptr[3],beta_max);
-      beta_ptr[4] = _mm256_subs_epi16(beta_ptr[4],beta_max);
-      beta_ptr[5] = _mm256_subs_epi16(beta_ptr[5],beta_max);
-      beta_ptr[6] = _mm256_subs_epi16(beta_ptr[6],beta_max);
-      beta_ptr[7] = _mm256_subs_epi16(beta_ptr[7],beta_max);
+      beta_ptr[0] = _mm256_subs_epi16(b0,beta_max);
+      beta_ptr[1] = _mm256_subs_epi16(b1,beta_max);
+      beta_ptr[2] = _mm256_subs_epi16(b2,beta_max);
+      beta_ptr[3] = _mm256_subs_epi16(b3,beta_max);
+      beta_ptr[4] = _mm256_subs_epi16(b4,beta_max);
+      beta_ptr[5] = _mm256_subs_epi16(b5,beta_max);
+      beta_ptr[6] = _mm256_subs_epi16(b6,beta_max);
+      beta_ptr[7] = _mm256_subs_epi16(b7,beta_max);
 
 #ifdef DEBUG_LOGMAP
       fprintf(fdavx2,"Loop index %d, mb\n",k);
@@ -658,6 +686,8 @@ void compute_beta16avx2(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,uint16_
 
 #endif
     }
+    timeout = rdtsc_oai();
+    printf("beta: inner loop time %llu\n",timeout-timein);
 
     if (rerun_flag==1)
       break;
@@ -968,7 +998,7 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   yp2 = yparity2;
 
 
-
+#if 0
   for (i=0; i<n; i+=8) {
     pi2_p = &pi2tab16avx2[iind][i];
 
@@ -1084,9 +1114,23 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
     yp128_cw2+=3;
 
   }
-
   yp=(llr_t*)yp128;
   yp_cw2=(llr_t*)yp128_cw2;
+#else
+  
+  pi2_p    = &pi2tab16avx2[iind][0];
+  for (i=0,j=0; i<n; i++) {
+    s[*pi2_p]     = y[j];
+    s[*pi2_p+8]   = y2[j++];
+    yp1[*pi2_p]   = y[j];
+    yp1[*pi2_p+8] = y2[j++];
+    yp2[*pi2_p]   = y[j];
+    yp2[(*pi2_p++)+8] = y2[j++];
+  }    
+  yp=(llr_t*)&y[j];
+  yp_cw2=(llr_t*)&y2[j];
+#endif
+
 
   // Termination
   for (i=0; i<3; i++) {
