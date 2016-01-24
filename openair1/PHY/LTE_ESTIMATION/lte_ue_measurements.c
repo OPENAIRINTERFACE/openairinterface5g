@@ -639,7 +639,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
 	       //   print_ints(" pmi128_im 0 ",&pmi128_im);
 	    
-	    mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+	  /*  mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
             mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
 	    
 	    mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[1],dl_ch1_128[1]);
@@ -656,7 +656,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
             pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
 	        //  print_ints(" pmi128_re 1",&pmi128_re);
             pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
-	    //print_ints(" pmi128_im 1 ",&pmi128_im);
+	    //print_ints(" pmi128_im 1 ",&pmi128_im);*/
 	    
 #elif defined(__arm__)
 
