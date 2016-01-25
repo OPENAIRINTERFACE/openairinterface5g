@@ -90,7 +90,7 @@ Options
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, ETHERNET, None
+   EXMIMO (Default), USRP, BLADERF, SODERA, ETHERNET, None
    Adds this RF board support (in external packages installation and in compilation)
 --oaisim
    Makes the oaisim simulator. Hardware will be defaulted to "NONE".
@@ -181,6 +181,9 @@ function main() {
             if [ "$HW" == "BLADERF" ] ; then 
 		HW="OAI_BLADERF"
 	    fi 
+            if [ "$HW" == "SODERA" ] ; then 
+		HW="OAI_SODERA"
+	    fi 
             echo_info "setting hardware to: $HW"
             shift 2;;
        --oaisim)
@@ -249,6 +252,7 @@ function main() {
    esac
   done
 
+  echo_info "RF HW set to $HW" 
   #Now we set flags to enable deadline scheduler settings
   #By default: USRP: disable, 
   #By default: BLADERF: enable,
@@ -261,6 +265,8 @@ function main() {
      elif [ "$HW" = "OAI_USRP" ] ; then 
         LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "OAI_SODERA" ] ; then 
         LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "None" ] ; then 
         LOWLATENCY_FLAG_USER="False"

@@ -57,12 +57,14 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   openair0_dev_init_usrp(device, openair0_cfg);
   printf("openair0_dev_init_usrp ...\n");
   return(openair0_dev_init_usrp(device, openair0_cfg));
-
 #elif OAI_BLADERF  
   device->type=BLADERF_IF;
   printf(" openair0_dev_init_bladerf ...\n");   
   return(openair0_dev_init_bladerf(device, openair0_cfg));	
-
-#endif 
+#elif OAI_SODERA
+  device->type=OAI_SODERA;
+  printf(" openair0_dev_init_sodera ...\n");   
+  return(openair0_dev_init_sodera(device, openair0_cfg));	
+#endif
    
 }

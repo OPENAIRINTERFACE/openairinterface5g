@@ -164,6 +164,8 @@ typedef enum {
   USRP_X300_IF,
   /*!\brief device is BLADE RF*/
   BLADERF_IF,
+  /*!\brief device is SODERA RF*/
+  SODERARF_IF,
   /*!\brief device is NONE*/
   NONE_IF,
   MAX_DEV_TYPE
@@ -295,6 +297,7 @@ extern "C"
 /*! \brief Initialize Openair ETHERNET target. It returns 0 if OK */
   int openair0_dev_init_eth(openair0_device *device, openair0_config_t *openair0_cfg);
   int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg);
+  int openair0_dev_init_sodera(openair0_device *device, openair0_config_t *openair0_cfg);
   int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg);
   int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg);
 /*@}*/

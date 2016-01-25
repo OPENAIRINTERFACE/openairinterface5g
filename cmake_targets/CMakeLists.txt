@@ -159,7 +159,7 @@ set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP"
 )
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}"
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
 )
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
@@ -167,6 +167,7 @@ add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
 
+Message("RF_BOARD is ${RF_BOARD}")
 # Below has been put in comment because does not work with
 # SVN authentication.
 #
@@ -404,7 +405,9 @@ add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4
 add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "False" "EXMIMO" "OAI_USRP" "ETHERNET" "OAI_BLADERF" "CPRIGW")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "False" "EXMIMO" "OAI_USRP" "ETHERNET" "OAI_BLADERF" "OAI_SODERA" "CPRIGW")
+
+Message("RF_BOARD  is ${RF_BOARD}")
 
 if (${RF_BOARD} STREQUAL "EXMIMO")
   set(DRIVER2013)
@@ -432,6 +435,19 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "bladeRF")
+ #set(LOWLATENCY False)
+
+elseif (${RF_BOARD} STREQUAL "OAI_SODERA")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/src/lms7002m")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/src/Si5351C")
+  set(HW_SOURCE ${HW_SOURCE}
+    ${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/sodera_lib.cpp
+    )
+  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/build/lms7002m")
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  set(option_HW_lib "usb-1.0")
+  set(LMS7002_LIB "libLMS7002M.a")
  #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
@@ -1431,7 +1447,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${LMS7002_LIB}
   -Wl,--end-group )
 
 
