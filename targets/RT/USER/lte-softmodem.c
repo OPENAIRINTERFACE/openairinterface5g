@@ -1665,12 +1665,18 @@ static void* eNB_thread( void* arg )
 
   pthread_mutex_unlock(&sync_mutex);
 
+  printf( "got sync (eNB_thread)\n" );
+
   int frame = 0;
 
 #ifndef EXMIMO
   spp        = openair0_cfg[0].samples_per_packet;
   tx_pos     = openair0_cfg[0].tx_scheduling_advance;
 #endif
+
+#if defined(ENABLE_ITTI)
+  wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+#endif 
 
   while (!oai_exit) {
     start_meas( &softmodem_stats_mt );
@@ -3022,10 +3028,14 @@ int main( int argc, char **argv )
   openair0.func_type = BBU_FUNC;
   openair0_cfg[0].log_level = glog_level;
 
-  if ((mode!=loop_through_memory) && 
-      (openair0_device_init(&openair0, &openair0_cfg[0]) <0)) {
-    printf("Exiting, cannot initialize device\n");
-    exit(-1);
+  if (mode!=loop_through_memory){
+    int ret;
+    ret= openair0_device_init(&openair0, &openair0_cfg[0]);
+    printf("openair0_device_init returns %d\n",ret);
+    if (ret<0) {
+      printf("Exiting, cannot initialize device\n");
+      exit(-1);
+    }
   }
   else if (mode==loop_through_memory) {    
   }
@@ -3182,15 +3192,15 @@ int main( int argc, char **argv )
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
 
-#if defined(ENABLE_ITTI)
+  /*  this is moved to the eNB main thread */ 
 
+//#if defined(ENABLE_ITTI)
   // Wait for eNB application initialization to be complete (eNB registration to MME)
-  if (UE_flag==0) {
-    printf("Waiting for eNB application to be ready\n");
-    wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-  }
-
-#endif
+  //  if (UE_flag==0) {
+  // printf("Waiting for eNB application to be ready\n");
+    //wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+  // }
+  //#endif
 
 
   // this starts the DMA transfers
@@ -3309,6 +3319,16 @@ int main( int argc, char **argv )
 
 #endif
     printf("UE threads created\n");
+#ifdef USE_MME
+
+    while (start_UE == 0) {
+      sleep(1);
+    }
+
+#endif
+
+
+
   } else {
     if (multi_thread>0) {
       init_eNB_proc();
@@ -3336,13 +3356,7 @@ int main( int argc, char **argv )
   // Sleep to allow all threads to setup
   sleep(1);
 
-#ifdef USE_MME
 
-  while (start_UE == 0) {
-    sleep(1);
-  }
-
-#endif
 
 #ifndef EXMIMO
 
@@ -3355,6 +3369,7 @@ int main( int argc, char **argv )
 
 #endif
 
+  printf("Sending sync to all threads\n");
 
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
