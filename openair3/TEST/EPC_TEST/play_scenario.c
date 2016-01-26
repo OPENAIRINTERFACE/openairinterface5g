@@ -141,10 +141,14 @@ void et_get_shift_arg( char * line_argument, shift_packet_t * const shift)
 
 
   while ((line_argument[i] != ':') && (i < len)) {
-    my_num[i] = line_argument[i];
+    if (isdigit(line_argument[i])) { // may occur '\"'
+      my_num[j++] = line_argument[i];
+    }
     i += 1;
   }
-  my_num[i++] = '\0';
+  AssertFatal(':' == line_argument[i], "Bad format");
+  i += 1; // ':'
+  my_num[j++] = '\0';
   shift->frame_number = atoi(my_num);
   AssertFatal(i<len, "Shift argument %s bad format", line_argument);
 
@@ -155,6 +159,7 @@ void et_get_shift_arg( char * line_argument, shift_packet_t * const shift)
     i += 1;
   }
   AssertFatal(i<len, "Shift argument %s bad format", line_argument);
+  j = 0;
   while ((line_argument[i] != '.') && (i < len)) {
     my_num[j++] = line_argument[i++];
   }
@@ -830,13 +835,13 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
   while (shift) {
     packet = scenario->list_packet;
     while (packet) {
-//      fprintf(stdout, "*shift: %p\n", shift);
-//      fprintf(stdout, "\tframe_number:       %p\n", shift->frame_number);
-//      fprintf(stdout, "\tshift_seconds:      %ld\n", shift->shift_seconds);
-//      fprintf(stdout, "\tshift_microseconds: %ld\n", shift->shift_microseconds);
-//      fprintf(stdout, "\tsingle:             %d\n\n", shift->single);
-//      fprintf(stdout, "\tshift_all_packets_seconds:      %ld\n", shift_all_packets.tv_sec);
-//      fprintf(stdout, "\tshift_all_packets_microseconds: %ld\n", shift_all_packets.tv_usec);
+      fprintf(stdout, "*shift: %p\n", shift);
+      fprintf(stdout, "\tframe_number:       %d\n", shift->frame_number);
+      fprintf(stdout, "\tshift_seconds:      %ld\n", shift->shift_seconds);
+      fprintf(stdout, "\tshift_microseconds: %ld\n", shift->shift_microseconds);
+      fprintf(stdout, "\tsingle:             %d\n\n", shift->single);
+      fprintf(stdout, "\tshift_all_packets_seconds:      %ld\n", shift_all_packets.tv_sec);
+      fprintf(stdout, "\tshift_all_packets_microseconds: %ld\n", shift_all_packets.tv_usec);
 
       AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
           "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
@@ -891,11 +896,11 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
         shift_all_packets.tv_sec = shift->shift_seconds;
         shift_all_packets.tv_usec = shift->shift_microseconds;
         timeval_add(&packet->time_relative_to_first_packet, &packet->time_relative_to_first_packet, &shift_all_packets);
-//        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
-//            packet->packet_number,
-//            packet->original_frame_number,
-//            packet->time_relative_to_first_packet.tv_sec,
-//            packet->time_relative_to_first_packet.tv_usec);
+        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
+            packet->packet_number,
+            packet->original_frame_number,
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec);
         AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
             "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
             packet->time_relative_to_first_packet.tv_sec,
@@ -904,11 +909,11 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
             packet->original_frame_number);
       } else if ((0 == shift->single)  && (shift->frame_number < packet->original_frame_number)) {
         timeval_add(&packet->time_relative_to_first_packet, &packet->time_relative_to_first_packet, &shift_all_packets);
-//        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
-//            packet->packet_number,
-//            packet->original_frame_number,
-//            packet->time_relative_to_first_packet.tv_sec,
-//            packet->time_relative_to_first_packet.tv_usec);
+        fprintf(stdout, "\tpacket num %u, now original frame number %u time_relative_to_first_packet=%d.%d\n",
+            packet->packet_number,
+            packet->original_frame_number,
+            packet->time_relative_to_first_packet.tv_sec,
+            packet->time_relative_to_first_packet.tv_usec);
         AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
             "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
             packet->time_relative_to_first_packet.tv_sec,
@@ -1107,8 +1112,8 @@ et_config_parse_opt_line (
             shift = shift->next;
           }
           shift->single = 1;
-          et_get_shift_arg(optarg, shift);
           printf("Arg Shift packet %s\n", optarg);
+          et_get_shift_arg(optarg, shift);
         }
         break;
 

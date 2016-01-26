@@ -467,7 +467,7 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
   int            size     = 0;
   int            pos      = 0;
   int            go_deeper_in_tree = 1;
-  S1AP_DEBUG("%s() mme_ue_s1ap_id %u\n", __FUNCTION__, new_id);
+  S1AP_INFO("%s() mme_ue_s1ap_id %u\n", __FUNCTION__, new_id);
 
   // modify
   for (cur_node = (xmlNode *)node; cur_node; cur_node = cur_node->next) {
@@ -527,7 +527,7 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, con
             } while (pos2 < (2*5));
             // update ASN1
             et_decode_s1ap(s1ap);
-            S1AP_DEBUG("Updated ASN1 for %s\n", showname);
+            S1AP_INFO("Updated ASN1 for %s\n", showname);
           }
         }
       }
@@ -553,6 +553,7 @@ void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xmlNodeSe
   xmlNode      *s1ap_node = NULL;
 
   size = (nodes) ? nodes->nodeNr : 0;
+  S1AP_DEBUG("%s() num nodes %u\n", __FUNCTION__, size);
 
   /*
    * NOTE: the nodes are processed in reverse order, i.e. reverse document
@@ -614,14 +615,19 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
 
   // Evaluate xpath expression
   xpath_obj = xmlXPathEvalExpression(xpath_expression, xpath_ctx);
+  xmlXPathFreeContext(xpath_ctx);
   AssertFatal(xpath_obj != NULL, "Unable to evaluate XPATH expression \"%s\"\n", xpath_expression);
 
+  if(xmlXPathNodeSetIsEmpty(xpath_obj->nodesetval)){
+    xmlXPathFreeObject(xpath_obj);
+    S1AP_DEBUG("%s() No match packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number, old_id, new_id);
+    return -1;
+  }
   // update selected nodes
   update_xpath_nodes_mme_ue_s1ap_id(&packet->sctp_hdr.u.data_hdr.payload, xpath_obj->nodesetval, new_id);
 
   // Cleanup of XPath data
   xmlXPathFreeObject(xpath_obj);
-  xmlXPathFreeContext(xpath_ctx);
 
   return 0;
 }
