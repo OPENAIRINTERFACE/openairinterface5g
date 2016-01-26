@@ -133,7 +133,8 @@ typedef struct {
   char *my_ip;
   //! my port number for Ethernet interface (eNB/BBU, UE)
   int my_port;
-
+  //! Configuration file for LMS7002M
+  char *configFilename;
 } openair0_config_t;
 
 typedef struct {

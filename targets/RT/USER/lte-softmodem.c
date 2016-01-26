@@ -290,6 +290,8 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
+char   rf_config_file[1024];
+
 int chain_offset=0;
 
 #ifndef EXMIMO
@@ -411,6 +413,7 @@ void help (void) {
   printf("  sudo -E lte-softmodem [options]\n");
   printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
   printf("Options:\n");
+  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
   printf("  --ulsch-max-errors set the max ULSCH erros\n");
   printf("  --calib-ue-rx set UE RX calibration\n");
   printf("  --calib-ue-rx-med \n");
@@ -2051,6 +2054,7 @@ static void get_options (int argc, char **argv)
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
+    LONG_OPTION_RF_CONFIG_FILE,
     LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS,
     LONG_OPTION_CALIB_UE_RX,
     LONG_OPTION_CALIB_UE_RX_MED,
@@ -2067,6 +2071,7 @@ static void get_options (int argc, char **argv)
   };
 
   static const struct option long_options[] = {
+    {"rf-config-file",required_argument,  NULL, LONG_OPTION_RF_CONFIG_FILE},
     {"ulsch-max-errors",required_argument,  NULL, LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS},
     {"calib-ue-rx",     required_argument,  NULL, LONG_OPTION_CALIB_UE_RX},
     {"calib-ue-rx-med", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_MED},
@@ -2085,11 +2090,19 @@ static void get_options (int argc, char **argv)
 
   while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
+    case LONG_OPTION_RF_CONFIG_FILE:
+      if (strlen(optarg)<=1024)
+         strcpy(rf_config_file,optarg);
+      else {
+         printf("Configuration filename is too long\n");
+         exit(-1);   
+      }
+      break;
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
       for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++)
 	tx_max_power[CC_id]=tx_max_power[0];
-
+      break;
     case LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS:
       ULSCH_max_consecutive_errors = atoi(optarg);
       printf("Set ULSCH_max_consecutive_errors = %d\n",ULSCH_max_consecutive_errors);
@@ -2552,8 +2565,12 @@ int main( int argc, char **argv )
   }
   logInit();
  
+  rf_config_file[0]='\0';
   get_options (argc, argv); //Command-line options
- 
+  if (rf_config_file[0] == '\0')
+    openair0_cfg[0].configFilename = NULL;
+  else
+    openair0_cfg[0].configFilename = rf_config_file;
   
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);

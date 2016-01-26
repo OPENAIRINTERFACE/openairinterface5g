@@ -31,8 +31,9 @@
  *
  * Author: Raymond Knopp
  */
-
-
+ 
+#include <vector>
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -49,6 +50,7 @@
 #include "common_lib.h"
 
 #include "lmsComms.h"
+#include "LMS7002M.h"
 #include "Si5351C.h"
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
@@ -57,6 +59,8 @@
 #ifdef __AVX2__
 #  include <immintrin.h>
 #endif
+
+using namespace std;
 
 int num_devices=0;
 /*These items configure the underlying asynch stream used by the the sync interface. 
@@ -84,8 +88,8 @@ typedef struct
   uhd::async_metadata_t async_md;
   */
 
-  LMScomms mDataPort;
-
+  LMScomms Port;
+  Si5351C Si;
   double sample_rate;
   // time offset between transmiter timestamp and receiver timestamp;
   double tdiff;
@@ -103,6 +107,7 @@ typedef struct
 
 } sodera_state_t;
 
+sodera_state_t sodera_state;
 
 static int trx_sodera_start(openair0_device *device)
 {
@@ -308,62 +313,99 @@ int trx_sodera_reset_stats(openair0_device* device) {
 int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair0_cfg)
 {
 
-  sodera_state_t *s = (sodera_state_t*)malloc(sizeof(sodera_state_t));
+  sodera_state_t *s=&sodera_state;
+
   size_t i;
-  memset(s, 0, sizeof(sodera_state_t));
 
   // Initialize SODERA device
-  if (!s->mDataPort.Open(0)) {
-    printf("Cannot open SoDeRa\n");
-    exit(-1);
-  }
+  s->Port.RefreshDeviceList();
+  vector<string> deviceNames=s->Port.GetDeviceList();
 
-  
-  int vers=0,subvers=0,subsubvers=0;
-  int bw_gain_adjust=0;
+  if (deviceNames.size() == 1) {
+    if (s->Port.Open(0) != IConnection::SUCCESS) {
+      printf("Cannot open SoDeRa\n");
+      exit(-1);
+    }
+    LMSinfo devInfo = s->Port.GetInfo();
+    printf("Device %s, HW: %d, FW: %d, Protocol %d\n",
+	   GetDeviceName(devInfo.device),
+	   (int)devInfo.hardware,
+	   (int)devInfo.firmware,
+	   (int)devInfo.protocol);
+    LMS7002M lmsControl(&s->Port);
+
+    printf("Configuring Si5351C\n");
+    s->Si.Initialize(&s->Port);
+    s->Si.SetPLL(0, 25000000, 0);
+    s->Si.SetPLL(1, 25000000, 0);
+    s->Si.SetClock(0, 27000000, true, false);
+    s->Si.SetClock(1, 27000000, true, false);
+    for (int i = 2; i < 8; ++i)
+      s->Si.SetClock(i, 27000000, false, false);
+    Si5351C::Status status = s->Si.ConfigureClocks();
+    if (status != Si5351C::SUCCESS)
+      {
+	printf("Failed to configure Si5351C");
+	exit(-1);
+      }
+    status = s->Si.UploadConfiguration();
+    if (status != Si5351C::SUCCESS)
+      printf("Failed to upload Si5351C configuration");
+    
+
+    printf("Configuring LMS7002\n");
+
+    int bw_gain_adjust=0;
 
    
-  openair0_cfg[0].rx_gain_calib_table = calib_table_sodera;
+    openair0_cfg[0].rx_gain_calib_table = calib_table_sodera;
 
-  switch ((int)openair0_cfg[0].sample_rate) {
-  case 30720000:
-            // from usrp_time_offset
-    openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 15;
-    openair0_cfg[0].tx_bw                 = 20e6;
-    openair0_cfg[0].rx_bw                 = 20e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
-    break;
-  case 15360000:
-    openair0_cfg[0].samples_per_packet    = 2048;
-    openair0_cfg[0].tx_sample_advance     = 45;
-    openair0_cfg[0].tx_bw                 = 10e6;
-    openair0_cfg[0].rx_bw                 = 10e6;
-    openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
-    break;
-  case 7680000:
-    openair0_cfg[0].samples_per_packet    = 1024;
-    openair0_cfg[0].tx_sample_advance     = 50;
-    openair0_cfg[0].tx_bw                 = 5e6;
-    openair0_cfg[0].rx_bw                 = 5e6;
-    openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
-    break;
-  case 1920000:
-    openair0_cfg[0].samples_per_packet    = 256;
-    openair0_cfg[0].tx_sample_advance     = 50;
-    openair0_cfg[0].tx_bw                 = 1.25e6;
-    openair0_cfg[0].rx_bw                 = 1.25e6;
-    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
-    break;
-  default:
-    printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
-    exit(-1);
-    break;
-  }
- 
-  /*
-  for(i=0;i<s->usrp->get_rx_num_channels();i++) {
-    if (i<openair0_cfg[0].rx_num_channels) {
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
+      // from usrp_time_offset
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 15;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    case 15360000:
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 45;
+      openair0_cfg[0].tx_bw                 = 10e6;
+      openair0_cfg[0].rx_bw                 = 10e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 7680000:
+      openair0_cfg[0].samples_per_packet    = 1024;
+      openair0_cfg[0].tx_sample_advance     = 50;
+      openair0_cfg[0].tx_bw                 = 5e6;
+      openair0_cfg[0].rx_bw                 = 5e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 1920000:
+      openair0_cfg[0].samples_per_packet    = 256;
+      openair0_cfg[0].tx_sample_advance     = 50;
+      openair0_cfg[0].tx_bw                 = 1.25e6;
+      openair0_cfg[0].rx_bw                 = 1.25e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    default:
+      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+      exit(-1);
+      break;
+
+    }
+    liblms7_status opStatus;
+    lmsControl.ResetChip();
+    opStatus = lmsControl.LoadConfig(openair0_cfg[0].configFilename);
+    
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Failed to load configuration file %s\n",openair0_cfg[0].configFilename);
+      exit(-1);
+    }
+    /*
+    for(i=0;i<openair0_cfg[0].rx_num_channels;i++) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
       s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
       printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
@@ -420,9 +462,12 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
       std::cout << boost::format("Actual TX bandwidth: %fM...") % (s->usrp->get_tx_bandwidth(i)/1e6) << std::endl;
       std::cout << boost::format("Actual TX antenna: %s...") % (s->usrp->get_tx_antenna(i)) << std::endl;
     }
-  }
   */
-
+  }
+  else {
+    printf("Please connect SoDeRa\n");
+    exit(-1);
+  }
 
   device->priv = s;
   device->trx_start_func = trx_sodera_start;

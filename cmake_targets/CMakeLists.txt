@@ -438,16 +438,18 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
  #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_SODERA")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/src/lms7002m")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/src/Si5351C")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/lms7002m")
+  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/Si5351C")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/sodera_lib.cpp
     )
-  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/SoDeRaV1_distro_01v/lms7suite_source_code/build/lms7002m")
+  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/lms7002m")
+  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/Si5351C")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "usb-1.0")
   set(LMS7002_LIB "libLMS7002M.a")
+  set(Si5351C_LIB "libSi5351C.a")
  #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
@@ -1447,7 +1449,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${LMS7002_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${LMS7002_LIB} ${Si5351C_LIB}
   -Wl,--end-group )
 
 

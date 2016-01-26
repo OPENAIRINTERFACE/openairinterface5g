@@ -59,11 +59,16 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   return(openair0_dev_init_usrp(device, openair0_cfg));
 #elif OAI_BLADERF  
   device->type=BLADERF_IF;
-  printf(" openair0_dev_init_bladerf ...\n");   
+  printf("openair0_dev_init_bladerf ...\n");   
   return(openair0_dev_init_bladerf(device, openair0_cfg));	
 #elif OAI_SODERA
   device->type=OAI_SODERA;
-  printf(" openair0_dev_init_sodera ...\n");   
+  printf("openair0_dev_init_sodera ...\n");
+  if (openair0_cfg[0].configFilename==NULL) {
+    printf("Please provide a configuration file for SoDeRa\n");
+    exit(-1);
+  }
+
   return(openair0_dev_init_sodera(device, openair0_cfg));	
 #endif
    
