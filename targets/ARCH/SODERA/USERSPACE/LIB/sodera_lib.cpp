@@ -354,7 +354,7 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
     
 
     printf("Configuring LMS7002\n");
-
+    
     int bw_gain_adjust=0;
 
    
@@ -404,14 +404,65 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
       printf("Failed to load configuration file %s\n",openair0_cfg[0].configFilename);
       exit(-1);
     }
-    /*
-    for(i=0;i<openair0_cfg[0].rx_num_channels;i++) {
-      s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
-      s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-      printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
-      s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
-      set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
+    opStatus = lmsControl.UploadAll();
 
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Failed to upload configuration file\n");
+      exit(-1);
+    }
+    
+    opStatus = lmsControl.SetFrequencySX(LMS7002M::Tx, openair0_cfg[0].tx_freq[0]/1e6,30.72);
+
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Cannot set TX frequency %f MHz\n",openair0_cfg[0].tx_freq[0]/1e6);
+      exit(-1);
+    }
+
+    opStatus = lmsControl.SetFrequencySX(LMS7002M::Rx, openair0_cfg[0].rx_freq[0]/1e6,30.72);
+
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Cannot set RX frequency %f MHz\n",openair0_cfg[0].rx_freq[0]/1e6);
+      exit(-1);
+    }
+
+
+    
+    // this makes RX/TX sampling rates equal
+    opStatus = lmsControl.Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN,0);
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Cannot modify SPI (EN_ADCCLKH_CLKGN)\n");
+      exit(-1);
+    }
+    opStatus = lmsControl.Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN,2);
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Cannot modify SPI (CLKH_OV_CLKL_CGEN)\n");
+      exit(-1);
+    }
+
+    const float cgen_freq_MHz = 245.76;
+    const int interpolation   = 0; // real interpolation = 2
+    const int decimation      = 0; // real decimation = 2
+    opStatus = lmsControl.SetInterfaceFrequency(cgen_freq_MHz,interpolation,decimation);
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Cannot SetInterfaceFrequency (%f,%d,%d)\n",cgen_freq_MHz,interpolation,decimation);
+      exit(-1);
+    }
+    // Run calibration procedure
+    float txrx_calibrationBandwidth_MHz = 5;
+    opStatus = lmsControl.CalibrateTx(txrx_calibrationBandwidth_MHz);
+    if (opStatus != LIBLMS7_SUCCESS){
+      printf("TX Calibration failed\n");
+      exit(-1);
+    }
+    opStatus = lmsControl.CalibrateRx(txrx_calibrationBandwidth_MHz);
+    if (opStatus != LIBLMS7_SUCCESS){
+      printf("RX Calibration failed\n");
+      exit(-1);
+    }
+    
+    // this will configure that sampling rate at output of FPGA
+    //    LMS_StreamBoard::ConfigurePLL(&s->Port,openair0_cfg[0].sample_rate,openair0_cfg[0].sample_rate,90);
+    /*
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
       if (openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] > gain_range.stop()) {
@@ -482,6 +533,6 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
   
   s->sample_rate = openair0_cfg[0].sample_rate;
   // TODO:
-
+  exit(-1);
   return 0;
 }
