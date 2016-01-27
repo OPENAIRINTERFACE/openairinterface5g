@@ -601,7 +601,7 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
 
   S1AP_DEBUG("%s() packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number, old_id, new_id);
 
-  ret = snprintf(xpath_expression, ET_XPATH_EXPRESSION_MAX_LENGTH, "//field[@name=\"s1ap.MME_UE_S1AP_ID\"][@show=\"%d\"]", old_id);
+  ret = snprintf(xpath_expression, ET_XPATH_EXPRESSION_MAX_LENGTH, "//field[@name=\"s1ap.MME_UE_S1AP_ID\"][@show=\"%u\"]", old_id);
   AssertFatal((ret > 0) && (ret < ET_XPATH_EXPRESSION_MAX_LENGTH), "Could not build XPATH expression err=%d", ret);
 
   doc = packet->sctp_hdr.u.data_hdr.payload.doc;
@@ -620,7 +620,8 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_
 
   if(xmlXPathNodeSetIsEmpty(xpath_obj->nodesetval)){
     xmlXPathFreeObject(xpath_obj);
-    S1AP_DEBUG("%s() No match packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number, old_id, new_id);
+    S1AP_DEBUG("%s() No match \"%s\"packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n",
+        __FUNCTION__, xpath_expression, packet->packet_number, packet->original_frame_number, old_id, new_id);
     return -1;
   }
   // update selected nodes
