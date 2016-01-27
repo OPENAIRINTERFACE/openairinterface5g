@@ -710,6 +710,8 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_MSG_DIR}/stats_common.proto
     ${PRPT_MSG_DIR}/stats_messages.proto
     ${PRPT_MSG_DIR}/time_common.proto
+    ${PRPT_MSG_DIR}/controller_commands.proto
+    ${PRPT_MSG_DIR}/mac_primitives.proto
     )
 
   set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
@@ -722,6 +724,8 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_C_DIR}/stats_common.pb-c.c
     ${PRPT_C_DIR}/stats_messages.pb-c.c
     ${PRPT_C_DIR}/time_common.pb-c.c
+    ${PRPT_C_DIR}/controller_commands.pb-c.c
+    ${PRPT_C_DIR}/mac_primitives.pb-c.c
     )
   
   file(GLOB prpt_h ${PRPT_C_DIR}/*.h)

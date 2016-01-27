@@ -4,6 +4,7 @@ package protocol;
 import "stats_messages.proto";
 import "header.proto";
 import "time_common.proto";
+import "controller_commands.proto";
 
 message progran_message {
        optional progran_direction msg_dir = 100;
@@ -15,6 +16,7 @@ message progran_message {
 	      prp_stats_reply stats_reply_msg = 5;
 	      prp_sf_trigger sf_trigger_msg = 6;
 	      prp_ul_sr_info ul_sr_info_msg = 7;
+	      prp_dl_mac_config dl_mac_config_msg = 8;
 	}
 }
 
@@ -104,6 +106,19 @@ message prp_ul_sr_info {
 	optional prp_header header = 1;
 	optional uint32 sfn_sf = 2;
 	repeated uint32 rnti = 3;
+}
+
+//
+// Controller command messages
+//
+
+message prp_dl_mac_config {
+	optional prp_header header = 1;
+	optional uint32 sfn_sf = 2;
+	repeated prp_dl_data dl_ue_data = 3;
+	repeated prp_dl_rar dl_rar = 4;
+	repeated prp_dl_broadcast dl_broadcast = 5;
+	repeated prp_pdcch_ofdm_sym_count ofdm_sym = 6; // OFDM symbol count for each CC
 }
 
 // Extensions of the echo request and reply

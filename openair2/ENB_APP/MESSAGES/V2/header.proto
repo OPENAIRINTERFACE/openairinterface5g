@@ -21,5 +21,8 @@ enum prp_type {
 
      //Asynchronous messages
      PRPT_UL_SR_INFO = 6;
+
+     //Controller command messages
+     PRPT_DL_MAC_CONFIG = 7;
 }
 
