@@ -482,6 +482,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
   } else {
     printf("Found USRP B200");
+    args += ",num_recv_frames=256" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
