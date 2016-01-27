@@ -94,6 +94,10 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
 
 int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg);
 
+int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage **msg);
+
+int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg);
+
 
 /**********************************
  * eNB agent - technology mac API

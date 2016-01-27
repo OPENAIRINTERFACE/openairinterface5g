@@ -45,6 +45,9 @@
 /*Flags showing if a mac agent has already been registered*/
 unsigned int mac_agent_registered[NUM_MAX_ENB];
 
+/*Array containing the Agent-MAC interfaces*/
+AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
+
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
   
   // TODO: Must deal with sanitization of input
@@ -991,6 +994,43 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
+int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage **msg) {
+
+  int xid = 0;
+  Protocol__PrpHeader *header;
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_DL_MAC_CONFIG, &header) != 0)
+    goto error;
+
+  Protocol__PrpDlMacConfig *dl_mac_config_msg;
+  dl_mac_config_msg = malloc(sizeof(Protocol__PrpDlMacConfig));
+  if (dl_mac_config_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_dl_mac_config__init(dl_mac_config_msg);
+  
+  dl_mac_config_msg->header = header;
+  dl_mac_config_msg->has_sfn_sf = 1;
+  dl_mac_config_msg->sfn_sf = get_sfn_sf(mod_id);
+  
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG;
+  (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->dl_mac_config_msg = dl_mac_config_msg;
+
+  return 0;
+
+ error:
+  return -1;
+}
+
+int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
+  //TODO: De-allocate the memory of the message
+  return -1;
+}
+
 /***********************************************
  * eNB agent - technology mac API implementation
  ***********************************************/
@@ -1109,7 +1149,7 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
 }
 
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
-  if (!mac_agent_registered[mod_id]) {
+  if (mac_agent_registered[mod_id]) {
     LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
     return -1;
   }
@@ -1119,22 +1159,23 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
 
+  
   mac_agent_registered[mod_id] = 1;
+  agent_mac_xface[mod_id] = xface;
 
   return 0;
 }
 
 int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   
-  if(mac_agent_registered[mod_id]) {
-    LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
-    return -1;
-  }
-  
   //xface->agent_ctxt = NULL;
   xface->enb_agent_send_sr_info = NULL;
   xface->enb_agent_send_sf_trigger = NULL;
+  xface->enb_agent_send_update_mac_stats = NULL;
 
+  mac_agent_registered[mod_id] = 0;
+  agent_mac_xface[mod_id] = NULL;
+  
   return 0;
 }
 

@@ -46,9 +46,10 @@ enb_agent_message_decoded_callback messages_callback[][3] = {
   {enb_agent_echo_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG*/ //Must add handler when receiving echo reply
   {enb_agent_mac_handle_stats, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG*/
-  {0,0,0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
-  {0,0,0}, /*PROTOCOK__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
-  {0,0,0}, /*SR_INFO*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
+  {0, 0, 0}, /*PROTOCOK__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
+  {0, 0, 0}, /*SR_INFO*/
+  {0, 0, 0}, /*DL_MAC_CONFIG*/
 
 };
 
@@ -60,6 +61,7 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_mac_destroy_stats_reply,
   enb_agent_mac_destroy_sf_trigger,
   enb_agent_mac_destroy_sr_info,
+  enb_agent_mac_destroy_dl_config,
 };
 
 static const char *enb_agent_direction2String[] = {
