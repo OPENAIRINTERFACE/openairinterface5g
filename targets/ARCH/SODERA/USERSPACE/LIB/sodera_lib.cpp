@@ -52,6 +52,8 @@
 #include "lmsComms.h"
 #include "LMS7002M.h"
 #include "Si5351C.h"
+#include "LMS_StreamBoard.h"
+
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
 #endif
@@ -72,24 +74,12 @@ typedef struct
   // --------------------------------
   // variables for SoDeRa configuration
   // --------------------------------
-  /*
-  uhd::usrp::multi_usrp::sptr usrp;
-  //uhd::usrp::multi_usrp::sptr rx_usrp;
-  
-  //create a send streamer and a receive streamer
-  uhd::tx_streamer::sptr tx_stream;
-  uhd::rx_streamer::sptr rx_stream;
-
-  uhd::tx_metadata_t tx_md;
-  uhd::rx_metadata_t rx_md;
-
-  uhd::time_spec_t tm_spec;
-  //setup variables and allocate buffer
-  uhd::async_metadata_t async_md;
-  */
 
   LMScomms Port;
   Si5351C Si;
+  LMS7002M lmsControl;
+  LMS_StreamBoard *lmsStream;
+
   double sample_rate;
   // time offset between transmiter timestamp and receiver timestamp;
   double tdiff;
@@ -105,13 +95,13 @@ typedef struct
   int64_t rx_count;
   openair0_timestamp rx_timestamp;
 
-} sodera_state_t;
+} sodera_t;
 
-sodera_state_t sodera_state;
+sodera_t sodera_state;
 
 static int trx_sodera_start(openair0_device *device)
 {
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
 
   // init recv and send streaming
 
@@ -124,7 +114,7 @@ static int trx_sodera_start(openair0_device *device)
 
 static void trx_sodera_end(openair0_device *device)
 {
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
 
 
   
@@ -132,7 +122,7 @@ static void trx_sodera_end(openair0_device *device)
 
 static int trx_sodera_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
 
   if (cc>1) {
     //    s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
@@ -145,7 +135,7 @@ static int trx_sodera_write(openair0_device *device, openair0_timestamp timestam
 
 static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
-   sodera_state_t *s = (sodera_state_t*)device->priv;
+   sodera_t *s = (sodera_t*)device->priv;
    int samples_received=0,i,j;
    int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
@@ -193,7 +183,7 @@ static bool is_equal(double a, double b)
 
 int trx_sodera_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
 
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
 
   //  s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[0]);
   //  s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[0]);
@@ -204,7 +194,7 @@ int trx_sodera_set_freq(openair0_device* device, openair0_config_t *openair0_cfg
 
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg) {
 
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
   static int first_call=1;
   static double rf_freq,diff;
 
@@ -222,7 +212,7 @@ int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *open
 int trx_sodera_set_gains(openair0_device* device, 
 		       openair0_config_t *openair0_cfg) {
 
-  sodera_state_t *s = (sodera_state_t*)device->priv;
+  sodera_t *s = (sodera_t*)device->priv;
 
   //  s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[0]);
   //  ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(0);
@@ -313,7 +303,7 @@ int trx_sodera_reset_stats(openair0_device* device) {
 int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair0_cfg)
 {
 
-  sodera_state_t *s=&sodera_state;
+  sodera_t *s=&sodera_state;
 
   size_t i;
 
@@ -332,8 +322,7 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
 	   (int)devInfo.hardware,
 	   (int)devInfo.firmware,
 	   (int)devInfo.protocol);
-    LMS7002M lmsControl(&s->Port);
-
+    
     printf("Configuring Si5351C\n");
     s->Si.Initialize(&s->Port);
     s->Si.SetPLL(0, 25000000, 0);
@@ -396,29 +385,32 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
       break;
 
     }
+
+    s->lmsControl = LMS7002M(&s->Port);
+
     liblms7_status opStatus;
-    lmsControl.ResetChip();
-    opStatus = lmsControl.LoadConfig(openair0_cfg[0].configFilename);
+    s->lmsControl.ResetChip();
+    opStatus = s->lmsControl.LoadConfig(openair0_cfg[0].configFilename);
     
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Failed to load configuration file %s\n",openair0_cfg[0].configFilename);
       exit(-1);
     }
-    opStatus = lmsControl.UploadAll();
+    opStatus = s->lmsControl.UploadAll();
 
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Failed to upload configuration file\n");
       exit(-1);
     }
     
-    opStatus = lmsControl.SetFrequencySX(LMS7002M::Tx, openair0_cfg[0].tx_freq[0]/1e6,30.72);
+    opStatus = s->lmsControl.SetFrequencySX(LMS7002M::Tx, openair0_cfg[0].tx_freq[0]/1e6,30.72);
 
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Cannot set TX frequency %f MHz\n",openair0_cfg[0].tx_freq[0]/1e6);
       exit(-1);
     }
 
-    opStatus = lmsControl.SetFrequencySX(LMS7002M::Rx, openair0_cfg[0].rx_freq[0]/1e6,30.72);
+    opStatus = s->lmsControl.SetFrequencySX(LMS7002M::Rx, openair0_cfg[0].rx_freq[0]/1e6,30.72);
 
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Cannot set RX frequency %f MHz\n",openair0_cfg[0].rx_freq[0]/1e6);
@@ -428,12 +420,12 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
 
     
     // this makes RX/TX sampling rates equal
-    opStatus = lmsControl.Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN,0);
+    opStatus = s->lmsControl.Modify_SPI_Reg_bits(EN_ADCCLKH_CLKGN,0);
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Cannot modify SPI (EN_ADCCLKH_CLKGN)\n");
       exit(-1);
     }
-    opStatus = lmsControl.Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN,2);
+    opStatus = s->lmsControl.Modify_SPI_Reg_bits(CLKH_OV_CLKL_CGEN,2);
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Cannot modify SPI (CLKH_OV_CLKL_CGEN)\n");
       exit(-1);
@@ -442,26 +434,34 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
     const float cgen_freq_MHz = 245.76;
     const int interpolation   = 0; // real interpolation = 2
     const int decimation      = 0; // real decimation = 2
-    opStatus = lmsControl.SetInterfaceFrequency(cgen_freq_MHz,interpolation,decimation);
+    opStatus = s->lmsControl.SetInterfaceFrequency(cgen_freq_MHz,interpolation,decimation);
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Cannot SetInterfaceFrequency (%f,%d,%d)\n",cgen_freq_MHz,interpolation,decimation);
       exit(-1);
     }
     // Run calibration procedure
     float txrx_calibrationBandwidth_MHz = 5;
-    opStatus = lmsControl.CalibrateTx(txrx_calibrationBandwidth_MHz);
+    opStatus = s->lmsControl.CalibrateTx(txrx_calibrationBandwidth_MHz);
     if (opStatus != LIBLMS7_SUCCESS){
       printf("TX Calibration failed\n");
       exit(-1);
     }
-    opStatus = lmsControl.CalibrateRx(txrx_calibrationBandwidth_MHz);
+    opStatus = s->lmsControl.CalibrateRx(txrx_calibrationBandwidth_MHz);
     if (opStatus != LIBLMS7_SUCCESS){
       printf("RX Calibration failed\n");
       exit(-1);
     }
-    
+
+        
+    s->lmsStream = new LMS_StreamBoard(&s->Port);    
+    LMS_StreamBoard::Status opStreamStatus; 
     // this will configure that sampling rate at output of FPGA
-    //    LMS_StreamBoard::ConfigurePLL(&s->Port,openair0_cfg[0].sample_rate,openair0_cfg[0].sample_rate,90);
+    opStreamStatus = s->lmsStream->ConfigurePLL(&s->Port,openair0_cfg[0].sample_rate,openair0_cfg[0].sample_rate,90);
+    if (opStatus != LIBLMS7_SUCCESS){
+      printf("Sample rate programming failed\n");
+      exit(-1);
+    }
+    
     /*
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
