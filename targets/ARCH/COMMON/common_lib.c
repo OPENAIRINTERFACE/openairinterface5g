@@ -54,7 +54,6 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   return(openair0_dev_init_exmimo(device, openair0_cfg));
 #elif OAI_USRP
   device->type=USRP_B200_IF;
-  openair0_dev_init_usrp(device, openair0_cfg);
   printf("openair0_dev_init_usrp ...\n");
   return(openair0_dev_init_usrp(device, openair0_cfg));
 
