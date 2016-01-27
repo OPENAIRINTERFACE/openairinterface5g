@@ -861,10 +861,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
@@ -894,11 +891,9 @@
     <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -911,15 +906,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -945,10 +936,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
@@ -978,11 +966,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -995,15 +981,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1028,10 +1010,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 100
@@ -1061,11 +1040,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1078,15 +1055,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1111,10 +1084,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
@@ -1144,11 +1114,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1161,15 +1129,11 @@
     <UE_search_expr_false></UE_search_expr_false>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1193,10 +1157,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
@@ -1226,11 +1187,8 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1244,15 +1202,11 @@
 
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1276,10 +1230,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 100
@@ -1309,11 +1260,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1327,15 +1276,11 @@
 
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1360,10 +1305,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
@@ -1393,11 +1335,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue;$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1410,15 +1350,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1444,10 +1380,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
@@ -1477,11 +1410,8 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue;$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1494,15 +1424,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1527,10 +1453,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 100
@@ -1560,11 +1483,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1577,15 +1498,11 @@
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1610,10 +1527,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 25
@@ -1643,11 +1557,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1661,15 +1573,11 @@
 
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1693,10 +1601,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 50
@@ -1726,11 +1631,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1744,15 +1647,11 @@
 
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
@@ -1776,10 +1675,7 @@
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
     <eNB_working_dir>/tmp</eNB_working_dir>
-    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"208\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"92\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
+    <eNB_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  tracking_area_code \"1\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_country_code \"208\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  mobile_network_code \"92\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  N_RB_DL 100
@@ -1809,11 +1705,9 @@
     <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
-    <UE_config_file>targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  tracking_area_code \"4\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_country_code \"5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  mobile_network_code \"6\"</UE_config_file>
-    <UE_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</UE_compile_prog>
-    <UE_compile_prog_args>--eNB -w USRP -x -c </UE_compile_prog_args>
+    <UE_config_file></UE_config_file>
+    <UE_compile_prog></UE_compile_prog>
+    <UE_compile_prog_args></UE_compile_prog_args>
     <UE_pre_exec></UE_pre_exec>
     <UE_pre_exec_args></UE_pre_exec_args>
     <UE_main_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue ; sleep 45; $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --start-ue </UE_main_exec>
@@ -1827,15 +1721,11 @@
 
 
     <EPC_working_dir>/tmp</EPC_working_dir>
-    <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
-                     BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
-                     BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
-    <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
-    <HSS_compile_prog>SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <EPC_config_file></EPC_config_file>
+    <EPC_compile_prog></EPC_compile_prog>
+    <EPC_compile_prog_args></EPC_compile_prog_args>
+    <HSS_compile_prog></HSS_compile_prog>
+    <HSS_compile_prog_args></HSS_compile_prog_args>
 
     <EPC_pre_exec></EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
