@@ -44,7 +44,7 @@
 
 //extern msg_context_t shared_ctxt[NUM_MAX_ENB][ENB_AGENT_MAX];
 
-extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB][ENB_AGENT_MAX];
+extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
 extern unsigned int mac_agent_registered[NUM_MAX_ENB];
 

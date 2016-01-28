@@ -35,6 +35,11 @@
  */
 #ifndef __LAYER2_MAC_PROTO_H__
 #define __LAYER2_MAC_PROTO_H__
+
+#include "enb_agent_defs.h"
+#include "header.pb-c.h"
+#include "progran.pb-c.h"
+
 /** \addtogroup _mac
  *  @{
  */
@@ -138,6 +143,11 @@ void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,u
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
 void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,unsigned int *nb_rb_used0,unsigned int *nCCE_used,int *mbsfn_flag);
+
+//To be used by the agent
+void schedule_ue_spec_default(mid_t mod_id, uint32_t frame, uint32_t subframe,
+				     unsigned int *nb_rb_used, unsigned int *nCCE_used,
+				     int *mbsfn_flag, Protocol__ProgranMessage *dl_info);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE

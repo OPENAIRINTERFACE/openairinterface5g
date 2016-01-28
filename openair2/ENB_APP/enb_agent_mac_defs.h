@@ -53,7 +53,14 @@ typedef struct {
   /// Send to the controller all the mac stat updates that occured during this subframe
   /// based on the stats request configuration
   void (*enb_agent_send_update_mac_stats)(mid_t mod_id);
-  
+
+  /// Run the UE DL scheduler and fill the Protocol__ProgranMessage. Assumes that
+  /// dl_info is already initialized as prp_dl_mac_config and fills the
+  /// prp_dl_data part of it
+  void (*enb_agent_schedule_ue_spec)(mid_t mod_id, uint32_t frame, uint32_t subframe,
+				     unsigned int *nb_rb_used, unsigned int *nCCE_used,
+				     int *mbsfn_flag, Protocol__ProgranMessage *dl_info);
+
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;

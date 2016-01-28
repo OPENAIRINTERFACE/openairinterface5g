@@ -256,6 +256,12 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   enb_agent_init_cont_mac_stats_update(mod_id);
   
   new_thread(receive_thread, &enb_agent[mod_id]);
+
+  /*Initialize and register the mac xface. Must be modified later
+   *for more flexibility in agent management */
+
+  AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
+  enb_agent_register_mac_xface(mod_id, mac_agent_xface);
   
   /* 
    * initilize a timer 

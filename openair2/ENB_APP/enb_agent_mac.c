@@ -39,6 +39,8 @@
 #include "enb_agent_common.h"
 #include "enb_agent_mac_internal.h"
 
+#include "LAYER2/MAC/proto.h"
+
 #include "log.h"
 
 
@@ -1158,6 +1160,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
+  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
 
   
   mac_agent_registered[mod_id] = 1;
@@ -1172,6 +1175,7 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sr_info = NULL;
   xface->enb_agent_send_sf_trigger = NULL;
   xface->enb_agent_send_update_mac_stats = NULL;
+  xface->enb_agent_schedule_ue_spec = NULL;
 
   mac_agent_registered[mod_id] = 0;
   agent_mac_xface[mod_id] = NULL;
