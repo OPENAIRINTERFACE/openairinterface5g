@@ -68,8 +68,8 @@ int num_devices=0;
 /*These items configure the underlying asynch stream used by the the sync interface. 
  */
 
-#define BUFFERSIZE 65536
-#define BUFFERSCOUNT 16  // must be a power of 2
+#define BUFFERSIZE 4096
+#define BUFFERSCOUNT 32
 typedef struct
 {
 
@@ -82,10 +82,11 @@ typedef struct
   LMS7002M lmsControl;
   LMS_StreamBoard *lmsStream;
 
-  uint8_t buffers_rx[BUFFERSIZE*BUFFERSCOUNT];
+  char buffers_rx[BUFFERSIZE*BUFFERSCOUNT];
   int handles[BUFFERSCOUNT];
-  int last_handle;
+  int current_handle;
   int samples_left_buffer;
+  int last_transfer;
 
   double sample_rate;
   // time offset between transmiter timestamp and receiver timestamp;
@@ -108,7 +109,7 @@ typedef struct
 typedef struct {
   uint8_t reserved[8];
   uint64_t counter;
-  uint8_t data[4080];
+  char data[4080];
 } StreamPacket_t;
 
 sodera_t sodera_state;
@@ -149,7 +150,6 @@ static int trx_sodera_start(openair0_device *device)
 {
   sodera_t *s = (sodera_t*)device->priv;
 
-  const int buffersCountMask = buffersCount-1;
 
   // init recv and send streaming
 
@@ -157,34 +157,35 @@ static int trx_sodera_start(openair0_device *device)
   s->tx_count = 0;
   s->rx_timestamp = 0;
   s->current_handle = 0;
+  s->last_transfer = 0;
 
   // switch off RX
-  uint16_t regVal = SPI_read(s->Port,0x0005);
-  SPI_write(s->port,0x0005,regVal & ~0x6);
+  uint16_t regVal = SPI_read(&s->Port,0x0005);
+  SPI_write(&s->Port,0x0005,regVal & ~0x6);
 
   if (s->channelscount==2) {
-    SPI_write(s->Port,0x0001,0x0003);
-    SPI_write(s->Port,0x0007,0x000A);
+    SPI_write(&s->Port,0x0001,0x0003);
+    SPI_write(&s->Port,0x0007,0x000A);
   }
   else {
-    SPI_write(s->Port,0x0001,0x0001);
-    SPI_write(s->Port,0x0007,0x0008);
+    SPI_write(&s->Port,0x0001,0x0001);
+    SPI_write(&s->Port,0x0007,0x0008);
   }
 
   // USB FIFO reset
   LMScomms::GenericPacket ctrPkt;
-  ctrPkt.cmd = CMD_USR_FIFO_RST;
+  ctrPkt.cmd = CMD_USB_FIFO_RST;
   ctrPkt.outBuffer.push_back(0x01);
   s->Port.TransferPacket(ctrPkt);
   ctrPkt.outBuffer[0]=0x00;
   s->Port.TransferPacket(ctrPkt);
   
-  uint16_t regVal = SPI_read(s->Port,0x0005);
+  regVal = SPI_read(&s->Port,0x0005);
   // provide timestamp, set streamTXEN, set TX/RX enable 
-  SPI_write(s->port,0x0005,(regVal & ~0x20) | 0x6);
+  SPI_write(&s->Port,0x0005,(regVal & ~0x20) | 0x6);
 
   for (int i=0; i< BUFFERSCOUNT ; i++) 
-    s->handles[i] = s->Port.BeginDataReading(&s->buffers[i*BUFFERSIZE],BUFFERSIZE);
+    s->handles[i] = s->Port.BeginDataReading(&s->buffers_rx[i*BUFFERSIZE],BUFFERSIZE);
 
   return 0;
 }
@@ -195,8 +196,8 @@ static void trx_sodera_end(openair0_device *device)
 
 
   // stop TX/RX if they were active
-  regVal = SPI_read(s->Port,0x0005);
-  SPI_write(s->Port,0x0005,regVal & ~0x6);
+  uint16_t regVal = SPI_read(&s->Port,0x0005);
+  SPI_write(&s->Port,0x0005,regVal & ~0x6);
 
 }
 
@@ -204,11 +205,6 @@ static int trx_sodera_write(openair0_device *device, openair0_timestamp timestam
 {
   sodera_t *s = (sodera_t*)device->priv;
 
-  if (cc>1) {
-    //    s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
-  }
-  else
-    //    s->tx_stream->send(buff[0], nsamps, s->tx_md);
 
   return 0;
 }
@@ -220,18 +216,23 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
    int nsamps2;  // aligned to upper 32 or 16 byte boundary
    StreamPacket_t *p;
    int16_t sampleI,sampleQ;
-   uint8_t *pktStart;
+   char *pktStart;
    int offset = 0;
    int num_p;
    int ind=0;
+   int buffsize;
+   int spp;
 
    // this assumes that each request is of size 4096 bytes (spp = 4080/4/channelscount)
-   
+   spp = sizeof(p->data)>>2; // spp = size of payload in samples  
+   spp /= s->channelscount;
+
+
    // first get rid of remaining samples
    if (s->samples_left_buffer > 0) {
      buffsize = min(s->samples_left_buffer,nsamps);
-     pktStart = &s->buffers_rx[(s->last_handle-1)*BUFFERSIZE].data;
-     pktStart -= (spp-s->samples_left_buffer);
+     pktStart = ((StreamPacket_t*)&s->buffers_rx[(s->current_handle-1)*BUFFERSIZE])->data;
+     pktStart += (spp-s->samples_left_buffer);
      const int stepSize = s->channelscount * 3;
 
      for (int b=0;b<buffsize<<2;b+=stepSize) {
@@ -267,16 +268,14 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
    // This is for the left-over part => READ from USB
 
 
-   spp = sizeof(p->data)>>2; // spp = size of payload in samples  
-   spp /= s->channelscount;
 
    num_p = nsamps / spp;
    if ((nsamps%spp) > 0)
      num_p++;
    s->samples_left_buffer = (num_p*spp)-nsamps;
    for (int i=0;i<num_p;i++)
-     s->handles[i] = s->Port.BeginDataReading(&buffers_rx[i*BUFFERSIZE],BUFFERSIZE);
-   s->last_handle = num_p;
+     s->handles[i] = s->Port.BeginDataReading(&s->buffers_rx[i*BUFFERSIZE],BUFFERSIZE);
+   s->current_handle = num_p;
    
 
    const int stepSize = s->channelscount * 3;
@@ -287,7 +286,8 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
        printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,i,num_p);
        return(samples_received);
      }
-     if ((ret=Port.FinishDataReading(&s->buffers_rx[i*BUFFERSIZE],BUFFERSIZE,s->handles[i])) != BUFFERSIZE) {  
+     long bytesToRead=BUFFERSIZE;
+     if (s->Port.FinishDataReading(&s->buffers_rx[i*BUFFERSIZE],bytesToRead,s->handles[i]) != BUFFERSIZE) {  
        printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,i,num_p);
        return(samples_received);
      }
@@ -305,8 +305,8 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
 	 }
        }
      }
-     pktStart = &p->data;
-     for (uint16_t b=0;b<sizeof(p->data);n+=stepSize) {
+     pktStart = p->data;
+     for (uint16_t b=0;b<sizeof(p->data);b+=stepSize) {
        for (int ch=0;ch < s->channelscount;ch++) {
 	 // I sample
 	 sampleI = (pktStart[b + 1 + 3*ch]&0x0F)<<8;
