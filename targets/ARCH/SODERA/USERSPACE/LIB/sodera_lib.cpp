@@ -86,7 +86,6 @@ typedef struct
   int handles[BUFFERSCOUNT];
   int current_handle;
   int samples_left_buffer;
-  int last_transfer;
 
   double sample_rate;
   // time offset between transmiter timestamp and receiver timestamp;
@@ -153,15 +152,33 @@ static int trx_sodera_start(openair0_device *device)
 
   // init recv and send streaming
 
+  printf("Starting LMS Streaming\n");
   s->rx_count = 0;
   s->tx_count = 0;
   s->rx_timestamp = 0;
   s->current_handle = 0;
-  s->last_transfer = 0;
 
   // switch off RX
   uint16_t regVal = SPI_read(&s->Port,0x0005);
   SPI_write(&s->Port,0x0005,regVal & ~0x6);
+
+
+
+
+
+
+  // USB FIFO reset
+  LMScomms::GenericPacket ctrPkt; 
+  ctrPkt.cmd = CMD_USB_FIFO_RST;
+  ctrPkt.outBuffer.push_back(0x01);
+  s->Port.TransferPacket(ctrPkt);
+  ctrPkt.outBuffer[0]=0x00;
+  s->Port.TransferPacket(ctrPkt);
+ 
+  regVal = SPI_read(&s->Port,0x0005);
+  // provide timestamp, set streamTXEN, set TX/RX enable 
+  SPI_write(&s->Port,0x0005,(regVal & ~0x20) | 0x6);
+
 
   if (s->channelscount==2) {
     SPI_write(&s->Port,0x0001,0x0003);
@@ -172,21 +189,10 @@ static int trx_sodera_start(openair0_device *device)
     SPI_write(&s->Port,0x0007,0x0008);
   }
 
-  // USB FIFO reset
-  LMScomms::GenericPacket ctrPkt;
-  ctrPkt.cmd = CMD_USB_FIFO_RST;
-  ctrPkt.outBuffer.push_back(0x01);
-  s->Port.TransferPacket(ctrPkt);
-  ctrPkt.outBuffer[0]=0x00;
-  s->Port.TransferPacket(ctrPkt);
-  
-  regVal = SPI_read(&s->Port,0x0005);
-  // provide timestamp, set streamTXEN, set TX/RX enable 
-  SPI_write(&s->Port,0x0005,(regVal & ~0x20) | 0x6);
 
   for (int i=0; i< BUFFERSCOUNT ; i++) 
     s->handles[i] = s->Port.BeginDataReading(&s->buffers_rx[i*BUFFERSIZE],BUFFERSIZE);
-
+  printf("Armed %d transfers\n",BUFFERSCOUNT);
   return 0;
 }
 
@@ -209,6 +215,8 @@ static int trx_sodera_write(openair0_device *device, openair0_timestamp timestam
   return 0;
 }
 
+#define DEBUG_READ 1
+
 static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
    sodera_t *s = (sodera_t*)device->priv;
@@ -222,16 +230,21 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
    int ind=0;
    int buffsize;
    int spp;
+   int bufindex;
 
    // this assumes that each request is of size 4096 bytes (spp = 4080/4/channelscount)
    spp = sizeof(p->data)>>2; // spp = size of payload in samples  
    spp /= s->channelscount;
 
-
+#ifdef DEBUG_READ
+   printf("\nIn trx_read\n");
+   printf("s->current_handle %d\n", s->current_handle);
+   printf("s->samples_left_buffer %d\n",s->samples_left_buffer);
+#endif
    // first get rid of remaining samples
    if (s->samples_left_buffer > 0) {
      buffsize = min(s->samples_left_buffer,nsamps);
-     pktStart = ((StreamPacket_t*)&s->buffers_rx[(s->current_handle-1)*BUFFERSIZE])->data;
+     pktStart = ((StreamPacket_t*)&s->buffers_rx[s->current_handle*BUFFERSIZE])->data;
      pktStart += (spp-s->samples_left_buffer);
      const int stepSize = s->channelscount * 3;
 
@@ -253,10 +266,9 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
    if (ind == nsamps) {
      s->samples_left_buffer -= nsamps;
      s->rx_count += nsamps;
-     s->rx_timestamp += s->last_transfer;
      *ptimestamp = s->rx_timestamp;
-     s->last_transfer = nsamps;
-     
+     s->rx_timestamp+=nsamps;
+      
      return(nsamps);
    }
    else {
@@ -273,29 +285,38 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
    if ((nsamps%spp) > 0)
      num_p++;
    s->samples_left_buffer = (num_p*spp)-nsamps;
-   for (int i=0;i<num_p;i++)
-     s->handles[i] = s->Port.BeginDataReading(&s->buffers_rx[i*BUFFERSIZE],BUFFERSIZE);
-   s->current_handle = num_p;
-   
+  
 
+#ifdef DEBUG_READ
+   printf("num_p %d\n",num_p);
+#endif
    const int stepSize = s->channelscount * 3;
 
    for (i=0;i<num_p;i++) {
 
-     if (s->Port.WaitForReading(s->handles[i],1000) == false) {
-       printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,i,num_p);
+     bufindex = (s->current_handle+i)&(BUFFERSCOUNT-1);
+     if (s->Port.WaitForReading(s->handles[bufindex],1000) == false) {
+       printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,bufindex,num_p);
+       *ptimestamp = s->rx_timestamp;
+       s->rx_timestamp+=samples_received;
        return(samples_received);
      }
      long bytesToRead=BUFFERSIZE;
-     if (s->Port.FinishDataReading(&s->buffers_rx[i*BUFFERSIZE],bytesToRead,s->handles[i]) != BUFFERSIZE) {  
-       printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,i,num_p);
+     if (s->Port.FinishDataReading(&s->buffers_rx[bufindex*BUFFERSIZE],bytesToRead,s->handles[bufindex]) != BUFFERSIZE) {  
+       printf("[recv] Error: request %d samples (%d/%d) WaitForReading timed out\n",nsamps,bufindex,num_p);
+       *ptimestamp = s->rx_timestamp;
+       s->rx_timestamp+=samples_received;
        return(samples_received);
      }
     
-     p = (StreamPacket_t*)&s->buffers_rx[i*BUFFERSIZE];
+     p = (StreamPacket_t*)&s->buffers_rx[bufindex*BUFFERSIZE];
      // handle timestamp
      if ((i==0) & (ind==0)) { // grab the timestamp from HW
-       s->rx_timestamp = p->counter;
+       *ptimestamp = p->counter;
+       s->rx_timestamp = p->counter+nsamps; // for next time
+#ifdef DEBUG_READ
+       printf("RX timestamp %d\n",s->rx_timestamp);
+#endif
      }
      else { // check the timestamp
        if (i==0) {
@@ -304,6 +325,8 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
 	   return(ind);
 	 }
        }
+       *ptimestamp = s->rx_timestamp;
+       s->rx_timestamp+=nsamps;
      }
      pktStart = p->data;
      for (uint16_t b=0;b<sizeof(p->data);b+=stepSize) {
@@ -321,13 +344,15 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
        ind++;	        
      }
      samples_received+=spp;
+     // schedule a new transmission for this index
+     s->handles[bufindex] = s->Port.BeginDataReading(&s->buffers_rx[bufindex*BUFFERSIZE],BUFFERSIZE);
+     s->current_handle=(s->current_handle+1)&(BUFFERSCOUNT-1);
    }   
 
   //handle the error code
 
   s->rx_count += samples_received;
   //  s->rx_timestamp = s->rx_md.time_spec.to_ticks(s->sample_rate);
-  *ptimestamp = s->rx_timestamp;
 
   return samples_received;
 }
@@ -597,6 +622,7 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
       printf("Cannot SetInterfaceFrequency (%f,%d,%d)\n",cgen_freq_MHz,interpolation,decimation);
       exit(-1);
     }
+    /*
     // Run calibration procedure
     float txrx_calibrationBandwidth_MHz = 5;
     opStatus = s->lmsControl.CalibrateTx(txrx_calibrationBandwidth_MHz);
@@ -609,7 +635,7 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
       printf("RX Calibration failed\n");
       exit(-1);
     }
-
+    */
         
     s->lmsStream = new LMS_StreamBoard(&s->Port);    
     LMS_StreamBoard::Status opStreamStatus; 
@@ -693,6 +719,5 @@ int openair0_dev_init_sodera(openair0_device* device, openair0_config_t *openair
   s->channelscount = openair0_cfg[0].rx_num_channels;
 
   // TODO:
-  exit(-1);
   return 0;
 }
