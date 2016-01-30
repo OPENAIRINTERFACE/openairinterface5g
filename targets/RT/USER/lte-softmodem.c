@@ -956,6 +956,8 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
           ((short*)dummy_tx_b)[2*i]<<4;
 #elif OAI_BLADERF
 	((short*)dummy_tx_b)[2*i];
+#elif OAI_LMSSDR
+	((short*)dummy_tx_b)[2*i];
 #else
           ((short*)dummy_tx_b)[2*i]<<4;
 #endif
@@ -963,6 +965,8 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 #ifdef EXMIMO
 	    ((short*)dummy_tx_b)[2*i+1]<<4;
 #elif OAI_BLADERF
+	  ((short*)dummy_tx_b)[2*i+1];
+#elif OAI_LMSSDR
 	  ((short*)dummy_tx_b)[2*i+1];
 #else
 	  ((short*)dummy_tx_b)[2*i+1]<<4;

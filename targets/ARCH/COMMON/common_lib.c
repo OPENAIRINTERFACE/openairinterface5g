@@ -61,15 +61,16 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
   device->type=BLADERF_IF;
   printf("openair0_dev_init_bladerf ...\n");   
   return(openair0_dev_init_bladerf(device, openair0_cfg));	
-#elif OAI_SODERA
-  device->type=OAI_SODERA;
-  printf("openair0_dev_init_sodera ...\n");
+#elif OAI_LMSSDR
+  device->type=LMSSDR_IF;
+  printf("openair0_dev_init_lmssdr ...\n");
+  /*
   if (openair0_cfg[0].configFilename==NULL) {
     printf("Please provide a configuration file for SoDeRa\n");
     exit(-1);
-  }
+    }*/
 
-  return(openair0_dev_init_sodera(device, openair0_cfg));	
+  return(openair0_dev_init_lms(device, openair0_cfg));	
 #endif
    
 }

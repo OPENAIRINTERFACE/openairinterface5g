@@ -405,7 +405,7 @@ add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4
 add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "False" "EXMIMO" "OAI_USRP" "ETHERNET" "OAI_BLADERF" "OAI_SODERA" "CPRIGW")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "False" "EXMIMO" "OAI_USRP" "ETHERNET" "OAI_BLADERF" "OAI_LMSSDR" "CPRIGW")
 
 Message("RF_BOARD  is ${RF_BOARD}")
 
@@ -437,25 +437,19 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   set(option_HW_lib "bladeRF")
  #set(LOWLATENCY False)
 
-elseif (${RF_BOARD} STREQUAL "OAI_SODERA")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/lms7002m")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/Si5351C")
-  include_directories("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/LMS_StreamBoard")
+elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m")
+#  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/LMS_StreamBoard")
   set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/sodera_lib.cpp
+    ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
     )
-  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/lms7002m")
-  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/Si5351C")
-  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/LMS_StreamBoard")
-  LINK_DIRECTORIES("${OPENAIR_TARGETS}/ARCH/SODERA/USERSPACE/LIB/lms7suite/src/kissFFT")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
-  set(option_HW_lib "usb-1.0")
-  set(LMS7002_LIB "libLMS7002M.a")
-  set(Si5351C_LIB "libSi5351C.a")
-  set(LMSStreamBoard_LIB "libLMS_StreamBoard.a")
-  set(KISSFFT_LIB "libkissFFT.a")
- #set(LOWLATENCY False)
+  set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
+  set(LIB_LMS_LIBRARIES "${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR/build/libLMS_SDR.so" "${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m/build/libLMS7002M.a")
+  set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "ETHERNET")
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
@@ -1454,13 +1448,14 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${LMS7002_LIB} ${Si5351C_LIB} ${LMSStreamBoard_LIB} ${KISSFFT_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
   -Wl,--end-group )
 
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
 ###################################################
