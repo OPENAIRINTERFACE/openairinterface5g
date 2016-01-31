@@ -45,20 +45,23 @@ int openair0_device_init(openair0_device *device, openair0_config_t *openair0_cf
 #ifdef ETHERNET 
   device->type=ETH_IF; 
   device->func_type = BBU_FUNC;
-  openair0_dev_init_eth(device, openair0_cfg);
   printf(" openair0_dev_init_eth ...\n");
+  return(openair0_dev_init_eth(device, openair0_cfg));
+
 #elif EXMIMO
   device->type=EXMIMO_IF;
-  openair0_dev_init_exmimo(device, openair0_cfg);
   printf("openair0_dev_init_exmimo...\n");
+  return(openair0_dev_init_exmimo(device, openair0_cfg));
 #elif OAI_USRP
   device->type=USRP_B200_IF;
-  openair0_dev_init_usrp(device, openair0_cfg);
   printf("openair0_dev_init_usrp ...\n");
+  return(openair0_dev_init_usrp(device, openair0_cfg));
+
 #elif OAI_BLADERF  
   device->type=BLADERF_IF;
-  openair0_dev_init_bladerf(device, openair0_cfg);	
   printf(" openair0_dev_init_bladerf ...\n");   
+  return(openair0_dev_init_bladerf(device, openair0_cfg));	
+
 #endif 
    
 }

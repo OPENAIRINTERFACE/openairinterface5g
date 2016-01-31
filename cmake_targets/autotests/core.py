@@ -118,8 +118,7 @@ class core:
         rsp1 = self.prompt1
         rsp2 = self.prompt2
         if sudo == True:
-          command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
-
+           command = 'echo \'' + '' + '\' | sudo -S -E bash -c \' ' + command + '\' '
         self.wait_quiet()
         if self.send_cr:
             log.stats['cmd'] += 1
@@ -140,7 +139,7 @@ class core:
             rsp2 = self.prompt2
         self.wait_quiet()
         if sudo == True:
-          command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
+            command = 'echo \'' + '' + '\' | sudo -S -E bash -c \' ' + command + '\' '
         if self.send_cr:
             log.stats['cmd'] += 1
             self.oai.sendline(command)
@@ -181,7 +180,8 @@ class core:
             rsp2 = self.prompt2
         self.wait_quiet()
         if sudo == True:
-          command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
+          #command = 'echo \'' + self.password + '\' | sudo -S -E ' + command
+          command = 'echo \'' + '' + '\' | sudo -S -E bash -c \' ' + command + '\' '
         if self.send_cr:
             log.stats['cmd'] += 1
             self.oai.sendline(command)
@@ -192,6 +192,7 @@ class core:
         if index == 0 or index == 1 :
             return self.oai.before
         else:
+            print "command = " + command + "rsp1  = " + rsp1 + " rsp2 = " + rsp2 + " index = " + str(index)
             raise log.err(self.failed(command, rsp1 + ' or ' + rsp2,debug))
 
            
@@ -239,8 +240,9 @@ class core:
     #    print rsp
         if  (rsp.find(expect) == -1):
             return 'OK'
-
-        raise log.err(self.failed(command, expect,debug))
+        else:
+            print "command = " + command + "expect  = " + expect + "rsp = " + rsp
+            raise log.err(self.failed(command, expect,debug))
 
     
     # **************************send_wait*************************    
