@@ -707,16 +707,17 @@ void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_si
 uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
 {
 
-  UE_TEMPLATE *UE_template = &eNB_mac_inst[module_idP].UE_list.UE_template[CC_id][UE_id];
-
-  //  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframeP %d Scheduling UE %d\n",module_idP,rnti,frameP,subframeP,
-  //  UE_id);
+  UE_TEMPLATE *UE_template    = &eNB_mac_inst[module_idP].UE_list.UE_template[CC_id][UE_id];
+  UE_sched_ctrl *UE_sched_ctl = &eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[UE_id];
+  LOG_D(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
 
   if ((UE_template->bsr_info[LCGID0]>0) ||
       (UE_template->bsr_info[LCGID1]>0) ||
       (UE_template->bsr_info[LCGID2]>0) ||
       (UE_template->bsr_info[LCGID3]>0) ||
-      (UE_template->ul_SR>0)) { // uplink scheduling request
+      (UE_template->ul_SR>0) ||
+      (UE_sched_ctl->ul_inactivity_timer>100)) { // uplink scheduling request
+
     return(1);
   } else {
     return(0);

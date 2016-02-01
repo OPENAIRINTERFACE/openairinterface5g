@@ -566,7 +566,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
   // }
 
   for (eNB=0; eNB<number_of_cards_l; eNB++) {
-    len += sprintf(&buffer[len],"[eNB PROC] eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
+    len += sprintf(&buffer[len],"eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
                    eNB,number_of_cards_l,
                    phy_vars_eNB->proc[0].frame_tx,
                    phy_vars_eNB->rx_total_gain_eNB_dB,
@@ -574,7 +574,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[0],
                    phy_vars_eNB->PHY_measurements_eNB[eNB].n0_power_dB[1]);
 
-    len += sprintf(&buffer[len],"[eNB PROC] PRB I0 (%X.%X.%X.%X): ",
+    len += sprintf(&buffer[len],"PRB I0 (%X.%X.%X.%X): ",
 		   phy_vars_eNB->rb_mask_ul[0],
 		   phy_vars_eNB->rb_mask_ul[1],phy_vars_eNB->rb_mask_ul[2],phy_vars_eNB->rb_mask_ul[3]);
 
@@ -587,7 +587,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 
     }
     len += sprintf(&buffer[len],"\n");
-    len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
+    len += sprintf(&buffer[len],"\nPERFORMANCE PARAMETERS\n");
     /*
     len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH Bitrate for the System %dkbps\n",((phy_vars_eNB->eNB_UE_stats[0].dlsch_bitrate + phy_vars_eNB->eNB_UE_stats[1].dlsch_bitrate)/1000));
     len += sprintf(&buffer[len],"[eNB PROC] Total Bits successfully transitted %dKbits in %dframe(s)\n",((phy_vars_eNB->eNB_UE_stats[0].total_transmitted_bits + phy_vars_eNB->eNB_UE_stats[1].total_transmitted_bits)/1000),phy_vars_eNB->frame+1);
@@ -595,119 +595,95 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
     */
 
     for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-#ifdef OPENAIR2
+      if ((phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0)&&
+	  (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH)) {	
 
-      if (phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0) {
         phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
         phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS + phy_vars_eNB->total_transmitted_bits;
 
         //phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
-        if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH)
-          for (i=0; i<8; i++)
-            success = success + (phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[i][0] - phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors[i]);
-      }
+         
+	for (i=0; i<8; i++)
+	  success = success + (phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[i][0] - phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors[i]);
 
-#else
-      phy_vars_eNB->total_dlsch_bitrate = phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate + phy_vars_eNB->total_dlsch_bitrate;
-      phy_vars_eNB->total_transmitted_bits = phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS +  phy_vars_eNB->total_transmitted_bits;
+    
+	
+	len += sprintf(&buffer[len],"Total DLSCH %d kbits / %d frames ",(phy_vars_eNB->total_transmitted_bits/1000),phy_vars_eNB->proc[0].frame_tx+1);
+	len += sprintf(&buffer[len],"Total DLSCH throughput %d kbps ",(phy_vars_eNB->total_dlsch_bitrate/1000));
+	len += sprintf(&buffer[len],"Total DLSCH trans %d / %d frames\n",success,phy_vars_eNB->proc[0].frame_tx+1);
+	//len += sprintf(&buffer[len],"[eNB PROC] FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+	//len += sprintf(&buffer[len],"[eNB PROC] MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+	//len += sprintf(&buffer[len],"[eNB PROC] SU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_SUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
+	
+	len += sprintf(&buffer[len],"UE %d (%x) Power: (%d,%d) dB, Po_PUSCH: (%d,%d) dBm, Po_PUCCH (%d/%d) dBm, Po_PUCCH1 (%d,%d) dBm,  PUCCH1 Thres %d dBm \n",
+		       UE_id,
+		       phy_vars_eNB->eNB_UE_stats[UE_id].crnti,
+		       dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[0]),
+		       dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[1]),
+		       phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[0],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
+		       dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		       phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
+		       dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		       dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
+		       PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
+		       phy_vars_eNB->eNB_UE_stats[UE_id].sector);
+	
+	len+= sprintf(&buffer[len],"DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d, ",
+		      i,
+		      phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[0]->mcs,
+		      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[0]->mcs,
+		      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[0]->nb_rb,
+		      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[0]->delta_TF);
+	
+	len += sprintf(&buffer[len],"Wideband CQI: (%d,%d) dB\n",
+		       phy_vars_eNB->PHY_measurements_eNB[eNB].wideband_cqi_dB[UE_id][0],
+		       phy_vars_eNB->PHY_measurements_eNB[eNB].wideband_cqi_dB[UE_id][1]);
+	
+	/*	len += sprintf(&buffer[len],"[eNB PROC] Subband CQI:    ");
+	
+	for (i=0; i<phy_vars_eNB->lte_frame_parms.N_RB_DL; i++)
+	  len += sprintf(&buffer[len],"%2d ",
+			 phy_vars_eNB->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[UE_id][i]);
+	
+	len += sprintf(&buffer[len],"\n");
+	*/
 
-      //phy_vars_eNB->total_system_throughput = phy_vars_eNB->eNB_UE_stats[UE_id].total_transmitted_bits + phy_vars_eNB->total_system_throughput;
-      for (i=0; i<8; i++)
-        success = success + (phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[i][0] - phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors[i]);
+	len += sprintf(&buffer[len],"DL TM %d, DL_cqi %d, DL_pmi_single %jx ",
+		       phy_vars_eNB->transmission_mode[UE_id],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].DL_cqi[0],
+		       pmi2hex_2Ar1(phy_vars_eNB->eNB_UE_stats[UE_id].DL_pmi_single));
 
-#endif
-    }
-
-    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH bits successfully transmitted %d kbits in %d frame(s)\n",(phy_vars_eNB->total_transmitted_bits/1000),phy_vars_eNB->proc[0].frame_tx+1);
-    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH average system throughput %d kbps\n",(phy_vars_eNB->total_dlsch_bitrate/1000));
-    len += sprintf(&buffer[len],"[eNB PROC] Total DLSCH successful transmissions %d in %d frame(s)\n",success,phy_vars_eNB->proc[0].frame_tx+1);
-    //len += sprintf(&buffer[len],"[eNB PROC] FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->FULL_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-    //len += sprintf(&buffer[len],"[eNB PROC] MU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_MUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-    //len += sprintf(&buffer[len],"[eNB PROC] SU-MIMO Transmissions/Total Transmissions = %d/%d\n",phy_vars_eNB->check_for_SUMIMO_transmissions,phy_vars_eNB->check_for_total_transmissions);
-
-  }
-
-  len += sprintf(&buffer[len],"\n");
-
-  for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
-#ifdef OPENAIR2
-
-    if (phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti>0) {
-#endif
-      len += sprintf(&buffer[len],"[eNB PROC] UE %d (%x) Power: (%d,%d) dB, Po_PUSCH: (%d,%d) dBm, Po_PUCCH (%d/%d) dBm, Po_PUCCH1 (%d,%d) dBm,  PUCCH1 Thres %d dBm \n",
-                     UE_id,
-                     phy_vars_eNB->eNB_UE_stats[UE_id].crnti,
-                     dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[0]),
-                     dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[UE_id]->ulsch_power[1]),
-                     phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[0],
-                     phy_vars_eNB->eNB_UE_stats[UE_id].UL_rssi[1],
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
-                     phy_vars_eNB->eNB_UE_stats[UE_id].sector);
-
-      for(i=0; i<8; i++)
-        len+= sprintf(&buffer[len],"   harq %d: DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d\n",
-                      i,
-                      phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[i]->mcs,
-                      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[i]->mcs,
-                      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[i]->nb_rb,
-                      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[i]->delta_TF);
-
-      len += sprintf(&buffer[len],"[eNB PROC] Wideband CQI: (%d,%d) dB\n",
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].wideband_cqi_dB[UE_id][0],
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].wideband_cqi_dB[UE_id][1]);
-
-      len += sprintf(&buffer[len],"[eNB PROC] Subband CQI:    ");
-
-      for (i=0; i<25; i++)
-        len += sprintf(&buffer[len],"%2d ",
-                       phy_vars_eNB->PHY_measurements_eNB[eNB].subband_cqi_tot_dB[UE_id][i]);
-
-      len += sprintf(&buffer[len],"\n");
-
-      len += sprintf(&buffer[len],"[eNB PROC] DL TM %d, DL_cqi %d, DL_pmi_single %jx\n",
-                     phy_vars_eNB->transmission_mode[UE_id],
-                     phy_vars_eNB->eNB_UE_stats[UE_id].DL_cqi[0],
-                     pmi2hex_2Ar1(phy_vars_eNB->eNB_UE_stats[UE_id].DL_pmi_single));
-
-      len += sprintf(&buffer[len],"[eNB PROC] DL Subband CQI: ");
-
-      for (i=0; i<13; i++)
-        len += sprintf(&buffer[len],"%2d ",
-                       phy_vars_eNB->eNB_UE_stats[UE_id].DL_subband_cqi[0][i]);
-
-      len += sprintf(&buffer[len],"\n");
-
-      len += sprintf(&buffer[len],"[eNB PROC] Timing advance %d samples (%d 16Ts), update %d\n",
-                     phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset,
-                     phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset>>2,
-                     phy_vars_eNB->eNB_UE_stats[UE_id].timing_advance_update);
-
-      len += sprintf(&buffer[len],"[eNB PROC] Mode = %s(%d)\n",
-                     mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
-                     phy_vars_eNB->eNB_UE_stats[UE_id].mode);
-#ifdef OPENAIR2
-      UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti);
-
-      if (UE_id_mac != -1) {
-        RRC_status = mac_eNB_get_rrc_status(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti);
-        len += sprintf(&buffer[len],"[eNB PROC] UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
-      } else
-        len += sprintf(&buffer[len],"[eNB PROC] UE_id_mac = -1\n");
-
-#endif
-
-#ifdef OPENAIR2
-
-      if (phy_vars_eNB->eNB_UE_stats[UE_id].mode == PUSCH) {
-#endif
-        len += sprintf(&buffer[len],"[eNB PROC] SR received/total: %d/%d (diff %d)\n",
+	len += sprintf(&buffer[len],"Timing advance %d samples (%d 16Ts), update %d ",
+		       phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset,
+		       phy_vars_eNB->eNB_UE_stats[UE_id].UE_timing_offset>>2,
+		       phy_vars_eNB->eNB_UE_stats[UE_id].timing_advance_update);
+	
+	len += sprintf(&buffer[len],"Mode = %s(%d) ",
+		       mode_string[phy_vars_eNB->eNB_UE_stats[UE_id].mode],
+		       phy_vars_eNB->eNB_UE_stats[UE_id].mode);
+	UE_id_mac = find_UE_id(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti);
+	
+	if (UE_id_mac != -1) {
+	  RRC_status = mac_eNB_get_rrc_status(phy_vars_eNB->Mod_id,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti);
+	  len += sprintf(&buffer[len],"UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
+	} else
+	  len += sprintf(&buffer[len],"UE_id_mac = -1\n");
+	
+        len += sprintf(&buffer[len],"SR received/total: %d/%d (diff %d)\n",
                        phy_vars_eNB->eNB_UE_stats[UE_id].sr_received,
                        phy_vars_eNB->eNB_UE_stats[UE_id].sr_total,
                        phy_vars_eNB->eNB_UE_stats[UE_id].sr_total-phy_vars_eNB->eNB_UE_stats[UE_id].sr_received);
+	
+	len += sprintf(&buffer[len],"DL Subband CQI: ");
+	
+	for (i=0; i<25; i++)
+	  len += sprintf(&buffer[len],"%2d ",
+			 phy_vars_eNB->eNB_UE_stats[UE_id].DL_subband_cqi[0][i]);
+	
+	len += sprintf(&buffer[len],"\n");
+	
+
 
         ulsch_errors = 0;
 
@@ -716,10 +692,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
           ulsch_round_errors[j]=0;
         }
 
-        len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors/attempts per harq (per round): \n");
+        len += sprintf(&buffer[len],"ULSCH errors/attempts per harq (per round): \n");
 
         for (i=0; i<8; i++) {
-          len += sprintf(&buffer[len],"   harq %d: %d/%d (fer %d) (%d/%d, %d/%d, %d/%d, %d/%d)\n",
+          len += sprintf(&buffer[len],"   harq %d: %d/%d (fer %d) (%d/%d, %d/%d, %d/%d, %d/%d) ",
                          i,
                          phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_errors[i],
                          phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[i][0],
@@ -732,6 +708,9 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                          phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[i][2],
                          phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_round_errors[i][3],
                          phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_decoding_attempts[i][3]);
+	  if ((i&1) == 1)
+	    len += sprintf(&buffer[len],"\n");
+	    
           ulsch_errors+=phy_vars_eNB->eNB_UE_stats[UE_id].ulsch_errors[i];
 
           for (j=0; j<4; j++) {
@@ -740,7 +719,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
           }
         }
 
-        len += sprintf(&buffer[len],"[eNB PROC] ULSCH errors/attempts total %d/%d (%d/%d, %d/%d, %d/%d, %d/%d): \n",
+        len += sprintf(&buffer[len],"ULSCH errors/attempts total %d/%d (%d/%d, %d/%d, %d/%d, %d/%d)\n",
                        ulsch_errors,ulsch_round_attempts[0],
 
                        ulsch_round_errors[0],ulsch_round_attempts[0],
@@ -755,10 +734,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
           dlsch_round_errors[j]=0;
         }
 
-        len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors/attempts per harq (per round): \n");
+        len += sprintf(&buffer[len],"DLSCH errors/attempts per harq (per round): \n");
 
         for (i=0; i<8; i++) {
-          len += sprintf(&buffer[len],"   harq %d: %d/%d (%d/%d/%d, %d/%d/%d, %d/%d/%d, %d/%d/%d)\n",
+          len += sprintf(&buffer[len],"   harq %d: %d/%d (%d/%d/%d, %d/%d/%d, %d/%d/%d, %d/%d/%d) ",
                          i,
                          phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors[i],
                          phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[i][0],
@@ -774,6 +753,10 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                          phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_ACK[i][3],
                          phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_NAK[i][3],
                          phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_trials[i][3]);
+	  if ((i&1) == 1)
+	    len += sprintf(&buffer[len],"\n");
+
+
           dlsch_errors+=phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_l2_errors[i];
 
           for (j=0; j<4; j++) {
@@ -782,7 +765,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
           }
         }
 
-        len += sprintf(&buffer[len],"[eNB PROC] DLSCH errors/attempts total %d/%d (%d/%d, %d/%d, %d/%d, %d/%d): \n",
+        len += sprintf(&buffer[len],"DLSCH errors/attempts total %d/%d (%d/%d, %d/%d, %d/%d, %d/%d): \n",
                        dlsch_errors,dlsch_round_attempts[0],
                        dlsch_round_errors[0],dlsch_round_attempts[0],
                        dlsch_round_errors[1],dlsch_round_attempts[1],
@@ -790,11 +773,11 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                        dlsch_round_errors[3],dlsch_round_attempts[3]);
 
 
-        len += sprintf(&buffer[len],"[eNB PROC] DLSCH total bits from MAC: %dkbit\n",(phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_MAC)/1000);
-        len += sprintf(&buffer[len],"[eNB PROC] DLSCH total bits ack'ed: %dkbit\n",(phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS)/1000);
-        len += sprintf(&buffer[len],"[eNB PROC] DLSCH Average throughput (100 frames): %dkbps\n",(phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate/1000));
-        len += sprintf(&buffer[len],"[eNB PROC] Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
-
+        len += sprintf(&buffer[len],"DLSCH total bits from MAC: %dkbit ",(phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_MAC)/1000);
+        len += sprintf(&buffer[len],"DLSCH total bits ack'ed: %dkbit ",(phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS)/1000);
+        len += sprintf(&buffer[len],"DLSCH Average throughput (100 frames): %dkbps\n",(phy_vars_eNB->eNB_UE_stats[UE_id].dlsch_bitrate/1000));
+	//        len += sprintf(&buffer[len],"[eNB PROC] Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+	/*
         if(phy_vars_eNB->transmission_mode[UE_id] == 5) {
           if(phy_vars_eNB->mu_mimo_mode[UE_id].dl_pow_off == 0)
             len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is in MU-MIMO mode****\n",UE_id);
@@ -803,7 +786,8 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
           else
             len += sprintf(&buffer[len],"[eNB PROC] ****UE %d is not scheduled****\n",UE_id);
         }
-
+	*/
+	/*
         len += sprintf(&buffer[len],"[eNB PROC] RB Allocation on Sub-bands: ");
 
         //  for (j=0;j< mac_xface->lte_frame_parms->N_RBGS;j++)
@@ -813,16 +797,14 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 
         len += sprintf(&buffer[len],"\n");
         len += sprintf(&buffer[len],"[eNB PROC] Total Number of Allocated PRBs = %d\n",phy_vars_eNB->mu_mimo_mode[UE_id].pre_nb_available_rbs);
-
-#ifdef OPENAIR2
+	*/
       }
     }
 
-#endif
     len += sprintf(&buffer[len],"\n");
   }
-
+  
   len += sprintf(&buffer[len],"EOF\n");
-
+  
   return len;
 }

@@ -123,6 +123,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
           mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti));
     next_i= UE_list->next[i];
 
+    // increment this, it is cleared when we receive an sdu
+    eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
+
     if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
       mac_remove_ue(module_idP, i, frameP, subframeP);
     }
@@ -356,7 +359,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     } else {
       if (mac_xface->lte_frame_parms->frame_type == FDD) {  //FDD
 
-	//        schedule_RA(module_idP,frameP, subframeP, 0);
 	schedule_ulsch(module_idP, frameP, cooperation_flag, 4, 8);
 	schedule_ue_spec(module_idP, frameP, subframeP,  mbsfn_status);
         fill_DLSCH_dci(module_idP, frameP, subframeP,   mbsfn_status);
@@ -427,7 +429,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-      //      schedule_ulsch(module_idP,frameP,cooperation_flag,6,0);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,6,0);
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
@@ -456,7 +458,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-      //schedule_ulsch(module_idP,frameP,cooperation_flag,7,1);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,7,1);
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
@@ -485,7 +487,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-      //schedule_ulsch(module_idP,frameP,cooperation_flag,8,2);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,8,2);
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }
@@ -529,7 +531,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         break;
       }
     } else { //FDD
-      //     schedule_ulsch(module_idP,frameP,cooperation_flag,9,3);
+      schedule_ulsch(module_idP,frameP,cooperation_flag,9,3);
       schedule_ue_spec(module_idP,frameP,subframeP,mbsfn_status);
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
     }

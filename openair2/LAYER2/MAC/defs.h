@@ -737,7 +737,9 @@ typedef struct {
   uint16_t      pre_nb_available_rbs[MAX_NUM_CCs];
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
   uint16_t      ta_timer;
-  int16_t      ta_update;
+  int16_t       ta_update;
+  int32_t       context_active_timer;
+  int32_t       ul_inactivity_timer;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {

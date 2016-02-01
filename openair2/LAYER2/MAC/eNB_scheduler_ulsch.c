@@ -105,6 +105,9 @@ void rx_sdu(
   }
 
   LOG_D(MAC,"[eNB %d] CC_id %d Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",enb_mod_idP,CC_idP,rntiP,UE_id);
+
+  if (UE_id!=-1)
+    UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
   
   payload_ptr = parse_ulsch_header(sduP,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_lenP);
  
@@ -760,15 +763,17 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
           LOG_T(MAC,"[eNB %d] Frame %d, subframeP %d, UE %d CC %d : got harq pid %d  round %d (rnti %x,mode %s)\n",
                 module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,rnti,mode_string[eNB_UE_stats->mode]);
 
-	//#undef EXMIMO_IOT
+#undef EXMIMO_IOT
 #ifndef EXMIMO_IOT
 
-        if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0) || ((frameP%10)==0))
+        if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0))// || ((frameP%10)==0))
           // if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
 #else
-        if (round==0)
+	  if (round==0)  // always schedule
 #endif
         {
+	  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UE_inactivity timer %d)\n",
+		module_idP,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
           aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!
@@ -855,7 +860,236 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                             TBS,
                             UE_template);
 
-          } else if (round > 0) { //we schedule a retransmission
+	    // Cyclic shift for DM RS
+	    if(cooperation_flag == 2) {
+	      if(UE_id == 1) { // For Distriibuted Alamouti, cyclic shift applied to 2nd UE
+		cshift = 1;
+	      } else {
+		cshift = 0;
+	      }
+	    } else {
+	      cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+	    }
+	    
+	    if (frame_parms->frame_type == TDD) {
+	      switch (frame_parms->N_RB_UL) {
+	      case 6:
+		ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
+		((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_1_5MHz_TDD_1_6_t),
+				aggregation,
+				sizeof_DCI0_1_5MHz_TDD_1_6_t,
+				format0,
+				0);
+		break;
+		
+	      default:
+	      case 25:
+		ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
+		((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_5MHz_TDD_1_6_t),
+				aggregation,
+				sizeof_DCI0_5MHz_TDD_1_6_t,
+				format0,
+				0);
+		break;
+		
+	      case 50:
+		ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
+		((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_10MHz_TDD_1_6_t),
+				aggregation,
+				sizeof_DCI0_10MHz_TDD_1_6_t,
+				format0,
+				0);
+		break;
+		
+	      case 100:
+		ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
+		((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_20MHz_TDD_1_6_t),
+				aggregation,
+				sizeof_DCI0_20MHz_TDD_1_6_t,
+				format0,
+				0);
+		break;
+	      }
+	    } // TDD
+	    else { //FDD
+	      switch (frame_parms->N_RB_UL) {
+	      case 25:
+	      default:
+		
+		ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->type     = 0;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_5MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_5MHz_FDD_t),
+				aggregation,
+				sizeof_DCI0_5MHz_FDD_t,
+				format0,
+				0);
+		break;
+		
+	      case 6:
+		ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->type     = 0;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_1_5MHz_FDD_t),
+				aggregation,
+				sizeof_DCI0_1_5MHz_FDD_t,
+				format0,
+				0);
+		break;
+		
+	      case 50:
+		ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->type     = 0;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_10MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_10MHz_FDD_t),
+				aggregation,
+				sizeof_DCI0_10MHz_FDD_t,
+				format0,
+				0);
+		break;
+		
+	      case 100:
+		ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
+		
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->type     = 0;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->padding  = 0;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
+		((DCI0_20MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
+		
+		add_ue_spec_dci(DCI_pdu,
+				ULSCH_dci,
+				rnti,
+				sizeof(DCI0_20MHz_FDD_t),
+				aggregation,
+				sizeof_DCI0_20MHz_FDD_t,
+				format0,
+				0);
+		break;
+		
+	      }
+	    }
+
+
+	    add_ue_ulsch_info(module_idP,
+			      CC_id,
+			      UE_id,
+			      subframeP,
+			      S_UL_SCHEDULED);
+	    
+	    LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
+#ifdef DEBUG
+	    dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
+#endif
+	    
+          }
+	  else {
+            LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d,round %d)\n",
+                  module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
+                  first_rb[CC_id],rb_table[rb_table_index],
+                  rb_table_index,TBS,harq_pid,round);
+	  }/* 
+	  else if (round > 0) { //we schedule a retransmission
 
             ndi = UE_template->oldNDI_UL[harq_pid];
 
@@ -866,7 +1100,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 
             }
 
-            LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, harq_pid %d, round %d)\n",
+            LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, harq_pid %d, round %d)\n",
                   module_idP,UE_id,rnti,CC_id,frameP,subframeP,mcs,
                   first_rb[CC_id],UE_template->nb_rb_ul[harq_pid],
 		  harq_pid, round);
@@ -882,227 +1116,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=mcs;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	  }
-
-          // Cyclic shift for DM RS
-          if(cooperation_flag == 2) {
-            if(UE_id == 1) { // For Distriibuted Alamouti, cyclic shift applied to 2nd UE
-              cshift = 1;
-            } else {
-              cshift = 0;
-            }
-          } else {
-            cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-          }
-
-          if (frame_parms->frame_type == TDD) {
-            switch (frame_parms->N_RB_UL) {
-            case 6:
-              ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
-              ((DCI0_1_5MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_1_5MHz_TDD_1_6_t),
-                              aggregation,
-                              sizeof_DCI0_1_5MHz_TDD_1_6_t,
-                              format0,
-                              0);
-              break;
-
-            default:
-            case 25:
-              ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
-              ((DCI0_5MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_5MHz_TDD_1_6_t),
-                              aggregation,
-                              sizeof_DCI0_5MHz_TDD_1_6_t,
-                              format0,
-                              0);
-              break;
-
-            case 50:
-              ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_10MHz_TDD_1_6_t),
-                              aggregation,
-                              sizeof_DCI0_10MHz_TDD_1_6_t,
-                              format0,
-                              0);
-              break;
-
-            case 100:
-              ULSCH_dci = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_10MHz_TDD_1_6_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->dai      = UE_template->DAI_ul[sched_subframe];
-              ((DCI0_20MHz_TDD_1_6_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_20MHz_TDD_1_6_t),
-                              aggregation,
-                              sizeof_DCI0_20MHz_TDD_1_6_t,
-                              format0,
-                              0);
-              break;
-            }
-          } // TDD
-          else { //FDD
-            switch (frame_parms->N_RB_UL) {
-            case 25:
-            default:
-
-              ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_5MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_5MHz_FDD_t),
-                              aggregation,
-                              sizeof_DCI0_5MHz_FDD_t,
-                              format0,
-                              0);
-              break;
-
-            case 6:
-              ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_1_5MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_1_5MHz_FDD_t),
-                              aggregation,
-                              sizeof_DCI0_1_5MHz_FDD_t,
-                              format0,
-                              0);
-              break;
-
-            case 50:
-              ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_10MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_10MHz_FDD_t),
-                              aggregation,
-                              sizeof_DCI0_10MHz_FDD_t,
-                              format0,
-                              0);
-              break;
-
-            case 100:
-              ULSCH_dci          = UE_template->ULSCH_DCI[harq_pid];
-
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->type     = 0;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->hopping  = 0;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->rballoc  = rballoc;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->mcs      = mcs;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->ndi      = ndi;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->TPC      = tpc;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->padding  = 0;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->cshift   = cshift;
-              ((DCI0_20MHz_FDD_t *)ULSCH_dci)->cqi_req  = cqi_req;
-
-              add_ue_spec_dci(DCI_pdu,
-                              ULSCH_dci,
-                              rnti,
-                              sizeof(DCI0_20MHz_FDD_t),
-                              aggregation,
-                              sizeof_DCI0_20MHz_FDD_t,
-                              format0,
-                              0);
-              break;
-
-            }
-          }
-
-          add_ue_ulsch_info(module_idP,
-                            CC_id,
-                            UE_id,
-                            subframeP,
-                            S_UL_SCHEDULED);
-
-          LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n", module_idP,CC_id,frameP,subframeP,UE_id);
-#ifdef DEBUG
-          dump_dci(frame_parms, &DCI_pdu->dci_alloc[DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci-1]);
-#endif
+	   */
 
         } // UE_is_to_be_scheduled
       } // UE is in PUSCH

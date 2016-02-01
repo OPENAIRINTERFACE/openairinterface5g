@@ -164,7 +164,7 @@ FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 1;
+unsigned char                   scope_enb_num_ue = 2;
 #endif //XFORMS
 
 #ifdef RTAI
@@ -504,6 +504,7 @@ static void *scope_thread(void *arg)
   int len = 0;
   struct sched_param sched_param;
   int UE_id, CC_id;
+  int ue_cnt=0;
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
   sched_setscheduler(0, SCHED_FIFO,&sched_param);
@@ -547,11 +548,15 @@ static void *scope_thread(void *arg)
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
 
-      for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
+      ue_cnt=0;
+      for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	  phy_scope_eNB(form_enb[CC_id][UE_id],
-			PHY_vars_eNB_g[0][CC_id],
-			UE_id);
+	  if ((PHY_vars_eNB_g[0][CC_id]->dlsch_eNB[UE_id][0]->rnti>0) && (ue_cnt<scope_enb_num_ue)) {
+	    phy_scope_eNB(form_enb[CC_id][UE_id],
+			  PHY_vars_eNB_g[0][CC_id],
+			  UE_id);
+	    ue_cnt++;
+	  }
 	}
       }
 
