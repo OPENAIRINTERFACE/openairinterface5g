@@ -58,7 +58,6 @@ typedef struct {
   /// dl_info is already initialized as prp_dl_mac_config and fills the
   /// prp_dl_data part of it
   void (*enb_agent_schedule_ue_spec)(mid_t mod_id, uint32_t frame, uint32_t subframe,
-				     unsigned int *nb_rb_used, unsigned int *nCCE_used,
 				     int *mbsfn_flag, Protocol__ProgranMessage *dl_info);
 
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/

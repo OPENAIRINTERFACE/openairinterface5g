@@ -78,8 +78,6 @@ schedule_ue_spec_default(
   mid_t   mod_id,
   uint32_t      frame,
   uint32_t      subframe,
-  unsigned int  *nb_rb_used,
-  unsigned int  *nCCE_used,
   int           *mbsfn_flag,
   Protocol__ProgranMessage *dl_info
 )
@@ -146,8 +144,8 @@ schedule_ue_spec_default(
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
     frame_parms[CC_id] = mac_xface->get_lte_frame_parms(mod_id, CC_id);
-    total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL - nb_rb_used[CC_id];
-    nCCE[CC_id] = mac_xface->get_nCCE_max(mod_id, CC_id) - nCCE_used[CC_id];
+    //total_nb_available_rb[CC_id] = frame_parms[CC_id]->N_RB_DL - nb_rb_used[CC_id];
+    //nCCE[CC_id] = mac_xface->get_nCCE_max(mod_id, CC_id) - nCCE_used[CC_id];
     N_RBG[CC_id] = frame_parms[CC_id]->N_RBG;
 
     // store the global enb stats:
@@ -195,8 +193,8 @@ schedule_ue_spec_default(
       }
 
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) || (nCCE[CC_id] < (1<<aggregation))) {
-        LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
-              mod_id, frame, UE_id, CC_id, nb_rb_used[CC_id], ue_sched_ctl->pre_nb_available_rbs[CC_id], nCCE[CC_id], aggregation);
+	//  LOG_D(MAC,"[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
+	//     mod_id, frame, UE_id, CC_id, nb_rb_used[CC_id], ue_sched_ctl->pre_nb_available_rbs[CC_id], nCCE[CC_id], aggregation);
         //if(mac_xface->get_transmission_mode(module_idP,rnti)==5)
         continue_flag=1; //to next user (there might be rbs availiable for other UEs in TM5
         // else
@@ -329,7 +327,7 @@ schedule_ue_spec_default(
 	  nb_available_rb -= nb_rb;
 	  aggregation = process_ue_cqi(mod_id, UE_id);
 	  nCCE[CC_id]-=(1<<aggregation); // adjust the remaining nCCE
-	  nCCE_used[CC_id] += (1<<aggregation);
+	  //nCCE_used[CC_id] += (1<<aggregation);
 	  
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
@@ -765,9 +763,9 @@ schedule_ue_spec_default(
 	  dl_dci->has_aggr_level = 1;
 	  dl_dci->aggr_level = aggregation;
 	  dl_dci->has_cce_index = 1;
-	  dl_dci->cce_index = nCCE_used[CC_id];
+	  // dl_dci->cce_index = nCCE_used[CC_id];
           nCCE[CC_id]-=(1<<aggregation); // adjust the remaining nCCE
-          nCCE_used[CC_id]+=(1<<aggregation); // adjust the remaining nCCE
+	  // nCCE_used[CC_id]+=(1<<aggregation); // adjust the remaining nCCE
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 
           add_ue_dlsch_info(mod_id,
@@ -1044,7 +1042,6 @@ schedule_ue_spec_default(
 void apply_scheduling_decisions(mid_t mod_id,
 				uint32_t frame,
 				uint32_t subframe,
-				uint32_t *rballoc,
 				int *mbsfn_flag,
 				Protocol__ProgranMessage *dl_scheduling_info) {
 
