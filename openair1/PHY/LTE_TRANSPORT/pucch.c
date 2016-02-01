@@ -1077,7 +1077,7 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
   }
 
   if (UE_id==NB_UE_INST) {
-    LOG_E(PHY,"rx_pucch_emul: FATAL, didn't find UE with rnti %x\n",rnti);
+    LOG_W(PHY,"rx_pucch_emul: Didn't find UE with rnti %x\n",rnti);
     return(-1);
   }
 
