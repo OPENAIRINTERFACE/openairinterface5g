@@ -2406,6 +2406,21 @@ static void get_options (int argc, char **argv)
                    "lte-softmodem compiled with MAX_NUM_CCs=%d, but only %d CCs configured for eNB %d!",
                    MAX_NUM_CCs, enb_properties->properties[i]->nb_cc, i);
 
+      for (j=0; j<enb_properties->properties[i]->nb_rrh_gw; j++) {
+	
+	if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ){
+	  // replace printf by setting
+	  printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
+	  printf( "\tinterface name :       \t%s:\n",enb_properties->properties[i]->rrh_gw_if_name);
+	  printf( "\tlocal address  :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].local_address);
+	  printf( "\tlocal port     :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].local_port);
+	  printf( "\tremote address :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_address);
+	  printf( "\tremote port    :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_port);
+	  printf( "\ttransport      :       \t%s Ethernet:\n\n",(enb_properties->properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : "UDP");
+	}
+	
+      }
+
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         frame_parms[CC_id]->frame_type =       enb_properties->properties[i]->frame_type[CC_id];
         frame_parms[CC_id]->tdd_config =       enb_properties->properties[i]->tdd_config[CC_id];
