@@ -115,6 +115,7 @@ schedule_ue_spec_default(
 
   Protocol__PrpDlData *dl_data[NUM_MAX_UE];
   int num_ues_added = 0;
+  int channels_added = 0;
 
   Protocol__PrpDlDci *dl_dci;
   Protocol__PrpRlcPdu *rlc_pdus[11];
@@ -237,11 +238,6 @@ schedule_ue_spec_default(
       harq_pid = ue_sched_ctl->harq_pid[CC_id];
       round = ue_sched_ctl->round[CC_id];
 
-      /* TODO: Must add these stats (probably in the apply_scheduling function) */
-      //UE_list->eNB_UE_stats[CC_id][UE_id].crnti= rnti;
-      //UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status=mac_eNB_get_rrc_status(mod_id, rnti);
-      //UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
-      //UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
       
       sdu_length_total=0;
@@ -363,10 +359,10 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 0;
+	    dl_dci->ndi[0] = 1;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = round&3;
+	    dl_dci->rv[0] = (round+1) % 4;
 	    if (frame_parms[CC_id]->frame_type == TDD) {
 	      dl_dci->has_dai = 1;
 	      dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
@@ -401,8 +397,8 @@ schedule_ue_spec_default(
 	    dl_dci->ndi[1] = 0;
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = round&3;
-	    dl_dci->rv[1] = round&3;
+	    dl_dci->rv[0] = (round+1) % 4;
+	    dl_dci->rv[1] = (round+1) % 4;
 	    if (frame_parms[CC_id]->frame_type == TDD) {
 	      dl_dci->has_dai = 1;
 	      dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
@@ -437,7 +433,7 @@ schedule_ue_spec_default(
 	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = round&3;
+	    dl_dci->rv[0] = (round + 1) % 4;
 
 	    if(ue_sched_ctl->dl_pow_off[CC_id] == 2) {
               ue_sched_ctl->dl_pow_off[CC_id] = 1;
@@ -471,28 +467,12 @@ schedule_ue_spec_default(
 	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = round&3;
+	    dl_dci->rv[0] = (round + 1) % 4;
 	    dl_dci->has_dl_power_offset = 1;
 	    dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
 
 	    break;
 	  }
-
-	  /*We now probably don't need this*/
-	  /* add_ue_dlsch_info(mod_id, */
-	  /* 		    CC_id, */
-	  /* 		    UE_id, */
-	  /* 		    subframe, */
-	  /* 		    S_DL_SCHEDULED); */
-	
-	  //eNB_UE_stats->dlsch_trials[round]++;
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].num_retransmission+=1;
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx=nb_rb;
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_retx+=nb_rb;
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx=nCCECC_id];
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
-	  //UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=eNB_UE_stats->dlsch_mcs1;
-
 	  num_ues_added += 1;
 	} else {
 	  LOG_D(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
@@ -529,6 +509,7 @@ schedule_ue_spec_default(
 	header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
 	// Need to see if we have space for data from this channel
+	
 	if ( TBS-ta_len-header_len_dcch > 0 ) {
 
 	  //If we have space, we need to see how much data we can request at most (if any available)
@@ -543,26 +524,28 @@ schedule_ue_spec_default(
 
 	  //If data are available in the DCCH
 	  if (rlc_status.bytes_in_buffer > 0) {
-	    LOG_D(MAC, "[TEST]Have %d bytes in buffer DCCH during first call\n", rlc_status.bytes_in_buffer);
+	    LOG_D(MAC, "[TEST]Have %d bytes in buffer during first call\n", rlc_status.bytes_in_buffer);
 	    //Fill in as much as possible
 	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch, rlc_status.bytes_in_buffer) + 1;
 	    LOG_D(MAC, "[TEST]Will request %d \n", data_to_request);
-	    rlc_pdus[0] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
-	    protocol__prp_rlc_pdu__init(rlc_pdus[0]);
-	    rlc_pdus[0]->n_rlc_pdu_tb = 2;
-	    rlc_pdus[0]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
-	    rlc_pdus[0]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[0]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
-	    rlc_pdus[0]->rlc_pdu_tb[0]->logical_channel_id = DCCH;
-	    rlc_pdus[0]->rlc_pdu_tb[0]->has_size = 1;
-	    rlc_pdus[0]->rlc_pdu_tb[0]->size = data_to_request;
-	    rlc_pdus[0]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[0]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
-	    rlc_pdus[0]->rlc_pdu_tb[1]->logical_channel_id = DCCH;
-	    rlc_pdus[0]->rlc_pdu_tb[1]->has_size = 1;
-	    rlc_pdus[0]->rlc_pdu_tb[1]->size = data_to_request;
+	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
+	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
+	    rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
+	    rlc_pdus[channels_added]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[0]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->logical_channel_id = DCCH;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->size = data_to_request;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[1]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->logical_channel_id = DCCH;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->size = data_to_request;
 	    dl_data[num_ues_added]->n_rlc_pdu++;
-
+	    channels_added++;
 	    //Set this to the max value that we might request
 	    sdu_length_total = data_to_request;
 	  } else {
@@ -572,7 +555,7 @@ schedule_ue_spec_default(
 	}
 
 	// check for DCCH1 and update header information (assume 2 byte sub-header)
-        if (dci_tbs-ta_len-header_len_dcch-sdu_length_total > 0 ) {
+        if (dci_tbs-ta_len-header_len_dcch-sdu_length_total-2 > 0 ) {
 
 	  //If we have space, we need to see how much data we can request at most (if any are available)
 	  rlc_status = mac_rlc_status_ind(mod_id,
@@ -581,33 +564,36 @@ schedule_ue_spec_default(
 					  frame,
 					  ENB_FLAG_YES,
 					  MBMS_FLAG_NO,
-					  DCCH+1,
-					  (dci_tbs-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
+					  DCCH1,
+					  (dci_tbs-ta_len-header_len_dcch-sdu_length_total-2)); // transport block set size less allocations for timing advance and
           // DCCH SDU
 
 	  // If data are available in DCCH1
 	  if (rlc_status.bytes_in_buffer > 0) {
+	    //Add this subheader
 	    header_len_dcch += 2;
 
 	    //Fill in as much as possible
 	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total, rlc_status.bytes_in_buffer) + 1;
 
-	    rlc_pdus[1] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
-	    protocol__prp_rlc_pdu__init(rlc_pdus[1]);
-	    rlc_pdus[1]->n_rlc_pdu_tb = 2;
-	    rlc_pdus[1]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
-	    rlc_pdus[1]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[1]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
-	    rlc_pdus[1]->rlc_pdu_tb[0]->logical_channel_id = DCCH+1;
-	    rlc_pdus[1]->rlc_pdu_tb[0]->has_size = 1;
-	    rlc_pdus[1]->rlc_pdu_tb[0]->size = data_to_request;
-	    rlc_pdus[1]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[1]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
-	    rlc_pdus[1]->rlc_pdu_tb[1]->logical_channel_id = DCCH+1;
-	    rlc_pdus[1]->rlc_pdu_tb[1]->has_size = 1;
-	    rlc_pdus[1]->rlc_pdu_tb[1]->size = data_to_request;
+	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
+	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
+	    rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
+	    rlc_pdus[channels_added]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[0]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->logical_channel_id = DCCH1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->size = data_to_request;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[1]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->logical_channel_id = DCCH1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->size = data_to_request;
 	    dl_data[num_ues_added]->n_rlc_pdu++;
-	    
+	    channels_added++;
 	    sdu_length_total += data_to_request;
 	  }
 	}
@@ -615,7 +601,7 @@ schedule_ue_spec_default(
 	// check for DTCH and update header information
         // here we should loop over all possible DTCH
 
-        header_len_dtch = 3; // 3 bytes DTCH SDU subheader
+        header_len_dtch = 3; // Assume max 3 bytes DTCH SDU subheader
 
 	LOG_D(MAC,"[eNB %d], Frame %d, DTCH->DLSCH, CC_id %d, Checking RLC status (rab %d, tbs %d, len %d)\n",
               mod_id, frame, CC_id, DTCH, TBS,
@@ -623,6 +609,8 @@ schedule_ue_spec_default(
 
 	if (dci_tbs-ta_len-header_len_dcch-sdu_length_total-header_len_dtch > 0 ) {
 
+	   LOG_D(MAC, "[TEST] This is how much we request at most during first call %d\n", dci_tbs-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
+	  
 	  //If we have space, we need to see how much data we can request at most (if any are available)
 	  rlc_status = mac_rlc_status_ind(mod_id,
 					  rnti,
@@ -639,33 +627,34 @@ schedule_ue_spec_default(
 	    //Fill what remains in the TB
 	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total-header_len_dtch, rlc_status.bytes_in_buffer) + 1;
 	    LOG_D(MAC, "[TEST]Will request %d \n", data_to_request);
-	    rlc_pdus[2] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
-	    protocol__prp_rlc_pdu__init(rlc_pdus[2]);
-	    rlc_pdus[2]->n_rlc_pdu_tb = 2;
-	    rlc_pdus[2]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
-	    rlc_pdus[2]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[2]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
-	    rlc_pdus[2]->rlc_pdu_tb[0]->logical_channel_id = DTCH;
-	    rlc_pdus[2]->rlc_pdu_tb[0]->has_size = 1;
-	    rlc_pdus[2]->rlc_pdu_tb[0]->size = data_to_request;
-	    rlc_pdus[2]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
-	    rlc_pdus[2]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
-	    rlc_pdus[2]->rlc_pdu_tb[1]->logical_channel_id = DTCH;
-	    rlc_pdus[2]->rlc_pdu_tb[1]->has_size = 1;
-	    rlc_pdus[2]->rlc_pdu_tb[1]->size = data_to_request;
+	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
+	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
+	    rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
+	    rlc_pdus[channels_added]->rlc_pdu_tb = (Protocol__PrpRlcPduTb **) malloc(sizeof(Protocol__PrpRlcPduTb *) * 2);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[0]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->logical_channel_id = DTCH;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[0]->size = data_to_request;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1] = (Protocol__PrpRlcPduTb *) malloc(sizeof(Protocol__PrpRlcPduTb));
+	    protocol__prp_rlc_pdu_tb__init(rlc_pdus[channels_added]->rlc_pdu_tb[1]);
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_logical_channel_id = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->logical_channel_id = DTCH;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->has_size = 1;
+	    rlc_pdus[channels_added]->rlc_pdu_tb[1]->size = data_to_request;
 	    dl_data[num_ues_added]->n_rlc_pdu++;
-
+	    channels_added++;
 	    sdu_length_total += data_to_request;
 
 	    if(data_to_request < 128) {
 	      header_len_dtch = 2;
 	    }
-	    
 	  } else {
-	    header_len_dtch = 3;
+	    header_len_dtch = 0;
 	  }
 	}
-
+	
 	// Add rlc_pdus to the dl_data message
 	dl_data[num_ues_added]->rlc_pdu = (Protocol__PrpRlcPdu **) malloc(sizeof(Protocol__PrpRlcPdu *) *
 									  dl_data[num_ues_added]->n_rlc_pdu);
@@ -674,7 +663,7 @@ schedule_ue_spec_default(
 	}
 	
 	// there is a payload
-        if (((sdu_length_total + header_len_dcch + header_len_dtch) > 0)) {
+        if (( dl_data[num_ues_added]->n_rlc_pdu > 0)) {
 	  // Now compute number of required RBs for total sdu length
           // Assume RAH format 2
           // adjust  header lengths
@@ -682,15 +671,12 @@ schedule_ue_spec_default(
           header_len_dtch_tmp = header_len_dtch;
 
 	  if (header_len_dtch == 0) {
-            header_len_dcch = (header_len_dcch > 0) ? 1 : header_len_dcch;  // remove length field
+            header_len_dcch = (header_len_dcch > 0) ? (header_len_dcch - 1) : header_len_dcch;  // remove length field
           } else {
             header_len_dtch = (header_len_dtch > 0) ? 1 : header_len_dtch;     // remove length field for the last SDU
           }
 
 	  mcs_tmp = mcs;
-	  
-	  // TODO: Need to compute this and not take it from the stats
-	  //	  mcs = eNB_UE_stats->dlsch_mcs1;
 
 	  if (mcs_tmp == 0) {
             nb_rb = 4;  // don't let the TBS get too small
@@ -757,7 +743,7 @@ schedule_ue_spec_default(
             TBS = mac_xface->get_TBS_DL(mcs_tmp, nb_rb);
           }
 
-	  LOG_D(MAC,"dlsch_mcs and TBS before and after the rate matching = (%d, %d) (%d, %d)\n", mcs, mcs_tmp, dci_tbs, TBS);
+	  LOG_D(MAC,"[TEST] dlsch_mcs and TBS before and after the rate matching = (%d, %d) (%d, %d)\n", mcs, mcs_tmp, dci_tbs, TBS);
 
 	  dci_tbs = TBS;
 
@@ -840,8 +826,8 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-	    dl_dci->n_rv = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->ndi[0] = 1;
+	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
 	    dl_dci->has_tpc = 1;
@@ -870,8 +856,8 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 2;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
-	    dl_dci->ndi[1] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
+	    dl_dci->ndi[0] = 1;
+	    dl_dci->ndi[1] = 1;
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -904,8 +890,8 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 2;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
-	    dl_dci->ndi[1] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
+	    dl_dci->ndi[0] = 1;
+	    dl_dci->ndi[1] = 1;
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -938,10 +924,10 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = 1;
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
+	    dl_dci->ndi[0] = 1;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = round&3;
+	    dl_dci->rv[0] = 0;
 	    dl_dci->has_tpc = 1;
 	    dl_dci->tpc = tpc;
 	    dl_dci->n_mcs = 1;
@@ -978,7 +964,7 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];;
+	    dl_dci->ndi[0] = 1;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = round&3;
@@ -1106,7 +1092,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->ndi     = dl_dci->ndi[0];
@@ -1122,7 +1108,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1142,7 +1128,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1157,10 +1143,8 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
 	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->rv       = round;
-	    if (dl_dci->has_rb_bitmap) {
-	      ((DCI1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    }
-	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
+	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_5MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1180,7 +1164,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1196,7 +1180,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_10MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_10MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1216,7 +1200,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_20MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1232,7 +1216,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->rb_shift;
+	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
 	    ((DCI1_20MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
@@ -1266,14 +1250,17 @@ void apply_scheduling_decisions(mid_t mod_id,
 
 	n_lc = dl_data->n_rlc_pdu;
 	num_sdus = 0;
+	sdu_length_total = 0;
 	// Go through each one of the channel commands and create SDUs
 	for (i = 0; i < n_lc; i++) {
 	  lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
 	  rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
 	  LOG_D(MAC,"[TEST]Have to check %d channels\n", n_lc);
 	  if (rlc_size > 0) {
-	    rlc_status = mac_rlc_status_ind(
-					    mod_id,
+	    if (lcid == 3) {
+	      rlc_size--;
+	    }
+	    rlc_status = mac_rlc_status_ind(mod_id,
 					    rnti,
 					    mod_id,
 					    frame,
@@ -1287,25 +1274,27 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    LOG_D(MAC,"[eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   mod_id, frame, lcid, CC_id, rlc_size);
 
-	    LOG_D(MAC, "[TEST] Have %d bytes in buffer DCCH during second call\n", rlc_status.bytes_in_buffer);
+	    LOG_D(MAC, "[TEST] Have %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
 	    
-	    sdu_lengths[i] += mac_rlc_data_req(
-					       mod_id,
+	    sdu_lengths[i] += mac_rlc_data_req(mod_id,
 					       rnti,
 					       mod_id,
 					       frame,
 					       ENB_FLAG_YES,
 					       MBMS_FLAG_NO,
 					       lcid,
-					       (char *)&dlsch_buffer[sdu_lengths[i]]);
+					       (char *)&dlsch_buffer[sdu_lengths[sdu_length_total]]);
 
-	    LOG_D(MAC, "[TEST] This is what I actuallty got %d\n", sdu_lengths[i]);
+	    LOG_D(MAC, "[TEST] This is what I actually got from LCID %d -> %d\n",lcid,  sdu_lengths[i]);
 
-	    LOG_D(MAC,"[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",mod_id, CC_id, sdu_lengths[i]);
+	    LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
 	    sdu_length_total += sdu_lengths[i];
             sdu_lcids[i] = lcid;
 
-	    if (lcid == DCCH || lcid == DCCH+1) {
+	    UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
+	    UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
+	    
+	    if (lcid == DCCH || lcid == DCCH1) {
 	      header_len_dcch += 2;
 	    } else if (lcid == DTCH) {
 	      if (sdu_lengths[i] < 128) {
@@ -1313,12 +1302,8 @@ void apply_scheduling_decisions(mid_t mod_id,
 	      } else {
 		header_len_dtch = 3;
 	      }
-	    }
-	    
-	    UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH] += 1;
-            UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH] += sdu_lengths[i];
+	    }  
 	    num_sdus++;
-	    
 	  }
 	} // SDU creation end
 
@@ -1329,15 +1314,16 @@ void apply_scheduling_decisions(mid_t mod_id,
           header_len_dtch_tmp = header_len_dtch;
 	  
 	  if (header_len_dtch==0) {
-	    header_len_dcch = (header_len_dcch >0) ? 1 : header_len_dcch;  // remove length field
+	    header_len_dcch = (header_len_dcch >0) ? (header_len_dcch - 1) : header_len_dcch;  // remove length field
 	  } else {
-	    header_len_dtch = (header_len_dtch > 0) ? 1 :header_len_dtch;     // remove length field for the last SDU
+	    header_len_dtch = (header_len_dtch > 0) ? 1 : header_len_dtch;     // remove length field for the last SDU
 	  }
 	  
 	  // there is a payload
 	  LOG_D(MAC, "[TEST] This is the padding %d\n", TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len); 
 	  if (((sdu_length_total + header_len_dcch + header_len_dtch ) > 0)) {
-	    if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2) {
+	    if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2
+		|| (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) > TBS) { //protect from overflow
 	      padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len);
 	      post_padding = 0;
 	    } else {
@@ -1345,16 +1331,17 @@ void apply_scheduling_decisions(mid_t mod_id,
 	    
 	      // adjust the header len
 	      if (header_len_dtch==0) {
-		header_len_dcch = header_len_dcch_tmp;
-	      } else { //if (( header_len_dcch==0)&&((header_len_dtch==1)||(header_len_dtch==2)))
-		header_len_dtch = header_len_dtch_tmp;
+	      	header_len_dcch = header_len_dcch_tmp;
+	      } else {
+	      	header_len_dtch = header_len_dtch_tmp;
 	      }
 	      
-	      post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len ; // 1 is for the postpadding header
+	      post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len - 1; // 1 is for the postpadding header
 	    }
 	  }
 	  
 	  LOG_D(MAC, "[TEST] This is the current SDU length %d and this is the TBS %d\n", sdu_length_total, TBS);
+	  
 	  
 	  
 	  if (ta_len > 0) {
@@ -1373,7 +1360,8 @@ void apply_scheduling_decisions(mid_t mod_id,
 					 NULL,                                  // contention res id
 					 padding,
 					 post_padding);
-	  
+
+	  LOG_D(MAC, "[TEST]Have to schedule %d SDUs with length %d. TBS is %d, LCID is %d, post padding is %d, padding is %d, header offset is %d, total sdu size is %d\n", num_sdus, sdu_lengths[0], TBS, sdu_lcids[0], post_padding, padding, offset, sdu_length_total);
 	  
 #ifdef DEBUG_eNB_SCHEDULER
           LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
@@ -1411,8 +1399,8 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
 	  UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
-          UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
-          UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
+          //UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
+          //UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=dl_dci->mcs[0];
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=dl_dci->mcs[0];
           UE_list->eNB_UE_stats[CC_id][UE_id].TBS = TBS;
@@ -1421,6 +1409,9 @@ void apply_scheduling_decisions(mid_t mod_id,
           UE_list->eNB_UE_stats[CC_id][UE_id].total_sdu_bytes+= sdu_length_total;
           UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes+= TBS;
           UE_list->eNB_UE_stats[CC_id][UE_id].total_num_pdus+=1;
+
+	  eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
+	  eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 	// TODO
 	
 	  
@@ -1430,6 +1421,15 @@ void apply_scheduling_decisions(mid_t mod_id,
 	
       } else {
 	// No need to create anything apart of DCI in case of retransmission
+
+	/*TODO: Must add these */
+	//eNB_UE_stats->dlsch_trials[round]++;
+	//UE_list->eNB_UE_stats[CC_id][UE_id].num_retransmission+=1;
+	//UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx=nb_rb;
+	//UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_retx+=nb_rb;
+	//UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx=nCCECC_id];
+	//UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
+	//UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=eNB_UE_stats->dlsch_mcs1;
       }
 
       //Add DCI based on format
@@ -1438,7 +1438,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 			DLSCH_dci,
 			rnti,
 			size_bytes,
-			process_ue_cqi (mod_id, UE_id),//aggregation
+			dl_dci->aggr_level,//aggregation
 			size_bits,
 			format1,
 			0);
@@ -1447,7 +1447,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 			DLSCH_dci,
 			rnti,
 			size_bytes,
-			process_ue_cqi (mod_id, UE_id),//aggregation
+			dl_dci->aggr_level,//aggregation
 			size_bits,
 			format2A,
 			0);
