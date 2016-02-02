@@ -487,6 +487,8 @@ schedule_ue_spec_default(
         //TBS = mac_xface->get_TBS(eNB_UE_stats->DL_cqi[0]<<1,nb_available_rb);
         TBS = mac_xface->get_TBS_DL(mcs, nb_available_rb);
 	dci_tbs = TBS;
+
+
 	
         // check first for RLC data on DCCH
         // add the length for  all the control elements (timing adv, drx, etc) : header + payload
@@ -511,7 +513,8 @@ schedule_ue_spec_default(
 	// Need to see if we have space for data from this channel
 	
 	if ( TBS-ta_len-header_len_dcch > 0 ) {
-
+	  LOG_D(MAC, "[TEST]Requested %d bytes in DCCH buffer during first call\n", dci_tbs-ta_len-header_len_dcch);
+	  LOG_D(MAC, "DCCH dci_tbus is %d\n", dci_tbs);
 	  //If we have space, we need to see how much data we can request at most (if any available)
 	  rlc_status = mac_rlc_status_ind(mod_id,
 					  rnti,
@@ -524,10 +527,10 @@ schedule_ue_spec_default(
 
 	  //If data are available in the DCCH
 	  if (rlc_status.bytes_in_buffer > 0) {
-	    LOG_D(MAC, "[TEST]Have %d bytes in buffer during first call\n", rlc_status.bytes_in_buffer);
+	    LOG_D(MAC, "[TEST]Have %d bytes in DCCH buffer during first call\n", rlc_status.bytes_in_buffer);
 	    //Fill in as much as possible
 	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch, rlc_status.bytes_in_buffer) + 1;
-	    LOG_D(MAC, "[TEST]Will request %d \n", data_to_request);
+	    LOG_D(MAC, "[TEST]Will request %d from DCCH\n", data_to_request);
 	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
 	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
 	    rlc_pdus[channels_added]->n_rlc_pdu_tb = 2;
@@ -1257,9 +1260,6 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
 	  LOG_D(MAC,"[TEST]Have to check %d channels\n", n_lc);
 	  if (rlc_size > 0) {
-	    if (lcid == 3) {
-	      rlc_size--;
-	    }
 	    rlc_status = mac_rlc_status_ind(mod_id,
 					    rnti,
 					    mod_id,
@@ -1283,7 +1283,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 					       ENB_FLAG_YES,
 					       MBMS_FLAG_NO,
 					       lcid,
-					       (char *)&dlsch_buffer[sdu_lengths[sdu_length_total]]);
+					       (char *)&dlsch_buffer[sdu_length_total]);
 
 	    LOG_D(MAC, "[TEST] This is what I actually got from LCID %d -> %d\n",lcid,  sdu_lengths[i]);
 
@@ -1302,7 +1302,8 @@ void apply_scheduling_decisions(mid_t mod_id,
 	      } else {
 		header_len_dtch = 3;
 	      }
-	    }  
+	    }
+
 	    num_sdus++;
 	  }
 	} // SDU creation end
