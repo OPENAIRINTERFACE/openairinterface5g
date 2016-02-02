@@ -19,9 +19,11 @@ file.close()
 
 
 if keyword == 'mme_ip_address':
-   #string =  (re.sub(r"mme_ip_address\s*=\s*\([^\$]+)\)\s*;\s*", r"<% tex \1 %>", t, re.M)
    replacement_text = keyword + ' =  ( { ' + replacement_text + ' } ) ; '
    string = re.sub(r"mme_ip_address\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
+elif keyword == 'IPV4_LIST':
+   replacement_text = keyword + ' =  ( ' + replacement_text + '  ) ; '
+   string = re.sub(r"IPV4_LIST\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
 else :
    replacement_text = keyword + ' =  ' + replacement_text + ' ; '
    string = re.sub(r"%s\s*=\s*([^\$]+?)\s*;" % keyword , replacement_text, string, re.M)   

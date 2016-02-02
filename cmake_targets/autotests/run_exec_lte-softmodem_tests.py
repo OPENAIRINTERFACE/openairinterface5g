@@ -258,17 +258,17 @@ def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
 # \param logdirRepo directory of remote repository
 # \param python_script python script location
 def update_config_file(oai, config_string, logdirRepo, python_script):
+  cmd=""
   if config_string :
     stringArray = config_string.splitlines()
-    cmd=""
     #python_script = '$OPENAIR_DIR/targets/autotests/tools/search_repl.py'
     for string in stringArray:
        #split the string based on space now
        string1=string.split()
        cmd = cmd + 'python ' + python_script + ' ' + logdirRepo+'/'+string1[0] + '  ' + string1[1] +  ' '+ string1[2] + '\n'
        #cmd = cmd + 'perl -p -i  -e \'s/'+ string1[1] + '\\s*=\\s*"\\S*"\\s*/' + string1[1] + ' = "' + string1[2] +'"' + '/g\'   ' + logdirRepo + '/' +string1[0] + '\n'
-    return cmd
-    #result = oai.send_recv(cmd)
+  return cmd
+  #result = oai.send_recv(cmd)
 
 # \brief thread safe sshsession wrapper due to occasional connection issues with ssh
 # \param machine name of machine
@@ -323,7 +323,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   #result = oai.send_recv(cmd)
   #print result
   result = oai.send_expect_false(cmd, 'Match found', False)
-  print result
+  print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
   res = oai.send_recv(ExmimoRfStop, False)
 
@@ -359,7 +359,7 @@ class oaiThread (threading.Thread):
         except Exception, e:
            error=''
            error = error + ' In class oaiThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + self.timeout + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n username = ' + self.username + '\n'  
+           error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n timeout = ' + str(self.timeout) + '\n machine = ' + self.machine + '\n cmd = ' + self.cmd + '\n timeout = ' + str(self.timeout) +  '\n username = ' + self.username + '\n'  
            error = error + traceback.format_exc()
            print error
 
@@ -548,7 +548,7 @@ def wait_testcaseclass_generic_threads(threadListGeneric, timeout = 1):
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
 # \param nruns_lte-softmodem global parameter to override number of runs (nruns) within the test case
-def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem):
+def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , logdirOpenaircnRepo, MachineList, user, password, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, timeout_cmd):
   #We ignore the password sent to this function for secuirity reasons for password present in log files
   #It is recommended to add a line in /etc/sudoers that looks something like below. The line below will run sudo without password prompt
   # your_user_name ALL=(ALL:ALL) NOPASSWD: ALL
@@ -558,7 +558,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   #user = getpass.getuser()
   testcasename = testcase.get('id')
   testcaseclass = testcase.findtext('class',default='')
-  timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
+  if timeout_cmd == '':
+     timeout_cmd = testcase.findtext('TimeOut_cmd',default='')
   timeout_cmd = int(float(timeout_cmd))
   #Timeout_thread is more than that of cmd to have room for compilation time, etc
   timeout_thread = timeout_cmd + 300 
@@ -580,6 +581,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   eNB_traffic_exec_args = testcase.findtext('eNB_traffic_exec_args',default='')
   eNB_terminate_missing_procs = testcase.findtext('eNB_terminate_missing_procs',default='True')
   eNB_search_expr_true = testcase.findtext('eNB_search_expr_true','')
+  if re.compile('\w+').match(eNB_search_expr_true) != None:
+      eNB_search_expr_true = eNB_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's' 
 
   UEMachine = testcase.findtext('UE',default='')
   UE_config_file = testcase.findtext('UE_config_file',default='')
@@ -594,6 +597,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   UE_terminate_missing_procs = testcase.findtext('UE_terminate_missing_procs',default='True')
   UE_search_expr_true = testcase.findtext('UE_search_expr_true','')
   UE_stop_script =  testcase.findtext('UE_stop_script','')
+  if re.compile('\w+').match(UE_search_expr_true) != None:
+      UE_search_expr_true = UE_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
   EPCMachine = testcase.findtext('EPC',default='')
   EPC_config_file = testcase.findtext('EPC_config_file',default='')
@@ -612,6 +617,8 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   EPC_traffic_exec_args = testcase.findtext('EPC_traffic_exec_args',default='')
   EPC_terminate_missing_procs = testcase.findtext('EPC_terminate_missing_procs',default='True')
   EPC_search_expr_true = testcase.findtext('EPC_search_expr_true','')
+  if re.compile('\w+').match(EPC_search_expr_true) != None:
+     EPC_search_expr_true = EPC_search_expr_true + '  duration=' + str(timeout_cmd-90) + 's'
 
   index_eNBMachine = MachineList.index(eNBMachine)
   index_UEMachine = MachineList.index(UEMachine)
@@ -680,6 +687,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     logfile_task_eNB_out = logdir_eNB + '/eNB_task_out' + '_' + str(run) + '_.log'
     logfile_task_eNB = logdir_local_testcase + '/eNB_task' + '_' + str(run) + '_.log'
     logfile_local_traffic_eNB_out = logdir_local_testcase + '/eNB_traffic' + '_' + str(run) + '_.log' 
+    logfile_tshark_eNB = logdir_eNB + '/eNB_tshark' + '_' + str(run) + '_.log'
+    logfile_pcap_eNB = logdir_eNB + '/eNB_tshark' + '_' + str(run) + '_.pcap'
+    logfile_pcap_zip_eNB = logdir_eNB + '/eNB_tshark' + '_' + str(run) + '_.pcap.zip'
+    logfile_pcap_tmp_eNB = '/tmp/' + '/eNB_tshark' + '_' + str(run) + '_.pcap'
 
     task_eNB_compile = ' ( uname -a ; date \n'
     task_eNB_compile = task_eNB_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
@@ -701,9 +712,16 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_main_exec PID = $! \n'
     if eNB_traffic_exec != "":
-       task_eNB = task_eNB + ' (date;  ' + eNB_traffic_exec + ' ' + eNB_traffic_exec_args + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n '
+       cmd_traffic = eNB_traffic_exec + ' ' + eNB_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
+       task_eNB = task_eNB + ' (date;  ' + cmd_traffic + ' ) > ' + logfile_traffic_eNB + ' 2>&1 & \n'
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
+
+    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+    task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
+    task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
     task_eNB  = task_eNB + finalize_deploy_script (timeout_cmd, eNB_terminate_missing_procs) + ' \n'
     #task_eNB  = task_eNB + 'sleep ' +  str(timeout_cmd) + ' \n'
@@ -747,7 +765,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_main_exec PID = $! \n'
     if UE_traffic_exec != "":
-       task_UE = task_UE + ' ( date;  ' + UE_traffic_exec + ' ' + UE_traffic_exec_args + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
+       cmd_traffic = UE_traffic_exec + ' ' + UE_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
+       task_UE = task_UE + ' ( date;  ' + cmd_traffic + ' ) >' + logfile_traffic_UE + ' 2>&1 & \n'
        task_UE = task_UE + 'array_exec_pid+=($!) \n'
        task_UE = task_UE + 'echo UE_traffic_exec PID = $! \n'
     #terminate the UE test case after timeout_cmd seconds
@@ -797,7 +818,10 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'
        task_EPC = task_EPC + 'echo EPC_main_exec PID = $! \n'
     if EPC_traffic_exec !=  "":
-       task_EPC  = task_EPC + '( date; ' + EPC_traffic_exec + ' ' + EPC_traffic_exec_args + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
+       cmd_traffic = EPC_traffic_exec + ' ' + EPC_traffic_exec_args
+       if cmd_traffic.find('-c') >= 0:
+          cmd_traffic = cmd_traffic + ' -t ' + str(timeout_cmd - 60)
+       task_EPC  = task_EPC + '( date; ' + cmd_traffic + ' ) > ' + logfile_traffic_EPC  +  ' 2>&1   & \n' 
        task_EPC = task_EPC + 'array_exec_pid+=($!) \n'  
        task_EPC = task_EPC + 'echo EPC_traffic_exec PID = $! \n'
     #terminate the EPC test case after timeout_cmd seconds   
@@ -861,6 +885,19 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       thread_UE.start()
       thread_UE.join()
    
+    #Now we change the permissions of the logfiles to avoid some of them being with root permissions
+    cmd = 'sudo -E chown -R ' + user + ' ' + logdir_eNB
+    res= oai_eNB.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_eNB + "> in eNB machine..." + res
+
+    cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_UE
+    res= oai_UE.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_UE + "> in UE machine..." + res
+
+    cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_EPC
+    res= oai_EPC.send_recv(cmd)
+    print "Changing permissions of logdir <" + logdir_EPC + "> in EPC machine..." + res
+
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
     #ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
@@ -1019,7 +1056,8 @@ MachineListGeneric=''
 flag_remove_logdir=False
 flag_start_testcase=False
 nruns_lte_softmodem=''
-
+flag_skip_git_head_check=False
+Timeout_cmd=''
 print "Number of arguments argc = " + str(len(sys.argv))
 #for index in range(1,len(sys.argv) ):
 #  print "argv_" + str(index) + " : " + sys.argv[index]
@@ -1073,6 +1111,11 @@ while i < len (sys.argv):
         MachineListGeneric = MachineListGeneric.replace("\"","")
         MachineListGeneric = MachineListGeneric.replace("\'","")
         i = i +1
+    elif arg == '--skip-git-head-check':
+        flag_skip_git_head_check=True
+    elif arg == '--timeout_cmd': 
+        Timeout_cmd = sys.argv[i+1]
+        i = i +1
     elif arg == '-h' :
         print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
@@ -1086,6 +1129,8 @@ while i < len (sys.argv):
         print "--nrun_lte_softmodem:  Set the number of runs for lte-softmodem test case class"
         print "-MachineList : overrides the MachineList parameter in test_case_list.xml"
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
+        print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
+        print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1186,6 +1231,7 @@ print "GitOAI5GBranch = " + GitOAI5GRepoBranch
 print "GitOpenaircnRepoBranch = " + GitOpenaircnRepoBranch
 print "NFSResultsShare = " + NFSResultsShare
 print "nruns_lte_softmodem = " + nruns_lte_softmodem
+print "Timeout_cmd = " + Timeout_cmd
 
 if GitOAI5GHeadVersion == '':
   cmd = "git show-ref --heads -s "+ GitOAI5GRepoBranch
@@ -1289,7 +1335,10 @@ for oai in oai_list:
       cmd = cmd + 'git_head=${git_head[0]} \n'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
-      cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
+      if flag_skip_git_head_check==True:
+         cmd = cmd + 'echo \"skipping GitHead check...\" \n '
+      else:
+         cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
       cmd = cmd + 'source oaienv'   + '\n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
@@ -1375,8 +1424,8 @@ for testcase in testcaseList:
            print "eNBMachine : " + eNBMachine + "UEMachine : " + UEMachine + "EPCMachine : " + EPCMachine + "MachineList : " + ','.join(MachineList)
         print "testcasename = " + testcasename + " class = " + testcaseclass
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
-        cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
-        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem )
+        #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+        handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
@@ -1412,7 +1461,7 @@ cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
 res = oai_localhost.send_recv(cmd)
 print "Deleting NFSTestResults Dir..." + res
 
-print "Copying files from GilabCI Runner Machine : " + host + "locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
 
 sys.exit()
