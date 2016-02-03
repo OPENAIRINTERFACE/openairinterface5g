@@ -982,7 +982,7 @@ void init_openair1(void)
 
       PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=23;
 
-      PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=160;
+      PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=100;
 
       // update UE_mode for each eNB_id not just 0
       if (abstraction_flag == 0)

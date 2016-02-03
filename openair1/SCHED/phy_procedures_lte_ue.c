@@ -2684,9 +2684,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
 
-            //      if (abstraction_flag ==0 )
-            dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
-            mac_xface->macphy_exit("");
+            //if (abstraction_flag ==0 )
+	    //dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
+	    //mac_xface->macphy_exit("Hello?");
 	    //#endif
           } else {
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d (slot_rx %d): Received DLSCH (rv %d,mcs %d,TBS %d)\n",
