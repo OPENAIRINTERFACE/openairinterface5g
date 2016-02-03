@@ -71,8 +71,8 @@
  *****************************************************************************************/
 
 
-
-char rrh_ip[20] = "0.0.0.0"; // there is code to detect  my ip address
+/* local IP/MAC address is detected*/
+char rrh_ip[20] = "0.0.0.0"; 
 unsigned char rrh_mac[6] = "0:0:0:0:0:0"; 
 int  rrh_port = 50000; // has to be an option
 
@@ -103,8 +103,8 @@ uint8_t         measurements_flag=0;
    - default ethernet interface is local */
 uint8_t 	    num_eNB_mod=0;
 uint8_t 	    num_UE_mod=0;
-char*               if_name="lo";
-uint8_t             eth_mode=ETH_UDP_MODE;
+char*           if_name="lo";
+uint8_t         eth_mode=ETH_UDP_MODE;
 
 rrh_module_t 	        *enb_array;
 rrh_module_t            *ue_array;
@@ -224,6 +224,7 @@ static rrh_module_t new_module (unsigned int id) {
   rrh_mod.devs->transp_type=NONE_TP;
   rrh_mod.devs->host_type=RRH_HOST; 
 
+
   return rrh_mod;
 }
 
@@ -301,7 +302,7 @@ static void get_options(int argc, char *argv[]) {
     default: /* '?' */
       //fprintf(stderr, "Usage: \n", argv[0]);
       exit(-1);
-    }
+  }
 }
 
 }

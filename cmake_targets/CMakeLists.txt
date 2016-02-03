@@ -133,9 +133,6 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   if (CPUINFO MATCHES "avx2")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
   endif()
-  if (CPUINFO MATCHES "sse4_2")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.2")
-  endif()
   if (CPUINFO MATCHES "sse4_1")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
   endif()
@@ -149,8 +146,8 @@ set(C_FLAGS_PROCESSOR " ${C_FLAGS_PROCESSOR} ${CFLAGS_PROCESSOR_USER}")
 Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
-  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.2")) )
-    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1 -msse4.2. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -msse4.2\" ")
+  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) )
+    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1\" ")
   endif()
 endif()
 
@@ -251,6 +248,9 @@ endif (${RTAI})
 #############
 set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
+
+set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
+set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
@@ -491,6 +491,7 @@ elseif (${RF_BOARD} STREQUAL "CPRIGW") #to ask
   
 endif (${RF_BOARD} STREQUAL "EXMIMO")
 
+
 if (${TRANSP_PRO} STREQUAL "ETHERNET")
   
   include_directories ("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB")
@@ -501,12 +502,15 @@ if (${TRANSP_PRO} STREQUAL "ETHERNET")
     )
   set(option_TP_lib "-rdynamic -ldl")
   set(LOWLATENCY True)
+
   
 endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 ##########################################################
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
-	  
+
+Message("LOWLATENCY flag  is ${LOWLATENCY}")
+
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
 ##############################################################
@@ -514,6 +518,7 @@ add_boolean_option(ENABLE_SECURITY         True  "Enable LTE integrity and ciphe
 add_boolean_option(ENABLE_USE_MME          True  "eNB connected to MME (INTERFACE S1-C), not standalone eNB")
 add_boolean_option(NO_RRM                  True  "DO WE HAVE A RADIO RESSOURCE MANAGER: NO")
 add_boolean_option(USER_MODE True "????")
+add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the default bearer")
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
@@ -527,6 +532,9 @@ add_list_string_option(PACKAGE_NAME "NotDefined" "As per attribute name")
 add_boolean_option(MESSAGE_CHART_GENERATOR False         "For generating sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_RLC_MAC False "trace RLC-MAC exchanges in sequence diagrams")
 add_boolean_option(MESSAGE_CHART_GENERATOR_PHY     False "trace some PHY exchanges in sequence diagrams")
+
+add_boolean_option(ENB_AGENT                   True         "enable eNB agent to inteface with a SDN contrller")
+
 ########################
 # Include order
 ##########################
@@ -741,6 +749,56 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
+if (ENB_AGENT)
+  # set the version of protobuf messages, V3 not supported yet
+  add_list1_option(PRPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
+  
+  if (${PRPT_VERSION} STREQUAL "V2")
+    set (PRPTDIR V2)
+  elseif (${PRPT_VERSION} STREQUAL "V3")
+    set (PRPTDIR V3)
+  endif(${PRPT_VERSION} STREQUAL "V2")
+  
+  set(PRPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${PRPTDIR} )
+  set(PRPT_MSG_FILES
+    ${PRPT_MSG_DIR}/header.proto
+    ${PRPT_MSG_DIR}/progran.proto
+    ${PRPT_MSG_DIR}/stats_common.proto
+    ${PRPT_MSG_DIR}/stats_messages.proto
+    )
+
+  set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
+  message("calling ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES}")
+  execute_process(COMMAND ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES})
+  file(GLOB PRPT_source ${PRPT_C_DIR}/*.c)
+  set(PRPT_OAI_generated
+    ${PRPT_C_DIR}/header.pb-c.c
+    ${PRPT_C_DIR}/progran.pb-c.c
+    ${PRPT_C_DIR}/stats_common.pb-c.c
+    ${PRPT_C_DIR}/stats_messages.pb-c.c
+    )
+  
+  file(GLOB prpt_h ${PRPT_C_DIR}/*.h)
+  set(prpt_h ${prpt_h} )
+  
+  add_library(PRPT_MSG
+    ${PRPT_OAI_generated}
+    ${PRPT_source}
+    )
+
+  include_directories ("${PRPT_C_DIR}")
+
+  add_library(ASYNC_IF
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+    )
+  set(ASYNC_IF_LIB ASYNC_IF)
+  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
+
+endif()
+
+
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
@@ -1648,7 +1706,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${ASYNC_IF_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})

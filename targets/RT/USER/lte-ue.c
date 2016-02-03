@@ -279,7 +279,7 @@ static void *UE_thread_synch(void *arg)
 #ifdef OAI_USRP
         openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 
-	
+#if 0 // UHD 3.8	
         switch(UE->lte_frame_parms.N_RB_DL) {
         case 6:
           openair0_cfg[card].rx_gain[i] -= 12;
@@ -301,7 +301,7 @@ static void *UE_thread_synch(void *arg)
           printf( "Unknown number of RBs %d\n", UE->lte_frame_parms.N_RB_DL );
           break;
         }
-	
+#endif
         printf( "UE synch: setting RX gain (%d,%d) to %f\n", card, i, openair0_cfg[card].rx_gain[i] );
 #endif
       }
@@ -357,7 +357,8 @@ static void *UE_thread_synch(void *arg)
           openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i];
 #ifdef OAI_USRP
           openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;  // 65 calibrated for USRP B210 @ 2.6 GHz
-	  
+
+#if 0 // UHD 3.8	  
           switch(UE->lte_frame_parms.N_RB_DL) {
           case 6:
             openair0_cfg[card].rx_gain[i] -= 12;
@@ -379,7 +380,7 @@ static void *UE_thread_synch(void *arg)
             printf("Unknown number of RBs %d\n",UE->lte_frame_parms.N_RB_DL);
             break;
           }
-	  
+#endif	  
 
           printf("UE synch: setting RX gain (%d,%d) to %f\n",card,i,openair0_cfg[card].rx_gain[i]);
 #endif
@@ -400,7 +401,7 @@ static void *UE_thread_synch(void *arg)
  
     case pbch:
 
-      
+      LOG_I(PHY,"[UE thread Synch] Running Initial Synch\n");
       if (initial_sync( UE, UE->mode ) == 0) {
 
         hw_slot_offset = (UE->rx_offset<<1) / UE->lte_frame_parms.samples_per_tti;
@@ -410,6 +411,7 @@ static void *UE_thread_synch(void *arg)
 	  UE->UE_scan_carrier = 0;
 	  // rerun with new cell parameters and frequency-offset
 	  for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
+	    openair0_cfg[0].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	    openair0_cfg[0].rx_freq[i] -= UE->lte_ue_common_vars.freq_offset;
 	    openair0_cfg[0].tx_freq[i] =  openair0_cfg[0].rx_freq[i]+uplink_frequency_offset[0][i];
 	    downlink_frequency[0][i] = openair0_cfg[0].rx_freq[i];
@@ -422,25 +424,25 @@ static void *UE_thread_synch(void *arg)
 	    openair0_cfg[0].sample_rate =1.92e6;
 	    openair0_cfg[0].rx_bw          =.96e6;
 	    openair0_cfg[0].tx_bw          =.96e6;
-            openair0_cfg[0].rx_gain[0] -= 12;
+	    //            openair0_cfg[0].rx_gain[0] -= 12;
 	    break;
 	  case 25:
 	    openair0_cfg[0].sample_rate =7.68e6;
 	    openair0_cfg[0].rx_bw          =2.5e6;
 	    openair0_cfg[0].tx_bw          =2.5e6;
-            openair0_cfg[0].rx_gain[0] -= 6;
+	    //            openair0_cfg[0].rx_gain[0] -= 6;
 	    break;
 	  case 50:
 	    openair0_cfg[0].sample_rate =15.36e6;
 	    openair0_cfg[0].rx_bw          =5.0e6;
 	    openair0_cfg[0].tx_bw          =5.0e6;
-            openair0_cfg[0].rx_gain[0] -= 3;
+	    //            openair0_cfg[0].rx_gain[0] -= 3;
 	    break;
 	  case 100:
 	    openair0_cfg[0].sample_rate=30.72e6;
 	    openair0_cfg[0].rx_bw=10.0e6;
 	    openair0_cfg[0].tx_bw=10.0e6;
-            openair0_cfg[0].rx_gain[0] -= 0;
+	    //            openair0_cfg[0].rx_gain[0] -= 0;
 	    break;
 	  }
 #ifndef EXMIMO
@@ -519,10 +521,6 @@ static void *UE_thread_synch(void *arg)
           for (i=0; i<openair0_cfg[card].rx_num_channels; i++) {
             openair0_cfg[card].rx_freq[i] = downlink_frequency[card][i]+freq_offset;
             openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i]+freq_offset;
-#ifdef OAI_USRP
-            openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-	    
-	    
 #ifndef EXMIMO
 	    openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
 	    
@@ -530,6 +528,12 @@ static void *UE_thread_synch(void *arg)
 	    openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
 	    
 #endif
+
+#ifdef OAI_USRP
+            openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
+	    
+	    
+
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;
@@ -1002,7 +1006,7 @@ void *UE_thread(void *arg)
   static int UE_thread_retval;
   PHY_VARS_UE *UE = PHY_vars_UE_g[0][0];
   int spp = openair0_cfg[0].samples_per_packet;
-  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=spp*openair0_cfg[0].tx_delay;
+  int slot=1, frame=0, hw_subframe=0, rxpos=0, txpos=openair0_cfg[0].tx_scheduling_advance;
 #ifdef __AVX2__
   int dummy[2][spp] __attribute__((aligned(32)));
 #else
@@ -1018,6 +1022,10 @@ void *UE_thread(void *arg)
   unsigned int rxs;
 
   openair0_timestamp timestamp;
+
+#ifdef NAS_UE
+  MessageDef *message_p;
+#endif
 
 #ifdef RTAI
   RT_TASK *task = rt_task_init_schmod(nam2num("UE thread"), 0, 0, 0, SCHED_FIFO, 0xF);
@@ -1074,6 +1082,11 @@ void *UE_thread(void *arg)
 
   printf("starting UE thread\n");
 
+#ifdef NAS_UE
+  message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+  itti_send_msg_to_task (TASK_NAS_UE, INSTANCE_DEFAULT, message_p);
+#endif
+
   T0 = rt_get_time_ns();
   first_rx = 1;
   rxpos=0;
@@ -1094,10 +1107,10 @@ void *UE_thread(void *arg)
 
       for (int i=0; i<UE->lte_frame_parms.nb_antennas_rx; i++)
         rxp[i] = (dummy_dump==0) ? (void*)&rxdata[i][rxpos] : (void*)dummy[i];
-      /*
-      if (dummy_dump == 0)
-      	printf("writing %d samples to %d (first_rx %d)\n",spp - ((first_rx==1) ? rx_off_diff : 0),rxpos,first_rx);
-      */
+      
+      /*      if (dummy_dump == 0)
+	      printf("writing %d samples to %d (first_rx %d)\n",spp - ((first_rx==1) ? rx_off_diff : 0),rxpos,first_rx);*/
+      
       if (UE->mode != loop_through_memory) {
 	rxs = openair0.trx_read_func(&openair0,
 				     &timestamp,
@@ -1106,8 +1119,11 @@ void *UE_thread(void *arg)
 				     UE->lte_frame_parms.nb_antennas_rx);
 
 	if (rxs != (spp- ((first_rx==1) ? rx_off_diff : 0))) {
-	  exit_fun("problem in rx");
-	  return &UE_thread_retval;
+	  printf("rx error: asked %d got %d ",spp - ((first_rx==1) ? rx_off_diff : 0),rxs);
+	  if (UE->is_synchronized == 1) {
+	    exit_fun("problem in rx");
+	    return &UE_thread_retval;
+	  }
 	}
       }
 
@@ -1127,7 +1143,7 @@ void *UE_thread(void *arg)
           txp[i] = (void*)&txdata[i][txpos];
 
         openair0.trx_write_func(&openair0,
-                                (timestamp+spp*openair0_cfg[0].tx_delay-openair0_cfg[0].tx_forward_nsamps),
+                                (timestamp+openair0_cfg[0].tx_scheduling_advance-openair0_cfg[0].tx_sample_advance),
                                 txp,
 				spp - ((first_rx==1) ? rx_off_diff : 0),
                                 UE->lte_frame_parms.nb_antennas_tx,
@@ -1324,6 +1340,7 @@ void *UE_thread(void *arg)
 
 #ifndef USRP_DEBUG
 	    if (UE->mode != loop_through_memory) {
+	      LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
 	      rxs = openair0.trx_read_func(&openair0,
 					   &timestamp,
 					   (void**)rxdata,

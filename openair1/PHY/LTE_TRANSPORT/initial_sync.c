@@ -336,7 +336,9 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
 #else
 #ifndef OAI_USRP
+  #ifndef OAI_BLADERF 
   phy_adjust_gain(phy_vars_ue,0);
+  #endif
 #endif
 #endif
 

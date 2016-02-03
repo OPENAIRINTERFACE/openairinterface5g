@@ -251,7 +251,8 @@ typedef struct {
 typedef struct {
   uint8_t Num_ue_spec_dci ;
   uint8_t Num_common_dci  ;
-  unsigned int nCCE;
+  uint32_t nCCE;
+  uint32_t num_pdcch_symbols;
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
 } DCI_PDU;
 /*! \brief CCCH payload */
@@ -735,7 +736,8 @@ typedef struct {
   uint8_t       dl_pow_off[MAX_NUM_CCs];
   uint16_t      pre_nb_available_rbs[MAX_NUM_CCs];
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
-
+  uint16_t      ta_timer;
+  int16_t      ta_update;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -765,8 +767,6 @@ typedef struct {
   uint8_t Msg3_subframe;
   /// Flag to indicate the eNB should generate Msg4 upon reception of SDU from RRC.  This is triggered by first ULSCH reception at eNB for new user.
   uint8_t generate_Msg4;
-  /// Flag to indicate the eNB should generate the DCI for Msg4, after getting the SDU from RRC.
-  uint8_t generate_Msg4_dci;
   /// Flag to indicate that eNB is waiting for ACK that UE has received Msg3.
   uint8_t wait_ack_Msg4;
   /// UE RNTI allocated during RAR
@@ -835,8 +835,8 @@ typedef struct {
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
   RA_TEMPLATE RA_template[NB_RA_PROC_MAX];
-  /// BCCH active flag
-  uint8_t bcch_active;
+  /// VRB map for common channels
+  uint8_t vrb_map[100];
   /// MBSFN SubframeConfig
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
   /// number of subframe allocation pattern available for MBSFN sync area
@@ -883,9 +883,11 @@ typedef struct {
   /// Common cell resources
   COMMON_channels_t common_channels[MAX_NUM_CCs];
   UE_list_t UE_list;
+
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
-
+  /// CCE table used to build DCI scheduling information
+  int CCE_table[MAX_NUM_CCs][800];
   ///  active flag for Other lcid
   //  uint8_t lcid_active[NB_RB_MAX];
   /// eNB stats

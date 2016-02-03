@@ -258,6 +258,13 @@ typedef struct {
   uint8_t error_threshold;
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];
+  /// circular list of free harq PIDs (the oldest come first)
+  /// (10 is arbitrary value, must be > to max number of DL HARQ processes in LTE)
+  int harq_pid_freelist[10];
+  /// the head position of the free list (if list is free then head=tail)
+  int head_freelist;
+  /// the tail position of the free list
+  int tail_freelist;
   /// Number of soft channel bits
   uint32_t G;
   /// Codebook index for this dlsch (0,1,2,3)
@@ -266,6 +273,8 @@ typedef struct {
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
+  /// Nsoft parameter related to UE Category
+  uint32_t Nsoft;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
@@ -576,13 +585,13 @@ typedef struct {
   /// UL RSSI per receive antenna
   int32_t UL_rssi[NB_ANTENNAS_RX];
   /// PUCCH1a/b power (digital linear)
-  int32_t Po_PUCCH;
+  uint32_t Po_PUCCH;
   /// PUCCH1a/b power (dBm)
   int32_t Po_PUCCH_dBm;
   /// PUCCH1 power (digital linear), conditioned on below threshold
-  int32_t Po_PUCCH1_below;
+  uint32_t Po_PUCCH1_below;
   /// PUCCH1 power (digital linear), conditioned on above threshold
-  int32_t Po_PUCCH1_above;
+  uint32_t Po_PUCCH1_above;
   /// Indicator that Po_PUCCH has been updated by PHY
   int32_t Po_PUCCH_update;
   /// DL Wideband CQI index (2 TBs)
@@ -693,6 +702,8 @@ typedef struct {
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
+  /// Nsoft parameter related to UE Category
+  uint32_t Nsoft;
   /// Maximum number of Turbo iterations
   uint8_t max_turbo_iterations;
   /// accumulated tx power adjustment for PUCCH
@@ -737,7 +748,7 @@ typedef struct {
   /// Aggregation level
   uint8_t L;
   /// Position of first CCE of the dci
-  int nCCE;
+  int firstCCE;
   /// flag to indicate that this is a RA response
   boolean_t ra_flag;
   /// rnti

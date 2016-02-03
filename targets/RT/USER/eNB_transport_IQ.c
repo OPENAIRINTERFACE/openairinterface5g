@@ -172,7 +172,7 @@ if (mod_enb->devs->type != NONE_DEV ) {
 	mod_enb->devs->openair0_cfg.tx_delay = 8;
       }
     }
-    else if (mod_enb->devs->type == USRP_DEV) {
+    else if ((mod_enb->devs->type == USRP_B200_IF )||(mod_enb->devs->type == USRP_X300_IF )) {
       if ( mod_enb->devs->openair0_cfg.num_rb_dl == 100 ) {
 	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
 	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 175;
@@ -221,7 +221,7 @@ if (mod_enb->devs->type != NONE_DEV ) {
     check_dev_config(mod_enb);    
     
     /* initialize and configure the RF device */
-    if (openair0_device_load(mod_enb->devs, &mod_enb->devs->openair0_cfg)<0){
+    if (openair0_device_load(mod_enb->devs, &mod_enb->devs->openair0_cfg)<0) {
       LOG_E(RRH,"Exiting, cannot initialize RF device.\n");
       exit(-1);
     } else {
@@ -256,7 +256,7 @@ if (mod_enb->devs->type != NONE_DEV ) {
       }
     }  
   }
- 
+  
   /* create main eNB module thread
      main_rrh_eNB_thread allocates memory 
      for TX/RX buffers and creates TX/RX
@@ -305,14 +305,14 @@ void *rrh_eNB_thread(void *arg) {
       tmp=(void *)malloc16(sizeof(int32_t)*(samples_per_frame + 32));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame + 32));
       rx_buffer_eNB[i]=( tmp + (32*sizeof(int32_t)) );  
-      LOG_D(RRH,"i=%d rx_buffer_eNB[i]=%p tmp= %p samples_per_frame=%d\n",i,rx_buffer_eNB[i],tmp, samples_per_frame);
+      LOG_D(RRH,"i=%d rx_buffer_eNB[i]=%p tmp= %p\n",i,rx_buffer_eNB[i],tmp);
     }
     /* tx_buffer_eNB points to the beginning of data */
     for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) {
       tmp=(void *)malloc16(sizeof(int32_t)*(samples_per_frame + 32));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame + 32));
       tx_buffer_eNB[i]=( tmp + (32*sizeof(int32_t)) );  
-      LOG_D(RRH,"i= %d tx_buffer_eNB[i]=%p tmp= %p samples_per_frame=%d\n",i,tx_buffer_eNB[i],tmp, samples_per_frame);
+      LOG_D(RRH,"i= %d tx_buffer_eNB[i]=%p tmp= %p \n",i,tx_buffer_eNB[i],tmp);
     }
     /* dummy initialization for TX/RX buffers */
     for (i=0; i<dev->eth_dev.openair0_cfg.rx_num_channels; i++) {
@@ -596,7 +596,17 @@ void *rrh_eNB_rx_thread(void *arg) {
        next_rx_pos=(rx_pos+spp_eth);
        
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_RX, 0 );
-       
+       /**/
+       if (frame>50) {
+	 pthread_mutex_lock(&sync_trx_mutex);
+	 while (sync_trx) {
+	   pthread_cond_wait(&sync_trx_cond,&sync_trx_mutex);
+	 }
+	 sync_trx=1;
+	 LOG_D(RRH,"out of while send:%d  %d\n",sync_trx,frame);
+	 pthread_cond_signal(&sync_trx_cond);
+	 pthread_mutex_unlock(&sync_trx_mutex);
+       }
     } // while 
     
     subframe++;
@@ -670,7 +680,14 @@ void *rrh_eNB_tx_thread(void *arg) {
   while (rrh_exit == 0) {     
     while (tx_pos < (1 + subframe)*samples_per_subframe) {
       
-     
+      LOG_D(RRH,"bef lock read:%d  %d\n",sync_trx,frame);
+      pthread_mutex_lock(&sync_trx_mutex);
+      
+      while (!sync_trx) {
+	LOG_D(RRH,"in sync read:%d  %d\n",sync_trx,frame);
+	pthread_cond_wait(&sync_trx_cond,&sync_trx_mutex);
+      }
+      LOG_D(RRH,"out of while read:%d  %d\n",sync_trx,frame);
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX, 1 );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, frame);
@@ -733,7 +750,9 @@ void *rrh_eNB_tx_thread(void *arg) {
       pck_tx++;   
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX, 0 );
-     
+      sync_trx=0;
+      pthread_cond_signal(&sync_trx_cond);
+      pthread_mutex_unlock(&sync_trx_mutex);
     }
 
     /* wrap around tx buffer index */
@@ -761,7 +780,7 @@ static void calc_rt_period_ns( openair0_config_t openair0_cfg) {
 
 static void check_dev_config( rrh_module_t *mod_enb) {
     
-  AssertFatal( (mod_enb->devs->openair0_cfg.num_rb_dl==100 || mod_enb->devs->openair0_cfg.num_rb_dl==50 || mod_enb->devs->openair0_cfg.num_rb_dl==25 || mod_enb->devs->openair0_cfg.num_rb_dl==6) , "Invalid number of resource blocks! %d\n", mod_enb->devs->openair0_cfg.num_rb_dl);
+ AssertFatal( (mod_enb->devs->openair0_cfg.num_rb_dl==100 || mod_enb->devs->openair0_cfg.num_rb_dl==50 || mod_enb->devs->openair0_cfg.num_rb_dl==25 || mod_enb->devs->openair0_cfg.num_rb_dl==6) , "Invalid number of resource blocks! %d\n", mod_enb->devs->openair0_cfg.num_rb_dl);
  AssertFatal( mod_enb->devs->openair0_cfg.samples_per_frame  > 0 ,  "Invalid number of samples per frame! %d\n",mod_enb->devs->openair0_cfg.samples_per_frame); 
  AssertFatal( mod_enb->devs->openair0_cfg.sample_rate        > 0.0, "Invalid sample rate! %f\n", mod_enb->devs->openair0_cfg.sample_rate);
  AssertFatal( mod_enb->devs->openair0_cfg.samples_per_packet > 0 ,  "Invalid number of samples per packet! %d\n",mod_enb->devs->openair0_cfg.samples_per_packet);

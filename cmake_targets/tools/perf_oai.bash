@@ -68,7 +68,7 @@ declare MAX_RATE=1000
 
 # set paths to the required binaries and check if the required binaries are available  
 ENB_CONFIG=$OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.generic.oaisim.local_no_mme.conf
-OAISIM_EXEC=$OPENAIR_DIR/targets/bin/oaisim_nos1
+OAISIM_EXEC=$OPENAIR_DIR/cmake_targets/oaisim_noS1_build_oai/build/oaisim_nos1
 BYPASSE_ITTI=0
 OTGPLOT="$OPENAIR2_DIR/UTIL/OTG/OTGplot"
 PS2PDF="ps2pdf"
@@ -301,8 +301,8 @@ oaisim_otg_stats(){
     sync
 
     if [ ! -f $OAISIM_EXEC ]; then 
-	echo_info "3.1 compiling OAISIM ($OPENAIR_TARGETS/cmake_targets/build_oai --oaisim -c)"
-	($OPENAIR_TARGETS/cmake_targets/build_oai --oaisim -c  >> results/perf_log.txt 2>&1 )
+	echo_info "3.1 compiling OAISIM ($OPENAIR_DIR/cmake_targets/build_oai --oaisim -c --noS1)"
+	($OPENAIR_DIR/cmake_targets/build_oai --oaisim -c  --noS1 >> results/perf_log.txt 2>&1 )
 	build_stats=$?
 	if [ $build_stats != 0 ] ; then 
 	    echo_error "$OAISIM_EXEC cannot be built, check results/perf_log.txt file"

@@ -44,11 +44,6 @@
 
 #include "common_lib.h"
 
-/* 
-   FT: The device interface is implemented in a shared library, the softmodem knows which kind
-   of harware is used by parsing the device name returned when calling the trx_getinfo_func function
-   provided by this shared library
-*/
 int set_device(openair0_device *device) {
 
   switch (device->type) {

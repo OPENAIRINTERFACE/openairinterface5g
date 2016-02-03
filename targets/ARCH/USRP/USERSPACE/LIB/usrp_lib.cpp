@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <uhd/utils/thread_priority.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/version.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
@@ -171,31 +172,45 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
 
 
-  
-  if (cc>1) {
+  if (device->type == USRP_B200_IF) {  
+    if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
-    std::vector<void *> buff_ptrs;
-    for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
-    samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
-  } else {
+      std::vector<void *> buff_ptrs;
+ 
+      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff_tmp[i]);
+      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
     // receive a single channel (e.g. from connector RF A)
-    samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
-  }
-
+      samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
+    }
+   
   // bring RX data into 12 LSBs for softmodem RX
-  for (int i=0;i<cc;i++) {
-    for (int j=0; j<nsamps2; j++) {      
+    for (int i=0;i<cc;i++) {
+      for (int j=0; j<nsamps2; j++) {      
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef __AVX2__
-      ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
+        ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 #else
-      ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
+        ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
 #endif
 #elif defined(__arm__)
-      ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
+        ((int16x8_t*)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],4);
 #endif
+      }
     }
+  } else if (device->type == USRP_X300_IF) {
+    if (cc>1) {
+    // receive multiple channels (e.g. RF A and RF B)
+      std::vector<void *> buff_ptrs;
+ 
+      for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
+      samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+    } else {
+    // receive a single channel (e.g. from connector RF A)
+      samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
     }
+  }
+
   if (samples_received < nsamps) {
     printf("[recv] received %d samples out of %d\n",samples_received,nsamps);
     
@@ -279,7 +294,7 @@ int trx_usrp_set_gains(openair0_device* device,
     exit(-1);
   }
   s->usrp->set_rx_gain(openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
-  printf("Setting USRP RX gain to %f\n", openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0]);
+  printf("Setting USRP RX gain to %f (rx_gain %f,gain_range.stop() %f)\n", openair0_cfg[0].rx_gain[0]-openair0_cfg[0].rx_gain_offset[0],openair0_cfg[0].rx_gain[0],gain_range.stop());
 
   return(0);
 }
@@ -289,27 +304,69 @@ int trx_usrp_stop(int card) {
 }
 
 
-rx_gain_calib_table_t calib_table[] = {
-  {3500000000.0,46.0},
-  {2660000000.0,53.0},
-  {2300000000.0,54.0},
-  {1880000000.0,55.0},
-  {816000000.0,62.0},
+rx_gain_calib_table_t calib_table_b210[] = {
+  {3500000000.0,44.0},
+  {2660000000.0,49.0},
+  {2300000000.0,50.0},
+  {1880000000.0,53.0},
+  {816000000.0,58.0},
   {-1,0}};
 
-void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
+rx_gain_calib_table_t calib_table_b210_38[] = {
+  {3500000000.0,44.0},
+  {2660000000.0,49.8},
+  {2300000000.0,51.0},
+  {1880000000.0,53.0},
+  {816000000.0,57.0},
+  {-1,0}};
+
+rx_gain_calib_table_t calib_table_x310[] = {
+  {3500000000.0,77.0},
+  {2660000000.0,81.0},
+  {2300000000.0,81.0},
+  {1880000000.0,82.0},
+  {816000000.0,85.0},
+  {-1,0}};
+
+void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_gain_adjust) {
 
   int i=0;
   // loop through calibration table to find best adjustment factor for RX frequency
-  double min_diff = 6e9,diff;
- 
-  while (calib_table[i].freq>0) {
-    diff = fabs(openair0_cfg->rx_freq[chain_index] - calib_table[i].freq);
+  double min_diff = 6e9,diff,gain_adj=0.0;
+  if (bw_gain_adjust==1) {
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:      
+      break;
+    case 23040000:
+      gain_adj=1.25;
+      break;
+    case 15360000:
+      gain_adj=3.0;
+      break;
+    case 7680000:
+      gain_adj=6.0;
+      break;
+    case 3840000:
+      gain_adj=9.0;
+      break;
+    case 1920000:
+      gain_adj=12.0;
+      break;
+    default:
+      printf("unknown sampling rate %d\n",(int)openair0_cfg[0].sample_rate);
+      exit(-1);
+      break;
+    }
+  }
+  while (openair0_cfg->rx_gain_calib_table[i].freq>0) {
+    diff = fabs(openair0_cfg->rx_freq[chain_index] - openair0_cfg->rx_gain_calib_table[i].freq);
     printf("cal %d: freq %f, offset %f, diff %f\n",
-	   i,calib_table[i].freq,calib_table[i].offset,diff);
+	   i,
+	   openair0_cfg->rx_gain_calib_table[i].freq,
+	   openair0_cfg->rx_gain_calib_table[i].offset,diff);
     if (min_diff > diff) {
       min_diff = diff;
-      openair0_cfg->rx_gain_offset[chain_index] = calib_table[i].offset;
+      openair0_cfg->rx_gain_offset[chain_index] = openair0_cfg->rx_gain_calib_table[i].offset+gain_adj;
     }
     i++;
   }
@@ -338,6 +395,7 @@ extern "C" {
     
     // Initialize USRP device
 
+<<<<<<< HEAD
     std::string args = "type=b200";
     
 
@@ -345,6 +403,17 @@ extern "C" {
     size_t i;
     
   printf("Checking for USRPs\n");
+=======
+  uhd::device_addrs_t device_adds = uhd::device::find(args);
+  size_t i;
+  
+  int vers=0,subvers=0,subsubvers=0;
+  int bw_gain_adjust=0;
+
+  sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
+
+  printf("Checking for USRPs : UHD %s (%d.%d.%d)\n",uhd::get_version_string().c_str(),vers,subvers,subsubvers);
+>>>>>>> acd607fa359709ba16a83437f483c230cee1d9b0
   
   if(device_adds.size() == 0)
   {
@@ -358,6 +427,7 @@ extern "C" {
     uhd::device_addrs_t device_adds = uhd::device::find(args);
     
     if(device_adds.size() == 0)
+<<<<<<< HEAD
       {
 	std::cerr<<"No USRP Device Found. " << std::endl;
 	free(s);
@@ -365,6 +435,16 @@ extern "C" {
 	
       }
     
+=======
+    {
+      std::cerr<<"No USRP Device Found. " << std::endl;
+      free(s);
+      return -1;
+
+    }
+
+
+>>>>>>> acd607fa359709ba16a83437f483c230cee1d9b0
     printf("Found USRP X300\n");
     s->usrp = uhd::usrp::multi_usrp::make(args);
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
@@ -373,11 +453,54 @@ extern "C" {
     // lock mboard clocks
     s->usrp->set_clock_source("internal");
     
+    //Setting device type to USRP X300/X310 
+    device->type=USRP_X300_IF;
+
     // this is not working yet, master clock has to be set via constructor
     // set master clock rate and sample rate for tx & rx for streaming
     //s->usrp->set_master_clock_rate(usrp_master_clock);
+
+    openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
+
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
+            // from usrp_time_offset
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 15;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    case 15360000:
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 45;
+      openair0_cfg[0].tx_bw                 = 10e6;
+      openair0_cfg[0].rx_bw                 = 10e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 7680000:
+      openair0_cfg[0].samples_per_packet    = 1024;
+      openair0_cfg[0].tx_sample_advance     = 50;
+      openair0_cfg[0].tx_bw                 = 5e6;
+      openair0_cfg[0].rx_bw                 = 5e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 1920000:
+      openair0_cfg[0].samples_per_packet    = 256;
+      openair0_cfg[0].tx_sample_advance     = 50;
+      openair0_cfg[0].tx_bw                 = 1.25e6;
+      openair0_cfg[0].rx_bw                 = 1.25e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    default:
+      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+      exit(-1);
+      break;
+    }
+
   } else {
     printf("Found USRP B200");
+    args += ",num_recv_frames=256" ; 
     s->usrp = uhd::usrp::multi_usrp::make(args);
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
@@ -387,18 +510,84 @@ extern "C" {
     //    // lock mboard clocks
     //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
-    s->usrp->set_master_clock_rate(30.72e6);
+
+    device->type = USRP_B200_IF;
+
+<<<<<<< HEAD
+    
+=======
+
+    if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
+      openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
+      bw_gain_adjust=0;
+    }
+    else {
+      openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
+      bw_gain_adjust=1;
+    }
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
+      s->usrp->set_master_clock_rate(30.72e6);
+            // from usrp_time_offset
+      openair0_cfg[0].samples_per_packet    = 4096;
+      openair0_cfg[0].tx_sample_advance     = 115;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
+      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
+      break;
+    case 23040000:
+      s->usrp->set_master_clock_rate(46.08e6);
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 113;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    case 15360000:
+      s->usrp->set_master_clock_rate(30.72e6);
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 113;
+      openair0_cfg[0].tx_bw                 = 10e6;
+      openair0_cfg[0].rx_bw                 = 10e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 7680000:
+      s->usrp->set_master_clock_rate(30.72e6);
+      openair0_cfg[0].samples_per_packet    = 1024;
+      openair0_cfg[0].tx_sample_advance     = 70;//103;
+      openair0_cfg[0].tx_bw                 = 5e6;
+      openair0_cfg[0].rx_bw                 = 5e6;
+      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      break;
+    case 1920000:
+      s->usrp->set_master_clock_rate(30.72e6);
+      openair0_cfg[0].samples_per_packet    = 256;
+      openair0_cfg[0].tx_sample_advance     = 40;
+      openair0_cfg[0].tx_bw                 = 1.25e6;
+      openair0_cfg[0].rx_bw                 = 1.25e6;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      break;
+    default:
+      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+      exit(-1);
+      break;
+    }
   }
 
-    
+>>>>>>> acd607fa359709ba16a83437f483c230cee1d9b0
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
       s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-      printf("Setting rx freq/gain on channel %lu/%lu\n",i,s->usrp->get_rx_num_channels());
+      printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
       s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
+<<<<<<< HEAD
       set_rx_gain_offset(&openair0_cfg[0],i);
       
+=======
+      set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
+
+>>>>>>> acd607fa359709ba16a83437f483c230cee1d9b0
       ::uhd::gain_range_t gain_range = s->usrp->get_rx_gain_range(i);
       // limit to maximum gain
       if (openair0_cfg[0].rx_gain[i]-openair0_cfg[0].rx_gain_offset[i] > gain_range.stop()) {
@@ -416,7 +605,7 @@ extern "C" {
     if (i<openair0_cfg[0].tx_num_channels) {
       s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
       s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
-      printf("Setting tx freq/gain on channel %lu/%lu\n",i,s->usrp->get_tx_num_channels());
+      printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
       s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
       s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[i],i);
     }
