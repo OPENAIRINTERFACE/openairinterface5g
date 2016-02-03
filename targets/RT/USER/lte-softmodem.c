@@ -316,7 +316,7 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 
 int multi_thread=1;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 10;
+uint32_t target_ul_mcs = 19;
 uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
@@ -552,7 +552,7 @@ static void *scope_thread(void *arg)
       for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 	  if ((PHY_vars_eNB_g[0][CC_id]->dlsch_eNB[UE_id][0]->rnti>0) && (ue_cnt<scope_enb_num_ue)) {
-	    phy_scope_eNB(form_enb[CC_id][UE_id],
+	    phy_scope_eNB(form_enb[CC_id][ue_cnt],
 			  PHY_vars_eNB_g[0][CC_id],
 			  UE_id);
 	    ue_cnt++;

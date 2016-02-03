@@ -630,7 +630,6 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 		       phy_vars_eNB->eNB_UE_stats[UE_id].sector);
 	
 	len+= sprintf(&buffer[len],"DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d, ",
-		      i,
 		      phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[0]->mcs,
 		      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[0]->mcs,
 		      phy_vars_eNB->ulsch_eNB[(uint8_t)UE_id]->harq_processes[0]->nb_rb,

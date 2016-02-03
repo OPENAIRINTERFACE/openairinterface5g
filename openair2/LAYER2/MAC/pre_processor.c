@@ -1104,7 +1104,7 @@ void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframe
     }
 
     if ( UE_template->ul_total_buffer >0)
-      LOG_I(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: LCGID0 %d, LCGID1 %d, LCGID2 %d LCGID3 %d, BO %d\n",
+      LOG_D(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: LCGID0 %d, LCGID1 %d, LCGID2 %d LCGID3 %d, BO %d\n",
             module_idP, frameP,subframeP, UE_id, UE_PCCID(module_idP,UE_id),
             UE_template->ul_buffer_info[LCGID0],
             UE_template->ul_buffer_info[LCGID1],
