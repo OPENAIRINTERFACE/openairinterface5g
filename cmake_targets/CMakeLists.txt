@@ -1010,6 +1010,7 @@ set (MAC_SRC
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue.c
+  ${MAC_DIR}/eNB_agent_scheduler_dataplane.c
   )
 
 set (ENB_APP_SRC

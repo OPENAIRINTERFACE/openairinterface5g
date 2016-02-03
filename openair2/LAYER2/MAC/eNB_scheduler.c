@@ -62,6 +62,7 @@
 //Agent-related headers
 #include "ENB_APP/enb_agent_extern.h"
 #include "ENB_APP/enb_agent_mac.h"
+#include "LAYER2/MAC/enb_agent_mac_proto.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -273,7 +274,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -322,7 +323,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -353,7 +354,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -390,7 +391,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -419,7 +420,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -463,7 +464,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -494,7 +495,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -531,7 +532,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -559,7 +560,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -612,7 +613,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -637,7 +638,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -665,7 +666,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -699,7 +700,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -723,7 +724,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -751,7 +752,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -790,7 +791,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -818,7 +819,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -851,7 +852,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -877,7 +878,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -903,7 +904,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -929,7 +930,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
@@ -957,7 +958,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
                                                                 mbsfn_status,
                                                                 msg);
 	  
-	  apply_scheduling_decisions(module_idP,
+	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
 				     subframeP,
 				     mbsfn_status,
