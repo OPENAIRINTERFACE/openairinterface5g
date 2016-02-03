@@ -251,12 +251,6 @@ schedule_ue_spec_default(
       mcs = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
       mcs = cmin(mcs, openair_daq_vars.target_ue_dl_mcs);
 
-
-      /*TODO: Must also update these stats*/
-      //eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-      //eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
-
-
 #ifdef EXMIMO
 
        if (mac_xface->get_transmission_mode(mod_id, CC_id, rnti)==5) {
@@ -293,6 +287,13 @@ schedule_ue_spec_default(
 
       if (round > 0) {
 
+	mcs = UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1;
+
+	  // get freq_allocation
+	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	  
+	dci_tbs = mac_xface->get_TBS_DL(mcs, nb_rb);
+
 	if (frame_parms[CC_id]->frame_type == TDD) {
 	  UE_list->UE_template[CC_id][UE_id].DAI++;
 	  update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
@@ -300,8 +301,7 @@ schedule_ue_spec_default(
 		CC_id, subframe,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
 	}
 
-	// get freq_allocation
-	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+
 
 	if (nb_rb <= nb_available_rb) {
 	  
@@ -348,7 +348,6 @@ schedule_ue_spec_default(
 	    dl_dci->n_mcs = 1;
 	    dl_dci->mcs = (uint32_t *)malloc(sizeof(uint32_t));
 	    dl_dci->mcs[0] = mcs;
-	    //TODO:Need to fix tpc for retransmissions
 	    dl_dci->has_tpc = 1;
 	    dl_dci->tpc = 1;
 	    dl_dci->has_vrb_format = 1;
@@ -359,12 +358,18 @@ schedule_ue_spec_default(
 	    dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, UE_list->UE_template[CC_id][UE_id].rballoc_subband);
 	    dl_dci->has_rb_shift = 1;
 	    dl_dci->rb_shift = 0;
-	    dl_dci->n_ndi = 1;
+	    dl_dci->n_ndi = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
 	    dl_dci->ndi[0] = 1;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = (round+1) % 4;
+	    dl_dci->rv[0] = round&3;
+	    dl_dci->n_mcs = 1;
+	    dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+	    dl_dci->mcs[0] = mcs;
+	    dl_dci->n_tbs_size = 1;
+	    dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+	    dl_dci->tbs_size[0] = dci_tbs;
 	    if (frame_parms[CC_id]->frame_type == TDD) {
 	      dl_dci->has_dai = 1;
 	      dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
@@ -382,7 +387,6 @@ schedule_ue_spec_default(
 	    dl_dci->mcs = (uint32_t *)malloc(sizeof(uint32_t) * dl_dci->n_mcs);
 	    dl_dci->mcs[0] = mcs;
 	    dl_dci->mcs[1] = mcs;
-	    //TODO:Need to fix tpc for retransmissions
 	    dl_dci->has_tpc = 1;
 	    dl_dci->tpc = 1;
 	    dl_dci->has_vrb_format = 1;
@@ -395,12 +399,19 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 2;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 0;
-	    dl_dci->ndi[1] = 0;
+	    dl_dci->ndi[0] = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->ndi[1] = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->n_tbs_size = 2;
+	    dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+	    dl_dci->tbs_size[0] = dci_tbs;
+	    dl_dci->tbs_size[1] = dci_tbs;
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = (round+1) % 4;
-	    dl_dci->rv[1] = (round+1) % 4;
+	    dl_dci->rv[0] = round&3;
+	    dl_dci->rv[1] = round&3;
+	    dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+	    dl_dci->mcs[0] = mcs;
+	    dl_dci->mcs[1] = mcs;
 	    if (frame_parms[CC_id]->frame_type == TDD) {
 	      dl_dci->has_dai = 1;
 	      dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
@@ -417,7 +428,6 @@ schedule_ue_spec_default(
 	    dl_dci->n_mcs = 1;
 	    dl_dci->mcs = (uint32_t *)malloc(sizeof(uint32_t));
 	    dl_dci->mcs[0] = mcs;
-	    //TODO:Need to fix tpc for retransmissions
 	    dl_dci->has_tpc = 1;
 	    dl_dci->tpc = 1;
 	    dl_dci->has_vrb_format = 1;
@@ -426,16 +436,22 @@ schedule_ue_spec_default(
 	    dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 0;
+	    dl_dci->ndi[0] = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->has_rb_bitmap = 1;
 	    dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, UE_list->UE_template[CC_id][UE_id].rballoc_subband);
 	    dl_dci->has_rb_shift = 1;
 	    dl_dci->rb_shift = 0;
 	    dl_dci->has_dai = 1;
 	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+	    dl_dci->n_mcs = 1;
+	    dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+	    dl_dci->mcs[0] = mcs;
+	    dl_dci->n_tbs_size = 1;
+	    dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+	    dl_dci->tbs_size[0] = dci_tbs;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = (round + 1) % 4;
+	    dl_dci->rv[0] = round&3;
 
 	    if(ue_sched_ctl->dl_pow_off[CC_id] == 2) {
               ue_sched_ctl->dl_pow_off[CC_id] = 1;
@@ -451,7 +467,6 @@ schedule_ue_spec_default(
 	    dl_dci->n_mcs = 1;
 	    dl_dci->mcs = (uint32_t *)malloc(sizeof(uint32_t));
 	    dl_dci->mcs[0] = mcs;
-	    //TODO:Need to fix tpc for retransmissions
 	    dl_dci->has_tpc = 1;
 	    dl_dci->tpc = 1;
 	    dl_dci->has_vrb_format = 1;
@@ -460,16 +475,22 @@ schedule_ue_spec_default(
 	    dl_dci->format = PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 0;
+	    dl_dci->ndi[0] = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->has_rb_bitmap = 1;
 	    dl_dci->rb_bitmap = allocate_prbs_sub(nb_rb, UE_list->UE_template[CC_id][UE_id].rballoc_subband);
 	    dl_dci->has_rb_shift = 1;
 	    dl_dci->rb_shift = 0;
 	    dl_dci->has_dai = 1;
 	    dl_dci->dai = (UE_list->UE_template[CC_id][UE_id].DAI-1)&3;
+	    dl_dci->n_mcs = 1;
+	    dl_dci->mcs = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_mcs);
+	    dl_dci->mcs[0] = mcs;
+	    dl_dci->n_tbs_size = 1;
+	    dl_dci->tbs_size = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_tbs_size);
+	    dl_dci->tbs_size[0] = dci_tbs;
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
-	    dl_dci->rv[0] = (round + 1) % 4;
+	    dl_dci->rv[0] = round&3;
 	    dl_dci->has_dl_power_offset = 1;
 	    dl_dci->dl_power_offset = ue_sched_ctl->dl_pow_off[CC_id];
 
@@ -843,7 +864,7 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->ndi[0] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -873,8 +894,8 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 2;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1;
-	    dl_dci->ndi[1] = 1;
+	    dl_dci->ndi[0] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->ndi[1] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -907,8 +928,8 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 2;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1;
-	    dl_dci->ndi[1] = 1;
+	    dl_dci->ndi[0] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	    dl_dci->ndi[1] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 2;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -941,7 +962,7 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = 1;
-	    dl_dci->ndi[0] = 1;
+	    dl_dci->ndi[0] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -981,7 +1002,7 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1;
+	    dl_dci->ndi[0] = 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = round&3;
