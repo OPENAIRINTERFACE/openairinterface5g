@@ -249,6 +249,8 @@ schedule_ue_spec_default(
       */
 
       mcs = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
+      mcs = cmin(mcs, openair_daq_vars.target_ue_dl_mcs);
+
 
       /*TODO: Must also update these stats*/
       //eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
@@ -514,7 +516,6 @@ schedule_ue_spec_default(
 	
 	if ( TBS-ta_len-header_len_dcch > 0 ) {
 	  LOG_D(MAC, "[TEST]Requested %d bytes in DCCH buffer during first call\n", dci_tbs-ta_len-header_len_dcch);
-	  LOG_D(MAC, "DCCH dci_tbus is %d\n", dci_tbs);
 	  //If we have space, we need to see how much data we can request at most (if any available)
 	  rlc_status = mac_rlc_status_ind(mod_id,
 					  rnti,
@@ -552,6 +553,7 @@ schedule_ue_spec_default(
 	    //Set this to the max value that we might request
 	    sdu_length_total = data_to_request;
 	  } else {
+	    LOG_D(MAC, "[TEST]Nothing here\n");
 	    header_len_dcch = 0;
             sdu_length_total = 0;
 	  } 
@@ -559,6 +561,7 @@ schedule_ue_spec_default(
 
 	// check for DCCH1 and update header information (assume 2 byte sub-header)
         if (dci_tbs-ta_len-header_len_dcch-sdu_length_total-2 > 0 ) {
+	  LOG_D(MAC, "[TEST]Requested %d bytes in DCCH1 buffer during first call\n", dci_tbs-ta_len-header_len_dcch-sdu_length_total-2);
 
 	  //If we have space, we need to see how much data we can request at most (if any are available)
 	  rlc_status = mac_rlc_status_ind(mod_id,
@@ -577,7 +580,7 @@ schedule_ue_spec_default(
 	    header_len_dcch += 2;
 
 	    //Fill in as much as possible
-	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total, rlc_status.bytes_in_buffer) + 1;
+	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total, rlc_status.bytes_in_buffer);
 
 	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
 	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
@@ -628,7 +631,7 @@ schedule_ue_spec_default(
 	  if (rlc_status.bytes_in_buffer > 0) {
 	     LOG_D(MAC, "[TEST] Have %d bytes in buffer DTCH during first call\n", rlc_status.bytes_in_buffer);
 	    //Fill what remains in the TB
-	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total-header_len_dtch, rlc_status.bytes_in_buffer) + 1;
+	    data_to_request = cmin(dci_tbs-ta_len-header_len_dcch-sdu_length_total-header_len_dtch, rlc_status.bytes_in_buffer);
 	    LOG_D(MAC, "[TEST]Will request %d \n", data_to_request);
 	    rlc_pdus[channels_added] = (Protocol__PrpRlcPdu *) malloc(sizeof(Protocol__PrpRlcPdu));
 	    protocol__prp_rlc_pdu__init(rlc_pdus[channels_added]);
@@ -687,11 +690,15 @@ schedule_ue_spec_default(
             nb_rb=min_rb_unit[CC_id];
           }
 
+	  LOG_D(MAC,"[TEST]The initial number of resource blocks was %d\n", nb_rb);
+	  LOG_D(MAC,"[TEST] The initial mcs was %d\n", mcs_tmp);
+
 	  TBS = mac_xface->get_TBS_DL(mcs_tmp, nb_rb);
+	  LOG_D(MAC,"[TEST]The TBS during rate matching was %d\n", TBS);
 
 	  while (TBS < (sdu_length_total + header_len_dcch + header_len_dtch + ta_len))  {
             nb_rb += min_rb_unit[CC_id];  //
-	    
+	    LOG_D(MAC, "[TEST]Had to increase the number of RBs\n");
             if (nb_rb > nb_available_rb) { // if we've gone beyond the maximum number of RBs
               // (can happen if N_RB_DL is odd)
               TBS = mac_xface->get_TBS_DL(mcs_tmp, nb_available_rb);
@@ -702,14 +709,18 @@ schedule_ue_spec_default(
             TBS = mac_xface->get_TBS_DL(mcs_tmp, nb_rb);
           }
 
+	  LOG_D(MAC,"[TEST] After the first pass the resource blocks became %d\n", nb_rb);
+	  LOG_D(MAC,"[TEST] After the first pass the MCS was %d\n", mcs_tmp);
+
 	  if(nb_rb == ue_sched_ctl->pre_nb_available_rbs[CC_id]) {
+	    LOG_D(MAC, "[TEST]We had the exact number of rbs. Time to fill the rballoc subband\n");
             for(j = 0; j < frame_parms[CC_id]->N_RBG; j++) { // for indicating the rballoc for each sub-band
               UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
             }
           } else {
 	    nb_rb_temp = nb_rb;
             j = 0;
-
+	    LOG_D(MAC, "[TEST]Will only partially fill the bitmap\n");
 	    while((nb_rb_temp > 0) && (j < frame_parms[CC_id]->N_RBG)) {
               if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
                 UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
@@ -726,6 +737,9 @@ schedule_ue_spec_default(
             }
 	  }
 
+	  LOG_D(MAC,"[TEST] After the second pass the resource blocks became %d\n", nb_rb);
+	  LOG_D(MAC,"[TEST] After the second pass the mcs was %d\n", mcs_tmp);
+	  
 	  PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].pre_nb_available_rbs = nb_rb;
           PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off = ue_sched_ctl->dl_pow_off[CC_id];
 
@@ -829,7 +843,7 @@ schedule_ue_spec_default(
 	    dl_dci->rb_shift = 0;
 	    dl_dci->n_ndi = 1;
 	    dl_dci->ndi = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_ndi);
-	    dl_dci->ndi[0] = 1;
+	    dl_dci->ndi[0] = 1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	    dl_dci->n_rv = 1;
 	    dl_dci->rv = (uint32_t *) malloc(sizeof(uint32_t) * dl_dci->n_rv);
 	    dl_dci->rv[0] = 0;
@@ -987,6 +1001,7 @@ schedule_ue_spec_default(
 	    dl_dci->precoding_info = 5; // Is this right??
 	    break;
 	  }
+
 	  // Toggle NDI for next time
           LOG_D(MAC,"CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
                 CC_id, frame, subframe, UE_id,
@@ -998,12 +1013,12 @@ schedule_ue_spec_default(
 	}  else { // There is no data from RLC or MAC header, so don't schedule
 
 	}
-    }
+      }
       if (frame_parms[CC_id]->frame_type == TDD) {
         set_ul_DAI(mod_id, UE_id, CC_id, frame, subframe, frame_parms);
       }
-    }
-   }
+    } // UE_id loop
+   } // CC_id loop
 
    // Add all the dl_data elements to the progran message
    dl_info->dl_mac_config_msg->n_dl_ue_data = num_ues_added;
@@ -1072,9 +1087,6 @@ void apply_scheduling_decisions(mid_t mod_id,
       rnti = dl_data->rnti;
       UE_id = find_ue(rnti, PHY_vars_eNB_g[mod_id][CC_id]);
 
-      //NOTICE: Maybe later will not be required, once scheduler fully restructured
-      //eNB_dlsch_info[mod_id][CC_id][UE_id].status = S_DL_WAITING;
-
       ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
       eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
       
@@ -1108,6 +1120,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  }
 	} else {
 	  if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
+	    LOG_D(MAC,"[TEST] Setting DCI format 1\n");
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rv       = round;
 	    ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
@@ -1240,13 +1253,16 @@ void apply_scheduling_decisions(mid_t mod_id,
 	rlc_status.bytes_in_buffer = 0;
 
 	TBS = dl_dci->tbs_size[0];
+	LOG_D(MAC,"[TEST] The TBS during the creation process is %d\n", TBS);
 
 	if (dl_data->n_ce_bitmap > 0) {
 	  //Check if there is TA command
 	  if (dl_data->ce_bitmap[0] & PROTOCOL__PRP_CE_TYPE__PRPCET_TA) {
 	    ta_len = 2;
+	    LOG_D(MAC, "[TEST] Need to send timing advance\n");
 	  } else {
 	    ta_len = 0;
+	    LOG_D(MAC, "[TEST] No timing advance\n");
 	  }
 	}
 	
@@ -1257,9 +1273,12 @@ void apply_scheduling_decisions(mid_t mod_id,
 	// Go through each one of the channel commands and create SDUs
 	for (i = 0; i < n_lc; i++) {
 	  lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
+	  LOG_D(MAC, "[TEST] Going through SDU of channel %d\n", lcid);
 	  rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
-	  LOG_D(MAC,"[TEST]Have to check %d channels\n", n_lc);
+	  LOG_D(MAC,"[TEST] [eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+		 mod_id, frame, lcid, CC_id, rlc_size);
 	  if (rlc_size > 0) {
+
 	    rlc_status = mac_rlc_status_ind(mod_id,
 					    rnti,
 					    mod_id,
@@ -1271,10 +1290,7 @@ void apply_scheduling_decisions(mid_t mod_id,
 
 	    sdu_lengths[i] = 0;
 
-	    LOG_D(MAC,"[eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
-                  mod_id, frame, lcid, CC_id, rlc_size);
-
-	    LOG_D(MAC, "[TEST] Have %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
+	    LOG_D(MAC, "[TEST] RLC can give %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
 	    
 	    sdu_lengths[i] += mac_rlc_data_req(mod_id,
 					       rnti,
@@ -1285,10 +1301,11 @@ void apply_scheduling_decisions(mid_t mod_id,
 					       lcid,
 					       (char *)&dlsch_buffer[sdu_length_total]);
 
-	    LOG_D(MAC, "[TEST] This is what I actually got from LCID %d -> %d\n",lcid,  sdu_lengths[i]);
+	    LOG_D(MAC, "[TEST] RLC gave %d bytes in LCID %d\n", sdu_lengths[i], lcid);
 
 	    LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
 	    sdu_length_total += sdu_lengths[i];
+	    LOG_D(MAC, "[TEST] Total sdu size became %d\n", sdu_length_total);
             sdu_lcids[i] = lcid;
 
 	    UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
@@ -1321,7 +1338,6 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  }
 	  
 	  // there is a payload
-	  LOG_D(MAC, "[TEST] This is the padding %d\n", TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len); 
 	  if (((sdu_length_total + header_len_dcch + header_len_dtch ) > 0)) {
 	    if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2
 		|| (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) > TBS) { //protect from overflow
@@ -1340,9 +1356,6 @@ void apply_scheduling_decisions(mid_t mod_id,
 	      post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len - 1; // 1 is for the postpadding header
 	    }
 	  }
-	  
-	  LOG_D(MAC, "[TEST] This is the current SDU length %d and this is the TBS %d\n", sdu_length_total, TBS);
-	  
 	  
 	  
 	  if (ta_len > 0) {
@@ -1400,8 +1413,10 @@ void apply_scheduling_decisions(mid_t mod_id,
 	  UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
 	  UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
-          //UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
-          //UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
+	  nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	  LOG_D(MAC,"[TEST] %d Number of resource blocks allocated\n", nb_rb);
+          UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
+          UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=dl_dci->mcs[0];
           UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=dl_dci->mcs[0];
           UE_list->eNB_UE_stats[CC_id][UE_id].TBS = TBS;
