@@ -40,6 +40,7 @@
 #include "enb_agent_mac_internal.h"
 
 #include "LAYER2/MAC/proto.h"
+#include "LAYER2/MAC/enb_agent_mac_proto.h"
 
 #include "log.h"
 
@@ -1029,7 +1030,63 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage 
 }
 
 int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
-  //TODO: De-allocate the memory of the message
+  int i,j, k;
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG)
+    goto error;
+
+  Protocol__PrpDlDci *dl_dci;
+
+  free(msg->dl_mac_config_msg->header);
+  for (i = 0; i < msg->dl_mac_config_msg->n_dl_ue_data; i++) {
+    free(msg->dl_mac_config_msg->dl_ue_data[i]->ce_bitmap);
+    for (j = 0; j < msg->dl_mac_config_msg->dl_ue_data[i]->n_rlc_pdu; j++) {
+      for (k = 0; k <  msg->dl_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]->n_rlc_pdu_tb; k++) {
+	free(msg->dl_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]->rlc_pdu_tb[k]);
+      }
+      free(msg->dl_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]->rlc_pdu_tb);
+      free(msg->dl_mac_config_msg->dl_ue_data[i]->rlc_pdu[j]);
+    }
+    free(msg->dl_mac_config_msg->dl_ue_data[i]->rlc_pdu);
+    dl_dci = msg->dl_mac_config_msg->dl_ue_data[i]->dl_dci;
+    free(dl_dci->tbs_size);
+    free(dl_dci->mcs);
+    free(dl_dci->ndi);
+    free(dl_dci->rv);
+    free(dl_dci);
+    free(msg->dl_mac_config_msg->dl_ue_data[i]);
+  }
+  free(msg->dl_mac_config_msg->dl_ue_data);
+  
+  for (i = 0; i <  msg->dl_mac_config_msg->n_dl_rar; i++) {
+    dl_dci = msg->dl_mac_config_msg->dl_rar[i]->rar_dci;
+    free(dl_dci->tbs_size);
+    free(dl_dci->mcs);
+    free(dl_dci->ndi);
+    free(dl_dci->rv);
+    free(dl_dci);
+    free(msg->dl_mac_config_msg->dl_rar[i]);
+  }
+  free(msg->dl_mac_config_msg->dl_rar);
+
+  for (i = 0; i < msg->dl_mac_config_msg->n_dl_broadcast; i++) {
+    dl_dci = msg->dl_mac_config_msg->dl_broadcast[i]->broad_dci;
+    free(dl_dci->tbs_size);
+    free(dl_dci->mcs);
+    free(dl_dci->ndi);
+    free(dl_dci->rv);
+    free(dl_dci);
+    free(msg->dl_mac_config_msg->dl_broadcast[i]);
+  }
+  free(msg->dl_mac_config_msg->dl_broadcast);
+
+    for ( i = 0; i < msg->dl_mac_config_msg->n_ofdm_sym; i++) {
+    free(msg->dl_mac_config_msg->ofdm_sym[i]);
+  }
+  free(msg->dl_mac_config_msg->ofdm_sym);
+
+  return 0;
+
+ error:
   return -1;
 }
 
