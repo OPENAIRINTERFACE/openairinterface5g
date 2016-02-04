@@ -39,6 +39,8 @@
 #define __ENB_AGENT_MAC_PRIMITIVES_H__
 
 #include "enb_agent_defs.h"
+#include "progran.pb-c.h"
+#include "header.pb-c.h"
 
 /* ENB AGENT-MAC Interface */
 typedef struct {
