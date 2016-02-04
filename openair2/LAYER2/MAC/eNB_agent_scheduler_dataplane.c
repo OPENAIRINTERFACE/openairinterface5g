@@ -104,8 +104,8 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
   int                   N_RBG[MAX_NUM_CCs];
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
-  unsigned char         header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
-  unsigned char header_len = 0, header_len_tmp = 0;
+  unsigned char         ta_len=0;
+  unsigned char         header_len = 0, header_len_tmp = 0;
   unsigned char         sdu_lcids[11],offset,num_sdus=0;
   uint16_t              nb_rb,nb_rb_temp,total_nb_available_rb[MAX_NUM_CCs],nb_available_rb;
   uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
@@ -251,8 +251,6 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 				       NULL,                                  // contention res id
 				       padding,
 				       post_padding);
-	
-	LOG_D(MAC, "[TEST]Have to schedule %d SDUs with length %d. TBS is %d, LCID is %d, post padding is %d, padding is %d, header offset is %d, total sdu size is %d\n", num_sdus, sdu_lengths[0], TBS, sdu_lcids[0], post_padding, padding, offset, sdu_length_total);
 	
 #ifdef DEBUG_eNB_SCHEDULER
 	LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
