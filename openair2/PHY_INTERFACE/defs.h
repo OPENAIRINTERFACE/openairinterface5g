@@ -238,13 +238,16 @@ typedef struct {
   int (*get_ue_active_harq_pid)(module_id_t Mod_id, uint8_t CC_id,rnti_t rnti, int frame, uint8_t subframe, uint8_t *harq_pid, uint8_t *round, uint8_t ul_flag);
 
   /// Function to retrieve number of CCE
-  uint16_t (*get_nCCE_max)(module_id_t Mod_id,uint8_t  CC_id);
+  uint16_t (*get_nCCE_max)(module_id_t Mod_id,uint8_t  CC_id,int num_pdcch_symbols,int subframe);
 
-  /// Function to get the CCE offset
+
   int (*get_nCCE_offset)(unsigned char L, int nCCE, int common_dci, unsigned short rnti, unsigned char subframe);
 
   /// Function to retrieve number of PRB in an rb_alloc
   uint32_t (*get_nb_rb)(uint8_t ra_header, uint32_t rb_alloc, int n_rb_dl);
+
+  /// Function to convert VRB to PRB for distributed allocation
+  int (*get_prb)(int N_RB_DL,int odd_slot,int vrb,int Ngap);
 
   /// Function to retrieve transmission mode for UE
   uint8_t (*get_transmission_mode)(module_id_t Mod_id,uint8_t CC_id,rnti_t rnti);
@@ -312,8 +315,9 @@ typedef struct {
 
   /// get the delta TF for Uplink Power Control Calculation
   int16_t (*get_hundred_times_delta_TF) (module_id_t module_idP, uint8_t CC_id, rnti_t rnti, uint8_t harq_pid);
-  /// get target uplink received power 
+  /// get target PUSCH received power 
   int16_t (*get_target_pusch_rx_power) (module_id_t module_idP, uint8_t CC_id);
+  /// get target PUSCH received power 
   int16_t (*get_target_pucch_rx_power) (module_id_t module_idP, uint8_t CC_id);
 
   unsigned char is_cluster_head;

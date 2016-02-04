@@ -45,7 +45,7 @@ double **cos_lut=NULL,**sin_lut=NULL;
 
 
 
-void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
+int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
 {
 
 
@@ -54,15 +54,17 @@ void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
   int16_t f;
   uint8_t l;
 
+  if ((n_samples&1)==0) {
+    fprintf(stderr, "freq_channel_init: n_samples has to be odd\n");
+    return(-1); 
+  }
 
   cos_lut = (double **)malloc(n_samples*sizeof(double*));
   sin_lut = (double **)malloc(n_samples*sizeof(double*));
 
-
-
   delta_f = nb_rb*180000/(n_samples-1);
 
-  for (f=-(n_samples>>1); f<(n_samples>>1); f++) {
+  for (f=-(n_samples>>1); f<=(n_samples>>1); f++) {
     freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
 
     cos_lut[f+(n_samples>>1)] = (double *)malloc((int)desc->nb_taps*sizeof(double));
@@ -81,9 +83,11 @@ void init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
 
     }
   }
+
+  return(0);
 }
 
-void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
+int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
 {
 
 
@@ -93,22 +97,32 @@ void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
   static int freq_channel_init=0;
   static int n_samples_max=0;
 
-  // printf("no of samples:%d,",n_samples);
+  // do some error checking
+  // n_samples has to be a odd number because we assume the spectrum is symmetric around the DC and includes the DC
+  if ((n_samples&1)==0) {
+    fprintf(stderr, "freq_channel: n_samples has to be odd\n");
+    return(-1); 
+  }
+
   // printf("no of taps:%d,",(int)desc->nb_taps);
 
   if (freq_channel_init == 0) {
     // we are initializing the lut for the largets possible n_samples=12*nb_rb+1
     // if called with n_samples<12*nb_rb+1, we decimate the lut
     n_samples_max=12*nb_rb+1;
-    init_freq_channel(desc,nb_rb,n_samples_max);
-    freq_channel_init=1;
+    if (init_freq_channel(desc,nb_rb,n_samples_max)==0)
+      freq_channel_init=1;
+    else
+      return(-1);
   }
 
-  d=n_samples_max/n_samples;
+  d=(n_samples_max-1)/(n_samples-1);
+
+  //printf("no_samples=%d, n_samples_max=%d, d=%d\n",n_samples,n_samples_max,d);
 
   start_meas(&desc->interp_freq);
 
-  for (f=-n_samples_max/2,f2=-n_samples/2; f<n_samples_max/2; f+=d,f2++) {
+  for (f=-n_samples_max/2,f2=-n_samples/2; f<=n_samples_max/2; f+=d,f2++) {
     clut = cos_lut[n_samples_max/2+f];
     slut = sin_lut[n_samples_max/2+f];
 
@@ -129,6 +143,8 @@ void freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
   }
 
   stop_meas(&desc->interp_freq);
+
+  return(0);
 }
 
 double compute_pbch_sinr(channel_desc_t *desc,

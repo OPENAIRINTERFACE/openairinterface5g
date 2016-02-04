@@ -163,33 +163,27 @@ install_gnutls_from_source(){
 
 
 check_install_usrp_uhd_driver(){
-        log_file=$OPENAIR_DIR/cmake_targets/log/check_install_usrp_uhd_driver_log.txt
-        echo_info "\nIn function: check_install_usrp_uhd_driver(). Installing USRP Drivers : The logfile for the installation is located here: $log_file "
-        (
+        #first we remove old installation
+        $SUDO apt-get remove uhd libuhd-dev libuhd003 uhd-host -y
         v=$(lsb_release -cs)
-        $SUDO apt-add-repository "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
+        $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
+        #The new USRP repository
+        $SUDO add-apt-repository ppa:ettusresearch/uhd -y
         $SUDO apt-get update
         $SUDO apt-get -y install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y install -t `lsb_release -cs` uhd --force-yes
-        ) >& $log_file
+        $SUDO apt-get -y install libuhd-dev libuhd003 uhd-host
+        $SUDO uhd_images_downloader 
 }
 check_install_bladerf_driver(){
-        log_file=$OPENAIR_DIR/cmake_targets/log/check_install_bladerf_driver_log.txt
-        echo_info "\nIn function: check_install_bladerf_driver(). Install BLADERF drivers : The logfile for the installation is located here: $log_file "
-        (
 	$SUDO add-apt-repository -y ppa:bladerf/bladerf
 	$SUDO apt-get update
 	$SUDO apt-get install -y bladerf libbladerf-dev
 	$SUDO apt-get install -y bladerf-firmware-fx3
 	$SUDO apt-get install -y bladerf-fpga-hostedx40	
 	bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img	
-        ) >& $log_file
 }
 
 check_install_additional_tools (){
-    log_file=$OPENAIR_DIR/cmake_targets/log/check_install_additional_tools_log.txt
-    echo_info "\nIn function: check_install_oai_software(). Installing optional OAI packages : The logfile for the installation is located here: $log_file "
-    (
     $SUDO apt-get update
     $SUDO apt-get install -y \
 	check \
@@ -199,7 +193,6 @@ check_install_additional_tools (){
 	libboost-all-dev \
 	libpthread-stubs0-dev \
 	openvpn \
-	phpmyadmin \
 	pkg-config \
 	python-dev  \
 	python-pexpect \
@@ -212,14 +205,9 @@ check_install_additional_tools (){
 	vlan	  \
 	ctags \
         ntpdate
-      ) >& $log_file
 }
 
 check_install_oai_software() {
-    
-    log_file=$OPENAIR_DIR/cmake_targets/log/check_install_oai_software_log.txt
-    echo_info "\nIn function: check_install_oai_software(). Installing mandatory OAI packages : The logfile for the installation is located here: $log_file "
-    (
     $SUDO apt-get update
     $SUDO apt-get install -y \
 	autoconf  \
@@ -280,7 +268,8 @@ check_install_oai_software() {
 	python-pip \
 	pydb \
 	wvdial \
-        python-numpy
+        python-numpy \
+        sshpass
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
@@ -290,7 +279,6 @@ check_install_oai_software() {
     fi
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
-    ) > $log_file 2>&1
     install_asn1c_from_source
     $SUDO rm -fr /opt/ssh
     $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
@@ -309,8 +297,8 @@ install_asn1c_from_source(){
     patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
     ./configure
     make -j`nproc`
-    $SUDO make install 
-    ) > $asn1_install_dir 2>&1 
+    $SUDO make install
+    ) > $asn1_install_dir 2>&1
 }
 
 #################################################

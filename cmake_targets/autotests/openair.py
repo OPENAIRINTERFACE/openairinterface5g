@@ -83,10 +83,13 @@ class openair(core):
         return (stdout, stderr)
 
     def connect(self, username, password, prompt='PEXPECT_OAI'):
-     while True:  
+     max_retries=100
+     i=0
+     while i <= max_retries:  
         self.prompt1 = prompt
         self.prompt2 = prompt
         self.password = '' 
+        i=i+1
         # WE do not store the password when sending commands for secuirity reasons. The password might be accidentally logged in such cases.
         #The password is used only to make ssh connections. In case user wants to run programs with sudo, then he/she needs to add following line in /etc/sudoers
         # your_user_name  ALL=(ALL:ALL) NOPASSWD: ALL
@@ -109,11 +112,14 @@ class openair(core):
         except Exception, e:
             error=''
             error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
+            error = error + 'address = "'+ self.address +' username = ' + username
             error = error + traceback.format_exc()
             print error
-            print "Retrying again in 60 seconds"
-            time.sleep(60)
-            #sys.exit(1)
+            print "Retrying again in 1  seconds"
+            time.sleep(1)
+            if i==max_retries:
+              print "Fatal Error: Terminating the program now..."
+              sys.exit(1)
                 
     def connect2(self, username, password, prompt='$'):
         self.prompt1 = prompt
