@@ -48,6 +48,7 @@
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/progran_dci_conversions.h"
 
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -104,6 +105,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
   unsigned char         aggregation;
   mac_rlc_status_resp_t rlc_status;
   unsigned char         header_len_dcch=0, header_len_dcch_tmp=0,header_len_dtch=0,header_len_dtch_tmp=0, ta_len=0;
+  unsigned char header_len = 0, header_len_tmp = 0;
   unsigned char         sdu_lcids[11],offset,num_sdus=0;
   uint16_t              nb_rb,nb_rb_temp,total_nb_available_rb[MAX_NUM_CCs],nb_available_rb;
   uint16_t              TBS,j,sdu_lengths[11],rnti,padding=0,post_padding=0;
@@ -156,19 +158,11 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       rlc_status.bytes_in_buffer = 0;
       
       TBS = dl_dci->tbs_size[0];
-      LOG_D(MAC,"[TEST] The TBS during the creation process is %d\n", TBS);
       
       if (dl_data->n_ce_bitmap > 0) {
-	//Check if there is TA command
-	if (dl_data->ce_bitmap[0] & PROTOCOL__PRP_CE_TYPE__PRPCET_TA) {
-	  ta_len = 2;
-	  LOG_D(MAC, "[TEST] Need to send timing advance\n");
-	} else {
-	  ta_len = 0;
-	  LOG_D(MAC, "[TEST] No timing advance\n");
-	}
+	//Check if there is TA command and set the length appropriately
+	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__PRP_CE_TYPE__PRPCET_TA) ? 2 : 0; 
       }
-      
       
       n_lc = dl_data->n_rlc_pdu;
       num_sdus = 0;
@@ -176,7 +170,6 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       // Go through each one of the channel commands and create SDUs
       for (i = 0; i < n_lc; i++) {
 	lcid = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->logical_channel_id;
-	LOG_D(MAC, "[TEST] Going through SDU of channel %d\n", lcid);
 	rlc_size = dl_data->rlc_pdu[i]->rlc_pdu_tb[0]->size;
 	LOG_D(MAC,"[TEST] [eNB %d] Frame %d, LCID %d, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
 	      mod_id, frame, lcid, CC_id, rlc_size);
@@ -204,24 +197,17 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 					     lcid,
 					     (char *)&dlsch_buffer[sdu_length_total]);
 	  
-	  LOG_D(MAC, "[TEST] RLC gave %d bytes in LCID %d\n", sdu_lengths[i], lcid);
-	  
 	  LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
 	  sdu_length_total += sdu_lengths[i];
-	  LOG_D(MAC, "[TEST] Total sdu size became %d\n", sdu_length_total);
 	  sdu_lcids[i] = lcid;
 	  
 	  UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
 	  UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
 	  
-	  if (lcid == DCCH || lcid == DCCH1) {
-	    header_len_dcch += 2;
-	  } else if (lcid == DTCH) {
-	    if (sdu_lengths[i] < 128) {
-	      header_len_dtch = 2;
-	    } else {
-	      header_len_dtch = 3;
-	    }
+	  if (sdu_lengths[i] < 128) {
+	    header_len += 2;
+	  } else {
+	    header_len += 3;
 	  }
 	  
 	  num_sdus++;
@@ -229,46 +215,34 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
       } // SDU creation end
       
       
-      if (((sdu_length_total + header_len_dcch + header_len_dtch) > 0)) {
+      if (((sdu_length_total + header_len) > 0)) {
+
+	header_len_tmp = header_len;
 	
-	header_len_dcch_tmp = header_len_dcch;
-	header_len_dtch_tmp = header_len_dtch;
-	
-	if (header_len_dtch==0) {
-	  header_len_dcch = (header_len_dcch >0) ? (header_len_dcch - 1) : header_len_dcch;  // remove length field
+	// If we have only a single SDU, header length becomes 1
+	if (header_len == 2 || header_len == 3) {
+	  header_len = 1;
 	} else {
-	  header_len_dtch = (header_len_dtch > 0) ? 1 : header_len_dtch;     // remove length field for the last SDU
+	  header_len--;
 	}
 	
 	// there is a payload
-	if (((sdu_length_total + header_len_dcch + header_len_dtch ) > 0)) {
-	  if ((TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) <= 2
-	      || (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len) > TBS) { //protect from overflow
-	    padding = (TBS - header_len_dcch - header_len_dtch - sdu_length_total - ta_len);
+	if (((sdu_length_total + header_len) > 0)) {
+	  // If we need a 1 or 2 bit padding or no padding at all
+	  if ((TBS - header_len - sdu_length_total - ta_len) <= 2
+	      || (TBS - header_len - sdu_length_total - ta_len) > TBS) { //protect from overflow
+	    padding = (TBS - header_len - sdu_length_total - ta_len);
 	    post_padding = 0;
-	  } else {
+	  } else { // The last sdu needs to have a length field, since we add padding
 	    padding = 0;
-	    
-	    // adjust the header len
-	    if (header_len_dtch==0) {
-	      header_len_dcch = header_len_dcch_tmp;
-	    } else {
-	      header_len_dtch = header_len_dtch_tmp;
-	    }
-	    
-	    post_padding = TBS - sdu_length_total - header_len_dcch - header_len_dtch - ta_len - 1; // 1 is for the postpadding header
+	    header_len = header_len_tmp;	    
+	    post_padding = TBS - sdu_length_total - header_len - ta_len - 1; // 1 is for the postpadding header
 	  }
 	}
 	
-	
-	if (ta_len > 0) {
-	  ta_update = ue_sched_ctl->ta_update;
-	} else {
-	  ta_update = 0;
-	}
+	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
 	
 	offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-				       // offset = generate_dlsch_header((unsigned char*)eNB_mac_inst[0].DLSCH_pdu[0][0].payload[0],
 				       num_sdus,              //num_sdus
 				       sdu_lengths,  //
 				       sdu_lcids,
@@ -364,6 +338,8 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
 
   int UE_id = find_ue(rnti, PHY_vars_eNB_g[mod_id][CC_id]);
 
+  uint32_t format;
+
   harq_pid = dl_dci->harq_process;
   round = dl_dci->rv[0];
   
@@ -377,14 +353,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   case 6:
     if (frame_parms[CC_id]->frame_type == TDD) {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->ndi     = dl_dci->ndi[0];
+	FILL_DCI_TDD_1(DCI1_1_5MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_1_5MHz_TDD_t);
 	size_bits  = sizeof_DCI1_1_5MHz_TDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -394,14 +363,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
       }
     } else {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	LOG_D(MAC,"[TEST] Setting DCI format 1\n");
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_FDD_1(DCI1_1_5MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_1_5MHz_FDD_t);
 	size_bits  = sizeof_DCI1_1_5MHz_FDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -414,14 +376,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   case 25:
     if (frame_parms[CC_id]->frame_type == TDD) {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_5MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_TDD_1(DCI1_5MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_5MHz_TDD_t);
 	size_bits  = sizeof_DCI1_5MHz_TDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -431,13 +386,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
       }
     } else {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_5MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_FDD_1(DCI1_5MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_5MHz_FDD_t);
 	size_bits  = sizeof_DCI1_5MHz_FDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -450,14 +399,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   case 50:
     if (frame_parms[CC_id]->frame_type == TDD) {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_TDD_1(DCI1_10MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_10MHz_TDD_t);
 	size_bits  = sizeof_DCI1_10MHz_TDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -467,13 +409,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
       }
     } else {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_10MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_10MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_FDD_1(DCI1_10MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_10MHz_FDD_t);
 	size_bits  = sizeof_DCI1_10MHz_FDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -486,14 +422,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   case 100:
     if (frame_parms[CC_id]->frame_type == TDD) {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->dai      = dl_dci->dai;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_20MHz_TDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_TDD_1(DCI1_20MHz_TDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_20MHz_TDD_t);
 	size_bits  = sizeof_DCI1_20MHz_TDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -503,13 +432,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
       }
     } else {
       if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->harq_pid = harq_pid;
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->rv       = round;
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->rballoc  = dl_dci->rb_bitmap;
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->rah      = dl_dci->res_alloc;
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->mcs      = dl_dci->mcs[0];
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->TPC      = dl_dci->tpc;
-	((DCI1_20MHz_FDD_t*)DLSCH_dci)->ndi      = dl_dci->ndi[0];
+	FILL_DCI_FDD_1(DCI1_20MHz_FDD_t, DLSCH_dci, dl_dci);
 	size_bytes = sizeof(DCI1_20MHz_FDD_t);
 	size_bits  = sizeof_DCI1_20MHz_FDD_t;
       } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
@@ -521,24 +444,46 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
     break;
   }
 
-  //Add DCI based on format
-  if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1) {
-    add_ue_spec_dci(DCI_pdu,
-		    DLSCH_dci,
-		    rnti,
-		    size_bytes,
-		    dl_dci->aggr_level,//aggregation
-		    size_bits,
-		    format1,
-		    0);
-  } else if (dl_dci->format ==  PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A) {
-    add_ue_spec_dci(DCI_pdu,
-		    DLSCH_dci,
-		    rnti,
-		    size_bytes,
-		    dl_dci->aggr_level,//aggregation
-		    size_bits,
-		    format2A,
-		    0);
+  //Set format to the proper type
+  switch(dl_dci->format) {
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1:
+    format = format1;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1A:
+    format = format1A;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1B:
+    format = format1B;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1C:
+    format = format1C;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_1D:
+    format = format1E_2A_M10PRB;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2:
+    format  = format2;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2A:
+    format = format2A;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_2B:
+    format = format2B;
+    break;
+  case PROTOCOL__PRP_DCI_FORMAT__PRDCIF_3:
+    format = 3;
+    break;
+  default:
+    /*TODO: Need to deal with unsupported DCI type*/
+    return;
   }
+
+  add_ue_spec_dci(DCI_pdu,
+		  DLSCH_dci,
+		  rnti,
+		  size_bytes,
+		  dl_dci->aggr_level,
+		  size_bits,
+		  format,
+		  0);
 }
