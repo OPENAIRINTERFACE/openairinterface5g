@@ -38,23 +38,16 @@ extern int card;
 #endif
 
 void
-phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id)
+phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB_id)
 {
 
-  uint16_t rx_power_fil_dB;
 #ifdef EXMIMO
   exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
   uint16_t i;
 #endif
-  int rssi;
 
-  rssi = dB_fixed(phy_vars_ue->PHY_measurements.rssi);
-
-  if (rssi>0) rx_power_fil_dB = rssi;
-  else rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
-
-  LOG_D(PHY,"Gain control: rssi %d (%d,%d)\n",
-         rssi,
+  LOG_I(PHY,"Gain control: rssi %d (%d,%d)\n",
+         rx_power_fil_dB,
          phy_vars_ue->PHY_measurements.rssi,
          phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id]
         );
@@ -87,7 +80,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id)
     phy_vars_ue->rx_total_gain_dB = MIN_RF_GAIN;
   }
 
-  LOG_D(PHY,"Gain control: rx_total_gain_dB = %d (max %d,rxpf %d)\n",phy_vars_ue->rx_total_gain_dB,MAX_RF_GAIN,rx_power_fil_dB);
+  LOG_I(PHY,"Gain control: rx_total_gain_dB = %d (max %d,rxpf %d)\n",phy_vars_ue->rx_total_gain_dB,MAX_RF_GAIN,rx_power_fil_dB);
 
 #ifdef EXMIMO
 
