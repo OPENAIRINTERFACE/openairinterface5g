@@ -161,9 +161,9 @@ def reset_ue():
   usb_dir= find_usb_path(VendorId, ProductId)
   print usb_dir
   cmd = "sudo sh -c \"echo 0 > " + usb_dir + "/authorized\""
-  os.system(cmd + " ; sleep 5" )
+  os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
-  os.system(cmd + " ; sleep 5" )
+  os.system(cmd + " ; sleep 30" )
 
 def read_file(filename):
   try:
