@@ -8,7 +8,7 @@
  <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
  <CleanUpOldProgs>oaisim* oaisim_nos1* lte-softmodem* lte-softmodem-nos1* mme_gw* run_epc* run_hss* hss hss_sim configure_cots_bandrich_ue* wvdial*  iperf iperf_script ping tshark</CleanUpOldProgs>	
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
-<ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; dmesg|tail</ExmimoRfStop>
+<ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; uname -a; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>0104+ 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 016002 016005  016102 016105 016302 016305</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
