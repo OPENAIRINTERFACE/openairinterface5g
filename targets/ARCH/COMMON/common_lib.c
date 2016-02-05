@@ -51,8 +51,11 @@ int set_device(openair0_device *device) {
   case EXMIMO_DEV:
     printf("[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
     break;
-  case USRP_DEV:
-    printf("[%s] has loaded USRP device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+  case USRP_B200_DEV:
+    printf("[%s] has loaded USRP B200 device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    break;
+case USRP_X300_DEV:
+    printf("[%s] has loaded USRP X300 device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
     break;
   case BLADERF_DEV:
     printf("[%s] has loaded BLADERF device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 

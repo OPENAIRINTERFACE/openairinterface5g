@@ -127,7 +127,7 @@ static void check_dev_config( rrh_module_t *mod_enb);
  * \note
  * @ingroup  _oai
  */
-static void calc_rt_period_ns( openair0_config_t openair0_cfg);
+static void calc_rt_period_ns( openair0_config_t *openair0_cfg);
 
 
 
@@ -140,122 +140,34 @@ void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag) {
   
   RT_flag_eNB=RT_flag;
   NRT_flag_eNB=NRT_flag;
-   
+  
   /* init socket and have handshake-like msg with client to exchange parameters */
   mod_enb->eth_dev.trx_start_func(&mod_enb->eth_dev);//change port  make it plus_id
-  if (1==0) {
- /* if a RF iterface is added to RRH module get the  configuration parameters sent from eNB  */
-if (mod_enb->devs->type != NONE_DEV ) {  
+    printf("sdfs\n");
 
-    memcpy((void*)&mod_enb->devs->openair0_cfg,(void *)&mod_enb->eth_dev.openair0_cfg,sizeof(openair0_config_t));
-    
-    /* certain parameters have to be updated (calibration related)*/
-    if ( mod_enb->devs->type == EXMIMO_DEV ) {
-      if ( mod_enb->devs->openair0_cfg.num_rb_dl == 100 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 175;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
+  memcpy((void*)mod_enb->devs->openair0_cfg,(void *)mod_enb->eth_dev.openair0_cfg,sizeof(openair0_config_t));
+  printf("sdfs\n");
+  /* check sanity of configuration parameters and print */
+  check_dev_config(mod_enb);    
+  
+  /* initialize and configure the RF device */
+  if (openair0_device_load(mod_enb->devs, mod_enb->devs->openair0_cfg)<0) {
+    LOG_E(RRH,"Exiting, cannot initialize RF device.\n");
+    exit(-1);
+  } else {
+    if (mod_enb->devs->type != NONE_DEV) {
+      /* start RF device */
+      if (mod_enb->devs->type == EXMIMO_DEV) {
+	//call start function for exmino
+      } else {
+	if (mod_enb->devs->trx_start_func(mod_enb->devs)!=0)
+	  LOG_E(RRH,"Unable to initiate RF device.\n");
+	else
+	  LOG_I(RRH,"RF device has been initiated.\n");
       }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 50 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 95;
-	mod_enb->devs->openair0_cfg.tx_delay = 5;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 25 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 1024;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 70;
-	mod_enb->devs->openair0_cfg.tx_delay = 6;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 6 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 256;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 40;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
-      }
+      
     }
-    else if ((mod_enb->devs->type == USRP_B200_IF )||(mod_enb->devs->type == USRP_X300_IF )) {
-      if ( mod_enb->devs->openair0_cfg.num_rb_dl == 100 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 175;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 50 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 95;
-	mod_enb->devs->openair0_cfg.tx_delay = 5;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 25 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 1024;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 70;
-	mod_enb->devs->openair0_cfg.tx_delay = 6;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 6 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 256;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 40;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
-      }
-    }
-    else if(mod_enb->devs->type == BLADERF_DEV) {
-      if ( mod_enb->devs->openair0_cfg.num_rb_dl == 100 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 175;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 50 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 2048;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 95;
-	mod_enb->devs->openair0_cfg.tx_delay = 5;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 25 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 1024;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 70;
-	mod_enb->devs->openair0_cfg.tx_delay = 6;
-      }
-      else if ( mod_enb->devs->openair0_cfg.num_rb_dl == 6 ) {
-	mod_enb->devs->openair0_cfg.samples_per_packet = 256;
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps = 40;
-	mod_enb->devs->openair0_cfg.tx_delay = 8;
-      }           
-    }  
-    
-    /* check sanity of configuration parameters and print */
-    check_dev_config(mod_enb);    
-    
-    /* initialize and configure the RF device */
-    if (openair0_device_load(mod_enb->devs, &mod_enb->devs->openair0_cfg)<0) {
-      LOG_E(RRH,"Exiting, cannot initialize RF device.\n");
-      exit(-1);
-    } else {
-      LOG_I(RRH,"RF device has been successfully initialized.\n");
-    }  
- 
-  }
-
-    } else {
-    
-    memcpy((void*)&mod_enb->devs->openair0_cfg,(void *)&mod_enb->eth_dev.openair0_cfg,sizeof(openair0_config_t));
-    
-    /* check sanity of configuration parameters and print */
-    check_dev_config(mod_enb);    
-    
-    /* initialize and configure the RF device */
-    if (openair0_device_load(mod_enb->devs, &mod_enb->devs->openair0_cfg)<0){
-      LOG_E(RRH,"Exiting, cannot initialize RF device.\n");
-      exit(-1);
-    } else {
-      if (mod_enb->devs->type != NONE_DEV) {
-	/* start RF device */
-	if (mod_enb->devs->type == EXMIMO_DEV) {
-	  //call start function for exmino
-	} else {
-	  if (mod_enb->devs->trx_start_func(mod_enb->devs)!=0)
-	    LOG_E(RRH,"Unable to initiate RF device.\n");
-	  else
-	    LOG_I(RRH,"RF device has been initiated.\n");
-	}
-	
-      }
-    }  
-  }
+  }  
   
   /* create main eNB module thread
      main_rrh_eNB_thread allocates memory 
@@ -284,7 +196,7 @@ void *rrh_eNB_thread(void *arg) {
   void 			*tmp;
   unsigned int          samples_per_frame=0;
   
-  samples_per_frame = dev->eth_dev.openair0_cfg.samples_per_frame;    
+  samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;    
 
   while (rrh_exit==0) {
     
@@ -296,42 +208,42 @@ void *rrh_eNB_thread(void *arg) {
     /* allocate memory for TX/RX buffers
        each antenna port has a TX and a RX buffer
        each TX and RX buffer is of (samples_per_frame + HEADER_SIZE) samples (size of samples is 4 bytes) */
-    rx_buffer_eNB = (int32_t**)malloc16(dev->eth_dev.openair0_cfg.rx_num_channels*sizeof(int32_t*));
-    tx_buffer_eNB = (int32_t**)malloc16(dev->eth_dev.openair0_cfg.tx_num_channels*sizeof(int32_t*));    
+    rx_buffer_eNB = (int32_t**)malloc16(dev->eth_dev.openair0_cfg->rx_num_channels*sizeof(int32_t*));
+    tx_buffer_eNB = (int32_t**)malloc16(dev->eth_dev.openair0_cfg->tx_num_channels*sizeof(int32_t*));    
     LOG_D(RRH,"rx_buffer_eNB address =%p tx_buffer_eNB address =%p  \n",rx_buffer_eNB,tx_buffer_eNB);
     
     /* rx_buffer_eNB points to the beginning of data */
-    for (i=0; i<dev->eth_dev.openair0_cfg.rx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->rx_num_channels; i++) {
       tmp=(void *)malloc16(sizeof(int32_t)*(samples_per_frame + 32));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame + 32));
       rx_buffer_eNB[i]=( tmp + (32*sizeof(int32_t)) );  
       LOG_D(RRH,"i=%d rx_buffer_eNB[i]=%p tmp= %p\n",i,rx_buffer_eNB[i],tmp);
     }
     /* tx_buffer_eNB points to the beginning of data */
-    for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->tx_num_channels; i++) {
       tmp=(void *)malloc16(sizeof(int32_t)*(samples_per_frame + 32));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame + 32));
       tx_buffer_eNB[i]=( tmp + (32*sizeof(int32_t)) );  
       LOG_D(RRH,"i= %d tx_buffer_eNB[i]=%p tmp= %p \n",i,tx_buffer_eNB[i],tmp);
     }
     /* dummy initialization for TX/RX buffers */
-    for (i=0; i<dev->eth_dev.openair0_cfg.rx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->rx_num_channels; i++) {
       for (j=0; j<samples_per_frame; j++) {
 	rx_buffer_eNB[i][j]=32+i; 
       } 
     }
     /* dummy initialization for TX/RX buffers */
-    for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->tx_num_channels; i++) {
       for (j=0; j<samples_per_frame; j++) {
 	tx_buffer_eNB[i][j]=12+i; 
       } 
     }    
     /* allocate TX/RX buffers pointers used in write/read operations */
-    rx_eNB = (void**)malloc16(dev->eth_dev.openair0_cfg.rx_num_channels*sizeof(int32_t*));
-    tx_eNB = (void**)malloc16(dev->eth_dev.openair0_cfg.tx_num_channels*sizeof(int32_t*));
+    rx_eNB = (void**)malloc16(dev->eth_dev.openair0_cfg->rx_num_channels*sizeof(int32_t*));
+    tx_eNB = (void**)malloc16(dev->eth_dev.openair0_cfg->tx_num_channels*sizeof(int32_t*));
 
     /* init mutexes */    
-    for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->tx_num_channels; i++) {
       pthread_mutex_init(&sync_eNB_mutex[i],NULL);
       pthread_cond_init(&sync_eNB_cond[i],NULL);
     }
@@ -444,10 +356,10 @@ void *rrh_eNB_rx_thread(void *arg) {
 
   time_req_1us.tv_sec = 0;
   time_req_1us.tv_nsec =1000;  //time_req_1us.tv_nsec = (int)rt_period/2;--->granularity issue
-  spp_eth =  dev->eth_dev.openair0_cfg.samples_per_packet;
-  spp_rf  =  dev->devs->openair0_cfg.samples_per_packet;
+  spp_eth =  dev->eth_dev.openair0_cfg->samples_per_packet;
+  spp_rf  =  dev->devs->openair0_cfg->samples_per_packet;
 
-  samples_per_frame = dev->eth_dev.openair0_cfg.samples_per_frame;
+  samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   samples_per_subframe = (unsigned int)samples_per_frame/10;
   loopback = dev->loopback;
   measurements = dev->measurements;
@@ -520,7 +432,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 	}
        }
        
-       for (i=0; i<dev->eth_dev.openair0_cfg.rx_num_channels; i++) {
+       for (i=0; i<dev->eth_dev.openair0_cfg->rx_num_channels; i++) {
 	 rx_eNB[i] = (void*)&rx_buffer_eNB[i][rx_pos];
 	 LOG_D(RRH," rx_eNB[i]=%p rx_buffer_eNB[i][rx_pos]=%p ,rx_pos=%d, i=%d ts=%d\n",rx_eNB[i],&rx_buffer_eNB[i][rx_pos],rx_pos,i,timestamp_rx);	 
        }  
@@ -532,7 +444,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 					&timestamp_rx,
 					rx_eNB,
 					spp_rf,
-					dev->devs->openair0_cfg.rx_num_channels
+					dev->devs->openair0_cfg->rx_num_channels
 					)<0) {
 	   perror("RRH eNB : USRP read");
 	 }
@@ -545,7 +457,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 						      timestamp_rx,
 						      rx_eNB,
 						      spp_eth,
-						      dev->eth_dev.openair0_cfg.rx_num_channels,
+						      dev->eth_dev.openair0_cfg->rx_num_channels,
 						      0))<0) {
 	 perror("RRH eNB : ETHERNET write");
        }    
@@ -667,13 +579,12 @@ void *rrh_eNB_tx_thread(void *arg) {
   
   time_req_1us.tv_sec = 1;
   time_req_1us.tv_nsec = 0;
-  spp_eth = dev->eth_dev.openair0_cfg.samples_per_packet;
-  spp_rf =  dev->devs->openair0_cfg.samples_per_packet;
-  samples_per_frame = dev->eth_dev.openair0_cfg.samples_per_frame;
+  spp_eth = dev->eth_dev.openair0_cfg->samples_per_packet;
+  spp_rf =  dev->devs->openair0_cfg->samples_per_packet;
+  samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   samples_per_subframe = (unsigned int)samples_per_frame/10;
   tx_pos=0;
-  //tx_pos_rf=spp_rf*dev->devs->openair0_cfg.tx_delay;
-  
+
   loopback = dev->loopback;
   measurements = dev->measurements;
   
@@ -695,7 +606,7 @@ void *rrh_eNB_tx_thread(void *arg) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_PCK, pck_tx );
           
       if (measurements == 1 ) 	clock_gettime(CLOCK_MONOTONIC,&time1); 
-      for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) tx_eNB[i] = (void*)&tx_buffer_eNB[i][tx_pos];	//RF!!!!!		
+      for (i=0; i<dev->eth_dev.openair0_cfg->tx_num_channels; i++) tx_eNB[i] = (void*)&tx_buffer_eNB[i][tx_pos];		
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TXCNT, tx_pos );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
@@ -705,7 +616,7 @@ void *rrh_eNB_tx_thread(void *arg) {
 							&timestamp_tx,
 							tx_eNB,
 							spp_eth,
-							dev->eth_dev.openair0_cfg.tx_num_channels))<0) {
+							dev->eth_dev.openair0_cfg->tx_num_channels))<0) {
 	perror("RRH eNB : ETHERNET read");
       }		
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );	
@@ -718,7 +629,7 @@ void *rrh_eNB_tx_thread(void *arg) {
 					timestamp_tx,
 					tx_eNB,
 					spp_rf,
-					dev->devs->openair0_cfg.tx_num_channels,
+					dev->devs->openair0_cfg->tx_num_channels,
 					1)<0){
 	  perror("RRH eNB : USRP write");
 	}
@@ -770,9 +681,9 @@ void *rrh_eNB_tx_thread(void *arg) {
 }
 
 
-static void calc_rt_period_ns( openair0_config_t openair0_cfg) {
+static void calc_rt_period_ns( openair0_config_t *openair0_cfg) {
 
-  rt_period= (double)(openair0_cfg.samples_per_packet/(openair0_cfg.samples_per_frame/10.0)*1000000);
+  rt_period= (double)(openair0_cfg->samples_per_packet/(openair0_cfg->samples_per_frame/10.0)*1000000);
   AssertFatal(rt_period > 0, "Invalid rt period !%u\n", rt_period);
   LOG_I(RRH,"[eNB] Real time period is set to %u ns\n", rt_period);	
 }
@@ -780,57 +691,57 @@ static void calc_rt_period_ns( openair0_config_t openair0_cfg) {
 
 static void check_dev_config( rrh_module_t *mod_enb) {
     
- AssertFatal( (mod_enb->devs->openair0_cfg.num_rb_dl==100 || mod_enb->devs->openair0_cfg.num_rb_dl==50 || mod_enb->devs->openair0_cfg.num_rb_dl==25 || mod_enb->devs->openair0_cfg.num_rb_dl==6) , "Invalid number of resource blocks! %d\n", mod_enb->devs->openair0_cfg.num_rb_dl);
- AssertFatal( mod_enb->devs->openair0_cfg.samples_per_frame  > 0 ,  "Invalid number of samples per frame! %d\n",mod_enb->devs->openair0_cfg.samples_per_frame); 
- AssertFatal( mod_enb->devs->openair0_cfg.sample_rate        > 0.0, "Invalid sample rate! %f\n", mod_enb->devs->openair0_cfg.sample_rate);
- AssertFatal( mod_enb->devs->openair0_cfg.samples_per_packet > 0 ,  "Invalid number of samples per packet! %d\n",mod_enb->devs->openair0_cfg.samples_per_packet);
- AssertFatal( mod_enb->devs->openair0_cfg.rx_num_channels    > 0 ,  "Invalid number of RX antennas! %d\n", mod_enb->devs->openair0_cfg.rx_num_channels); 
- AssertFatal( mod_enb->devs->openair0_cfg.tx_num_channels    > 0 ,  "Invalid number of TX antennas! %d\n", mod_enb->devs->openair0_cfg.tx_num_channels);
- AssertFatal( mod_enb->devs->openair0_cfg.rx_freq[0]         > 0.0 ,"Invalid RX frequency! %f\n", mod_enb->devs->openair0_cfg.rx_freq[0]); 
- AssertFatal( mod_enb->devs->openair0_cfg.tx_freq[0]         > 0.0 ,"Invalid TX frequency! %f\n", mod_enb->devs->openair0_cfg.tx_freq[0]);
- AssertFatal( mod_enb->devs->openair0_cfg.rx_gain[0]         > 0.0 ,"Invalid RX gain! %f\n", mod_enb->devs->openair0_cfg.rx_gain[0]); 
- AssertFatal( mod_enb->devs->openair0_cfg.tx_gain[0]         > 0.0 ,"Invalid TX gain! %f\n", mod_enb->devs->openair0_cfg.tx_gain[0]);
- AssertFatal( mod_enb->devs->openair0_cfg.rx_bw              > 0.0 ,"Invalid RX bw! %f\n", mod_enb->devs->openair0_cfg.rx_bw); 
- AssertFatal( mod_enb->devs->openair0_cfg.tx_bw              > 0.0 ,"Invalid RX bw! %f\n", mod_enb->devs->openair0_cfg.tx_bw);
- AssertFatal( mod_enb->devs->openair0_cfg.autocal[0]         > 0 ,  "Invalid auto calibration choice! %d\n", mod_enb->devs->openair0_cfg.autocal[0]);
+ AssertFatal( (mod_enb->devs->openair0_cfg->num_rb_dl==100 || mod_enb->devs->openair0_cfg->num_rb_dl==50 || mod_enb->devs->openair0_cfg->num_rb_dl==25 || mod_enb->devs->openair0_cfg->num_rb_dl==6) , "Invalid number of resource blocks! %d\n", mod_enb->devs->openair0_cfg->num_rb_dl);
+ AssertFatal( mod_enb->devs->openair0_cfg->samples_per_frame  > 0 ,  "Invalid number of samples per frame! %d\n",mod_enb->devs->openair0_cfg->samples_per_frame); 
+ AssertFatal( mod_enb->devs->openair0_cfg->sample_rate        > 0.0, "Invalid sample rate! %f\n", mod_enb->devs->openair0_cfg->sample_rate);
+ AssertFatal( mod_enb->devs->openair0_cfg->samples_per_packet > 0 ,  "Invalid number of samples per packet! %d\n",mod_enb->devs->openair0_cfg->samples_per_packet);
+ AssertFatal( mod_enb->devs->openair0_cfg->rx_num_channels    > 0 ,  "Invalid number of RX antennas! %d\n", mod_enb->devs->openair0_cfg->rx_num_channels); 
+ AssertFatal( mod_enb->devs->openair0_cfg->tx_num_channels    > 0 ,  "Invalid number of TX antennas! %d\n", mod_enb->devs->openair0_cfg->tx_num_channels);
+ AssertFatal( mod_enb->devs->openair0_cfg->rx_freq[0]         > 0.0 ,"Invalid RX frequency! %f\n", mod_enb->devs->openair0_cfg->rx_freq[0]); 
+ AssertFatal( mod_enb->devs->openair0_cfg->tx_freq[0]         > 0.0 ,"Invalid TX frequency! %f\n", mod_enb->devs->openair0_cfg->tx_freq[0]);
+ AssertFatal( mod_enb->devs->openair0_cfg->rx_gain[0]         > 0.0 ,"Invalid RX gain! %f\n", mod_enb->devs->openair0_cfg->rx_gain[0]); 
+ AssertFatal( mod_enb->devs->openair0_cfg->tx_gain[0]         > 0.0 ,"Invalid TX gain! %f\n", mod_enb->devs->openair0_cfg->tx_gain[0]);
+ AssertFatal( mod_enb->devs->openair0_cfg->rx_bw              > 0.0 ,"Invalid RX bw! %f\n", mod_enb->devs->openair0_cfg->rx_bw); 
+ AssertFatal( mod_enb->devs->openair0_cfg->tx_bw              > 0.0 ,"Invalid RX bw! %f\n", mod_enb->devs->openair0_cfg->tx_bw);
+ AssertFatal( mod_enb->devs->openair0_cfg->autocal[0]         > 0 ,  "Invalid auto calibration choice! %d\n", mod_enb->devs->openair0_cfg->autocal[0]);
  
  printf("\n---------------------RF device configuration parameters---------------------\n");
  
- printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_delay=%d\n \ttx_forward_nsamps=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
-	mod_enb->devs->openair0_cfg.Mod_id,
-	mod_enb->devs->openair0_cfg.log_level,
-	mod_enb->devs->openair0_cfg.num_rb_dl,
-	mod_enb->devs->openair0_cfg.samples_per_frame,
-	mod_enb->devs->openair0_cfg.sample_rate,
-	mod_enb->devs->openair0_cfg.samples_per_packet,
-	mod_enb->devs->openair0_cfg.tx_delay,
-	mod_enb->devs->openair0_cfg.tx_forward_nsamps,
-	mod_enb->devs->openair0_cfg.rx_num_channels,
-	mod_enb->devs->openair0_cfg.tx_num_channels,
-	mod_enb->devs->openair0_cfg.rx_freq[0],
-	mod_enb->devs->openair0_cfg.tx_freq[0],
-	mod_enb->devs->openair0_cfg.rx_freq[1],
-	mod_enb->devs->openair0_cfg.tx_freq[1],
-	mod_enb->devs->openair0_cfg.rx_freq[2],
-	mod_enb->devs->openair0_cfg.tx_freq[2],
-	mod_enb->devs->openair0_cfg.rx_freq[3],
-	mod_enb->devs->openair0_cfg.tx_freq[3],
-	mod_enb->devs->openair0_cfg.rxg_mode[0],
-	mod_enb->devs->openair0_cfg.rx_gain[0],
-	mod_enb->devs->openair0_cfg.tx_gain[0],
-	mod_enb->devs->openair0_cfg.rx_gain[1],
-	mod_enb->devs->openair0_cfg.tx_gain[1],
-	mod_enb->devs->openair0_cfg.rx_gain[2],
-	mod_enb->devs->openair0_cfg.tx_gain[2],
-	mod_enb->devs->openair0_cfg.rx_gain[3],
-	mod_enb->devs->openair0_cfg.tx_gain[3],
-	//mod_enb->devs->openair0_cfg.rx_gain_offset[0],
-	//mod_enb->devs->openair0_cfg.rx_gain_offset[1],
-	mod_enb->devs->openair0_cfg.rx_gain_offset[2],
-	mod_enb->devs->openair0_cfg.rx_gain_offset[3],
-	mod_enb->devs->openair0_cfg.rx_bw,
-	mod_enb->devs->openair0_cfg.tx_bw,
-	mod_enb->devs->openair0_cfg.autocal[0]  
+ printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_scheduling_advance=%d\n \ttx_sample_advance=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
+	mod_enb->devs->openair0_cfg->Mod_id,
+	mod_enb->devs->openair0_cfg->log_level,
+	mod_enb->devs->openair0_cfg->num_rb_dl,
+	mod_enb->devs->openair0_cfg->samples_per_frame,
+	mod_enb->devs->openair0_cfg->sample_rate,
+	mod_enb->devs->openair0_cfg->samples_per_packet,
+	mod_enb->devs->openair0_cfg->tx_scheduling_advance,
+	mod_enb->devs->openair0_cfg->tx_sample_advance,
+	mod_enb->devs->openair0_cfg->rx_num_channels,
+	mod_enb->devs->openair0_cfg->tx_num_channels,
+	mod_enb->devs->openair0_cfg->rx_freq[0],
+	mod_enb->devs->openair0_cfg->tx_freq[0],
+	mod_enb->devs->openair0_cfg->rx_freq[1],
+	mod_enb->devs->openair0_cfg->tx_freq[1],
+	mod_enb->devs->openair0_cfg->rx_freq[2],
+	mod_enb->devs->openair0_cfg->tx_freq[2],
+	mod_enb->devs->openair0_cfg->rx_freq[3],
+	mod_enb->devs->openair0_cfg->tx_freq[3],
+	mod_enb->devs->openair0_cfg->rxg_mode[0],
+	mod_enb->devs->openair0_cfg->tx_gain[0],
+	mod_enb->devs->openair0_cfg->tx_gain[0],
+	mod_enb->devs->openair0_cfg->rx_gain[1],
+	mod_enb->devs->openair0_cfg->tx_gain[1],
+	mod_enb->devs->openair0_cfg->rx_gain[2],
+	mod_enb->devs->openair0_cfg->tx_gain[2],
+	mod_enb->devs->openair0_cfg->rx_gain[3],
+	mod_enb->devs->openair0_cfg->tx_gain[3],
+	//mod_enb->devs->openair0_cfg->rx_gain_offset[0],
+	//mod_enb->devs->openair0_cfg->rx_gain_offset[1],
+	mod_enb->devs->openair0_cfg->rx_gain_offset[2],
+	mod_enb->devs->openair0_cfg->rx_gain_offset[3],
+	mod_enb->devs->openair0_cfg->rx_bw,
+	mod_enb->devs->openair0_cfg->tx_bw,
+	mod_enb->devs->openair0_cfg->autocal[0]  
 	);
  
  printf("----------------------------------------------------------------------------\n");

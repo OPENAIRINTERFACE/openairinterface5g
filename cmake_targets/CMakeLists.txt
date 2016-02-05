@@ -749,56 +749,6 @@ include_directories("${OPENAIR_DIR}")
 
 # Utilities Library
 ################
-if (ENB_AGENT)
-  # set the version of protobuf messages, V3 not supported yet
-  add_list1_option(PRPT_VERSION V2 "PRPT MSG  protobuf  grammar version" V2 V3)
-  
-  if (${PRPT_VERSION} STREQUAL "V2")
-    set (PRPTDIR V2)
-  elseif (${PRPT_VERSION} STREQUAL "V3")
-    set (PRPTDIR V3)
-  endif(${PRPT_VERSION} STREQUAL "V2")
-  
-  set(PRPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${PRPTDIR} )
-  set(PRPT_MSG_FILES
-    ${PRPT_MSG_DIR}/header.proto
-    ${PRPT_MSG_DIR}/progran.proto
-    ${PRPT_MSG_DIR}/stats_common.proto
-    ${PRPT_MSG_DIR}/stats_messages.proto
-    )
-
-  set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
-  message("calling ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES}")
-  execute_process(COMMAND ${protoc_call} ${PRPT_C_DIR} ${PRPT_MSG_FILES})
-  file(GLOB PRPT_source ${PRPT_C_DIR}/*.c)
-  set(PRPT_OAI_generated
-    ${PRPT_C_DIR}/header.pb-c.c
-    ${PRPT_C_DIR}/progran.pb-c.c
-    ${PRPT_C_DIR}/stats_common.pb-c.c
-    ${PRPT_C_DIR}/stats_messages.pb-c.c
-    )
-  
-  file(GLOB prpt_h ${PRPT_C_DIR}/*.h)
-  set(prpt_h ${prpt_h} )
-  
-  add_library(PRPT_MSG
-    ${PRPT_OAI_generated}
-    ${PRPT_source}
-    )
-
-  include_directories ("${PRPT_C_DIR}")
-
-  add_library(ASYNC_IF
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
-    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
-    )
-  set(ASYNC_IF_LIB ASYNC_IF)
-  include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
-
-endif()
-
-
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/collection/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/collection/hashtable/obj_hashtable.c
@@ -955,6 +905,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_init.c
   ${OPENAIR1_DIR}/PHY/INIT/lte_parms.c
+  ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
@@ -1706,7 +1657,7 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${ASYNC_IF_LIB}
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})

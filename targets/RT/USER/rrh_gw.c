@@ -194,7 +194,10 @@ static rrh_module_t new_module (unsigned int id) {
   rrh_mod.eth_dev.type=NONE_DEV;
   rrh_mod.eth_dev.transp_type=NONE_TP;
   /* ethernet device is functioning within RRH */
-  rrh_mod.eth_dev.host_type=RRH_HOST; 
+  rrh_mod.eth_dev.host_type=RRH_HOST;
+  /* */
+  rrh_mod.eth_dev.openair0_cfg = (openair0_config_t*)malloc(sizeof(openair0_config_t));
+  memset(rrh_mod.eth_dev.openair0_cfg,0,sizeof(openair0_config_t));
   /* get IP and MAC address */
   get_address(if_name,eth_mode);
 
@@ -219,11 +222,11 @@ static rrh_module_t new_module (unsigned int id) {
   /* allocate space and specify associated RF device */
   openair0_device *oai_dv = (openair0_device *)malloc(sizeof(openair0_device));
   memset(oai_dv,0,sizeof(openair0_device));
+
   rrh_mod.devs=oai_dv;   
   rrh_mod.devs->type=NONE_DEV;
   rrh_mod.devs->transp_type=NONE_TP;
   rrh_mod.devs->host_type=RRH_HOST; 
-
 
   return rrh_mod;
 }

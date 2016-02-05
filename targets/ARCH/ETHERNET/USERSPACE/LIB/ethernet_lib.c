@@ -72,7 +72,7 @@ int trx_eth_start(openair0_device *device) {
       if(eth_get_dev_conf_raw(device)!=0)  return -1;
     }
     /* adjust MTU wrt number of samples per packet */
-    if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg.samples_per_packet))!=0)  return -1;
+    if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
   } else {
     if (eth_socket_init_udp(device)!=0)   return -1; 
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -82,7 +82,7 @@ int trx_eth_start(openair0_device *device) {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
     }
     /* adjust MTU wrt number of samples per packet */
-    if(ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg.samples_per_packet))!=0)  return -1;
+    if(ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
   }
     
   return 0;
@@ -93,7 +93,7 @@ void trx_eth_end(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
-  /*destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
+  /* destroys socket only for the processes that call the eth_end fuction-- shutdown() for beaking the pipe */
   if ( close(eth->sockfd[Mod_id]) <0 ) {
     perror("ETHERNET: Failed to close socket");
     exit(0);
@@ -177,7 +177,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   if (1==0) {
     /***************** get working interface name ***************************/
     /* convert ascii ip address from config file to network binary format */
-    inet_aton(device->openair0_cfg.my_addr, &ia); 
+    inet_aton(device->openair0_cfg->my_addr, &ia); 
       /* look for the interface used, we have its ip address get info on all our network interfaces*/ 
       ids = if_nameindex(); 
       /* loop on these network interfaces */
@@ -201,7 +201,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
       } 
       if_freenameindex(ids); 
       if( if_name == NULL) { 
-	printf("Unable to find interface name for %s\n",device->openair0_cfg.my_addr); 
+	printf("Unable to find interface name for %s\n",device->openair0_cfg->my_addr); 
 	return -1; 
       } 
       eth->if_name[Mod_id]=if_name; 
@@ -339,12 +339,9 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
 
   eth_state_t *eth = (eth_state_t*)malloc(sizeof(eth_state_t));
   memset(eth, 0, sizeof(eth_state_t));
-  int card = 0;
 
-  /*hardcoded!!!!*/
   eth->flags = ETH_RAW_MODE;
-  eth->buffer_size = (unsigned int)openair0_cfg[card].samples_per_packet*sizeof(int32_t); 
-  
+
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
   device->Mod_id           = num_devices_eth++;
   device->transp_type      = ETHERNET_TP;
@@ -370,7 +367,7 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
   device->priv = eth; 	
   openair0_cfg->iq_txshift = 5;
   openair0_cfg->iq_rxrescale = 15;
-  memcpy((void*)&device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
+  memcpy((void*)device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
  
   return 0;
 }
@@ -407,14 +404,14 @@ void dump_dev(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
   
-  printf("Ethernet device interface %i configuration:\n" ,device->openair0_cfg.Mod_id);
-  printf("       Log level is %i :\n" ,device->openair0_cfg.log_level);	
+  printf("Ethernet device interface %i configuration:\n" ,device->openair0_cfg->Mod_id);
+  printf("       Log level is %i :\n" ,device->openair0_cfg->log_level);	
   printf("       RB number: %i, sample rate: %lf \n" ,
-        device->openair0_cfg.num_rb_dl, device->openair0_cfg.sample_rate);
-  printf("       Delay: %i, Forward samples: %u \n" ,
-        device->openair0_cfg.tx_delay, device->openair0_cfg.tx_forward_nsamps);		
+        device->openair0_cfg->num_rb_dl, device->openair0_cfg->sample_rate);
+  printf("       Scheduling_advance: %i, Sample_advance: %u \n" ,
+        device->openair0_cfg->tx_scheduling_advance, device->openair0_cfg->tx_sample_advance);		
   printf("       BBU configured for %i tx/%i rx channels)\n",
-	device->openair0_cfg.tx_num_channels,device->openair0_cfg.rx_num_channels);
+	device->openair0_cfg->tx_num_channels,device->openair0_cfg->rx_num_channels);
    printf("       Running flags: %s %s %s\n",      
 	((eth->flags & ETH_RAW_MODE)  ? "RAW socket mode - ":""),
 	((eth->flags & ETH_UDP_MODE)  ? "UDP socket mode - ":""),
@@ -425,14 +422,14 @@ void dump_dev(openair0_device *device) {
 
 void inline dump_txcounters(openair0_device *device) {
   eth_state_t *eth = (eth_state_t*)device->priv;  
-  printf("   Ethernet device interface %i, tx counters:\n" ,device->openair0_cfg.Mod_id);
+  printf("   Ethernet device interface %i, tx counters:\n" ,device->openair0_cfg->Mod_id);
   printf("   Sent packets: %llu send errors: %i\n",   eth->tx_count, eth->num_tx_errors);	 
 }
 
 void inline dump_rxcounters(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
-  printf("   Ethernet device interface %i rx counters:\n" ,device->openair0_cfg.Mod_id);
+  printf("   Ethernet device interface %i rx counters:\n" ,device->openair0_cfg->Mod_id);
   printf("   Received packets: %llu missed packets errors: %i\n", eth->rx_count, eth->num_underflows);	 
 }  
 

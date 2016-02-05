@@ -72,17 +72,17 @@ int eth_socket_init_raw(openair0_device *device) {
   int sock_proto=0;  
  
   if (device->host_type == RRH_HOST ) {  /* RRH doesn't know remote MAC(will be retrieved from first packet send from BBU) and remote port(don't care) */
-    local_mac = device->openair0_cfg.my_addr; 
-    local_port = device->openair0_cfg.my_port;    
+    local_mac = device->openair0_cfg->my_addr; 
+    local_port = device->openair0_cfg->my_port;    
     remote_mac = malloc(ETH_ALEN);
     memset(remote_mac,0,ETH_ALEN);
     remote_port = 0;    
     printf("[%s] local MAC addr %s remote MAC addr %s\n","RRH", local_mac,remote_mac);    
   } else {
-    local_mac = device->openair0_cfg.my_addr;
-    local_port = device->openair0_cfg.my_port;  
-    remote_mac = device->openair0_cfg.remote_addr;
-    remote_port = device->openair0_cfg.remote_port;  
+    local_mac = device->openair0_cfg->my_addr;
+    local_port = device->openair0_cfg->my_port;  
+    remote_mac = device->openair0_cfg->remote_addr;
+    remote_port = device->openair0_cfg->remote_port;  
     printf("[%s] local MAC addr %s remote MAC addr %s\n","BBU", local_mac,remote_mac);    
   }
    
@@ -109,7 +109,7 @@ int eth_socket_init_raw(openair0_device *device) {
   local_addr[Mod_id].sll_family   = AF_PACKET;
   local_addr[Mod_id].sll_ifindex  = if_index[Mod_id].ifr_ifindex;
   /* hear traffic from specific protocol*/
-  local_addr[Mod_id].sll_protocol = htons((short)device->openair0_cfg.my_port);
+  local_addr[Mod_id].sll_protocol = htons((short)device->openair0_cfg->my_port);
   local_addr[Mod_id].sll_halen    = ETH_ALEN;
   local_addr[Mod_id].sll_pkttype  = PACKET_OTHERHOST;
   addr_len[Mod_id] = sizeof(struct sockaddr_ll);
@@ -122,7 +122,7 @@ int eth_socket_init_raw(openair0_device *device) {
  /* Construct the Ethernet header */ 
  ether_aton_r(local_mac, (struct ether_addr *)(&(eh.ether_shost)));
  ether_aton_r(remote_mac, (struct ether_addr *)(&(eh.ether_dhost)));
- eh.ether_type = htons((short)device->openair0_cfg.my_port);
+ eh.ether_type = htons((short)device->openair0_cfg->my_port);
 
  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eh.ether_shost[0],eh.ether_shost[1],eh.ether_shost[2],eh.ether_shost[3],eh.ether_shost[4],eh.ether_shost[5]);
  
