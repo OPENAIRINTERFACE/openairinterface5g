@@ -49,7 +49,7 @@ LOWLATENCY_FLAG_USER="False"
 FORCE_LOWLATENCY_FLAG_USER=""
 REL="Rel10"
 HW="EXMIMO"
-TP="NO_VALUE"
+TP="None"
 NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
@@ -178,20 +178,28 @@ function main() {
             shift 2;;
        -w | --hardware)
             HW="$2" #"${i#*=}"
-            # Use OAI_USRP  as the key word USRP is used inside UHD driver
-            if [ "$HW" == "USRP" ] ; then 
-		HW="OAI_USRP"
-	    fi 
-            if [ "$HW" == "BLADERF" ] ; then 
-		HW="OAI_BLADERF"
-	    fi 
-            echo_info "Setting hardware to: $HW"
+            # Use OAI_USRP  as the key word USRP is used inside UHD driver           
+	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
+		echo_fatal "Unknown HW type $HW will exit..."		
+	    else
+		if [ "$HW" == "USRP" ] ; then 
+		    HW="OAI_USRP"
+		fi 
+		if [ "$HW" == "BLADERF" ] ; then 
+		    HW="OAI_BLADERF"
+		fi
+		echo_info "Setting hardware to: $HW"
+	    fi
             shift 2;;
 	-t | --transport_protocol)
             TP="$2" #"${i#*=}"
-            echo_info "Setting transport protocol to: $TP"
+	    if [ "$TP" != "ETHERNET" -a "$TP" != "None" ] ; then 
+		echo_fatal "Unknown TP type $TP will exit..."		
+	    else
+		echo_info "Setting transport protocol to: $TP"		
+	    fi
             shift 2;;
-       --oaisim)
+	--oaisim)
             oaisim=1
             echo_info "Will compile oaisim and drivers nasmesh, ..."
             shift;;
@@ -257,31 +265,32 @@ function main() {
    esac
   done
   
-  ############################################
+  #########################################################
   # check validity of HW and TP parameters for RRH and eNB
-  #############################################
+  #########################################################
   # to be discussed
+  
   if [ "$eNB" = "1" ] ; then
-      if [ "$HW" = "NO_VALUE" -a  "$TP" = "NO_VALUE" ] ; then
-	  echo_fatal "A hardware target or a transport protocol must be defined!!"
+      if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
+	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
-      if [ "$HW" != "NO_VALUE" -a  "$TP" != "NO_VALUE" ] ; then
-	  echo_fatal "Currentlt lte-softmodem can not support simultaniously local and remote RF heads!!"
+      if [ "$HW" != "None" -a  "$TP" != "None" ] ; then
+	  echo_fatal "Currently eNB  can not support simultaniously local and remote radio heads!!"
       fi      
-      if [ "$HW" = "NO_VALUE" ] ; then 
-	  echo_info "No RF device has been selected: (HW=$HW)"	
+      if [ "$HW" = "None" ] ; then 
+	  echo_info "No radio head has been selected (HW set to $HW)"	
       fi
-      if [ "$TP" = "NO_VALUE" ] ; then
-	  echo_info "No transport protocol has been selected: (TP=$TP)"	
+      if [ "$TP" = "None" ] ; then
+	  echo_info "No transport protocol has been selected (TP set to $TP)"	
       fi
   fi
   
   if [ "$RRH" = "1" ] ; then
-      if [ "$TP" = "NO_VALUE" ] ; then
-	  echo_fatal "A transport protocol must be defined!!"
+      if [ "$TP" = "None" ] ; then
+	  echo_fatal "A transport protocol (e.g. -t ETHERNET) must be defined!"
       fi
-      if [ "$HW" = "NO_VALUE" ] ; then
-	  echo_info "No RF device has been selected: (HW=$HW)"	
+      if [ "$HW" = "None" ] ; then
+	  echo_info "No radio head has been selected (HW set to $HW)"	
       fi
   fi
 
@@ -360,11 +369,11 @@ function main() {
   fi
 
   if [ "$oaisim" = "1" ] ; then
-  #to be discussed
-  # there is no RF device and no transport protocol 
-     HW="NO_VALUE" 
-     TP="NO_VALUE"
-  
+      #to be discussed
+      # there is no RF device and no transport protocol 
+      HW="None" 
+      TP="None"
+      
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
       fi 
@@ -642,33 +651,36 @@ function main() {
       fi
 
       # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
-      if [ "$HW" != "NO_VALUE" ] ; then
+      if [ "$HW" != "None" ] ; then
 	  rm -f liboai_device.so
 	  rm -f $dbin/liboai_device.so
-	  if [ -d "/usr/include/uhd" ] ; then
-	      compilations \
-		  $build_dir oai_usrpdevif \
-		  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
-	  fi
-	  if [ -f "/usr/include/libbladeRF.h" ] ; then
-	      compilations \
-		  $build_dir oai_bladerfdevif \
-		  liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
-	  fi
-
-	  #add exmimo compilation
 
 
 	  # link liboai_device.so with the selected RF device library
 	  if [ "$HW" == "EXMIMO" ] ; then
-	      ln -s liboai_exmimodevif.so liboai_device.so
-	      ln -s $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
+	      
+	      #add exmimo compilation
+	      
+	      ln -s openair_rf.ko liboai_device.so
+	      ln -s $dbin/openair_rf.ko $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
+	      if [ -d "/usr/include/uhd" ] ; then
+		  compilations \
+		      $build_dir oai_usrpdevif \
+		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
+	      fi
+
 	      ln -s liboai_usrpdevif.so liboai_device.so
 	      ln -s $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to USRP device library"        
 	  elif [ "$HW" == "OAI_BLADERF" ] ; then
+	      if [ -f "/usr/include/libbladeRF.h" ] ; then
+		  compilations \
+		      $build_dir oai_bladerfdevif \
+		      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
+	      fi
+
 	      ln -s liboai_bladerfdevif.so liboai_device.so
 	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
@@ -678,14 +690,14 @@ function main() {
       fi
       
       # build trasport protocol libraries (currently only ETHERNET is available)
-      if [ "$TP" != "NO_VALUE" ] ; then
+      if [ "$TP" != "None" ] ; then
 	  rm -f liboai_transpro.so
 	  rm -f $dbin/liboai_transpro.so
 
-	  compilations \
-              $build_dir oai_eth_transpro \
-              liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
 	  if [ "$TP" == "ETHERNET" ] ; then
+	      compilations \
+		  $build_dir oai_eth_transpro \
+		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
 	      ln -s liboai_eth_transpro.so liboai_transpro.so
 	      ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
 	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 

@@ -412,9 +412,9 @@ add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4
 add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
-add_list2_option(RF_BOARD "NO_VALUE" "RF head type" "False" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "NO_VALUE")# make cleanup false rf_head_type cprigw???
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW")
 
-add_list2_option(TRANSP_PRO "NO_VALUE" "ETHERNET" "NO_VALUE")
+add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 
 
 # include RF devices / transport protocols library modules
