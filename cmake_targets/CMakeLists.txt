@@ -1512,12 +1512,12 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} 
   -Wl,--end-group )
 
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB})
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
@@ -1545,11 +1545,11 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB} ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} 
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${XFORMS_LIBRARIES} )
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB})
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 
 

@@ -60,9 +60,9 @@
 #include "pdcp.h"
 
 //Agent-related headers
-#include "ENB_APP/enb_agent_extern.h"
-#include "ENB_APP/enb_agent_mac.h"
-#include "LAYER2/MAC/enb_agent_mac_proto.h"
+#include "enb_agent_extern.h"
+#include "enb_agent_mac.h"
+#include "enb_agent_mac_proto.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"

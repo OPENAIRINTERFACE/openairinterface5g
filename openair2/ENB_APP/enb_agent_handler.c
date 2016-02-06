@@ -41,7 +41,7 @@
 
 #include "assertions.h"
 
-enb_agent_message_decoded_callback messages_callback[][3] = {
+enb_agent_message_decoded_callback agent_messages_callback[][3] = {
   {enb_agent_hello, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG*/
   {enb_agent_echo_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ECHO_REPLY_MSG*/ //Must add handler when receiving echo reply
@@ -85,19 +85,19 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
     goto error; 
   }
   
-  if ((decoded_message->msg_case > sizeof(messages_callback) / (3*sizeof(enb_agent_message_decoded_callback))) || 
+  if ((decoded_message->msg_case > sizeof(agent_messages_callback) / (3*sizeof(enb_agent_message_decoded_callback))) || 
       (decoded_message->msg_dir > PROTOCOL__PROGRAN_DIRECTION__UNSUCCESSFUL_OUTCOME)){
     err_code= PROTOCOL__PROGRAN_ERR__MSG_NOT_HANDLED;
       goto error;
   }
     
-  if (messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1] == NULL) {
+  if (agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1] == NULL) {
     err_code= PROTOCOL__PROGRAN_ERR__MSG_NOT_SUPPORTED;
     goto error;
 
   }
 
-  err_code = ((*messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
+  err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
   }
@@ -147,7 +147,7 @@ Protocol__ProgranMessage *enb_agent_handle_timed_task(void *args) {
 
   Protocol__ProgranMessage *timed_task, *reply_message;
   timed_task = timer_args->msg;
-   err_code = ((*messages_callback[timed_task->msg_case-1][timed_task->msg_dir-1])(timer_args->mod_id, (void *) timed_task, &reply_message));
+   err_code = ((*agent_messages_callback[timed_task->msg_case-1][timed_task->msg_dir-1])(timer_args->mod_id, (void *) timed_task, &reply_message));
   if ( err_code < 0 ){
     goto error;
   }
