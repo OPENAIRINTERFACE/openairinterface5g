@@ -1,0 +1,17 @@
+#!/bin/bash
+
+echo "This script stops exmimo2 as it might be transmitting signal by itself if lte-softmodem terminates incorrectly"
+
+if [ "$OPENAIR_DIR" == "" ]; then
+  echo "Is the OPENAIR_DIR path set correctly? Exiting now"
+  exit
+fi
+sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches'
+
+#load the module
+sudo -E $OPENAIR_DIR/cmake_targets/tools/init_exmimo2
+
+#now we stop the card from transmitting anything
+cd $OPENAIR_DIR/targets/bin
+sudo -E octave $OPENAIR_DIR/cmake_targets/tools/exmimo_stop_octave.m
+

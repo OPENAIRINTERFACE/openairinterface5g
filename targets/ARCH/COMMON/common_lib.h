@@ -193,7 +193,7 @@ struct openair0_device_t {
   func_type_t func_type;
 
   /* RF frontend parameters set by application */
-  openair0_config_t openair0_cfg;
+  openair0_config_t *openair0_cfg;
 
   /* Can be used by driver to hold internal structure*/
   void *priv;

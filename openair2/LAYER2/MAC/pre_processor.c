@@ -176,6 +176,7 @@ void assign_rbs_required (module_id_t Mod_id,
       eNB_UE_stats[CC_id]->DL_cqi[0], MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
+
       eNB_UE_stats[CC_id]->dlsch_mcs1 = cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
 
     }
@@ -729,38 +730,123 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
   }
 }
 
+#define SF05_LIMIT 1
 
 void dlsch_scheduler_pre_processor_reset (int module_idP,
-    int UE_id,
-    uint8_t  CC_id,
-    int frameP,
-    int subframeP,					  
-    int N_RBG,
-    uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    uint16_t nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
-    unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
-    unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
+					  int UE_id,
+					  uint8_t  CC_id,
+					  int frameP,
+					  int subframeP,					  
+					  int N_RBG,
+					  uint16_t nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					  uint16_t nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+					  unsigned char rballoc_sub[MAX_NUM_CCs][N_RBG_MAX],
+					  unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX])
+  
 {
-  int i;
+  int i,j;
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
-
+  uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
+  int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
+#ifdef SF05_LIMIT
+  int subframe05_limit=0;
+  int sf05_upper=-1,sf05_lower=-1;
+#endif
+  LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
   // initialize harq_pid and round
   mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,
 				    frameP,subframeP,
 				    &ue_sched_ctl->harq_pid[CC_id],
 				    &ue_sched_ctl->round[CC_id],
 				    0);
+  if (ue_sched_ctl->ta_timer == 0) {
 
+    // WE SHOULD PROTECT the eNB_UE_stats with a mutex here ...
+
+    ue_sched_ctl->ta_timer = 20;  // wait 20 subframes before taking TA measurement from PHY
+    switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+    case 6:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update;
+      break;
+      
+    case 15:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/2;
+      break;
+      
+    case 25:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/4;
+      break;
+      
+    case 50:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/8;
+      break;
+      
+    case 75:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/12;
+      break;
+      
+    case 100:
+      ue_sched_ctl->ta_update = eNB_UE_stats->timing_advance_update/16;
+      break;
+    }
+    // clear the update in case PHY does not have a new measurement after timer expiry
+    eNB_UE_stats->timing_advance_update =  0;
+  }
+  else {
+    ue_sched_ctl->ta_timer--;
+    ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
+  }
   nb_rbs_required[CC_id][UE_id]=0;
   ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
   nb_rbs_required_remaining[CC_id][UE_id] = 0;
 
+#ifdef SF05_LIMIT  
+  switch (N_RBG) {
+  case 6:
+    sf05_lower=0;
+    sf05_upper=5;
+    break;
+  case 8:
+    sf05_lower=2;
+    sf05_upper=5;
+    break;
+  case 13:
+    sf05_lower=4;
+    sf05_upper=7;
+    break;
+  case 17:
+    sf05_lower=7;
+    sf05_upper=9;
+    break;
+  case 25:
+    sf05_lower=11;
+    sf05_upper=13;
+    break;
+  }
+#endif
+  // Initialize Subbands according to VRB map
   for (i=0; i<N_RBG; i++) {
     ue_sched_ctl->rballoc_sub_UE[CC_id][i] = 0;
     rballoc_sub[CC_id][i] = 0;
+#ifdef SF05_LIMIT
+    // for avoiding 6+ PRBs around DC in subframe 0-5 (avoid excessive errors)
+
+    if ((subframeP==0 || subframeP==5) && 
+	(i>=sf05_lower && i<=sf05_upper))
+      rballoc_sub[CC_id][i]=1;
+#endif
+    // for SI-RNTI,RA-RNTI and P-RNTI allocations
+    for (j=0;j<RBGsize;j++) {
+      if (vrb_map[j+(i*RBGsize)]!=0)  {
+	rballoc_sub[CC_id][i] = 1;
+	LOG_D(MAC,"Frame %d, subframe %d : vrb %d allocated\n",frameP,subframeP,j+(i*RBGsize));
+	break;
+      }
+    }
+    LOG_D(MAC,"Frame %d Subframe %d CC_id %d RBG %i : rb_alloc %d\n",frameP,subframeP,CC_id,i,rballoc_sub[CC_id][i]);
     MIMO_mode_indicator[CC_id][i] = 2;
   }
 }
@@ -828,8 +914,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
                                    int frameP,
                                    sub_frame_t subframeP,
                                    uint16_t *first_rb,
-                                   uint8_t aggregation,
-                                   uint32_t *nCCE)
+                                   uint8_t aggregation)
 {
 
   int16_t            i;
@@ -839,7 +924,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   int16_t            total_remaining_rbs[MAX_NUM_CCs];
   uint16_t           max_num_ue_to_be_scheduled=0,total_ue_count=0;
   rnti_t             rnti= -1;
-  uint32_t            nCCE_to_be_used[MAX_NUM_CCs];
   UE_list_t          *UE_list = &eNB_mac_inst[module_idP].UE_list;
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
@@ -860,7 +944,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   // we need to distribute RBs among UEs
   // step1:  reset the vars
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    nCCE_to_be_used[CC_id]= nCCE[CC_id];
     total_allocated_rbs[CC_id]=0;
     total_remaining_rbs[CC_id]=0;
     average_rbs_per_user[CC_id]=0;
@@ -894,11 +977,13 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       if (UE_template->pre_allocated_nb_rb_ul > 0) {
         total_ue_count+=1;
       }
-
-      if((mac_xface->get_nCCE_max(module_idP,CC_id) - nCCE_to_be_used[CC_id])  > (1<<aggregation)) {
+      /*
+      if((mac_xface->get_nCCE_max(module_idP,CC_id,3,subframeP) - nCCE_to_be_used[CC_id])  > (1<<aggregation)) {
         nCCE_to_be_used[CC_id] = nCCE_to_be_used[CC_id] + (1<<aggregation);
         max_num_ue_to_be_scheduled+=1;
-      }
+	}*/
+
+      max_num_ue_to_be_scheduled+=1;
 
       if (total_ue_count == 0) {
         average_rbs_per_user[CC_id] = 0;
