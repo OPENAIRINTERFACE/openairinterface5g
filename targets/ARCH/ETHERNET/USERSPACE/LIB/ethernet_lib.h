@@ -53,33 +53,18 @@
 #define DEFAULT_IF   "lo"
 
 #define ETH_RAW_MODE        1
-#define ETH_UDP_MODE        (1<<1)
-#define ETH_LOOP_MODE       (1<<2)
+#define ETH_UDP_MODE        0
 
 #define TX_FLAG	        1
 #define RX_FLAG 	0
 
-
+#define MAX_PACKET_SEQ_NUM(spp,spf) (spf/spp)
 #define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))
 #define APP_HEADER_SIZE_BYTES (sizeof(int32_t) + sizeof(openair0_timestamp))
 #define PAYLOAD_SIZE_BYTES(nsamps) (nsamps<<2)
 #define UDP_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
 #define RAW_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
-/*
-#define RRH_DEST_MAC0	0x74
-#define RRH_DEST_MAC1	0xd4
-#define RRH_DEST_MAC2	0x35
-#define RRH_DEST_MAC3	0xcc
-#define RRH_DEST_MAC4	0x88
-#define RRH_DEST_MAC5	0x45
 
-#define BBU_DEST_MAC0	0xd4
-#define BBU_DEST_MAC1	0xbe
-#define BBU_DEST_MAC2	0xd9
-#define BBU_DEST_MAC3	0x22
-#define BBU_DEST_MAC4	0x0a
-#define BBU_DEST_MAC5	0xac
-*/
 
 /*!\brief opaque ethernet data structure */
 typedef struct {
@@ -142,12 +127,12 @@ typedef struct {
 
 /*!\brief packet header */
 typedef struct {
+  /*!\brief packet sequence number max value=packets per frame*/
+  uint16_t seq_num ;
+  /*!\brief antenna port used to resynchronize */
+  uint16_t antenna_id;
   /*!\brief packet's timestamp */ 
   openair0_timestamp timestamp;
-  /*!\brief variable declared for alignment purposes (sample size=32 bit)  */
-  int16_t not_used;
-  /*!\brief antenna port used to resynchronize */
-  int16_t antenna_id;
 } header_t;
 
 /*!\brief different options for ethernet tuning in socket and driver level */

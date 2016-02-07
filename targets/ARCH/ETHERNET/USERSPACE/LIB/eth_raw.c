@@ -52,7 +52,7 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 struct sockaddr_ll dest_addr[MAX_INST];
 struct sockaddr_ll local_addr[MAX_INST];
@@ -275,7 +275,7 @@ int eth_set_dev_conf_raw(openair0_device *device) {
 
   
   memcpy(msg,(void*)&eh,MAC_HEADER_SIZE_BYTES);	
-  memcpy((msg+MAC_HEADER_SIZE_BYTES),(void*)&device->openair0_cfg,sizeof(openair0_config_t));
+  memcpy((msg+MAC_HEADER_SIZE_BYTES),(void*)device->openair0_cfg,sizeof(openair0_config_t));
  	  
   if (send(eth->sockfd[Mod_id],
 	     msg,
@@ -311,7 +311,8 @@ int eth_get_dev_conf_raw(openair0_device *device) {
   
   /* RRH stores the remote MAC address */
   memcpy(eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
-  memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
+  //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
+  device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
   printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eh.ether_shost[0],eh.ether_shost[1],eh.ether_shost[2],eh.ether_shost[3],eh.ether_shost[4],eh.ether_shost[5],eh.ether_dhost[0],eh.ether_dhost[1],eh.ether_dhost[2],eh.ether_dhost[3],eh.ether_dhost[4],eh.ether_dhost[5]);
  	  
   return 0;

@@ -48,6 +48,7 @@
 #include <netinet/ether.h>
 #include <unistd.h>
 #include <errno.h>
+#include "vcd_signal_dumper.h"
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
@@ -57,6 +58,10 @@ struct sockaddr_in dest_addr[MAX_INST];
 struct sockaddr_in local_addr[MAX_INST];
 int addr_len[MAX_INST];
 
+
+uint16_t pck_seq_num = 1;
+uint16_t pck_seq_num_cur=0;
+uint16_t pck_seq_num_prev=0;
 
  int eth_socket_init_udp(openair0_device *device) {
 
@@ -122,9 +127,6 @@ int addr_len[MAX_INST];
     exit(0);
   }
   
-  /* apply additional configuration */
-  //ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet));
-  
   /* want to receive -> so bind */   
     if (bind(eth->sockfd[Mod_id],(struct sockaddr *)&local_addr[Mod_id],addr_len[Mod_id])<0) {
       perror("ETHERNET: Cannot bind to socket");
@@ -133,8 +135,6 @@ int addr_len[MAX_INST];
       printf("[%s] binding mod_%d to %s:%d\n","RRH",Mod_id,str_local,ntohs(local_addr[Mod_id].sin_port));
     }
  
-    printf("ssssssssssssssss\n");
-
   return 0;
 }
 
@@ -159,10 +159,15 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
     
     bytes_sent = 0;
     
-    *(int16_t *)(buff2 + sizeof(int16_t))=1+(i<<1);
+    /* constract application header */
+    // eth->pck_header.seq_num = pck_seq_num;
+    //eth->pck_header.antenna_id = 1+(i<<1);
+    //eth->pck_header.timestamp = timestamp;
+    *(uint16_t *)buff2 = pck_seq_num;
+    *(uint16_t *)(buff2 + sizeof(uint16_t)) = 1+(i<<1);
     *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = timestamp;
-    
-  
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TX_SEQ_NUM, pck_seq_num);
+
     while(bytes_sent < UDP_PACKET_SIZE_BYTES(nsamps)) {
 #if DEBUG   
       printf("------- TX ------: buff2 current position=%d remaining_bytes=%d  bytes_sent=%d \n",
@@ -193,6 +198,8 @@ int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, voi
 #endif
     eth->tx_actual_nsamps=bytes_sent>>2;
     eth->tx_count++;
+    pck_seq_num++;
+    if ( pck_seq_num > MAX_PACKET_SEQ_NUM(nsamps,76800) )  pck_seq_num = 1;
       }
     }              
       /* tx buffer values restored */  
@@ -278,19 +285,28 @@ int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, voi
 		  bytes_received);
 	   dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, UDP_PACKET_SIZE_BYTES(nsamps),RX_FLAG);	  
 #endif  
-	   /* store the timestamp value from packet's header */
-	   if (prev_timestamp == -1) {
-	     prev_timestamp = *(openair0_timestamp *)(buff2 + sizeof(int32_t));
-	   } else {
-	     prev_timestamp =timestamp;
-	   }
+	   
 	   /* store the timestamp value from packet's header */
 	   *timestamp =  *(openair0_timestamp *)(buff2 + sizeof(int32_t));
-	   eth->rx_actual_nsamps=bytes_received>>2;
-	   eth->rx_count++;
-    }	 
-      
-    }
+	   /* store the sequence number of the previous packet received */    
+	   if (pck_seq_num_cur == 0) {
+	     pck_seq_num_prev = *(uint16_t *)buff2;
+	   } else {
+	     pck_seq_num_prev = pck_seq_num_cur;
+	   }
+	   /* get the packet sequence number from packet's header */
+	   pck_seq_num_cur = *(uint16_t *)buff2;
+	   //printf("cur=%d prev=%d buff=%d\n",pck_seq_num_cur,pck_seq_num_prev,*(uint16_t *)(buff2));
+	   if ( ( pck_seq_num_cur != (pck_seq_num_prev + 1) ) && !((pck_seq_num_prev==75) && (pck_seq_num_cur==1 ))){
+	     printf("out of order packet received1! %d|%d|%d\n",pck_seq_num_cur,pck_seq_num_prev,	*timestamp);
+	   }
+	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM,pck_seq_num_cur);
+	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RX_SEQ_NUM_PRV,pck_seq_num_prev);
+						    eth->rx_actual_nsamps=bytes_received>>2;
+						    eth->rx_count++;
+						    }	 
+	     
+      }
       /* tx buffer values restored */  
       *(int32_t *)buff2 = temp0;
       *(openair0_timestamp *)(buff2 + sizeof(int32_t)) = temp1;
@@ -316,7 +332,7 @@ int eth_set_dev_conf_udp(openair0_device *device) {
 
   msg=malloc(sizeof(openair0_config_t));
   msg_len=sizeof(openair0_config_t);
-  memcpy(msg,(void*)&device->openair0_cfg,msg_len);	
+  memcpy(msg,(void*)device->openair0_cfg,msg_len);	
   
   if (sendto(eth->sockfd[Mod_id],msg,msg_len,0,(struct sockaddr *)&dest_addr[Mod_id],addr_len[Mod_id])==-1) {
     perror("ETHERNET: ");
@@ -338,7 +354,7 @@ int eth_get_dev_conf_udp(openair0_device *device) {
   msg_len=sizeof(openair0_config_t);
 
   inet_ntop(AF_INET, &(local_addr[Mod_id].sin_addr), str, INET_ADDRSTRLEN);
-      inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN);
+  inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN);
 
   /* RRH receives from BBU openair0_config_t */
   if (recvfrom(eth->sockfd[Mod_id],
@@ -350,7 +366,7 @@ int eth_get_dev_conf_udp(openair0_device *device) {
     perror("ETHERNET: ");
     exit(0);
   }
-   memcpy((void*)&device->openair0_cfg,msg,msg_len);
+  device->openair0_cfg=(openair0_config_t *)msg;
 
    /* get remote ip address and port */
    /* inet_ntop(AF_INET, &(dest_addr[Mod_id].sin_addr), str1, INET_ADDRSTRLEN); */

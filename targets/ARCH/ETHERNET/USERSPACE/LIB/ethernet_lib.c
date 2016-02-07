@@ -82,9 +82,12 @@ int trx_eth_start(openair0_device *device) {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
     }
     /* adjust MTU wrt number of samples per packet */
-    if(ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    //if(ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
   }
-    
+  /* apply additional configuration */
+  if(ethernet_tune (device, SND_BUF_SIZE,2000000000)!=0)  return -1;
+  if(ethernet_tune (device, RCV_BUF_SIZE,2000000000)!=0)  return -1;
+  
   return 0;
 }
 
@@ -335,13 +338,17 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
 
 
 
-int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile) {
+int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params ) {
 
   eth_state_t *eth = (eth_state_t*)malloc(sizeof(eth_state_t));
   memset(eth, 0, sizeof(eth_state_t));
 
-  eth->flags = ETH_RAW_MODE;
-
+  if (eth_params->transp_preference == 1) {
+    eth->flags = ETH_RAW_MODE;
+  } else {
+    eth->flags = ETH_UDP_MODE;
+  }
+  
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
   device->Mod_id           = num_devices_eth++;
   device->transp_type      = ETHERNET_TP;
@@ -362,13 +369,53 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, cha
     device->trx_write_func   = trx_eth_write_udp;
     device->trx_read_func    = trx_eth_read_udp;     
   }
-  /*hardcoded!!!!*/
-  eth->if_name[device->Mod_id] = "eth0";
-  device->priv = eth; 	
-  openair0_cfg->iq_txshift = 5;
-  openair0_cfg->iq_rxrescale = 15;
-  memcpy((void*)device->openair0_cfg,(void*)openair0_cfg,sizeof(openair0_config_t));
+
+  eth->if_name[device->Mod_id] = eth_params->local_if_name;
+  device->priv = eth;
+ 	
+  /* device specific */
+  openair0_cfg[0].iq_txshift = 5;
+  openair0_cfg[0].iq_rxrescale = 15;
+  openair0_cfg[0].txlaunch_wait = 0;
+  openair0_cfg[0].txlaunch_wait_slotcount = 0;
+
+  /* RRH does not have any information to make this configuration atm */
+  if (device->host_type == BBU_HOST) {
+    /*Note scheduling advance values valid only for case 7680000 */    
+    switch ((int)openair0_cfg[0].sample_rate) {
+    case 30720000:
+      openair0_cfg[0].samples_per_packet    = 4096;
+      openair0_cfg[0].tx_sample_advance     = 0;
+      openair0_cfg[0].tx_scheduling_advance = 22*openair0_cfg[0].samples_per_packet;
+      break;
+    case 23040000:     
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 0;
+      openair0_cfg[0].tx_scheduling_advance = 16*openair0_cfg[0].samples_per_packet;
+      break;
+    case 15360000:
+      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].tx_sample_advance     = 0;
+      openair0_cfg[0].tx_scheduling_advance = 10*openair0_cfg[0].samples_per_packet;
+      break;
+    case 7680000:
+      openair0_cfg[0].samples_per_packet    = 1024;
+      openair0_cfg[0].tx_sample_advance     = 0;
+      openair0_cfg[0].tx_scheduling_advance = 10*openair0_cfg[0].samples_per_packet;
+      break;
+    case 1920000:
+      openair0_cfg[0].samples_per_packet    = 256;
+      openair0_cfg[0].tx_sample_advance     = 0;
+      openair0_cfg[0].tx_scheduling_advance = 16*openair0_cfg[0].samples_per_packet;
+      break;
+    default:
+      printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
+      exit(-1);
+      break;
+    }
+  }
  
+  device->openair0_cfg=&openair0_cfg[0];
   return 0;
 }
 
@@ -414,8 +461,7 @@ void dump_dev(openair0_device *device) {
 	device->openair0_cfg->tx_num_channels,device->openair0_cfg->rx_num_channels);
    printf("       Running flags: %s %s %s\n",      
 	((eth->flags & ETH_RAW_MODE)  ? "RAW socket mode - ":""),
-	((eth->flags & ETH_UDP_MODE)  ? "UDP socket mode - ":""),
-	((eth->flags & ETH_LOOP_MODE) ? "loopback mode - ":""));	  	
+	((eth->flags & ETH_UDP_MODE)  ? "UDP socket mode - ":""));	  	
   printf("       Number of iqs dumped when displaying packets: %i\n\n",eth->iqdumpcnt);   
   
 }
