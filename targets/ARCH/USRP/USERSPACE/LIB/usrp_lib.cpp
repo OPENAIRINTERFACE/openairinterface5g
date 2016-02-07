@@ -387,7 +387,7 @@ int trx_usrp_reset_stats(openair0_device* device) {
 
 
 extern "C" {
-  int device_init(openair0_device* device, openair0_config_t *openair0_cfg, char *cfgfile) {
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
     
     uhd::set_thread_priority_safe(1.0);
     usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
@@ -444,7 +444,7 @@ extern "C" {
     //s->usrp->set_master_clock_rate(usrp_master_clock);
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-
+    
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
             // from usrp_time_offset
@@ -554,6 +554,12 @@ extern "C" {
     }
   }
 
+  /* device specific */
+  openair0_cfg[0].iq_txshift = 5;
+  openair0_cfg[0].iq_rxrescale = 15;
+  openair0_cfg[0].txlaunch_wait = 1;
+  openair0_cfg[0].txlaunch_wait_slotcount = 1;
+  
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);

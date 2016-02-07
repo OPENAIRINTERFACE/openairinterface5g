@@ -200,7 +200,7 @@ static rrh_module_t new_module (unsigned int id) {
   memset(rrh_mod.eth_dev.openair0_cfg,0,sizeof(openair0_config_t));
   /* get IP and MAC address */
   get_address(if_name,eth_mode);
-
+  
   if(eth_mode==ETH_UDP_MODE) {
     openair0_cfg.my_addr = &rrh_ip[0];
     openair0_cfg.my_port = rrh_port;
@@ -211,10 +211,14 @@ static rrh_module_t new_module (unsigned int id) {
     LOG_I(RRH,"RAW mode selected for ethernet.\n");
   } 
 
-  /* if use setrunnig parameters we should keep in device->priv keep if_name and raw/udp flag*/
+  /* */
+  eth_params_t *eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
+  memset(eth_params, 0, sizeof(eth_params_t));
+  eth_params->local_if_name     = if_name;
+  eth_params->transp_preference = eth_mode;
 
   /* ethernet device initialization */
-  if (openair0_transport_load(&rrh_mod.eth_dev, &openair0_cfg)<0,NULL) {
+  if (openair0_transport_load(&rrh_mod.eth_dev, &openair0_cfg,eth_params)<0) {
     LOG_E(RRH,"Exiting, cannot initialize ethernet interface.\n");
     exit(-1);
   }

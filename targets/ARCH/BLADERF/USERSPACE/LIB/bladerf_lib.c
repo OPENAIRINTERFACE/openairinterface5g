@@ -828,8 +828,13 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
+  /* device specific */
+  openair0_cfg->txlaunch_wait = 1;
+  openair0_cfg->txlaunch_wait_slotcount = 1; /* device specific */
+  openair0_cfg->iq_txshift = 5;
+  openair0_cfg->iq_rxrescale = 15;
+  
   // init required params
-
   switch ((int)openair0_cfg->sample_rate) {
   case 30720000:
     openair0_cfg->samples_per_packet    = 2048;

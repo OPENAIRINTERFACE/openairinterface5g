@@ -97,7 +97,7 @@ Options
    ETHERNET , None
    Adds this trasport protocol support in compilation
 --oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to "NO_VALUE".
+   Makes the oaisim simulator. Hardware will be defaulted to "None".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators

@@ -90,23 +90,24 @@ int set_transport(openair0_device *device) {
   
 }
 
-/* FT: looking for the rh interface library and load it */
-int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile, uint8_t flag) {
+/* look for the interface library and load it */
+int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * cfg, uint8_t flag) {
   
   void *lib_handle;
-  oai_device_initfunc_t fp ;
+  oai_device_initfunc_t dp ;
+  oai_transport_initfunc_t tp ;
 
-  if (flag == RF_DEVICE) {
+  if (flag == BBU_LOCAL_RADIO_HEAD) {
       lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
       if (!lib_handle) {
 	printf( "Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
 	return 0;
       } 
       
-      fp = dlsym(lib_handle,"device_init");
+      dp = dlsym(lib_handle,"device_init");
       
-      if (fp != NULL ) {
-	fp(device,openair0_cfg,cfgfile);
+      if (dp != NULL ) {
+	dp(device,openair0_cfg);
       } else {
 	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
 	return -1;
@@ -118,10 +119,10 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, char *cfg
 	return 0;
       } 
       
-      fp = dlsym(lib_handle,"transport_init");
+      tp = dlsym(lib_handle,"transport_init");
       
-      if (fp != NULL ) {
-	fp(device,openair0_cfg,cfgfile);
+      if (tp != NULL ) {
+	tp(device,openair0_cfg,cfg);
       } else {
 	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
 	return -1;
@@ -136,10 +137,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, char *cfg
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
   
   int rc;
-  static char   *cfgfile;
-  uint8_t       flag=RF_DEVICE;
-  /* FT: rewritten for shared library, common, radio head interface implementation */
-  rc=load_lib(device, openair0_cfg, NULL,flag);
+  rc=load_lib(device, openair0_cfg, NULL,BBU_LOCAL_RADIO_HEAD );
   if ( rc >= 0) {       
     if ( set_device(device) < 0) {
       fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
@@ -150,20 +148,23 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
   return 0;
 }
 
-int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg) {
+int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params) {
   
   int rc;
-  static char   *cfgfile;
-  uint8_t       flag=TRANSPORT_PROTOCOL;
-
-  /* FT: rewritten for shared library, common, radio head interface implementation */
-  rc=load_lib(device, openair0_cfg, NULL,flag);
+  rc=load_lib(device, openair0_cfg, eth_params, BBU_REMOTE_RADIO_HEAD);
   if ( rc >= 0) {       
     if ( set_transport(device) < 0) {
-      fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
+      fprintf(stderr, "%s %d:Unsupported transport protocol\n",__FILE__, __LINE__);
       return -1;		   
     }   
   }
   
   return 0;
 }
+
+
+
+
+
+
+

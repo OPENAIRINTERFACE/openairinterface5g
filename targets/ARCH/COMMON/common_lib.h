@@ -47,16 +47,9 @@
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "liboai_transpro.so"
 
-/* flags for BBU to determine whether RF front end is local or remote 
-Note: currently lte-softmodem supports either a local RF device or a remote. */
-#define BBU_LOCAL_RF_ENABLED 1
-#define BBU_REMOTE_RF_ENABLED 2
-#define BBU_LOCAL_REMOTE_RF_ENABLED 3
-/*flags for load_lib() used to specify whether a RF device or a transport protocol library is loaded */
-#define TRANSPORT_PROTOCOL 1
-#define RF_DEVICE 2
-
-
+/* flags for BBU to determine whether the attached radio head is local or remote */
+#define BBU_LOCAL_RADIO_HEAD  0
+#define BBU_REMOTE_RADIO_HEAD 1
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
@@ -79,6 +72,49 @@ typedef enum {
 typedef enum {
   duplex_mode_TDD=1,duplex_mode_FDD=0
 } duplex_mode_t;
+
+
+/*!\brief RF device types
+ */
+typedef enum {
+  MIN_RF_DEV_TYPE = 0,
+  /*!\brief device is ExpressMIMO */
+  EXMIMO_DEV,
+  /*!\brief device is USRP B200/B210*/
+  USRP_B200_DEV,
+  /*!\brief device is USRP X300/X310*/
+  USRP_X300_DEV,
+  /*!\brief device is BLADE RF*/
+  BLADERF_DEV,
+  /*!\brief device is NONE*/
+  NONE_DEV,
+  MAX_RF_DEV_TYPE
+
+} dev_type_t;
+
+/*!\brief transport protocol types
+ */
+typedef enum {
+  MIN_TRANSP_TYPE = 0,
+  /*!\brief transport protocol ETHERNET */
+  ETHERNET_TP,
+  /*!\brief no transport protocol*/
+  NONE_TP,
+  MAX_TRANSP_TYPE
+
+} transport_type_t;
+
+
+/*!\brief  openair0 device host type */
+typedef enum {
+  MIN_HOST_TYPE = 0,
+ /*!\brief device functions within a BBU */
+  BBU_HOST,
+ /*!\brief device functions within a RRH */
+  RRH_HOST,
+  MAX_HOST_TYPE
+
+}host_type_t;
 
 
 /** @addtogroup _PHY_RF_INTERFACE_
@@ -167,49 +203,20 @@ typedef struct {
   int chain;
 } openair0_rf_map;
 
+typedef struct {
+  char *remote_addr;
+  //! remote port number for Ethernet interface
+  unsigned int remote_port;
+  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
+  char *my_addr;
+  //! local port number for Ethernet interface (eNB/BBU, UE)
+  unsigned int my_port;
+  //! local port number for Ethernet interface (eNB/BBU, UE)
+  char *local_if_name;
+ //! local port number for Ethernet interface (eNB/BBU, UE)
+  uint8_t transp_preference;
+} eth_params_t;
 
-
-/*!\brief RF device types
- */
-typedef enum {
-  MIN_RF_DEV_TYPE = 0,
-  /*!\brief device is ExpressMIMO */
-  EXMIMO_DEV,
-  /*!\brief device is USRP B200/B210*/
-  USRP_B200_DEV,
-  /*!\brief device is USRP X300/X310*/
-  USRP_X300_DEV,
-  /*!\brief device is BLADE RF*/
-  BLADERF_DEV,
-  /*!\brief device is NONE*/
-  NONE_DEV,
-  MAX_RF_DEV_TYPE
-
-} dev_type_t;
-
-/*!\brief transport protocol types
- */
-typedef enum {
-  MIN_TRANSP_TYPE = 0,
-  /*!\brief transport protocol ETHERNET */
-  ETHERNET_TP,
-  /*!\brief no transport protocol*/
-  NONE_TP,
-  MAX_TRANSP_TYPE
-
-} transport_type_t;
-
-
-/*!\brief  openair0 device host type */
-typedef enum {
-  MIN_HOST_TYPE = 0,
- /*!\brief device functions within a BBU */
-  BBU_HOST,
- /*!\brief device functions within a RRH */
-  RRH_HOST,
-  MAX_HOST_TYPE
-
-}host_type_t;
 
 struct openair0_device_t {
   /*!brief Module ID of this device */
@@ -309,17 +316,19 @@ struct openair0_device_t {
 };
 
 /* type of device init function, implemented in shared lib */
-typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, char *cfgfile);
+typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg);
+/* type of transport init function, implemented in shared lib */
+typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params);
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  /*! \brief Initialize openair RF target. It returns 0 if OK */
+/*! \brief Initialize openair RF target. It returns 0 if OK */
   int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);  
   /*! \brief Initialize transport protocol . It returns 0 if OK */
-  int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg);
+  int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params);
   
   //USRP
 /*! \brief Get the current timestamp of USRP */

@@ -143,10 +143,9 @@ void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag) {
   
   /* init socket and have handshake-like msg with client to exchange parameters */
   mod_enb->eth_dev.trx_start_func(&mod_enb->eth_dev);//change port  make it plus_id
-    printf("sdfs\n");
 
-  memcpy((void*)mod_enb->devs->openair0_cfg,(void *)mod_enb->eth_dev.openair0_cfg,sizeof(openair0_config_t));
-  printf("sdfs\n");
+  mod_enb->devs->openair0_cfg = mod_enb->eth_dev.openair0_cfg;
+
   /* check sanity of configuration parameters and print */
   check_dev_config(mod_enb);    
   
@@ -387,7 +386,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 
   while (rrh_exit == 0) {    
     while (rx_pos <(1 + subframe)*samples_per_subframe) {
-      LOG_D(RRH,"starting a new send:%d  %d\n",sync_trx,frame);
+      //LOG_D(RRH,"starting a new send:%d  %d\n",sync_trx,frame);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_RX, 1 );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME_RX, frame);
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_SUBFRAME_RX, subframe );  
@@ -508,7 +507,7 @@ void *rrh_eNB_rx_thread(void *arg) {
        next_rx_pos=(rx_pos+spp_eth);
        
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_RX, 0 );
-       /**/
+       /*
        if (frame>50) {
 	 pthread_mutex_lock(&sync_trx_mutex);
 	 while (sync_trx) {
@@ -518,7 +517,7 @@ void *rrh_eNB_rx_thread(void *arg) {
 	 LOG_D(RRH,"out of while send:%d  %d\n",sync_trx,frame);
 	 pthread_cond_signal(&sync_trx_cond);
 	 pthread_mutex_unlock(&sync_trx_mutex);
-       }
+	 }*/
     } // while 
     
     subframe++;
@@ -591,14 +590,14 @@ void *rrh_eNB_tx_thread(void *arg) {
   while (rrh_exit == 0) {     
     while (tx_pos < (1 + subframe)*samples_per_subframe) {
       
-      LOG_D(RRH,"bef lock read:%d  %d\n",sync_trx,frame);
-      pthread_mutex_lock(&sync_trx_mutex);
+      //LOG_D(RRH,"bef lock read:%d  %d\n",sync_trx,frame);
+      //pthread_mutex_lock(&sync_trx_mutex);
       
-      while (!sync_trx) {
-	LOG_D(RRH,"in sync read:%d  %d\n",sync_trx,frame);
-	pthread_cond_wait(&sync_trx_cond,&sync_trx_mutex);
-      }
-      LOG_D(RRH,"out of while read:%d  %d\n",sync_trx,frame);
+      //while (!sync_trx) {
+      //LOG_D(RRH,"in sync read:%d  %d\n",sync_trx,frame);
+      //pthread_cond_wait(&sync_trx_cond,&sync_trx_mutex);
+      //}
+      //LOG_D(RRH,"out of while read:%d  %d\n",sync_trx,frame);
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX, 1 );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, frame);
@@ -660,10 +659,10 @@ void *rrh_eNB_tx_thread(void *arg) {
       tx_pos += spp_eth;
       pck_tx++;   
       
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX, 0 );
-      sync_trx=0;
-      pthread_cond_signal(&sync_trx_cond);
-      pthread_mutex_unlock(&sync_trx_mutex);
+      //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_TX, 0 );
+      //sync_trx=0;
+      //pthread_cond_signal(&sync_trx_cond);
+      //pthread_mutex_unlock(&sync_trx_mutex);
     }
 
     /* wrap around tx buffer index */
