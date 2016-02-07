@@ -60,7 +60,9 @@ import paramiko
 import subprocess
 import commands
 sys.path.append('/opt/ssh')
+sys.path.append(os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/'))
 
+from lib_autotest import *
 import ssh
 from ssh import SSHSession
 import argparse
@@ -1015,6 +1017,8 @@ class oaiCleanOldProgramThread (threading.Thread):
            error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n CleanUpOldProgs = ' + self.CleanUpOldProgs + '\n CleanUpAluLteBox = ' + self.CleanUpAluLteBox + '\n ExmimoRfStop = ' + self.ExmimoRfStop + '\n'  
            error = error + traceback.format_exc()
            print error
+           print "There is error in cleaning up old programs. The test case execution cannot continue...."
+           sys.exit(1)
 
 # \brief Run parallel threads in all machines for clean up old execution of test cases
 # \param oai_list list of handlers that can be used to execute programs on remote machines
@@ -1282,18 +1286,17 @@ if localshell == 0:
            print '\nCleaning Older running programs : ' + CleanUpOldProgs
            cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 
-           result = oai_list[index].send('mount ' + NFSResultsDir, True)
-           print "Mounting NFS Share " + NFSResultsDir + "..." + result
+           #result = oai_list[index].send('mount ' + NFSResultsDir, True)
+           #print "Mounting NFS Share " + NFSResultsDir + "..." + result
 
            # Check if NFS share is mounted correctly.
-           print 'Checking if NFS Share<' + NFSResultsDir + '> is mounted correctly...'
-           #result = oai_list[index].send_expect('mount | grep ' + NFSResultsDir,  NFSResultsDir )
-           cmd = 'if grep -qs '+NFSResultsDir+ ' /proc/mounts; then  echo \'' + NFSResultsDir  + ' is mounted\' ; fi'
-           search_expr = NFSResultsDir + ' is mounted'
-           print "cmd = " + cmd
-           print "search_expr = " + search_expr
-           result = oai_list[index].send_expect(cmd, search_expr)
-           print "Mount NFS_Results_Dir..." + result
+           #print 'Checking if NFS Share<' + NFSResultsDir + '> is mounted correctly...'
+           #cmd = 'if grep -qs '+NFSResultsDir+ ' /proc/mounts; then  echo \'' + NFSResultsDir  + ' is mounted\' ; fi'
+           #search_expr = NFSResultsDir + ' is mounted'
+           #print "cmd = " + cmd
+           #print "search_expr = " + search_expr
+           #result = oai_list[index].send_expect(cmd, search_expr)
+           #print "Mount NFS_Results_Dir..." + result
            index = index + 1
            
            #oai.connect2(user,pw) 
