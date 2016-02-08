@@ -555,10 +555,10 @@ extern "C" {
   }
 
   /* device specific */
-  openair0_cfg[0].iq_txshift = 5;
-  openair0_cfg[0].iq_rxrescale = 15;
-  openair0_cfg[0].txlaunch_wait = 1;
-  openair0_cfg[0].txlaunch_wait_slotcount = 1;
+  openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+  openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  openair0_cfg[0].iq_txshift = 4;//shift
+  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {

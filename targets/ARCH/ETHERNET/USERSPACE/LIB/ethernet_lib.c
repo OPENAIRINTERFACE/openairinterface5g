@@ -374,10 +374,10 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->priv = eth;
  	
   /* device specific */
-  openair0_cfg[0].iq_txshift = 5;
-  openair0_cfg[0].iq_rxrescale = 15;
-  openair0_cfg[0].txlaunch_wait = 0;
-  openair0_cfg[0].txlaunch_wait_slotcount = 0;
+  openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
+  openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
+  openair0_cfg[0].iq_txshift = 5;// shift
+  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
 
   /* RRH does not have any information to make this configuration atm */
   if (device->host_type == BBU_HOST) {
