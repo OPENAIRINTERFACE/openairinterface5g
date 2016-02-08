@@ -2166,6 +2166,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
           }
 	  // RRH Config 
 	  setting_rrh_gws = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_RRH_GW_CONFIG);
+	  if ( setting_rrh_gws != NULL) {
           num_rrh_gw     = config_setting_length(setting_rrh_gws);
           enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;
 
@@ -2209,6 +2210,17 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
             }
           }
+	  } else {
+	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = "none";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = "0.0.0.0";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = "0.0.0.0";
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port= 0;
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_port= 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].active = 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 0;
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 0;
+	  }
 
           // SCTP SETTING
           enb_properties.properties[enb_properties_index]->sctp_out_streams = SCTP_OUT_STREAMS;
