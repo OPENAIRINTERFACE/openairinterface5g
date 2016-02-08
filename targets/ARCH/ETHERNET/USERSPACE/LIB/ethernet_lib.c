@@ -177,38 +177,6 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   int ret=0;
   int i=0;
   
-  if (1==0) {
-    /***************** get working interface name ***************************/
-    /* convert ascii ip address from config file to network binary format */
-    inet_aton(device->openair0_cfg->my_addr, &ia); 
-      /* look for the interface used, we have its ip address get info on all our network interfaces*/ 
-      ids = if_nameindex(); 
-      /* loop on these network interfaces */
-      for (i=0; ids[i].if_index != 0 ; i++) {
-	/* skip unamed interfaces  */
-	if (ids[i].if_name == NULL)
-	  continue; 
-	/* get ip address of current network interface */
-	strcpy(ifr.ifr_name,ids[i].if_name);     
-	if (-1 == ioctl(eth->sockfd[Mod_id], SIOCGIFADDR, &ifr)) { 
-	  printf( " Interface %i: %s isn't configured (no ip addr), skipped\n",ids[i].if_index, ifr.ifr_name);
-	  continue;           
-	} 
-	/* test if this is the interface to be used */
-	if ( ((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr.s_addr !=  ia.s_addr) 
-	  continue; 
-    /* store interface name */
-	if_name = ids[i].if_name;
-     break;
-     
-      } 
-      if_freenameindex(ids); 
-      if( if_name == NULL) { 
-	printf("Unable to find interface name for %s\n",device->openair0_cfg->my_addr); 
-	return -1; 
-      } 
-      eth->if_name[Mod_id]=if_name; 
-  }
   /****************** socket level options ************************/  
   switch(option) {
   case SND_BUF_SIZE:  /* transmit socket buffer size */   
