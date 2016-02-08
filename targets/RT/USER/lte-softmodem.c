@@ -993,8 +993,6 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
 	
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
-
-	printf("dddddddddddddddddddddd%d\n\n\n\n",openair0_cfg[0].iq_txshift);
   
      }
      // if S-subframe switch to RX in second subframe
@@ -1884,8 +1882,7 @@ static void* eNB_thread( void* arg )
       stop_meas( &softmodem_stats_mt );
       if (frame > 50) { 
 	  clock_gettime( CLOCK_MONOTONIC, &trx_time2 );
-	  // BMC: compute time between rx and tx
-	  update_difftimes(trx_time1, trx_time2);
+	  //update_difftimes(trx_time1, trx_time2);
       }
 
 
