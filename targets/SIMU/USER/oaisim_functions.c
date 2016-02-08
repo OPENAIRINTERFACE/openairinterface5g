@@ -170,6 +170,8 @@ extern pdcp_mbms_t pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSe
 extern time_stats_t dl_chan_stats;
 extern time_stats_t ul_chan_stats;
 
+extern int xforms;
+
 void get_simulation_options(int argc, char *argv[])
 {
   int                           option;
@@ -206,6 +208,8 @@ void get_simulation_options(int argc, char *argv[])
     LONG_OPTION_MALLOC_TRACE_ENABLED,
 
     LONG_OPTION_CBA_BACKOFF_TIMER,
+
+    LONG_OPTION_XFORMS,
   };
 
   static struct option long_options[] = {
@@ -236,6 +240,8 @@ void get_simulation_options(int argc, char *argv[])
     {"malloc-trace-enabled",   no_argument,       0, LONG_OPTION_MALLOC_TRACE_ENABLED},
 
     {"cba-backoff",            required_argument, 0, LONG_OPTION_CBA_BACKOFF_TIMER},
+
+    {"xforms",                 no_argument,       0, LONG_OPTION_XFORMS},
 
     {NULL, 0, NULL, 0}
   };
@@ -395,6 +401,10 @@ void get_simulation_options(int argc, char *argv[])
 
       break;
 #endif
+
+    case LONG_OPTION_XFORMS:
+      xforms=1;
+      break;
 
     case 'a':
       abstraction_flag = 1;
@@ -1280,6 +1290,7 @@ void update_ocm()
 #ifdef OPENAIR2
 void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 {
+
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   int rrc_state=0; 
