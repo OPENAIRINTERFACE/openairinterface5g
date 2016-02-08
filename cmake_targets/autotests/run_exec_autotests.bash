@@ -175,6 +175,7 @@ function test_compile() {
 #\param $13 -> output of compilation program that needs to be found for test case to pass
 #\param $14 -> tags to help identify the test case for readability in output xml file
 #\param $15 => password for the user to run certain commands as sudo
+#\param $16 => test config file params to be modified
 
 function test_compile_and_run() {
     xUnit_start
@@ -195,12 +196,14 @@ function test_compile_and_run() {
     compile_prog_out=${13}
     tags=${14}
     mypassword=${15}
+    test_config_file=${16}
+
     build_dir=$tdir/$1/build
     #exec_file=$build_dir/$6
     xmlfile_testcase=$log_dir/test.$1.xml
     #Temporary log file where execution log is stored.
     temp_exec_log=$log_dir/temp_log.txt
-    
+    export OPENAIR_LOGDIR=$log_dir
     rm -fr $log_dir
     mkdir -p $log_dir
     
@@ -219,6 +222,10 @@ function test_compile_and_run() {
     
     #compile_prog_array=()
     #read -a compile_prog_array <<<"$compile_prog"
+
+    #test_config_file=`eval "echo \"$test_config_file\" "`
+
+    #echo "test_config_file = $test_config_file"
   
     tags_array=()
     read -a tags_array <<<"$tags"
@@ -238,17 +245,21 @@ function test_compile_and_run() {
        cd $log_dir
        {   
           uname -a
-          #eval $pre_compile_prog
-          #cmake ..
-          #rm -fv $exec_file
-          echo "Executing $compile_prog $compile_args" >> $log_file
+          echo "Executing $pre_compile_prog"
+          eval $pre_compile_prog
+ 
+          if [ "$test_config_file" != "" ]; then
+            echo "Modifying test_config_file parameters..."
+            echo "$test_config_file" |xargs -L 1 $OPENAIR_DIR/cmake_targets/autotests/tools/search_repl.py 
+          fi
+          echo "Executing $compile_prog $compile_args"
           eval "$compile_prog $compile_args"
           echo "Copying compilation log files to test case log directory: $log_dir"
           cp -fvr $OPENAIR_DIR/cmake_targets/log/ $log_dir/compile_log
        }>> $log_file 2>&1
        echo "</COMPILATION LOG>" >> $log_file 2>&1
     #done
-
+    
     #process the test case if it is that of execution
     if [ "$class" == "execution" ]; then
       tags_array_index=0
@@ -437,7 +448,8 @@ for search_expr in "${test_case_array[@]}"
     else
        flag_run_test_case=1
     fi
-       
+
+
     #We skip this test case if it is not in the group list
     if [ "$flag_run_test_case" -ne "1" ]; then
       continue
@@ -458,6 +470,7 @@ for search_expr in "${test_case_array[@]}"
     nruns=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/nruns" $xml_conf`
     compile_prog_out=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/compile_prog_out" $xml_conf`
     tags=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/tags" $xml_conf`
+    test_config_file=`xmlstarlet sel -t -v "/testCaseList/testCase[@id='$search_expr']/test_config_file" $xml_conf`
 
     echo "class = $class"
     echo "name = $name"
@@ -497,7 +510,7 @@ for search_expr in "${test_case_array[@]}"
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
         $SUDO killall -q oaisim_nos1
-        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" 
+        test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file"
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."
     fi
