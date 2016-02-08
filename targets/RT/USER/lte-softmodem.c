@@ -329,15 +329,6 @@ time_stats_t softmodem_stats_rx_sf[10]; // total rx time
 void reset_opp_meas(void);
 void print_opp_meas(void);
 int transmission_mode=1;
-/*
-   FT: not a very clean way of managing the rescale of iqs in rx path, but this is done in
-  openair1/PHY/MODULATION/ul_7_5_kHz.c which doesn't have access to config parameters
-  to re-worked later.....
-  RX_IQRESCALELEN is setup in device libraries for all non expressmimo targets and acessed as an
-  external variable in ul_7_5_kHz.c. For expressmimo it is a macro (openair1/PHY/defs.h) 
-  Regarding the value of this variable or macro: 18 is for 15 bits iqs, 15 is used for USRP, EXMIMO
-*/
-//int rxrescale; 
 
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -482,7 +473,6 @@ void help (void) {
   printf("  -h provides this help message!\n");
   printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
   printf("  -m Set the maximum downlink MCS\n");
-  printf("  -M Specify whether RF head is local or remote,valid options: (1: local , 2:remote)  \n");
   printf("  -O eNB configuration file (located in targets/PROJECTS/GENERIC-LTE-EPC/CONF\n");
   printf("  -q Enable processing timing measurement of lte softmodem on per subframe basis \n");
   printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
@@ -1000,29 +990,12 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
         if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti))
           tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
-	// ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift ;
+	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
+	
+	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
 
-	//	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
-
-
-
-        ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0]=
-#ifdef EXMIMO
-          ((short*)dummy_tx_b)[2*i]<<4;
-#elif OAI_BLADERF
-	((short*)dummy_tx_b)[2*i];
-#else
-          ((short*)dummy_tx_b)[2*i]<<4;
-#endif
-	  ((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1]=
-#ifdef EXMIMO
-	    ((short*)dummy_tx_b)[2*i+1]<<4;
-#elif OAI_BLADERF
-	  ((short*)dummy_tx_b)[2*i+1];
-#else
-	  ((short*)dummy_tx_b)[2*i+1]<<4;
-#endif
-
+	printf("dddddddddddddddddddddd%d\n\n\n\n",openair0_cfg[0].iq_txshift);
+  
      }
      // if S-subframe switch to RX in second subframe
      if (subframe_select(&phy_vars_eNB->lte_frame_parms,subframe) == SF_S) {
@@ -1921,14 +1894,16 @@ static void* eNB_thread( void* arg )
       // USRP_DEBUG is active
       rt_sleep_ns(1000000);
 #endif
-      /* FT configurable tx lauch delay (in slots )*/
+      /* FT configurable tx lauch delay (in slots): txlaunch_wait, txlaunch_wait_slotcount is device specific and 
+	 set in the corresponding library (with txlaunch_wait=1 and txlaunch_wait_slotcount=1 the check is as it previously was) */
+      /* old check:
+	 if ((frame>50) &&
+	 (tx_launched == 0) &&
+	 (rx_pos >= (((2*hw_subframe)+1)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))) {*/
       if ( (frame>50) && (tx_launched == 0) &&
 	   ((openair0_cfg[card].txlaunch_wait == 0) ||
 	    ((openair0_cfg[card].txlaunch_wait == 1) &&
-	    (rx_pos >= (((2*hw_subframe)+openair0_cfg[card].txlaunch_wait_slotcount)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))))) { 
-      /* if ((frame>50) &&
-	  (tx_launched == 0) &&
-          (rx_pos >= (((2*hw_subframe)+1)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))) {*/
+	     (rx_pos >= (((2*hw_subframe)+openair0_cfg[card].txlaunch_wait_slotcount)*PHY_vars_eNB_g[0][0]->lte_frame_parms.samples_per_tti>>1))))) { 
 	
         tx_launched = 1;
 
@@ -2222,12 +2197,7 @@ static void get_options (int argc, char **argv)
 
    case LONG_OPTION_DUMP_FRAME:
      mode = rx_dump_frame;
-     break;
-
-    case 'M':
-      local_remote_radio=atoi(optarg);
-      break;
-
+     break;   
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -3001,11 +2971,6 @@ int main( int argc, char **argv )
 
   for (card=0; card<MAX_CARDS; card++) {
 
-#ifdef EXMIMO
-/* FT: for all other devices the iq_txshift value is setup in the device library */
-       openair0_cfg[card].iq_txshift=4;
-#endif
-
     if(frame_parms[0]->N_RB_DL == 100) {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
@@ -3150,10 +3115,6 @@ int main( int argc, char **argv )
     else if (mode==loop_through_memory) {    
     }
   }   
-  
-  //for EXMIMO
-  //openair0_cfg[0].iq_rxrescale=15;  /* default value if build with EXMIMO */
-  //rxrescale=openair0_cfg[0].iq_rxrescale; /* see comments near RX_IQRESCALELEN definition */
   
   printf("Done\n");
 
