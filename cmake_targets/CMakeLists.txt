@@ -469,7 +469,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_USRP")
     ${OPENAIR_TARGETS}/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp)
   LINK_DIRECTORIES("/opt/lib")
   set(option_HW_lib "-luhd -rdynamic -ldl")
-  set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   include_directories("${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/")
@@ -480,7 +479,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
   set(option_HW_lib "bladeRF -rdynamic -ldl")
-  #set(LOWLATENCY False)
  
 elseif (${RF_BOARD} STREQUAL "CPRIGW") #to ask
   set(HW_SOURCE ${HW_SOURCE}
@@ -501,7 +499,6 @@ if (${TRANSP_PRO} STREQUAL "ETHERNET")
     ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
     )
   set(option_TP_lib "-rdynamic -ldl")
-  set(LOWLATENCY True)
 
   
 endif (${TRANSP_PRO} STREQUAL "ETHERNET")

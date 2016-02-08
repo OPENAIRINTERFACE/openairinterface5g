@@ -631,6 +631,7 @@ function main() {
      echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
      echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
      echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
+     echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
      cmake ..

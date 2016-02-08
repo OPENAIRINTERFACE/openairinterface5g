@@ -355,7 +355,7 @@ static void print_help(void) {
   puts("\t -u create UE module\n");
   puts("\t -g define global log level\n");
   puts("\t -i set the RRH interface (default lo)\n");
-  puts("\t -m set ethernet mode to be used by RRH, valid options: (1:raw, 2:udp) \n");
+  puts("\t -m set ethernet mode to be used by RRH, valid options: (1:raw, 0:udp) \n");
   puts("\t -r define rrh log level\n");
   puts("\t -e define eNB log level\n");
   puts("\t -x enable real time bahaviour\n");
