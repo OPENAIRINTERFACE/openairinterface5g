@@ -48,8 +48,14 @@ enb_agent_message_decoded_callback agent_messages_callback[][3] = {
   {enb_agent_mac_handle_stats, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_STATS_REPLY_MSG*/
   {0, 0, 0}, /*PROTOCOK__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
-  {0, 0, 0}, /*SR_INFO*/
-  {0, 0, 0}, /*DL_MAC_CONFIG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UL_SR_INFO_MSG*/
+  {enb_agent_enb_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG*/
+  {enb_agent_ue_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
+  {enb_agent_lc_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
 
 };
 
@@ -61,6 +67,12 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_mac_destroy_stats_reply,
   enb_agent_mac_destroy_sf_trigger,
   enb_agent_mac_destroy_sr_info,
+  enb_agent_destroy_enb_config_request,
+  enb_agent_destroy_enb_config_reply,
+  enb_agent_destroy_ue_config_request,
+  enb_agent_destroy_ue_config_reply,
+  enb_agent_destroy_lc_config_request,
+  enb_agent_destroy_lc_config_reply,
   enb_agent_mac_destroy_dl_config,
 };
 

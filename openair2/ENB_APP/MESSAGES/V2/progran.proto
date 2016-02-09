@@ -17,12 +17,12 @@ message progran_message {
 	      prp_stats_reply stats_reply_msg = 5;
 	      prp_sf_trigger sf_trigger_msg = 6;
 	      prp_ul_sr_info ul_sr_info_msg = 7;
-	      prp_enb_config_request enb_config_request = 8;
-	      prp_enb_config_reply enb_config_reply = 9;
-	      prp_ue_config_request ue_config_request = 10;
-	      prp_ue_config_reply ue_config_reply = 11;
-	      prp_lc_config_request lc_config_request = 12;
-	      prp_lc_config_reply lc_config_reply = 13;
+	      prp_enb_config_request enb_config_request_msg = 8;
+	      prp_enb_config_reply enb_config_reply_msg = 9;
+	      prp_ue_config_request ue_config_request_msg = 10;
+	      prp_ue_config_reply ue_config_reply_msg = 11;
+	      prp_lc_config_request lc_config_request_msg = 12;
+	      prp_lc_config_reply lc_config_reply_msg = 13;
 	      prp_dl_mac_config dl_mac_config_msg = 14;
 	}
 }

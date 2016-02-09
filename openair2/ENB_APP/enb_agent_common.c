@@ -261,6 +261,51 @@ int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
+int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  /* TODO: Create a reply progRAN message with the current eNB configuration */
+  return 0;
+}
+
+int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg) {
+  /* TODO: Deallocate memory for a dynamically allocated eNB config message */
+  return 0;
+}
+
+int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  /* TODO: Create a reply progRAN message with the current UE configurations */
+  return 0;
+}
+
+int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
+  /*TODO: Deallocate memory for a dynamically allocated UE config message */
+  return 0;
+}
+
+int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  /* TODO: Create a reply progRAN message with the current LC configurations */
+  return 0;
+}
+
+int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
+  /* TODO: Deallocate memory for a dynamically allocated LC config message */
+  return 0;
+}
+
+int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {
+  /* TODO: Deallocate memory for a dynamically allocated eNB config message */
+  return 0;
+}
+
+int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg) {
+  /* TODO: Deallocate memory for a dynamically allocated UE config message */
+  return 0;
+}
+
+int enb_agent_destroy_lc_config_request(Protocol__ProgranMessage *msg) {
+  /* TODO: Deallocate memory for a dynamically allocated LC config message */
+  return 0;
+}
+
 /*
  * get generic info from RAN
  */

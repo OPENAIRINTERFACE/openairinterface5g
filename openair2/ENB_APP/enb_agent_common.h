@@ -91,6 +91,21 @@ int enb_agent_destroy_echo_request(Protocol__ProgranMessage *msg);
 int enb_agent_echo_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg);
 
+int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg);
+
+int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg);
+
+int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg);
+
+int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg);
+
+int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg);
+
+int enb_agent_destroy_lc_config_request(Protocol__ProgranMessage *msg);
+
 
 Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id, 
 						    uint8_t *data, 
