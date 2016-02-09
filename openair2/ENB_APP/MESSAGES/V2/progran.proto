@@ -4,6 +4,7 @@ package protocol;
 import "stats_messages.proto";
 import "header.proto";
 import "time_common.proto";
+import "config_messages.proto";
 import "controller_commands.proto";
 
 message progran_message {
@@ -16,7 +17,13 @@ message progran_message {
 	      prp_stats_reply stats_reply_msg = 5;
 	      prp_sf_trigger sf_trigger_msg = 6;
 	      prp_ul_sr_info ul_sr_info_msg = 7;
-	      prp_dl_mac_config dl_mac_config_msg = 8;
+	      prp_enb_config_request enb_config_request = 8;
+	      prp_enb_config_reply enb_config_reply = 9;
+	      prp_ue_config_request ue_config_request = 10;
+	      prp_ue_config_reply ue_config_reply = 11;
+	      prp_lc_config_request lc_config_request = 12;
+	      prp_lc_config_reply lc_config_reply = 13;
+	      prp_dl_mac_config dl_mac_config_msg = 14;
 	}
 }
 
@@ -106,6 +113,37 @@ message prp_ul_sr_info {
 	optional prp_header header = 1;
 	optional uint32 sfn_sf = 2;
 	repeated uint32 rnti = 3;
+}
+
+//
+// eNB configuration messages
+//
+message prp_enb_config_request {
+	optional prp_header header = 1;
+}
+
+message prp_enb_config_reply {
+	optional prp_header header = 1;
+	optional uint32 eNB_id = 2;		// Unique id to distinguish the eNB
+	repeated prp_cell_config cell_config = 3;
+}
+
+message prp_ue_config_request {
+	optional prp_header header = 1;
+}
+
+message prp_ue_config_reply {
+	optional prp_header header = 1;
+	repeated prp_ue_config ue_config = 2;
+}
+
+message prp_lc_config_request {
+	optional prp_header header = 1;
+}
+
+message prp_lc_config_reply {
+	optional prp_header header = 1;
+	repeated prp_lc_ue_config lc_ue_config = 2;
 }
 
 //
