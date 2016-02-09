@@ -483,13 +483,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   *eNB_id = sync_source;
 
+  LOG_D(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val,dB_fixed(peak_val)/2);
+
+
 #ifdef DEBUG_PHY
-  msg("[PHY][UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d\n",
-      sync_source,peak_pos,peak_val);
-
-
-
-
   if (debug_cnt == 0) {
     write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
     write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);

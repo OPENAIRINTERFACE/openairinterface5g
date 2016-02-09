@@ -571,12 +571,20 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   }
 
   // gain control
-  if (ret!=0) { //we are not synched, so do a measurement on the full frame
+  if (ret!=0) { //we are not synched, so we cannot use rssi measurement (which is based on channel estimates)
     rx_power = 0;
 
+    // do a measurement on the best guess of the PSS
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+      rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][sync_pos2],
+				frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+    
+    /*
+    // do a measurement on the full frame
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
       rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][0],
 				frame_parms->samples_per_tti*10);
+    */
 
     // we might add a low-pass filter here later
     phy_vars_ue->PHY_measurements.rx_power_avg[0] = rx_power/frame_parms->nb_antennas_rx; 
@@ -616,7 +624,6 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 #endif
 #endif
   }
-
 
   //  exit_fun("debug exit");
   return ret;
