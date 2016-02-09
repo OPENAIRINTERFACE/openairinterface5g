@@ -320,6 +320,7 @@ schedule_ue_spec_default(
 	    rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
           }	
 
+	  // Keep the old NDI, do not toggle
 	  ndi = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	  tpc = 1;
 	  
@@ -562,13 +563,12 @@ schedule_ue_spec_default(
 	    rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
           }	
 
-	  ndi =  1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-	  
-	  // Toggle NDI for next time
+	   // Toggle NDI
           LOG_D(MAC,"CC_id %d Frame %d, subframeP %d: Toggling Format1 NDI for UE %d (rnti %x/%d) oldNDI %d\n",
                 CC_id, frame, subframe, UE_id,
                 UE_list->UE_template[CC_id][UE_id].rnti,harq_pid, UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]);
-          UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]=1-UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+          UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]= 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
+	  ndi =  UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	  
 	  // Increase the pointer for the number of scheduled UEs
 	  num_ues_added++;
