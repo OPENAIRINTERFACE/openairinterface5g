@@ -661,9 +661,8 @@ function main() {
 	  if [ "$HW" == "EXMIMO" ] ; then
 	      
 	      #add exmimo compilation
-	      
-	      ln -s openair_rf.ko liboai_device.so
-	      ln -s $dbin/openair_rf.ko $dbin/liboai_device.so
+	      #TODO EXMIMO library support
+	     
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then
