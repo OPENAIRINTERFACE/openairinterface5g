@@ -941,10 +941,17 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti>>1;
       else
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti;
- 
-     for (i=0; i<len; i++) {
+      
+      for (i=0;i<len;i+=4) {
+	dummy_tx_b[i] = 0x100;
+	dummy_tx_b[i+1] = 0x01000000;
+	dummy_tx_b[i+2] = 0xff00;
+	dummy_tx_b[i+3] = 0xff000000;
+      }
+      for (i=0; i<len; i++) {
         tx_offset = (int)slot_offset+time_offset[aa]+i;
 
+	
         if (tx_offset<0)
           tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
@@ -957,6 +964,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 #elif OAI_BLADERF
 	((short*)dummy_tx_b)[2*i];
 #elif OAI_LMSSDR
+	//phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset]=dummy_tx_b[i];
 	((short*)dummy_tx_b)[2*i];
 #else
           ((short*)dummy_tx_b)[2*i]<<4;
