@@ -925,9 +925,7 @@ static void *UE_thread_rx(void *arg)
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
-#ifdef OPENAIR2
-
-      if (i==0) {
+      if ((UE->mac_enabled==1) && (i==0)) {
         ret = mac_xface->ue_scheduler(UE->Mod_id,
                                       UE->frame_tx,
                                       UE->slot_rx>>1,
@@ -950,7 +948,6 @@ static void *UE_thread_rx(void *arg)
         }
       }
 
-#endif
       UE->slot_rx++;
 
       if (UE->slot_rx == 20) {

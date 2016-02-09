@@ -87,9 +87,6 @@ fifo_dump_emos_UE emos_dump_UE;
 #   endif
 #endif
 
-#ifndef OPENAIR2
-//#define DIAG_PHY
-#endif
 
 #define DLSCH_RB_ALLOC 0x1fbf  // skip DC RB (total 23/25 RBs)
 #define DLSCH_RB_ALLOC_12 0x0aaa  // skip DC RB (total 23/25 RBs)

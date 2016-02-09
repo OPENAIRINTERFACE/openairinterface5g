@@ -271,6 +271,7 @@ typedef struct PHY_VARS_eNB_s {
   int              **dl_precoder_SeNB[3];
   char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
+  /// if ==0 enables phy only test mode
   int mac_enabled;
 
   /// For emulation only (used by UE abstraction to retrieve DCI)
@@ -573,6 +574,9 @@ typedef struct {
   int              **ul_precoder_S_UE;
   /// holds the maximum channel/precoder coefficient
   char             log2_maxp;
+
+  /// if ==0 enables phy only test mode
+  int mac_enabled;
 
   /// Flag to initialize averaging of PHY measurements
   int init_averaging;
