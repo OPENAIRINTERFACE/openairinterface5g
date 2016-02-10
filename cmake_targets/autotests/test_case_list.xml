@@ -81,7 +81,8 @@
      <compile_prog_args>--eNB -w USRP -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_usrpdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -122,7 +123,8 @@
      <compile_prog_args>--eNB -w BLADERF -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_bladerfdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -138,10 +140,11 @@
      <desc>Build lte_softmodem_noS1.ETHERNET.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--eNB -w ETHERNET -r Rel10 --noS1  -c </compile_prog_args>
+     <compile_prog_args>--eNB -w None -t ETHERNET -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -160,7 +163,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w USRP -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_usrpdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -197,7 +201,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w BLADERF -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_bladerfdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -213,8 +218,9 @@
      <desc>Build lte_softmodem.ETHERNET.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--eNB -w ETHERNET -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_args>--eNB -w None -t ETHERNET -r Rel10   -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -261,11 +267,13 @@
 
      <testCase id="010140" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build RRH Gateway for USRP(RF) + Ethernet (Transport)</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w USRP  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <compile_prog_args>--RRH -w USRP -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_usrpdevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -278,14 +286,16 @@
 
      <testCase id="010141" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build RRH Gateway for EXMIMO(RF) + Ethernet (Transport)</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w EXMIMO  -c </compile_prog_args>
+     <compile_prog_args>--RRH -w EXMIMO -t ETHNERNET  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/CMakeFiles/openair_rf/openair_rf.ko
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/updatefw
-                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_exmimodevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -301,8 +311,10 @@
      <desc>Build RRH Gateway</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w BLADERF  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <compile_prog_args>--RRH -w BLADERF -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_bladerfdevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>

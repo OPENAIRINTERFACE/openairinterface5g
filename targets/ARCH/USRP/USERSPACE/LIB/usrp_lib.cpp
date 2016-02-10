@@ -172,7 +172,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
 
 
-  if (device->type == USRP_B200_IF) {  
+  if (device->type == USRP_B200_DEV) {  
     if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
@@ -198,7 +198,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
       }
     }
-  } else if (device->type == USRP_X300_IF) {
+  } else if (device->type == USRP_X300_DEV) {
     if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
@@ -386,13 +386,14 @@ int trx_usrp_reset_stats(openair0_device* device) {
 }
 
 
-int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
-{
-  uhd::set_thread_priority_safe(1.0);
-  usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
-  memset(s, 0, sizeof(usrp_state_t));
-
-  // Initialize USRP device
+extern "C" {
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+    
+    uhd::set_thread_priority_safe(1.0);
+    usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
+    memset(s, 0, sizeof(usrp_state_t));
+    
+    // Initialize USRP device
 
   std::string args = "type=b200";
 
@@ -436,14 +437,14 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     s->usrp->set_clock_source("internal");
     
     //Setting device type to USRP X300/X310 
-    device->type=USRP_X300_IF;
+    device->type=USRP_X300_DEV;
 
     // this is not working yet, master clock has to be set via constructor
     // set master clock rate and sample rate for tx & rx for streaming
     //s->usrp->set_master_clock_rate(usrp_master_clock);
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-
+    
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
             // from usrp_time_offset
@@ -487,13 +488,13 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
-
-// do not explicitly set the clock to "internal", because this will disable the gpsdo
-//    // lock mboard clocks
-//    s->usrp->set_clock_source("internal");
+    
+    // do not explicitly set the clock to "internal", because this will disable the gpsdo
+    //    // lock mboard clocks
+    //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
 
-    device->type = USRP_B200_IF;
+    device->type = USRP_B200_DEV;
 
 
     if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
@@ -553,6 +554,12 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     }
   }
 
+  /* device specific */
+  openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+  openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  openair0_cfg[0].iq_txshift = 4;//shift
+  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
+  
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
@@ -606,10 +613,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
 
   s->usrp->set_time_now(uhd::time_spec_t(0.0));
-
-
-
-  
+ 
 
   for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
@@ -657,4 +661,5 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
   return 0;
+  }
 }
