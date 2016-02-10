@@ -137,6 +137,10 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
   
   int rc;
+  //ToDo: EXMIMO harmonization is not complete. That is the reason for this ifdef
+  #ifdef EXMIMO
+  device_init(device, openair0_cfg);
+  #else
   rc=load_lib(device, openair0_cfg, NULL,BBU_LOCAL_RADIO_HEAD );
   if ( rc >= 0) {       
     if ( set_device(device) < 0) {
@@ -144,28 +148,19 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
       return -1;		   
     }   
   }
-  
+  #endif
   return 0;
 }
 
 int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params) {
-  
   int rc;
-  //ToDo: EXMIMO library is still not harmonized with rest of HW Targets (USRP, BladeRF).
-  if (device->type != EXMIMO_DEV)
-  {
-    rc=load_lib(device, openair0_cfg, eth_params, BBU_REMOTE_RADIO_HEAD);
-    if ( rc >= 0) {       
-     if ( set_transport(device) < 0) {
+  rc=load_lib(device, openair0_cfg, eth_params, BBU_REMOTE_RADIO_HEAD);
+  if ( rc >= 0) {       
+    if ( set_transport(device) < 0) {
       fprintf(stderr, "%s %d:Unsupported transport protocol\n",__FILE__, __LINE__);
       return -1;		   
       }   
-    }
   }
-  else
-  {
-    device_init(device, openair0_cfg);
-  } 
   return 0;
 }
 
