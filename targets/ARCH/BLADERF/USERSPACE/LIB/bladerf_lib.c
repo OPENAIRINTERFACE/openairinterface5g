@@ -887,14 +887,18 @@ void calibrate_rf(openair0_device *device) {
  * \param openair0_cfg RF frontend parameters set by application
  */
 int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
-
   int status;
   int card=0;
   
   brf_state_t *brf = (brf_state_t*)malloc(sizeof(brf_state_t));
   memset(brf, 0, sizeof(brf_state_t));
+  /* device specific */
+  openair0_cfg->txlaunch_wait = 1;//manage when TX processing is triggered
+  openair0_cfg->txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  openair0_cfg->iq_txshift = 0;// shift
+  openair0_cfg->iq_rxrescale = 15;//rescale iqs
+  
   // init required params
-
   switch ((int)openair0_cfg->sample_rate) {
   case 30720000:
     openair0_cfg->samples_per_packet    = 2048;
@@ -921,7 +925,8 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
     exit(-1);
     break;
   }
-
+  openair0_cfg->iq_txshift= 0;
+  openair0_cfg->iq_rxrescale = 15; /*not sure*/
   openair0_cfg->rx_gain_calib_table = calib_table_fx4;
 
   //  The number of buffers to use in the underlying data stream
@@ -1065,6 +1070,7 @@ int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openai
   printf("BLADERF: Initializing openair0_device\n");
   device->priv           = brf; 
   device->Mod_id         = num_devices++;
+  device->type             = BLADERF_DEV; 
   device->trx_start_func = trx_brf_start;
   device->trx_end_func   = trx_brf_end;
   device->trx_read_func  = trx_brf_read;

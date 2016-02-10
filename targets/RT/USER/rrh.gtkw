@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Thu Sep 17 14:23:43 2015
+[*] Fri Jan 29 16:34:46 2016
 [*]
 [dumpfile] "/tmp/openair_dump_rrh.vcd"
-[dumpfile_mtime] "Thu Sep 17 14:21:43 2015"
-[dumpfile_size] 636509125
-[savefile] "/home/guepe/openair4G/targets/RT/USER/rrh.gtkw"
-[timestart] 17746655400
-[size] 1855 1056
-[pos] -1 -1
-*-15.826077 17746846200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile_mtime] "Fri Jan 29 16:20:55 2016"
+[dumpfile_size] 224259458
+[savefile] "/home/guepe/openairinterface5g_rrh/openairinterface5g/targets/RT/USER/rrh.gtkw"
+[timestart] 31315875900
+[size] 1004 1028
+[pos] 926 -1
+*-17.429794 31316090054 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 224
-[signals_width] 230
+[signals_width] 261
 [sst_expanded] 1
-[sst_vpaned_height] 287
+[sst_vpaned_height] 278
 @24
 [color] 1
 variables.hw_frame_rx[63:0]
@@ -23,7 +23,10 @@ variables.hw_subframe_rx[63:0]
 [color] 1
 functions.eNB_rx
 functions.eNB_rx_sleep
-functions.trx_write_rf
+[color] 3
+functions.trx_read_rf
+[color] 7
+functions.trx_write
 @c00024
 variables.rxcnt[63:0]
 @28
@@ -95,24 +98,97 @@ variables.rxcnt[63:0]
 -group_end
 @24
 variables.pck_rx[63:0]
+variables.rx_ts[63:0]
+@c00024
+variables.tx_seq_num[63:0]
+@28
+(0)variables.tx_seq_num[63:0]
+(1)variables.tx_seq_num[63:0]
+(2)variables.tx_seq_num[63:0]
+(3)variables.tx_seq_num[63:0]
+(4)variables.tx_seq_num[63:0]
+(5)variables.tx_seq_num[63:0]
+(6)variables.tx_seq_num[63:0]
+(7)variables.tx_seq_num[63:0]
+(8)variables.tx_seq_num[63:0]
+(9)variables.tx_seq_num[63:0]
+(10)variables.tx_seq_num[63:0]
+(11)variables.tx_seq_num[63:0]
+(12)variables.tx_seq_num[63:0]
+(13)variables.tx_seq_num[63:0]
+(14)variables.tx_seq_num[63:0]
+(15)variables.tx_seq_num[63:0]
+(16)variables.tx_seq_num[63:0]
+(17)variables.tx_seq_num[63:0]
+(18)variables.tx_seq_num[63:0]
+(19)variables.tx_seq_num[63:0]
+(20)variables.tx_seq_num[63:0]
+(21)variables.tx_seq_num[63:0]
+(22)variables.tx_seq_num[63:0]
+(23)variables.tx_seq_num[63:0]
+(24)variables.tx_seq_num[63:0]
+(25)variables.tx_seq_num[63:0]
+(26)variables.tx_seq_num[63:0]
+(27)variables.tx_seq_num[63:0]
+(28)variables.tx_seq_num[63:0]
+(29)variables.tx_seq_num[63:0]
+(30)variables.tx_seq_num[63:0]
+(31)variables.tx_seq_num[63:0]
+(32)variables.tx_seq_num[63:0]
+(33)variables.tx_seq_num[63:0]
+(34)variables.tx_seq_num[63:0]
+(35)variables.tx_seq_num[63:0]
+(36)variables.tx_seq_num[63:0]
+(37)variables.tx_seq_num[63:0]
+(38)variables.tx_seq_num[63:0]
+(39)variables.tx_seq_num[63:0]
+(40)variables.tx_seq_num[63:0]
+(41)variables.tx_seq_num[63:0]
+(42)variables.tx_seq_num[63:0]
+(43)variables.tx_seq_num[63:0]
+(44)variables.tx_seq_num[63:0]
+(45)variables.tx_seq_num[63:0]
+(46)variables.tx_seq_num[63:0]
+(47)variables.tx_seq_num[63:0]
+(48)variables.tx_seq_num[63:0]
+(49)variables.tx_seq_num[63:0]
+(50)variables.tx_seq_num[63:0]
+(51)variables.tx_seq_num[63:0]
+(52)variables.tx_seq_num[63:0]
+(53)variables.tx_seq_num[63:0]
+(54)variables.tx_seq_num[63:0]
+(55)variables.tx_seq_num[63:0]
+(56)variables.tx_seq_num[63:0]
+(57)variables.tx_seq_num[63:0]
+(58)variables.tx_seq_num[63:0]
+(59)variables.tx_seq_num[63:0]
+(60)variables.tx_seq_num[63:0]
+(61)variables.tx_seq_num[63:0]
+(62)variables.tx_seq_num[63:0]
+(63)variables.tx_seq_num[63:0]
+@1401200
+-group_end
+@24
 variables.hw_frame[63:0]
 variables.hw_subframe[63:0]
 @28
 [color] 1
 functions.eNB_tx
 functions.eNB_tx_sleep
-functions.trx_read_rf
-[color] 7
-functions.trx_write
 [color] 7
 functions.trx_read
+[color] 3
+functions.trx_write_rf
 @24
 variables.txcnt[63:0]
-variables.rx_ts[63:0]
+variables.pck_tx[63:0]
 variables.tx_ts[63:0]
+@25
+variables.rx_seq_num_prv[63:0]
+@24
+variables.rx_seq_num[63:0]
 variables.hw_cnt_rx[63:0]
 variables.lhw_cnt_rx[63:0]
-@25
 [color] 3
 variables.cnt[63:0]
 [pattern_trace] 1
