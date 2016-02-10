@@ -822,7 +822,7 @@ void calibrate_rf(openair0_device *device) {
   //  write_output("blade_rf_test.m","rxs",calib_buff,RXDCLENGTH,1,1);
 }
 
-int openair0_dev_init_bladerf(openair0_device *device, openair0_config_t *openair0_cfg) {
+int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   int status;
   int card=0;
   
