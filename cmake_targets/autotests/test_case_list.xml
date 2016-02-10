@@ -4639,7 +4639,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -4790,7 +4790,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -4865,7 +4865,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
@@ -5013,7 +5013,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
