@@ -393,6 +393,13 @@ int get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
 
   return ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].dl_cqi;
 }
+int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
+{
+	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
+	uint16_t frame = (uint16_t) get_current_frame(mod_id);
+	mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id,frame,ENB_FLAG_YES,MBMS_FLAG_NO,channel_id,0);
+	return rlc_status.bytes_in_buffer;
+}
 /*
  * timer primitives
  */

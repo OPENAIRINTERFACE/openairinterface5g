@@ -148,7 +148,7 @@ int get_ue_phr (mid_t mod_id, mid_t ue_id);
 
 int get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 
-
+int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
 
 

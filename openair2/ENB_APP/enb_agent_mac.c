@@ -413,9 +413,9 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       /* Check flag for creation of RLC buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_RLC_BS) {
 	// TODO: Fill in the actual RLC buffer status reports
-	ue_report[i]->n_rlc_report = 1; // Set this to the number of LCs for this UE
+	ue_report[i]->n_rlc_report = 3; // Set this to the number of LCs for this UE
 	Protocol__PrpRlcBsr ** rlc_reports;
-	rlc_reports = malloc(sizeof(Protocol__PrpRlcBsr) * ue_report[i]->n_rlc_report);
+	rlc_reports = malloc(sizeof(Protocol__PrpRlcBsr *) * ue_report[i]->n_rlc_report);
 	if (rlc_reports == NULL)
 	  goto error;
 	
@@ -427,10 +427,10 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	    goto error;
 	  protocol__prp_rlc_bsr__init(rlc_reports[j]);
 	  //TODO:Set logical channel id
-	  rlc_reports[j]->lc_id = 1;
+	  rlc_reports[j]->lc_id = j+1;
 	  rlc_reports[j]->has_lc_id = 1;
 	  //TODO:Set tx queue size in bytes
-	  rlc_reports[j]->tx_queue_size = 10;
+	  rlc_reports[j]->tx_queue_size = get_tx_queue_size(enb_id,i,j+1);
 	  rlc_reports[j]->has_tx_queue_size = 1;
 	  //TODO:Set tx queue head of line delay in ms
 	  rlc_reports[j]->tx_queue_hol_delay = 100;
