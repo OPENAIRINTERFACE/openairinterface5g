@@ -400,6 +400,31 @@ int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 	mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id,frame,ENB_FLAG_YES,MBMS_FLAG_NO,channel_id,0);
 	return rlc_status.bytes_in_buffer;
 }
+
+int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id)
+{
+	if((((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ta_update) > 0)
+		return 1;
+	else
+		return 0;
+}
+
+int get_active_CC(mid_t mod_id, mid_t ue_id)
+{
+	return ((UE_list_t *)enb_ue[mod_id])->numactiveCCs[ue_id];
+}
+
+int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id)
+{
+	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+
+	int pCCid = UE_PCCID(mod_id,ue_id);
+	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
+
+	eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+	return eNB_UE_stats[CC_id].rank;
+}
+
 /*
  * timer primitives
  */

@@ -52,25 +52,25 @@ unsigned int mac_agent_registered[NUM_MAX_ENB];
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
-  
+
   // TODO: Must deal with sanitization of input
   // TODO: Must check if RNTIs and cell ids of the request actually exist
   // TODO: Must resolve conflicts among stats requests
-  
+
   int i;
   void *buffer;
   int size;
   err_code_t err_code;
   xid_t xid;
   uint32_t usec_interval, sec_interval;
-  
-  //TODO: We do not deal with multiple CCs at the moment and eNB id is 0 
+
+  //TODO: We do not deal with multiple CCs at the moment and eNB id is 0
   int cc_id = 0;
   int enb_id = mod_id;
 
   //eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
   //UE_list_t *eNB_UE_list=  &eNB->UE_list;
-  
+
   report_config_t report_config;
 
   uint32_t ue_flags = 0;
@@ -96,7 +96,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
       ue_flags = comp_req->ue_report_flags;
       c_flags = comp_req->cell_report_flags;
       //Create a list of all eNB RNTIs and cells
-      
+
       //Set the number of UEs and create list with their RNTIs stats configs
       report_config.nr_ue = get_num_ues(mod_id); //eNB_UE_list->num_UEs
       report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
@@ -129,7 +129,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	stats_request_config_t request_config;
 	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
 	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
-	request_config.period = 0; 
+	request_config.period = 0;
 	request_config.config = &report_config;
 	enb_agent_mac_stats_request(enb_id, xid, &request_config, &timer_msg);
 	/* Create a timer */
@@ -137,7 +137,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	enb_agent_timer_args_t *timer_args;
 	timer_args = malloc(sizeof(enb_agent_timer_args_t));
 	memset (timer_args, 0, sizeof(enb_agent_timer_args_t));
-	timer_args->mod_id = enb_id;	
+	timer_args->mod_id = enb_id;
 	timer_args->msg = timer_msg;
 	/*Convert subframes to usec time*/
 	usec_interval = 1000*comp_req->sf;
@@ -155,7 +155,7 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	stats_request_config_t request_config;
 	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
 	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
-	request_config.period = 0; 
+	request_config.period = 0;
 	request_config.config = &report_config;
 	enb_agent_enable_cont_mac_stats_update(enb_id, xid, &request_config);
       }
@@ -219,14 +219,14 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 
 int enb_agent_mac_stats_request(mid_t mod_id,
 				xid_t xid,
-				const stats_request_config_t *report_config, 
+				const stats_request_config_t *report_config,
 				Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   int i;
-   
+
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REQUEST, &header) != 0)
     goto error;
-  
+
   Protocol__PrpStatsRequest *stats_request_msg;
   stats_request_msg = malloc(sizeof(Protocol__PrpStatsRequest));
   if(stats_request_msg == NULL)
@@ -234,10 +234,10 @@ int enb_agent_mac_stats_request(mid_t mod_id,
 
   protocol__prp_stats_request__init(stats_request_msg);
   stats_request_msg->header = header;
-  
+
   stats_request_msg->type = report_config->report_type;
   stats_request_msg->has_type = 1;
-  
+
   switch (report_config->report_type) {
   case PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS:
     stats_request_msg->body_case =  PROTOCOL__PRP_STATS_REQUEST__BODY_COMPLETE_STATS_REQUEST;
@@ -311,7 +311,7 @@ int enb_agent_mac_stats_request(mid_t mod_id,
   (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->stats_request_msg = stats_request_msg;
   return 0;
-  
+
  error:
   // TODO: Need to make proper error handling
   if (header != NULL)
@@ -337,7 +337,7 @@ int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg) {
   free(msg->stats_request_msg);
   free(msg);
   return 0;
-  
+
  error:
   //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
@@ -345,7 +345,7 @@ int enb_agent_mac_destroy_stats_request(Protocol__ProgranMessage *msg) {
 
 int enb_agent_mac_stats_reply(mid_t mod_id,
 			      xid_t xid,
-			      const report_config_t *report_config, 
+			      const report_config_t *report_config,
 			      Protocol__ProgranMessage **msg) {
   Protocol__PrpHeader *header;
   int i, j, k;
@@ -353,8 +353,8 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   int enb_id = mod_id;
   //eNB_MAC_INST *eNB = &eNB_mac_inst[enb_id];
   //UE_list_t *eNB_UE_list=  &eNB->UE_list;
-  
-  
+
+
   if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_STATS_REPLY, &header) != 0)
     goto error;
 
@@ -371,7 +371,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   Protocol__PrpUeStatsReport **ue_report;
   Protocol__PrpCellStatsReport **cell_report;
 
-  
+
   /* Allocate memory for list of UE reports */
   if (report_config->nr_ue > 0) {
     ue_report = malloc(sizeof(Protocol__PrpUeStatsReport *) * report_config->nr_ue);
@@ -402,7 +402,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	}
 	ue_report[i]->bsr = elem;
       }
-      
+
       /* Check flag for creation of PRH report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PRH) {
 	// TODO: Fill in the actual power headroom value for the RNTI
@@ -418,7 +418,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	rlc_reports = malloc(sizeof(Protocol__PrpRlcBsr *) * ue_report[i]->n_rlc_report);
 	if (rlc_reports == NULL)
 	  goto error;
-	
+
 	// Fill the buffer status report for each logical channel of the UE
 	// NN: see LAYER2/openair2_proc.c for rlc status
 	for (j = 0; j < ue_report[i]->n_rlc_report; j++) {
@@ -453,13 +453,13 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       /* Check flag for creation of MAC CE buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_MAC_CE_BS) {
 	// TODO: Fill in the actual MAC CE buffer status report
-	ue_report[i]->pending_mac_ces = -1; /* Use as bitmap. Set one or more of the
+	ue_report[i]->pending_mac_ces = (get_MAC_CE_bitmap_TA(enb_id,i) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
 					       PROTOCOL__PRP_CE_TYPE__PRPCET_ values
 					       found in stats_common.pb-c.h. See
 					       prp_ce_type in progRAN specification */
 	ue_report[i]->has_pending_mac_ces = 1;
       }
-      
+
       /* Check flag for creation of DL CQI report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_DL_CQI) {
 	// TODO: Fill in the actual DL CQI report for the UE based on its configuration
@@ -472,7 +472,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	dl_report->sfn_sn = get_sfn_sf(enb_id);
 	dl_report->has_sfn_sn = 1;
 	//TODO:Set the number of DL CQI reports for this UE. One for each CC
-	dl_report->n_csi_report = 1;
+	dl_report->n_csi_report = get_active_CC(enb_id,i);
 	//TODO:Create the actual CSI reports.
 	Protocol__PrpDlCsi **csi_reports;
 	csi_reports = malloc(sizeof(Protocol__PrpDlCsi *)*dl_report->n_csi_report);
@@ -484,36 +484,62 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	    goto error;
 	  protocol__prp_dl_csi__init(csi_reports[j]);
 	  //TODO: the servCellIndex for this report
-	  csi_reports[j]->serv_cell_index = 0;
+	  csi_reports[j]->serv_cell_index = j;
 	  csi_reports[j]->has_serv_cell_index = 1;
 	  //TODO: the rank indicator value for this cc
-	  csi_reports[j]->ri = 1;
+	  csi_reports[j]->ri = get_current_RI(enb_id,i,j);
 	  csi_reports[j]->has_ri = 1;
 	  //TODO: the type of CSI report based on the configuration of the UE
 	  //For this example we use type P10, which only needs a wideband value
 	  //The full set of types can be found in stats_common.pb-c.h and
 	  //in the progRAN specifications
-	  csi_reports[j]->type =  PROTOCOL__PRP_CSI_TYPE__PRCSIT_P10;
-	  csi_reports[j]->has_type = 1;
-	  csi_reports[j]->report_case = PROTOCOL__PRP_DL_CSI__REPORT_P10CSI;
-	  Protocol__PrpCsiP10 *csi10;
-	  csi10 = malloc(sizeof(Protocol__PrpCsiP10));
-	  if (csi10 == NULL)
-	    goto error;
-	  protocol__prp_csi_p10__init(csi10);
-	  //TODO: set the wideband value
-	  // NN: this is also depends on cc_id
-	  csi10->wb_cqi = get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
-	  csi10->has_wb_cqi = 1;
-	  //Add the type of measurements to the csi report in the proper union type
-	  csi_reports[j]->p10csi = csi10;
-	}
+    csi_reports[j]->type =  PROTOCOL__PRP_CSI_TYPE__PRCSIT_P10;
+		  csi_reports[j]->has_type = 1;
+		  csi_reports[j]->report_case = PROTOCOL__PRP_DL_CSI__REPORT_P10CSI;
+		  if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P10CSI){
+			  Protocol__PrpCsiP10 *csi10;
+			  csi10 = malloc(sizeof(Protocol__PrpCsiP10));
+			  if (csi10 == NULL)
+				goto error;
+			  protocol__prp_csi_p10__init(csi10);
+			  //TODO: set the wideband value
+			  // NN: this is also depends on cc_id
+			  csi10->wb_cqi = get_ue_wcqi (enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].dl_cqi;
+			  csi10->has_wb_cqi = 1;
+			  //Add the type of measurements to the csi report in the proper union type
+			  csi_reports[j]->p10csi = csi10;
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P11CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P20CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_P21CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A12CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A22CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A20CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A30CSI){
+
+		  }
+		  else if(csi_reports[j]->report_case == PROTOCOL__PRP_DL_CSI__REPORT_A31CSI){
+
+		  }
+		}
 	//Add the csi reports to the full DL CQI report
 	dl_report->csi_report = csi_reports;
 	//Add the DL CQI report to the stats report
 	ue_report[i]->dl_cqi_report = dl_report;
       }
-      
+
       /* Check flag for creation of paging buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_PBS) {
 	//TODO: Fill in the actual paging buffer status report. For this field to be valid, the RNTI
@@ -554,7 +580,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	//Add the paging report to the UE report
 	ue_report[i]->pbr = paging_report;
       }
-      
+
       /* Check flag for creation of UL CQI report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_UL_CQI) {
 	//Fill in the full UL CQI report of the UE
@@ -648,7 +674,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
     /* Add list of all cell reports to the message */
     stats_reply_msg->cell_report = cell_report;
   }
-  
+
   *msg = malloc(sizeof(Protocol__ProgranMessage));
   if(*msg == NULL)
     goto error;
@@ -657,7 +683,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
   (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->stats_reply_msg = stats_reply_msg;
   return 0;
-  
+
  error:
   // TODO: Need to make proper error handling
   if (header != NULL)
@@ -676,7 +702,7 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
     goto error;
   free(msg->stats_reply_msg->header);
   int i, j, k;
-  
+
   Protocol__PrpStatsReply *reply = msg->stats_reply_msg;
   Protocol__PrpDlCqiReport *dl_report;
   Protocol__PrpUlCqiReport *ul_report;
@@ -737,8 +763,8 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
 	  }
 	  free(dl_report->csi_report[j]->a31csi->sb_cqi);
 	  break;
-	}  
-	
+	}
+
 	free(dl_report->csi_report[j]);
       }
       free(dl_report->csi_report);
@@ -773,11 +799,11 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
     free(reply->cell_report[i]);
   }
   free(reply->cell_report);
-  
+
   free(reply);
   free(msg);
   return 0;
-  
+
  error:
   //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
@@ -796,7 +822,7 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
     goto error;
   }
   protocol__prp_ul_sr_info__init(ul_sr_info_msg);
-  
+
   ul_sr_info_msg->header = header;
   ul_sr_info_msg->has_sfn_sf = 1;
   ul_sr_info_msg->sfn_sf = get_sfn_sf(mod_id);
@@ -811,7 +837,7 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
   for (i = 0; i < ul_sr_info_msg->n_rnti; i++) {
     ul_sr_info_msg->rnti[i] = 1;
   }
-    
+
   *msg = malloc(sizeof(Protocol__ProgranMessage));
   if(*msg == NULL)
     goto error;
@@ -820,7 +846,7 @@ int enb_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__ProgranMes
   (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->ul_sr_info_msg = ul_sr_info_msg;
   return 0;
-  
+
  error:
   // TODO: Need to make proper error handling
   if (header != NULL)
@@ -863,7 +889,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
     goto error;
   }
   protocol__prp_sf_trigger__init(sf_trigger_msg);
-  
+
   sf_trigger_msg->header = header;
   sf_trigger_msg->has_sfn_sf = 1;
   sf_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
@@ -872,7 +898,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
    *transmitting UEs
    */
   sf_trigger_msg->n_dl_info = get_num_ues(mod_id);
-  
+
   Protocol__PrpDlInfo **dl_info = NULL;
 
   if (sf_trigger_msg->n_dl_info > 0) {
@@ -901,14 +927,14 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       dl_info[i]->has_serv_cell_index = 1;
     }
   }
-  
+
   sf_trigger_msg->dl_info = dl_info;
 
     /*TODO: Fill in the number of UL reception status related info, based on the number of currently
    *transmitting UEs
    */
   sf_trigger_msg->n_ul_info = get_num_ues(mod_id);
-  
+
   Protocol__PrpUlInfo **ul_info = NULL;
 
   if (sf_trigger_msg->n_ul_info > 0) {
@@ -926,7 +952,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       /*TODO: fill in the Tx power control command for this UE (if available)*/
       ul_info[i]->tpc = 1;
       ul_info[i]->has_tpc = 0;
-      /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the 
+      /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
 	given logical channel*/
       ul_info[i]->n_ul_reception = 11;
       ul_info[i]->ul_reception = malloc(sizeof(uint32_t) * ul_info[i]->n_ul_reception);
@@ -941,7 +967,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       ul_info[i]->has_serv_cell_index = 1;
     }
   }
-  
+
   sf_trigger_msg->ul_info = ul_info;
 
   *msg = malloc(sizeof(Protocol__ProgranMessage));
@@ -952,7 +978,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
   (*msg)->msg_dir =  PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
   (*msg)->sf_trigger_msg = sf_trigger_msg;
   return 0;
-  
+
  error:
   if (header != NULL)
     free(header);
@@ -977,7 +1003,7 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   int i;
   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_SF_TRIGGER_MSG)
     goto error;
-  
+
   free(msg->sf_trigger_msg->header);
   for (i = 0; i < msg->sf_trigger_msg->n_dl_info; i++) {
     free(msg->sf_trigger_msg->dl_info[i]->harq_status);
@@ -989,7 +1015,7 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   free(msg->sf_trigger_msg->ul_info);
   free(msg->sf_trigger_msg);
   free(msg);
-  
+
   return 0;
 
  error:
@@ -1010,11 +1036,11 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage 
     goto error;
   }
   protocol__prp_dl_mac_config__init(dl_mac_config_msg);
-  
+
   dl_mac_config_msg->header = header;
   dl_mac_config_msg->has_sfn_sf = 1;
   dl_mac_config_msg->sfn_sf = get_sfn_sf(mod_id);
-  
+
   *msg = malloc(sizeof(Protocol__ProgranMessage));
   if(*msg == NULL)
     goto error;
@@ -1056,7 +1082,7 @@ int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
     free(msg->dl_mac_config_msg->dl_ue_data[i]);
   }
   free(msg->dl_mac_config_msg->dl_ue_data);
-  
+
   for (i = 0; i <  msg->dl_mac_config_msg->n_dl_rar; i++) {
     dl_dci = msg->dl_mac_config_msg->dl_rar[i]->rar_dci;
     free(dl_dci->tbs_size);
@@ -1132,7 +1158,7 @@ void enb_agent_send_sf_trigger(mid_t mod_id) {
   err_code_t err_code;
 
   int xid = 0;
-  
+
   /*TODO: Must use a proper xid*/
   err_code = enb_agent_mac_sf_trigger(mod_id, (void *) &xid, &msg);
   if (err_code < 0) {
@@ -1161,20 +1187,20 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   int size;
   err_code_t err_code;
   int priority;
-  
+
   mac_stats_updates_context_t stats_context = mac_stats_context[mod_id];
 
   if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
     goto error;
   }
-  
+
   /*Create a fresh report with the required flags*/
   err_code = enb_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
   if (err_code < 0) {
     goto error;
   }
 
-  /*TODO:Check if a previous reports exists and if yes, generate a report 
+  /*TODO:Check if a previous reports exists and if yes, generate a report
    *that is the diff between the old and the new report,
    *respecting the thresholds. Otherwise send the new report*/
   if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
@@ -1186,12 +1212,12 @@ void enb_agent_send_update_mac_stats(mid_t mod_id) {
   }
   /*Use the current report for future comparissons*/
   mac_stats_context[mod_id].prev_stats_reply = current_report;
-  
-  
+
+
   if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
     goto error;
   }
-  
+
   if (msg != NULL){
     data=enb_agent_pack_message(msg, &size);
     /*Send any stats updates using the MAC channel of the eNB*/
@@ -1219,7 +1245,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
   xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
 
-  
+
   mac_agent_registered[mod_id] = 1;
   agent_mac_xface[mod_id] = xface;
 
@@ -1227,7 +1253,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 }
 
 int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
-  
+
   //xface->agent_ctxt = NULL;
   xface->enb_agent_send_sr_info = NULL;
   xface->enb_agent_send_sf_trigger = NULL;
@@ -1236,7 +1262,7 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   mac_agent_registered[mod_id] = 0;
   agent_mac_xface[mod_id] = NULL;
-  
+
   return 0;
 }
 
@@ -1246,7 +1272,7 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
  ******************************************************/
 
 err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id) {
-  
+
   /*Initialize the Mac stats update structure*/
   /*Initially the continuous update is set to false*/
   mac_stats_context[mod_id].cont_update = 0;
@@ -1258,9 +1284,9 @@ err_code_t enb_agent_init_cont_mac_stats_update(mid_t mod_id) {
     goto error;
   if (pthread_mutex_init(mac_stats_context[mod_id].mutex, NULL))
     goto error;;
-  
+
   return 0;
-  
+
  error:
   return -1;
 }
@@ -1272,7 +1298,7 @@ err_code_t enb_agent_destroy_cont_mac_stats_update(mid_t mod_id) {
   enb_agent_destroy_progran_message(mac_stats_context[mod_id].stats_req);
   enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
   free(mac_stats_context[mod_id].mutex);
-  
+
   mac_agent_registered[mod_id] = NULL;
   return 1;
 }
@@ -1290,15 +1316,15 @@ err_code_t enb_agent_enable_cont_mac_stats_update(mid_t mod_id,
   enb_agent_mac_stats_request(mod_id, xid, stats_req, &req_msg);
   mac_stats_context[mod_id].stats_req = req_msg;
   mac_stats_context[mod_id].prev_stats_reply = NULL;
-  
+
   mac_stats_context[mod_id].cont_update = 1;
   mac_stats_context[mod_id].xid = xid;
-  
+
   if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
     goto error;
   }
   return 0;
-  
+
  error:
   LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
   return -1;
@@ -1325,5 +1351,5 @@ err_code_t enb_agent_disable_cont_mac_stats_update(mid_t mod_id) {
  error:
   LOG_E(ENB_AGENT, "mac_stats_context for eNB %d is not initialized\n", mod_id);
   return -1;
-  
+
 }

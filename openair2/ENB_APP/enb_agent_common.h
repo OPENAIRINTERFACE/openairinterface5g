@@ -150,6 +150,11 @@ int get_ue_wcqi (mid_t mod_id, mid_t ue_id);
 
 int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id);
 
+int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id);
+
+int get_active_CC(mid_t mod_id, mid_t ue_id);
+
+int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id);
 
 
 
