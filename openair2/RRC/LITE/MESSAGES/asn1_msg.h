@@ -219,6 +219,16 @@ do_RRCConnectionReestablishmentReject(
     uint8_t*                   const buffer);
 
 /**
+\brief Generate an RRCConnectionReject DL-CCCH-Message (eNB).
+@param Mod_id Module ID of eNB
+@param buffer Pointer to PER-encoded ASN.1 description of DL-CCCH-Message PDU
+@returns Size of encoded bit stream in bytes*/
+uint8_t
+do_RRCConnectionReject(
+    uint8_t                    Mod_id,
+    uint8_t*                   const buffer);
+
+/**
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This
 routine only generates an mo-data establishment cause.
 @param Mod_id Module ID of eNB

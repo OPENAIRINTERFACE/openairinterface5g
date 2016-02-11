@@ -170,6 +170,14 @@
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
+#define ENB_CONFIG_STRING_RRH_GW_CONFIG                   "rrh_gw_config"
+#define ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME            "local_if_name"
+#define ENB_CONFIG_STRING_RRH_GW_LOCAL_ADDRESS            "local_address"
+#define ENB_CONFIG_STRING_RRH_GW_REMOTE_ADDRESS           "remote_address"
+#define ENB_CONFIG_STRING_RRH_GW_LOCAL_PORT               "local_port"
+#define ENB_CONFIG_STRING_RRH_GW_REMOTE_PORT              "remote_port"
+#define ENB_CONFIG_STRING_RRH_GW_ACTIVE                   "active"
+#define ENB_CONFIG_STRING_RRH_GW_PREFERENCE               "preference"
 
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY                   "Asn1_verbosity"
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE              "none"
@@ -273,6 +281,18 @@ void enb_config_display(void)
       printf( "\tMNC:                \t%03"PRIu16":\n",enb_properties.properties[i]->mnc);
     } else {
       printf( "\tMNC:                \t%02"PRIu16":\n",enb_properties.properties[i]->mnc);
+    }
+    
+    for (j=0; j< enb_properties.properties[i]->nb_rrh_gw; j++) {
+      if (enb_properties.properties[i]->rrh_gw_config[j].active == 1 ){
+	printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
+	printf( "\tinterface name :       \t%s:\n",enb_properties.properties[i]->rrh_gw_if_name);
+	printf( "\tlocal address  :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].local_address);
+	printf( "\tlocal port     :       \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].local_port);
+	printf( "\tremote address :       \t%s:\n",enb_properties.properties[i]->rrh_gw_config[j].remote_address);
+	printf( "\tremote port    :       \t%d:\n",enb_properties.properties[i]->rrh_gw_config[j].remote_port);
+	printf( "\ttransport      :       \t%s Ethernet:\n\n",(enb_properties.properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : "UDP");
+      }
     }
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
@@ -455,6 +475,8 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   config_setting_t *setting_srb1                  = NULL;
   config_setting_t *setting_mme_addresses         = NULL;
   config_setting_t *setting_mme_address           = NULL;
+  config_setting_t *setting_rrh_gws               = NULL;
+  config_setting_t *setting_rrh_gw                = NULL;
   config_setting_t *setting_enb                   = NULL;
   config_setting_t *setting_otg                   = NULL;
   config_setting_t *subsetting_otg                   = NULL;
@@ -462,6 +484,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   int               enb_properties_index          = 0;
   int               num_enbs                      = 0;
   int               num_mme_address               = 0;
+  int               num_rrh_gw                    = 0;
   int               num_otg_elements              =0;
   int               num_component_carriers        =0;
   int               i                             = 0;
@@ -558,10 +581,15 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
   libconfig_int     my_int;
 
+
+  char*             if_name                       = NULL;
   char*             ipv4                          = NULL;
+  char*             ipv4_remote                   = NULL;
   char*             ipv6                          = NULL;
   char*             active                        = NULL;
   char*             preference                    = NULL;
+  libconfig_int     local_port                    = 0;
+  libconfig_int     remote_port                   = 0;
   const char*       active_enb[MAX_ENB];
   char*             enb_interface_name_for_S1U    = NULL;
   char*             enb_ipv4_address_for_S1U      = NULL;
@@ -2136,6 +2164,63 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               enb_properties.properties[enb_properties_index]->mme_ip_address[j].ipv6 = 1;
             }
           }
+	  // RRH Config 
+	  setting_rrh_gws = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_RRH_GW_CONFIG);
+	  if ( setting_rrh_gws != NULL) {
+          num_rrh_gw     = config_setting_length(setting_rrh_gws);
+          enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;
+
+          for (j = 0; j < num_rrh_gw; j++) {
+            setting_rrh_gw = config_setting_get_elem(setting_rrh_gws, j);
+
+            if (  !(
+                   config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME, (const char **)&if_name)
+		   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_ADDRESS, (const char **)&ipv4)
+                   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_ADDRESS , (const char **)&ipv4_remote)
+                   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_LOCAL_PORT, &local_port)
+                   && config_setting_lookup_int(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_REMOTE_PORT, &remote_port)
+                   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_ACTIVE, (const char **)&active)
+                   && config_setting_lookup_string(setting_rrh_gw, ENB_CONFIG_STRING_RRH_GW_PREFERENCE, (const char **)&preference)
+                 )
+              ) {
+              AssertError (0, parse_errors ++,
+                           "Failed to parse eNB configuration file %s, %u th enb %u the RRH GW address !\n",
+                           lib_config_file_name_pP, i, j);
+              continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
+            }
+
+            enb_properties.properties[enb_properties_index]->nb_rrh_gw += 1;
+
+	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = strdup(if_name);
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = strdup(ipv4);
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = strdup(ipv4_remote);
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port= local_port;
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_port= remote_port;
+
+            if (strcmp(active, "yes") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].active = 1;
+            } 
+
+            if (strcmp(preference, "udp") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
+            } else if (strcmp(preference, "raw") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+            } else {//if (strcmp(preference, "no") == 0) 
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+            }
+          }
+	  } else {
+	    enb_properties.properties[enb_properties_index]->nb_rrh_gw = 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_if_name = "none";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_address  = "0.0.0.0";
+            enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_address = "0.0.0.0";
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].local_port= 0;
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].remote_port= 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].active = 0;	    
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 0;
+	    enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 0;
+	  }
 
           // SCTP SETTING
           enb_properties.properties[enb_properties_index]->sctp_out_streams = SCTP_OUT_STREAMS;
