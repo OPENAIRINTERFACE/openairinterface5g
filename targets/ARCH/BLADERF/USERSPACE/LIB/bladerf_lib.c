@@ -38,6 +38,11 @@
 #include <inttypes.h>
 #include "bladerf_lib.h"
 
+/** @addtogroup _BLADERF_PHY_RF_INTERFACE_
+ * @{
+ */
+
+//! Number of BladeRF devices 
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
 #endif
@@ -47,13 +52,21 @@
 #endif
 
 int num_devices=0;
+
 /*These items configure the underlying asynch stream used by the the sync interface. 
  */
 
-int trx_brf_init(openair0_device *openair0) {
+/*! \brief BladeRF Init function (not used at the moment)
+ * \param device RF frontend parameters set by application
+ */
+int trx_brf_init(openair0_device *device) {
   
 }
 
+/*! \brief get current timestamp
+ *\param device the hardware to use 
+ *\param module the bladeRf module
+ */
  
 openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module module) {
   int status;
@@ -69,17 +82,29 @@ openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module mod
   return meta.timestamp;
 }
 
-
-int trx_brf_start(openair0_device *openair0) {
+/*! \brief Start BladeRF
+ *\param device the hardware to use 
+ */
+int trx_brf_start(openair0_device *device) {
 
   return 0;
 }
 
+/*! \brief Get BladeRF stats
+ *\param device the hardware to use 
+ */
 static void trx_brf_stats(openair0_device *device){
 
 
 }
 
+/*! \brief Called to send samples to the BladeRF RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at whicch the first sample MUST be sent 
+      @param buff Buffer which holds the samples
+      @param nsamps number of samples to be sent
+      @param cc index of the component carrier
+*/ 
 static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc) {
   
   int status;
@@ -121,6 +146,16 @@ static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, 
   return(0);
 }
 
+/*! \brief Receive samples from hardware.
+ * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+ * the first channel. *ptimestamp is the time at which the first sample
+ * was received.
+ * \param device the hardware to use
+ * \param[out] ptimestamp the time at which the first sample was received.
+ * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
+ * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+ * \param cc  Index of component carrier
+*/
 static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
 
   int status=0;
@@ -157,6 +192,9 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
 
 }
 
+/*! \brief Terminate operation of the BladeRF transceiver -- free all associated resources 
+ * \param device the hardware to use
+ */
 int trx_brf_end(openair0_device *device) {
 
   int status;
@@ -172,25 +210,39 @@ int trx_brf_end(openair0_device *device) {
   return 0;
 }
 
-
+/*! \brief print the BladeRF statistics  
+* \param device the hardware to use
+* \returns  0 on success
+*/
 int trx_brf_get_stats(openair0_device* device) {
 
   return(0);
 
 }
 
+/*! \brief Reset the BladeRF statistics  
+* \param device the hardware to use
+* \returns  0 on success
+*/
 int trx_brf_reset_stats(openair0_device* device) {
 
   return(0);
 
 }
 
+/*! \brief Stop USRP
+ * \param device the hardware to use
+ */
 int trx_brf_stop(openair0_device* device) {
 
   return(0);
 
 }
 
+/*! \brief Set frequencies (TX/RX)
+ * \param device the hardware to use
+ * \returns 0 in success 
+ */
 int trx_brf_set_freq(openair0_device* device) {
 
   int status;
@@ -213,11 +265,18 @@ int trx_brf_set_freq(openair0_device* device) {
   return(0);
 
 }
+
+/*! \brief Set Gains (TX/RX)
+ * \param device the hardware to use
+ * \returns 0 in success 
+ */
 int trx_brf_set_gains(openair0_device* device) {
 
   return(0);
 
 }
+
+
 
 #define RXDCLENGTH 16384
 int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
@@ -822,6 +881,10 @@ void calibrate_rf(openair0_device *device) {
   //  write_output("blade_rf_test.m","rxs",calib_buff,RXDCLENGTH,1,1);
 }
 
+/*! \brief Initialize Openair BLADERF target. It returns 0 if OK 
+ * \param device the hardware to use
+ * \param openair0_cfg RF frontend parameters set by application
+ */
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   int status;
   int card=0;
@@ -1025,6 +1088,9 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
 
+/*! \brief bladeRF error report 
+ * \param status 
+ */
 int brf_error(int status) {
   
   //exit(-1);
@@ -1032,7 +1098,9 @@ int brf_error(int status) {
 }
 
 
-
+/*! \brief Open BladeRF from serial port
+ * \param serial name of serial port on which to open BladeRF device
+ */
 struct bladerf * open_bladerf_from_serial(const char *serial) {
 
   int status;
@@ -1059,6 +1127,10 @@ struct bladerf * open_bladerf_from_serial(const char *serial) {
     return dev;
   }
 }
+
+/*! \brief Get BladeRF log level
+ * \param log_level log level
+ */
 int get_brf_log_level(int log_level){
 
   int level=BLADERF_LOG_LEVEL_INFO;
@@ -1087,3 +1159,4 @@ int get_brf_log_level(int log_level){
   }
   return level;
 }
+/*@}*/
