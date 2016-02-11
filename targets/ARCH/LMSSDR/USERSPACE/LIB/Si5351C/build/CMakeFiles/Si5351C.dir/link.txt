@@ -1,0 +1,2 @@
+/usr/bin/ar cr libSi5351C.a  CMakeFiles/Si5351C.dir/Si5351C.o
+/usr/bin/ranlib libSi5351C.a
