@@ -136,6 +136,8 @@ int             td                  = 0;
 int             td_avg              = 0;
 int             sleep_time_us       = 0;
 
+int phy_test = 0;
+
 #ifdef OPENAIR2
 // omv related info
 //pid_t omv_pid;
@@ -206,6 +208,7 @@ void get_simulation_options(int argc, char *argv[])
     LONG_OPTION_MALLOC_TRACE_ENABLED,
 
     LONG_OPTION_CBA_BACKOFF_TIMER,
+    LONG_OPTION_PHYTEST,
   };
 
   static struct option long_options[] = {
@@ -237,11 +240,17 @@ void get_simulation_options(int argc, char *argv[])
 
     {"cba-backoff",            required_argument, 0, LONG_OPTION_CBA_BACKOFF_TIMER},
 
+    {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+
     {NULL, 0, NULL, 0}
   };
 
   while ((option = getopt_long (argc, argv, "aA:b:B:c:C:D:d:eE:f:FGg:hHi:IJ:j:k:K:l:L:m:M:n:N:oO:p:P:qQ:rR:s:S:t:T:u:U:vV:w:W:x:X:y:Y:z:Z:", long_options, NULL)) != -1) {
     switch (option) {
+    case LONG_OPTION_PHYTEST:
+      phy_test = 1;
+      break;
+
     case LONG_OPTION_ENB_CONF:
       if (optarg) {
         free(conf_config_file_name); // prevent memory leak if option is used multiple times
@@ -976,6 +985,14 @@ void init_openair1(void)
     }
   }
 
+  for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++)
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      if (phy_test==1)
+	PHY_vars_eNB_g[eNB_id][CC_id]->mac_enabled=0;
+      else
+	PHY_vars_eNB_g[eNB_id][CC_id]->mac_enabled=1;
+    }
+
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++)
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -991,6 +1008,11 @@ void init_openair1(void)
         // 0 is the index of the connected eNB
         PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] = PRACH;
       }
+
+      if (phy_test==1)
+	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=0;
+      else
+	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
       PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;

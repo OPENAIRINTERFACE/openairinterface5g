@@ -530,20 +530,20 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 #endif
 
     if (phy_vars_ue->UE_scan_carrier == 0) {
-#ifdef OPENAIR2
-      LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
-      //mac_resynch();
-      mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
-#endif //OPENAIR2
-      
+      if (phy_vars_ue->mac_enabled==1) {
+	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
+	//mac_resynch();
+	mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+	phy_vars_ue->UE_mode[0] = PRACH;
+      }
+      else {
+	phy_vars_ue->UE_mode[0] = PUSCH;
+      }
+
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);
       //    init_prach625(frame_parms);
-#ifndef OPENAIR2
-      phy_vars_ue->UE_mode[0] = PUSCH;
-#else
-      phy_vars_ue->UE_mode[0] = PRACH;
-#endif
+
       //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
       phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
     //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
