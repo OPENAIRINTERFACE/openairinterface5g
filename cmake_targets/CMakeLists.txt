@@ -940,8 +940,8 @@ set (ENB_APP_SRC
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
-  ${ENB_APP_SRC}
-  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+  ${ENB_APP_SRC})
+#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 # L3 Libs
 ##########################

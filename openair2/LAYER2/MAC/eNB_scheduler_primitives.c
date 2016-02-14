@@ -530,22 +530,9 @@ void swap_UEs(UE_list_t *listP,int nodeiP, int nodejP, int ul_flag)
   dump_ue_list(listP,ul_flag);
 }
 
-void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
-{
 
-  int UE_id = find_UE_id(mod_idP, rntiP);
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
 
-  if (UE_id  != -1) {
-    LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
-    UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
-    UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
-  } else {
-    //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
-    //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
-    LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d (unknown UEid) on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
-  }
-}
+
 
 
 
@@ -1108,3 +1095,35 @@ boolean_t CCE_allocation_infeasible(int module_idP,
   return(res);
 }
 
+void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
+{
+ 
+  int UE_id = find_UE_id(mod_idP, rntiP);
+  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+ 
+  if (UE_id  != -1) {
+    LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+    UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
+    UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
+  } else {
+    //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
+    //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
+    LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d (unknown UEid) on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+  }
+}
+
+void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP, sub_frame_t subframeP)
+{
+
+  int UE_id = find_UE_id(mod_idP, rntiP);
+  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+
+  if (UE_id  != -1) {
+    LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=1;
+  } else {
+    //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
+    //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
+    LOG_W(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d (unknown UEid) on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+  }
+}

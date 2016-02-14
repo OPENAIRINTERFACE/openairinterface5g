@@ -94,7 +94,8 @@ typedef struct {
 
   /// Indicate Scheduling Request from UE
   void (*SR_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
-
+  /// Indicate UL Failure to eNodeB MAC
+  void (*UL_failure_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_eNB)(module_id_t Mod_id,int CC_id,
                               TDD_Config_t *tdd_config,

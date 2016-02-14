@@ -1342,13 +1342,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
     // If we've dropped the UE, go back to PRACH mode for this UE
     //#if !defined(EXMIMO_IOT)
     if (phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors == ULSCH_max_consecutive_errors) {
-      LOG_W(PHY,"[eNB %d, CC %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, removing UE\n",
+      LOG_W(PHY,"[eNB %d, CC %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, triggering UL Failure\n",
             phy_vars_eNB->Mod_id,phy_vars_eNB->CC_id,frame,subframe, i, phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors);
+      /*
       phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
       remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
+      */
       phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
+      mac_xface->UL_failure_indication(phy_vars_eNB->Mod_id,
+				       phy_vars_eNB->CC_id,
+				       frame,
+				       phy_vars_eNB->eNB_UE_stats[i].crnti,
+				       subframe);
+				       
     }
-
+	
     //#endif
   }
 

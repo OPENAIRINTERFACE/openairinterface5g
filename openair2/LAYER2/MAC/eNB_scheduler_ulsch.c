@@ -106,9 +106,10 @@ void rx_sdu(
 
   LOG_D(MAC,"[eNB %d] CC_id %d Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",enb_mod_idP,CC_idP,rntiP,UE_id);
 
-  if (UE_id!=-1)
+  if (UE_id!=-1) {
     UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
-  
+    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+  }
   payload_ptr = parse_ulsch_header(sduP,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_lenP);
  
   eNB->eNB_stats[CC_idP].ulsch_bytes_rx=sdu_lenP;

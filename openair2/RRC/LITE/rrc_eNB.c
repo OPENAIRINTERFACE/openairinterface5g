@@ -920,14 +920,14 @@ rrc_eNB_generate_SecurityModeCommand(
     rrc_eNB_mui,
     size);
 
-  pdcp_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req(
+	       ctxt_pP,
+	       DCCH,
+	       rrc_eNB_mui++,
+	       SDU_CONFIRM_NO,
+	       size,
+	       buffer,
+	       PDCP_TRANSMISSION_MODE_CONTROL);
 
 }
 
@@ -971,14 +971,14 @@ rrc_eNB_generate_UECapabilityEnquiry(
     rrc_eNB_mui,
     size);
 
-  pdcp_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req(
+	       ctxt_pP,
+	       DCCH,
+	       rrc_eNB_mui++,
+	       SDU_CONFIRM_NO,
+	       size,
+	       buffer,
+	       PDCP_TRANSMISSION_MODE_CONTROL);
 
 }
 
@@ -1107,14 +1107,14 @@ rrc_eNB_generate_RRCConnectionRelease(
     rrc_eNB_mui,
     size);
 
-  pdcp_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req(
+	       ctxt_pP,
+	       DCCH,
+	       rrc_eNB_mui++,
+	       SDU_CONFIRM_NO,
+	       size,
+	       buffer,
+	       PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 //-----------------------------------------------------------------------------
@@ -1728,14 +1728,14 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
     rrc_eNB_mui,
     size);
 
-  pdcp_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req(
+	       ctxt_pP,
+	       DCCH,
+	       rrc_eNB_mui++,
+	       SDU_CONFIRM_NO,
+	       size,
+	       buffer,
+	       PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 
@@ -1805,14 +1805,14 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
     rrc_eNB_mui,
     size);
 
-  pdcp_rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req(
+	       ctxt_pP,
+	       DCCH,
+	       rrc_eNB_mui++,
+	       SDU_CONFIRM_NO,
+	       size,
+	       buffer,
+	       PDCP_TRANSMISSION_MODE_CONTROL);
   return(0);
 }
 
@@ -3369,7 +3369,7 @@ rrc_eNB_generate_RRCConnectionSetup(
 #if defined(ENABLE_ITTI)
 char
 //-----------------------------------------------------------------------------
-openair_rrc_lite_eNB_init(
+openair_rrc_eNB_init(
   const module_id_t enb_mod_idP
 )
 //-----------------------------------------------------------------------------
@@ -3382,13 +3382,13 @@ openair_rrc_lite_eNB_init(
 #if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------
 char
-openair_rrc_lite_eNB_configuration(
+openair_rrc_eNB_configuration(
   const module_id_t enb_mod_idP,
   RrcConfigurationReq* configuration
 )
 #else
 char
-openair_rrc_lite_eNB_init(
+openair_rrc_eNB_init(
   const module_id_t enb_mod_idP
 )
 #endif
@@ -3417,7 +3417,7 @@ openair_rrc_lite_eNB_init(
   //        for (j = 0; j < NUMBER_OF_UE_MAX; j++) {
   //            eNB_rrc_inst[ctxt.module_id].ciphering_algorithm[j] = SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
   //            eNB_rrc_inst[ctxt.module_id].integrity_algorithm[j] = SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
-  //            rrc_lite_eNB_init_security(enb_mod_idP, j);
+  //            rrc_eNB_init_security(enb_mod_idP, j);
   //        }
   //    }
   eNB_rrc_inst[ctxt.module_id].Nb_ue = 0;
@@ -4434,7 +4434,7 @@ rrc_enb_task(
       /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
       LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
-      openair_rrc_lite_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
+      openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
       break;
 
 #   if ENABLE_RAL

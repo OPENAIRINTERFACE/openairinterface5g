@@ -269,6 +269,15 @@ void rx_sdu(const module_id_t module_idP, const int CC_id,const frame_t frameP, 
 */
 void SR_indication(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti, sub_frame_t subframe);
 
+/* \brief Function to indicate a UL failure was detected by eNB PHY.
+@param Mod_id Instance ID of eNB
+@param CC_id Component carrier
+@param frameP Frame index
+@param rnti RNTI of UE transmitting the SR
+@param subframe Index of subframe where SR was received
+*/
+void UL_failure_indication(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
+
 uint8_t *get_dlsch_sdu(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti,uint8_t TBindex);
 
 /* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be transmitted
