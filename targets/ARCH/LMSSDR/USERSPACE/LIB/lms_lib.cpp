@@ -571,6 +571,24 @@ void calibrate_rf(openair0_device *device) {
 }
 */
 
+int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
+
+  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];
+
+  if (gv > 31) {
+    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);
+    gv = 31;
+  }
+  if (gv < 0) {
+    printf("RX Gain 0 too low, increase by %f dB\n",-gv);
+    gv = 0;
+  }
+  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);
+  lms7->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
+
+  return(0);
+}
+
 int trx_lms_start(openair0_device *device){
  
 
@@ -637,7 +655,14 @@ int trx_lms_start(openair0_device *device){
     opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND,5.0);
 
     if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune TX filter\n");
+      printf("Warning: Could not tune RX filter\n");
+    }
+
+    printf("Tuning TIA filter\n");
+    opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_TIA,7.0);
+
+    if (opStatus != LIBLMS7_SUCCESS) {
+      printf("Warning: Could not tune RX TIA filter\n");
     }
 
     opStatus = lms7->SetInterfaceFrequency(lms7->GetFrequencyCGEN_MHz(), 
@@ -683,6 +708,7 @@ int trx_lms_start(openair0_device *device){
       printf("Set RX frequency %f MHz\n",device->openair0_cfg[0].rx_freq[0]/1e6);
     }
 
+    trx_lms_set_gains(device, device->openair0_cfg);
     // Run calibration procedure
     //    calibrate_rf(device);
     //lms7->CalibrateTx(5.0);
@@ -743,31 +769,14 @@ rx_gain_calib_table_t calib_table_sodera[] = {
   {3500000000.0,70.0},
   {2660000000.0,80.0},
   {2300000000.0,80.0},
-  {1880000000.0,80.0},
-  {816000000.0,80.0},
+  {1880000000.0,74.0},  // on W PAD
+  {816000000.0,76.0},   // on W PAD
   {-1,0}};
 
 
 
 
 
-int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
-
-  double gv = openair0_cfg[0].rx_gain[0] - openair0_cfg[0].rx_gain_offset[0];
-
-  if (gv > 31) {
-    printf("RX Gain 0 too high, reduce by %f dB\n",gv-31);
-    gv = 31;
-  }
-  if (gv < 0) {
-    printf("RX Gain 0 too low, increase by %f dB\n",-gv);
-    gv = 0;
-  }
-  printf("[LMS] Setting 7002M G_PGA_RBB to %d\n", (int16_t)gv);
-  lms7->Modify_SPI_Reg_bits(LMS7param(G_PGA_RBB),(int16_t)gv);
-
-  return(0);
-}
 
 
 int trx_lms_get_stats(openair0_device* device) {
