@@ -427,7 +427,7 @@ void help (void) {
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
   printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log level \n");
+  printf("  -G Set the global log verbosity \n");
   printf("  -h provides this help message!\n");
   printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
   printf("  -m Set the maximum downlink MCS\n");
@@ -2564,8 +2564,8 @@ int main( int argc, char **argv )
   if (UE_flag==1) {
     printf("configuring for UE\n");
 
-    set_comp_log(HW,      LOG_INFO,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
+    set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);

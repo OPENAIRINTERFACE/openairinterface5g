@@ -446,7 +446,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 
   if (frame_parms->frame_type == FDD ) { // FDD
     sf = (subframe<4)? subframe+6 : subframe-4;
-    printf("n1_pucch_UE: subframe %d, nCCE %d\n",sf,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
+    LOG_D(PHY,"n1_pucch_UE: subframe %d, nCCE %d\n",sf,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
 
     if (SR == 0)
       return(frame_parms->pucch_config_common.n1PUCCH_AN + phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->nCCE[sf]);
@@ -2083,10 +2083,10 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 
 #ifdef DEBUG_PHY_PROC
 
-    //    if (subframe_rx == 9) { //( frame_rx % 100 == 0)   {
+    if ( frame_rx % 100 == 0)   {
       LOG_D(PHY,"frame %d, subframe %d, rnti %x: dci %d/%d\n",frame_rx,subframe_rx,phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->crnti,i,dci_cnt);
-      //dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
-      //    }
+      dump_dci(&phy_vars_ue->lte_frame_parms, &dci_alloc_rx[i]);
+    }
 
 #endif
 

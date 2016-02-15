@@ -194,6 +194,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
 
       break;
     }
+    break; //subframe switch
 
     /*
   case 6:
@@ -235,7 +236,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         =   DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist];
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = subframe*3; //openair_daq_vars.target_ue_dl_mcs;
+          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
           //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
           ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
@@ -471,7 +472,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
       phy_vars_eNB->eNB_UE_stats[1].DL_pmi_single = (phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single ^ 0x1555);
     }
 
-    break;
+    break; //subframe switch
 
     /*
       case 8:

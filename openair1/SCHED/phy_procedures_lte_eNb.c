@@ -1161,7 +1161,10 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 	UE_id = i;
 
       if (UE_id>=0) {
-        //    dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	if ((frame%100)==0) {
+	  LOG_D(PHY,"Frame %3d, SF %d \n",frame,subframe); 
+	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	}
 #if defined(SMBV) && !defined(EXMIMO)
         // Configure this user
         if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
@@ -1232,7 +1235,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       if (harq_pid==255) {
         LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Bad harq_pid for ULSCH allocation\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx);
         //mac_exit_wrapper("Invalid harq_pid (255) detected");
-        return; // not reached
+        return; 
       }
 
       if (phy_vars_eNB->mac_enabled==1)
