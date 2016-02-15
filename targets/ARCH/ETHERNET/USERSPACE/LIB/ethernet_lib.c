@@ -353,28 +353,28 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
       openair0_cfg[0].samples_per_packet    = 4096;
-      openair0_cfg[0].tx_sample_advance     = 0;
-      openair0_cfg[0].tx_scheduling_advance = 22*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 115;
+      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 23040000:     
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 0;
-      openair0_cfg[0].tx_scheduling_advance = 16*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 113;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 0;
-      openair0_cfg[0].tx_scheduling_advance = 10*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 113;
+      openair0_cfg[0].tx_scheduling_advance = 9*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
       openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 0;
-      openair0_cfg[0].tx_scheduling_advance = 10*openair0_cfg[0].samples_per_packet;
-      break;
+      openair0_cfg[0].tx_sample_advance     = 70;
+      openair0_cfg[0].tx_scheduling_advance = 9*openair0_cfg[0].samples_per_packet;
+     break;
     case 1920000:
       openair0_cfg[0].samples_per_packet    = 256;
-      openair0_cfg[0].tx_sample_advance     = 0;
-      openair0_cfg[0].tx_scheduling_advance = 16*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 40;
+      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
