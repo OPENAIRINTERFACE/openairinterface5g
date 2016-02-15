@@ -104,8 +104,9 @@ static void trx_brf_stats(openair0_device *device){
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param cc index of the component carrier
+      @param flags Ignored for the moment
 */ 
-static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc) {
+static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc, int flags) {
   
   int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
