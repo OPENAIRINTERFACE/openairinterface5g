@@ -645,25 +645,26 @@ int trx_lms_start(openair0_device *device){
     // Set TX filter
     
     printf("Tuning TX filter\n");
-    opStatus = lms7->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND,28.0);
+    opStatus = lms7->TuneTxFilter(LMS7002M::TxFilter::TX_HIGHBAND,device->openair0_cfg[0].tx_bw/1e6);
 
     if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune TX filter\n");
+      printf("Warning: Could not tune TX filter to %f MHz\n",device->openair0_cfg[0].tx_bw/1e6);
     }
     
     printf("Tuning RX filter\n");
-    opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND,5.0);
+    
+    opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_LPF_LOWBAND,device->openair0_cfg[0].rx_bw/1e6);
 
     if (opStatus != LIBLMS7_SUCCESS) {
-      printf("Warning: Could not tune RX filter\n");
+      printf("Warning: Could not tune RX filter to %f MHz\n",device->openair0_cfg[0].rx_bw/1e6);
     }
 
-    printf("Tuning TIA filter\n");
+    /*    printf("Tuning TIA filter\n");
     opStatus = lms7->TuneRxFilter(LMS7002M::RxFilter::RX_TIA,7.0);
 
     if (opStatus != LIBLMS7_SUCCESS) {
       printf("Warning: Could not tune RX TIA filter\n");
-    }
+      }*/
 
     opStatus = lms7->SetInterfaceFrequency(lms7->GetFrequencyCGEN_MHz(), 
 					   lms7->Get_SPI_Reg_bits(HBI_OVR_TXTSP), 
@@ -683,7 +684,9 @@ int trx_lms_start(openair0_device *device){
     lmsStream = new LMS_StreamBoard(usbport);    
     LMS_StreamBoard::Status opStreamStatus; 
     // this will configure that sampling rate at output of FPGA
-    opStreamStatus = lmsStream->ConfigurePLL(usbport,device->openair0_cfg[0].sample_rate,device->openair0_cfg[0].sample_rate,90);
+    opStreamStatus = lmsStream->ConfigurePLL(usbport,
+					     device->openair0_cfg[0].sample_rate,
+					     device->openair0_cfg[0].sample_rate,90);
     if (opStatus != LIBLMS7_SUCCESS){
       printf("Sample rate programming failed\n");
       exit(-1);
@@ -827,16 +830,16 @@ int openair0_dev_init_lms(openair0_device *device, openair0_config_t *openair0_c
   case 15360000:
     openair0_cfg[0].samples_per_packet    = 2048;
     openair0_cfg[0].tx_sample_advance     = 45;
-    openair0_cfg[0].tx_bw                 = 15.36e6;
-    openair0_cfg[0].rx_bw                 = 15.36e6;
-    openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+    openair0_cfg[0].tx_bw                 = 28e6;
+    openair0_cfg[0].rx_bw                 = 10e6;
+    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 7680000:
     openair0_cfg[0].samples_per_packet    = 1024;
     openair0_cfg[0].tx_sample_advance     = 70;
-    openair0_cfg[0].tx_bw                 = 7.68e6;
-    openair0_cfg[0].rx_bw                 = 7.68e6;
-    openair0_cfg[0].tx_scheduling_advance = 12*openair0_cfg[0].samples_per_packet;
+    openair0_cfg[0].tx_bw                 = 28e6;
+    openair0_cfg[0].rx_bw                 = 5.0e6;
+    openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
     break;
   case 1920000:
     openair0_cfg[0].samples_per_packet    = 256;
