@@ -109,6 +109,10 @@ void rx_sdu(
   if (UE_id!=-1) {
     UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
     UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
+      UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
+      mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,UE_RNTI(enb_mod_idP,UE_id));
+    }
   }
   payload_ptr = parse_ulsch_header(sduP,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_lenP);
  
@@ -133,6 +137,14 @@ void rx_sdu(
     case CRNTI:
       UE_id = find_UE_id(enb_mod_idP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
       LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], i,num_ce,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
+      if (UE_id!=-1) {
+	UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
+	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+	if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
+	  UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
+	  mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
+	}
+      }
       crnti_rx=1;
       payload_ptr+=2;
 
@@ -773,8 +785,10 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	  if (round==0)  // always schedule
 #endif
         {
-	  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UE_inactivity timer %d)\n",
-		module_idP,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer);
+	  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d)\n",
+		module_idP,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,
+		UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer,
+		UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
           aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!

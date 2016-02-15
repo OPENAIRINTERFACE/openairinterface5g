@@ -319,6 +319,8 @@ void sort_UEs (module_id_t Mod_idP,
       rnti1 = UE_RNTI(Mod_idP,UE_id1);
       if(rnti1 == NOT_A_RNTI)
 	continue;
+      if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
+	continue;
       pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
       cqi1    = maxcqi(Mod_idP,UE_id1); //
       round1  = maxround(Mod_idP,rnti1,frameP,subframeP,0);
@@ -327,6 +329,8 @@ void sort_UEs (module_id_t Mod_idP,
       rnti2 = UE_RNTI(Mod_idP,UE_id2);
       if(rnti2 == NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+	continue;
       cqi2    = maxcqi(Mod_idP,UE_id2);
       round2  = maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
       pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
@@ -453,7 +457,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
     if(rnti == NOT_A_RNTI)
       continue;
-
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
     UE_id = i;
 
     // if there is no available harq_process, skip the UE
@@ -563,6 +568,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
           if(rnti == NOT_A_RNTI)
             continue;
+	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+	    continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
 	  //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
@@ -607,6 +614,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 		  round2    = ue_sched_ctl2->round[CC_id];
                   if(rnti2 == NOT_A_RNTI)
                     continue;
+		  if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+		    continue;
 
                   eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti2);
                   //mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
@@ -965,6 +974,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     if (rnti==NOT_A_RNTI)
       continue;
 
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+
     UE_id = i;
 
     for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
@@ -1013,6 +1025,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
     if (rnti==NOT_A_RNTI)
       continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
 
     UE_id = i;
 
@@ -1041,6 +1055,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       if (rnti==NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+	continue;
 
       UE_id = i;
 
@@ -1146,6 +1162,8 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
 
     if (rnti==NOT_A_RNTI)
       continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
 
     UE_id = i;
 
@@ -1246,7 +1264,9 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       rnti1 = UE_RNTI(module_idP,UE_id1);
       
       if(rnti1 == NOT_A_RNTI)
-      continue;
+	continue;
+      if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+	continue;
 
       pCCid1 = UE_PCCID(module_idP,UE_id1);
       round1  = maxround(module_idP,rnti1,frameP,subframeP,1);
@@ -1256,6 +1276,8 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       
       if(rnti2 == NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+	continue;
 
       pCCid2 = UE_PCCID(module_idP,UE_id2);
       round2  = maxround(module_idP,rnti2,frameP,subframeP,1);

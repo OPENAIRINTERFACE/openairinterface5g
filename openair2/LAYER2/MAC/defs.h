@@ -742,6 +742,7 @@ typedef struct {
   int32_t       ul_inactivity_timer;
   int32_t       ul_failure_timer;
   int32_t       ra_pdcch_order_sent;
+  int32_t       ul_out_of_sync;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {

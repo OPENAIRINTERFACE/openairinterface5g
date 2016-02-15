@@ -567,10 +567,20 @@ rrc_eNB_ue_context_stmsi_exist(
 {
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
-    if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE)
+    LOG_I(RRC,"checking for UE S-TMSI %x, mme %x (%p): rnti %x",
+	  m_tmsiP, mme_codeP, ue_context_p, 
+	  ue_context_p->ue_context.rnti);
+    if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+      printf("S-TMSI %x, MME %x\n",
+	    ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+	    ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code);
       if (ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi == m_tmsiP)
         if (ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code == mme_codeP)
           return ue_context_p;
+    }
+    else
+      printf("\n");
+
   }
   return NULL;
 }

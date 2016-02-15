@@ -698,6 +698,12 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
   UE_sched_ctrl *UE_sched_ctl = &eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[UE_id];
   LOG_D(MAC,"[eNB %d][PUSCH] Checking UL requirements UE %d/%x\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
 
+  // do not schedule UE if UL is not working
+  if (UE_sched_ctl->ul_failure_timer>0)
+    return(0);
+  if (UE_sched_ctl->ul_out_of_sync>0)
+    return(0);
+
   if ((UE_template->bsr_info[LCGID0]>0) ||
       (UE_template->bsr_info[LCGID1]>0) ||
       (UE_template->bsr_info[LCGID2]>0) ||
@@ -1119,8 +1125,10 @@ void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
 
   if (UE_id  != -1) {
-    LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
-    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=1;
+    LOG_I(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",mod_idP,UE_id,rntiP,frameP,subframeP, UE_id,cc_idP,
+	  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0)
+      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=1;
   } else {
     //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
     //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
