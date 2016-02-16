@@ -1561,11 +1561,7 @@ target_link_libraries (lte-softmodem-nos1
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
-
-if (${RF_BOARD} STREQUAL "OAI_LMSSDR")
-  add_dependencies(lte-softmodem LMS7002M LMS_SDR Si5351C)
-  add_dependencies(lte-softmodem-nos1 LMS7002M LMS_SDR Si5351C)
-endif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 
 # rrh
 ################################
@@ -1579,7 +1575,6 @@ add_executable(rrh_gw
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   )
-# assert
 target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
 target_link_libraries(rrh_gw
   -Wl,--start-group
@@ -1587,11 +1582,20 @@ target_link_libraries(rrh_gw
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
 target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} )
+target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 
 Message("-- option_HW_lib=${option_HW_lib}")
 Message("-- HW_SOURCE=${HW_SOURCE}")
 Message("-- option_TP_lib=${option_TP_lib}")
 Message("-- TRANSPORT_SOURCE=${TRANSPORT_SOURCE}")
+
+if (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+  add_dependencies(lte-softmodem LMS7002M LMS_SDR Si5351C)
+  add_dependencies(lte-softmodem-nos1 LMS7002M LMS_SDR Si5351C)
+  add_dependencies(rrh_gw LMS7002M LMS_SDR Si5351C)
+endif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+
+
 
 # USIM process
 #################
