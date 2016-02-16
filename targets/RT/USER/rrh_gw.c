@@ -111,8 +111,7 @@ rrh_module_t            *ue_array;
 
 openair0_vtimestamp 	hw_counter=0;
 
-
-
+char   rf_config_file[1024];
 
 static void debug_init(void);
 static void get_options(int argc, char *argv[]);
@@ -143,7 +142,7 @@ static int get_address(char* if_name, uint8_t flag);
 int main(int argc, char **argv) {
   
   unsigned int i;
-  
+  rf_config_file[0]='\0';
   /* parse input arguments */
   get_options(argc, argv);
   /* initialize logger and signal analyzer */
@@ -257,7 +256,7 @@ static void get_options(int argc, char *argv[]) {
 
   int 	opt;
 
-  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:m:i:")) != -1) {
+  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:m:i:f:")) != -1) {
     
     switch (opt) {
     case 'n':
@@ -298,6 +297,14 @@ static void get_options(int argc, char *argv[]) {
     case 'l':
       /*In loopback mode rrh sends back to bbu what it receives*/
       loopback_flag=1; 
+      break;
+    case 'f':
+      if (strlen(optarg)<=1024)
+	strcpy(rf_config_file,optarg);
+      else {
+	printf("Configuration filename is too long\n");
+	exit(-1);   
+      }
       break;
     case 't':
       /* When measurements are enabled statistics related to TX/RX time are printed */
