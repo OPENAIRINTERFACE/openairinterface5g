@@ -812,11 +812,15 @@ void trx_lms_end(openair0_device *device) {
 
 }
 
+extern "C" {
+/*! \brief Initialize Openair LMSSDR target. It returns 0 if OK
+* \param device the hardware to use
+* \param openair0_cfg RF frontend parameters set by application
+*/
+int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
 
-int openair0_dev_init_lms(openair0_device *device, openair0_config_t *openair0_cfg){
 
-
-  printf("LMSSDR: Initializing openair0_device for %s ...\n", ((device->func_type == BBU_FUNC) ? "BBU": "RRH"));
+  printf("LMSSDR: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
 
   switch ((int)openair0_cfg[0].sample_rate) {
   case 30720000:
@@ -871,4 +875,5 @@ int openair0_dev_init_lms(openair0_device *device, openair0_config_t *openair0_c
   device->openair0_cfg = openair0_cfg;
 
   return 0;
+}
 }
