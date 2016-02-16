@@ -1101,8 +1101,9 @@ boolean_t CCE_allocation_infeasible(int module_idP,
     DCI_pdu->Num_ue_spec_dci++;
     ret = allocate_CCEs(module_idP,CC_idP,subframe,1);
     if (ret==-1)
-      res = FALSE;
+      res = TRUE;
     DCI_pdu->Num_ue_spec_dci--;
   }
+  return(res);
 }
 
