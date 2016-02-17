@@ -60,7 +60,9 @@ import paramiko
 import subprocess
 import commands
 sys.path.append('/opt/ssh')
+sys.path.append(os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/'))
 
+from lib_autotest import *
 import ssh
 from ssh import SSHSession
 import argparse
