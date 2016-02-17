@@ -194,6 +194,7 @@ int main(int argc, char **argv)
   int nb_rb_set = 0;
   int sf;
 
+  int threequarter_fs=0;
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
@@ -203,7 +204,7 @@ int main(int argc, char **argv)
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapZbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
+  while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -373,6 +374,10 @@ int main(int argc, char **argv)
       cyclic_shift = atoi(optarg);
       break;
 
+    case 'E':
+      threequarter_fs=1;
+      break;
+
     case 'N':
       N0 = atoi(optarg);
       break;
@@ -470,6 +475,7 @@ int main(int argc, char **argv)
 		 0,
 		 tdd_config,
 		 N_RB_DL,
+		 threequarter_fs,
 		 osf,
 		 0);
 
