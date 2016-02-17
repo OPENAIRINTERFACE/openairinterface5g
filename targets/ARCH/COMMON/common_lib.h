@@ -209,15 +209,23 @@ typedef struct {
 typedef struct {
   char *remote_addr;
   //! remote port number for Ethernet interface
-  unsigned int remote_port;
+  uint16_t remote_port;
   //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
-  unsigned int my_port;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
+  uint16_t  my_port;
+  //! local Ethernet interface (eNB/BBU, UE)
   char *local_if_name;
- //! local port number for Ethernet interface (eNB/BBU, UE)
+  //! tx_sample_advance for RF + ETH
+  uint8_t tx_sample_advance;
+  //! tx_scheduling_advance for RF + ETH
+  uint8_t tx_scheduling_advance;
+  //! iq_txshift  for RF + ETH
+  uint8_t iq_txshift;
+  //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
+  //! radio front end preference (EXMIMO,USRP, BALDERF,LMSSDR)
+  uint8_t rf_preference;
 } eth_params_t;
 
 
