@@ -90,6 +90,8 @@ typedef enum {
   USRP_X300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
+  /*!\brief device is LMSSDR (SoDeRa)*/
+  LMSSDR_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
   MAX_RF_DEV_TYPE
@@ -195,7 +197,8 @@ typedef struct {
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
   unsigned int my_port;
-
+  //! Configuration file for LMS7002M
+  char *configFilename;
 } openair0_config_t;
 
 /*! \brief RF mapping */ 
@@ -205,6 +208,7 @@ typedef struct {
   //! rf chain id
   int chain;
 } openair0_rf_map;
+
 
 typedef struct {
   char *remote_addr;
@@ -355,7 +359,7 @@ extern "C"
   * \param device the hardware to use
   */
   openair0_timestamp get_usrp_time(openair0_device *device);
-  
+
  /*! \brief Set RX frequencies 
   * \param device the hardware to use
   * \param openair0_cfg RF frontend parameters set by application
