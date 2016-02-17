@@ -136,7 +136,8 @@ void rx_sdu(
 
     case CRNTI:
       UE_id = find_UE_id(enb_mod_idP,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1]);
-      LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",enb_mod_idP, CC_idP, rx_ces[i], i,num_ce,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
+      LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d MAC CE_LCID %d (ce %d/%d): CRNTI %x (UE_id %d) in Msg3\n",
+	    frameP,subframeP,enb_mod_idP, CC_idP, rx_ces[i], i,num_ce,(((uint16_t)payload_ptr[0])<<8) + payload_ptr[1],UE_id);
       if (UE_id!=-1) {
 	UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
 	UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;

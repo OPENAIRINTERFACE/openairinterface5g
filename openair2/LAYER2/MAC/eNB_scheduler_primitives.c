@@ -1125,7 +1125,8 @@ void UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
 
   if (UE_id  != -1) {
-    LOG_I(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",mod_idP,UE_id,rntiP,frameP,subframeP, UE_id,cc_idP,
+    LOG_I(MAC,"[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
+	  mod_idP,UE_id,rntiP,frameP,subframeP, UE_id,cc_idP,
 	  UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0)
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=1;

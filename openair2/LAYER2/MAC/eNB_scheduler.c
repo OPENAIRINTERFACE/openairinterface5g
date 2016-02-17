@@ -214,15 +214,16 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	  if ((UE_list->UE_sched_ctrl[i].ul_failure_timer % 40) == 0)
 	    UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent=0; // resend every 4 frames	      
 	}
-      }
-      UE_list->UE_sched_ctrl[i].ul_failure_timer++;
-      // check threshold
-      if (UE_list->UE_sched_ctrl[i].ul_failure_timer > 200) {
-	// inform RRC of failure and clear timer
-	LOG_I(MAC,"UE %d rnti %x: UL Failure Triggering RRC \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
-	mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
-	UE_list->UE_sched_ctrl[i].ul_failure_timer=0;
-	UE_list->UE_sched_ctrl[i].ul_out_of_sync=1;
+      
+	UE_list->UE_sched_ctrl[i].ul_failure_timer++;
+	// check threshold
+	if (UE_list->UE_sched_ctrl[i].ul_failure_timer > 200) {
+	  // inform RRC of failure and clear timer
+	  LOG_I(MAC,"UE %d rnti %x: UL Failure Triggering RRC \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);
+	  mac_eNB_rrc_ul_failure(module_idP,CC_id,frameP,subframeP,rnti);
+	  UE_list->UE_sched_ctrl[i].ul_failure_timer=0;
+	  UE_list->UE_sched_ctrl[i].ul_out_of_sync=1;
+	}
       }
     } // ul_failure_timer>0
     
