@@ -344,43 +344,35 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   /* device specific */
   openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
   openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
-  openair0_cfg[0].iq_txshift = 5;// shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
+  openair0_cfg[0].iq_txshift = eth_params->iq_txshift;// shift
+  openair0_cfg[0].tx_sample_advance = eth_params->tx_sample_advance;
 
   /* RRH does not have any information to make this configuration atm */
   if (device->host_type == BBU_HOST) {
     /*Note scheduling advance values valid only for case 7680000 */    
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
-      openair0_cfg[0].samples_per_packet    = 4096;
-      openair0_cfg[0].tx_sample_advance     = 115;
-      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].samples_per_packet    = 4096;     
       break;
     case 23040000:     
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 113;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
-      openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 113;
-      openair0_cfg[0].tx_scheduling_advance = 9*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].samples_per_packet    = 2048;      
       break;
     case 7680000:
-      openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 70;
-      openair0_cfg[0].tx_scheduling_advance = 9*openair0_cfg[0].samples_per_packet;
-     break;
+      openair0_cfg[0].samples_per_packet    = 1024;     
+      break;
     case 1920000:
-      openair0_cfg[0].samples_per_packet    = 256;
-      openair0_cfg[0].tx_sample_advance     = 40;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].samples_per_packet    = 256;     
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
       exit(-1);
       break;
     }
+    openair0_cfg[0].tx_scheduling_advance = eth_params->tx_scheduling_advance*openair0_cfg[0].samples_per_packet;
   }
  
   device->openair0_cfg=&openair0_cfg[0];

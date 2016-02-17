@@ -86,7 +86,14 @@ typedef struct rrh_gw_config_s {
   char     *remote_address;
   uint16_t  local_port;
   uint16_t  remote_port;
-
+  int tx_scheduling_advance;
+  int tx_sample_advance;
+  int iq_txshift;
+  unsigned  exmimo:1;
+  unsigned  usrp_b200:1;
+  unsigned  usrp_x300:1;
+  unsigned  bladerf:1; 
+  unsigned  lmssdr:1;  
 } rrh_gw_config_t;
 
 typedef struct Enb_properties_s {
