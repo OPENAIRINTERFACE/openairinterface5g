@@ -82,7 +82,7 @@ int trx_lms_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
   uint64_t timestamp;
   int16_t *dst_ptr = (int16_t*) buff[0];
   int ret;
-  ret = LMS_TRxRead(dst_ptr, nsamps,0,&timestamp, 100);
+  ret = LMS_TRxRead(dst_ptr, nsamps,0,&timestamp, 10);
   *ptimestamp=timestamp;
 
   return ret;   
@@ -843,7 +843,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
     openair0_cfg[0].tx_sample_advance     = 70;
     openair0_cfg[0].tx_bw                 = 28e6;
     openair0_cfg[0].rx_bw                 = 5.0e6;
-    openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+    openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
     break;
   case 1920000:
     openair0_cfg[0].samples_per_packet    = 256;
