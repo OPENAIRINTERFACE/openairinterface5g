@@ -176,7 +176,7 @@
 #define ENB_CONFIG_STRING_RRH_GW_REMOTE_ADDRESS           "remote_address"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_PORT               "local_port"
 #define ENB_CONFIG_STRING_RRH_GW_REMOTE_PORT              "remote_port"
-#define ENB_CONFIG_STRING_RRH_GW_ACTIVE                   "active"
+#define ENB_CONFIG_STRING_RRH_GW_ACTIVE                   "rrh_gw_active"
 #define ENB_CONFIG_STRING_RRH_GW_TRANSPORT_PREFERENCE     "tr_preference"
 #define ENB_CONFIG_STRING_RRH_GW_RF_TARGET_PREFERENCE     "rf_preference"
 #define ENB_CONFIG_STRING_RRH_GW_IQ_TXSHIFT               "iq_txshift"
