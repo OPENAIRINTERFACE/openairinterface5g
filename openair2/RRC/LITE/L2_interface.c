@@ -727,7 +727,7 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
                    rntiP);
 
   if (ue_context_p != NULL) {
-    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",rntiP);
+    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
     ue_context_p->ue_context.ul_failure_timer=1;
   }
   else {

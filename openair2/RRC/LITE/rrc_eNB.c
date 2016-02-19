@@ -3724,6 +3724,7 @@ rrc_eNB_decode_ccch(
 #warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
 	      LOG_I(RRC," S-TMSI exists, ue_context_p %p\n",ue_context_p);
 	      stmsi_received=1;
+	      ue_context_p->ue_context.rnti = ctxt_pP->rnti;
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
 	      //              ue_context_p = NULL;
             } else {
@@ -3766,12 +3767,19 @@ rrc_eNB_decode_ccch(
 
 #if defined(ENABLE_ITTI)
           ue_context_p->ue_context.establishment_cause = rrcConnectionRequest->establishmentCause;
-          LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE random UE identity (0x%" PRIx64 ") MME code %u TMSI %u cause %u\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-                ue_context_p->ue_context.random_ue_identity,
-                ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
-                ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
-                ue_context_p->ue_context.establishment_cause);
+	  if (stmsi_received==0)
+	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE random UE identity (0x%" PRIx64 ") MME code %u TMSI %u cause %u\n",
+		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+		  ue_context_p->ue_context.random_ue_identity,
+		  ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
+		  ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		  ue_context_p->ue_context.establishment_cause);
+	  else
+	    LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection from UE  MME code %u TMSI %u cause %u\n",
+		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+		  ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code,
+		  ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		  ue_context_p->ue_context.establishment_cause);
 #else
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Accept new connection for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
