@@ -43,6 +43,7 @@
 # include "RRC/LITE/defs.h"
 # include "rrc_eNB_UE_context.h"
 # include "rrc_eNB_S1AP.h"
+# include "enb_config.h"
 
 # if defined(ENABLE_ITTI)
 #   include "asn1_conversions.h"
@@ -661,15 +662,16 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code = s_TMSI->mme_code;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi = s_TMSI->m_tmsi;
         LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ with s_TMSI: MME code %u M-TMSI %u ue %x\n",
-        ctxt_pP->module_id,
-        S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
-        S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
-        ue_context_pP->ue_context.rnti);
+            ctxt_pP->module_id,
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
+            S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
+            ue_context_pP->ue_context.rnti);
       }
 
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
+        int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
@@ -678,9 +680,9 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
             /* Use first indicated PLMN MCC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[0];
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
-            ctxt_pP->module_id,
-            S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
-            ue_context_pP->ue_context.rnti);
+                ctxt_pP->module_id,
+                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
+                ue_context_pP->ue_context.rnti);
           }
 
           if (r_mme->plmn_Identity->mnc.list.count > 0) {
@@ -691,6 +693,14 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
                   S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
                   ue_context_pP->ue_context.rnti);
           }
+        } else {
+          const Enb_properties_array_t   *enb_properties_p  = NULL;
+          enb_properties_p = enb_config_get();
+
+          // actually the eNB configuration contains only one PLMN (can be up to 6)
+          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = enb_properties_p->properties[ctxt_pP->module_id]->mcc;
+          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = enb_properties_p->properties[ctxt_pP->module_id]->mnc;
+          S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len = enb_properties_p->properties[ctxt_pP->module_id]->mnc_digit_length;
         }
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code     = BIT_STRING_to_uint8 (&r_mme->mmec);
@@ -1178,7 +1188,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
       GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
 
       for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_p).num_erab++] =
+        GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
           ue_context_p->ue_context.enb_gtp_ebi[e_rab];
         // erase data
         ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;

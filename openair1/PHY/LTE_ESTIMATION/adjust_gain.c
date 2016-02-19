@@ -53,7 +53,7 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id)
   if (rssi>0) rx_power_fil_dB = rssi;
   else rx_power_fil_dB = phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id];
 
-  printf("Gain control: rssi %d (%d,%d)\n",
+  LOG_D(PHY,"Gain control: rssi %d (%d,%d)\n",
          rssi,
          phy_vars_ue->PHY_measurements.rssi,
          phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id]

@@ -453,7 +453,7 @@ uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL) {
    
 }
 
-int get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
+uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap) {
 
   int offset;
 
@@ -926,10 +926,15 @@ int generate_eNB_dlsch_params_from_dci(int frame,
         //      printf("FDD 1A: mcs %d, rballoc %x,rv %d, NPRB %d\n",mcs,rballoc,rv,NPRB);
       }
 
-
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT6[rballoc];
+      if (vrb_type==LOCALIZED) {
+	dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT6[rballoc];
+      }
+      else {
+	LOG_E(PHY,"Distributed RB allocation not done yet\n");
+	mac_xface->macphy_exit("exiting");
+      }
       dlsch0_harq->vrb_type       = vrb_type;
       dlsch0_harq->nb_rb          = RIV2nb_rb_LUT6[rballoc];//NPRB;
       RIV_max = RIV_max6;
@@ -960,7 +965,14 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-      dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT25[rballoc];
+      
+      if (vrb_type==LOCALIZED) {
+	dlsch0_harq->rb_alloc[0]    = localRIV2alloc_LUT25[rballoc];
+      }
+      else {
+	LOG_E(PHY,"Distributed RB allocation not done yet\n");
+	mac_xface->macphy_exit("exiting");
+      }
       dlsch0_harq->vrb_type       = vrb_type;
       dlsch0_harq->nb_rb          = RIV2nb_rb_LUT25[rballoc];//NPRB;
       RIV_max                     = RIV_max25;
@@ -987,9 +999,16 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       }
 
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+      if (vrb_type==LOCALIZED) {
+	dlsch0_harq->rb_alloc[0]     = localRIV2alloc_LUT50_0[rballoc];
+	dlsch0_harq->rb_alloc[1]     = localRIV2alloc_LUT50_1[rballoc];
+      }
+      else {
+	LOG_E(PHY,"Distributed RB allocation not done yet\n");
+	mac_xface->macphy_exit("exiting");
+      }
 
-      dlsch0_harq->rb_alloc[0]     = localRIV2alloc_LUT50_0[rballoc];
-      dlsch0_harq->rb_alloc[1]     = localRIV2alloc_LUT50_1[rballoc];
+
       dlsch0_harq->vrb_type        = vrb_type;
       dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT50[rballoc];//NPRB;
       RIV_max = RIV_max50;
@@ -1017,10 +1036,17 @@ int generate_eNB_dlsch_params_from_dci(int frame,
       dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
       dlsch0_harq->vrb_type         = vrb_type;
-      dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT100_0[rballoc];
-      dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT100_1[rballoc];
-      dlsch0_harq->rb_alloc[2]      = localRIV2alloc_LUT100_2[rballoc];
-      dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rballoc];
+      if (vrb_type==LOCALIZED) {
+	dlsch0_harq->rb_alloc[0]      = localRIV2alloc_LUT100_0[rballoc];
+	dlsch0_harq->rb_alloc[1]      = localRIV2alloc_LUT100_1[rballoc];
+	dlsch0_harq->rb_alloc[2]      = localRIV2alloc_LUT100_2[rballoc];
+	dlsch0_harq->rb_alloc[3]      = localRIV2alloc_LUT100_3[rballoc];
+      }
+      else {
+	LOG_E(PHY,"Distributed RB allocation not done yet\n");
+	mac_xface->macphy_exit("exiting");
+      }
+
 
 
       dlsch0_harq->nb_rb                               = RIV2nb_rb_LUT100[rballoc];//NPRB;
@@ -1102,8 +1128,12 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     dlsch[0]->harq_ids[subframe] = harq_pid;
 
-    if (dlsch0_harq->round == 0)
+    if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch[0], harq_pid);
       dlsch0_harq->status = ACTIVE;
+    }
 
     break;
 
@@ -1237,6 +1267,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch[0], harq_pid);
       dlsch0_harq->status = ACTIVE;
       //            printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
       // MCS and TBS don't change across HARQ rounds
@@ -1605,10 +1638,16 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     // reset HARQ process if this is the first transmission
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
     }
 
     if (dlsch1_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status = ACTIVE;
     }
 
@@ -1986,10 +2025,16 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     // reset HARQ process if this is the first transmission
     if ((dlsch0->active==1) && (dlsch0_harq->round == 0)) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
     }
 
     if ((dlsch1->active==1) && (dlsch1_harq->round == 0)) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status = ACTIVE;
     }
 
@@ -2131,16 +2176,23 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     // check if either TB is disabled (see 36-213 V8.6 p. 26)
 
 
-    if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0))
+    if ((dlsch0_harq->rvidx == 1) && (dlsch0_harq->mcs == 0)) {
+      LOG_W(PHY, "what to do with respect to remove_harq_pid_from_freelist?\n");
       dlsch0_harq->status = DISABLED;
+    }
 
-    if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0))
+    if ((dlsch1_harq->rvidx == 1) && (dlsch1_harq->mcs == 0)) {
+      LOG_W(PHY, "what to do with respect to remove_harq_pid_from_freelist?\n");
       dlsch1_harq->status = DISABLED;
+    }
 
     dlsch0_harq->Nl        = 1;
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
@@ -2305,11 +2357,17 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if ((dlsch0_harq->round == 0) && (dlsch0->active == 1) ) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status      = ACTIVE;
       dlsch0_harq->mcs         = mcs1;
     }
 
     if ((dlsch1_harq->round == 0) && (dlsch1->active == 1) ) {
+      /* necessary test? */
+      if (dlsch1_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch1, harq_pid);
       dlsch1_harq->status      = ACTIVE;
       dlsch1_harq->mcs         = mcs2;
     }
@@ -2473,6 +2531,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
 
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
@@ -2602,6 +2663,9 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     //    dlsch0_harq->Ndi         = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->ndi;
     if (dlsch0_harq->round == 0) {
+      /* necessary test? */
+      if (dlsch0_harq->status == SCH_IDLE)
+        remove_harq_pid_from_freelist(dlsch0, harq_pid);
       dlsch0_harq->status = ACTIVE;
       //      printf("Setting DLSCH process %d to ACTIVE\n",harq_pid);
     }
@@ -2644,17 +2708,17 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 #ifdef DEBUG_DCI
 
   if (dlsch0) {
-    msg("dlsch0 eNB: dlsch0   %p\n",dlsch0);
-    msg("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
-    msg("dlsch0 eNB: NBRB     %d\n",dlsch0_harq->nb_rb);
-    msg("dlsch0 eNB: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
-    msg("dlsch0 eNB: harq_pid %d\n",harq_pid);
-    msg("dlsch0 eNB: round    %d\n",dlsch0_harq->round);
-    msg("dlsch0 eNB: rvidx    %d\n",dlsch0_harq->rvidx);
-    msg("dlsch0 eNB: TBS      %d (NPRB %d)\n",dlsch0_harq->TBS,NPRB);
-    msg("dlsch0 eNB: mcs      %d\n",dlsch0_harq->mcs);
-    msg("dlsch0 eNB: tpmi %d\n",tpmi);
-    msg("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
+    printf("dlsch0 eNB: dlsch0   %p\n",dlsch0);
+    printf("dlsch0 eNB: rnti     %x\n",dlsch0->rnti);
+    printf("dlsch0 eNB: NBRB     %d\n",dlsch0_harq->nb_rb);
+    printf("dlsch0 eNB: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
+    printf("dlsch0 eNB: harq_pid %d\n",harq_pid);
+    printf("dlsch0 eNB: round    %d\n",dlsch0_harq->round);
+    printf("dlsch0 eNB: rvidx    %d\n",dlsch0_harq->rvidx);
+    printf("dlsch0 eNB: TBS      %d (NPRB %d)\n",dlsch0_harq->TBS,NPRB);
+    printf("dlsch0 eNB: mcs      %d\n",dlsch0_harq->mcs);
+    printf("dlsch0 eNB: tpmi %d\n",tpmi);
+    printf("dlsch0 eNB: mimo_mode %d\n",dlsch0_harq->mimo_mode);
   }
 
 #endif
@@ -5511,15 +5575,15 @@ int generate_ue_dlsch_params_from_dci(int frame,
 #ifdef DEBUG_DCI
 
   if (dlsch[0]) {
-    msg("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
-    msg("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
-    msg("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc[0]);
-    msg("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
-    msg("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
-    msg("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
-    msg("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
-    msg("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
-    msg("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
+    printf("PDSCH dlsch0 UE: rnti     %x\n",dlsch[0]->rnti);
+    printf("PDSCH dlsch0 UE: NBRB     %d\n",dlsch0_harq->nb_rb);
+    printf("PDSCH dlsch0 UE: rballoc  %x\n",dlsch0_harq->rb_alloc_even[0]);
+    printf("PDSCH dlsch0 UE: harq_pid %d\n",harq_pid);
+    printf("PDSCH dlsch0 UE: DCINdi   %d\n",dlsch0_harq->DCINdi);
+    printf("PDSCH dlsch0 UE: rvidx    %d\n",dlsch0_harq->rvidx);
+    printf("PDSCH dlsch0 UE: TBS      %d\n",dlsch0_harq->TBS);
+    printf("PDSCH dlsch0 UE: mcs      %d\n",dlsch0_harq->mcs);
+    printf("PDSCH dlsch0 UE: pwr_off  %d\n",dlsch0_harq->dl_power_off);
   }
 
 #endif

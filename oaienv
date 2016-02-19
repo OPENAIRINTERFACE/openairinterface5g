@@ -5,7 +5,8 @@ export OPENAIR1_DIR=$OPENAIR_HOME/openair1
 export OPENAIR2_DIR=$OPENAIR_HOME/openair2
 export OPENAIR3_DIR=$OPENAIR_HOME/openair3
 export OPENAIR_TARGETS=$OPENAIR_HOME/targets
-export OPENAIRITS_DIR=$OPENAIR_HOME/openairITS
+
+export PATH=$PATH:$OPENAIR_TARGETS/bin
 
 alias  oai='cd $OPENAIR_HOME'
 alias oai0='cd $OPENAIR0_DIR'

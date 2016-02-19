@@ -45,12 +45,19 @@ MSC_GEN="False"
 XFORMS="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
+LOWLATENCY_FLAG_USER="False"
+FORCE_LOWLATENCY_FLAG_USER=""
 REL="Rel10"
 HW="EXMIMO"
+TP="None"
 NOS1=0
 EPC=0
 VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
+RUN_GROUP=0
+TEST_CASE_GROUP=""
+BUILD_DOXYGEN=0
+trap handle_ctrl_c INT
 
 function print_help() {
   echo_info '
@@ -78,24 +85,27 @@ Options
    Makes the LTE softmodem
 --UE
    Makes the UE specific parts (ue_ip, usim, nvram) 
---EPC
-   Makes the EPC (MME-SPGW, HSS)
 --RRH
    Makes the RRH
 -r | --3gpp-release
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, ETHERNET, None
+   EXMIMO (Default), USRP, BLADERF, None
    Adds this RF board support (in external packages installation and in compilation)
+-t | --transport protocol
+   ETHERNET , None
+   Adds this trasport protocol support in compilation
 --oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to "NONE".
+   Makes the oaisim simulator. Hardware will be defaulted to "None".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
    Makes the core security features unitary simulators
 -s | --check
    runs a set of auto-tests based on simulators and several compilation tests
+--run-group 
+   runs only specified test cases specified here. This flag is only valid with -s
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
@@ -109,11 +119,16 @@ Options
    Shows detailed compilation instructions in makefile
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
-
+--build-doxygen
+   Builds doxygen based documentation.
+--disable-deadline
+   Disables deadline scheduler of Linux kernel (>=3.14.x).
+--enable-deadline
+   Disables deadline scheduler of Linux kernel (>=3.14.x). 
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
- Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files
- NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB --EPC -x --install-system-files -w USRP
+ Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
+ NI/ETTUS B201  + COTS UE : ./build_oai -I -g --eNB -x --install-system-files -w USRP
 Usage (Regular):
  oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
@@ -155,30 +170,38 @@ function main() {
             UE=1
             echo_info "Will compile UE"
             shift;;
-       --EPC)
-            EPC=1
-            echo_info "Will compile EPC"
-            shift;;
        --RRH)
             RRH=1
             echo_info "Will compile RRH"
             shift;;
        -r | --3gpp-release)
             REL=$2
-            echo_info "setting release to: $REL"
+            echo_info "Setting release to: $REL"
             shift 2;;
        -w | --hardware)
             HW="$2" #"${i#*=}"
-            # Use OAI_USRP  as the key word USRP is used inside UHD driver
-            if [ "$HW" == "USRP" ] ; then 
-		HW="OAI_USRP"
-	    fi 
-            if [ "$HW" == "BLADERF" ] ; then 
-		HW="OAI_BLADERF"
-	    fi 
-            echo_info "setting hardware to: $HW"
+            # Use OAI_USRP  as the key word USRP is used inside UHD driver           
+	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
+		echo_fatal "Unknown HW type $HW will exit..."		
+	    else
+		if [ "$HW" == "USRP" ] ; then 
+		    HW="OAI_USRP"
+		fi 
+		if [ "$HW" == "BLADERF" ] ; then 
+		    HW="OAI_BLADERF"
+		fi
+		echo_info "Setting hardware to: $HW"
+	    fi
             shift 2;;
-       --oaisim)
+	-t | --transport_protocol)
+            TP="$2" #"${i#*=}"
+	    if [ "$TP" != "ETHERNET" -a "$TP" != "None" ] ; then 
+		echo_fatal "Unknown TP type $TP will exit..."		
+	    else
+		echo_info "Setting transport protocol to: $TP"		
+	    fi
+            shift 2;;
+	--oaisim)
             oaisim=1
             echo_info "Will compile oaisim and drivers nasmesh, ..."
             shift;;
@@ -194,8 +217,13 @@ function main() {
             OAI_TEST=1
             echo_info "Will run auto-tests"
             shift;;
+       --run-group)
+            RUN_GROUP=1
+            TEST_CASE_GROUP=$2
+            echo_info "executing test cases only in group: $TEST_CASE_GROUP"
+            shift 2;;
        -V | --vcd)
-            echo_info "setting gtk-wave output"
+            echo_info "Setting gtk-wave output"
             VCD_TIMING=1
             EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
@@ -218,8 +246,20 @@ function main() {
             shift;;
        --cflags_processor)
             CFLAGS_PROCESSOR_USER=$2
-            echo_info "setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
+            echo_info "Setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
+       --build-doxygen)
+	    BUILD_DOXYGEN=1
+            echo_info "Will build doxygen support"
+            shift;;     
+       --disable-deadline)
+            FORCE_LOWLATENCY_FLAG_USER="False"
+            echo_info "Disabling the usage of deadline scheduler"
+            shift 1;;
+       --enable-deadline)
+            FORCE_LOWLATENCY_FLAG_USER="True"
+            echo_info "Enabling the usage of deadline scheduler"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -229,6 +269,61 @@ function main() {
             break;;
    esac
   done
+  
+  #########################################################
+  # check validity of HW and TP parameters for RRH and eNB
+  #########################################################
+  # to be discussed
+  
+  if [ "$eNB" = "1" ] ; then
+      if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
+	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
+      fi
+      if [ "$HW" != "None" -a  "$TP" != "None" ] ; then
+	  echo_fatal "Currently eNB  can not support simultaniously local and remote radio heads!!"
+      fi      
+      if [ "$HW" = "None" ] ; then 
+	  echo_info "No radio head has been selected (HW set to $HW)"	
+      fi
+      if [ "$TP" = "None" ] ; then
+	  echo_info "No transport protocol has been selected (TP set to $TP)"	
+      fi
+  fi
+  
+  if [ "$RRH" = "1" ] ; then
+      if [ "$TP" = "None" ] ; then
+	  echo_fatal "A transport protocol (e.g. -t ETHERNET) must be defined!"
+      fi
+      if [ "$HW" = "None" ] ; then
+	  echo_info "No radio head has been selected (HW set to $HW)"	
+      fi
+  fi
+
+  #Now we set flags to enable deadline scheduler settings
+  #By default: USRP: disable, 
+  #By default: BLADERF: enable,
+  #By default: EXMIMO: enable
+  if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
+     if [ "$HW" = "EXMIMO" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "ETHERNET" ] ; then 
+        LOWLATENCY_FLAG_USER="True"
+     elif [ "$HW" = "OAI_USRP" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "OAI_BLADERF" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "None" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     else 
+        echo_error "Unknown HW type $HW. Exiting now..."
+        exit 
+     fi
+  else
+     LOWLATENCY_FLAG_USER=$FORCE_LOWLATENCY_FLAG_USER
+  fi
+
+  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
+
 
   ############################################
   # setting and printing OAI envs, we should check here
@@ -266,12 +361,11 @@ function main() {
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
-    fi
+    fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
-      echo_info "installing packages for BALDERF support"
+      echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
     fi
-
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then
@@ -280,9 +374,11 @@ function main() {
   fi
 
   if [ "$oaisim" = "1" ] ; then
-      if [ "$HW" != "ETHERNET" ] ; then 
-	  HW="NONE"
-      fi 
+      #to be discussed
+      # there is no RF device and no transport protocol 
+      HW="None" 
+      TP="None"
+      
       if [ "$XFORMS" == "True" ] ; then 
 	  PRINT_STATS="True"
       fi 
@@ -316,7 +412,9 @@ function main() {
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo "set(PACKAGE_NAME \"${lte_exec}\")"     >>  $cmake_file
+    echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+    echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
+    echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -408,7 +506,7 @@ function main() {
 
   # EXMIMO drivers & firmware loader
   ###############
-  if [ "$HW" = "EXMIMO" -a "$EPC" = "0" ] ; then
+  if [ "$HW" = "EXMIMO" ] ; then
     
     echo_info "Compiling Express MIMO 2 board drivers"
     compilations \
@@ -521,64 +619,136 @@ function main() {
   fi
 
   # RRH compilation
-  ##################
+  #####################
   if [ "$RRH" = "1" ] ; then
-    echo_info "Compiling RRH"
-    if [  $HW == "ETHERNET" ] ; then 
-	echo_info "RF frontend for RRH is not defined. This mode is used for testing (loopback)."
-    elif [ $HW != "EXMIMO" -a $HW != "OAI_USRP" -a $HW != "OAI_BLADERF" ] ; then 
-	echo_fatal "Hardware not defined ($HW)"
-    fi
-    cmake_file=$DIR/rrh_gw/CMakeLists.txt
-    echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
-    echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
-    echo "set(ENABLE_ITTI False )"     					 >>  $cmake_file
-    echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
-    echo 'set(PACKAGE_NAME "\"rrh_gw\"")' >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
 
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build
-    mkdir -p $DIR/rrh_gw/build
-    cd $DIR/rrh_gw/build
-    cmake ..
-    compilations \
-      rrh_gw rrh_gw \
-      rrh_gw $dbin/rrh_gw
-  fi
+     rrh_exec=rrh_gw
+     rrh_build_dir=rrh_gw
+     
+     echo_info "Compiling $rrh_exec ..."
+    
+     [ "$CLEAN" = "1" ] && rm -rf $DIR/rrh_gw/build 
+     mkdir -p $DIR/$rrh_build_dir/build
+     cmake_file=$DIR/$rrh_build_dir/CMakeLists.txt
+     echo "cmake_minimum_required(VERSION 2.8)"   >   $cmake_file
+     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
+     echo "set(ENABLE_ITTI False )"     		 >>  $cmake_file
+     echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
+     echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
+     echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
+     echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
+     cd $DIR/$rrh_build_dir/build
+     cmake ..
+     compilations \
+	 rrh_gw rrh_gw \
+	 rrh_gw $dbin/rrh_gw
 
-  # EPC compilation
-  ##################
-  if [ "$EPC" = "1" ] ; then
-      echo_info "Compiling EPC"
-      # Example HSS and EPC run on the same host
-      if [ "$CLEAN" = "1" ]; then
-	  $OPENAIR_DIR/cmake_targets/tools/build_epc --clean --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-	  $OPENAIR_DIR/cmake_targets/tools/build_hss --clean --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-      else
-	  $OPENAIR_DIR/cmake_targets/tools/build_epc --debug --transport-tcp-only --transport-prefer-tcp --s6a-server
-	  $OPENAIR_DIR/cmake_targets/tools/build_hss --debug --transport-tcp-only --transport-prefer-tcp --fqdn `hostname --fqdn` --connect-to-mme `hostname --fqdn`
-      fi
-      
-      #   if [ "$INSTALL_SYSTEM_FILES" = "1" ] ;then
-      #    if [ -f $dbin/hss.conf ] ; then
-      #      sed -e 's/ *= */=/' $dbin/hss.conf > $dconf/hss.conf.nospace
-      #      source $dconf/hss.conf.nospace
-      #      rm -f $dconf/hss.conf.nospace
-      #      create_hss_database root linux "$MYSQL_user" "$MYSQL_pass" "$MYSQL_db"
-      #    else
-      #      echo_warning "not created HSS database: config not found"
-      #    fi
-      #  fi
   fi
   
+  # build RF device and transport protocol libraries
+  #####################################
+  if [ "$eNB" = "1" -o  "$RRH" = "1" ] ; then
+
+      if [ "$eNB" = "1" ] ; then
+	  build_dir=$lte_build_dir	  
+      else
+	  build_dir=$rrh_build_dir	 
+      fi
+
+      # build RF device libraries (currently EXMIMO is not complied with the rest of HW targets)
+      if [ "$HW" != "None" ] ; then
+	  rm -f liboai_device.so
+	  rm -f $dbin/liboai_device.so
+
+
+	  # link liboai_device.so with the selected RF device library
+	  if [ "$HW" == "EXMIMO" ] ; then
+	      
+	      #add exmimo compilation
+	      #TODO EXMIMO library support
+	     
+	      echo_info "liboai_device.so is linked to EXMIMO device library"       
+	  elif [ "$HW" == "OAI_USRP" ] ; then
+	      if [ -d "/usr/include/uhd" ] ; then
+		  compilations \
+		      $build_dir oai_usrpdevif \
+		      liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
+	      fi
+
+	      ln -s liboai_usrpdevif.so liboai_device.so
+	      ln -s $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
+	      echo_info "liboai_device.so is linked to USRP device library"        
+	  elif [ "$HW" == "OAI_BLADERF" ] ; then
+	      if [ -f "/usr/include/libbladeRF.h" ] ; then
+		  compilations \
+		      $build_dir oai_bladerfdevif \
+		      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
+	      fi
+
+	      ln -s liboai_bladerfdevif.so liboai_device.so
+	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
+	      echo_info "liboai_device.so is linked to BLADERF device library"	 
+	  else 
+	      echo_info "liboai_device.so is not linked to any device library"	    
+	  fi
+      fi
+      
+      # build trasport protocol libraries (currently only ETHERNET is available)
+      if [ "$TP" != "None" ] ; then
+	  rm -f liboai_transpro.so
+	  rm -f $dbin/liboai_transpro.so
+
+	  if [ "$TP" == "ETHERNET" ] ; then
+	      compilations \
+		  $build_dir oai_eth_transpro \
+		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+	      ln -s liboai_eth_transpro.so liboai_transpro.so
+	      ln -s $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
+	      echo_info "liboai_transpro.so is linked with ETHERNET library"	 
+	  fi      
+      fi
+fi
+
+
+  # Doxygen Support
+  #####################
+  if [ "$BUILD_DOXYGEN" = "1" ] ;then
+    doxygen_log=$OPENAIR_DIR/cmake_targets/log/doxygen.log
+    echo_info "Building doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/targets/DOCS/html/index.html"
+    echo_info "Doxygen Generation log is located here: $doxygen_log"
+    echo_info "Generating doxygen files....please wait"
+    (
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
+    mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
+    cd $OPENAIR_DIR/cmake_targets/doxygen/build
+    cmake ..
+    make doc
+    ) >& $doxygen_log
+  fi
+
   # Auto-tests
   #####################
   if [ "$OAI_TEST" = "1" ]; then
     echo_info "10. Running OAI pre commit tests (pre-ci) ..."
+    echo_error "These scripts ASSUME that user is in /etc/sudoers and can execute commands without PASSWORD prompt"
+    echo_error "Add the following lines in /etc/sudoers file to make your __user_name__ sudo without password prompt"
+    echo_error " __your_user_name__ ALL = (ALL:ALL) NOPASSWD: ALL"
+    echo_error " __your_user_name__ ALL = (ALL) NOPASSWD: ALL "
+    echo_info "The log file for the autotest script for debugging is located here: $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log "
+    echo_info "The results of autotests results is located here: $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+    echo_info "You can hit CTRL-C any time to terminate the autotests..."
+    echo "Current User Name: $USER"
+    read -s -p "Enter Password: " mypassword
+    echo -e "\n"
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
-    $OPENAIR_DIR/cmake_targets/autotests/run_compilation_autotests.bash
-    $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash
+    if [ "$RUN_GROUP" -eq "1" ]; then
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+    else
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+    fi
+    wait
   else
     echo_info "10. Bypassing the Tests ..."
   fi

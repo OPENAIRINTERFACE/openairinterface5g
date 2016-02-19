@@ -175,13 +175,13 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length)
      {
     for(p=0;p<desc->nb_paths;p++)
        {
-         H[i][j] += sqrt(desc->amps[j]/2)*alpha[p]*cexp(-I*(2*pi*w_Hz[p]*i*(1/(desc->BW*1e6))+phi_rad[p]));
+         H[i][j] += sqrt(desc->amps[j]/2)*alpha[p]*cexp(-I*(2*pi*w_Hz[p]*i*(1/(desc->sampling_rate*1e6))+phi_rad[p]));
        }
        }
    }
   for(j=0;j<desc->nb_paths;j++)
    {
-  phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->BW)+phi_rad[j],2*pi);
+  phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->sampling_rate)+phi_rad[j],2*pi);
    }
   */
 
@@ -193,13 +193,13 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length)
           H[i+(j*desc->nb_rx)][k][l] = 0;
 
           for(p=0; p<desc->nb_paths; p++) {
-            H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[l]/2)*alpha[p]*cexp(I*(2*pi*w_Hz[p]*k*(1/(desc->BW*1e6))+phi_rad[p]));
+            H[i+(j*desc->nb_rx)][k][l] += sqrt(desc->amps[l]/2)*alpha[p]*cexp(I*(2*pi*w_Hz[p]*k*(1/(desc->sampling_rate*1e6))+phi_rad[p]));
           }
         }
       }
 
       for(j=0; j<desc->nb_paths; j++) {
-        phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->BW)+phi_rad[j],2*pi);
+        phi_rad[j] = fmod(2*pi*w_Hz[j]*(length-1)*(1/desc->sampling_rate)+phi_rad[j],2*pi);
       }
     }
   }

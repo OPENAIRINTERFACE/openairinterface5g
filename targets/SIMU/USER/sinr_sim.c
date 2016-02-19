@@ -254,7 +254,7 @@ void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_dat
   uint8_t qq;
 
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm
+  thermal_noise = -174 + 10*log10(eNB2UE->sampling_rate*1e6); //value in dBm
 
   //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
   *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
@@ -496,7 +496,7 @@ void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_
 
   // nb_rb = phy_vars_eNB->ulsch_eNB[UE_id]->harq_processes[harq_pid]->nb_rb;
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(UE2eNB->BW*1e6); //value in dBm
+  thermal_noise = -174 + 10*log10(UE2eNB->sampling_rate*1e6); //value in dBm
   *N0 = thermal_noise + enb_data->rx_noise_level;//? all the element have the same noise level?????
   double lambda ;
   double residual;
@@ -557,7 +557,7 @@ void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *
   short count;
 
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(eNB2UE->BW*1e6); //value in dBm
+  thermal_noise = -174 + 10*log10(eNB2UE->sampling_rate*1e6); //value in dBm
 
   for (count = 0; count < 12 * nb_rb; count++) {
     sir = enb_data->tx_power_dBm

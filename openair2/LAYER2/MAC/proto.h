@@ -47,26 +47,23 @@ void add_ue_spec_dci(DCI_PDU *DCI_pdu,void *pdu,rnti_t rnti,unsigned char dci_si
 
 //LG commented cause compilation error for RT eNB extern inline unsigned int taus(void);
 
-/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb,unsigned int *nCCE);
+/** \fn void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb);
 \brief First stage of Random-Access Scheduling. Loops over the RA_templates and checks if RAR, Msg3 or its retransmission are to be scheduled in the subframe.  It returns the total number of PRB used for RA SDUs.  For Msg3 it retrieves the L3msg from RRC and fills the appropriate buffers.  For the others it just computes the number of PRBs. Each DCI uses 3 PRBs (format 1A)
 for the message.
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
-@param nprb Pointer to current PRB count
-@param nCCE Pointer to current nCCE count
+
 */
-void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe,unsigned int *nprb,unsigned int *nCCE);
+void schedule_RA(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint8_t Msg3_subframe);
 
 /** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param Msg3_subframe Subframe where Msg3 will be transmitted
-@param nprb Pointer to current PRB count
-@param nCCE Pointer to current nCCE count
 */
-void schedule_SI(module_id_t module_idP,frame_t frameP,unsigned int *nprb,unsigned int *nCCE);
+void schedule_SI(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
@@ -95,49 +92,41 @@ int8_t ue_get_mbsfn_sf_alloction (module_id_t module_idP, uint8_t mbsfn_sync_are
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-@param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch(module_id_t module_idP,frame_t frameP,unsigned char cooperation_flag,sub_frame_t subframe,unsigned char sched_subframe,unsigned int *nCCE);
+void schedule_ulsch(module_id_t module_idP,frame_t frameP,unsigned char cooperation_flag,sub_frame_t subframe,unsigned char sched_subframe);
 
 /** \brief ULSCH Scheduling per RNTI
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-@param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, unsigned int *nCCE, unsigned int *nCCE_available,
-                         uint16_t *first_rb);
+void schedule_ulsch_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
 
 /** \brief ULSCH Scheduling for CBA  RNTI
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe number on which to act
 @param sched_subframe Subframe number where PUSCH is transmitted (for DAI lookup)
-@param nCCE Pointer to current nCCE count
 */
-void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, unsigned int *nCCE,
-                             unsigned int *nCCE_available, uint16_t *first_rb);
+void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_flag, frame_t frameP, sub_frame_t subframe, unsigned char sched_subframe, uint16_t *first_rb);
 
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
 @param frame Frame index
 @param subframe Index of subframe
-@param rballoc Bitmask for allowable subband allocations
-@param RA_scheduled RA was scheduled in this subframe
 @param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,uint32_t *rballoc,uint8_t RA_scheduled,int *mbsfn_flag);
+void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
 @param frame Frame index
 @param subframe Subframe on which to act
-@param nb_rb_used0 Number of PRB used by SI/RA
-@param nCCE_used Number of CCE used by SI/RA
+
 @param mbsfn_flag  Indicates that MCH/MCCH is in this subframe
 */
-void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,unsigned int *nb_rb_used0,unsigned int *nCCE_used,int *mbsfn_flag);
+void schedule_ue_spec(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief Function for UE/PHY to compute PUSCH transmit power in power-control procedure.
     @param Mod_id Module id of UE
@@ -311,6 +300,27 @@ boolean_t   is_UE_active      (module_id_t module_idP, int UE_id);
 uint8_t     process_ue_cqi    (module_id_t module_idP, int UE_id);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
+
+void init_CCE_table(int module_idP,int CC_idP);
+
+int get_nCCE_offset(int *CCE_table,
+		    const unsigned char L, 
+		    const int nCCE, 
+		    const int common_dci, 
+		    const unsigned short rnti, 
+		    const unsigned char subframe);
+
+int allocate_CCEs(int module_idP,
+		  int CC_idP,
+		  int subframe,
+		  int test_only);
+
+boolean_t CCE_allocation_infeasible(int module_idP,
+				  int CC_idP,
+				  int common_flag,
+				  int subframe,
+				  int aggregation,
+				  int rnti);
 
 void set_ue_dai(sub_frame_t   subframeP,
                 uint8_t       tdd_config,
@@ -492,7 +502,7 @@ int UE_PCCID(module_id_t mod_idP,int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 
-void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb, uint8_t  aggregattion, uint32_t *nCCE);
+void ulsch_scheduler_pre_processor(module_id_t module_idP, int frameP, sub_frame_t subframeP, uint16_t *first_rb, uint8_t  aggregattion);
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP);
 void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP);
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP,uint16_t *first_rb);
