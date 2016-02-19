@@ -123,7 +123,7 @@ int enb_agent_hello(mid_t mod_id, const void *params, Protocol__ProgranMessage *
   
   protocol__progran_message__init(*msg);
   (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_HELLO_MSG;
-  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->has_msg_dir = 1;
   (*msg)->hello_msg = hello_msg;
   return 0;
