@@ -750,25 +750,6 @@ int main(int argc, char **argv)
          subframe,NUMBER_OF_OFDM_CARRIERS,
          PHY_vars_eNB->lte_frame_parms.Ncp,PHY_vars_eNB->lte_frame_parms.samples_per_tti,nsymb);
 
-<<<<<<< HEAD
-  switch (N_RB_DL) {
-  case 6:
-    BW = 1.25;
-    break;
-
-  case 25:
-    BW = 5.00;
-    break;
-
-  case 50:
-    BW = 10.00;
-    break;
-
-  case 100:
-    BW = 20.00;
-    break;
-  }
-
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antenna_ports_eNB,
                                 PHY_vars_UE->lte_frame_parms.nb_antennas_rx,
                                 channel_model,
