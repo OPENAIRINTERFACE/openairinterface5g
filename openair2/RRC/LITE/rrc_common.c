@@ -48,6 +48,7 @@
 #include "asn1_msg.h"
 #include "pdcp.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "rrc_eNB_UE_context.h"
 
 #ifdef LOCALIZATION
 #include <sys/time.h>
@@ -414,7 +415,7 @@ rrc_rx_tx(
   uint8_t        UE_id;
   int32_t        current_timestamp_ms, ref_timestamp_ms;
   struct timeval ts;
-  struct rrc_eNB_ue_context_s*   ue_context_p = NULL;
+  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
 
 #ifdef LOCALIZATION
   double                         estimated_distance;
@@ -523,15 +524,16 @@ rrc_rx_tx(
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
       if (ue_context_p->ue_context.ul_failure_timer>0) {
 	ue_context_p->ue_context.ul_failure_timer++;
-	if (ue_context_p->ue_context.ul_failure_timer == 1000) {
-	  // remove UE after 1 second after MAC has indicated UL failure
+	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+	  // remove UE after 20 seconds after MAC has indicated UL failure
 	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
-	  
+	  ue_to_be_removed = ue_context_p;
+	  break;
 	}
       }
-
-
     }
+    if (ue_to_be_removed)
+      rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
 #ifdef LOCALIZATION
 
     /* for the localization, only primary CC_id might be relevant*/

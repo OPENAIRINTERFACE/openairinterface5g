@@ -200,38 +200,40 @@ int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
 
 int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
   uint8_t i;
-  int j;
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_idP];
+  int j,CC_id;
+  PHY_VARS_eNB *phy_vars_eNB;
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
-      MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rnti);
-      LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
-      return(-1);
-    } else {
-      if (phy_vars_eNB->eNB_UE_stats[i].crnti==rntiP) {
-        MSC_LOG_EVENT(MSC_PHY_ENB, "0 Removed ue %"PRIx16" ", rntiP);
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    phy_vars_eNB = PHY_vars_eNB_g[Mod_idP][CC_id];
+    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+      if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
+	MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (ENOMEM)", rnti);
+	LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
+	return(-1);
+      } else {
+	if (phy_vars_eNB->eNB_UE_stats[i].crnti==rntiP) {
+	  MSC_LOG_EVENT(MSC_PHY_ENB, "0 Removed ue %"PRIx16" ", rntiP);
 #ifdef DEBUG_PHY_PROC
-	LOG_I(PHY,"eNB %d removing UE %d with rnti %x\n",phy_vars_eNB->Mod_id,i,rnti);
+	  LOG_I(PHY,"eNB %d removing UE %d with rnti %x\n",phy_vars_eNB->Mod_id,i,rnti);
 #endif
-        //msg("[PHY] UE_id %d\n",i);
-        clean_eNb_dlsch(phy_vars_eNB->dlsch_eNB[i][0]);
-        clean_eNb_ulsch(phy_vars_eNB->ulsch_eNB[i]);
-        //phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
-        memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
-        //  mac_exit_wrapper("Removing UE");
-
-        /* clear the harq pid freelist */
-        phy_vars_eNB->dlsch_eNB[i][0]->head_freelist = 0;
-        phy_vars_eNB->dlsch_eNB[i][0]->tail_freelist = 0;
-        for (j = 0; j < 8; j++)
-          put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[i][0], j);
-
-        return(i);
+	  //msg("[PHY] UE_id %d\n",i);
+	  clean_eNb_dlsch(phy_vars_eNB->dlsch_eNB[i][0]);
+	  clean_eNb_ulsch(phy_vars_eNB->ulsch_eNB[i]);
+	  //phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
+	  memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
+	  //  mac_exit_wrapper("Removing UE");
+	  
+	  /* clear the harq pid freelist */
+	  phy_vars_eNB->dlsch_eNB[i][0]->head_freelist = 0;
+	  phy_vars_eNB->dlsch_eNB[i][0]->tail_freelist = 0;
+	  for (j = 0; j < 8; j++)
+	    put_harq_pid_in_freelist(phy_vars_eNB->dlsch_eNB[i][0], j);
+	  
+	  return(i);
+	}
       }
     }
   }
-
   MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (not found)", rntiP);
   return(-1);
 }
@@ -3523,7 +3525,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                       frame,
                                       phy_vars_eNB->eNB_UE_stats[i].crnti);
 #endif
-            mac_phy_remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB);
+            mac_phy_remove_ue(phy_vars_eNB->Mod_id,phy_vars_eNB->eNB_UE_stats[i].crnti);
             phy_vars_eNB->ulsch_eNB[(uint32_t)i]->Msg3_active = 0;
             //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
 
@@ -3670,7 +3672,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                       phy_vars_eNB->CC_id,
                                       frame,
                                       phy_vars_eNB->eNB_UE_stats[i].crnti);
-            mac_phy_remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB);
+            mac_phy_remove_ue(phy_vars_eNB->Mod_id,phy_vars_eNB->eNB_UE_stats[i].crnti);
             phy_vars_eNB->ulsch_eNB[(uint32_t)i]->Msg3_active = 0;
           }
 

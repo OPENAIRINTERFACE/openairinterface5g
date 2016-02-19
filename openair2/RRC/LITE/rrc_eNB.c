@@ -792,32 +792,30 @@ rrc_eNB_free_mem_UE_context(
 //-----------------------------------------------------------------------------
 // should be called when UE is lost by eNB
 void
-rrc_eNB_free_UE(
-  const module_id_t enb_mod_idP,
-  const rnti_t      rntiP,
-  const frame_t     frameP,
-  const sub_frame_t subframeP
-)
+rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*        const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
 
-  struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
+
   protocol_ctxt_t                     ctxt;
 #if !defined(ENABLE_USE_MME)
   module_id_t                         ue_module_id;
 #endif
-  AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rntiP);
-  ue_context_p = rrc_eNB_get_ue_context(
+  rnti_t rnti = ue_context_pP->ue_context.rnti;
+
+
+  AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rnti);
+  /*  ue_context_p = rrc_eNB_get_ue_context(
                    &eNB_rrc_inst[enb_mod_idP],
                    rntiP
                  );
-
-  if (NULL != ue_context_p) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rntiP, frameP, subframeP,enb_mod_idP);
-    LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rntiP);
+  */
+  if (NULL != ue_context_pP) {
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0,enb_mod_idP);
+    LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
 #if defined(ENABLE_USE_MME)
-    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_p, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
+    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
     /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
      * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
      *  triggering the S1 UE Context Release Request procedure
@@ -826,23 +824,22 @@ rrc_eNB_free_UE(
      */
 #else
 #if defined(OAI_EMU)
-    AssertFatal(ue_context_p->local_uid < NUMBER_OF_UE_MAX, "local_uid invalid (%d<%d) for UE %x!", ue_context_p->local_uid, NUMBER_OF_UE_MAX, rntiP);
-    ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_p->local_uid];
-    AssertFatal(ue_module_id < NUMBER_OF_UE_MAX, "ue_module_id invalid (%d<%d) for UE %x!", ue_module_id, NUMBER_OF_UE_MAX, rntiP);
-    oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_p->local_uid] = -1;
+    AssertFatal(ue_context_pP->local_uid < NUMBER_OF_UE_MAX, "local_uid invalid (%d<%d) for UE %x!", ue_context_pP->local_uid, NUMBER_OF_UE_MAX, rnti);
+    ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid];
+    AssertFatal(ue_module_id < NUMBER_OF_UE_MAX, "ue_module_id invalid (%d<%d) for UE %x!", ue_module_id, NUMBER_OF_UE_MAX, rnti);
+    oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_mod_idP][ue_context_pP->local_uid] = -1;
     oai_emulation.info.eNB_ue_module_id_to_rnti[enb_mod_idP][ue_module_id] = NOT_A_RNTI;
 #endif
 #endif
-    ue_context_p->ue_context.Status = RRC_IDLE;
 
-    rrc_mac_remove_ue(enb_mod_idP,rntiP);
+    rrc_mac_remove_ue(enb_mod_idP,rnti);
     rrc_rlc_remove_ue(&ctxt);
     pdcp_remove_UE(&ctxt);
 
     rrc_eNB_remove_ue_context(
       &ctxt,
       &eNB_rrc_inst[enb_mod_idP],
-      ue_context_p);
+      ue_context_pP);
   }
 }
 
@@ -3554,6 +3551,7 @@ rrc_eNB_decode_ccch(
   int                                 i, rval;
   struct rrc_eNB_ue_context_s*                  ue_context_p = NULL;
   uint64_t                                      random_value = 0;
+  int                                           stmsi_received = 0;
 
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
@@ -3724,17 +3722,16 @@ rrc_eNB_decode_ccch(
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
 #warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
-	      LOG_I(RRC,PROTOCOL_RRC_CTXT_UE_FMT" S-TMSI exists, ue_context_p %p\n",ue_context_p);
+	      LOG_I(RRC," S-TMSI exists, ue_context_p %p\n",ue_context_p);
+	      stmsi_received=1;
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
-              ue_context_p = NULL;
+	      //              ue_context_p = NULL;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
+	      ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
+	      ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
+	      ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
             }
-	    if (ue_context_p==NULL)
-	      AssertFatal(0 == 1, "ue_context_p is null");
-            ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
-            ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
-            ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
 
             MSC_LOG_RX_MESSAGE(
               MSC_RRC_ENB,
@@ -3780,7 +3777,8 @@ rrc_eNB_decode_ccch(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 ue_context_p->ue_context.random_ue_identity);
 #endif
-          eNB_rrc_inst[ctxt_pP->module_id].Nb_ue++;
+          if (stmsi_received == 0)
+	    eNB_rrc_inst[ctxt_pP->module_id].Nb_ue++;
 
         } else {
           // no context available

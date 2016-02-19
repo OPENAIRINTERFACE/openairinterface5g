@@ -731,10 +731,10 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
     ue_context_p->ue_context.ul_failure_timer=1;
   }
   else {
-    LOG_E(RRC,"Frame %d, Subframe %d: UE %x unknown \n",rntiP);
+    LOG_W(RRC,"Frame %d, Subframe %d: UE %x unknown \n",frameP,subframeP,rntiP);
+    rrc_mac_remove_ue(Mod_instP,rntiP);
   }
   
-  return;
 }
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 

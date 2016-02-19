@@ -360,6 +360,8 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
     prev=i;
   }
 
+  mac_phy_remove_ue(mod_idP,rntiP);
+
   if (ret == 0) {
     return (0);
   }
