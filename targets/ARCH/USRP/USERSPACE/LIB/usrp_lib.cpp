@@ -29,7 +29,7 @@
 
 /** usrp_lib.cpp
  *
- * Author: HongliangXU : hong-liang-xu@agilent.com
+ * \author: HongliangXU : hong-liang-xu@agilent.com
  */
 
 #include <string.h>
@@ -55,47 +55,71 @@
 #  include <immintrin.h>
 #endif
 
+/** @addtogroup _USRP_PHY_RF_INTERFACE_
+ * @{
+ */
+
+/*! \brief USRP Configuration */ 
 typedef struct
 {
 
   // --------------------------------
   // variables for USRP configuration
   // --------------------------------
+  //! USRP device pointer
   uhd::usrp::multi_usrp::sptr usrp;
   //uhd::usrp::multi_usrp::sptr rx_usrp;
   
   //create a send streamer and a receive streamer
+  //! USRP TX Stream
   uhd::tx_streamer::sptr tx_stream;
+  //! USRP RX Stream
   uhd::rx_streamer::sptr rx_stream;
 
+  //! USRP TX Metadata
   uhd::tx_metadata_t tx_md;
+  //! USRP RX Metadata
   uhd::rx_metadata_t rx_md;
 
+  //! USRP Timestamp Information
   uhd::time_spec_t tm_spec;
+
   //setup variables and allocate buffer
+  //! USRP Metadata
   uhd::async_metadata_t async_md;
 
+  //! Sampling rate
   double sample_rate;
-  // time offset between transmiter timestamp and receiver timestamp;
+
+  //! time offset between transmiter timestamp and receiver timestamp;
   double tdiff;
-  // use usrp_time_offset to get this value
+
+  //! TX forward samples. We use usrp_time_offset to get this value
   int tx_forward_nsamps; //166 for 20Mhz
 
 
   // --------------------------------
   // Debug and output control
   // --------------------------------
+  //! Number of underflows
   int num_underflows;
+  //! Number of overflows
   int num_overflows;
+  
+  //! Number of sequential errors
   int num_seq_errors;
-
+  //! tx count
   int64_t tx_count;
+  //! rx count
   int64_t rx_count;
+  //! timestamp of RX packet
   openair0_timestamp rx_timestamp;
 
 } usrp_state_t;
 
-
+/*! \brief Called to start the USRP transceiver. Return 0 if OK, < 0 if error
+    @param device pointer to the device structure specific to the RF hardware target
+*/
 static int trx_usrp_start(openair0_device *device)
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -118,7 +142,9 @@ static int trx_usrp_start(openair0_device *device)
 
   return 0;
 }
-
+/*! \brief Terminate operation of the USRP transceiver -- free all associated resources 
+ * \param device the hardware to use
+ */
 static void trx_usrp_end(openair0_device *device)
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -132,6 +158,14 @@ static void trx_usrp_end(openair0_device *device)
   
 }
 
+/*! \brief Called to send samples to the USRP RF target
+      @param device pointer to the device structure specific to the RF hardware target
+      @param timestamp The timestamp at whicch the first sample MUST be sent 
+      @param buff Buffer which holds the samples
+      @param nsamps number of samples to be sent
+      @param antenna_id index of the antenna if the device has multiple anteannas
+      @param flags flags must be set to TRUE if timestamp parameter needs to be applied
+*/ 
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -153,6 +187,17 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
   return 0;
 }
 
+/*! \brief Receive samples from hardware.
+ * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+ * the first channel. *ptimestamp is the time at which the first sample
+ * was received.
+ * \param device the hardware to use
+ * \param[out] ptimestamp the time at which the first sample was received.
+ * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
+ * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+ * \param antenna_id Index of antenna for which to receive samples
+ * \returns the number of sample read
+*/
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc)
 {
    usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -172,7 +217,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
 
 
-  if (device->type == USRP_B200_IF) {  
+  if (device->type == USRP_B200_DEV) {  
     if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
@@ -198,7 +243,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 #endif
       }
     }
-  } else if (device->type == USRP_X300_IF) {
+  } else if (device->type == USRP_X300_DEV) {
     if (cc>1) {
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
@@ -238,6 +283,9 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   return samples_received;
 }
 
+/*! \brief Get current timestamp of USRP
+ * \param device the hardware to use
+*/
 openair0_timestamp get_usrp_time(openair0_device *device) 
 {
  
@@ -246,11 +294,21 @@ openair0_timestamp get_usrp_time(openair0_device *device)
   return s->usrp->get_time_now().to_ticks(s->sample_rate);
 } 
 
+/*! \brief Compares two variables within precision
+ * \param a first variable
+ * \param b second variable
+*/
 static bool is_equal(double a, double b)
 {
   return std::fabs(a-b) < std::numeric_limits<double>::epsilon();
 }
 
+/*! \brief Set frequencies (TX/RX)
+ * \param device the hardware to use
+ * \param openair0_cfg RF frontend parameters set by application
+ * \param dummy dummy variable not used
+ * \returns 0 in success 
+ */
 int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -262,6 +320,11 @@ int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, 
   
 }
 
+/*! \brief Set RX frequencies 
+ * \param device the hardware to use
+ * \param openair0_cfg RF frontend parameters set by application
+ * \returns 0 in success 
+ */
 int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg) {
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
@@ -279,6 +342,11 @@ int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *open
   
 }
 
+/*! \brief Set Gains (TX/RX)
+ * \param device the hardware to use
+ * \param openair0_cfg RF frontend parameters set by application
+ * \returns 0 in success 
+ */
 int trx_usrp_set_gains(openair0_device* device, 
 		       openair0_config_t *openair0_cfg) {
 
@@ -299,11 +367,14 @@ int trx_usrp_set_gains(openair0_device* device,
   return(0);
 }
 
+/*! \brief Stop USRP
+ * \param card refers to the hardware index to use
+ */
 int trx_usrp_stop(int card) {
   return(0);
 }
 
-
+/*! \brief USRPB210 RX calibration table */
 rx_gain_calib_table_t calib_table_b210[] = {
   {3500000000.0,44.0},
   {2660000000.0,49.0},
@@ -312,6 +383,7 @@ rx_gain_calib_table_t calib_table_b210[] = {
   {816000000.0,58.0},
   {-1,0}};
 
+/*! \brief USRPB210 RX calibration table */
 rx_gain_calib_table_t calib_table_b210_38[] = {
   {3500000000.0,44.0},
   {2660000000.0,49.8},
@@ -320,6 +392,7 @@ rx_gain_calib_table_t calib_table_b210_38[] = {
   {816000000.0,57.0},
   {-1,0}};
 
+/*! \brief USRPx310 RX calibration table */
 rx_gain_calib_table_t calib_table_x310[] = {
   {3500000000.0,77.0},
   {2660000000.0,81.0},
@@ -328,6 +401,11 @@ rx_gain_calib_table_t calib_table_x310[] = {
   {816000000.0,85.0},
   {-1,0}};
 
+/*! \brief Set RX gain offset 
+ * \param openair0_cfg RF frontend parameters set by application
+ * \param chain_index RF chain to apply settings to
+ * \returns 0 in success 
+ */
 void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_gain_adjust) {
 
   int i=0;
@@ -373,12 +451,20 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index,int bw_
   
 }
 
-
+/*! \brief print the USRP statistics  
+* \param device the hardware to use
+* \returns  0 on success
+*/
 int trx_usrp_get_stats(openair0_device* device) {
 
   return(0);
 
 }
+
+/*! \brief Reset the USRP statistics  
+* \param device the hardware to use
+* \returns  0 on success
+*/
 int trx_usrp_reset_stats(openair0_device* device) {
 
   return(0);
@@ -386,13 +472,20 @@ int trx_usrp_reset_stats(openair0_device* device) {
 }
 
 
-int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_cfg)
-{
-  uhd::set_thread_priority_safe(1.0);
-  usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
-  memset(s, 0, sizeof(usrp_state_t));
 
-  // Initialize USRP device
+extern "C" {
+/*! \brief Initialize Openair USRP target. It returns 0 if OK
+* \param device the hardware to use
+* \param openair0_cfg RF frontend parameters set by application
+*/
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+    
+    uhd::set_thread_priority_safe(1.0);
+    usrp_state_t *s = (usrp_state_t*)malloc(sizeof(usrp_state_t));
+    memset(s, 0, sizeof(usrp_state_t));
+    
+    // Initialize USRP device
+
 
   std::string args = "type=b200";
 
@@ -436,14 +529,14 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     s->usrp->set_clock_source("internal");
     
     //Setting device type to USRP X300/X310 
-    device->type=USRP_X300_IF;
+    device->type=USRP_X300_DEV;
 
     // this is not working yet, master clock has to be set via constructor
     // set master clock rate and sample rate for tx & rx for streaming
     //s->usrp->set_master_clock_rate(usrp_master_clock);
 
     openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
-
+    
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
             // from usrp_time_offset
@@ -487,13 +580,13 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
     //  s->usrp->set_rx_subdev_spec(rx_subdev);
     //  s->usrp->set_tx_subdev_spec(tx_subdev);
-
-// do not explicitly set the clock to "internal", because this will disable the gpsdo
-//    // lock mboard clocks
-//    s->usrp->set_clock_source("internal");
+    
+    // do not explicitly set the clock to "internal", because this will disable the gpsdo
+    //    // lock mboard clocks
+    //    s->usrp->set_clock_source("internal");
     // set master clock rate and sample rate for tx & rx for streaming
 
-    device->type = USRP_B200_IF;
+    device->type = USRP_B200_DEV;
 
 
     if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
@@ -553,6 +646,12 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
     }
   }
 
+  /* device specific */
+  openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+  openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  openair0_cfg[0].iq_txshift = 4;//shift
+  openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
+  
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
@@ -606,10 +705,7 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
 
 
   s->usrp->set_time_now(uhd::time_spec_t(0.0));
-
-
-
-  
+ 
 
   for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
@@ -657,4 +753,6 @@ int openair0_dev_init_usrp(openair0_device* device, openair0_config_t *openair0_
   if(is_equal(s->sample_rate, (double)7.68e6))
     s->tx_forward_nsamps = 50;
   return 0;
+  }
 }
+/*@}*/
