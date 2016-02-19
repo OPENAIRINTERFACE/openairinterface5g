@@ -12,7 +12,7 @@ trap handle_ctrl_c INT
 source $OPENAIR_DIR/cmake_targets/tools/test_helper
 
 
-#SUDO="sudo -E "
+SUDO="sudo -E -S"
 tdir=$OPENAIR_DIR/cmake_targets/autotests
 rm -fr $tdir/bin 
 mkdir -p $tdir/bin
@@ -509,7 +509,7 @@ for search_expr in "${test_case_array[@]}"
     if [ "$class" == "compilation" ]; then
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
-        $SUDO killall -q oaisim_nos1
+        echo \'passwd\' | $SUDO killall -q oaisim_nos1
         test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file"
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."
