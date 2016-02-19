@@ -287,44 +287,38 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP,int harq_pidP)
 }
 
 //------------------------------------------------------------------------------
-int mac_remove_ue(module_id_t mod_idP, int ue_idP, int frameP, sub_frame_t subframeP)
+int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP) 
 //------------------------------------------------------------------------------
 {
 
   int prev,i, ret=-1;
 
-  rnti_t  rnti;
-  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
-  int pCC_id = UE_PCCID(mod_idP,ue_idP);
 
-  rnti = UE_list->UE_template[pCC_id][ue_idP].rnti;
-  LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",ue_idP,pCC_id, rnti);
+  UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
+  int UE_id = find_UE_id(mod_idP,rntiP);
+  int pCC_id = UE_PCCID(mod_idP,UE_id);
+
+  LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
   // clear all remaining pending transmissions
-  UE_list->UE_template[pCC_id][ue_idP].bsr_info[LCGID0]  = 0;
-  UE_list->UE_template[pCC_id][ue_idP].bsr_info[LCGID1]  = 0;
-  UE_list->UE_template[pCC_id][ue_idP].bsr_info[LCGID2]  = 0;
-  UE_list->UE_template[pCC_id][ue_idP].bsr_info[LCGID3]  = 0;
+  UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID0]  = 0;
+  UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID1]  = 0;
+  UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID2]  = 0;
+  UE_list->UE_template[pCC_id][UE_id].bsr_info[LCGID3]  = 0;
 
-  UE_list->UE_template[pCC_id][ue_idP].ul_SR             = 0;
-  UE_list->UE_template[pCC_id][ue_idP].rnti              = NOT_A_RNTI;
-  UE_list->UE_template[pCC_id][ue_idP].ul_active         = FALSE;
-  eNB_ulsch_info[mod_idP][pCC_id][ue_idP].rnti                        = NOT_A_RNTI;
-  eNB_ulsch_info[mod_idP][pCC_id][ue_idP].status                      = S_UL_NONE;
-  eNB_dlsch_info[mod_idP][pCC_id][ue_idP].rnti                        = NOT_A_RNTI;
-  eNB_dlsch_info[mod_idP][pCC_id][ue_idP].status                      = S_DL_NONE;
-
-  rrc_eNB_free_UE(
-    mod_idP,
-    rnti,
-    frameP,
-    subframeP);
+  UE_list->UE_template[pCC_id][UE_id].ul_SR             = 0;
+  UE_list->UE_template[pCC_id][UE_id].rnti              = NOT_A_RNTI;
+  UE_list->UE_template[pCC_id][UE_id].ul_active         = FALSE;
+  eNB_ulsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
+  eNB_ulsch_info[mod_idP][pCC_id][UE_id].status                      = S_UL_NONE;
+  eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti                        = NOT_A_RNTI;
+  eNB_dlsch_info[mod_idP][pCC_id][UE_id].status                      = S_DL_NONE;
 
   prev = UE_list->head;
 
   for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
-    if (i == ue_idP) {
+    if (i == UE_id) {
       // link prev to next in Active list
       //if (prev==UE_list->head)
       if (i==UE_list->head) {
@@ -349,7 +343,7 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP, int frameP, sub_frame_t subfr
   prev = UE_list->head_ul;
 
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
-    if (i == ue_idP) {
+    if (i == UE_id) {
       // link prev to next in Active list
       if (prev==UE_list->head_ul) {
         UE_list->head_ul = UE_list->next_ul[i];
@@ -370,7 +364,7 @@ int mac_remove_ue(module_id_t mod_idP, int ue_idP, int frameP, sub_frame_t subfr
     return (0);
   }
 
-  LOG_E(MAC,"error in mac_remove_ue(), could not find previous to %d in UE_list, should never happen, Dumping UE list\n",ue_idP);
+  LOG_E(MAC,"error in mac_remove_ue(), could not find previous to %d in UE_list, should never happen, Dumping UE list\n",UE_id);
   dump_ue_list(UE_list,0);
   mac_xface->macphy_exit("mac_remove_ue: Problem in UE_list");
   return(-1);

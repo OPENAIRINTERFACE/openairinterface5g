@@ -414,9 +414,10 @@ rrc_rx_tx(
   uint8_t        UE_id;
   int32_t        current_timestamp_ms, ref_timestamp_ms;
   struct timeval ts;
+  struct rrc_eNB_ue_context_s*   ue_context_p = NULL;
+
 #ifdef LOCALIZATION
   double                         estimated_distance;
-  struct rrc_eNB_ue_context_s*   ue_context_p = NULL;
   protocol_ctxt_t                ctxt;
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
@@ -517,6 +518,20 @@ rrc_rx_tx(
   } else { // eNB
     check_handovers(ctxt_pP);
     // counetr, and get the value and aggregate
+
+    // check for UL failure
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+      if (ue_context_p->ue_context.ul_failure_timer>0) {
+	ue_context_p->ue_context.ul_failure_timer++;
+	if (ue_context_p->ue_context.ul_failure_timer == 1000) {
+	  // remove UE after 1 second after MAC has indicated UL failure
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  
+	}
+      }
+
+
+    }
 #ifdef LOCALIZATION
 
     /* for the localization, only primary CC_id might be relevant*/

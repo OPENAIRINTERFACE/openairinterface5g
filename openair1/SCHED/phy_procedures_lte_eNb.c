@@ -198,10 +198,10 @@ int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB)
   return(-1);
 }
 
-int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB, uint8_t abstraction_flag)
-{
+int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
   uint8_t i;
   int j;
+  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_idP];
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     if ((phy_vars_eNB->dlsch_eNB[i]==NULL) || (phy_vars_eNB->ulsch_eNB[i]==NULL)) {
@@ -209,14 +209,14 @@ int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB, uint8_t abstraction
       LOG_E(PHY,"Can't remove UE, not enough memory allocated\n");
       return(-1);
     } else {
-      if (phy_vars_eNB->eNB_UE_stats[i].crnti==rnti) {
-        MSC_LOG_EVENT(MSC_PHY_ENB, "0 Removed ue %"PRIx16" ", rnti);
+      if (phy_vars_eNB->eNB_UE_stats[i].crnti==rntiP) {
+        MSC_LOG_EVENT(MSC_PHY_ENB, "0 Removed ue %"PRIx16" ", rntiP);
 #ifdef DEBUG_PHY_PROC
 	LOG_I(PHY,"eNB %d removing UE %d with rnti %x\n",phy_vars_eNB->Mod_id,i,rnti);
 #endif
         //msg("[PHY] UE_id %d\n",i);
-        clean_eNb_dlsch(phy_vars_eNB->dlsch_eNB[i][0], abstraction_flag);
-        clean_eNb_ulsch(phy_vars_eNB->ulsch_eNB[i],abstraction_flag);
+        clean_eNb_dlsch(phy_vars_eNB->dlsch_eNB[i][0]);
+        clean_eNb_ulsch(phy_vars_eNB->ulsch_eNB[i]);
         //phy_vars_eNB->eNB_UE_stats[i].crnti = 0;
         memset(&phy_vars_eNB->eNB_UE_stats[i],0,sizeof(LTE_eNB_UE_stats));
         //  mac_exit_wrapper("Removing UE");
@@ -232,7 +232,7 @@ int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB, uint8_t abstraction
     }
   }
 
-  MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (not found)", rnti);
+  MSC_LOG_EVENT(MSC_PHY_ENB, "0 Failed remove ue %"PRIx16" (not found)", rntiP);
   return(-1);
 }
 
@@ -3523,7 +3523,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                       frame,
                                       phy_vars_eNB->eNB_UE_stats[i].crnti);
 #endif
-            remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
+            mac_phy_remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB);
             phy_vars_eNB->ulsch_eNB[(uint32_t)i]->Msg3_active = 0;
             //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
 
@@ -3670,7 +3670,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                       phy_vars_eNB->CC_id,
                                       frame,
                                       phy_vars_eNB->eNB_UE_stats[i].crnti);
-            remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
+            mac_phy_remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB);
             phy_vars_eNB->ulsch_eNB[(uint32_t)i]->Msg3_active = 0;
           }
 

@@ -179,7 +179,7 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint
   return(NULL);
 }
 
-void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag)
+void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
 
   unsigned char Mdlharq;

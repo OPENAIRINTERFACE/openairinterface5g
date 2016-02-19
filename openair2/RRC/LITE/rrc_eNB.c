@@ -790,7 +790,6 @@ rrc_eNB_free_mem_UE_context(
 }
 
 //-----------------------------------------------------------------------------
-// called by MAC layer only
 // should be called when UE is lost by eNB
 void
 rrc_eNB_free_UE(
@@ -836,6 +835,7 @@ rrc_eNB_free_UE(
 #endif
     ue_context_p->ue_context.Status = RRC_IDLE;
 
+    rrc_mac_remove_ue(enb_mod_idP,rntiP);
     rrc_rlc_remove_ue(&ctxt);
     pdcp_remove_UE(&ctxt);
 

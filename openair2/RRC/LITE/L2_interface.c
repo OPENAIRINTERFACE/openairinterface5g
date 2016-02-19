@@ -716,19 +716,47 @@ mac_eNB_get_rrc_status(
 }
 
 void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP, 
-			    const int CC_id, 
+			    const int CC_idP, 
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
-			    const rnti_t rnti) {
+			    const rnti_t rntiP) {
 
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  ue_context_p = rrc_eNB_get_ue_context(
+                   &eNB_rrc_inst[Mod_instP],
+                   rntiP);
+
+  if (ue_context_p != NULL) {
+    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",rntiP);
+    ue_context_p->ue_context.ul_failure_timer=1;
+  }
+  else {
+    LOG_E(RRC,"Frame %d, Subframe %d: UE %x unknown \n",rntiP);
+  }
+  
   return;
 }
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
-			    const int CC_id, 
+			    const int CC_idP, 
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
-			    const rnti_t rnti) {
+			    const rnti_t rntiP) {
+
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  ue_context_p = rrc_eNB_get_ue_context(
+                   &eNB_rrc_inst[Mod_instP],
+                   rntiP);
+
+
+
+  if (ue_context_p != NULL) {
+    LOG_I(RRC,"Frame %d, Subframe %d: UE %x to UL in synch\n",rntiP);
+    ue_context_p->ue_context.ul_failure_timer=0;
+  }
+  else {
+    LOG_E(RRC,"Frame %d, Subframe %d: UE %x unknown \n",rntiP);
+  }
 
   return;
 }
