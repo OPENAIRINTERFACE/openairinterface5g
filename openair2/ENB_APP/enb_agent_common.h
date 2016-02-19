@@ -47,6 +47,7 @@
 #include "stats_common.pb-c.h"
 
 # include "enb_agent_defs.h"
+#include "enb_config.h"
 
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/RLC/rlc.h"
@@ -100,6 +101,7 @@ int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg);
 int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg);
 
+int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg);
 
 int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg);
@@ -156,6 +158,47 @@ int get_active_CC(mid_t mod_id, mid_t ue_id);
 
 int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id);
 
+int get_n1pucch_an(mid_t mod_id, int CC_id);
+
+int get_nRB_CQI(mid_t mod_id, int CC_id);
+
+int get_deltaPUCCH_Shift(mid_t mod_id, int CC_id);
+
+int get_prach_ConfigIndex(mid_t mod_id, int CC_id);
+
+int get_prach_FreqOffset(mid_t mod_id, int CC_id);
+
+int get_maxHARQ_Msg3Tx(mid_t mod_id, int CC_id);
+
+int get_ul_cyclic_prefix_length(mid_t mod_id, int CC_id);
+
+int get_dl_cyclic_prefix_length(mid_t mod_id, int CC_id);
+
+int get_cell_id(mid_t mod_id, int CC_id);
+
+int get_srs_BandwidthConfig(mid_t mod_id, int CC_id);
+
+int get_srs_SubframeConfig(mid_t mod_id, int CC_id);
+
+int get_srs_MaxUpPts(mid_t mod_id, int CC_id);
+
+int get_N_RB_DL(mid_t mod_id, int CC_id);
+
+int get_N_RB_UL(mid_t mod_id, int CC_id);
+
+int get_subframe_assignment(mid_t mod_id, int CC_id);
+
+int get_special_subframe_assignment(mid_t mod_id, int CC_id);
+
+int get_ra_ResponseWindowSize(mid_t mod_id, int CC_id);
+
+int get_mac_ContentionResolutionTimer(mid_t mod_id, int CC_id);
+
+int get_duplex_mode(mid_t mod_id, int CC_id);
+
+long get_si_window_length(mid_t mod_id, int CC_id);
+
+int get_num_pdcch_symb(mid_t mod_id, int CC_id);
 
 
 /*******************
