@@ -299,11 +299,17 @@ static void get_options(int argc, char *argv[]) {
       loopback_flag=1; 
       break;
     case 'f':
-      if (strlen(optarg)<=1024)
-	strcpy(rf_config_file,optarg);
-      else {
-	printf("Configuration filename is too long\n");
-	exit(-1);   
+      if (optarg){
+	if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
+	  printf("no configuration filename is provided\n");
+	}
+	else if (strlen(optarg)<=1024){
+	  // rf_config_file = strdup(optarg);
+	  strcpy(rf_config_file,optarg);
+	}else {
+	  printf("Configuration filename is too long\n");
+	  exit(-1);   
+	}
       }
       break;
     case 't':
