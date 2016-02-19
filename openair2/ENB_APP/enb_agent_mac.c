@@ -130,6 +130,18 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
 	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
 	request_config.period = 0;
+	/* Need to make sure that the ue flags are saved (Bug) */
+	if (report_config.nr_ue == 0) {
+	  report_config.nr_ue = 1;
+	  report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t));
+	   if (report_config.ue_report_type == NULL) {
+	     // TODO: Add appropriate error code
+	     err_code = -100;
+	     goto error;
+	   }
+	   report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
+	   report_config.ue_report_type[0].ue_report_flags = ue_flags;
+	}
 	request_config.config = &report_config;
 	enb_agent_mac_stats_request(enb_id, xid, &request_config, &timer_msg);
 	/* Create a timer */
