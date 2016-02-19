@@ -54,7 +54,7 @@
 */
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
-void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag);
+void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 /** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at eNB
@@ -85,7 +85,7 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
+void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 

@@ -127,9 +127,9 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // increment this, it is cleared when we receive an sdu
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
-
+    
     if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
-      mac_remove_ue(module_idP, i, frameP, subframeP);
+      //      mac_remove_ue(module_idP, i, frameP, subframeP);
     }
     else {
       // check uplink failure
@@ -210,7 +210,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 			  0);
 	}
 	else { // ra_pdcch_sent==1
-	  LOG_I(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    	    
+	  LOG_D(MAC,"UE %d rnti %x: sent PDCCH order for RAPROC waiting (failure timer %d) \n",i,rnti,UE_list->UE_sched_ctrl[i].ul_failure_timer);	    	    
 	  if ((UE_list->UE_sched_ctrl[i].ul_failure_timer % 40) == 0)
 	    UE_list->UE_sched_ctrl[i].ra_pdcch_order_sent=0; // resend every 4 frames	      
 	}
