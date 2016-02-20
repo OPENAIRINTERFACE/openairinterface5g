@@ -90,6 +90,8 @@ typedef enum {
   USRP_X300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
+  /*!\brief device is LMSSDR (SoDeRa)*/
+  LMSSDR_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
   MAX_RF_DEV_TYPE
@@ -195,7 +197,8 @@ typedef struct {
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
   unsigned int my_port;
-
+  //! Configuration file for LMS7002M
+  char *configFilename;
 } openair0_config_t;
 
 /*! \brief RF mapping */ 
@@ -206,18 +209,27 @@ typedef struct {
   int chain;
 } openair0_rf_map;
 
+
 typedef struct {
   char *remote_addr;
   //! remote port number for Ethernet interface
-  unsigned int remote_port;
+  uint16_t remote_port;
   //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
-  unsigned int my_port;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
+  uint16_t  my_port;
+  //! local Ethernet interface (eNB/BBU, UE)
   char *local_if_name;
- //! local port number for Ethernet interface (eNB/BBU, UE)
+  //! tx_sample_advance for RF + ETH
+  uint8_t tx_sample_advance;
+  //! tx_scheduling_advance for RF + ETH
+  uint8_t tx_scheduling_advance;
+  //! iq_txshift  for RF + ETH
+  uint8_t iq_txshift;
+  //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
+  //! radio front end preference (EXMIMO,USRP, BALDERF,LMSSDR)
+  uint8_t rf_preference;
 } eth_params_t;
 
 
@@ -347,7 +359,7 @@ extern "C"
   * \param device the hardware to use
   */
   openair0_timestamp get_usrp_time(openair0_device *device);
-  
+
  /*! \brief Set RX frequencies 
   * \param device the hardware to use
   * \param openair0_cfg RF frontend parameters set by application

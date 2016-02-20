@@ -60,6 +60,9 @@ case USRP_X300_DEV:
   case BLADERF_DEV:
     printf("[%s] has loaded BLADERF device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
     break;
+  case LMSSDR_DEV:
+    printf("[%s] has loaded LMSSDR device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH")); 
+    break;
   case NONE_DEV:
     printf("[%s] has not loaded a HW device.\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"));
     break;    
@@ -162,6 +165,7 @@ int openair0_transport_load(openair0_device *device, openair0_config_t *openair0
       }   
   }
   return 0;
+
 }
 
 

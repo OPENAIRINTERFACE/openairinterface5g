@@ -529,11 +529,11 @@ static void *UE_thread_synch(void *arg)
 	    
 #endif
 
-#ifdef OAI_USRP
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	    
 	    
-
+#if 0
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;
@@ -555,7 +555,7 @@ static void *UE_thread_synch(void *arg)
               printf("Unknown number of RBs %d\n",UE->lte_frame_parms.N_RB_DL);
               break;
             }
-	    
+#endif	    
 #endif
           }
         }
