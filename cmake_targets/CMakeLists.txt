@@ -1110,7 +1110,6 @@ add_library(CN_UTILS
   ${OPENAIR3_DIR}/UTILS/conversions.c
   ${OPENAIR3_DIR}/UTILS/enum_string.c
   ${OPENAIR3_DIR}/UTILS/log.c
-  ${OPENAIR3_DIR}/UTILS/mme_config.c
   ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
