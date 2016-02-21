@@ -718,7 +718,7 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
 
 	xid_t xid;
 	Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-	Protocol__PrpEnbConfigReply *enb_config_req_msg = input->enb_config_request_msg;
+	Protocol__PrpEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
 	xid = (enb_config_req_msg->header)->xid;
 
 	int i, j, k;
