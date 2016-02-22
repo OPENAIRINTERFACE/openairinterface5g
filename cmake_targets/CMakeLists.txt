@@ -269,13 +269,16 @@ set (RRC_FULL_DIR ${asn1_generated_dir}/${RRC_ASN1_VERSION})
 if(NOT EXISTS ${asn1c_call})
   message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
-execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR})
+execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
 if(NOT EXISTS ${fix_asn1c_call})
   message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
 endif(NOT EXISTS ${fix_asn1c_call})
-execute_process(
-  COMMAND ${fix_asn1c_call} ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
-  RESULT_VARIABLE ret)
+execute_process(COMMAND ${fix_asn1c_call} ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -321,15 +324,18 @@ set(S1AP_ASN_FILES
   )
 set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
 #message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES} RESULT_VARIABLE ret)
+execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR} RESULT_VARIABLE ret)
+execute_process(COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "asn1tostruct.py: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION} RESULT_VARIABLE ret)
+execute_process(COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -400,15 +406,18 @@ set(X2AP_ASN_FILES
 
 set(X2AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
 #message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES} RESULT_VARIABLE ret)
+execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR} RESULT_VARIABLE ret)
+execute_process(COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "asn1tostruct.py: error")
 endif (NOT ${ret} STREQUAL 0)
-execute_process(COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION} RESULT_VARIABLE ret)
+execute_process(COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
+                RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${fix_asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
