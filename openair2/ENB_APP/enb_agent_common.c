@@ -604,13 +604,80 @@ int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
 }
 
 int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
-  /* TODO: Create a progRAN message with the state changes requested for the UE with RNTI rnti */
-  return 0;
+  int size;
+  Protocol__ProgranMessage *msg;
+  Protocol__PrpHeader *header;
+  void *data;
+  int priority;
+  err_code_t err_code;
+
+  int xid = 0;
+
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UE_STATE_CHANGE, &header) != 0)
+    goto error;
+
+  Protocol__PrpUeStateChange *ue_state_change_msg;
+  ue_state_change_msg = malloc(sizeof(Protocol__PrpUeStateChange));
+  if(ue_state_change_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_ue_state_change__init(ue_state_change_msg);
+  ue_state_change_msg->has_type = 1;
+  ue_state_change_msg->type = state_change;
+
+  Protocol__PrpUeConfig *config;
+  config = malloc(sizeof(Protocol__PrpUeConfig));
+  if (config == NULL) {
+    goto error;
+  }
+  protocol__prp_ue_config__init(config);
+  if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED) {
+    // Simply set the rnti of the UE
+    config->has_rnti = 1;
+    config->rnti = rnti;
+  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED
+	     || state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED) {
+    // TODO: Set the whole UE configuration message
+    
+  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_MOVED) {
+    // TODO: Not supported for now. Leave blank
+  }
+
+  ue_state_change_msg->config = config;
+  msg = malloc(sizeof(Protocol__ProgranMessage));
+  if (msg == NULL) {
+    goto error;
+  }
+  protocol__progran_message__init(msg);
+  msg->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG;
+  msg->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  msg->ue_state_change_msg = ue_state_change_msg;
+  
+  data = enb_agent_pack_message(msg, &size);
+  /*Send sr info using the MAC channel of the eNB*/
+  if (enb_agent_msg_send(mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+    err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+    goto error;
+  }
+
+  LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+  return;
+ error:
+  LOG_D(ENB_AGENT, "Could not send UE state message\n");
 }
 
 int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
-  /* TODO: Dealocate memory for a dynamically allocated UE state change message */
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
+    goto error;
+  free(msg->ue_state_change_msg->header);
+  //TODO: Free the contents of the UE config structure
+  free(msg->ue_state_change_msg);
+  free(msg);
   return 0;
+
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {

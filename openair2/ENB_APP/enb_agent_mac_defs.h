@@ -62,6 +62,12 @@ typedef struct {
   void (*enb_agent_schedule_ue_spec)(mid_t mod_id, uint32_t frame, uint32_t subframe,
 				     int *mbsfn_flag, Protocol__ProgranMessage *dl_info);
 
+
+  /// Notify the controller for a state change of a particular UE, by sending the proper
+  /// UE state change message (ACTIVATION, DEACTIVATION, HANDOVER)
+  void (*enb_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
+					   uint32_t state_change);
+  
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;
