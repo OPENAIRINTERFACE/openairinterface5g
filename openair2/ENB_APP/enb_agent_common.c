@@ -293,13 +293,188 @@ int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg) {
 }
 
 int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  /* TODO: Create a reply progRAN message with the current UE configurations */
+
+  xid_t xid;
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpUeConfigRequest *ue_config_request_msg = input->ue_config_request_msg;
+  xid = (ue_config_request_msg->header)->xid;
+
+  int i;
+  
+  Protocol__PrpHeader *header;
+  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_UE_CONFIG_REPLY, &header) != 0)
+    goto error;
+
+  Protocol__PrpUeConfigReply *ue_config_reply_msg;
+  ue_config_reply_msg = malloc(sizeof(Protocol__PrpUeConfigReply));
+  if(ue_config_reply_msg == NULL)
+    goto error;
+  protocol__prp_enb_config_reply__init(ue_config_reply_msg);
+  ue_config_reply_msg->header = header;
+
+  //TODO: Fill in the actual number of UEs that are currently connected
+  ue_config_reply_msg->n_ue_config = 1;
+
+  Protocol__PrpUeConfig **ue_config;
+  if (ue_config_reply_msg->n_ue_config > 0) {
+    ue_config = malloc(sizeof(Protocol__PrpUeConfig *) * ue_config_reply_msg->n_ue_config);
+    if (ue_config == NULL) {
+      goto error;
+    }
+    for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
+      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig *));
+      protocol__prp_ue_config__init(ue_config[i]);
+      //TODO: Set the RNTI of the ue with id i
+      ue_config[i]->rnti = 1;
+      ue_config[i]->has_rnti = 1;
+      //TODO: Set the DRX configuration (optional)
+      //Not supported for now, so we do not set it
+
+      //TODO: Set the time_alignment_timer
+      ue_config[i]->time_alignment_timer = 1;
+      ue_config[i]->has_time_alignment_timer = 1;
+      //TODO: Set the measurement gap configuration pattern
+      ue_config[i]->meas_gap_config_pattern = 1;
+      ue_config[i]->has_meas_gap_config_pattern = 1;
+      //TODO: Set the measurement gap offset if applicable
+      ue_config[i]->meas_gap_config_sf_offset = 1;
+      ue_config[i]->has_meas_gap_config_sf_offset = 1;
+      //TODO: Set the SPS configuration (Optional)
+      //Not supported for noe, so we do not set it
+
+      //TODO: Set the SR configuration (Optional)
+      //We do not set it for now
+
+      //TODO: Set the CQI configuration (Optional)
+      //We do not set it for now
+
+      //TODO: Set the transmission mode
+      ue_config[i]->transmission_mode = 1;
+      ue_config[i]->has_transmission_mode = 1;
+
+      //TODO: Set the aggregated bit-rate of the non-gbr bearer (UL)
+      ue_config[i]->ue_aggregated_max_bitrate_ul = 1;
+      ue_config[i]->has_ue_aggregated_max_bitrate_ul = 1;
+
+      //TODO: Set the aggregated bit-rate of the non-gbr bearer (DL)
+      ue_config[i]->ue_aggregated_max_bitrate_dl = 1;
+      ue_config[i]->has_ue_aggregated_max_bitrate_dl = 1;
+
+      //TODO: Set the UE capabilities
+      Protocol__PrpUeCapabilities *capabilities;
+      capabilities = malloc(sizeof(Protocol__PrpUeCapabilities));
+      protocol__prp_ue_capabilities__init(capabilities);
+      //TODO: Set half duplex (FDD operation)
+      capabilities->has_half_duplex = 1;
+      capabilities->half_duplex = 1;
+      //TODO: Set intra-frame hopping flag
+      capabilities->has_intra_sf_hopping = 1;
+      capabilities->intra_sf_hopping = 1;
+      //TODO: Set support for type 2 hopping with n_sb > 1
+      capabilities->has_type2_sb_1 = 1;
+      capabilities->type2_sb_1 = 1;
+      //TODO: Set ue category
+      capabilities->has_ue_category = 1;
+      capabilities->ue_category = 1;
+      //TODO: Set UE support for resource allocation type 1
+      capabilities->has_res_alloc_type1 = 1;
+      capabilities->res_alloc_type1 = 1;
+      //Set the capabilites to the message
+      ue_config[i]->capabilities = capabilities;
+      //TODO: Set UE transmission antenna. One of the PRUTA_* values
+      ue_config[i]->has_ue_transmission_antenna = 1;
+      ue_config[i]->ue_transmission_antenna = PROTOCOL__PRP_UE_TRANSMISSION_ANTENNA__PRUTA_OPEN_LOOP;
+      //TODO: Set tti bundling flag (See ts 36.321)
+      ue_config[i]->has_tti_bundling = 1;
+      ue_config[i]->tti_bundling = 1;
+      //TODO: Set the max HARQ retransmission for the UL
+      ue_config[i]->has_max_harq_tx = 1;
+      ue_config[i]->max_harq_tx = 1;
+      //TODO: Fill beta_offset_ack_index (TS 36.213)
+      ue_config[i]->has_beta_offset_ack_index = 1;
+      ue_config[i]->beta_offset_ack_index = 1;
+      //TODO: Fill beta_offset_ri_index (TS 36.213)
+      ue_config[i]->has_beta_offset_ri_index = 1;
+      ue_config[i]->beta_offset_ri_index = 1;
+      //TODO: Fill beta_offset_cqi_index (TS 36.213)
+      ue_config[i]->has_beta_offset_cqi_index = 1;
+      ue_config[i]->beta_offset_cqi_index = 1;
+      //TODO: Fill ack_nack_simultaneous_trans (TS 36.213)
+      ue_config[i]->has_ack_nack_simultaneous_trans = 1;
+      ue_config[i]->ack_nack_simultaneous_trans = 1;
+      //TODO: Fill simultaneous_ack_nack_cqi (TS 36.213)
+      ue_config[i]->has_simultaneous_ack_nack_cqi = 1;
+      ue_config[i]->simultaneous_ack_nack_cqi = 1;
+      //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
+      ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
+      ue_config[i]->aperiodic_cqi_rep_mode = PROTOCOL__PRP_APERIODIC_CQI_REPORT_MODE__PRACRM_RM12;
+      //TODO: Set tdd_ack_nack_feedback
+      ue_config[i]->has_tdd_ack_nack_feedback = 1;
+      ue_config[i]->tdd_ack_nack_feedback = 1;
+      //TODO: Set ack_nack_repetition factor
+      ue_config[i]->has_ack_nack_repetition_factor = 1;
+      ue_config[i]->ack_nack_repetition_factor = 1;
+      //TODO: Set extended BSR size
+      ue_config[i]->has_extended_bsr_size = 1;
+      ue_config[i]->extended_bsr_size = 1;
+      //TODO: Set carrier aggregation support (boolean)
+      ue_config[i]->has_ca_support = 1;
+      ue_config[i]->ca_support = 0;
+      //TODO: Set cross carrier scheduling support (boolean)
+      ue_config[i]->has_cross_carrier_sched_support = 1;
+      ue_config[i]->cross_carrier_sched_support = 0;
+      //TODO: Set index of primary cell
+      ue_config[i]->has_pcell_carrier_index = 1;
+      ue_config[i]->pcell_carrier_index = 1;
+      //TODO: Set secondary cells configuration
+      // We do not set it for now. No carrier aggregation support
+      
+      //TODO: Set deactivation timer for secondary cell
+      ue_config[i]->has_scell_deactivation_timer = 1;
+      ue_config[i]->scell_deactivation_timer = 1;
+    }
+    ue_config_reply_msg->ue_config = ue_config;
+  }
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if (*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  (*msg)->ue_config_reply_msg = ue_config_reply_msg;
   return 0;
+  
+ error:
+  // TODO: Need to make proper error handling
+  if (header != NULL)
+    free(header);
+  if (ue_config_reply_msg != NULL)
+    free(ue_config_reply_msg);
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
-  /*TODO: Deallocate memory for a dynamically allocated UE config message */
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG)
+    goto error;
+  free(msg->ue_config_reply_msg->header);
+  int i, j;
+  Protocol__PrpUeConfigReply *reply = msg->ue_config_reply_msg;
+  
+  for(i = 0; i < reply->n_ue_config;i++){
+    free(reply->ue_config[i]->capabilities);
+    free(reply->ue_config[i]);
+  }
+  free(reply->ue_config);
+  free(reply);
+  free(msg);
+
   return 0;
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
