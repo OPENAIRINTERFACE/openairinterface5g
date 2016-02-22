@@ -918,7 +918,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
     if(dl_info == NULL)
       goto error;
     //Fill the status of the current HARQ process for each UE
-    for(i = 0; i++; i < sf_trigger_msg->n_dl_info) {
+    for(i = 0; i < sf_trigger_msg->n_dl_info; i++) {
       dl_info[i] = malloc(sizeof(Protocol__PrpDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
@@ -934,7 +934,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       /*TODO: fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
-      for (j = 0; j < dl_info[j]->n_harq_status; j++) {
+      for (j = 0; j < dl_info[i]->n_harq_status; j++) {
 	// TODO: This should be different per TB
 	dl_info[i]->harq_status[j] = harq_status;
       }
@@ -958,7 +958,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
     if(ul_info == NULL)
       goto error;
     //Fill the reception info for each transmitting UE
-    for(i = 0; i++; i < sf_trigger_msg->n_ul_info) {
+    for(i = 0; i < sf_trigger_msg->n_ul_info; i++) {
       ul_info[i] = malloc(sizeof(Protocol__PrpUlInfo));
       if(ul_info[i] == NULL)
 	goto error;
@@ -978,7 +978,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
 	given logical channel*/
       ul_info[i]->n_ul_reception = 11;
       ul_info[i]->ul_reception = malloc(sizeof(uint32_t) * ul_info[i]->n_ul_reception);
-      for (j = 0; j < ul_info[j]->n_ul_reception; j++) {
+      for (j = 0; j < ul_info[i]->n_ul_reception; j++) {
 	ul_info[i]->ul_reception[j] = 100;
       }
       /*TODO: Fill in the reception status for each UEs data*/

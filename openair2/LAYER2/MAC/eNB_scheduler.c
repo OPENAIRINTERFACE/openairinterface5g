@@ -71,6 +71,7 @@
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 #define ENABLE_ENB_AGENT_DL_SCHEDULER
+//#define DISABLE_SF_TRIGGER
 
 //#define DEBUG_HEADER_PARSING 1
 //#define DEBUG_PACKET_TRACE 1
@@ -207,7 +208,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
 
   }
-
+  
+#ifndef DISABLE_SF_TRIGGER
+  //Send subframe trigger to the controller
+  if (mac_agent_registered[module_idP]) {
+    agent_mac_xface[module_idP]->enb_agent_send_sf_trigger(module_idP);
+  }
+#endif
+  
   //if (subframeP%5 == 0)
   //#ifdef EXMIMO
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, 0,module_idP);
