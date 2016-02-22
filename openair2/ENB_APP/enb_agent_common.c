@@ -781,29 +781,28 @@ int get_tpc(mid_t mod_id, mid_t ue_id)
 	return tpc;
 }
 
-int get_harq(mid_t mod_id,uint8_t CC_id,mid_t ue_id, int frame, uint8_t subframe, int flag_id_status)	//flag_id_status = 0 then id, else status
+int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const int frame, const uint8_t subframe, int *id, int *status)	//flag_id_status = 0 then id, else status
 {
 	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
 	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
 	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
 
-	uint8_t *harq_pid = malloc(sizeof(uint8_t));
-	uint8_t *round = malloc(sizeof(uint8_t));
+  uint8_t harq_pid;
+  uint8_t round;
+  
 
-	uint16_t rnti = get_ue_crnti(mod_id,ue_id);
+  uint16_t rnti = get_ue_crnti(mod_id,ue_id);
 
-	mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,0);
+  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,0);
 
-	if(flag_id_status == 0)
-		return *harq_pid;
-	else if(flag_id_status == 1)
-	{
-		if(*round > 0)
-			return 1;
-		else
-			return 0;
-	}
-	return 150;
+  *id = harq_pid;
+  if (round > 0) {
+    *status = 1;
+  } else {
+    *status = 0;
+  }
+
+  return 0;
 }
 
 

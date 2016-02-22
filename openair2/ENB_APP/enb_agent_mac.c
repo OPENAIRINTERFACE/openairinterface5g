@@ -926,13 +926,17 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       dl_info[i]->rnti = get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*TODO: fill in the right id of this round's HARQ process for this UE*/
-      dl_info[i]->harq_process_id = get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),0);
+      int harq_id;
+      int harq_status;
+      get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),&harq_id, &harq_status);
+      dl_info[i]->harq_process_id = harq_id;
       dl_info[i]->has_harq_process_id = 1;
       /*TODO: fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[j]->n_harq_status; j++) {
-	dl_info[i]->harq_status[j] = get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),1);
+	// TODO: This should be different per TB
+	dl_info[i]->harq_status[j] = harq_status;
       }
       /*TODO: fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);

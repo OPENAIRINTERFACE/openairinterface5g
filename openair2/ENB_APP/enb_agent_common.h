@@ -204,7 +204,8 @@ int get_num_pdcch_symb(mid_t mod_id, int CC_id);
 
 int get_tpc(mid_t mod_id, mid_t ue_id);
 
-int get_harq(mid_t mod_id,uint8_t CC_id,mid_t ue_id, int frame, uint8_t subframe, int flag_id_status);
+int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
+	     const int frame, const uint8_t subframe, int *id, int *status);
 
 /*******************
  * timer primitves
