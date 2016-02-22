@@ -926,16 +926,16 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       dl_info[i]->rnti = get_ue_crnti(mod_id, i);
       dl_info[i]->has_rnti = 1;
       /*TODO: fill in the right id of this round's HARQ process for this UE*/
-      dl_info[i]->harq_process_id = 1;
+      dl_info[i]->harq_process_id = get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),0);
       dl_info[i]->has_harq_process_id = 1;
       /*TODO: fill in the status of the HARQ process (2 TBs)*/
       dl_info[i]->n_harq_status = 2;
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[j]->n_harq_status; j++) {
-	dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+	dl_info[i]->harq_status[j] = get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),1);
       }
       /*TODO: fill in the serving cell index for this UE */
-      dl_info[i]->serv_cell_index = 0;
+      dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
       dl_info[i]->has_serv_cell_index = 1;
     }
   }
@@ -962,8 +962,14 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       ul_info[i]->rnti = get_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
       /*TODO: fill in the Tx power control command for this UE (if available)*/
-      ul_info[i]->tpc = 1;
-      ul_info[i]->has_tpc = 0;
+      if(get_tpc(mod_id,i) != 1){
+    	  ul_info[i]->tpc = get_tpc(mod_id,i);
+          ul_info[i]->has_tpc = 1;
+      }
+      else{
+    	  ul_info[i]->tpc = get_tpc(mod_id,i);
+    	  ul_info[i]->has_tpc = 0;
+      }
       /*TODO: fill in the amount of data in bytes in the MAC SDU received in this subframe for the
 	given logical channel*/
       ul_info[i]->n_ul_reception = 11;
@@ -975,7 +981,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       ul_info[i]->reception_status = PROTOCOL__PRP_RECEPTION_STATUS__PRRS_OK;
       ul_info[i]->has_reception_status = 1;
       /*TODO: fill in the serving cell index for this UE */
-      ul_info[i]->serv_cell_index = 0;
+      ul_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
       ul_info[i]->has_serv_cell_index = 1;
     }
   }

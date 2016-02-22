@@ -202,6 +202,9 @@ long get_si_window_length(mid_t mod_id, int CC_id);
 
 int get_num_pdcch_symb(mid_t mod_id, int CC_id);
 
+int get_tpc(mid_t mod_id, mid_t ue_id);
+
+int get_harq(mid_t mod_id,uint8_t CC_id,mid_t ue_id, int frame, uint8_t subframe, int flag_id_status);
 
 /*******************
  * timer primitves

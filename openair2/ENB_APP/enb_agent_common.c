@@ -640,6 +640,56 @@ int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id)
 	return eNB_UE_stats[CC_id].rank;
 }
 
+int get_tpc(mid_t mod_id, mid_t ue_id)
+{
+	LTE_eNB_UE_stats *eNB_UE_stats = NULL;
+	int32_t normalized_rx_power, target_rx_power;
+	int tpc = 1;
+
+	int pCCid = UE_PCCID(mod_id,ue_id);
+	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
+
+	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, pCCid, rnti);
+
+	normalized_rx_power = eNB_UE_stats->UL_rssi[0];
+
+	target_rx_power = mac_xface->get_target_pusch_rx_power(mod_id,pCCid);
+
+	if (normalized_rx_power>(target_rx_power+1)) {
+		tpc = 0; //-1
+	} else if (normalized_rx_power<(target_rx_power-1)) {
+		tpc = 2; //+1
+	} else {
+		tpc = 1; //0
+	}
+	return tpc;
+}
+
+int get_harq(mid_t mod_id,uint8_t CC_id,mid_t ue_id, int frame, uint8_t subframe, int flag_id_status)	//flag_id_status = 0 then id, else status
+{
+	/*TODO: Add int TB in function parameters to get the status of the second TB. This can be done to by editing in
+	 * get_ue_active_harq_pid function in line 272 file: phy_procedures_lte_eNB.c to add
+	 * DLSCH_ptr = PHY_vars_eNB_g[Mod_id][CC_id]->dlsch_eNB[(uint32_t)UE_id][1];*/
+
+	uint8_t *harq_pid = malloc(sizeof(uint8_t));
+	uint8_t *round = malloc(sizeof(uint8_t));
+
+	uint16_t rnti = get_ue_crnti(mod_id,ue_id);
+
+	mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,0);
+
+	if(flag_id_status == 0)
+		return *harq_pid;
+	else if(flag_id_status == 1)
+	{
+		if(*round > 0)
+			return 1;
+		else
+			return 0;
+	}
+	return 150;
+}
+
 
 /*
  * ************************************
