@@ -487,6 +487,16 @@ int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
   return 0;
 }
 
+int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
+  /* TODO: Create a progRAN message with the state changes requested for the UE with RNTI rnti */
+  return 0;
+}
+
+int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
+  /* TODO: Dealocate memory for a dynamically allocated UE state change message */
+  return 0;
+}
+
 int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {
 	if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG)
 		goto error;

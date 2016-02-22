@@ -56,6 +56,7 @@ enb_agent_message_decoded_callback agent_messages_callback[][3] = {
   {enb_agent_lc_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
+  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
 
 };
 
@@ -74,6 +75,7 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_destroy_lc_config_request,
   enb_agent_destroy_lc_config_reply,
   enb_agent_mac_destroy_dl_config,
+  enb_agent_destroy_ue_state_change,
 };
 
 static const char *enb_agent_direction2String[] = {
