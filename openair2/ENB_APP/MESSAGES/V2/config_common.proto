@@ -158,7 +158,7 @@ message prp_lc_config {
 	optional uint64 e_RAB_max_bitrate_UL = 6; // In bps (GBR only)
 	optional uint64 e_RAB_max_bitrate_DL = 7; // In bps (GBR only)
 	optional uint64 e_RAB_guaranteed_bitrate_UL = 8; // In bps (GBR only)
-	optional uint64 e_RAB_guranteed_bitrate_DL = 9;  // In bps (GBR only)
+	optional uint64 e_RAB_guaranteed_bitrate_DL = 9;  // In bps (GBR only)
 }
 
 enum prp_lc_direction {

@@ -322,7 +322,7 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       goto error;
     }
     for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
-      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig *));
+      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig));
       protocol__prp_ue_config__init(ue_config[i]);
       //TODO: Set the RNTI of the ue with id i
       ue_config[i]->rnti = 1;
@@ -478,13 +478,129 @@ int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
 }
 
 int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
-  /* TODO: Create a reply progRAN message with the current LC configurations */
+
+  xid_t xid;
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpLcConfigRequest *lc_config_request_msg = input->lc_config_request_msg;
+  xid = (lc_config_request_msg->header)->xid;
+
+  int i, j;
+  Protocol__PrpHeader *header;
+  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_LC_CONFIG_REPLY, &header) != 0)
+    goto error;
+
+  Protocol__PrpLcConfigReply *lc_config_reply_msg;
+  lc_config_reply_msg = malloc(sizeof(Protocol__PrpLcConfigReply));
+  if(lc_config_reply_msg == NULL)
+    goto error;
+  protocol__prp_lc_config_reply__init(lc_config_reply_msg);
+  lc_config_reply_msg->header = header;
+  
+  //TODO: Fill in the actual number of UEs that we are going to report LC configs about
+  lc_config_reply_msg->n_lc_ue_config = 1;
+  
+  Protocol__PrpLcUeConfig **lc_ue_config;
+  if (lc_config_reply_msg->n_lc_ue_config > 0) {
+    lc_ue_config = malloc(sizeof(Protocol__PrpLcUeConfig *) * lc_config_reply_msg->n_lc_ue_config);
+    if (lc_ue_config == NULL) {
+      goto error;
+    }
+    // Fill the config for each UE
+    for (i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
+      lc_ue_config[i] = malloc(sizeof(Protocol__PrpLcUeConfig));
+      protocol__prp_lc_ue_config__init(lc_ue_config[i]);
+      //TODO: Set the RNTI of the UE
+      lc_ue_config[i]->has_rnti = 1;
+      lc_ue_config[i]->rnti = 1;
+      //TODO: Set the number of LC configurations that will be reported for this UE
+      lc_ue_config[i]->n_lc_config = 3;
+      Protocol__PrpLcConfig **lc_config;
+      if (lc_ue_config[i]->n_lc_config > 0) {
+	lc_config = malloc(sizeof(Protocol__PrpLcConfig *) * lc_ue_config[i]->n_lc_config);
+	if (lc_config == NULL) {
+	  goto error;
+	}
+	for (j = 0; j < lc_ue_config[i]->n_lc_config; j++) {
+	  lc_config[j] = malloc(sizeof(Protocol__PrpLcConfig));
+	  protocol__prp_lc_config__init(lc_config[j]);
+	  //TODO: Set the LC id
+	  lc_config[j]->has_lcid = 1;
+	  lc_config[j]->lcid = 1;
+	  //TODO: Set the LCG of the channel
+	  lc_config[j]->has_lcg = 1;
+	  lc_config[j]->lcg = 1;
+	  //TODO: Set the LC direction
+	  lc_config[j]->has_direction = 1;
+	  lc_config[j]->direction = PROTOCOL__PRP_LC_DIRECTION__PRLCD_BOTH;
+	  //TODO: Bearer type. One of PRQBT_* values
+	  lc_config[j]->has_qos_bearer_type = 1;
+	  lc_config[j]->qos_bearer_type = PROTOCOL__PRP_QOS_BEARER_TYPE__PRQBT_NON_GBR;
+	  //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
+	  // One less than the actual QCI value
+	  lc_config[j]->has_qci = 1;
+	  lc_config[j]->qci = 1;
+	  if (lc_config[j]->direction == PROTOCOL__PRP_QOS_BEARER_TYPE__PRQBT_GBR) {
+	    //TODO: Set the max bitrate (UL)
+	    lc_config[j]->has_e_rab_max_bitrate_ul = 1;
+	    lc_config[j]->e_rab_max_bitrate_ul = 1;
+	    //TODO: Set the max bitrate (DL)
+	    lc_config[j]->has_e_rab_max_bitrate_dl = 1;
+	    lc_config[j]->e_rab_max_bitrate_dl = 1;
+	    //TODO: Set the guaranteed bitrate (UL)
+	    lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 1;
+	    lc_config[j]->e_rab_guaranteed_bitrate_ul = 1;
+	    //TODO: Set the guaranteed bitrate (DL)
+	    lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 1;
+	    lc_config[j]->e_rab_guaranteed_bitrate_dl = 1;
+	  }
+	}
+	lc_ue_config[i]->lc_config = lc_config;
+      }
+    } // end for UE
+    lc_config_reply_msg->lc_ue_config = lc_ue_config;
+  } // lc_config_reply_msg->n_lc_ue_config > 0
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if (*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  (*msg)->lc_config_reply_msg = lc_config_reply_msg;
+  
   return 0;
+  
+ error:
+  // TODO: Need to make proper error handling
+  if (header != NULL)
+    free(header);
+  if (lc_config_reply_msg != NULL)
+    free(lc_config_reply_msg);
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
-  /* TODO: Deallocate memory for a dynamically allocated LC config message */
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG)
+    goto error;
+
+  int i, j;
+  free(msg->lc_config_reply_msg->header);
+  for (i = 0; i < msg->lc_config_reply_msg->n_lc_ue_config; i++) {
+    for (j = 0; j < msg->lc_config_reply_msg->lc_ue_config[i]->n_lc_config; j++) {
+      free(msg->lc_config_reply_msg->lc_ue_config[i]->lc_config[j]);
+    }
+    free(msg->lc_config_reply_msg->lc_ue_config[i]->lc_config);
+    free(msg->lc_config_reply_msg->lc_ue_config[i]);
+  }
+  free(msg->lc_config_reply_msg->lc_ue_config);
+  free(msg->lc_config_reply_msg);
+  free(msg);
   return 0;
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
@@ -498,16 +614,16 @@ int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
 }
 
 int enb_agent_destroy_enb_config_request(Protocol__ProgranMessage *msg) {
-	if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG)
-		goto error;
-	free(msg->enb_config_request_msg->header);
-	free(msg->enb_config_request_msg);
-	free(msg);
-	return 0;
-
-	error:
-	//LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-	return -1;
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG)
+    goto error;
+  free(msg->enb_config_request_msg->header);
+  free(msg->enb_config_request_msg);
+  free(msg);
+  return 0;
+  
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg) {
