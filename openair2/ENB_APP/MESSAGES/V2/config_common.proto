@@ -172,3 +172,9 @@ enum prp_qos_bearer_type {
      PRQBT_GBR = 1;
 }
 
+enum prp_ue_state_change_type {
+     PRUESC_UPDATED = 0;
+     PRUESC_ACTIVATED = 1;
+     PRUESC_DEACTIVATED = 2;
+     PRUESC_MOVED = 3;
+}

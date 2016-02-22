@@ -32,5 +32,8 @@ enum prp_type {
 
      //Controller command messages
      PRPT_DL_MAC_CONFIG = 13;
+
+     // UE state change messages
+     PRPT_UE_STATE_CHANGE = 14;
 }
 

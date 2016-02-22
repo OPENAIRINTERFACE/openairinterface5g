@@ -24,6 +24,7 @@ message progran_message {
 	      prp_lc_config_request lc_config_request_msg = 12;
 	      prp_lc_config_reply lc_config_reply_msg = 13;
 	      prp_dl_mac_config dl_mac_config_msg = 14;
+	      prp_ue_state_change ue_state_change_msg = 15;
 	}
 }
 
@@ -157,6 +158,16 @@ message prp_dl_mac_config {
 	repeated prp_dl_rar dl_rar = 4;
 	repeated prp_dl_broadcast dl_broadcast = 5;
 	repeated prp_pdcch_ofdm_sym_count ofdm_sym = 6; // OFDM symbol count for each CC
+}
+
+//
+// UE state change message
+//
+
+message prp_ue_state_change {
+	optional prp_header header = 1;
+	optional uint32 type = 2;		// One of the PRUESC_* values
+	optional prp_ue_config config = 3;	// Body of the message (based on type)
 }
 
 // Extensions of the echo request and reply
