@@ -3320,8 +3320,8 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 
   avg_0[0] = avg_0[0] + avg_0[1];
   avg_1[0] = avg_1[0] + avg_1[1];
- // avg_0[0] = max (avg_0[0], avg_1[0]);
- // avg_1[0] = avg_0[0];
+  avg_0[0] = max (avg_0[0], avg_1[0]);
+  avg_1[0] = avg_0[0];
   
   _mm_empty();
   _m_empty();
