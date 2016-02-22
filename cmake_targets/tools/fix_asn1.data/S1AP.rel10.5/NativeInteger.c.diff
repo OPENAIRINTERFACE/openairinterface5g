@@ -1,0 +1,8 @@
+282c282
+< 	int dynamic = 0;
+---
+> 	//int dynamic = 0;
+289c289
+< 		dynamic = 1;
+---
+> 		//dynamic = 1;
