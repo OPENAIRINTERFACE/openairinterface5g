@@ -135,6 +135,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
       mac_remove_ue(module_idP, i, frameP, subframeP);
+      //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
+      if (mac_agent_registered[module_idP]) {
+	agent_mac_xface[module_idP]->enb_agent_notify_ue_state_change(module_idP,
+								      rnti,
+								      PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED);
+      }
     }
     i = next_i;
   }
