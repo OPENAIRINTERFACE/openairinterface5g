@@ -93,6 +93,9 @@ function patch_rrc()
       echo "patching RRC files release 10"
       apply_patches "$directory" RRC_Rel10 ${#RRC_Rel10[*]}
       ;;
+    Rel8 )
+      echo "patching RRC files release 8 TODO?"
+      ;;
     * )
       error unknwon/unhandled RRC version \'"$version"\'
       ;;
