@@ -1,21 +1,21 @@
 #!/bin/bash
 
 # in those arrays, each line is:
-#   <file> <sha1sum of file> <patch to apply to file>
+#   <file> <sha1sum of file (without line 4 which changes depending on the location of the files)> <patch to apply to file>
 
 RRC_Rel10=(
-  "SystemInformation-r8-IEs.h" 819eda3db27516f7c6780d832fb3c462e2264ea7 "fix_asn1.data/RRC.rel10/SystemInformation-r8-IEs.h.diff"
+  "SystemInformation-r8-IEs.h" 603cd6615cff36ec7020692d72c0d6de7c4859cb "fix_asn1.data/RRC.rel10/SystemInformation-r8-IEs.h.diff"
 )
 
 X2AP_Rel11_2=(
-  "X2ap-CriticalityDiagnostics-IE-List.h" f0e2414992bfacfbc4b9fd15c977241d6d7fabeb "fix_asn1.data/X2AP.rel11.2/X2ap-CriticalityDiagnostics-IE-List.h.diff"
-  "NativeInteger.c"                       e23034083a0fb9d4a2e523e2a64286161e621f27 "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
-  "constr_SET_OF.c"                       5fb65da648a57ea61f008fa226b707cf343c1c0c "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
+  "X2ap-CriticalityDiagnostics-IE-List.h" ae96308b37fcbcbf39da5012e42968135fc5f27b "fix_asn1.data/X2AP.rel11.2/X2ap-CriticalityDiagnostics-IE-List.h.diff"
+  "NativeInteger.c"                       f815a276f31ec54e03ed008d4f01faee579f00be "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
+  "constr_SET_OF.c"                       aeae707ba2471104a862477eb0107f04f4793ff4 "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
 )
 
 S1AP_Rel10_5=(
-  "NativeInteger.c" e23034083a0fb9d4a2e523e2a64286161e621f27 "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
-  "constr_SET_OF.c" 5fb65da648a57ea61f008fa226b707cf343c1c0c "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
+  "NativeInteger.c" f815a276f31ec54e03ed008d4f01faee579f00be "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
+  "constr_SET_OF.c" aeae707ba2471104a862477eb0107f04f4793ff4 "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
 )
 
 red_color="$(tput setaf 1)"
@@ -38,7 +38,12 @@ function check_sha1()
     error "$file: no such file"
   fi
 
-  local computed_sha1=$(sha1sum "$file" | cut -f 1 -d ' ')
+  # we don't use the line 4 of the file
+  # it contains the location of the ASN1 grammar
+  # and this location is not the same on every
+  # installation (this is for *.h files, for *.c
+  # files it's no big deal to skip that line)
+  local computed_sha1=$(sed 4d "$file" | sha1sum | cut -f 1 -d ' ')
 
   if [ "$target_sha1" != "$computed_sha1" ]
   then
