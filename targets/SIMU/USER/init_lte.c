@@ -76,7 +76,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (j=0; j<2; j++) {
-      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL,abstraction_flag);
+      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL,abstraction_flag,frame_parms);
 
       if (!PHY_vars_eNB->dlsch_eNB[i][j]) {
         LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
@@ -128,11 +128,11 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
     exit(-1);
   }
 
-  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag, frame_parms);
   LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
-  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag, frame_parms);
   LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
-  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL, 0);
+  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL, 0, frame_parms);
   LOG_D(PHY,"eNB %d : MCH %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_MCH);
 
 
@@ -253,7 +253,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     (frame_parms[CC_id])->Nid_cell           = Nid_cell;
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
     (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
-    (frame_parms[CC_id])->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2;
+    (frame_parms[CC_id])->nb_antenna_ports_eNB = (transmission_mode == 1 || transmission_mode == 7) ? 1 : 2;
     (frame_parms[CC_id])->nb_antennas_rx     = (transmission_mode == 1) ? 1 : 2;
     (frame_parms[CC_id])->mode1_flag = (transmission_mode == 1) ? 1 : 0;
 

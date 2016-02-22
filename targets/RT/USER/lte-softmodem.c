@@ -2476,7 +2476,7 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
+        frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
         //} // j
       }
@@ -2594,18 +2594,18 @@ int main( int argc, char **argv )
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
-    frame_parms[CC_id]->frame_type          = FDD;
-    frame_parms[CC_id]->tdd_config          = 3;
-    frame_parms[CC_id]->tdd_config_S        = 0;
-    frame_parms[CC_id]->N_RB_DL             = 100;
-    frame_parms[CC_id]->N_RB_UL             = 100;
-    frame_parms[CC_id]->Ncp                 = NORMAL;
-    frame_parms[CC_id]->Ncp_UL              = NORMAL;
-    frame_parms[CC_id]->Nid_cell            = Nid_cell;
-    frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antennas_tx_eNB  = 1;
-    frame_parms[CC_id]->nb_antennas_tx      = 1;
-    frame_parms[CC_id]->nb_antennas_rx      = 1;
+    frame_parms[CC_id]->frame_type            = FDD;
+    frame_parms[CC_id]->tdd_config            = 3;
+    frame_parms[CC_id]->tdd_config_S          = 0;
+    frame_parms[CC_id]->N_RB_DL               = 100;
+    frame_parms[CC_id]->N_RB_UL               = 100;
+    frame_parms[CC_id]->Ncp                   = NORMAL;
+    frame_parms[CC_id]->Ncp_UL                = NORMAL;
+    frame_parms[CC_id]->Nid_cell              = Nid_cell;
+    frame_parms[CC_id]->num_MBSFN_config      = 0;
+    frame_parms[CC_id]->nb_antenna_ports_eNB  = 1;
+    frame_parms[CC_id]->nb_antennas_tx        = 1;
+    frame_parms[CC_id]->nb_antennas_rx        = 1;
   }
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -2752,7 +2752,7 @@ int main( int argc, char **argv )
       //UE_flag==1
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
-      frame_parms[CC_id]->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
+      frame_parms[CC_id]->nb_antenna_ports_eNB = (transmission_mode == 1 || transmission_mode ==7) ? 1 : 2; //initial value overwritten by initial sync later
     }
 
     frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;

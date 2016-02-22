@@ -1636,7 +1636,7 @@ void *UE_thread(void *arg)
                       UE->lte_frame_parms.phich_config_common.phich_duration,
                       UE->lte_frame_parms.phich_config_common.phich_resource,
                       UE->lte_frame_parms.Nid_cell,
-                      UE->lte_frame_parms.nb_antennas_tx_eNB,
+                      UE->lte_frame_parms.nb_antenna_ports_eNB,
                       freq_offset,
                       UE->lte_ue_common_vars.freq_offset,
                       UE->PHY_measurements.rx_power_avg_dB[0],

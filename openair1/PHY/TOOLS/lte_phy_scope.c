@@ -491,7 +491,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
   int nsymb_ce = frame_parms->ofdm_symbol_size;//*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
-  uint8_t nb_antennas_tx = frame_parms->nb_antennas_ports_eNB;
+  uint8_t nb_antennas_tx = frame_parms->nb_antenna_ports_eNB;
   int16_t **rxsig_t;
   int16_t **chest_t;
   int16_t **chest_f;

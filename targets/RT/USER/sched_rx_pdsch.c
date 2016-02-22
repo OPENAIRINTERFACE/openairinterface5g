@@ -156,7 +156,9 @@ static void * rx_pdsch_thread(void *param)
         get_Qm(UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs),
         UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Nl,
         UE->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
-        UE->frame_rx,subframe);
+        UE->frame_rx,
+        subframe,
+        UE->transmission_mode[eNB_id]);
 
     if ((UE->transmission_mode[eNB_id] == 5) &&
         (UE->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off==0) &&
