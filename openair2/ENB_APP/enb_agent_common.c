@@ -1197,7 +1197,7 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       goto error;
     }
     for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
-      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig *));
+      ue_config[i] = malloc(sizeof(Protocol__PrpUeConfig));
       protocol__prp_ue_config__init(ue_config[i]);
       //TODO: Set the RNTI of the ue with id i
       ue_config[i]->rnti = get_ue_crnti(mod_id,i);
