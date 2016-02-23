@@ -35,5 +35,8 @@ enum prp_type {
 
      // UE state change messages
      PRPT_UE_STATE_CHANGE = 14;
+
+     // Control delegation messages
+     PRPT_DELEGATE_CONTROL = 15;
 }
 

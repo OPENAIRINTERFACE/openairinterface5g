@@ -796,6 +796,7 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_MSG_DIR}/mac_primitives.proto
     ${PRPT_MSG_DIR}/config_messages.proto
     ${PRPT_MSG_DIR}/config_common.proto
+    ${PRPT_MSG_DIR}/control_delegation.proto
     )
 
   set(PRPT_C_DIR ${protobuf_generated_dir}/${PRPTDIR})
@@ -812,6 +813,7 @@ if (ENB_AGENT_SB_IF)
     ${PRPT_C_DIR}/mac_primitives.pb-c.c
     ${PRPT_C_DIR}/config_messages.pb-c.c
     ${PRPT_C_DIR}/config_common.pb-c.c
+    ${PRPT_C_DIR}/control_delegation.pb-c.c
     )
   
   file(GLOB prpt_h ${PRPT_C_DIR}/*.h)
@@ -1108,6 +1110,9 @@ add_library(L2
   ${MAC_SRC}
   ${ENB_APP_SRC}
   ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+
+#Test for adding a shared library
+add_library(alt_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_alt.c)
 
 # L3 Libs
 ##########################
@@ -1604,7 +1609,7 @@ target_link_libraries (lte-softmodem
 
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB})
+target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS})
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 
@@ -1638,7 +1643,7 @@ target_link_libraries (lte-softmodem-nos1
   -Wl,--end-group )
 
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB})
+target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS})
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 
@@ -1770,12 +1775,12 @@ add_executable(oaisim_nos1
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
   -Wl,--start-group
-  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB} 
+  RRC_LIB X2AP_LIB SECU_CN UTIL HASHTABLE SCHED_LIB PHY LFDS ${MSC_LIB} L2 ${RAL_LIB} SIMU SIMU_ETH SECU_OSA ${ITTI_LIB}  ${MIH_LIB} ${PRPT_MSG_LIB} ${ASYNC_IF_LIB} ${ENB_AGENT_LIB}
   -Wl,--end-group )
 
 target_link_libraries (oaisim_nos1 ${LIBXML2_LIBRARIES} ${LAPACK_LIBRARIES})
 target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES}  ${NETTLE_LIBRARIES}  ${option_HW_lib} ${option_TP_lib}
-  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB})
+  ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES} ${PROTOBUF_LIB} ${CMAKE_DL_LIBS})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)
 

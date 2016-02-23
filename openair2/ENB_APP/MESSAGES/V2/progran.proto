@@ -6,6 +6,7 @@ import "header.proto";
 import "time_common.proto";
 import "config_messages.proto";
 import "controller_commands.proto";
+import "control_delegation.proto";
 
 message progran_message {
        optional progran_direction msg_dir = 100;
@@ -25,6 +26,7 @@ message progran_message {
 	      prp_lc_config_reply lc_config_reply_msg = 13;
 	      prp_dl_mac_config dl_mac_config_msg = 14;
 	      prp_ue_state_change ue_state_change_msg = 15;
+	      prp_control_delegation control_delegation_msg = 16;
 	}
 }
 
@@ -168,6 +170,17 @@ message prp_ue_state_change {
 	optional prp_header header = 1;
 	optional uint32 type = 2;		// One of the PRUESC_* values
 	optional prp_ue_config config = 3;	// Body of the message (based on type)
+}
+
+//
+// Control delegation message
+//
+
+message prp_control_delegation {
+	optional prp_header header = 1;
+	optional uint32 delegation_type = 2;	// Bitmap of PRCDT_* flags
+	optional bytes payload = 3;	  	// Byte array of shared lib containing the delegated functions
+	repeated string name = 4;		// The delegated functions names ordered based on bitmap flags
 }
 
 // Extensions of the echo request and reply
