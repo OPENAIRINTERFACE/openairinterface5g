@@ -34,8 +34,12 @@
  * \version 0.1
  */
 
+#include<stdio.h>
+#include <dlfcn.h>
+#include <time.h>
 
 #include "enb_agent_common.h"
+#include "enb_agent_extern.h"
 #include "PHY/extern.h"
 #include "log.h"
 
@@ -701,6 +705,76 @@ int enb_agent_destroy_ue_config_request(Protocol__ProgranMessage *msg) {
 int enb_agent_destroy_lc_config_request(Protocol__ProgranMessage *msg) {
   /* TODO: Deallocate memory for a dynamically allocated LC config message */
   return 0;
+}
+
+// call this function to start a nanosecond-resolution timer
+struct timespec timer_start(){
+    struct timespec start_time;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);
+    return start_time;
+}
+
+// call this function to end a timer, returning nanoseconds elapsed as a long
+long timer_end(struct timespec start_time){
+    struct timespec end_time;
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+    long diffInNanos = end_time.tv_nsec - start_time.tv_nsec;
+    return diffInNanos;
+}
+
+int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpControlDelegation *control_delegation_msg = input->control_delegation_msg;
+
+  uint32_t delegation_type = control_delegation_msg->delegation_type;
+
+  void *lib;
+  int i;
+
+  struct timespec vartime = timer_start();
+  
+  //Write the payload lib into a file in the cache and load the lib
+  char lib_name[120];
+  char target[512];
+  snprintf(lib_name, sizeof(lib_name), "/delegation_lib_%d.so", control_delegation_msg->header->xid);
+  strcpy(target, local_cache);
+  strcat(target, lib_name);
+
+  FILE *f;
+  f = fopen(target, "wb");
+  fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
+  fclose(f);
+  lib = dlopen(target, RTLD_NOW);
+  if (lib == NULL) {
+    goto error;
+  }
+
+  i = 0;
+  //Check functions that need to be delegated
+  
+  //DL UE scheduler delegation
+  if (delegation_type & PROTOCOL__PRP_CONTROL_DELEGATION_TYPE__PRCDT_MAC_DL_UE_SCHEDULER) {  
+    void *loaded_scheduler = dlsym(lib, control_delegation_msg->name[i]);
+    i++;
+    if (loaded_scheduler) {
+      if (mac_agent_registered[mod_id]) {
+	agent_mac_xface[mod_id]->enb_agent_schedule_ue_spec = loaded_scheduler;
+	LOG_D(ENB_APP,"Delegated control for DL UE scheduler successfully\n");
+      }
+    }
+  }
+  long time_elapsed_nanos = timer_end(vartime);
+  LOG_I(ENB_AGENT, "DID IT IN %lld\n", time_elapsed_nanos);
+  *msg = NULL;
+  return 0;
+
+ error:
+  return -1;
+}
+
+int enb_agent_destroy_control_delegation(Protocol__ProgranMessage *msg) {
+  /*TODO: Dealocate memory for a dynamically allocated control delegation message*/
 }
 
 /*

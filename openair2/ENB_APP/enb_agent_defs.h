@@ -47,7 +47,7 @@
 #define NUM_MAX_UE 2048
 #define DEFAULT_ENB_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_ENB_AGENT_PORT          2210
-#define DEFAULT_ENB_AGENT_CACHE        "/mnt/tmpfs"
+#define DEFAULT_ENB_AGENT_CACHE        "/mnt/oai_agent_cache"
 
 typedef enum {
   
