@@ -150,7 +150,7 @@ void *receive_thread(void *args) {
     // check if there is something to send back to the controller
     if (msg != NULL){
       data=enb_agent_pack_message(msg,&size);
-     
+
       if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	goto error;

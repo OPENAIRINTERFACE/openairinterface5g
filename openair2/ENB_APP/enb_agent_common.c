@@ -1380,220 +1380,220 @@ int enb_agent_enb_config_request(mid_t mod_id, const void* params, Protocol__Pro
 
 int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
 
-	xid_t xid;
-	Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
-	Protocol__PrpEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
-	xid = (enb_config_req_msg->header)->xid;
-
-	int i, j, k;
-	int cc_id = 0;
-	int enb_id = mod_id;
-
-
-	Protocol__PrpHeader *header;
-	if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_ENB_CONFIG_REPLY, &header) != 0)
-		goto error;
-
-	Protocol__PrpEnbConfigReply *enb_config_reply_msg;
-	enb_config_reply_msg = malloc(sizeof(Protocol__PrpEnbConfigReply));
-	if(enb_config_reply_msg == NULL)
-		goto error;
-	protocol__prp_enb_config_reply__init(enb_config_reply_msg);
-	enb_config_reply_msg->header = header;
-
-	enb_config_reply_msg->enb_id = mod_id;
-
-
-	enb_config_reply_msg->n_cell_config = MAX_NUM_CCs;
-
-	Protocol__PrpCellConfig **cell_conf;
-	if(enb_config_reply_msg->n_cell_config > 0){
-		cell_conf = malloc(sizeof(Protocol__PrpCellConfig *) * enb_config_reply_msg->n_cell_config);
-		if(cell_conf == NULL)
-			goto error;
-		for(i = 0; i < enb_config_reply_msg->n_cell_config; i++){
-			cell_conf[i] = malloc(sizeof(Protocol__PrpCellConfig));
-			protocol__prp_cell_config__init(cell_conf[i]);
-			//TODO: Fill in with actual value, the PCI of this cell
-			cell_conf[i]->phy_cell_id = 1;
-			cell_conf[i]->has_phy_cell_id = 1;
-			//TODO: Fill in with actual value, the PLMN cell id of this cell
-			cell_conf[i]->cell_id = get_cell_id(enb_id,i);
-			cell_conf[i]->has_cell_id = 1;
-			//TODO: Fill in with actual value, PUSCH resources in RBs for hopping
-			cell_conf[i]->pusch_hopping_offset = get_hopping_offset(enb_id,i);
-			cell_conf[i]->has_pusch_hopping_offset = 1;
-			//TODO: Fill in with actual value
-			cell_conf[i]->hopping_mode = get_hopping_mode(enb_id,i);
-			cell_conf[i]->has_hopping_mode = 1;
-			//TODO: Fill in with actual value, the number of subbands
-			cell_conf[i]->n_sb = get_n_SB(enb_id,i);
-			cell_conf[i]->has_n_sb = 1;
-			//TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of PRPR_
-			cell_conf[i]->phich_resource = get_phich_resource(enb_id,i);
-			cell_conf[i]->has_phich_resource = 1;
-			//TODO: Fill in with actual value, one of the PRPD_ values
-			cell_conf[i]->phich_duration = get_phich_duration(enb_id,i);
-			cell_conf[i]->has_phich_duration = 1;
-			//TODO: Fill in with actual value, See TS 36.211, section 6.9
-			cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
-			cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
-			//TODO: Fill in with actual value
-			Protocol__PrpSiConfig *si_config;
-			si_config = malloc(sizeof(Protocol__PrpSiConfig));
-			if(si_config == NULL)
-				goto error;
-			protocol__prp_si_config__init(si_config);
-			//TODO: Fill in with actual value, Frame number to apply the SI configuration
-			si_config->sfn = 1;
-			si_config->has_sfn = 1;
-			//TODO: Fill in with actual value, the length of SIB1 in bytes
-			si_config->sib1_length = get_sib1_length(enb_id,i);
-			si_config->has_sib1_length = 1;
-			//TODO: Fill in with actual value, Scheduling window for all SIs in SF
-			si_config->si_window_length = (uint32_t) get_si_window_length(enb_id,i);
-			si_config->has_si_window_length = 1;
-			//TODO: Fill in with actual value, the number of SI messages
-			si_config->n_si_message=1;
-			Protocol__PrpSiMessage **si_message;
-			si_message = malloc(sizeof(Protocol__PrpSiMessage *) * si_config->n_si_message);
-			if(si_message == NULL)
-				goto error;
-			for(j = 0; j < si_config->n_si_message; j++){
-				si_message[j] = malloc(sizeof(Protocol__PrpSiMessage));
-				if(si_message[j] == NULL)
-					goto error;
-				protocol__prp_si_message__init(si_message[j]);
-				//TODO: Fill in with actual value, Periodicity of SI msg in radio frames
-				si_message[j]->periodicity = 1;				//SIPeriod
-				si_message[j]->has_periodicity = 1;
-				//TODO: Fill in with actual value, rhe length of the SI message in bytes
-				si_message[j]->length = 10;
-				si_message[j]->has_length = 1;
-			}
-			if(si_config->n_si_message > 0){
-				si_config->si_message = si_message;
-			}
-			cell_conf[i]->si_config = si_config;
-
-			//TODO: Fill in with actual value, the DL transmission bandwidth in RBs
-			cell_conf[i]->dl_bandwidth = get_N_RB_DL(enb_id,i);
-			cell_conf[i]->has_dl_bandwidth = 1;
-			//TODO: Fill in with actual value, the UL transmission bandwidth in RBs
-			cell_conf[i]->ul_bandwidth = get_N_RB_UL(enb_id,i);
-			cell_conf[i]->has_ul_bandwidth = 1;
-			//TODO: Fill in with actual value, one of PRUCPL values
-			cell_conf[i]->ul_cyclic_prefix_length = get_ul_cyclic_prefix_length(enb_id,i);
-			cell_conf[i]->has_ul_cyclic_prefix_length = 1;
-			//TODO: Fill in with actual value, one of PRUCPL values
-			cell_conf[i]->dl_cyclic_prefix_length = get_dl_cyclic_prefix_length(enb_id,i);
-			cell_conf[i]->has_dl_cyclic_prefix_length = 1;
-			//TODO: Fill in with actual value, number of cell specific antenna ports
-			cell_conf[i]->antenna_ports_count = 1;
-			cell_conf[i]->has_antenna_ports_count = 1;
-			//TODO: Fill in with actual value, one of PRDM values
-			cell_conf[i]->duplex_mode = get_duplex_mode(enb_id,i);
-			cell_conf[i]->has_duplex_mode = 1;
-			//TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
-			cell_conf[i]->subframe_assignment = get_subframe_assignment(enb_id,i);
-			cell_conf[i]->has_subframe_assignment = 1;
-			//TODO: Fill in with actual value, TDD only. See TS 36.211, table 4.2.1
-			cell_conf[i]->special_subframe_patterns = get_special_subframe_assignment(enb_id,i);
-			cell_conf[i]->has_special_subframe_patterns = 1;
-			//TODO: Fill in with actual value, The MBSFN radio frame period
-			cell_conf[i]->n_mbsfn_subframe_config_rfperiod = 5;
-			uint32_t *elem_rfperiod;
-			elem_rfperiod = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_rfperiod);
-			if(elem_rfperiod == NULL)
-				goto error;
-			for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_rfperiod; j++){
-				elem_rfperiod[j] = 1;
-			}
-			cell_conf[i]->mbsfn_subframe_config_rfperiod = elem_rfperiod;
-
-			//TODO: Fill in with actual value, The MBSFN radio frame offset
-			cell_conf[i]->n_mbsfn_subframe_config_rfoffset = 5;
-			uint32_t *elem_rfoffset;
-			elem_rfoffset = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_rfoffset);
-			if(elem_rfoffset == NULL)
-				goto error;
-			for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_rfoffset; j++){
-				elem_rfoffset[j] = 1;
-			}
-			cell_conf[i]->mbsfn_subframe_config_rfoffset = elem_rfoffset;
-
-			//TODO: Fill in with actual value, Bitmap indicating the MBSFN subframes
-			cell_conf[i]->n_mbsfn_subframe_config_sfalloc = 5;
-			uint32_t *elem_sfalloc;
-			elem_sfalloc = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_sfalloc);
-			if(elem_sfalloc == NULL)
-				goto error;
-			for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_sfalloc; j++){
-				elem_sfalloc[j] = 1;
-			}
-			cell_conf[i]->mbsfn_subframe_config_sfalloc = elem_sfalloc;
-
-			//TODO: Fill in with actual value, See TS 36.211, section 5.7.1
-			cell_conf[i]->prach_config_index = get_prach_ConfigIndex(enb_id,i);
-			cell_conf[i]->has_prach_config_index = 1;
-			//TODO: Fill in with actual value, See TS 36.211, section 5.7.1
-			cell_conf[i]->prach_freq_offset = get_prach_FreqOffset(enb_id,i);
-			cell_conf[i]->has_prach_freq_offset = 1;
-			//TODO: Fill in with actual value, Duration of RA response window in SF
-			cell_conf[i]->ra_response_window_size = get_ra_ResponseWindowSize(enb_id,i);
-			cell_conf[i]->has_ra_response_window_size = 1;
-			//TODO: Fill in with actual value, Timer used for RA
-			cell_conf[i]->mac_contention_resolution_timer = get_mac_ContentionResolutionTimer(enb_id,i);
-			cell_conf[i]->has_mac_contention_resolution_timer = 1;
-			//TODO: Fill in with actual value, See TS 36.321
-			cell_conf[i]->max_harq_msg3tx = get_maxHARQ_Msg3Tx(enb_id,i);
-			cell_conf[i]->has_max_harq_msg3tx = 1;
-			//TODO: Fill in with actual value, See TS 36.213, section 10.1
-			cell_conf[i]->n1pucch_an = get_n1pucch_an(enb_id,i);
-			cell_conf[i]->has_n1pucch_an = 1;
-			//TODO: Fill in with actual value, See TS 36.211, section 5.4
-			cell_conf[i]->deltapucch_shift = get_deltaPUCCH_Shift(enb_id,i);
-			cell_conf[i]->has_deltapucch_shift = 1;
-			//TODO: Fill in with actual value, See TS 36.211, section 5.4
-			cell_conf[i]->nrb_cqi = get_nRB_CQI(enb_id,i);
-			cell_conf[i]->has_nrb_cqi = 1;
-			//TODO: Fill in with actual value, See TS 36.211, table 5.5.3.3-1 and 2
-			cell_conf[i]->srs_subframe_config = get_srs_SubframeConfig(enb_id,i);
-			cell_conf[i]->has_srs_subframe_config = 1;
-			//TODO: Fill in with actual value, See TS 36.211, section 5.5.3.2
-			cell_conf[i]->srs_bw_config = get_srs_BandwidthConfig(enb_id,i);
-			cell_conf[i]->has_srs_bw_config = 1;
-			//TODO: Fill in with actual value, Boolean value. See TS 36.211, section 5.5.3.2. TDD only
-			cell_conf[i]->srs_mac_up_pts = get_srs_MaxUpPts(enb_id,i);
-			cell_conf[i]->has_srs_mac_up_pts = 1;
-			//TODO: Fill in with actual value, One of the PREQ_ values
-			cell_conf[i]->enable_64qam = get_enable64QAM(enb_id,i);
-			cell_conf[i]->has_enable_64qam = 1;
-			//TODO: Fill in with actual value, Carrier component index
-			cell_conf[i]->carrier_index = i;
-			cell_conf[i]->has_carrier_index = 1;
-		}
-		enb_config_reply_msg->cell_config=cell_conf;
-	}
-	*msg = malloc(sizeof(Protocol__ProgranMessage));
-	if(*msg == NULL)
-		goto error;
-	protocol__progran_message__init(*msg);
-	(*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
-	(*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
-	(*msg)->enb_config_reply_msg = enb_config_reply_msg;
-	return 0;
-
-	 error:
-	  // TODO: Need to make proper error handling
-	 if (header != NULL)
-	   free(header);
-	 if (enb_config_reply_msg != NULL)
-	   free(enb_config_reply_msg);
-	 if(*msg != NULL)
-	   free(*msg);
-	 //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-	 return -1;
+  xid_t xid;
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpEnbConfigRequest *enb_config_req_msg = input->enb_config_request_msg;
+  xid = (enb_config_req_msg->header)->xid;
+  
+  int i, j, k;
+  int cc_id = 0;
+  int enb_id = mod_id;
+  
+  Protocol__PrpHeader *header;
+  if(prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_GET_ENB_CONFIG_REPLY, &header) != 0)
+    goto error;
+  
+  Protocol__PrpEnbConfigReply *enb_config_reply_msg;
+  enb_config_reply_msg = malloc(sizeof(Protocol__PrpEnbConfigReply));
+  if(enb_config_reply_msg == NULL)
+    goto error;
+  protocol__prp_enb_config_reply__init(enb_config_reply_msg);
+  enb_config_reply_msg->header = header;
+  
+  enb_config_reply_msg->enb_id = mod_id;
+  
+  
+  enb_config_reply_msg->n_cell_config = MAX_NUM_CCs;
+  
+  Protocol__PrpCellConfig **cell_conf;
+  if(enb_config_reply_msg->n_cell_config > 0){
+    cell_conf = malloc(sizeof(Protocol__PrpCellConfig *) * enb_config_reply_msg->n_cell_config);
+    if(cell_conf == NULL)
+      goto error;
+    for(i = 0; i < enb_config_reply_msg->n_cell_config; i++){
+      cell_conf[i] = malloc(sizeof(Protocol__PrpCellConfig));
+      protocol__prp_cell_config__init(cell_conf[i]);
+      //TODO: Fill in with actual value, the PCI of this cell
+      cell_conf[i]->phy_cell_id = 1;
+      cell_conf[i]->has_phy_cell_id = 1;
+      //TODO: Fill in with actual value, the PLMN cell id of this cell
+      cell_conf[i]->cell_id = get_cell_id(enb_id,i);
+      cell_conf[i]->has_cell_id = 1;
+      //TODO: Fill in with actual value, PUSCH resources in RBs for hopping
+      cell_conf[i]->pusch_hopping_offset = get_hopping_offset(enb_id,i);
+      cell_conf[i]->has_pusch_hopping_offset = 1;
+      //TODO: Fill in with actual value
+      cell_conf[i]->hopping_mode = get_hopping_mode(enb_id,i);
+      cell_conf[i]->has_hopping_mode = 1;
+      //TODO: Fill in with actual value, the number of subbands
+      cell_conf[i]->n_sb = get_n_SB(enb_id,i);
+      cell_conf[i]->has_n_sb = 1;
+      //TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of PRPR_
+      cell_conf[i]->phich_resource = get_phich_resource(enb_id,i);
+      cell_conf[i]->has_phich_resource = 1;
+      //TODO: Fill in with actual value, one of the PRPD_ values
+      cell_conf[i]->phich_duration = get_phich_duration(enb_id,i);
+      cell_conf[i]->has_phich_duration = 1;
+      //TODO: Fill in with actual value, See TS 36.211, section 6.9
+      cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
+      cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
+      //TODO: Fill in with actual value
+      Protocol__PrpSiConfig *si_config;
+      si_config = malloc(sizeof(Protocol__PrpSiConfig));
+      if(si_config == NULL)
+	goto error;
+      protocol__prp_si_config__init(si_config);
+      //TODO: Fill in with actual value, Frame number to apply the SI configuration
+      si_config->sfn = 1;
+      si_config->has_sfn = 1;
+      //TODO: Fill in with actual value, the length of SIB1 in bytes
+      si_config->sib1_length = get_sib1_length(enb_id,i);
+      si_config->has_sib1_length = 1;
+      //TODO: Fill in with actual value, Scheduling window for all SIs in SF
+      si_config->si_window_length = (uint32_t) get_si_window_length(enb_id,i);
+      si_config->has_si_window_length = 1;
+      //TODO: Fill in with actual value, the number of SI messages
+      si_config->n_si_message=1;
+      Protocol__PrpSiMessage **si_message;
+      si_message = malloc(sizeof(Protocol__PrpSiMessage *) * si_config->n_si_message);
+      if(si_message == NULL)
+	goto error;
+      for(j = 0; j < si_config->n_si_message; j++){
+	si_message[j] = malloc(sizeof(Protocol__PrpSiMessage));
+	if(si_message[j] == NULL)
+	  goto error;
+	protocol__prp_si_message__init(si_message[j]);
+	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames
+	si_message[j]->periodicity = 1;				//SIPeriod
+	si_message[j]->has_periodicity = 1;
+	//TODO: Fill in with actual value, rhe length of the SI message in bytes
+	si_message[j]->length = 10;
+	si_message[j]->has_length = 1;
+      }
+      if(si_config->n_si_message > 0){
+	si_config->si_message = si_message;
+      }
+      cell_conf[i]->si_config = si_config;
+      
+      //TODO: Fill in with actual value, the DL transmission bandwidth in RBs
+      cell_conf[i]->dl_bandwidth = get_N_RB_DL(enb_id,i);
+      cell_conf[i]->has_dl_bandwidth = 1;
+      //TODO: Fill in with actual value, the UL transmission bandwidth in RBs
+      cell_conf[i]->ul_bandwidth = get_N_RB_UL(enb_id,i);
+      cell_conf[i]->has_ul_bandwidth = 1;
+      //TODO: Fill in with actual value, one of PRUCPL values
+      cell_conf[i]->ul_cyclic_prefix_length = get_ul_cyclic_prefix_length(enb_id,i);
+      cell_conf[i]->has_ul_cyclic_prefix_length = 1;
+      //TODO: Fill in with actual value, one of PRUCPL values
+      cell_conf[i]->dl_cyclic_prefix_length = get_dl_cyclic_prefix_length(enb_id,i);
+      cell_conf[i]->has_dl_cyclic_prefix_length = 1;
+      //TODO: Fill in with actual value, number of cell specific antenna ports
+      cell_conf[i]->antenna_ports_count = 1;
+      cell_conf[i]->has_antenna_ports_count = 1;
+      //TODO: Fill in with actual value, one of PRDM values
+      cell_conf[i]->duplex_mode = get_duplex_mode(enb_id,i);
+      cell_conf[i]->has_duplex_mode = 1;
+      //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
+      cell_conf[i]->subframe_assignment = get_subframe_assignment(enb_id,i);
+      cell_conf[i]->has_subframe_assignment = 1;
+      //TODO: Fill in with actual value, TDD only. See TS 36.211, table 4.2.1
+      cell_conf[i]->special_subframe_patterns = get_special_subframe_assignment(enb_id,i);
+      cell_conf[i]->has_special_subframe_patterns = 1;
+      //TODO: Fill in with actual value, The MBSFN radio frame period
+      cell_conf[i]->n_mbsfn_subframe_config_rfperiod = 5;
+      uint32_t *elem_rfperiod;
+      elem_rfperiod = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_rfperiod);
+      if(elem_rfperiod == NULL)
+	goto error;
+      for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_rfperiod; j++){
+	elem_rfperiod[j] = 1;
+      }
+      cell_conf[i]->mbsfn_subframe_config_rfperiod = elem_rfperiod;
+      
+      //TODO: Fill in with actual value, The MBSFN radio frame offset
+      cell_conf[i]->n_mbsfn_subframe_config_rfoffset = 5;
+      uint32_t *elem_rfoffset;
+      elem_rfoffset = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_rfoffset);
+      if(elem_rfoffset == NULL)
+	goto error;
+      for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_rfoffset; j++){
+	elem_rfoffset[j] = 1;
+      }
+      cell_conf[i]->mbsfn_subframe_config_rfoffset = elem_rfoffset;
+      
+      //TODO: Fill in with actual value, Bitmap indicating the MBSFN subframes
+      cell_conf[i]->n_mbsfn_subframe_config_sfalloc = 5;
+      uint32_t *elem_sfalloc;
+      elem_sfalloc = (uint32_t *) malloc(sizeof(uint32_t) *cell_conf[i]->n_mbsfn_subframe_config_sfalloc);
+      if(elem_sfalloc == NULL)
+	goto error;
+      for(j = 0; j < cell_conf[i]->n_mbsfn_subframe_config_sfalloc; j++){
+	elem_sfalloc[j] = 1;
+      }
+      cell_conf[i]->mbsfn_subframe_config_sfalloc = elem_sfalloc;
+      
+      //TODO: Fill in with actual value, See TS 36.211, section 5.7.1
+      cell_conf[i]->prach_config_index = get_prach_ConfigIndex(enb_id,i);
+      cell_conf[i]->has_prach_config_index = 1;
+      //TODO: Fill in with actual value, See TS 36.211, section 5.7.1
+      cell_conf[i]->prach_freq_offset = get_prach_FreqOffset(enb_id,i);
+      cell_conf[i]->has_prach_freq_offset = 1;
+      //TODO: Fill in with actual value, Duration of RA response window in SF
+      cell_conf[i]->ra_response_window_size = get_ra_ResponseWindowSize(enb_id,i);
+      cell_conf[i]->has_ra_response_window_size = 1;
+      //TODO: Fill in with actual value, Timer used for RA
+      cell_conf[i]->mac_contention_resolution_timer = get_mac_ContentionResolutionTimer(enb_id,i);
+      cell_conf[i]->has_mac_contention_resolution_timer = 1;
+      //TODO: Fill in with actual value, See TS 36.321
+      cell_conf[i]->max_harq_msg3tx = get_maxHARQ_Msg3Tx(enb_id,i);
+      cell_conf[i]->has_max_harq_msg3tx = 1;
+      //TODO: Fill in with actual value, See TS 36.213, section 10.1
+      cell_conf[i]->n1pucch_an = get_n1pucch_an(enb_id,i);
+      cell_conf[i]->has_n1pucch_an = 1;
+      //TODO: Fill in with actual value, See TS 36.211, section 5.4
+      cell_conf[i]->deltapucch_shift = get_deltaPUCCH_Shift(enb_id,i);
+      cell_conf[i]->has_deltapucch_shift = 1;
+      //TODO: Fill in with actual value, See TS 36.211, section 5.4
+      cell_conf[i]->nrb_cqi = get_nRB_CQI(enb_id,i);
+      cell_conf[i]->has_nrb_cqi = 1;
+      //TODO: Fill in with actual value, See TS 36.211, table 5.5.3.3-1 and 2
+      cell_conf[i]->srs_subframe_config = get_srs_SubframeConfig(enb_id,i);
+      cell_conf[i]->has_srs_subframe_config = 1;
+      //TODO: Fill in with actual value, See TS 36.211, section 5.5.3.2
+      cell_conf[i]->srs_bw_config = get_srs_BandwidthConfig(enb_id,i);
+      cell_conf[i]->has_srs_bw_config = 1;
+      //TODO: Fill in with actual value, Boolean value. See TS 36.211, section 5.5.3.2. TDD only
+      cell_conf[i]->srs_mac_up_pts = get_srs_MaxUpPts(enb_id,i);
+      cell_conf[i]->has_srs_mac_up_pts = 1;
+      //TODO: Fill in with actual value, One of the PREQ_ values
+      cell_conf[i]->enable_64qam = get_enable64QAM(enb_id,i);
+      cell_conf[i]->has_enable_64qam = 1;
+      //TODO: Fill in with actual value, Carrier component index
+      cell_conf[i]->carrier_index = i;
+      cell_conf[i]->has_carrier_index = 1;
+    }
+    enb_config_reply_msg->cell_config=cell_conf;
+  }
+  *msg = malloc(sizeof(Protocol__ProgranMessage));
+  if(*msg == NULL)
+    goto error;
+  protocol__progran_message__init(*msg);
+  (*msg)->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG;
+  (*msg)->msg_dir = PROTOCOL__PROGRAN_DIRECTION__SUCCESSFUL_OUTCOME;
+  (*msg)->enb_config_reply_msg = enb_config_reply_msg;
+  
+  return 0;
+  
+ error:
+  // TODO: Need to make proper error handling
+  if (header != NULL)
+    free(header);
+  if (enb_config_reply_msg != NULL)
+    free(enb_config_reply_msg);
+  if(*msg != NULL)
+    free(*msg);
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 
