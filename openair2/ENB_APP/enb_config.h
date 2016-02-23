@@ -224,6 +224,7 @@ typedef struct Enb_properties_s {
   char               *enb_agent_interface_name;
   in_addr_t           enb_agent_ipv4_address;
   tcp_udp_port_t      enb_agent_port;
+  char               *enb_agent_cache;
 
   /* Nb of RRH to connect to */
   uint8_t             nb_rrh_gw;

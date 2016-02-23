@@ -174,6 +174,7 @@
 #define ENB_CONFIG_STRING_ENB_AGENT_INTERFACE_NAME      "ENB_AGENT_INTERFACE_NAME"
 #define ENB_CONFIG_STRING_ENB_AGENT_IPV4_ADDRESS        "ENB_AGENT_IPV4_ADDRESS"
 #define ENB_CONFIG_STRING_ENB_AGENT_PORT                "ENB_AGENT_PORT"
+#define ENB_CONFIG_STRING_ENB_AGENT_CACHE               "ENB_AGENT_CACHE"
 
 #define ENB_CONFIG_STRING_RRH_GW_CONFIG                   "rrh_gw_config"
 #define ENB_CONFIG_STRING_RRH_GW_LOCAL_IF_NAME            "local_if_name"
@@ -325,6 +326,7 @@ static void enb_config_display(void)
     printf( "\tInterface name:           \t%s:\n",enb_properties.properties[i]->enb_agent_interface_name);
     printf( "\tInterface IP Address:     \t%s:\n",enb_properties.properties[i]->enb_agent_ipv4_address);
     printf( "\tInterface PORT:           \t%d:\n\n",enb_properties.properties[i]->enb_agent_port);
+    printf( "\tCache directory:          \t%s:\n",enb_properties.properties[i]->enb_agent_cache);
     
 #endif 
 
@@ -641,6 +643,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char*             enb_agent_interface_name      = NULL;
   char*             enb_agent_ipv4_address        = NULL;
   libconfig_int     enb_agent_port                = 0;
+  char*             enb_agent_cache               = NULL;
   libconfig_int     otg_ue_id                     = 0;
   char*             otg_app_type                  = NULL;
   char*             otg_bg_traffic                = NULL;
@@ -2363,6 +2366,8 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                                                     (const char **)&enb_agent_ipv4_address)
                    && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_ENB_AGENT_PORT,
                                                 &enb_agent_port)
+		   && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_ENB_AGENT_CACHE,
+						    (const char **)&enb_agent_cache)
                  )
               ) {
               enb_properties.properties[enb_properties_index]->enb_agent_interface_name = strdup(enb_agent_interface_name);
@@ -2374,7 +2379,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 		}*/
 
               enb_properties.properties[enb_properties_index]->enb_agent_port = enb_agent_port;
-             
+	      enb_properties.properties[enb_properties_index]->enb_agent_cache = strdup(enb_agent_cache);
             }
           }
 	  
