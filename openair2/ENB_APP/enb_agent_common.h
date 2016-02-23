@@ -210,6 +210,62 @@ int get_tpc(mid_t mod_id, mid_t ue_id);
 int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
 	     const int frame, const uint8_t subframe, int *id, int *status);
 
+/*
+ * ************************************
+ * Get Messages for UE Configuration Reply
+ * ************************************
+ */
+
+int get_time_alignment_timer(mid_t mod_id, mid_t ue_id);
+
+int get_meas_gap_config(mid_t mod_id, mid_t ue_id);
+
+int get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id);
+
+int get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id);
+
+int get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id);
+
+int get_half_duplex(mid_t ue_id);
+
+int get_intra_sf_hopping(mid_t ue_id);
+
+int get_type2_sb_1(mid_t ue_id);
+
+int get_ue_category(mid_t ue_id);
+
+int get_res_alloc_type1(mid_t ue_id);
+
+int get_ue_transmission_mode(mid_t mod_id, mid_t ue_id);
+
+int get_tti_bundling(mid_t mod_id, mid_t ue_id);
+
+int get_maxHARQ_TX(mid_t mod_id, mid_t ue_id);
+
+int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id);
+
+int get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id);
+
+int get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id);
+
+int get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id);
+
+int get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id);
+
+int get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id);
+
+int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id);
+
+int get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id);
+
+int get_extended_bsr_size(mid_t mod_id, mid_t ue_id);
+
+int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id);
+
+int get_lcg(mid_t ue_id, mid_t lc_id);
+
+int get_direction(mid_t ue_id, mid_t lc_id);
+
 /*******************
  * timer primitves
  *******************/

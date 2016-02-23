@@ -58,6 +58,8 @@ extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
 extern UE_MAC_INST *UE_mac_inst;
 extern eNB_MAC_INST *eNB_mac_inst;
 extern eNB_RRC_INST *eNB_rrc_inst;
+extern UE_RRC_INST *UE_rrc_inst;
+extern UE_MAC_INST *ue_mac_inst;
 extern MAC_RLC_XFACE *Mac_rlc_xface;
 extern uint8_t Is_rrc_registered;
 
