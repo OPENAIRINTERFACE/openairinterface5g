@@ -586,7 +586,7 @@ int get_num_ues (mid_t mod_id){
 
 int get_ue_crnti (mid_t mod_id, mid_t ue_id){
 
-  return  ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].crnti;
+  return  UE_RNTI(mod_id, ue_id);
 }
 
 int get_ue_bsr (mid_t mod_id, mid_t ue_id, lcid_t lcid) {
