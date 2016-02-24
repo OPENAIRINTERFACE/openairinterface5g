@@ -43,6 +43,9 @@
 #include "PHY/extern.h"
 #include "log.h"
 
+#include "RRC/LITE/extern.h"
+#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+
 
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
@@ -375,7 +378,8 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
   } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED
 	     || state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED) {
     // TODO: Set the whole UE configuration message
-    
+    config->has_rnti = 1;
+    config->rnti = rnti;
   } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_MOVED) {
     // TODO: Not supported for now. Leave blank
   }
@@ -1039,7 +1043,11 @@ int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 
 int get_lcg(mid_t ue_id, mid_t lc_id)
 {
-	return &UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup;
+  if(UE_mac_inst[ue_id].logicalChannelConfig[lc_id] != NULL) {
+    return *UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup;
+  } else {
+    return -1;
+  }
 }
 
 int get_direction(mid_t ue_id, mid_t lc_id)
@@ -1093,7 +1101,16 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       lc_ue_config[i]->has_rnti = 1;
       lc_ue_config[i]->rnti = get_ue_crnti(mod_id,i);
       //TODO: Set the number of LC configurations that will be reported for this UE
-      lc_ue_config[i]->n_lc_config = 3;
+      //Set this according to the current state of the UE. This is only a temporary fix
+      int status = 0;
+      status = mac_eNB_get_rrc_status(mod_id, get_ue_crnti(mod_id, i));
+      if (status < RRC_CONNECTED) {
+	lc_ue_config[i]->n_lc_config = 0;
+      } else if (status == RRC_CONNECTED) {
+	lc_ue_config[i]->n_lc_config = 1;
+      } else {
+	lc_ue_config[i]->n_lc_config = 3;
+      }
       Protocol__PrpLcConfig **lc_config;
       if (lc_ue_config[i]->n_lc_config > 0) {
 	lc_config = malloc(sizeof(Protocol__PrpLcConfig *) * lc_ue_config[i]->n_lc_config);
