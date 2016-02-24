@@ -56,8 +56,6 @@
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
-#include "enb_agent_extern.h"
-
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
@@ -257,12 +255,6 @@ void rx_sdu(
             } else
               LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Added user with rnti %x => UE %d\n",
                     enb_mod_idP,CC_idP,frameP,eNB->common_channels[CC_idP].RA_template[ii].rnti,UE_id);
-	    //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-	    if (mac_agent_registered[enb_mod_idP]) {
-	      agent_mac_xface[enb_mod_idP]->enb_agent_notify_ue_state_change(enb_mod_idP,
-	    								    eNB->common_channels[CC_idP].RA_template[ii].rnti,
-	    								    PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED);
-	    }
           } else {
             LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d CCCH: Received Msg3 from already registered UE %d: length %d, offset %d\n",
                   enb_mod_idP,CC_idP,frameP,UE_id,rx_lengths[i],payload_ptr-sduP);
