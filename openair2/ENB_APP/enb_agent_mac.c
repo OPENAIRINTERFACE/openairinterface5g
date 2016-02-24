@@ -168,6 +168,18 @@ int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__Progr
 	request_config.report_type = PROTOCOL__PRP_STATS_TYPE__PRST_COMPLETE_STATS;
 	request_config.report_frequency = PROTOCOL__PRP_STATS_REPORT_FREQ__PRSRF_ONCE;
 	request_config.period = 0;
+	/* Need to make sure that the ue flags are saved (Bug) */
+	if (report_config.nr_ue == 0) {
+	  report_config.nr_ue = 1;
+	  report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t));
+	  if (report_config.ue_report_type == NULL) {
+	    // TODO: Add appropriate error code
+	    err_code = -100;
+	    goto error;
+	  }
+	  report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
+	  report_config.ue_report_type[0].ue_report_flags = ue_flags;
+	}
 	request_config.config = &report_config;
 	enb_agent_enable_cont_mac_stats_update(enb_id, xid, &request_config);
       }
@@ -1204,44 +1216,46 @@ void enb_agent_send_sf_trigger(mid_t mod_id) {
 
 void enb_agent_send_update_mac_stats(mid_t mod_id) {
 
-  Protocol__ProgranMessage *current_report, *msg;
+  Protocol__ProgranMessage *current_report = NULL, *msg;
   void *data;
   int size;
   err_code_t err_code;
   int priority;
 
   mac_stats_updates_context_t stats_context = mac_stats_context[mod_id];
-
+  
   if (pthread_mutex_lock(mac_stats_context[mod_id].mutex)) {
     goto error;
   }
 
-  /*Create a fresh report with the required flags*/
-  err_code = enb_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
-  if (err_code < 0) {
-    goto error;
+  if (mac_stats_context[mod_id].cont_update == 1) {
+  
+    /*Create a fresh report with the required flags*/
+    err_code = enb_agent_mac_handle_stats(mod_id, (void *) mac_stats_context[mod_id].stats_req, &current_report);
+    if (err_code < 0) {
+      goto error;
+    }
   }
+  /* /\*TODO:Check if a previous reports exists and if yes, generate a report */
+  /*  *that is the diff between the old and the new report, */
+  /*  *respecting the thresholds. Otherwise send the new report*\/ */
+  /* if (mac_stats_context[mod_id].prev_stats_reply != NULL) { */
 
-  /*TODO:Check if a previous reports exists and if yes, generate a report
-   *that is the diff between the old and the new report,
-   *respecting the thresholds. Otherwise send the new report*/
-  if (mac_stats_context[mod_id].prev_stats_reply != NULL) {
+  /*   msg = enb_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply); */
 
-    msg = enb_agent_generate_diff_mac_stats_report(current_report, mac_stats_context[mod_id].prev_stats_reply);
-
-    /*Destroy the old stats*/
-     enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply);
-  }
-  /*Use the current report for future comparissons*/
-  mac_stats_context[mod_id].prev_stats_reply = current_report;
+  /*   /\*Destroy the old stats*\/ */
+  /*    enb_agent_destroy_progran_message(mac_stats_context[mod_id].prev_stats_reply); */
+  /* } */
+  /* /\*Use the current report for future comparissons*\/ */
+  /* mac_stats_context[mod_id].prev_stats_reply = current_report; */
 
 
   if (pthread_mutex_unlock(mac_stats_context[mod_id].mutex)) {
     goto error;
   }
 
-  if (msg != NULL){
-    data=enb_agent_pack_message(msg, &size);
+  if (current_report != NULL){
+    data=enb_agent_pack_message(current_report, &size);
     /*Send any stats updates using the MAC channel of the eNB*/
     if (enb_agent_msg_send(mod_id, ENB_AGENT_MAC, data, size, priority)) {
       err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
