@@ -1053,8 +1053,7 @@ int get_lcg(mid_t ue_id, mid_t lc_id)
 int get_direction(mid_t ue_id, mid_t lc_id)
 {
 	/*TODO: fill with the value for the rest of LCID*/
-
-	if(lc_id == CCCH | lc_id == DCCH)
+	if(lc_id == DCCH | lc_id == DCCH1)
 		return 2;
 	else if(lc_id == DTCH)
 		return 1;
@@ -1124,8 +1123,11 @@ int enb_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Progra
 	  lc_config[j]->has_lcid = 1;
 	  lc_config[j]->lcid = j+1;
 	  //TODO: Set the LCG of the channel
-	  lc_config[j]->has_lcg = 1;
-	  lc_config[j]->lcg = get_lcg(i,j+1);
+	  int lcg = get_lcg(i, j+1);
+	  if (lcg >= 0 && lcg <= 3) {
+	    lc_config[j]->has_lcg = 1;
+	    lc_config[j]->lcg = get_lcg(i,j+1);
+	  }
 	  //TODO: Set the LC direction
 	  lc_config[j]->has_direction = 1;
 	  lc_config[j]->direction = get_direction(i,j+1);
