@@ -45,12 +45,11 @@
 
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
+#include "rrc_eNB_UE_context.h"
 
 void * enb[NUM_MAX_ENB];
 void * enb_ue[NUM_MAX_ENB];
 void * enb_rrc[NUM_MAX_ENB];
-void * enb_ue_rrc[NUM_MAX_ENB];
 /*
  * message primitives
  */
@@ -343,70 +342,6 @@ int enb_agent_destroy_lc_config_reply(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
-int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
-  int size;
-  Protocol__ProgranMessage *msg;
-  Protocol__PrpHeader *header;
-  void *data;
-  int priority;
-  err_code_t err_code;
-
-  int xid = 0;
-
-  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UE_STATE_CHANGE, &header) != 0)
-    goto error;
-
-  Protocol__PrpUeStateChange *ue_state_change_msg;
-  ue_state_change_msg = malloc(sizeof(Protocol__PrpUeStateChange));
-  if(ue_state_change_msg == NULL) {
-    goto error;
-  }
-  protocol__prp_ue_state_change__init(ue_state_change_msg);
-  ue_state_change_msg->has_type = 1;
-  ue_state_change_msg->type = state_change;
-
-  Protocol__PrpUeConfig *config;
-  config = malloc(sizeof(Protocol__PrpUeConfig));
-  if (config == NULL) {
-    goto error;
-  }
-  protocol__prp_ue_config__init(config);
-  if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED) {
-    // Simply set the rnti of the UE
-    config->has_rnti = 1;
-    config->rnti = rnti;
-  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED
-	     || state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED) {
-    // TODO: Set the whole UE configuration message
-    config->has_rnti = 1;
-    config->rnti = rnti;
-  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_MOVED) {
-    // TODO: Not supported for now. Leave blank
-  }
-
-  ue_state_change_msg->config = config;
-  msg = malloc(sizeof(Protocol__ProgranMessage));
-  if (msg == NULL) {
-    goto error;
-  }
-  protocol__progran_message__init(msg);
-  msg->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG;
-  msg->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
-  msg->ue_state_change_msg = ue_state_change_msg;
-  
-  data = enb_agent_pack_message(msg, &size);
-  /*Send sr info using the MAC channel of the eNB*/
-  if (enb_agent_msg_send(mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
-    err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
-    goto error;
-  }
-
-  LOG_D(ENB_AGENT,"sent message with size %d\n", size);
-  return;
- error:
-  LOG_D(ENB_AGENT, "Could not send UE state message\n");
-}
-
 int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg) {
   if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
     goto error;
@@ -525,7 +460,6 @@ void set_enb_vars(mid_t mod_id, ran_name_t ran){
     enb[mod_id] =  (void *)&eNB_mac_inst[mod_id];
     enb_ue[mod_id] = (void *)&eNB_mac_inst[mod_id].UE_list;
     enb_rrc[mod_id] = (void *)&eNB_rrc_inst[mod_id];
-    enb_ue_rrc[mod_id] = (void *)&UE_rrc_inst[mod_id];
     break;
   default :
     goto error;
@@ -901,26 +835,60 @@ int get_num_pdcch_symb(mid_t mod_id, int CC_id)
  * ************************************
  */
 
+
 int get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 {
-	return	(((UE_RRC_INST *)enb_ue_rrc[ue_id])->mac_MainConfig[mod_id]->timeAlignmentTimerDedicated);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	LOG_I(ENB_APP,"The value of rntiP is %d\n",rntiP);
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.mac_MainConfig != NULL)
+			return ue_context_p->ue_context.mac_MainConfig->timeAlignmentTimerDedicated;
+	}
+	else
+		return -1;
 }
 
 int get_meas_gap_config(mid_t mod_id, mid_t ue_id)
 {
-	if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->measGapConfig[mod_id]->present == MeasGapConfig_PR_NOTHING)
-		return 2;
-	else if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->measGapConfig[mod_id]->present == MeasGapConfig_PR_release)
-		return 0;
-	else if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->measGapConfig[mod_id]->present == MeasGapConfig_PR_setup)
-		return 1;
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
-	return -1;
+	LOG_I(ENB_APP,"The value of rntiP is %d\n",rntiP);
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.measGapConfig != NULL){
+			if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_NOTHING)
+				return 2;
+			else if (ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_release)
+				return 0;
+			else if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_setup)
+				return 1;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->measGapConfig[mod_id]->choice.setup.gapOffset.present);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.measGapConfig != NULL){
+			return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id)
@@ -935,110 +903,250 @@ int get_ue_aggregated_max_bitrate_ul (mid_t mod_id, mid_t ue_id)
 
 int get_half_duplex(mid_t ue_id)
 {
-	int halfduplex = 0;
-	int bands_to_scan = ((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;
-	for (int i =0; i < bands_to_scan; i++){
-		if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.array[i]->halfDuplex > 0)
-			halfduplex = 1;
-	}
-	return halfduplex;
+	//int halfduplex = 0;
+	//int bands_to_scan = ((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;
+	//for (int i =0; i < bands_to_scan; i++){
+		//if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.array[i]->halfDuplex > 0)
+		//	halfduplex = 1;
+	//}
+	//return halfduplex;
 }
 
 int get_intra_sf_hopping(mid_t ue_id)
 {
-	uint8_t temp = 0;
-	temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	return (temp & ( 1 << (31)));
+	//TODO:Get proper value
+	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
+	//return (0 & ( 1 << (31)));
 }
 
 int get_type2_sb_1(mid_t ue_id)
 {
-	uint8_t temp = 0;
-	temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	return (temp & ( 1 << (11)));
+	//TODO:Get proper value
+	//uint8_t temp = 0;
+	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
+	//return (temp & ( 1 << (11)));
 }
 
 int get_ue_category(mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->ue_Category);
+	//TODO:Get proper value
+	//return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->ue_Category);
 }
 
 int get_res_alloc_type1(mid_t ue_id)
 {
-	uint8_t temp = 0;
-	temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
-	return (temp & ( 1 << (30)));
+	//TODO:Get proper value
+	//uint8_t temp = 0;
+	//temp = (((UE_RRC_INST *)enb_ue_rrc[ue_id])->UECap->UE_EUTRA_Capability->featureGroupIndicators->buf);
+	//return (temp & ( 1 << (30)));
 }
 
 int get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->antennaInfo->choice.explicitValue.transmissionMode);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_tti_bundling(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->mac_MainConfig[mod_id]->ul_SCH_Config->ttiBundling);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.mac_MainConfig != NULL){
+			return ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->ttiBundling;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_maxHARQ_TX(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->mac_MainConfig[mod_id]->ul_SCH_Config->maxHARQ_Tx);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.mac_MainConfig != NULL){
+			return ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->pusch_ConfigDedicated->betaOffset_ACK_Index);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->pusch_ConfigDedicated->betaOffset_RI_Index);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->pusch_ConfigDedicated->betaOffset_CQI_Index);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI);
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+      if (ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic != NULL) {
+	return ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI;
+      }
+    }
+  }
+  return -1;
 }
 
 int get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->sib2[mod_id]->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission);
+	return (&eNB_rrc_inst[mod_id])->carrier[0].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
 int get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->cqi_ReportConfig->cqi_ReportModeAperiodic);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->pucch_ConfigDedicated->tdd_AckNackFeedbackMode);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
 {
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->pucch_ConfigDedicated->ackNackRepetition.choice.setup.repetitionFactor);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			return ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.choice.setup.repetitionFactor;
+		}
+	}
+	else
+		return -1;
 }
 
 int get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
 {
 	//TODO: need to double check
-	return (((UE_RRC_INST *)enb_ue_rrc[ue_id])->mac_MainConfig[mod_id]->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10);
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.mac_MainConfig != NULL){
+			if(ue_context_p->ue_context.mac_MainConfig->ext2 != NULL){
+				return ue_context_p->ue_context.mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10;
+			}
+		}
+	}
+	return -1;
 }
 
 int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 {
-	if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.setup == AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_closedLoop)
-		return 2;
-	else if(((UE_RRC_INST *)enb_ue_rrc[ue_id])->physicalConfigDedicated[mod_id]->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.setup == AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_openLoop)
-		return 1;
+	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+
+	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+
+	if(ue_context_p != NULL)
+	{
+		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+			if(ue_context_p->ue_context.physicalConfigDedicated->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.setup == AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_closedLoop)
+				return 2;
+			else if(ue_context_p->ue_context.physicalConfigDedicated->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.setup == AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_openLoop)
+				return 1;
+			else
+				return 0;
+		}
+	}
 	else
-		return 0;
+		return -1;
 }
 
 int get_lcg(mid_t ue_id, mid_t lc_id)
@@ -1059,6 +1167,207 @@ int get_direction(mid_t ue_id, mid_t lc_id)
 		return 1;
 }
 
+int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change) {
+  int size;
+  Protocol__ProgranMessage *msg;
+  Protocol__PrpHeader *header;
+  void *data;
+  int priority;
+  err_code_t err_code;
+
+  int xid = 0;
+
+  if (prp_create_header(xid, PROTOCOL__PRP_TYPE__PRPT_UE_STATE_CHANGE, &header) != 0)
+    goto error;
+
+  Protocol__PrpUeStateChange *ue_state_change_msg;
+  ue_state_change_msg = malloc(sizeof(Protocol__PrpUeStateChange));
+  if(ue_state_change_msg == NULL) {
+    goto error;
+  }
+  protocol__prp_ue_state_change__init(ue_state_change_msg);
+  ue_state_change_msg->has_type = 1;
+  ue_state_change_msg->type = state_change;
+
+  Protocol__PrpUeConfig *config;
+  config = malloc(sizeof(Protocol__PrpUeConfig));
+  if (config == NULL) {
+    goto error;
+  }
+  protocol__prp_ue_config__init(config);
+  if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_DEACTIVATED) {
+    // Simply set the rnti of the UE
+    config->has_rnti = 1;
+    config->rnti = rnti;
+  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED
+	     || state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED) {
+	  	  int i =find_UE_id(mod_id,rnti);
+     	  config->has_rnti = 1;
+          config->rnti = rnti;
+	  	  LOG_I(ENB_APP,"The value of i is %d\n",i);
+	  	  LOG_I(ENB_APP,"The value of rnto is %d\n",rnti);
+	  		//TODO: Set the time_alignment_timer
+	  	  if(get_time_alignment_timer(mod_id,i) != -1){
+	  		  config->time_alignment_timer = get_time_alignment_timer(mod_id,i);
+	  		  config->has_time_alignment_timer = 1;
+	  	  }
+	  	  //TODO: Set the measurement gap configuration pattern
+	  	  if(get_meas_gap_config(mod_id,i) != -1){
+	  		  config->meas_gap_config_pattern = get_meas_gap_config(mod_id,i);
+	  	  	  config->has_meas_gap_config_pattern = 1;
+	  	  }
+	  	  //TODO: Set the measurement gap offset if applicable
+	  	  if(get_meas_gap_config_offset(mod_id,i) != -1){
+	  		  config->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
+	  		  config->has_meas_gap_config_sf_offset = 1;
+	  	  }
+	  	  //TODO: Set the SPS configuration (Optional)
+	  	  //Not supported for noe, so we do not set it
+
+	  	  //TODO: Set the SR configuration (Optional)
+	  	  //We do not set it for now
+
+	  	  //TODO: Set the CQI configuration (Optional)
+	  	  //We do not set it for now
+
+	  	  //TODO: Set the transmission mode
+	  	  if(get_ue_transmission_mode(mod_id,i) != -1){
+	  		  config->transmission_mode = get_ue_transmission_mode(mod_id,i);
+	  		  config->has_transmission_mode = 1;
+	  	  }
+
+	  	  //TODO: Set the aggregated bit-rate of the non-gbr bearer (UL)
+	  	  config->ue_aggregated_max_bitrate_ul = get_ue_aggregated_max_bitrate_ul(mod_id,i);
+	  	  config->has_ue_aggregated_max_bitrate_ul = 1;
+
+	  	  //TODO: Set the aggregated bit-rate of the non-gbr bearer (DL)
+	  	  config->ue_aggregated_max_bitrate_dl = get_ue_aggregated_max_bitrate_dl(mod_id,i);
+	  	  config->has_ue_aggregated_max_bitrate_dl = 1;
+
+	  	  //TODO: Set the UE capabilities
+	  	  Protocol__PrpUeCapabilities *c_capabilities;
+	  	  c_capabilities = malloc(sizeof(Protocol__PrpUeCapabilities));
+	  	  protocol__prp_ue_capabilities__init(c_capabilities);
+	  	  //TODO: Set half duplex (FDD operation)
+	  	  c_capabilities->has_half_duplex = 1;
+	  	  c_capabilities->half_duplex = 1;//get_half_duplex(i);
+	  	  //TODO: Set intra-frame hopping flag
+	  	  c_capabilities->has_intra_sf_hopping = 1;
+	  	  c_capabilities->intra_sf_hopping = 1;//get_intra_sf_hopping(i);
+	  	  //TODO: Set support for type 2 hopping with n_sb > 1
+	  	  c_capabilities->has_type2_sb_1 = 1;
+	  	  c_capabilities->type2_sb_1 = 1;//get_type2_sb_1(i);
+	  	  //TODO: Set ue category
+	  	  c_capabilities->has_ue_category = 1;
+	  	  c_capabilities->ue_category = 1;//get_ue_category(i);
+	  	  //TODO: Set UE support for resource allocation type 1
+	  	  c_capabilities->has_res_alloc_type1 = 1;
+	  	  c_capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
+	  	  //Set the capabilites to the message
+	  	  config->capabilities = c_capabilities;
+	  	  //TODO: Set UE transmission antenna. One of the PRUTA_* values
+	  	  if(get_ue_transmission_antenna(mod_id,i) != -1){
+	  		  config->has_ue_transmission_antenna = 1;
+	  		  config->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
+	  	  }
+	  	  //TODO: Set tti bundling flag (See ts 36.321)
+	  	  if(get_tti_bundling(mod_id,i) != -1){
+	  		  config->has_tti_bundling = 1;
+	  		  config->tti_bundling = get_tti_bundling(mod_id,i);
+	  	  }
+	  	  //TODO: Set the max HARQ retransmission for the UL
+	  	  if(get_maxHARQ_TX(mod_id,i) != -1){
+	  		  config->has_max_harq_tx = 1;
+	  		  config->max_harq_tx = get_maxHARQ_TX(mod_id,i);
+	  	  }
+	  	  //TODO: Fill beta_offset_ack_index (TS 36.213)
+	  	  if(get_beta_offset_ack_index(mod_id,i) != -1){
+	  		  config->has_beta_offset_ack_index = 1;
+	  		  config->beta_offset_ack_index = get_beta_offset_ack_index(mod_id,i);
+	  	  }
+	  	  //TODO: Fill beta_offset_ri_index (TS 36.213)
+	  	  if(get_beta_offset_ri_index(mod_id,i) != -1){
+	  		  config->has_beta_offset_ri_index = 1;
+	  		  config->beta_offset_ri_index = get_beta_offset_ri_index(mod_id,i);
+	  	  }
+	  	  //TODO: Fill beta_offset_cqi_index (TS 36.213)
+	  	  if(get_beta_offset_cqi_index(mod_id,i) != -1){
+	  		  config->has_beta_offset_cqi_index = 1;
+	  		  config->beta_offset_cqi_index = get_beta_offset_cqi_index(mod_id,i);
+	  	  }
+	  	  //TODO: Fill ack_nack_simultaneous_trans (TS 36.213)
+	  	  if(get_ack_nack_simultaneous_trans(mod_id,i) != -1){
+	  		  config->has_ack_nack_simultaneous_trans = 1;
+	  		  config->ack_nack_simultaneous_trans = get_ack_nack_simultaneous_trans(mod_id,i);
+	  	  }
+	  	  //TODO: Fill simultaneous_ack_nack_cqi (TS 36.213)
+	  	  if(get_simultaneous_ack_nack_cqi(mod_id,i) != -1){
+	  		  config->has_simultaneous_ack_nack_cqi = 1;
+	  		  config->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
+	  	  }
+	  	  //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
+	  	  if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
+	  		  config->has_aperiodic_cqi_rep_mode = 1;
+	  		  config->aperiodic_cqi_rep_mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+	  	  }
+	  	  //TODO: Set tdd_ack_nack_feedback
+	  	  if(get_tdd_ack_nack_feedback != -1){
+	  		  config->has_tdd_ack_nack_feedback = 1;
+	  		  config->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
+	  	  }
+	  	  //TODO: Set ack_nack_repetition factor
+	  	  if(get_ack_nack_repetition_factor != -1){
+	  		  config->has_ack_nack_repetition_factor = 1;
+	  		  config->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
+	  	  }
+	  	  //TODO: Set extended BSR size
+	  	  if(get_extended_bsr_size != -1){
+	  		  config->has_extended_bsr_size = 1;
+	  		  config->extended_bsr_size = get_extended_bsr_size(mod_id,i);
+	  	  }
+	  	  //TODO: Set carrier aggregation support (boolean)
+	  	  config->has_ca_support = 0;
+	  	  config->ca_support = 0;
+	  	  if(config->has_ca_support){
+	  		  //TODO: Set cross carrier scheduling support (boolean)
+	  		  config->has_cross_carrier_sched_support = 1;
+	  		  config->cross_carrier_sched_support = 0;
+	  		  //TODO: Set index of primary cell
+	  		  config->has_pcell_carrier_index = 1;
+	  		  config->pcell_carrier_index = 1;
+	  		  //TODO: Set secondary cells configuration
+	  		  // We do not set it for now. No carrier aggregation support
+
+	  		  //TODO: Set deactivation timer for secondary cell
+	  		  config->has_scell_deactivation_timer = 1;
+	  		  config->scell_deactivation_timer = 1;
+	  	  }
+  } else if (state_change == PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_MOVED) {
+    // TODO: Not supported for now. Leave blank
+  }
+
+  ue_state_change_msg->config = config;
+  msg = malloc(sizeof(Protocol__ProgranMessage));
+  if (msg == NULL) {
+    goto error;
+  }
+  protocol__progran_message__init(msg);
+  msg->msg_case = PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG;
+  msg->msg_dir = PROTOCOL__PROGRAN_DIRECTION__INITIATING_MESSAGE;
+  msg->ue_state_change_msg = ue_state_change_msg;
+
+  data = enb_agent_pack_message(msg, &size);
+  /*Send sr info using the MAC channel of the eNB*/
+  if (enb_agent_msg_send(mod_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+    err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+    goto error;
+  }
+
+  LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+  return;
+ error:
+  LOG_D(ENB_AGENT, "Could not send UE state message\n");
+}
 
 /*
  * timer primitives
@@ -1225,14 +1534,20 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       //Not supported for now, so we do not set it
 
       //TODO: Set the time_alignment_timer
-      ue_config[i]->time_alignment_timer = get_time_alignment_timer(mod_id,i);
-      ue_config[i]->has_time_alignment_timer = 1;
+      if(get_time_alignment_timer(mod_id,i) != -1){
+    	  ue_config[i]->time_alignment_timer = get_time_alignment_timer(mod_id,i);
+    	  ue_config[i]->has_time_alignment_timer = 1;
+	  }
       //TODO: Set the measurement gap configuration pattern
-      ue_config[i]->meas_gap_config_pattern = get_meas_gap_config(mod_id,i);
-      ue_config[i]->has_meas_gap_config_pattern = 1;
+      if(get_meas_gap_config(mod_id,i) != -1){
+    	  ue_config[i]->meas_gap_config_pattern = get_meas_gap_config(mod_id,i);
+    	  ue_config[i]->has_meas_gap_config_pattern = 1;
+	  }
       //TODO: Set the measurement gap offset if applicable
-      ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
-      ue_config[i]->has_meas_gap_config_sf_offset = 1;
+      if(get_meas_gap_config_offset(mod_id,i) != -1){
+    	  ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
+    	  ue_config[i]->has_meas_gap_config_sf_offset = 1;
+	  }
       //TODO: Set the SPS configuration (Optional)
       //Not supported for noe, so we do not set it
 
@@ -1243,8 +1558,10 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       //We do not set it for now
 
       //TODO: Set the transmission mode
-      ue_config[i]->transmission_mode = get_ue_transmission_mode(mod_id,i);
-      ue_config[i]->has_transmission_mode = 1;
+      if(get_ue_transmission_mode(mod_id,i) != -1){
+    	  ue_config[i]->transmission_mode = get_ue_transmission_mode(mod_id,i);
+    	  ue_config[i]->has_transmission_mode = 1;
+	  }
 
       //TODO: Set the aggregated bit-rate of the non-gbr bearer (UL)
       ue_config[i]->ue_aggregated_max_bitrate_ul = get_ue_aggregated_max_bitrate_ul(mod_id,i);
@@ -1260,57 +1577,81 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       protocol__prp_ue_capabilities__init(capabilities);
       //TODO: Set half duplex (FDD operation)
       capabilities->has_half_duplex = 1;
-      capabilities->half_duplex = get_half_duplex(i);
+      capabilities->half_duplex = 1;//get_half_duplex(i);
       //TODO: Set intra-frame hopping flag
       capabilities->has_intra_sf_hopping = 1;
-      capabilities->intra_sf_hopping = get_intra_sf_hopping(i);
+      capabilities->intra_sf_hopping = 1;//get_intra_sf_hopping(i);
       //TODO: Set support for type 2 hopping with n_sb > 1
       capabilities->has_type2_sb_1 = 1;
-      capabilities->type2_sb_1 = get_type2_sb_1(i);
+      capabilities->type2_sb_1 = 1;//get_type2_sb_1(i);
       //TODO: Set ue category
       capabilities->has_ue_category = 1;
-      capabilities->ue_category = get_ue_category(i);
+      capabilities->ue_category = 1;//get_ue_category(i);
       //TODO: Set UE support for resource allocation type 1
       capabilities->has_res_alloc_type1 = 1;
-      capabilities->res_alloc_type1 = get_res_alloc_type1(i);
+      capabilities->res_alloc_type1 = 1;//get_res_alloc_type1(i);
       //Set the capabilites to the message
       ue_config[i]->capabilities = capabilities;
       //TODO: Set UE transmission antenna. One of the PRUTA_* values
-      ue_config[i]->has_ue_transmission_antenna = 1;
-      ue_config[i]->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
+      if(get_ue_transmission_antenna(mod_id,i) != -1){
+    	  ue_config[i]->has_ue_transmission_antenna = 1;
+    	  ue_config[i]->ue_transmission_antenna = get_ue_transmission_antenna(mod_id,i);
+	  }
       //TODO: Set tti bundling flag (See ts 36.321)
-      ue_config[i]->has_tti_bundling = 1;
-      ue_config[i]->tti_bundling = get_tti_bundling(mod_id,i);
+      if(get_tti_bundling(mod_id,i) != -1){
+    	  ue_config[i]->has_tti_bundling = 1;
+		  ue_config[i]->tti_bundling = get_tti_bundling(mod_id,i);
+	  }
       //TODO: Set the max HARQ retransmission for the UL
-      ue_config[i]->has_max_harq_tx = 1;
-      ue_config[i]->max_harq_tx = get_maxHARQ_TX(mod_id,i);
+      if(get_maxHARQ_TX(mod_id,i) != -1){
+    	  ue_config[i]->has_max_harq_tx = 1;
+    	  ue_config[i]->max_harq_tx = get_maxHARQ_TX(mod_id,i);
+	  }
       //TODO: Fill beta_offset_ack_index (TS 36.213)
-      ue_config[i]->has_beta_offset_ack_index = 1;
-      ue_config[i]->beta_offset_ack_index = get_beta_offset_ack_index(mod_id,i);
+      if(get_beta_offset_ack_index(mod_id,i) != -1){
+    	  ue_config[i]->has_beta_offset_ack_index = 1;
+    	  ue_config[i]->beta_offset_ack_index = get_beta_offset_ack_index(mod_id,i);
+	  }
       //TODO: Fill beta_offset_ri_index (TS 36.213)
-      ue_config[i]->has_beta_offset_ri_index = 1;
-      ue_config[i]->beta_offset_ri_index = get_beta_offset_ri_index(mod_id,i);
+      if(get_beta_offset_ri_index(mod_id,i) != -1){
+    	  ue_config[i]->has_beta_offset_ri_index = 1;
+    	  ue_config[i]->beta_offset_ri_index = get_beta_offset_ri_index(mod_id,i);
+	  }
       //TODO: Fill beta_offset_cqi_index (TS 36.213)
-      ue_config[i]->has_beta_offset_cqi_index = 1;
-      ue_config[i]->beta_offset_cqi_index = get_beta_offset_cqi_index(mod_id,i);
+      if(get_beta_offset_cqi_index(mod_id,i) != -1){
+    	  ue_config[i]->has_beta_offset_cqi_index = 1;
+    	  ue_config[i]->beta_offset_cqi_index = get_beta_offset_cqi_index(mod_id,i);
+	  }
       //TODO: Fill ack_nack_simultaneous_trans (TS 36.213)
-      ue_config[i]->has_ack_nack_simultaneous_trans = 1;
-      ue_config[i]->ack_nack_simultaneous_trans = get_ack_nack_simultaneous_trans(mod_id,i);
+      if(get_ack_nack_simultaneous_trans(mod_id,i) != -1){
+    	  ue_config[i]->has_ack_nack_simultaneous_trans = 1;
+    	  ue_config[i]->ack_nack_simultaneous_trans = get_ack_nack_simultaneous_trans(mod_id,i);
+	  }
       //TODO: Fill simultaneous_ack_nack_cqi (TS 36.213)
-      ue_config[i]->has_simultaneous_ack_nack_cqi = 1;
-      ue_config[i]->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
+      if(get_simultaneous_ack_nack_cqi(mod_id,i) != -1){
+    	  ue_config[i]->has_simultaneous_ack_nack_cqi = 1;
+    	  ue_config[i]->simultaneous_ack_nack_cqi = get_simultaneous_ack_nack_cqi(mod_id,i);
+	  }
       //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
-      ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
-      ue_config[i]->aperiodic_cqi_rep_mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+      if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
+    	  ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
+    	  ue_config[i]->aperiodic_cqi_rep_mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+	  }
       //TODO: Set tdd_ack_nack_feedback
-      ue_config[i]->has_tdd_ack_nack_feedback = 1;
-      ue_config[i]->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
+      if(get_tdd_ack_nack_feedback != -1){
+    	  ue_config[i]->has_tdd_ack_nack_feedback = 1;
+		  ue_config[i]->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
+	  }
       //TODO: Set ack_nack_repetition factor
-      ue_config[i]->has_ack_nack_repetition_factor = 1;
-      ue_config[i]->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
+      if(get_ack_nack_repetition_factor != -1){
+    	  ue_config[i]->has_ack_nack_repetition_factor = 1;
+    	  ue_config[i]->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
+	  }
       //TODO: Set extended BSR size
-      ue_config[i]->has_extended_bsr_size = 1;
-      ue_config[i]->extended_bsr_size = get_extended_bsr_size(mod_id,i);
+      if(get_extended_bsr_size != -1){
+    	  ue_config[i]->has_extended_bsr_size = 1;
+		  ue_config[i]->extended_bsr_size = get_extended_bsr_size(mod_id,i);
+	  }
       //TODO: Set carrier aggregation support (boolean)
       ue_config[i]->has_ca_support = 0;
       ue_config[i]->ca_support = 0;
@@ -1843,3 +2184,4 @@ err_code_t enb_agent_restart_timer(uint32_t *timer_id){
 }
 
 */
+
