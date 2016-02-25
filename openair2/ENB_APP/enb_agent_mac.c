@@ -1041,10 +1041,12 @@ int enb_agent_mac_destroy_sf_trigger(Protocol__ProgranMessage *msg) {
   free(msg->sf_trigger_msg->header);
   for (i = 0; i < msg->sf_trigger_msg->n_dl_info; i++) {
     free(msg->sf_trigger_msg->dl_info[i]->harq_status);
+    free(msg->sf_trigger_msg->dl_info[i]);
   }
   free(msg->sf_trigger_msg->dl_info);
   for (i = 0; i < msg->sf_trigger_msg->n_ul_info; i++) {
-    free(msg->sf_trigger_msg->ul_info[i]->reception_status);
+    free(msg->sf_trigger_msg->ul_info[i]->ul_reception);
+    free(msg->sf_trigger_msg->ul_info[i]);
   }
   free(msg->sf_trigger_msg->ul_info);
   free(msg->sf_trigger_msg);
@@ -1143,6 +1145,8 @@ int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
     free(msg->dl_mac_config_msg->ofdm_sym[i]);
   }
   free(msg->dl_mac_config_msg->ofdm_sym);
+  free(msg->dl_mac_config_msg);
+  free(msg);
 
   return 0;
 
