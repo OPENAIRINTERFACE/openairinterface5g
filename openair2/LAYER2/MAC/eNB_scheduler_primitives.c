@@ -991,13 +991,11 @@ int allocate_CCEs(int module_idP,
   int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
 
-
   LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
 
-  init_CCE_table(module_idP,CC_idP);
-  DCI_pdu->nCCE=0;
-
   while (allocation_is_feasible == 1) {
+    init_CCE_table(module_idP,CC_idP);
+    DCI_pdu->nCCE=0;
 
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
       dci_alloc = &DCI_pdu->dci_alloc[i];
