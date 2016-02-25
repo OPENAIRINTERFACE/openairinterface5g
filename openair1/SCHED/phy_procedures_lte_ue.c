@@ -2676,18 +2676,19 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
           if (ret == (1+phy_vars_ue->dlsch_ue[eNB_id][0]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_errors[eNB_id]++;
 
-	    //#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
                   harq_pid,frame_rx,subframe_prev,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
-
-            //      if (abstraction_flag ==0 )
-            dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
+/*
+            if (abstraction_flag ==0 )
+              dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
             mac_xface->macphy_exit("");
-	    //#endif
+*/
+#endif
           } else {
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d (slot_rx %d): Received DLSCH (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
