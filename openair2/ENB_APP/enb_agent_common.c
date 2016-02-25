@@ -852,43 +852,46 @@ int get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_meas_gap_config(mid_t mod_id, mid_t ue_id)
-{
-	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+int get_meas_gap_config(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
-	LOG_I(ENB_APP,"The value of rntiP is %d\n",rntiP);
-	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
-	if(ue_context_p != NULL)
-	{
-		if(ue_context_p->ue_context.measGapConfig != NULL){
-			if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_NOTHING)
-				return 2;
-			else if (ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_release)
-				return 0;
-			else if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_setup)
-				return 1;
-		}
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measGapConfig != NULL){
+      if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_setup) {
+	if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0) {
+	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_GP1;
+	} else if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1) {
+	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_GP2;
+	} else {
+	  return PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF;
 	}
-	else
-		return -1;
+      }
+    }
+  }
+  return -1;
 }
 
-int get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
-{
-	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
-	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
-
-	if(ue_context_p != NULL)
-	{
-		if(ue_context_p->ue_context.measGapConfig != NULL){
-			return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present;
-		}
-	}
-	else
-		return -1;
+int get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.measGapConfig != NULL){
+      if(ue_context_p->ue_context.measGapConfig->present == MeasGapConfig_PR_setup) {
+	if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0) {
+	  return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.choice.gp0;
+	} else if (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp1) {
+	  return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.choice.gp0;
+	} 
+      }
+    }
+  }
+  return -1;
 }
 
 int get_ue_aggregated_max_bitrate_dl (mid_t mod_id, mid_t ue_id)
@@ -974,20 +977,17 @@ int get_tti_bundling(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_maxHARQ_TX(mid_t mod_id, mid_t ue_id)
-{
-	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
-
-	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
-	if(ue_context_p != NULL)
-	{
-		if(ue_context_p->ue_context.mac_MainConfig != NULL){
-			return ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
-		}
-	}
-	else
-		return -1;
+int get_maxHARQ_TX(mid_t mod_id, mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.mac_MainConfig != NULL){
+      return *ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+    }
+  }
+  return -1;
 }
 
 int get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
@@ -1059,21 +1059,18 @@ int get_ack_nack_simultaneous_trans(mid_t mod_id,mid_t ue_id)
 	return (&eNB_rrc_inst[mod_id])->carrier[0].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
-int get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
-{
-	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
-
-	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
-
-	if(ue_context_p != NULL)
-	{
-		if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
-			return ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
-		}
-	}
-	else
-		return -1;
+int get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id) {
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+  
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.physicalConfigDedicated != NULL){
+      return *ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+    }
+  }
+  return -1;
 }
 
 int get_tdd_ack_nack_feedback(mid_t mod_id, mid_t ue_id)
@@ -1109,22 +1106,23 @@ int get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
 		return -1;
 }
 
-int get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
-{
-	//TODO: need to double check
-	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
+int get_extended_bsr_size(mid_t mod_id, mid_t ue_id) {
+  //TODO: need to double check
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
-	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
-	if(ue_context_p != NULL)
-	{
-		if(ue_context_p->ue_context.mac_MainConfig != NULL){
-			if(ue_context_p->ue_context.mac_MainConfig->ext2 != NULL){
-				return ue_context_p->ue_context.mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10;
-			}
-		}
+  ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
+  if(ue_context_p != NULL) {
+    if(ue_context_p->ue_context.mac_MainConfig != NULL){
+      if(ue_context_p->ue_context.mac_MainConfig->ext2 != NULL){
+	long val = (*(ue_context_p->ue_context.mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10));
+	if (val > 0) {
+	  return 1;
 	}
-	return -1;
+      }
+    }
+  }
+  return -1;
 }
 
 int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
@@ -1217,9 +1215,10 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  	  config->has_meas_gap_config_pattern = 1;
 	  	  }
 	  	  //TODO: Set the measurement gap offset if applicable
-	  	  if(get_meas_gap_config_offset(mod_id,i) != -1){
-	  		  config->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
-	  		  config->has_meas_gap_config_sf_offset = 1;
+	  	  if(config->has_meas_gap_config_pattern == 1 &&
+		     config->meas_gap_config_pattern != PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF) {
+		    config->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
+		    config->has_meas_gap_config_sf_offset = 1;
 	  	  }
 	  	  //TODO: Set the SPS configuration (Optional)
 	  	  //Not supported for noe, so we do not set it
@@ -1308,20 +1307,25 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
 	  	  if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
 	  		  config->has_aperiodic_cqi_rep_mode = 1;
-	  		  config->aperiodic_cqi_rep_mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+			  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+			  if (mode > 4) {
+			    config->aperiodic_cqi_rep_mode = PROTOCOL__PRP_APERIODIC_CQI_REPORT_MODE__PRACRM_NONE;
+			      } else {
+			    config->aperiodic_cqi_rep_mode = mode;
+			  }
 	  	  }
 	  	  //TODO: Set tdd_ack_nack_feedback
-	  	  if(get_tdd_ack_nack_feedback != -1){
+	  	  if(get_tdd_ack_nack_feedback(mod_id, i) != -1){
 	  		  config->has_tdd_ack_nack_feedback = 1;
 	  		  config->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
 	  	  }
 	  	  //TODO: Set ack_nack_repetition factor
-	  	  if(get_ack_nack_repetition_factor != -1){
+	  	  if(get_ack_nack_repetition_factor(mod_id, i) != -1){
 	  		  config->has_ack_nack_repetition_factor = 1;
 	  		  config->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
 	  	  }
 	  	  //TODO: Set extended BSR size
-	  	  if(get_extended_bsr_size != -1){
+	  	  if(get_extended_bsr_size(mod_id, i) != -1){
 	  		  config->has_extended_bsr_size = 1;
 	  		  config->extended_bsr_size = get_extended_bsr_size(mod_id,i);
 	  	  }
@@ -1544,10 +1548,11 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
     	  ue_config[i]->has_meas_gap_config_pattern = 1;
 	  }
       //TODO: Set the measurement gap offset if applicable
-      if(get_meas_gap_config_offset(mod_id,i) != -1){
-    	  ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
-    	  ue_config[i]->has_meas_gap_config_sf_offset = 1;
-	  }
+      if(ue_config[i]->has_meas_gap_config_pattern == 1 &&
+	 ue_config[i]->meas_gap_config_pattern != PROTOCOL__PRP_MEAS_GAP_CONFIG_PATTERN__PRMGCP_OFF) {
+	ue_config[i]->meas_gap_config_sf_offset = get_meas_gap_config_offset(mod_id,i);
+	ue_config[i]->has_meas_gap_config_sf_offset = 1;
+      }
       //TODO: Set the SPS configuration (Optional)
       //Not supported for noe, so we do not set it
 
@@ -1635,39 +1640,44 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       //TODO: Set PRACRM_* value regarding aperiodic cqi report mode
       if(get_aperiodic_cqi_rep_mode(mod_id,i) != -1){
     	  ue_config[i]->has_aperiodic_cqi_rep_mode = 1;
-    	  ue_config[i]->aperiodic_cqi_rep_mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+	  int mode = get_aperiodic_cqi_rep_mode(mod_id,i);
+	  if (mode > 4) {
+	    ue_config[i]->aperiodic_cqi_rep_mode = PROTOCOL__PRP_APERIODIC_CQI_REPORT_MODE__PRACRM_NONE;
+	  } else {
+	    ue_config[i]->aperiodic_cqi_rep_mode = mode;
 	  }
+      }
       //TODO: Set tdd_ack_nack_feedback
-      if(get_tdd_ack_nack_feedback != -1){
-    	  ue_config[i]->has_tdd_ack_nack_feedback = 1;
-		  ue_config[i]->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
-	  }
+      if(get_tdd_ack_nack_feedback(mod_id, i) != -1){
+	ue_config[i]->has_tdd_ack_nack_feedback = 1;
+	ue_config[i]->tdd_ack_nack_feedback = get_tdd_ack_nack_feedback(mod_id,i);
+      }
       //TODO: Set ack_nack_repetition factor
-      if(get_ack_nack_repetition_factor != -1){
-    	  ue_config[i]->has_ack_nack_repetition_factor = 1;
-    	  ue_config[i]->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
-	  }
+      if(get_ack_nack_repetition_factor(mod_id, i) != -1){
+	ue_config[i]->has_ack_nack_repetition_factor = 1;
+	ue_config[i]->ack_nack_repetition_factor = get_ack_nack_repetition_factor(mod_id,i);
+      }
       //TODO: Set extended BSR size
-      if(get_extended_bsr_size != -1){
-    	  ue_config[i]->has_extended_bsr_size = 1;
-		  ue_config[i]->extended_bsr_size = get_extended_bsr_size(mod_id,i);
-	  }
+      if(get_extended_bsr_size(mod_id, i) != -1){
+	ue_config[i]->has_extended_bsr_size = 1;
+	ue_config[i]->extended_bsr_size = get_extended_bsr_size(mod_id,i);
+      }
       //TODO: Set carrier aggregation support (boolean)
       ue_config[i]->has_ca_support = 0;
       ue_config[i]->ca_support = 0;
       if(ue_config[i]->has_ca_support){
-		  //TODO: Set cross carrier scheduling support (boolean)
-		  ue_config[i]->has_cross_carrier_sched_support = 1;
-		  ue_config[i]->cross_carrier_sched_support = 0;
-		  //TODO: Set index of primary cell
-		  ue_config[i]->has_pcell_carrier_index = 1;
-		  ue_config[i]->pcell_carrier_index = 1;
-		  //TODO: Set secondary cells configuration
-		  // We do not set it for now. No carrier aggregation support
-
-		  //TODO: Set deactivation timer for secondary cell
-		  ue_config[i]->has_scell_deactivation_timer = 1;
-		  ue_config[i]->scell_deactivation_timer = 1;
+	//TODO: Set cross carrier scheduling support (boolean)
+	ue_config[i]->has_cross_carrier_sched_support = 1;
+	ue_config[i]->cross_carrier_sched_support = 0;
+	//TODO: Set index of primary cell
+	ue_config[i]->has_pcell_carrier_index = 1;
+	ue_config[i]->pcell_carrier_index = 1;
+	//TODO: Set secondary cells configuration
+	// We do not set it for now. No carrier aggregation support
+	
+	//TODO: Set deactivation timer for secondary cell
+	ue_config[i]->has_scell_deactivation_timer = 1;
+	ue_config[i]->scell_deactivation_timer = 1;
       }
     }
     ue_config_reply_msg->ue_config = ue_config;
