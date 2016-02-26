@@ -55,7 +55,7 @@ enb_agent_message_decoded_callback agent_messages_callback[][3] = {
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
   {enb_agent_lc_config_reply, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
-  {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
+  {enb_agent_mac_handle_dl_mac_config, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
   {enb_agent_control_delegation, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
 
@@ -116,10 +116,9 @@ Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id,
   err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
+  } else if (err_code == 1) { //If err_code > 1, we do not want to dispose the message yet
+    protocol__progran_message__free_unpacked(decoded_message, NULL);
   }
-  
-  protocol__progran_message__free_unpacked(decoded_message, NULL);
-
   return reply_message;
   
 error:

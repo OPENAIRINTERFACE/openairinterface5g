@@ -76,6 +76,9 @@ typedef struct stats_request_config_s{
   report_config_t *config;
 } stats_request_config_t;
 
+/* Initialization function for the agent structures etc */
+void enb_agent_init_mac_agent(mid_t mod_id);
+
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 
 int enb_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__ProgranMessage **msg);
@@ -98,6 +101,8 @@ int enb_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__ProgranMessage 
 
 int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg);
 
+int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+
 
 /**********************************
  * eNB agent - technology mac API
@@ -112,6 +117,9 @@ void enb_agent_send_sf_trigger(mid_t mod_id);
 /// Send to the controller all the mac stat updates that occured during this subframe
 /// based on the stats request configuration
 void enb_agent_send_update_mac_stats(mid_t mod_id);
+
+/// Provide to the scheduler a pending dl_mac_config message
+void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__ProgranMessage **msg);
 
 /*Register technology specific interface callbacks*/
 int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);

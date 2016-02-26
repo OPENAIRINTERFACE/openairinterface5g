@@ -1099,7 +1099,8 @@ set (MAC_SRC
   ${MAC_DIR}/config.c
   ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue.c
   ${MAC_DIR}/eNB_agent_scheduler_dataplane.c
-  )
+  ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_remote.c
+ )
 
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
@@ -1113,7 +1114,7 @@ add_library(L2
   ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 #Test for adding a shared library
-add_library(alt_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_alt.c)
+#add_library(alt_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_alt.c)
 
 # L3 Libs
 ##########################

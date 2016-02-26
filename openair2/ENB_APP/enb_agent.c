@@ -276,6 +276,11 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
    */ 
   
   enb_agent_init_timer();
+
+  /*
+   * Initialize the mac agent
+   */
+  enb_agent_init_mac_agent(mod_id);
   
   /* 
    * start the enb agent task for tx and interaction with the underlying network function

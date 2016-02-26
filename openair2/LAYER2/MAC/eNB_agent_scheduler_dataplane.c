@@ -69,7 +69,7 @@ void apply_dl_scheduling_decisions(mid_t mod_id,
 				   uint32_t frame,
 				   uint32_t subframe,
 				   int *mbsfn_flag,
-				   Protocol__ProgranMessage *dl_scheduling_info) {
+				   const Protocol__ProgranMessage *dl_scheduling_info) {
 
   Protocol__PrpDlMacConfig *mac_config = dl_scheduling_info->dl_mac_config_msg;
 

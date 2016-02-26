@@ -42,6 +42,8 @@
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/enb_agent_mac_proto.h"
 
+#include "liblfds700.h"
+
 #include "log.h"
 
 
@@ -50,6 +52,13 @@ unsigned int mac_agent_registered[NUM_MAX_ENB];
 
 /*Array containing the Agent-MAC interfaces*/
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
+
+/* Ringbuffer related structs used for maintaining the dl mac config messages */
+//message_queue_t *dl_mac_config_queue;
+struct lfds700_misc_prng_state ps[NUM_MAX_ENB];
+struct lfds700_ringbuffer_element *dl_mac_config_array[NUM_MAX_ENB];
+struct lfds700_ringbuffer_state ringbuffer_state[NUM_MAX_ENB];
+
 
 int enb_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg){
 
@@ -1154,6 +1163,56 @@ int enb_agent_mac_destroy_dl_config(Protocol__ProgranMessage *msg) {
   return -1;
 }
 
+void enb_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__ProgranMessage **msg) {
+
+  struct lfds700_misc_prng_state ls;
+  
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+  
+  if (lfds700_ringbuffer_read(&ringbuffer_state[mod_id], NULL, (void **) msg, &ls) == 0) {
+    *msg = NULL;
+  }
+}
+
+int enb_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+
+  struct lfds700_misc_prng_state ls;
+  enum lfds700_misc_flag overwrite_occurred_flag;
+  Protocol__ProgranMessage *overwritten_dl_config;
+   
+  LFDS700_MISC_MAKE_VALID_ON_CURRENT_LOGICAL_CORE_INITS_COMPLETED_BEFORE_NOW_ON_ANY_OTHER_LOGICAL_CORE;
+  lfds700_misc_prng_init(&ls);
+  
+  lfds700_ringbuffer_write( &ringbuffer_state[mod_id],
+			    NULL,
+			    (void *) params,
+			    &overwrite_occurred_flag,
+			    NULL,
+			    (void **)&overwritten_dl_config,
+			    &ls);
+
+  if (overwrite_occurred_flag == LFDS700_MISC_FLAG_RAISED) {
+    // Delete unmanaged dl_config
+    enb_agent_mac_destroy_dl_config(overwritten_dl_config);
+  }
+  *msg = NULL;
+  return 2;
+
+ error:
+  *msg = NULL;
+  return -1;
+}
+
+void enb_agent_init_mac_agent(mid_t mod_id) {
+  lfds700_misc_library_init_valid_on_current_logical_core();
+  lfds700_misc_prng_init(&ps[mod_id]);
+  int num_elements = RINGBUFFER_SIZE + 1;
+  //Allow RINGBUFFER_SIZE messages to be stored in the ringbuffer at any time
+  dl_mac_config_array[mod_id] = malloc( sizeof(struct lfds700_ringbuffer_element) *  num_elements);
+  lfds700_ringbuffer_init_valid_on_current_logical_core( &ringbuffer_state[mod_id], dl_mac_config_array[mod_id], num_elements, &ps[mod_id], NULL );
+}
+
 /***********************************************
  * eNB agent - technology mac API implementation
  ***********************************************/
@@ -1284,6 +1343,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
   xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
+  xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
 
   mac_agent_registered[mod_id] = 1;
@@ -1299,6 +1359,8 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sf_trigger = NULL;
   xface->enb_agent_send_update_mac_stats = NULL;
   xface->enb_agent_schedule_ue_spec = NULL;
+  xface->enb_agent_get_pending_dl_mac_config = NULL;
+  xface->enb_agent_notify_ue_state_change = NULL;
 
   mac_agent_registered[mod_id] = 0;
   agent_mac_xface[mod_id] = NULL;

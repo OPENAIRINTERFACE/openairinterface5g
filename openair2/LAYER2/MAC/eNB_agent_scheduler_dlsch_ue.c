@@ -64,6 +64,7 @@
 
 #include "header.pb-c.h"
 #include "progran.pb-c.h"
+#include "enb_agent_mac.h"
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
@@ -80,7 +81,7 @@ schedule_ue_spec_default(
   uint32_t      frame,
   uint32_t      subframe,
   int           *mbsfn_flag,
-  Protocol__ProgranMessage *dl_info
+  Protocol__ProgranMessage **dl_info
 )
 //------------------------------------------------------------------------------
 {
@@ -126,11 +127,12 @@ schedule_ue_spec_default(
   uint8_t ue_has_transmission = 0;
   uint32_t ndi;
   
-
+  enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
+  
   if (UE_list->head==-1) {
     return;
   }
-
+  
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
@@ -763,10 +765,10 @@ schedule_ue_spec_default(
    } // CC_id loop
 
    // Add all the dl_data elements to the progran message
-   dl_info->dl_mac_config_msg->n_dl_ue_data = num_ues_added;
-   dl_info->dl_mac_config_msg->dl_ue_data = (Protocol__PrpDlData **) malloc(sizeof(Protocol__PrpDlData *) * num_ues_added);
+   (*dl_info)->dl_mac_config_msg->n_dl_ue_data = num_ues_added;
+   (*dl_info)->dl_mac_config_msg->dl_ue_data = (Protocol__PrpDlData **) malloc(sizeof(Protocol__PrpDlData *) * num_ues_added);
    for (i = 0; i < num_ues_added; i++) {
-     dl_info->dl_mac_config_msg->dl_ue_data[i] = dl_data[i];
+     (*dl_info)->dl_mac_config_msg->dl_ue_data[i] = dl_data[i];
    }
    
    stop_meas(&eNB->schedule_dlsch);

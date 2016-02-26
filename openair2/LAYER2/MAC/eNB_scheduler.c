@@ -281,13 +281,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
     fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
     if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -330,13 +329,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -361,13 +359,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -398,13 +395,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -427,13 +423,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -471,13 +466,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -502,13 +496,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP, frameP, subframeP,   mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -539,13 +532,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -567,13 +559,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -620,13 +611,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -645,13 +635,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -673,13 +662,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -707,13 +695,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -731,13 +718,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -759,13 +745,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -798,13 +783,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -826,13 +810,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -859,13 +842,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -885,13 +867,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -911,13 +892,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -937,13 +917,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
         fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
 	if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
 				     frameP,
@@ -965,19 +944,18 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
       fill_DLSCH_dci(module_idP,frameP,subframeP,mbsfn_status);
 #else
       if (mac_agent_registered[module_idP]) {                                  
-	  enb_agent_mac_create_empty_dl_config(module_idP, &msg);
 	  agent_mac_xface[module_idP]->enb_agent_schedule_ue_spec(
                                                                 module_idP,
                                                                 frameP,                  
                                                                 subframeP,
                                                                 mbsfn_status,
-                                                                msg);
+                                                                &msg);
 	  
 	  apply_dl_scheduling_decisions(module_idP,
-				     frameP,
-				     subframeP,
-				     mbsfn_status,
-				     msg);
+					frameP,
+					subframeP,
+					mbsfn_status,
+					msg);
 	  enb_agent_mac_destroy_dl_config(msg);
       }
 #endif
