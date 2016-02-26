@@ -734,11 +734,11 @@ void generate_RIV_tables()
       if (nVRB<32)
         alloc0 |= (1<<nVRB);
       else if (nVRB<64)
-        alloc1 |= (1<<(nVRB-33));
+        alloc1 |= (1<<(nVRB-32));
       else if (nVRB<96)
-        alloc2 |= (1<<(nVRB-65));
+        alloc2 |= (1<<(nVRB-64));
       else
-        alloc3 |= (1<<(nVRB-97));
+        alloc3 |= (1<<(nVRB-96));
 
       // Distributed Gap1, even slot
       nVRB_even_dist = get_prb(100,0,nVRB,0);
@@ -770,9 +770,9 @@ void generate_RIV_tables()
       else if (nVRB_odd_dist<64)
         allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
       else if (nVRB_odd_dist<96)
-	allocdist2_0_odd |= (1<<(nVRB_odd_dist-65));
+	allocdist2_0_odd |= (1<<(nVRB_odd_dist-64));
       else
-	allocdist3_0_odd |= (1<<(nVRB_odd_dist-97));
+	allocdist3_0_odd |= (1<<(nVRB_odd_dist-96));
 
 
       // Distributed Gap2, even slot
