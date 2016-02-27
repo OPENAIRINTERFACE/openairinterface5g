@@ -99,6 +99,8 @@
 
 #include "SIMULATION/TOOLS/defs.h" // for taus
 
+#include "enb_agent_extern.h"
+
 //#define XER_PRINT
 
 #ifdef PHY_EMUL
@@ -4011,6 +4013,12 @@ rrc_eNB_decode_dcch(
         LOG_I(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED \n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	if (mac_agent_registered[ctxt_pP->eNB_index]) {
+	  agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->eNB_index,
+										ue_context_p->ue_id_rnti,
+										PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED);
+	}
       }
 
 #if defined(ENABLE_USE_MME)
@@ -4095,6 +4103,12 @@ rrc_eNB_decode_dcch(
           ue_context_p->ue_context.Status = RRC_CONNECTED;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
+	  if (mac_agent_registered[ctxt_pP->eNB_index]) {
+	    agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->eNB_index,
+										  ue_context_p->ue_id_rnti,
+										  PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED);
+	  }
         }
       }
 

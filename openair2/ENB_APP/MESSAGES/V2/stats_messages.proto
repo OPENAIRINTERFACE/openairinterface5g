@@ -1,0 +1,86 @@
+package protocol;
+
+//import "header.proto";
+import "stats_common.proto";
+
+//
+// Bodies of statistics report requests
+//
+
+message prp_complete_stats_request {
+	optional prp_stats_report_freq report_frequency = 1;
+	optional uint32 sf = 2;
+	optional uint32 cell_report_flags = 3;
+	optional uint32 ue_report_flags = 4;
+}
+
+message prp_cell_stats_request {
+	repeated uint32 cell = 1;
+	optional uint32 flags = 2;
+}
+
+message prp_ue_stats_request {
+	repeated uint32 rnti = 1;
+	optional uint32 flags = 2;
+}
+
+//
+// Bodies of statistics reports
+//
+
+// The full statistics report for a specific cell
+message prp_cell_stats_report {
+	optional uint32 carrier_index = 1;
+	optional uint32 flags = 2;
+	optional prp_noise_interference_report noise_inter_report = 3;
+}
+
+// Statistics report for a specific UE
+message prp_ue_stats_report {
+	optional uint32 rnti = 1;
+	optional uint32 flags = 2;
+	repeated uint32 bsr = 3;
+	optional uint32 phr = 4;
+	repeated prp_rlc_bsr rlc_report = 5;
+	optional uint32 pending_mac_ces = 6;
+	optional prp_dl_cqi_report dl_cqi_report = 7;
+	optional prp_paging_buffer_report pbr = 8;
+	optional prp_ul_cqi_report ul_cqi_report = 9;
+}
+
+//
+// Types of statistics related enums
+//
+
+
+//Types of statistics requested by the controller
+enum prp_stats_type {
+     PRST_COMPLETE_STATS = 0;
+     PRST_CELL_STATS = 1;
+     PRST_UE_STATS = 2;
+}
+
+// Report frequency for the requested statistics
+enum prp_stats_report_freq {
+     PRSRF_ONCE = 0;
+     PRSRF_PERIODICAL = 1;
+     PRSRF_CONTINUOUS = 2;
+     PRSRF_OFF = 3;
+}
+
+// Flags for cell statistics
+enum prp_cell_stats_type {
+     PRCST_NOISE_INTERFERENCE = 1;
+}
+
+// Flags for UE-related statistics
+enum prp_ue_stats_type {
+     PRUST_BSR = 1;
+     PRUST_PRH = 2;
+     PRUST_RLC_BS = 4;
+     PRUST_MAC_CE_BS = 8;
+     PRUST_DL_CQI = 16;
+     PRUST_PBS = 32;
+     PRUST_UL_CQI = 64;
+     // To be extended with more types of stats
+}

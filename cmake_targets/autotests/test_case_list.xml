@@ -81,7 +81,8 @@
      <compile_prog_args>--eNB -w USRP -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_usrpdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -122,7 +123,8 @@
      <compile_prog_args>--eNB -w BLADERF -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_bladerfdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -138,10 +140,11 @@
      <desc>Build lte_softmodem_noS1.ETHERNET.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--eNB -w ETHERNET -r Rel10 --noS1  -c </compile_prog_args>
+     <compile_prog_args>--eNB -w None -t ETHERNET -r Rel10 --noS1  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
                        $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
-                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -160,7 +163,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w USRP -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_usrpdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -197,7 +201,8 @@
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--eNB -w BLADERF -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_bladerfdevif.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -213,8 +218,9 @@
      <desc>Build lte_softmodem.ETHERNET.Rel10</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--eNB -w ETHERNET -r Rel10   -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</compile_prog_out>
+     <compile_prog_args>--eNB -w None -t ETHERNET -r Rel10   -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -261,11 +267,13 @@
 
      <testCase id="010140" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build RRH Gateway for USRP(RF) + Ethernet (Transport)</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w USRP  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <compile_prog_args>--RRH -w USRP -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_usrpdevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -278,14 +286,16 @@
 
      <testCase id="010141" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build RRH Gateway for EXMIMO(RF) + Ethernet (Transport)</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w EXMIMO  -c </compile_prog_args>
+     <compile_prog_args>--RRH -w EXMIMO -t ETHNERNET  -c </compile_prog_args>
      <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/CMakeFiles/openair_rf/openair_rf.ko
                        $OPENAIR_DIR/cmake_targets/rrh_gw/build/updatefw
-                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct</compile_prog_out>
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/oarf_config_exmimo.oct
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_exmimodevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -301,8 +311,10 @@
      <desc>Build RRH Gateway</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
-     <compile_prog_args>--RRH -w BLADERF  -c </compile_prog_args>
-     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw</compile_prog_out>
+     <compile_prog_args>--RRH -w BLADERF -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_bladerfdevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
      <pre_exec></pre_exec>
      <pre_exec_args></pre_exec_args>
      <main_exec></main_exec>
@@ -4622,7 +4634,7 @@
   <testCase id="016500" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -4639,17 +4651,17 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
@@ -4698,7 +4710,7 @@
   <testCase id="016501" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -4715,23 +4727,23 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower      -32
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4773,7 +4785,7 @@
   <testCase id="016502" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -4790,23 +4802,23 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower       -35
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4848,7 +4860,7 @@
   <testCase id="016503" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -4865,23 +4877,23 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower       -29
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4922,7 +4934,7 @@
   <testCase id="016504" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -4939,23 +4951,23 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower       -32
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4996,7 +5008,7 @@
   <testCase id="016505" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>mozart</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -5013,23 +5025,23 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower       -35
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
     <eNB_pre_exec>sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
-    <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
+    <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
     <eNB_traffic_exec></eNB_traffic_exec>
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>

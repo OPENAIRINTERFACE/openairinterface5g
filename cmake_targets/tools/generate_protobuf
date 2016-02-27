@@ -1,0 +1,19 @@
+#!/bin/bash
+
+function main()
+{
+mkdir -p $1
+
+#echo generate protobuf messages inside $1 $2
+
+c_out=$1
+shift
+proto_path=$1
+shift
+
+protoc-c  --c_out=$c_out --proto_path=$proto_path $*
+#protoc    --cpp_out=$c_out --proto_path=$proto_path $*
+
+}
+
+main "$@"

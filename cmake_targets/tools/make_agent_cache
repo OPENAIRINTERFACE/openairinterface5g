@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+CACHE_DIR=/mnt/oai_agent_cache
+
+if [ ! -d $CACHE_DIR ]; then
+    echo "Creating cache dir in $CACHE_DIR"
+    sudo mkdir $CACHE_DIR
+fi
+
+if grep -qs "$CACHE_DIR" /proc/mounts; then
+    echo "Agent cache is already mounted"
+else
+    echo "Agent cache was not mounted"
+    echo "Mounting..."
+    sudo mount -o size=100m -t tmpfs none "$CACHE_DIR"
+    if [ $? -eq 0 ]; then
+	echo "Mount success"
+    else
+	echo "Something went wrong with the mount"
+    fi
+fi

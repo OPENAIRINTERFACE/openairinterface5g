@@ -148,7 +148,7 @@ void *rrh_proc_UE_thread(void * arg) {
   unsigned int                  samples_per_frame=0;
   rrh_module_t 	*dev=(rrh_module_t *)arg;
   
-  samples_per_frame= dev->eth_dev.openair0_cfg.samples_per_frame;
+  samples_per_frame= dev->eth_dev.openair0_cfg->samples_per_frame;
   AssertFatal(samples_per_frame <=0, "invalide samples_per_frame !%u\n",samples_per_frame);
 
   time_req.tv_sec = 0;
@@ -260,7 +260,7 @@ void *rrh_UE_thread(void *arg) {
   void 			*tmp;
   unsigned int          samples_per_frame=0;
   
-  samples_per_frame= dev->eth_dev.openair0_cfg.samples_per_frame;
+  samples_per_frame= dev->eth_dev.openair0_cfg->samples_per_frame;
   time_req_1us.tv_sec = 0;
   time_req_1us.tv_nsec = 1000;
   
@@ -269,26 +269,26 @@ void *rrh_UE_thread(void *arg) {
     cmd=dev->eth_dev.trx_start_func(&dev->eth_dev);
     
     /* allocate memory for TX/RX buffers */
-    rx_buffer_UE = (int32_t**)malloc16(dev->eth_dev.openair0_cfg.rx_num_channels*sizeof(int32_t*));
-    tx_buffer_UE = (int32_t**)malloc16(dev->eth_dev.openair0_cfg.tx_num_channels*sizeof(int32_t*));
+    rx_buffer_UE = (int32_t**)malloc16(dev->eth_dev.openair0_cfg->rx_num_channels*sizeof(int32_t*));
+    tx_buffer_UE = (int32_t**)malloc16(dev->eth_dev.openair0_cfg->tx_num_channels*sizeof(int32_t*));
     
-    for (i=0; i<dev->eth_dev.openair0_cfg.rx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->rx_num_channels; i++) {
       tmp=(void *)malloc(sizeof(int32_t)*(samples_per_frame+4));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame+4));
       rx_buffer_UE[i]=(tmp+4*sizeof(int32_t));  
     }
     
-    for (i=0; i<dev->eth_dev.openair0_cfg.tx_num_channels; i++) {
+    for (i=0; i<dev->eth_dev.openair0_cfg->tx_num_channels; i++) {
       tmp=(void *)malloc(sizeof(int32_t)*(samples_per_frame+4));
       memset(tmp,0,sizeof(int32_t)*(samples_per_frame+4));
       tx_buffer_UE[i]=(tmp+4*sizeof(int32_t));  
     }
     
-    printf("Client %s:%d is connected (DL_RB=%d) rt=%d|%d. \n" ,   dev->eth_dev.openair0_cfg.remote_ip,
-	   dev->eth_dev.openair0_cfg.remote_port,
-	   dev->eth_dev.openair0_cfg.num_rb_dl,
-	   dev->eth_dev.openair0_cfg.rx_num_channels,
-	   dev->eth_dev.openair0_cfg.tx_num_channels);
+    printf("Client %s:%d is connected (DL_RB=%d) rt=%d|%d. \n" ,   dev->eth_dev.openair0_cfg->remote_addr,
+	   dev->eth_dev.openair0_cfg->remote_port,
+	   dev->eth_dev.openair0_cfg->num_rb_dl,
+	   dev->eth_dev.openair0_cfg->rx_num_channels,
+	   dev->eth_dev.openair0_cfg->tx_num_channels);
     
     if (cmd==START_CMD) {
       
@@ -348,8 +348,8 @@ void *rrh_UE_rx_thread(void *arg) {
   openair0_timestamp  temp, last_hw_counter=0;
   
   antenna_index     = 0;
-  nsamps	    = dev->eth_dev.openair0_cfg.samples_per_packet;
-  samples_per_frame = dev->eth_dev.openair0_cfg.samples_per_frame;
+  nsamps	    = dev->eth_dev.openair0_cfg->samples_per_packet;
+  samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   
   while (rrh_exit == 0) {
     if (!UE_rx_started) {
@@ -492,8 +492,8 @@ void *rrh_UE_tx_thread(void *arg) {
   unsigned int          samples_per_frame=0;
   
   antenna_index    = 0;
-  nsamps 	   = dev->eth_dev.openair0_cfg.samples_per_packet;
-  samples_per_frame = dev->eth_dev.openair0_cfg.samples_per_frame;
+  nsamps 	   = dev->eth_dev.openair0_cfg->samples_per_packet;
+  samples_per_frame = dev->eth_dev.openair0_cfg->samples_per_frame;
   
   
   while (rrh_exit == 0) {

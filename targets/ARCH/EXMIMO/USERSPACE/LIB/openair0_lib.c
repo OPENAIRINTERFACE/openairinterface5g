@@ -247,7 +247,7 @@ int openair0_stop_without_reset(int card)
 #define MY_RF_MODE      (RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX)
 #define RF_MODE_BASE    (LNA1ON + RFBBNORM)
 
-int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg) {
+int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   // Initialize card
   //  exmimo_config_t         *p_exmimo_config;
@@ -287,6 +287,8 @@ int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair
     return(-1);
   }
 
+  device->type             = EXMIMO_DEV; 
+
   return(0);
 }
 
@@ -322,6 +324,12 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
       p_exmimo_config->framing.multicard_syncmode=SYNCMODE_MASTER;
     else
       p_exmimo_config->framing.multicard_syncmode=SYNCMODE_SLAVE;
+
+    /* device specific */
+    openair0_cfg[card].txlaunch_wait = 1;//manage when TX processing is triggered
+    openair0_cfg[card].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+    openair0_cfg[card].iq_txshift = 4;//shift
+    openair0_cfg[card].iq_rxrescale = 15;//rescale iqs
 
     if (openair0_cfg[card].sample_rate==30.72e6) {
       resampling_factor = 0;
