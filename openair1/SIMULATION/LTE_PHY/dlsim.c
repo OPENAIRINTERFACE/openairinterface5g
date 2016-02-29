@@ -601,10 +601,10 @@ int main(int argc, char **argv)
         }
       }
 
-      //if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
-      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
+      if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
+     // if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
         msg("Physical number of antennas not supported for TM7.\n");
-	exit(-1);
+        exit(-1);
       }
 
       break;
@@ -715,7 +715,7 @@ int main(int argc, char **argv)
     for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
       if (n_tx_phy==1 || n_tx_phy==2)
         cell_spec_bf_weights[aa][re] = 0x00007fff;
-      else if (n_tx_phy==4)
+      else if (n_tx_phy==4 || n_tx_phy==8)
         cell_spec_bf_weights[aa][re] = 0x00007fff>>1;
       else if (n_tx_phy==16)
         cell_spec_bf_weights[aa][re] = 0x00007fff>>2;
