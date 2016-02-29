@@ -938,16 +938,16 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->nb_antennas_tx[j] = nb_antennas_tx;
 
-              if ((nb_antennas_tx <1) || (nb_antennas_tx > 4))
+              if ((nb_antennas_tx <1) || (nb_antennas_tx > 64))
                 AssertError (0, parse_errors ++,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_tx choice: 1..4 !\n",
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_tx choice: 1..64 !\n",
                              lib_config_file_name_pP, i, nb_antennas_tx);
 
               enb_properties.properties[enb_properties_index]->nb_antennas_rx[j] = nb_antennas_rx;
 
-              if ((nb_antennas_rx <1) || (nb_antennas_rx > 4))
+              if ((nb_antennas_rx <1) || (nb_antennas_rx > 64))
                 AssertError (0, parse_errors ++,
-                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_rx choice: 1..4 !\n",
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antennas_rx choice: 1..64 !\n",
                              lib_config_file_name_pP, i, nb_antennas_rx);
 
               enb_properties.properties[enb_properties_index]->tx_gain[j] = tx_gain;

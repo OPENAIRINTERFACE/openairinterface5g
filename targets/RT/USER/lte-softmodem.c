@@ -2393,8 +2393,8 @@ static void get_options (int argc, char **argv)
     case 'x':
       transmission_mode = atoi(optarg);
 
-      if (transmission_mode > 2) {
-        printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
+      if (transmission_mode > 2 && transmission_mode != 7) {
+        printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
       break;
@@ -2476,7 +2476,7 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->N_RB_DL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->N_RB_UL             =  enb_properties->properties[i]->N_RB_DL[CC_id];
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
-        frame_parms[CC_id]->nb_antenna_ports_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
+        frame_parms[CC_id]->nb_antenna_ports_eNB  =  1;//enb_properties->properties[i]->nb_antenna_ports_eNB[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
         //} // j
       }
