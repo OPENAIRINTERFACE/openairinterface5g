@@ -760,9 +760,9 @@ fi
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     if [ "$RUN_GROUP" -eq "1" ]; then
-        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p $mypassword >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     else
-        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p $mypassword >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     fi
     wait
   else
