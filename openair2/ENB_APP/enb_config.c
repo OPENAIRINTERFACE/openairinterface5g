@@ -1019,7 +1019,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->prach_zero_correlation[j] =prach_zero_correlation;
 
-              if ((prach_zero_correlation <0) || (prach_zero_correlation > 63))
+              if ((prach_zero_correlation <0) || (prach_zero_correlation > 15))
                 AssertError (0, parse_errors ++,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
                              lib_config_file_name_pP, i, prach_zero_correlation);
