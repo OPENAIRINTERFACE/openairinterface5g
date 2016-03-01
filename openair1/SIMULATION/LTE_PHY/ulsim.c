@@ -28,7 +28,7 @@
  *******************************************************************************/
 
 /*! \file ulsim.c
- \brief Top-level DL simulator
+ \brief Top-level UL simulator
  \author R. Knopp
  \date 2011 - 2014
  \version 0.1
@@ -468,6 +468,7 @@ int main(int argc, char **argv)
   }
 
   lte_param_init(1,
+                 1, 
 		 n_rx,
 		 1,
 		 extended_prefix_flag,
