@@ -5361,8 +5361,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
       if ((dlsch0->active==1) && (dlsch1->active==1)) {
         dlsch0_harq->mimo_mode = LARGE_CDD;
         dlsch1_harq->mimo_mode = LARGE_CDD;
-        dlsch0_harq->dl_power_off = 0; //apply power offset
-        dlsch1_harq->dl_power_off = 0; //apply power offset
       } else {
         dlsch0_harq->mimo_mode   = ALAMOUTI;
         dlsch1_harq->mimo_mode   = ALAMOUTI;
