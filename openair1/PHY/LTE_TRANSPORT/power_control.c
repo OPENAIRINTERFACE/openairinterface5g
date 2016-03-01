@@ -29,7 +29,7 @@
 #include "PHY/defs.h"
 #include "PHY/impl_defs_lte.h"
 
-//#define DEBUG_PC 1
+#define DEBUG_PC 1
 
 /*
 double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
@@ -64,7 +64,7 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
 #ifdef DEBUG_PC
-  printf("sqrt_rho_a(eNB):%d\n",dlsch_eNB->sqrt_rho_a);
+  printf("eNB: p_a=%d, value=%f, sqrt_rho_a=%d\n",pdsch_config_dedicated->p_a,pa_values[ pdsch_config_dedicated->p_a],dlsch_eNB->sqrt_rho_a);
 #endif
 
   return(rho_a_dB);
@@ -92,7 +92,7 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
 #ifdef DEBUG_PC
-  printf("sqrt_rho_b(eNB):%d\n",dlsch_eNB->sqrt_rho_b);
+  printf("eNB: n_ant=%d, p_b=%d -> rho_b/rho_a=%f -> sqrt_rho_b=%d\n",n_antenna_port,pdsch_config_common->p_b,ratioPB[1][pdsch_config_common->p_b],dlsch_eNB->sqrt_rho_b);
 #endif
   return(rho_b_dB);
 }
@@ -121,7 +121,7 @@ double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   dlsch_ue->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
 #ifdef DEBUG_PC
-  printf("sqrt_rho_a(ue):%d\n",dlsch_ue->sqrt_rho_a);
+  printf("UE: p_a=%d, value=%f, dl_power_off=%d, sqrt_rho_a=%d\n",pdsch_config_dedicated->p_a,pa_values[ pdsch_config_dedicated->p_a],dl_power_off,dlsch_ue->sqrt_rho_a);
 #endif
 
   return(rho_a_dB);
@@ -149,7 +149,7 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   dlsch_ue->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
 #ifdef DEBUG_PC
-  printf("sqrt_rho_b(ue):%d\n",dlsch_ue->sqrt_rho_b);
+  printf("UE: p_b=%d, n_ant=%d -> ratio=%f -> sqrt_rho_b=%d\n",pdsch_config_common->p_b, n_antenna_port,ratioPB[1][pdsch_config_common->p_b],dlsch_ue->sqrt_rho_b);
 #endif
   return(rho_b_dB);
 }
