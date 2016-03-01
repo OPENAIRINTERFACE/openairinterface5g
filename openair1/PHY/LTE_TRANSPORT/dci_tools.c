@@ -1621,9 +1621,6 @@ int generate_eNB_dlsch_params_from_dci(int frame,
     dlsch0->rnti = rnti;
     dlsch1->rnti = rnti;
 
-   // dlsch0_harq->dl_power_off = 1;
-  // dlsch1_harq->dl_power_off = 1;
-
     break;
 
   case format2A:
@@ -5376,8 +5373,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         case 0: // one layer per transport block
           dlsch0_harq->mimo_mode   = LARGE_CDD;
           dlsch1_harq->mimo_mode   = LARGE_CDD;
-          dlsch0_harq->dl_power_off = 0; //apply power offset
-          dlsch1_harq->dl_power_off = 0; //apply power offset
           dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][dlsch0_harq->nb_rb-1];
           dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][dlsch1_harq->nb_rb-1];
 
@@ -5386,8 +5381,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         case 1: // one-layers on TB 0, two on TB 1
           dlsch0_harq->mimo_mode   = LARGE_CDD;
           dlsch1_harq->mimo_mode   = LARGE_CDD;
-          dlsch0_harq->dl_power_off = 0; //apply power offset
-          dlsch1_harq->dl_power_off = 0; //apply power offset
           dlsch1_harq->Nl          = 2;
           dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][(dlsch1_harq->nb_rb<<1)-1];
           break;
@@ -5396,8 +5389,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
           dlsch0_harq->mimo_mode   = LARGE_CDD;
           dlsch1_harq->mimo_mode   = LARGE_CDD;
           dlsch0_harq->Nl          = 2;
-          dlsch0_harq->dl_power_off = 0; //apply power offset
-          dlsch1_harq->dl_power_off = 0; //apply power offset
 
           if (frame_parms->N_RB_DL <= 56) {
             dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][(dlsch0_harq->nb_rb<<1)-1];
@@ -5442,8 +5433,6 @@ int generate_ue_dlsch_params_from_dci(int frame,
         case 1: // two-layers on TB 0
           dlsch1_harq->mimo_mode   = LARGE_CDD;
           dlsch1_harq->Nl          = 2;
-          dlsch0_harq->dl_power_off = 1; //apply power offset
-          dlsch1_harq->dl_power_off = 0; //apply power offset
           dlsch1_harq->TBS         = TBStable[get_I_TBS(dlsch1_harq->mcs)][(dlsch1_harq->nb_rb<<1)-1];
           break;
 
