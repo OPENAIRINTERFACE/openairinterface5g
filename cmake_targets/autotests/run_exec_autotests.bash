@@ -404,14 +404,12 @@ until [ -z "$1" ]
    esac
   done
 
-if [ "$SET_PASSWORD" == "1" ]; then
-   mypassword=$passwd
-else
-   read -s -p "Enter Password: " mypassword
+if [ "$SET_PASSWORD" != "1" ]; then
+   read -s -p "Enter Password: " passwd
 fi
 
 tmpfile=`mktemp`
-echo \'$passwd\' | $SUDO echo $HOME >& $tmpfile
+echo $passwd | $SUDO echo $HOME > $tmpfile
 tstsudo=`cat $tmpfile`
 if [ "$tstsudo" != "$HOME" ]; then
   echo "$USER might not have sudo privileges. Exiting" 
