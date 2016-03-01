@@ -48,7 +48,7 @@
 #include "gain_control.h"
 #endif
 
-#if defined(OAI_USRP) || defined(EXMIMO)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_LMSSDR)
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 #endif
@@ -290,17 +290,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=FDD;
   init_frame_parms(frame_parms,1);
-
-  //  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-
-  /*#ifdef OAI_USRP
-  for (aarx = 0; aarx<frame_parms->nb_antennas_rx;aarx++) {
-    rxdata128 = (__m128i*)phy_vars_ue->lte_ue_common_vars.rxdata[aarx];
-    for (i=0; i<(frame_parms->samples_per_tti*10)>>2; i++) {
-      rxdata128[i] = _mm_srai_epi16(rxdata128[i],4);
-    } 
-  }
-  #endif*/
+  /*
+  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+  exit(-1);
+  */
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata,
                            frame_parms,
                            (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
@@ -542,7 +535,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 	  phy_vars_ue->lte_frame_parms.phich_config_common.phich_duration,
 	  phich_string[phy_vars_ue->lte_frame_parms.phich_config_common.phich_resource],
 	  phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB);
-#if defined(OAI_USRP) || defined(EXMIMO)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_LMSSDR)
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  phy_vars_ue->Mod_id,
 	  phy_vars_ue->frame_rx,
@@ -603,9 +596,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
 #else
 #ifndef OAI_USRP
-  #ifndef OAI_BLADERF 
+#ifndef OAI_BLADERF 
+#ifndef OAI_LMSSDR
   phy_adjust_gain(phy_vars_ue,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],0);
-  #endif
+#endif
+#endif
 #endif
 #endif
   }
@@ -618,9 +613,11 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
 #else
 #ifndef OAI_USRP
-  #ifndef OAI_BLADERF 
+#ifndef OAI_BLADERF 
+#ifndef OAI_LMSSDR
   phy_adjust_gain(phy_vars_ue,dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
-  #endif
+#endif
+#endif
 #endif
 #endif
   }
