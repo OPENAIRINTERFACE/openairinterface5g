@@ -109,17 +109,17 @@ int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {
     return 0;
   }
   
-  uint16_t frame_mask = !((1<<4) - 1);
-  uint16_t frame = (sfn_sf & frame_mask) >> 4;
+  uint16_t frame_mask = ((1<<12) - 1);
+  uint16_t frame = (sfn_sf & (frame_mask << 4)) >> 4;
   
-  uint16_t sf_mask = !(((1<<12) - 1) << 4);
+  uint16_t sf_mask = ((1<<4) - 1);
   uint16_t subframe = (sfn_sf & sf_mask);
   
   if (frame == current_frame) {
     return subframe - current_subframe;
   } else if (frame > current_frame) {
     diff_in_subframes = 9 - current_subframe;
-    diff_in_subframes += subframe;
+    diff_in_subframes += (subframe + 1);
     diff_in_subframes += (frame-2) * 10;
     if (diff_in_subframes > SCHED_AHEAD_SUBFRAMES) {
       return -1;
@@ -128,7 +128,7 @@ int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {
     }
   } else { //frame < current_frame
     diff_in_subframes = 9 - current_subframe;
-    diff_in_subframes += subframe;
+    diff_in_subframes += (subframe + 1);
     if (frame > 0) {
       diff_in_subframes += (frame - 1) * 10;
     }
