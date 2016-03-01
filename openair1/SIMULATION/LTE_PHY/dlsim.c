@@ -447,7 +447,7 @@ int main(int argc, char **argv)
       n_ch_rlz= atof(optarg);
       break;
 
-    case 'q':
+    case 'p':
       extended_prefix_flag=1;
       break;
 
@@ -554,7 +554,7 @@ int main(int argc, char **argv)
       print_perf=1;
       break;
 
-    case 'p':
+    case 'q':
       n_tx_port=atoi(optarg);
 
       if ((n_tx_port==0) || ((n_tx_port>2))) {
@@ -647,7 +647,7 @@ int main(int argc, char **argv)
       printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
       printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
       printf("-x Transmission mode (1,2,6,7 for the moment)\n");
-      printf("-p Number of TX antennas ports used in eNB\n");
+      printf("-q Number of TX antennas ports used in eNB\n");
       printf("-y Number of physical TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-t MCS of interfering UE\n");
