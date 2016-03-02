@@ -571,6 +571,17 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     nruns = nruns_lte_softmodem
   nruns = int(float(nruns))
   tags = testcase.findtext('tags',default='')
+
+  RRHMachine = testcase.findtext('RRH',default='')
+  RRH_compile_prog = testcase.findtext('RRH_compile_prog',default='')
+  RRH_compile_prog_args = testcase.findtext('RRH_compile_prog_args',default='')
+  RRH_pre_exec = testcase.findtext('RRH_pre_exec',default='')
+  RRH_pre_exec_args = testcase.findtext('RRH_pre_exec_args',default='')
+  RRH_main_exec = testcase.findtext('RRH_main_exec',default='')
+  RRH_main_exec_args = testcase.findtext('RRH_main_exec_args',default='')
+  RRH_terminate_missing_procs = testcase.findtext('RRH_terminate_missing_procs',default='True')
+
+
   eNBMachine = testcase.findtext('eNB',default='')
   eNB_config_file = testcase.findtext('eNB_config_file',default='')
   eNB_compile_prog = testcase.findtext('eNB_compile_prog',default='')
@@ -635,13 +646,15 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
   oai_EPC = openair('localdomain', EPCMachine)
   oai_EPC.connect(user, password)
   res = oai_eNB.send_recv(cmd)
-
+  if RRHMachine != '':
+    cmd = 'cd ' + logdirOAI5GRepo + '; source oaienv ; env|grep OPENAIR'
+    index_RRHMachine = MachineList.index(RRHMachine)
+    oai_RRH = openair('localdomain', RRHMachine)
+    oai_RRH.connect(user, password)
+    res= oai_RRH.send_recv(cmd)
   #cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
   #cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
   #cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-  logdir_eNB = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
-  logdir_UE =  logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename
-  logdir_EPC = logdirOpenaircnRepo+'/TEST/autotests/log/'+ testcasename
   logdir_local = os.environ.get('OPENAIR_DIR')
   if logdir_local is None:
      print "Environment variable OPENAIR_DIR not set correctly"
@@ -667,10 +680,14 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     run_result=1
     run_result_string=''
     logdir_eNB = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
+    logdir_RRH = logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     logdir_UE =  logdirOAI5GRepo+'/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     logdir_EPC = logdirOpenaircnRepo+'/TEST/autotests/log/'+ testcasename + '/run_' + str(run)
     logdir_local_testcase = logdir_local + '/cmake_targets/autotests/log/'+ testcasename + '/run_' + str(run)
     #Make the log directory of test case
+    if RRHMachine != '':
+      cmd = 'rm -fr ' + logdir_RRH + ' ; mkdir -p ' + logdir_RRH
+      result = oai_RRH.send_recv(cmd)
     cmd = 'rm -fr ' + logdir_eNB + ' ; mkdir -p ' + logdir_eNB
     result = oai_eNB.send_recv(cmd)
     cmd = 'rm -fr ' + logdir_UE + ' ; mkdir -p ' +  logdir_UE
@@ -679,6 +696,39 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     result = oai_EPC.send_recv(cmd)
     cmd = ' rm -fr ' + logdir_local_testcase + ' ; mkdir -p ' + logdir_local_testcase
     result = os.system(cmd)
+
+    if RRHMachine != '':
+       logfile_compile_RRH = logdir_RRH + '/RRH_compile' + '_' + str(run) + '_.log'
+       logfile_exec_RRH = logdir_RRH + '/RRH_exec' + '_' + str(run) + '_.log'
+       logfile_pre_exec_RRH = logdir_RRH + '/RRH_pre_exec' + '_' + str(run) + '_.log'
+       logfile_task_RRH_compile_out = logdir_RRH + '/RRH_task_compile_out' + '_' + str(run) + '_.log'
+       logfile_task_RRH_compile = logdir_local_testcase + '/RRH_task_compile' + '_' + str(run) + '_.log'
+       logfile_task_RRH_out = logdir_RRH + '/RRH_task_out' + '_' + str(run) + '_.log'
+       logfile_task_RRH = logdir_local_testcase + '/RRH_task' + '_' + str(run) + '_.log'
+       task_RRH_compile = ' ( uname -a ; date \n'
+       task_RRH_compile = task_RRH_compile + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+       task_RRH_compile = task_RRH_compile + 'env |grep OPENAIR  \n'
+       if RRH_compile_prog != "":
+         task_RRH_compile  = task_RRH_compile +  ' ( ' + RRH_compile_prog + ' '+ RRH_compile_prog_args + ' ) > ' + logfile_compile_RRH + ' 2>&1 \n'
+       task_RRH_compile =  task_RRH_compile + ' date ) > ' + logfile_task_RRH_compile_out + ' 2>&1  '
+       write_file(logfile_task_RRH_compile, task_RRH_compile, mode="w")
+
+       task_RRH = ' ( uname -a ; date \n'
+       task_RRH = task_RRH + ' export OPENAIR_TESTDIR=' + logdir_RRH + '\n'
+       task_RRH = task_RRH + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
+       task_RRH = task_RRH + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
+
+       if RRH_pre_exec != "":
+          task_RRH  = task_RRH +  ' ( date; ' + RRH_pre_exec + ' '+ RRH_pre_exec_args + ' ) > ' + logfile_pre_exec_RRH + ' 2>&1 \n'
+       if RRH_main_exec != "":
+          task_RRH = task_RRH + ' ( date; ' + addsudo(RRH_main_exec + ' ' + RRH_main_exec_args, mypassword) + ' ) > ' + logfile_exec_RRH + ' 2>&1 & \n'
+          task_RRH = task_RRH + 'array_exec_pid+=($!) \n'
+          task_RRH = task_RRH + 'echo eNB_main_exec PID = $! \n'
+       #terminate the eNB test case after timeout_cmd seconds
+       task_RRH  = task_RRH + finalize_deploy_script (timeout_cmd, RRH_terminate_missing_procs) + ' \n'
+       task_RRH  = task_RRH + 'handle_ctrl_c' + '\n' 
+       task_RRH  = task_RRH + ' ) > ' + logfile_task_RRH_out + ' 2>&1  '
+       write_file(logfile_task_RRH, task_RRH, mode="w")
     
     logfile_compile_eNB = logdir_eNB + '/eNB_compile' + '_' + str(run) + '_.log'
     logfile_exec_eNB = logdir_eNB + '/eNB_exec' + '_' + str(run) + '_.log'
@@ -704,6 +754,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     write_file(logfile_task_eNB_compile, task_eNB_compile, mode="w")
 
     task_eNB = ' ( uname -a ; date \n'
+    task_eNB = task_eNB + ' export OPENAIR_TESTDIR=' + logdir_eNB + '\n'
     task_eNB = task_eNB + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
     task_eNB = task_eNB + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
 
@@ -806,6 +857,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     write_file(logfile_task_EPC_compile, task_EPC_compile, mode="w")
     
     task_EPC = ' ( uname -a ; date \n'
+    task_EPC = task_EPC + ' export OPENAIRCN_TESTDIR=' + logdir_EPC + '\n'
     task_EPC = task_EPC + 'array_exec_pid=()' + '\n'
     task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '; source oaienv\n'
     task_EPC = task_EPC +  'source BUILD/TOOLS/build_helper \n'
@@ -837,14 +889,20 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC_compile, False, timeout_thread)
     thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB_compile, False, timeout_thread)
     thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE_compile, False, timeout_thread) 
+    if RRHMachine != '':
+        thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH_compile, False, timeout_thread) 
     threads=[]
     threads.append(thread_eNB)
     threads.append(thread_UE)
     threads.append(thread_EPC)
+    if RRHMachine != '':
+        threads.append(thread_RRH)
     # Start new Threads
     thread_eNB.start()
     thread_UE.start()
     thread_EPC.start()
+    if RRHMachine != '':
+        thread_RRH.start()
     #Wait for all the compile threads to complete
     for t in threads:
        t.join()
@@ -853,26 +911,29 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     thread_EPC = oaiThread(1, "EPC_thread", EPCMachine, user, password , task_EPC, False, timeout_thread)
     thread_eNB = oaiThread(2, "eNB_thread", eNBMachine, user, password , task_eNB, False, timeout_thread)
     thread_UE = oaiThread(3, "UE_thread", UEMachine, user, password  , task_UE, False, timeout_thread) 
-
+    if RRHMachine != '':
+        thread_RRH = oaiThread(4, "RRH_thread", RRHMachine, user, password  , task_RRH, False, timeout_thread) 
     threads=[]
     threads.append(thread_eNB)
     threads.append(thread_UE)
     threads.append(thread_EPC)
+    if RRHMachine != '':
+        threads.append(thread_RRH)
     # Start new Threads
 
     thread_eNB.start()
     thread_UE.start()
     thread_EPC.start()
-
+    if RRHMachine != '':
+        thread_RRH.start()
     #Wait for all the compile threads to complete
     for t in threads:
        t.join()
     #Now we get the log files from remote machines on the local machine
-    cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-
-    #cleanOldPrograms(oai_eNB, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-    #cleanOldPrograms(oai_UE, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
-    #cleanOldPrograms(oai_EPC, oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    if RRHMachine != '':
+       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC, oai_RRH] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+    else:
+       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)       
     logfile_UE_stop_script_out = logdir_UE + '/UE_stop_script_out' + '_' + str(run) + '_.log'
     logfile_UE_stop_script = logdir_local_testcase + '/UE_stop_script' + '_' + str(run) + '_.log'
 
@@ -900,22 +961,23 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     res= oai_EPC.send_recv(cmd)
     print "Changing permissions of logdir <" + logdir_EPC + "> in EPC machine..." + res
 
+    if RRHMachine != '':
+       cmd = 'sudo -E chown -R ' + user + ' ' +  logdir_RRH
+       res= oai_RRH.send_recv(cmd)
+       print "Changing permissions of logdir <" + logdir_RRH + "> in RRH machine..." + res
 
     print "Copying files from EPCMachine : " + EPCMachine + "logdir_EPC = " + logdir_EPC
-    #ssh = SSHSession(EPCMachine , username=user, key_file=None, password=password)
-    #ssh.get_all(logdir_EPC , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     SSHSessionWrapper(EPCMachine, user, None, password, logdir_EPC, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
     print "Copying files from eNBMachine " + eNBMachine + "logdir_eNB = " + logdir_eNB
-    #ssh = SSHSession(eNBMachine , username=user, key_file=None, password=password)
-    #ssh.get_all(logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     SSHSessionWrapper(eNBMachine, user, None, password, logdir_eNB, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
     print "Copying files from UEMachine : " + UEMachine + "logdir_UE = " + logdir_UE
-    #ssh = SSHSession(UEMachine , username=user, key_file=None, password=password)
-    #ssh.get_all(logdir_UE , logdir_local + '/cmake_targets/autotests/log/'+ testcasename)
     SSHSessionWrapper(UEMachine, user, None, password, logdir_UE, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
+    if RRHMachine != '':
+       print "Copying files from RRHMachine : " + RRHMachine + "logdir_RRH = " + logdir_RRH
+       SSHSessionWrapper(RRHMachine, user, None, password, logdir_RRH, logdir_local + '/cmake_targets/autotests/log/'+ testcasename, "get_all")
 
     
     #Currently we only perform throughput tests
@@ -1017,8 +1079,8 @@ class oaiCleanOldProgramThread (threading.Thread):
            error = error + '\n threadID = ' + str(self.threadID) + '\n threadname = ' + self.threadname + '\n CleanUpOldProgs = ' + self.CleanUpOldProgs + '\n CleanUpAluLteBox = ' + self.CleanUpAluLteBox + '\n ExmimoRfStop = ' + self.ExmimoRfStop + '\n'  
            error = error + traceback.format_exc()
            print error
-           print "There is error in cleaning up old programs. The test case execution cannot continue...."
-           sys.exit(1)
+           print "There is error in cleaning up old programs....."
+           #sys.exit(1)
 
 # \brief Run parallel threads in all machines for clean up old execution of test cases
 # \param oai_list list of handlers that can be used to execute programs on remote machines
