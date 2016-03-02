@@ -13,5 +13,5 @@ sudo -E $OPENAIR_DIR/cmake_targets/tools/init_exmimo2
 
 #now we stop the card from transmitting anything
 cd $OPENAIR_DIR/targets/bin
-sudo -E octave $OPENAIR_DIR/cmake_targets/tools/exmimo_stop_octave.m
+sudo -E octave -H --no-gui $OPENAIR_DIR/cmake_targets/tools/exmimo_stop_octave.m
 
