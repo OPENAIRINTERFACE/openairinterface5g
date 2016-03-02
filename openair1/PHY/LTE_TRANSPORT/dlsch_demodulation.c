@@ -600,37 +600,34 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round], 
                                     lte_ue_pdsch_vars[eNB_id]->log2_maxh);
 
-    } else if (dlsch0_harq->dl_power_off==1)  {
+    } 
+    else if (dlsch0_harq->dl_power_off==1)  {
       
         dlsch_scale_channel(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-                          frame_parms,
-                          dlsch_ue,
-                          symbol,
-                          nb_rb);     
-
-      /* compute new log2_maxh for effective channel */
+			  frame_parms,
+			  dlsch_ue,
+			  symbol,
+			  nb_rb);
+  
       if (first_symbol_flag==1) {
+	dlsch_channel_level(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
+                        frame_parms,
+                        avg,
+                        symbol,
+                        nb_rb);
+#ifdef DEBUG_PHY
+    LOG_D(PHY,"[DLSCH] avg[0] %d\n",avg[0]);
+#endif
 
-        // effective channel of desired user is always stronger than interfering eff. channel
-       dlsch_channel_level_TM56(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				frame_parms,
-				lte_ue_pdsch_vars[eNB_id]->pmi_ext,
-				avg,
-				symbol,
-				nb_rb);
-       avgs = 0;
+    avgs = 0;
 
     for (aatx=0;aatx<frame_parms->nb_antennas_tx_eNB;aatx++)
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
+    //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
-        //    LOG_D(PHY,"llr_offset = %d\n",offset_mumimo_llr_drange[dlsch0_harq->mcs][(i_mod>>1)-1]);
-        lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
-
-        lte_ue_pdsch_vars[eNB_id]->log2_maxh = cmax(avg[0],0);
-	lte_ue_pdsch_vars[eNB_id]->log2_maxh++;
-	
-        //printf("log1_maxh =%d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
+    
       }
       
       

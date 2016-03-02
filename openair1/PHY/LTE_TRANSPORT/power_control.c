@@ -29,7 +29,7 @@
 #include "PHY/defs.h"
 #include "PHY/impl_defs_lte.h"
 
-#define DEBUG_PC 1
+//#define DEBUG_PC 
 
 /*
 double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
@@ -63,7 +63,7 @@ double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
 	
   dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
-#ifdef DEBUG_PC
+#if DEBUG_PC
   printf("eNB: p_a=%d, value=%f, sqrt_rho_a=%d\n",pdsch_config_dedicated->p_a,pa_values[ pdsch_config_dedicated->p_a],dlsch_eNB->sqrt_rho_a);
 #endif
 
