@@ -55,7 +55,7 @@ typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
  
-/* structrue holds the parameters to configure USRP devices*/
+/*!\brief structrue holds the parameters to configure USRP devices*/
 typedef struct openair0_device_t openair0_device;
 
 
@@ -74,6 +74,10 @@ typedef enum {
 } duplex_mode_t;
 
 
+
+/** @addtogroup _GENERIC_PHY_RF_INTERFACE_
+ * @{
+ */
 /*!\brief RF device types
  */
 typedef enum {
@@ -86,6 +90,8 @@ typedef enum {
   USRP_X300_DEV,
   /*!\brief device is BLADE RF*/
   BLADERF_DEV,
+  /*!\brief device is LMSSDR (SoDeRa)*/
+  LMSSDR_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
   MAX_RF_DEV_TYPE
@@ -117,10 +123,7 @@ typedef enum {
 }host_type_t;
 
 
-/** @addtogroup _PHY_RF_INTERFACE_
- * @{
- */
- 
+/*! \brief RF Gain clibration */ 
 typedef struct {
   //! Frequency for which RX chain was calibrated
   double freq;
@@ -128,10 +131,11 @@ typedef struct {
   double offset;
 } rx_gain_calib_table_t;
 
+/*! \brief RF frontend parameters set by application */
 typedef struct {
   //! Module ID for this configuration
   int Mod_id;
-  // device log level
+  //! device log level
   int log_level;
   //! duplexing mode
   duplex_mode_t duplex_mode;
@@ -193,31 +197,43 @@ typedef struct {
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
   unsigned int my_port;
-
+  //! Configuration file for LMS7002M
+  char *configFilename;
 } openair0_config_t;
 
+/*! \brief RF mapping */ 
 typedef struct {
-  /* card id */
+  //! card id
   int card;
-  /* rf chain id */
+  //! rf chain id
   int chain;
 } openair0_rf_map;
+
 
 typedef struct {
   char *remote_addr;
   //! remote port number for Ethernet interface
-  unsigned int remote_port;
+  uint16_t remote_port;
   //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
   char *my_addr;
   //! local port number for Ethernet interface (eNB/BBU, UE)
-  unsigned int my_port;
-  //! local port number for Ethernet interface (eNB/BBU, UE)
+  uint16_t  my_port;
+  //! local Ethernet interface (eNB/BBU, UE)
   char *local_if_name;
- //! local port number for Ethernet interface (eNB/BBU, UE)
+  //! tx_sample_advance for RF + ETH
+  uint8_t tx_sample_advance;
+  //! tx_scheduling_advance for RF + ETH
+  uint8_t tx_scheduling_advance;
+  //! iq_txshift  for RF + ETH
+  uint8_t iq_txshift;
+  //! transport type preference  (RAW/UDP)
   uint8_t transp_preference;
+  //! radio front end preference (EXMIMO,USRP, BALDERF,LMSSDR)
+  uint8_t rf_preference;
 } eth_params_t;
 
 
+/*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
   /*!brief Module ID of this device */
   int Mod_id;
@@ -256,7 +272,7 @@ struct openair0_device_t {
       @param msg pointer to the message structure passed between BBU-RRH
       @param msg_len length of the message  
   */  
-  int (*trx_reply_func)(openair0_device *openair0, void *msg, ssize_t msg_len);
+  int (*trx_reply_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
   /*! \brief Called to send samples to the RF target
       @param device pointer to the device structure specific to the RF hardware target
@@ -274,9 +290,9 @@ struct openair0_device_t {
    * was received.
    * \param device the hardware to use
    * \param[out] ptimestamp the time at which the first sample was received.
-   * \param[out] An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
+   * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
    * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
-   * \param cc Number of channels. If cc == 1, only buff[0] is filled with samples.
+   * \param antenna_id Index of antenna for which to receive samples
    * \returns the number of sample read
    */
   int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int antenna_id);
@@ -293,22 +309,29 @@ struct openair0_device_t {
    */
   int (*trx_reset_stats_func)(openair0_device *device);
 
-  /*! \brief Terminate operation of the transceiver -- free all associated resources */
+  /*! \brief Terminate operation of the transceiver -- free all associated resources 
+   * \param device the hardware to use
+   */
   void (*trx_end_func)(openair0_device *device);
 
-  /* Terminate operation  */
+  /*! \brief Stop operation of the transceiver 
+   * \param card RF Card to use
+   */
   int (*trx_stop_func)(int card);
 
   /* Functions API related to UE*/
 
   /*! \brief Set RX feaquencies 
-   * \param 
+   * \param device the hardware to use
+   * \param openair0_cfg RF frontend parameters set by application
+   * \param exmimo_dump_config  dump EXMIMO configuration 
    * \returns 0 in success 
    */
   int (*trx_set_freq_func)(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
   
   /*! \brief Set gains
-   * \param 
+   * \param device the hardware to use
+   * \param openair0_cfg RF frontend parameters set by application
    * \returns 0 in success 
    */
   int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
@@ -325,15 +348,23 @@ extern "C"
 {
 #endif
 
-/*! \brief Initialize openair RF target. It returns 0 if OK */
+
+  /*! \brief Initialize openair RF target. It returns 0 if OK */
   int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);  
   /*! \brief Initialize transport protocol . It returns 0 if OK */
   int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params);
+
   
-  //USRP
-/*! \brief Get the current timestamp of USRP */
+ /*! \brief Get current timestamp of USRP
+  * \param device the hardware to use
+  */
   openair0_timestamp get_usrp_time(openair0_device *device);
-/*! \brief Set the RX frequency of USRP RF TARGET */
+
+ /*! \brief Set RX frequencies 
+  * \param device the hardware to use
+  * \param openair0_cfg RF frontend parameters set by application
+  * \returns 0 in success 
+  */
   int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
 
 /*@}*/

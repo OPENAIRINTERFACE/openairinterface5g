@@ -42,6 +42,10 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
+add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m lms7002m)
+add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR lmsSDR)
+add_subdirectory(${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C Si5351C)
+
 ###########################################
 # macros to define options as there is numerous options in oai
 ################################################
@@ -159,7 +163,7 @@ set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP"
 )
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}"
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
 )
 
 
@@ -172,6 +176,7 @@ add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
 
+Message("RF_BOARD is ${RF_BOARD}")
 # Below has been put in comment because does not work with
 # SVN authentication.
 #
@@ -412,7 +417,7 @@ add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4
 add_list1_option(NB_ANTENNAS_TX "2" "Number of antennas in transmission" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TXRX "2" "Number of antennas in ????" "1" "2" "4")
 
-add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW")
+add_list2_option(RF_BOARD "EXMIMO" "RF head type" "None" "EXMIMO" "OAI_USRP" "OAI_BLADERF" "CPRIGW" "OAI_LMSSDR")
 
 add_list2_option(TRANSP_PRO "None" "Transport protocol type" "None" "ETHERNET")
 
@@ -443,6 +448,13 @@ set(HWLIB_BLADERF_SOURCE
   )
 add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
 
+include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/")
+set (option_HWLMSSDRLIB_lib "-l LMS_SDR -l LMS7002M -l Si5351C")
+set(HWLIB_LMSSDR_SOURCE 
+  ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
+  )
+add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
+
 include_directories("${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE 
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.c
@@ -450,6 +462,7 @@ set(TPLIB_ETHERNET_SOURCE
   ${OPENAIR_TARGETS}/ARCH/ETHERNET/USERSPACE/LIB/eth_raw.c
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
+
 
 # RF devices / transport protocols settings
 ######################################################################
@@ -478,9 +491,25 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
     ${OPENAIR_TARGETS}/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c
     )
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+
   set(option_HW_lib "bladeRF -rdynamic -ldl")
- 
-elseif (${RF_BOARD} STREQUAL "CPRIGW") #to ask
+ #set(LOWLATENCY False)
+
+elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms7002m")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/Si5351C")
+  include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lmsSDR/LMS_StreamBoard")
+  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
+  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lmsSDR")
+  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
+  LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
+  set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
+  set(LOWLATENCY False)
+  set(option_HW_lib "-lLMS_SDR -lLMS7002M -lSi5351C -rdynamic -ldl")
+
+elseif (${RF_BOARD} STREQUAL "CPRIGW")
   set(HW_SOURCE ${HW_SOURCE}
     ${OPENAIR_TARGETS}/ARCH/CPRIGW/USERSPACE/LIB/cprigw_lib.c
     )
@@ -1491,13 +1520,14 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB}
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS L2 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${MIH_LIB} 
   -Wl,--end-group )
 
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
+target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
 ###################################################
@@ -1531,8 +1561,7 @@ target_link_libraries (lte-softmodem-nos1
 target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
-
-
+target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
 
 # rrh
 ################################
@@ -1546,7 +1575,6 @@ add_executable(rrh_gw
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   )
-# assert
 target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
 target_link_libraries(rrh_gw
   -Wl,--start-group
@@ -1554,11 +1582,20 @@ target_link_libraries(rrh_gw
   -Wl,--end-group )
 target_link_libraries (rrh_gw rt pthread m )
 target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} )
+target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
 
 Message("-- option_HW_lib=${option_HW_lib}")
 Message("-- HW_SOURCE=${HW_SOURCE}")
 Message("-- option_TP_lib=${option_TP_lib}")
 Message("-- TRANSPORT_SOURCE=${TRANSPORT_SOURCE}")
+
+if (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+  add_dependencies(lte-softmodem LMS7002M LMS_SDR Si5351C)
+  add_dependencies(lte-softmodem-nos1 LMS7002M LMS_SDR Si5351C)
+  add_dependencies(rrh_gw LMS7002M LMS_SDR Si5351C)
+endif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
+
+
 
 # USIM process
 #################

@@ -56,7 +56,7 @@ VERBOSE_COMPILE=0
 CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
-
+BUILD_DOXYGEN=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -91,7 +91,7 @@ Options
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, None
+   EXMIMO (Default), USRP, BLADERF, LMSSDR, None
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -119,6 +119,8 @@ Options
    Shows detailed compilation instructions in makefile
 --cflags_processor
    Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
+--build-doxygen
+   Builds doxygen based documentation.
 --disable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
@@ -179,7 +181,7 @@ function main() {
        -w | --hardware)
             HW="$2" #"${i#*=}"
             # Use OAI_USRP  as the key word USRP is used inside UHD driver           
-	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
+	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
 		echo_fatal "Unknown HW type $HW will exit..."		
 	    else
 		if [ "$HW" == "USRP" ] ; then 
@@ -188,6 +190,9 @@ function main() {
 		if [ "$HW" == "BLADERF" ] ; then 
 		    HW="OAI_BLADERF"
 		fi
+		if [ "$HW" == "LMSSDR" ] ; then 
+		    HW="OAI_LMSSDR"
+		fi 
 		echo_info "Setting hardware to: $HW"
 	    fi
             shift 2;;
@@ -246,6 +251,10 @@ function main() {
             CFLAGS_PROCESSOR_USER=$2
             echo_info "Setting CPU FLAGS from USER to: $CFLAGS_PROCESSOR_USER"
             shift 2;;
+       --build-doxygen)
+	    BUILD_DOXYGEN=1
+            echo_info "Will build doxygen support"
+            shift;;     
        --disable-deadline)
             FORCE_LOWLATENCY_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
@@ -254,7 +263,6 @@ function main() {
             FORCE_LOWLATENCY_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
-
         -h | --help)
             print_help
             exit 1;;
@@ -294,6 +302,7 @@ function main() {
       fi
   fi
 
+  echo_info "RF HW set to $HW" 
   #Now we set flags to enable deadline scheduler settings
   #By default: USRP: disable, 
   #By default: BLADERF: enable,
@@ -306,6 +315,8 @@ function main() {
      elif [ "$HW" = "OAI_USRP" ] ; then 
         LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
+        LOWLATENCY_FLAG_USER="False"
+     elif [ "$HW" = "OAI_LMSSDR" ] ; then 
         LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "None" ] ; then 
         LOWLATENCY_FLAG_USER="False"
@@ -684,6 +695,16 @@ function main() {
 	      ln -s liboai_bladerfdevif.so liboai_device.so
 	      ln -s $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to BLADERF device library"	 
+	  elif [ "$HW" == "OAI_LMSSDR" ] ; then
+#	      if [ -f "/usr/include/libbladeRF.h" ] ; then
+		  compilations \
+		      $build_dir oai_lmssdrdevif \
+		      liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
+#	      fi
+
+	      ln -s liboai_lmssdrdevif.so liboai_device.so
+	      ln -s $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
+	      echo_info "liboai_device.so is linked to LMSSDR device library"	 
 	  else 
 	      echo_info "liboai_device.so is not linked to any device library"	    
 	  fi
@@ -706,7 +727,22 @@ function main() {
 fi
 
 
-  
+  # Doxygen Support
+  #####################
+  if [ "$BUILD_DOXYGEN" = "1" ] ;then
+    doxygen_log=$OPENAIR_DIR/cmake_targets/log/doxygen.log
+    echo_info "Building doxygen based documentation. The documentation file is located here: $OPENAIR_DIR/targets/DOCS/html/index.html"
+    echo_info "Doxygen Generation log is located here: $doxygen_log"
+    echo_info "Generating doxygen files....please wait"
+    (
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
+    mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
+    cd $OPENAIR_DIR/cmake_targets/doxygen/build
+    cmake ..
+    make doc
+    ) >& $doxygen_log
+  fi
+
   # Auto-tests
   #####################
   if [ "$OAI_TEST" = "1" ]; then
