@@ -704,6 +704,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     write_file(logfile_task_eNB_compile, task_eNB_compile, mode="w")
 
     task_eNB = ' ( uname -a ; date \n'
+    task_eNB = task_eNB + ' export OPENAIR_TESTDIR=' + logdir_eNB + '\n'
     task_eNB = task_eNB + 'cd ' + logdirOAI5GRepo + ' ; source oaienv ; source cmake_targets/tools/build_helper \n'
     task_eNB = task_eNB + 'env |grep OPENAIR  \n' + 'array_exec_pid=() \n'
 
@@ -806,6 +807,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
     write_file(logfile_task_EPC_compile, task_EPC_compile, mode="w")
     
     task_EPC = ' ( uname -a ; date \n'
+    task_EPC = task_EPC + ' export OPENAIRCN_TESTDIR=' + logdir_EPC + '\n'
     task_EPC = task_EPC + 'array_exec_pid=()' + '\n'
     task_EPC = task_EPC + 'cd ' + logdirOpenaircnRepo + '; source oaienv\n'
     task_EPC = task_EPC +  'source BUILD/TOOLS/build_helper \n'

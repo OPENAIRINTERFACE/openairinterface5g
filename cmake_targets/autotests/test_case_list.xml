@@ -1806,7 +1806,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -1845,13 +1845,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
     <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in;  $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -1890,7 +1890,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -1929,13 +1929,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false  </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1 ;  cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -1974,7 +1974,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2013,13 +2013,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth5 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2058,7 +2058,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2097,13 +2097,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2142,7 +2142,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2181,13 +2181,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1 ;  cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2226,7 +2226,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2265,13 +2265,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false</HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1 ;  cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2310,7 +2310,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches'; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches'; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2345,17 +2345,18 @@
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.168.12.62/24\"; 
                      BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth0\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.62/24\"
-                     BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
+                     BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"
+                     BUILD/EPC/epc.conf.in   OUTPUT \"CONSOLE\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2394,7 +2395,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2433,13 +2434,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l  --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2478,7 +2479,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2517,13 +2518,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2562,7 +2563,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2601,13 +2602,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2646,7 +2647,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2685,13 +2686,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false</HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -2730,7 +2731,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; ifconfig ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  -W </eNB_main_exec_args>
@@ -2769,13 +2770,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ;cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in </EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3243,7 +3244,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  -W </eNB_main_exec_args>
@@ -3282,13 +3283,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false  </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db    </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3319,14 +3320,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  -W </eNB_main_exec_args>
@@ -3365,13 +3366,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l  --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in </EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3407,7 +3408,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  -W </eNB_main_exec_args>
@@ -3446,13 +3447,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false</HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3488,7 +3489,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  -W </eNB_main_exec_args>
@@ -3525,15 +3526,15 @@
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.62/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
-    <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
+    <EPC_compile_prog_args>-c -l </EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false  </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3569,7 +3570,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args>sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf -W </eNB_main_exec_args>
@@ -3608,13 +3609,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false</HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ;  cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -3650,7 +3651,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S /usr/local/bin/niusrprio_pcie start ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  -W </eNB_main_exec_args>
@@ -3689,13 +3690,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4166,7 +4167,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2; dmesg|tail </eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  -W </eNB_main_exec_args>
@@ -4206,13 +4207,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1 ;cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4250,7 +4251,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  -W </eNB_main_exec_args>
@@ -4289,13 +4290,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4331,7 +4332,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail ; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  -W </eNB_main_exec_args>
@@ -4370,13 +4371,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false  </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4412,7 +4413,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  -W </eNB_main_exec_args>
@@ -4451,13 +4452,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l  --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ;cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4493,7 +4494,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf -W </eNB_main_exec_args>
@@ -4532,13 +4533,13 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l --debug --random false </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1 ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
@@ -4574,7 +4575,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w EXMIMO -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E -S $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 ; dmesg|tail; cp $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  $OPENAIR_TESTDIR/enb.conf</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  -W </eNB_main_exec_args>
@@ -4613,15 +4614,15 @@
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
-    <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
+    <HSS_compile_prog_args> -c -l  --debug --random false</HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth0 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -r </EPC_main_exec_args>
-    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  </HSS_main_exec>
+    <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
