@@ -10,7 +10,7 @@
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; uname -a; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 016002 016005  016102 016105 016302 016305 016502 016505</TestCaseExclusionList>
+ <TestCaseExclusionList>0102+ 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 016002 016005  016102 016105 016302 016305 016502 016505</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
  <MachineListGeneric>mozart calisson stevens nano amerique</MachineListGeneric>
      <testCase id="010101" >
@@ -909,9 +909,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -984,9 +984,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1058,9 +1058,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1132,9 +1132,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1205,9 +1205,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1278,9 +1278,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1353,9 +1353,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1428,9 +1428,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1501,9 +1501,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1575,9 +1575,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1649,9 +1649,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1723,9 +1723,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  2
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 2
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -1799,14 +1799,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -1835,11 +1835,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -1847,7 +1847,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -1883,14 +1883,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -1919,11 +1919,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -1931,7 +1931,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -1967,14 +1967,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2003,11 +2003,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -2015,7 +2015,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ; sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -2051,14 +2051,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2087,11 +2087,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -2099,7 +2099,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -2135,14 +2135,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2171,11 +2171,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -2183,7 +2183,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -2219,14 +2219,14 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0:3\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5:3\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.170.0.2/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0:4\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5:4\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.170.1.2/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -c</eNB_compile_prog_args>
-    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth0:3 192.170.0.2 up ; sudo -E ifconfig eth0:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
+    <eNB_pre_exec>sleep 15; sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E  ifconfig eth5:3 192.170.0.2 up ; sudo -E ifconfig eth5:4 192.170.1.2 up; ifconfig</eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec> $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.local.conf  -W </eNB_main_exec_args>
@@ -2255,11 +2255,11 @@
     <EPC_config_file>BUILD/EPC/epc.conf.in  MCC \"208\"
                      BUILD/EPC/epc.conf.in  MNC \"92\"
                      BUILD/EPC/epc.conf.in  TAC \"1\"
-                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth0:1\"
+                     BUILD/EPC/epc.conf.in  MME_INTERFACE_NAME_FOR_S1_MME \"eth5:1\"
                      BUILD/EPC/epc.conf.in  MME_IPV4_ADDRESS_FOR_S1_MME  \"192.170.0.1/24\"
-                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth0:2\";
+                     BUILD/EPC/epc.conf.in   SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP    \"eth5:2\";
                      BUILD/EPC/epc.conf.in   SGW_IPV4_ADDRESS_FOR_S1U_S12_S4_UP       \"192.170.1.1/24\"; 
-                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\"
                      BUILD/EPC/epc.conf.in   IPV4_LIST \"192.172.0.0/24\",\"192.172.1.0/24\"</EPC_config_file>
     <EPC_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_epc</EPC_compile_prog>
@@ -2267,7 +2267,7 @@
     <HSS_compile_prog>$OPENAIRCN_DIR/SCRIPTS/build_hss</HSS_compile_prog>
     <HSS_compile_prog_args> -c -l </HSS_compile_prog_args>
 
-    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth1 add 192.172.0.1</EPC_pre_exec>
+    <EPC_pre_exec>sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches' ;sudo -E ifconfig eth5 add 192.172.0.1</EPC_pre_exec>
     <EPC_pre_exec_args></EPC_pre_exec_args>
     <EPC_main_exec>$OPENAIRCN_DIR/SCRIPTS/run_epc  </EPC_main_exec>
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
@@ -2303,9 +2303,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2387,9 +2387,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2471,9 +2471,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2555,9 +2555,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2639,9 +2639,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2723,9 +2723,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2805,9 +2805,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2877,9 +2877,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -2948,9 +2948,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3020,9 +3020,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3091,9 +3091,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3162,9 +3162,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3236,9 +3236,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3319,9 +3319,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3400,9 +3400,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3481,9 +3481,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.25PRB.usrpx310.epc.remote.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3562,9 +3562,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3643,9 +3643,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.100PRB.usrpx310.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3724,9 +3724,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3796,9 +3796,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1                     
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3868,9 +3868,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -3904,7 +3904,7 @@
     <EPC_config_file>BUILD/EPC/epc.local.enb.conf.in  MCC \"208\"
                      BUILD/EPC/epc.local.enb.conf.in  MNC \"92\"
                      BUILD/EPC/epc.local.enb.conf.in   TAC \"1\"
-                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth1\"
+                     BUILD/EPC/epc.local.enb.conf.in   PGW_INTERFACE_NAME_FOR_SGI \"eth5\"
                      BUILD/EPC/epc.local.enb.conf.in   PGW_IPV4_ADDRESS_FOR_SGI \"192.168.12.82/24\" </EPC_config_file>
     <EPC_compile_prog>SCRIPTS/build_epc</EPC_compile_prog>
     <EPC_compile_prog_args>-c -l</EPC_compile_prog_args>
@@ -3944,9 +3944,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4015,9 +4015,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4086,9 +4086,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1                     
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4159,9 +4159,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4243,9 +4243,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1                     
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4324,9 +4324,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4405,9 +4405,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4486,9 +4486,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4567,9 +4567,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  nb_antennas_tx 1                     
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf   ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4652,9 +4652,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4728,9 +4728,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4803,9 +4803,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4878,9 +4878,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -26
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -4952,9 +4952,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -29
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
@@ -5026,9 +5026,9 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  nb_antennas_tx 1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  pdsch_referenceSignalPower -32
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.111/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth0\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth6\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.111/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
