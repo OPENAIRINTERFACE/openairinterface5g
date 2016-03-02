@@ -64,7 +64,7 @@ int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
 
   delta_f = nb_rb*180000/(n_samples-1);
 
-  for (f=-(n_samples>>1); f<(n_samples>>1); f++) {
+  for (f=-(n_samples>>1); f<=(n_samples>>1); f++) {
     freq=delta_f*(double)f*1e-6;// due to the fact that delays is in mus
 
     cos_lut[f+(n_samples>>1)] = (double *)malloc((int)desc->nb_taps*sizeof(double));
@@ -122,7 +122,7 @@ int freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples)
 
   start_meas(&desc->interp_freq);
 
-  for (f=-n_samples_max/2,f2=-n_samples/2; f<n_samples_max/2; f+=d,f2++) {
+  for (f=-n_samples_max/2,f2=-n_samples/2; f<=n_samples_max/2; f+=d,f2++) {
     clut = cos_lut[n_samples_max/2+f];
     slut = sin_lut[n_samples_max/2+f];
 

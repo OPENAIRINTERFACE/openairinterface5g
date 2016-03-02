@@ -108,88 +108,6 @@ void handler(int sig)
   exit(1);
 }
 
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,uint8_t extended_prefix_flag,uint8_t fdd_flag, uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL,
-                    uint8_t osf,uint32_t perfect_ce)
-{
-
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-  int i;
-
-
-  printf("Start lte_param_init\n");
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  srand(0);
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = Nid_cell%6;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->nb_antennas_tx_eNB = N_tx;
-  lte_frame_parms->phich_config_common.phich_resource         = one;
-  lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->frame_type         = (fdd_flag==1)?0 : 1;
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;44
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-  //  phy_init_top(lte_frame_parms); //allocation
-
-  PHY_vars_UE->is_secondary_ue = 0;
-  PHY_vars_UE->lte_frame_parms = *lte_frame_parms;
-  PHY_vars_eNB->lte_frame_parms = *lte_frame_parms;
-
-  phy_init_lte_top(lte_frame_parms);
-  dump_frame_parms(lte_frame_parms);
-
-  PHY_vars_UE->PHY_measurements.n_adj_cells=0;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
-
-  for (i=0; i<3; i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-  generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-  generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-
-  // DL power control init
-  if (transmission_mode == 1) {
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->lte_frame_parms).pdsch_config_common).p_b = 0;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->lte_frame_parms).pdsch_config_common).p_b = 0;
-  } else { // rho_a = rhob
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->lte_frame_parms).pdsch_config_common).p_b = 1;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->lte_frame_parms).pdsch_config_common).p_b = 1;
-  }
-
-  PHY_vars_UE->perfect_ce = perfect_ce;
-
-  printf("Done lte_param_init\n");
-
-
-}
 
 
 //DCI2_5MHz_2A_M10PRB_TDD_t DLSCH_alloc_pdu2_2A[2];
@@ -215,7 +133,7 @@ void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LT
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                    &txdata[aa][slot_offset],         // output
-                   frame_parms->log2_symbol_size,                // log2_fft_size
+                   frame_parms->ofdm_symbol_size,
                    6,                 // number of symbols
                    frame_parms->nb_prefix_samples,               // number of prefix samples
                    CYCLIC_PREFIX);
@@ -269,14 +187,15 @@ int main(int argc, char **argv)
   unsigned int ret;
   unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
 
- 
   unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[2][4],round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
+
   int re_allocated;
   char fname[32],vname[32];
   FILE *bler_fd;
   char bler_fname[256];
   FILE *time_meas_fd;
   char time_meas_fname[256];
+
   //FILE *tikz_fd;
   //char tikz_fname[256];
 
@@ -304,6 +223,7 @@ int main(int argc, char **argv)
   uint8_t rx_sample_offset = 0;
   //char stats_buffer[4096];
   //int len;
+
   uint8_t num_rounds = 4;
   uint8_t subframe=7;
   int u;
@@ -324,6 +244,8 @@ int main(int argc, char **argv)
   uint8_t N_RB_DL=25,osf=1;
   uint8_t fdd_flag = 0;
   int xforms = 0;
+  frame_t frame_type = FDD;
+
 #ifdef XFORMS
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
@@ -334,7 +256,7 @@ int main(int argc, char **argv)
   int common_flag=0,TPC=0;
 
   double cpu_freq_GHz;
-  time_stats_t ts;//,sts,usts;
+  //  time_stats_t ts;//,sts,usts;
   int avg_iter,iter_trials;
   int rballocset=0;
   int print_perf=0;
@@ -348,18 +270,29 @@ int main(int argc, char **argv)
   int TB0_active = 1;
   uint32_t perfect_ce = 0;
 
-  LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
-  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
+  //  LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
+  //  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
   uint8_t Kmimo;
-  mod_sym_t **sic_buffer;
 
+  mod_sym_t **sic_buffer;
   FILE    *proc_fd = NULL;
   char buf[64];
+
+  uint8_t ue_category=4;
+  uint32_t Nsoft;
+
+  int CCE_table[800];
+
+  int threequarter_fs=0;
+
 
 
   opp_enabled=1; // to enable the time meas
 
 #if defined(__arm__)
+  FILE    *proc_fd = NULL;
+  char buf[64];
+
   proc_fd = fopen("/sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq", "r");
   if(!proc_fd)
      printf("cannot open /sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq");
@@ -383,14 +316,20 @@ int main(int argc, char **argv)
   // default parameters
   n_frames = 1000;
   snr0 = 0;
-  num_layers = 1;
+  //  num_layers = 1;
   perfect_ce = 0;
 
+
   while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:YXV:W:J:")) != -1) {
+
     switch (c) {
     case 'a':
       awgn_flag = 1;
       channel_model = AWGN;
+      break;
+
+    case 'A':
+      abstx = 1;
       break;
 
     case 'b':
@@ -401,8 +340,57 @@ int main(int argc, char **argv)
       N_RB_DL=atoi(optarg);
       break;
 
+    case 'c':
+      num_pdcch_symbols=atoi(optarg);
+      break;
+
+    case 'C':
+      Nid_cell = atoi(optarg);
+      break;
+
     case 'd':
       dci_flag = 1;
+      break;
+
+    case 'D':
+      frame_type=TDD;
+      break;
+
+    case 'e':
+      num_rounds=1;
+      common_flag = 1;
+      TPC = atoi(optarg);
+      break;
+      
+    case 'E':
+      threequarter_fs=1;
+      break;
+
+    case 'f':
+      input_snr_step= atof(optarg);
+      break;
+
+    case 'F':
+      forgetting_factor = atof(optarg);
+      break;
+
+    case 'i':
+      input_fd = fopen(optarg,"r");
+      input_file=1;
+      dci_flag = 1;
+      break;
+
+    case 'I':
+      input_trch_fd = fopen(optarg,"r");
+      input_trch_file=1;
+      break;
+
+    case 'L':
+      llr8_flag=1;
+      break;
+
+    case 'l':
+      offset_mumimo_llr_drange_fix=atoi(optarg);
       break;
 
     case 'm':
@@ -414,6 +402,11 @@ int main(int argc, char **argv)
       //i_mod = get_Qm(mcs2); /// think here again!!!
       break;
 
+    case 'O':
+      test_perf=atoi(optarg);
+      //print_perf =1;
+      break;
+
     case 't':
       mcs_i = atoi(optarg);
       i_mod = get_Qm(mcs_i);
@@ -423,25 +416,13 @@ int main(int argc, char **argv)
       n_frames = atoi(optarg);
       break;
 
-    case 'C':
-      Nid_cell = atoi(optarg);
-      break;
-
     case 'o':
       rx_sample_offset = atoi(optarg);
-      break;
-
-    case 'D':
-      fdd_flag = 1;
       break;
 
     case 'r':
       DLSCH_RB_ALLOC = atoi(optarg);
       rballocset = 1;
-      break;
-
-    case 'F':
-      forgetting_factor = atof(optarg);
       break;
 
     case 's':
@@ -451,25 +432,13 @@ int main(int argc, char **argv)
     case 'w':
       snr_int = atof(optarg);
       break;
-      
-    case 'f':
-      input_snr_step= atof(optarg);
-      break;
-
-    case 'A':
-      abstx = 1;
-      break;
-
+ 
     case 'N':
       n_ch_rlz= atof(optarg);
       break;
 
     case 'p':
       extended_prefix_flag=1;
-      break;
-
-    case 'c':
-      num_pdcch_symbols=atoi(optarg);
       break;
 
     case 'g':
@@ -574,20 +543,7 @@ int main(int argc, char **argv)
 	  exit(-1);
 	}
 	break;
-      case 'I':
-	input_trch_fd = fopen(optarg,"r");
-	input_trch_file=1;
-	break;
-      case 'i':
-	input_fd = fopen(optarg,"r");
-	input_file=1;
-	dci_flag = 1;	
-	break;
-      case 'e':
-	num_rounds=1;
-	common_flag = 1;
-	TPC = atoi(optarg);
-	break;
+    
       case 'R':
 	num_rounds=atoi(optarg);
 	break;
@@ -613,16 +569,6 @@ int main(int argc, char **argv)
 	break;
       case 'P':
 	print_perf=1;
-	break;
-      case 'L':
-	llr8_flag=1;
-	break;
-      case 'l':
-	offset_mumimo_llr_drange_fix=atoi(optarg);
-	break;
-      case 'O':
-	test_perf=atoi(optarg);
-	//print_perf =1;
 	break;
       case 'X':
 	xforms = 1;
@@ -672,7 +618,7 @@ int main(int argc, char **argv)
 	exit(1);
 	break;
     
-    }
+   }
     
   }
     
@@ -740,15 +686,25 @@ int main(int argc, char **argv)
 
   if (transmission_mode==5) { 
     n_users = 2;
-    //eNB_id_i = PHY_vars_UE->n_connected_eNB;
-    eNB_id_i=1;
+    eNB_id_i = PHY_vars_UE->n_connected_eNB;
+    //eNB_id_i=1;
       
   }
   else 
     eNB_id_i = eNB_id;
 
+  lte_param_init(n_tx,
+		 n_rx,
+		 transmission_mode,
+		 extended_prefix_flag,
+		 frame_type,
+		 Nid_cell,
+		 tdd_config,
+		 N_RB_DL,
+		 threequarter_fs,
+		 osf,
+		 perfect_ce);
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,fdd_flag,Nid_cell,tdd_config,N_RB_DL,osf,perfect_ce);
 
   printf("Setting mcs1 = %d\n",mcs1);
   printf("Setting mcs2 = %d\n",mcs2);
@@ -790,14 +746,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1) 
     if (perfect_ce==1)
-	 sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_pce_sh%d_sumnormdifpm.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+	 sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_pce_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
   	else
-    	sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_sumnormdifpm.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+    	sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
   else //abstx=0
     if (perfect_ce==1)
-	sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_pce_sh%d_sumnormdifpm.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
+	sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_pce_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
    else
-        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_sumnormdifpm.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
+        sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
   
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -833,9 +789,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_pce_sh%d_%d_sumnormdifpm.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_pce_sh%d_%d_pmnew.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
  	else
-		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_sh%d_%d_sumnormdifpm.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+		sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_sh%d_%d_pmnew.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
 
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);
@@ -973,19 +929,19 @@ n(tikz_fname,"w");
   CCCH_alloc_pdu.type               = 0;
   CCCH_alloc_pdu.vrb_type           = 0;
   CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.ndi      = 1;
-  CCCH_alloc_pdu.mcs      = 1;
-  CCCH_alloc_pdu.harq_pid = 0;
+  CCCH_alloc_pdu.ndi                = 1;
+  CCCH_alloc_pdu.mcs                = 1;
+  CCCH_alloc_pdu.harq_pid           = 0;
 
   DLSCH_alloc_pdu2_1E[0].rah              = 0;
   DLSCH_alloc_pdu2_1E[0].rballoc          = DLSCH_RB_ALLOC;
   DLSCH_alloc_pdu2_1E[0].TPC              = 0;
   DLSCH_alloc_pdu2_1E[0].dai              = 0;
   DLSCH_alloc_pdu2_1E[0].harq_pid         = 0;
-  //DLSCH_alloc_pdu2_1E[0].tb_swap          = 0;
-  DLSCH_alloc_pdu2_1E[0].mcs             = mcs1;
-  DLSCH_alloc_pdu2_1E[0].ndi             = 1;
-  DLSCH_alloc_pdu2_1E[0].rv              = 0;
+  //DLSCH_alloc_pdu2_1E[0].tb_swap        = 0;
+  DLSCH_alloc_pdu2_1E[0].mcs              = mcs1;
+  DLSCH_alloc_pdu2_1E[0].ndi              = 1;
+  DLSCH_alloc_pdu2_1E[0].rv               = 0;
   // Forget second codeword
   DLSCH_alloc_pdu2_1E[0].tpmi             = (transmission_mode>=5 ? 5 : 0);  // precoding
   DLSCH_alloc_pdu2_1E[0].dl_power_off     = (transmission_mode==5 ? 0 : 1);
@@ -996,9 +952,9 @@ n(tikz_fname,"w");
   DLSCH_alloc_pdu2_1E[1].dai              = 0;
   DLSCH_alloc_pdu2_1E[1].harq_pid         = 0;
   //DLSCH_alloc_pdu2_1E[1].tb_swap          = 0;
-  DLSCH_alloc_pdu2_1E[1].mcs             = mcs_i;
-  DLSCH_alloc_pdu2_1E[1].ndi             = 1;
-  DLSCH_alloc_pdu2_1E[1].rv              = 0;
+  DLSCH_alloc_pdu2_1E[1].mcs              = mcs_i;
+  DLSCH_alloc_pdu2_1E[1].ndi              = 1;
+  DLSCH_alloc_pdu2_1E[1].rv               = 0;
   // Forget second codeword
   DLSCH_alloc_pdu2_1E[1].tpmi             = (transmission_mode>=5 ? 5 : 0) ;  // precoding
   DLSCH_alloc_pdu2_1E[1].dl_power_off     = (transmission_mode==5 ? 0 : 1);
@@ -1034,11 +990,27 @@ n(tikz_fname,"w");
   else
     Kmimo=1;
 
+  switch (ue_category) {
+  case 1:
+    Nsoft = 250368;
+    break;
+  case 2:
+  case 3:
+    Nsoft = 1237248;
+    break;
+  case 4:
+    Nsoft = 1827072;
+    break;
+  default:
+    printf("Unsupported UE category %d\n",ue_category);
+    exit(-1);
+    break;
+  }
+
   for (k=0; k<n_users; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
-
-    for (i=0;i<2;i++) { 
-      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+    for (i=0; i<2; i++) {
+      PHY_vars_eNB->dlsch_eNB[k][i] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
 
       if (!PHY_vars_eNB->dlsch_eNB[k][i]) {
         printf("Can't get eNB dlsch structures\n");
@@ -1050,7 +1022,7 @@ n(tikz_fname,"w");
   }
 
   for (i=0; i<2; i++) {
-    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(Kmimo,8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
+    PHY_vars_UE->dlsch_ue[0][i]  = new_ue_dlsch(Kmimo,8,Nsoft,MAX_TURBO_ITERATIONS,N_RB_DL,0);
 
     if (!PHY_vars_UE->dlsch_ue[0][i]) {
       printf("Can't get ue dlsch structures\n");
@@ -1061,7 +1033,7 @@ n(tikz_fname,"w");
   }
 
   // structure for SIC at UE
-  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,N_RB_DL,0);
+  PHY_vars_UE->dlsch_eNB[0] = new_eNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0);
 
   if (DLSCH_alloc_pdu2_1E[0].tpmi == 5) {
 
@@ -1113,9 +1085,9 @@ n(tikz_fname,"w");
 	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1_5MHz_TDD_t;
@@ -1125,9 +1097,9 @@ n(tikz_fname,"w");
 	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_5MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1_10MHz_TDD_t;
@@ -1137,9 +1109,9 @@ n(tikz_fname,"w");
 	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_10MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rah              = 0;
@@ -1147,9 +1119,9 @@ n(tikz_fname,"w");
 	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_20MHz_TDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      dci_length = sizeof_DCI1_20MHz_TDD_t;
 	      dci_length_bytes = sizeof(DCI1_20MHz_TDD_t);
 	      break;
@@ -1164,9 +1136,9 @@ n(tikz_fname,"w");
 	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = DLSCH_RB_ALLOC;
 	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1_5MHz_FDD_t;
@@ -1175,9 +1147,9 @@ n(tikz_fname,"w");
 	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = DLSCH_RB_ALLOC;
 	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1_10MHz_FDD_t;
@@ -1186,9 +1158,9 @@ n(tikz_fname,"w");
 	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = DLSCH_RB_ALLOC;
 	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      dci_length = sizeof_DCI1_20MHz_FDD_t;
@@ -1197,9 +1169,9 @@ n(tikz_fname,"w");
 	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = DLSCH_RB_ALLOC;
 	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = 0;
 	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 1;
-	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    }	  
 	  }
@@ -1239,9 +1211,9 @@ n(tikz_fname,"w");
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
@@ -1252,33 +1224,33 @@ n(tikz_fname,"w");
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      dci_length = sizeof_DCI1A_20MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
 	      break;
@@ -1290,49 +1262,49 @@ n(tikz_fname,"w");
 	      dci_length = sizeof_DCI1A_1_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_5MHz_FDD_t);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      dci_length = sizeof_DCI1A_20MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_FDD_t);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    }	  
 	  }
@@ -1341,7 +1313,7 @@ n(tikz_fname,"w");
 	  dci_alloc[num_dci].L          = 1;
 	  dci_alloc[num_dci].rnti       = SI_RNTI;
 	  dci_alloc[num_dci].format     = format1A;
-	  dci_alloc[num_dci].nCCE       = 0;
+	  dci_alloc[num_dci].firstCCE       = 0;
 	  dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);	
 
 	  printf("Generating dlsch params for user %d\n",k);
@@ -1534,9 +1506,9 @@ n(tikz_fname,"w");
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
@@ -1547,33 +1519,33 @@ n(tikz_fname,"w");
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      dci_length = sizeof_DCI1A_20MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
 	      break;
@@ -1585,49 +1557,49 @@ n(tikz_fname,"w");
 	      dci_length = sizeof_DCI1A_1_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_5MHz_FDD_t);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      dci_length = sizeof_DCI1A_20MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_FDD_t);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    }	  
 	  }
@@ -1636,7 +1608,7 @@ n(tikz_fname,"w");
 	  dci_alloc[num_dci].L          = 1;
 	  dci_alloc[num_dci].rnti       = SI_RNTI;
 	  dci_alloc[num_dci].format     = format1A;
-	  dci_alloc[num_dci].nCCE       = 0;
+	  dci_alloc[num_dci].firstCCE       = 0;
 	  dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);	
 	  
 	  printf("Generating dlsch params for user %d\n",k);
@@ -1755,7 +1727,7 @@ n(tikz_fname,"w");
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	  = 0;
+		((DCI2_1_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	  = 2;
 		break;
 	      case 25:
 		dci_length = sizeof_DCI2_5MHz_2A_FDD_t;
@@ -1771,7 +1743,7 @@ n(tikz_fname,"w");
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	= 0;
+		((DCI2_5MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	= 2;
 		break;
 	      case 50:
 		dci_length = sizeof_DCI2_10MHz_2A_FDD_t;
@@ -1787,7 +1759,7 @@ n(tikz_fname,"w");
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
+		((DCI2_10MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
 		break;
 	      case 100:
 		dci_length = sizeof_DCI2_20MHz_2A_FDD_t;
@@ -1803,7 +1775,7 @@ n(tikz_fname,"w");
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi2             = 1;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv2              = 0;
 		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tb_swap          = 0;
-		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 0;
+		((DCI2_20MHz_2A_FDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi          	 = 2;
 		break;
 	      }	  
 	    }
@@ -1813,7 +1785,7 @@ n(tikz_fname,"w");
 	  }
 	  
 	   printf ("TM4 with tpmi =%d\n", ((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi);    
-	   if (((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) { // not a nice way to do it, fix later
+	   if (((DCI2_5MHz_2A_TDD_t *)&DLSCH_alloc_pdu_1[k])->tpmi == 2) { 
 
 	    PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single = (unsigned short)(taus()&0xffff);
 	    
@@ -1856,9 +1828,9 @@ n(tikz_fname,"w");
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
@@ -1869,33 +1841,33 @@ n(tikz_fname,"w");
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_TDD_1_6_t);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->dai              = 0;
 	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_TDD_1_6_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      dci_length = sizeof_DCI1A_20MHz_TDD_1_6_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_TDD_1_6_t);
 	      break;
@@ -1907,49 +1879,49 @@ n(tikz_fname,"w");
 	      dci_length = sizeof_DCI1A_1_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_1_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 25:
 	      dci_length = sizeof_DCI1A_5MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_5MHz_FDD_t);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_5MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 50:
 	      dci_length = sizeof_DCI1A_10MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_10MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    case 100:
 	      dci_length = sizeof_DCI1A_20MHz_FDD_t;
 	      dci_length_bytes = sizeof(DCI1A_20MHz_FDD_t);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->type             = 1;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->vrb_type         = 0;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rballoc          = computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_DL,0,9);
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->TPC              = TPC;
 	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->harq_pid         = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs             = mcs1;  
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi             = 0;
-	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv              = 0;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->mcs              = mcs1;  
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->ndi              = 1;
+	      ((DCI1A_20MHz_FDD_t *)&DLSCH_alloc_pdu_1[k])->rv               = 0;
 	      break;
 	    }	  
 	  }
@@ -1958,7 +1930,7 @@ n(tikz_fname,"w");
 	  dci_alloc[num_dci].L          = 1;
 	  dci_alloc[num_dci].rnti       = SI_RNTI;
 	  dci_alloc[num_dci].format     = format1A;
-	  dci_alloc[num_dci].nCCE       = 0;
+	  dci_alloc[num_dci].firstCCE       = 0;
 	  dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);	
 
 	    printf("Generating dlsch params for user %d\n",k);
@@ -1981,6 +1953,7 @@ n(tikz_fname,"w");
 	}
 	break;
 
+
       case 5:
       case 6:
         memcpy(&dci_alloc[num_dci].dci_pdu[0],&DLSCH_alloc_pdu2_1E[k],sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
@@ -1988,7 +1961,7 @@ n(tikz_fname,"w");
         dci_alloc[num_dci].L          = 1;
         dci_alloc[num_dci].rnti       = n_rnti+k;
         dci_alloc[num_dci].format     = format1E_2A_M10PRB;
-        dci_alloc[num_dci].nCCE       = 4*k;
+        dci_alloc[num_dci].firstCCE       = 4*k;
         printf("Generating dlsch params for user %d\n",k);
         generate_eNB_dlsch_params_from_dci(0,
 					   subframe,
@@ -2033,17 +2006,20 @@ n(tikz_fname,"w");
     if (n_frames==1) printf("%d\n",numCCE);
 
     // apply RNTI-based nCCE allocation
+    memset(CCE_table,0,800*sizeof(int));
+
     for (i=num_common_dci; i<num_dci; i++) {
 
-      dci_alloc[i].nCCE = get_nCCE_offset(1<<dci_alloc[i].L,
-                                          numCCE,
-                                          (dci_alloc[i].rnti==SI_RNTI)? 1 : 0,
-                                          dci_alloc[i].rnti,
-                                          subframe);
+      dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
+						 1<<dci_alloc[i].L,
+						 numCCE,
+						 (dci_alloc[i].rnti==SI_RNTI)? 1 : 0,
+						 dci_alloc[i].rnti,
+						 subframe);
 
       if (n_frames==1)
         printf("dci %d: rnti %x, format %d : nCCE %d/%d\n",i,dci_alloc[i].rnti, dci_alloc[i].format,
-               dci_alloc[i].nCCE,numCCE);
+               dci_alloc[i].firstCCE,numCCE);
     }
 
     for (k=0; k<n_users; k++) {
@@ -2106,7 +2082,7 @@ n(tikz_fname,"w");
 	round_trials[i] = 0;
       }
       dci_errors=0;
-      avg_ber = 0;
+      //      avg_ber = 0;
 
       round=0;
       avg_iter = 0;
@@ -2767,6 +2743,7 @@ n(tikz_fname,"w");
 #else
                 tbs = PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->TBS;
 #endif
+
 	      rate = (double)tbs/(double)coded_bits_per_codeword;
 	      
 	      if ((SNR==snr0) && (trials==0) && (round==0) && (pmi_feedback==0))
@@ -3138,7 +3115,7 @@ n(tikz_fname,"w");
 
               if (PHY_vars_UE->perfect_ce==1) {
                 if (awgn_flag==0) {
-		  //fill the channel estimates
+
                   for(k=0; k<NUMBER_OF_eNB_MAX; k++) {
                     for(aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
                       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
