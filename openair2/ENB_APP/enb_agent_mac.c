@@ -486,7 +486,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
       /* Check flag for creation of MAC CE buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__PRP_UE_STATS_TYPE__PRUST_MAC_CE_BS) {
 	// TODO: Fill in the actual MAC CE buffer status report
-	ue_report[i]->pending_mac_ces = (get_MAC_CE_bitmap_TA(enb_id,i) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
+	ue_report[i]->pending_mac_ces = (get_MAC_CE_bitmap_TA(enb_id,i,0) | (0 << 1) | (0 << 2) | (0 << 3)) & 15; /* Use as bitmap. Set one or more of the; /* Use as bitmap. Set one or more of the
 					       PROTOCOL__PRP_CE_TYPE__PRPCET_ values
 					       found in stats_common.pb-c.h. See
 					       prp_ce_type in progRAN specification */
@@ -957,7 +957,10 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
 	// TODO: This should be different per TB
-	dl_info[i]->harq_status[j] = harq_status;
+ 	  if(harq_status == 0)
+    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+    	  else if (harq_status == 1)
+    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_NACK;
       }
       /*TODO: fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);

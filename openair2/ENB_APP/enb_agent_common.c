@@ -545,14 +545,43 @@ int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 	return rlc_status.bytes_in_buffer;
 }
 
-int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id)
+int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id)
 {
-	if((((UE_list_t *)enb_ue[mod_id])->UE_sched_ctrl[ue_id].ta_update) > 0)
+	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
+	LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+
+	int32_t time_advance;
+	switch (PHY_vars_eNB_g[mod_id][CC_id]->lte_frame_parms.N_RB_DL) {
+	case 6:
+	  time_advance = eNB_UE_stats->timing_advance_update;
+	  break;
+
+	case 15:
+	  time_advance = eNB_UE_stats->timing_advance_update/2;
+	  break;
+
+	case 25:
+	  time_advance = eNB_UE_stats->timing_advance_update/4;
+	  break;
+
+	case 50:
+	  time_advance = eNB_UE_stats->timing_advance_update/8;
+	  break;
+
+	case 75:
+	  time_advance = eNB_UE_stats->timing_advance_update/12;
+	  break;
+
+	case 100:
+	  time_advance = eNB_UE_stats->timing_advance_update/16;
+	  break;
+	}
+
+	if(time_advance > 0)
 		return 1;
 	else
 		return 0;
 }
-
 int get_active_CC(mid_t mod_id, mid_t ue_id)
 {
 	return ((UE_list_t *)enb_ue[mod_id])->numactiveCCs[ue_id];
@@ -1793,16 +1822,32 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       cell_conf[i]->pusch_hopping_offset = get_hopping_offset(enb_id,i);
       cell_conf[i]->has_pusch_hopping_offset = 1;
       //TODO: Fill in with actual value
-      cell_conf[i]->hopping_mode = get_hopping_mode(enb_id,i);
+      if(get_hopping_mode(enb_id,i) == 0){
+	 cell_conf[i]->hopping_mode = PROTOCOL__PRP_HOPPING_MODE__PRHM_INTER;
+      }else if(get_hopping_mode(enb_id,i) == 1){
+	cell_conf[i]->hopping_mode = PROTOCOL__PRP_HOPPING_MODE__PRHM_INTERINTRA;
+      }
       cell_conf[i]->has_hopping_mode = 1;
       //TODO: Fill in with actual value, the number of subbands
       cell_conf[i]->n_sb = get_n_SB(enb_id,i);
       cell_conf[i]->has_n_sb = 1;
       //TODO: Fill in with actual value, The number of resource element groups used for PHICH. One of PRPR_
-      cell_conf[i]->phich_resource = get_phich_resource(enb_id,i);
+      if(get_phich_resource(enb_id,i) == 0){
+	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_ONE_SIXTH; //0
+      }else if (get_phich_resource(enb_id,i) == 1){
+	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_HALF; //1
+      }else if (get_phich_resource(enb_id,i) == 2){
+	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_ONE; // 2
+      }else if (get_phich_resource(enb_id,i) == 3){
+	cell_conf[i]->phich_resource = PROTOCOL__PRP_PHICH_RESOURCE__PRPR_TWO;//3
+      }
       cell_conf[i]->has_phich_resource = 1;
       //TODO: Fill in with actual value, one of the PRPD_ values
-      cell_conf[i]->phich_duration = get_phich_duration(enb_id,i);
+      if(get_phich_duration(enb_id,i) == 0){
+    	cell_conf[i]->phich_duration = PROTOCOL__PRP_PHICH_DURATION__PRPD_NORMAL;
+      }else if(get_phich_duration(enb_id,i) == 1){
+	cell_conf[i]->phich_duration = PROTOCOL__PRP_PHICH_DURATION__PRPD_EXTENDED;
+      }
       cell_conf[i]->has_phich_duration = 1;
       //TODO: Fill in with actual value, See TS 36.211, section 6.9
       cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
@@ -1852,16 +1897,29 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       cell_conf[i]->ul_bandwidth = get_N_RB_UL(enb_id,i);
       cell_conf[i]->has_ul_bandwidth = 1;
       //TODO: Fill in with actual value, one of PRUCPL values
-      cell_conf[i]->ul_cyclic_prefix_length = get_ul_cyclic_prefix_length(enb_id,i);
+      if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
+    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_UL_CYCLIC_PREFIX_LENGTH__PRUCPL_NORMAL;
+      }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
+	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_UL_CYCLIC_PREFIX_LENGTH__PRUCPL_EXTENDED;      
+      }
       cell_conf[i]->has_ul_cyclic_prefix_length = 1;
       //TODO: Fill in with actual value, one of PRUCPL values
-      cell_conf[i]->dl_cyclic_prefix_length = get_dl_cyclic_prefix_length(enb_id,i);
+      if(get_ul_cyclic_prefix_length(enb_id,i) == 0){
+    	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_DL_CYCLIC_PREFIX_LENGTH__PRDCPL_NORMAL;
+      }else if(get_ul_cyclic_prefix_length(enb_id,i) == 1){
+	  cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__PRP_DL_CYCLIC_PREFIX_LENGTH__PRDCPL_EXTENDED;
+      }
+
       cell_conf[i]->has_dl_cyclic_prefix_length = 1;
       //TODO: Fill in with actual value, number of cell specific antenna ports
       cell_conf[i]->antenna_ports_count = 1;
       cell_conf[i]->has_antenna_ports_count = 1;
       //TODO: Fill in with actual value, one of PRDM values
-      cell_conf[i]->duplex_mode = get_duplex_mode(enb_id,i);
+      if(get_duplex_mode(enb_id,i) == 1){
+	cell_conf[i]->duplex_mode = PROTOCOL__PRP_DUPLEX_MODE__PRDM_FDD;
+      }else if(get_duplex_mode(enb_id,i) == 0){
+	cell_conf[i]->duplex_mode = PROTOCOL__PRP_DUPLEX_MODE__PRDM_TDD;
+      }
       cell_conf[i]->has_duplex_mode = 1;
       //TODO: Fill in with actual value, DL/UL subframe assignment. TDD only
       cell_conf[i]->subframe_assignment = get_subframe_assignment(enb_id,i);
@@ -1936,7 +1994,11 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       cell_conf[i]->srs_mac_up_pts = get_srs_MaxUpPts(enb_id,i);
       cell_conf[i]->has_srs_mac_up_pts = 1;
       //TODO: Fill in with actual value, One of the PREQ_ values
-      cell_conf[i]->enable_64qam = get_enable64QAM(enb_id,i);
+      if(get_enable64QAM(enb_id,i) == 0){
+	cell_conf[i]->enable_64qam = PROTOCOL__PRP_QAM__PREQ_MOD_16QAM;
+      }else if(get_enable64QAM(enb_id,i) == 1){
+	cell_conf[i]->enable_64qam = PROTOCOL__PRP_QAM__PREQ_MOD_64QAM;
+      }
       cell_conf[i]->has_enable_64qam = 1;
       //TODO: Fill in with actual value, Carrier component index
       cell_conf[i]->carrier_index = i;
