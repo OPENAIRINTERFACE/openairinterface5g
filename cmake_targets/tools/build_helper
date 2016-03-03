@@ -269,7 +269,9 @@ check_install_oai_software() {
 	pydb \
 	wvdial \
         python-numpy \
-        sshpass
+        sshpass \
+        libxslt1-dev
+
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
