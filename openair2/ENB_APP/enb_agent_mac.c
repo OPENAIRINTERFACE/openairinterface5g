@@ -657,13 +657,10 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  //TODO: Set the servCellIndex for this report
 	  ul_report[j]->serv_cell_index = 0;
 	  ul_report[j]->has_serv_cell_index = 1;
-
-	  /*if(get_p0_pucch_dbm(enb_id,i) != -1){
-		  ul_report[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i);
-		  ul_report[j]->has_p0_pucch_dbm = 1;
-	  }*/
+	  
 	  //Set the list of UL reports of this UE to the full UL report
 	  full_ul_report->cqi_meas = ul_report;
+
 	  full_ul_report->n_pucch_dbm = MAX_NUM_CCs;
 	  full_ul_report->pucch_dbm = malloc(sizeof(Protocol__PrpPucchDbm *) * full_ul_report->n_pucch_dbm);
 
@@ -843,11 +840,11 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
 	free(ul_report->cqi_meas[j]);
       }
       free(ul_report->cqi_meas);
+      for (j = 0; j < ul_report->n_pucch_dbm; j++) {
+	free(ul_report->pucch_dbm[j]);
+      }
+      free(ul_report->pucch_dbm);
     }
-    for (j = 0; j < ul_report->n_pucch_dbm; j++) {
-    	free(ul_report->pucch_dbm[j]);
-    }
-    free(ul_report->pucch_dbm);
     free(reply->ue_report[i]);
   }
   free(reply->ue_report);
