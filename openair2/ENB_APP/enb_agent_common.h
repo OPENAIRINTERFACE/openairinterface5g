@@ -210,6 +210,10 @@ int get_tpc(mid_t mod_id, mid_t ue_id);
 int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id,
 	     const int frame, const uint8_t subframe, int *id, int *status);
 
+int get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id);
+
+int get_p0_nominal_pucch(mid_t mod_id, int CC_id);
+
 /*
  * ************************************
  * Get Messages for UE Configuration Reply

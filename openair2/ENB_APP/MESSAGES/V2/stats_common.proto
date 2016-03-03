@@ -154,15 +154,19 @@ message prp_ul_cqi {
 	optional prp_ul_cqi_type type = 1;
 	repeated uint32 sinr = 2;
 	optional uint32 serv_cell_index = 3;
-	optional int32 p0_pucch_dbm = 4;
 }
 
 // Full UL CQI report for a specific UE
 message prp_ul_cqi_report {
 	optional uint32 sfn_sn = 1;
 	repeated prp_ul_cqi cqi_meas = 2;
+	repeated prp_pucch_dbm pucch_dbm = 3;
 }
 
+message prp_pucch_dbm {
+	optional int32 p0_pucch_dbm = 1;
+	optional uint32 serv_cell_index = 2;
+}
 
 //
 // Cell related statistics

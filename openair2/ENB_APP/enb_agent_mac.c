@@ -657,8 +657,27 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  //TODO: Set the servCellIndex for this report
 	  ul_report[j]->serv_cell_index = 0;
 	  ul_report[j]->has_serv_cell_index = 1;
+
+	  /*if(get_p0_pucch_dbm(enb_id,i) != -1){
+		  ul_report[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i);
+		  ul_report[j]->has_p0_pucch_dbm = 1;
+	  }*/
 	  //Set the list of UL reports of this UE to the full UL report
 	  full_ul_report->cqi_meas = ul_report;
+	  full_ul_report->n_pucch_dbm = MAX_NUM_CCs;
+	  full_ul_report->pucch_dbm = malloc(sizeof(Protocol__PrpPucchDbm *) * full_ul_report->n_pucch_dbm);
+
+	  for (j = 0; j < MAX_NUM_CCs; j++) {
+		  full_ul_report->pucch_dbm[j] = malloc(sizeof(Protocol__PrpPucchDbm));
+		  protocol__prp_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
+		  full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
+		  full_ul_report->pucch_dbm[j]->serv_cell_index = j;
+		  if(get_p0_pucch_dbm(enb_id,i, j) != -1){
+		  	  full_ul_report->pucch_dbm[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i,j);
+		  	  full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
+		  }
+	  }
+
 	  //Add full UL CQI report to the UE report
 	  ue_report[i]->ul_cqi_report = full_ul_report;
 	}
@@ -701,6 +720,9 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	// Thermal noise power in dbm
 	ni_report->tnp = 0;
 	ni_report->has_tnp = 1;
+
+	ni_report->p0_nominal_pucch = get_p0_nominal_pucch(enb_id, 0);
+	ni_report->has_p0_nominal_pucch = 1;
 	cell_report[i]->noise_inter_report = ni_report;
       }
     }
@@ -822,6 +844,10 @@ int enb_agent_mac_destroy_stats_reply(Protocol__ProgranMessage *msg) {
       }
       free(ul_report->cqi_meas);
     }
+    for (j = 0; j < ul_report->n_pucch_dbm; j++) {
+    	free(ul_report->pucch_dbm[j]);
+    }
+    free(ul_report->pucch_dbm);
     free(reply->ue_report[i]);
   }
   free(reply->ue_report);
