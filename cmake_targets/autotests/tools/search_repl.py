@@ -26,6 +26,9 @@ if keyword == 'mme_ip_address':
 elif keyword == 'IPV4_LIST':
    replacement_text = keyword + ' =  ( ' + replacement_text + '  ) ; '
    string = re.sub(r"IPV4_LIST\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
+elif keyword == 'rrh_gw_config':
+   replacement_text = keyword + ' =  ( { ' + replacement_text + ' } ) ; '
+   string = re.sub(r"rrh_gw_config\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
 else :
    replacement_text = keyword + ' =  ' + replacement_text + ' ; '
    string = re.sub(r"%s\s*=\s*([^\$]+?)\s*;" % keyword , replacement_text, string, re.M)   
