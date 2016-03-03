@@ -290,6 +290,8 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
+char   rf_config_file[1024];
+
 int chain_offset=0;
 
 #ifndef EXMIMO
@@ -454,6 +456,7 @@ void help (void) {
   printf("  sudo -E lte-softmodem [options]\n");
   printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
   printf("Options:\n");
+  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
   printf("  --ulsch-max-errors set the max ULSCH erros\n");
   printf("  --calib-ue-rx set UE RX calibration\n");
   printf("  --calib-ue-rx-med \n");
@@ -980,10 +983,17 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti>>1;
       else
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti;
- 
-     for (i=0; i<len; i++) {
+      /*
+      for (i=0;i<len;i+=4) {
+	dummy_tx_b[i] = 0x100;
+	dummy_tx_b[i+1] = 0x01000000;
+	dummy_tx_b[i+2] = 0xff00;
+	dummy_tx_b[i+3] = 0xff000000;
+	}*/
+      for (i=0; i<len; i++) {
         tx_offset = (int)slot_offset+time_offset[aa]+i;
 
+	
         if (tx_offset<0)
           tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
@@ -993,7 +1003,6 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
 	
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
-  
      }
      // if S-subframe switch to RX in second subframe
      if (subframe_select(&phy_vars_eNB->lte_frame_parms,subframe) == SF_S) {
@@ -2095,6 +2104,7 @@ static void get_options (int argc, char **argv)
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
+    LONG_OPTION_RF_CONFIG_FILE,
     LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS,
     LONG_OPTION_CALIB_UE_RX,
     LONG_OPTION_CALIB_UE_RX_MED,
@@ -2111,6 +2121,7 @@ static void get_options (int argc, char **argv)
   };
 
   static const struct option long_options[] = {
+    {"rf-config-file",required_argument,  NULL, LONG_OPTION_RF_CONFIG_FILE},
     {"ulsch-max-errors",required_argument,  NULL, LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS},
     {"calib-ue-rx",     required_argument,  NULL, LONG_OPTION_CALIB_UE_RX},
     {"calib-ue-rx-med", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_MED},
@@ -2129,11 +2140,19 @@ static void get_options (int argc, char **argv)
 
   while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
+    case LONG_OPTION_RF_CONFIG_FILE:
+      if (strlen(optarg)<=1024)
+         strcpy(rf_config_file,optarg);
+      else {
+         printf("Configuration filename is too long\n");
+         exit(-1);   
+      }
+      break;
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
       for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++)
 	tx_max_power[CC_id]=tx_max_power[0];
-
+      break;
     case LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS:
       ULSCH_max_consecutive_errors = atoi(optarg);
       printf("Set ULSCH_max_consecutive_errors = %d\n",ULSCH_max_consecutive_errors);
@@ -2443,22 +2462,29 @@ static void get_options (int argc, char **argv)
 	  local_remote_radio = BBU_REMOTE_RADIO_HEAD;
 	  eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
 	  memset(eth_params, 0, sizeof(eth_params_t));
-	 
-	  printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
-	  printf( "\tinterface name :       \t%s:\n",enb_properties->properties[i]->rrh_gw_if_name);
-	  printf( "\tlocal address  :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].local_address);
-	  printf( "\tlocal port     :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].local_port);
-	  printf( "\tremote address :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_address);
-	  printf( "\tremote port    :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_port);
-	  printf( "\ttransport      :       \t%s Ethernet:\n\n",(enb_properties->properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : "UDP");
 	  
 	  eth_params->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
 	  eth_params->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
 	  eth_params->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
 	  eth_params->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
 	  eth_params->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;
- 
+	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
+	  eth_params->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
+	  eth_params->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
+	  eth_params->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
+	  if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
+	     eth_params->rf_preference          = EXMIMO_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
+	    eth_params->rf_preference          = USRP_B200_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
+	   eth_params->rf_preference          = USRP_X300_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
+	    eth_params->rf_preference          = BLADERF_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
+	    //eth_params->rf_preference          = LMSSDR_DEV;
+	  } else {
+	    eth_params->rf_preference          = 0;
+	  } 
 	} else {
 	  local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
 	}
@@ -2617,8 +2643,12 @@ int main( int argc, char **argv )
   }
   logInit();
  
+  rf_config_file[0]='\0';
   get_options (argc, argv); //Command-line options
- 
+  if (rf_config_file[0] == '\0')
+    openair0_cfg[0].configFilename = NULL;
+  else
+    openair0_cfg[0].configFilename = rf_config_file;
   
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
