@@ -1586,7 +1586,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 	  dlsch0_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
 	  dlsch0_harq->pmi_alloc   = DL_pmi_single;
 	  dlsch1_harq->mimo_mode   = DUALSTREAM_PUSCH_PRECODING;
-	  dlsch1_harq->pmi_alloc   = DL_pmi_single; //this is actually never used, since the PMI for the second codeword is always the opposote of the first one
+	  dlsch1_harq->pmi_alloc   = DL_pmi_single; 
 	  break;
 	default:
 	  break;
@@ -3337,7 +3337,8 @@ int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci)
           break;
 
         case 25:
-          LOG_D(PHY,"DCI format2 2 antennas (FDD, 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs %d, harq_pid %d, ndi %d, RV %d, TPC %d\n",
+          //LOG_D
+          printf("DCI format2 2 antennas (FDD, 5 MHz), rnti %x (%x): rah %d, rb_alloc %x, mcs1 %d, mcs2 %d, harq_pid %d, ndi1 %d, ndi2 %d, RV1 %d, RV2 %d, swap %d, TPMI %d, TPC %d\n",
                 dci->rnti,
                 ((uint32_t*)&dci->dci_pdu)[0],
                 ((DCI2_5MHz_2A_FDD_t *)&dci->dci_pdu[0])->rah,
@@ -4772,8 +4773,10 @@ int generate_ue_dlsch_params_from_dci(int frame,
       return(-1);
     }
 
-
-    tbswap = ((DCI2_5MHz_2A_TDD_t *)dci_pdu)->tb_swap;
+    if (frame_type == TDD)
+      tbswap = ((DCI2_5MHz_2A_TDD_t *)dci_pdu)->tb_swap;
+    else
+      tbswap = ((DCI2_5MHz_2A_FDD_t *)dci_pdu)->tb_swap;
 
     if (tbswap == 0) {
       dlsch0 = dlsch[0];
@@ -5899,7 +5902,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
       else 
 	pmiq = PMI_2A_R1_1j;
       
-    //  printf("subband %d, pmi_re %d, pmi_im %d, pmiq %d \n",i,pmi_re,pmi_im,pmiq);
+     // printf("subband %d, pmi_re %d, pmi_im %d, pmiq %d \n",i,pmi_re,pmi_im,pmiq);
      // printf("subband %d, pmi%d \n",i,pmiq);
       //According to Section 7.2.4 of 36.213
       

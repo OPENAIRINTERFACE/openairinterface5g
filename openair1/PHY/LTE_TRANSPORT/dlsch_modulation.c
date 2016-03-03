@@ -776,9 +776,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
       else if ((mimo_mode >= DUALSTREAM_UNIFORM_PRECODING1)&&(mimo_mode <= DUALSTREAM_PUSCH_PRECODING)) {
 	// this is for transmission mode 4 (1 layer)
 	*re_allocated = *re_allocated + 1;	         
-	//amp = (int16_t)(((int32_t)tmp_amp*ONE_OVER_SQRT2_Q15)>>15);
-	amp = tmp_amp/2;
-	gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
+
 
 	if (precoder_index==0) {
 	  precoder_index0 = 0; //[1 1]
