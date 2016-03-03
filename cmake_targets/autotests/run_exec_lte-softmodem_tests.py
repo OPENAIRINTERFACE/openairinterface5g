@@ -1123,6 +1123,7 @@ flag_remove_logdir=False
 flag_start_testcase=False
 nruns_lte_softmodem=''
 flag_skip_git_head_check=False
+flag_skip_oai_install=False
 Timeout_cmd=''
 print "Number of arguments argc = " + str(len(sys.argv))
 #for index in range(1,len(sys.argv) ):
@@ -1182,6 +1183,8 @@ while i < len (sys.argv):
     elif arg == '--timeout_cmd': 
         Timeout_cmd = sys.argv[i+1]
         i = i +1
+    elif arg == '--skip-oai-install':
+        flag_skip_oai_install=True
     elif arg == '-h' :
         print "-s:  This flag *MUST* be set to start the test cases"
         print "-r:  Remove the log directory in autotests"
@@ -1197,6 +1200,7 @@ while i < len (sys.argv):
         print "-MachineListGeneric : overrides the MachineListGeneric  parameter in test_case_list.xml"
         print "--skip-git-head-check: skip checking of GitHead remote/local branch (only for debugging)"
         print "--timeout_cmd: Override the default parameter (timeout_cmd) in test_case_list.xml. This parameter is in seconds and should be > 120"
+        print "--skip-oai-install: Skips the openairinterface5g installer"
         sys.exit()
     else :
         print "Unrecongnized Option: <" + arg + ">. Use -h to see valid options"
@@ -1405,6 +1409,17 @@ for oai in oai_list:
       else:
          cmd = cmd + 'if [ \"$git_head\" != \"'+ GitOAI5GHeadVersion + '\" ]; then echo \"error: Git openairinterface5g head version does not match\" ; fi \n'
       cmd = cmd + 'source oaienv'   + '\n'
+      if flag_skip_oai_install == False:
+         cmd = cmd + 'source $OPENAIR_DIR/cmake_targets/tools/build_helper \n'
+         cmd = cmd + 'echo \"Installing core OAI dependencies...Start\" \n'
+         cmd = cmd + '$OPENAIR_DIR/cmake_targets/build_oai -I --install-optional-packages \n'
+         cmd = cmd + 'echo \"Installing core OAI dependencies...Finished\" \n'
+         cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Start\" \n'
+         cmd = cmd + 'check_install_bladerf_driver \n'
+         cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Finished\" \n'
+         cmd = cmd + 'echo \"Installing USRP OAI dependencies...Start\" \n'
+         cmd = cmd + 'check_install_usrp_uhd_driver \n'
+         cmd = cmd + 'echo \"Installing USRP OAI dependencies...Finished\" \n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
       cmd = cmd +  'env |grep OPENAIR'  + '\n'
@@ -1413,7 +1428,7 @@ for oai in oai_list:
       #cmd = cmd + 'echo \' ' + cmd  + '\' > ' + setup_script + ' 2>&1 \n '
       #result = oai_list[index].send_recv(cmd, False, 300 )
       write_file(setup_script, cmd, mode="w")
-      tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 300)
+      tempThread = oaiThread(index, 'thread_setup_'+str(index)+'_' + MachineList[index] , MachineList[index] , user, pw, cmd, False, 3000)
       threads_init_setup.append(tempThread )
       tempThread.start()
       index = index + 1
@@ -1461,7 +1476,7 @@ status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdi
 if (out != '') :
   print "There is error in setup of machines"
   print "status  = " + str(status) + "\n Check files for error = " + out
-  print sys.exit(1)
+  print "Continuing..."
 
 cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 if cleanUpRemoteMachines == True:
