@@ -633,7 +633,7 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	if(ul_report == NULL)
 	  goto error;
 	//Fill each UL report of the UE for each of the configured report types
-	for(j = 0; j++; j < full_ul_report->n_cqi_meas) {
+	for(j = 0; j < full_ul_report->n_cqi_meas; j++) {
 	  ul_report[j] = malloc(sizeof(Protocol__PrpUlCqi));
 	  if(ul_report[j] == NULL)
 	  goto error;
@@ -665,14 +665,14 @@ int enb_agent_mac_stats_reply(mid_t mod_id,
 	  full_ul_report->pucch_dbm = malloc(sizeof(Protocol__PrpPucchDbm *) * full_ul_report->n_pucch_dbm);
 
 	  for (j = 0; j < MAX_NUM_CCs; j++) {
-		  full_ul_report->pucch_dbm[j] = malloc(sizeof(Protocol__PrpPucchDbm));
-		  protocol__prp_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
-		  full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
-		  full_ul_report->pucch_dbm[j]->serv_cell_index = j;
-		  if(get_p0_pucch_dbm(enb_id,i, j) != -1){
-		  	  full_ul_report->pucch_dbm[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i,j);
-		  	  full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
-		  }
+	    full_ul_report->pucch_dbm[j] = malloc(sizeof(Protocol__PrpPucchDbm));
+	    protocol__prp_pucch_dbm__init(full_ul_report->pucch_dbm[j]);
+	    full_ul_report->pucch_dbm[j]->has_serv_cell_index = 1;
+	    full_ul_report->pucch_dbm[j]->serv_cell_index = j;
+	    if(get_p0_pucch_dbm(enb_id,i, j) != -1){
+	      full_ul_report->pucch_dbm[j]->p0_pucch_dbm = get_p0_pucch_dbm(enb_id,i,j);
+	      full_ul_report->pucch_dbm[j]->has_p0_pucch_dbm = 1;
+	    }
 	  }
 
 	  //Add full UL CQI report to the UE report
