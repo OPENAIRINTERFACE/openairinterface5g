@@ -70,7 +70,7 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
       enb_agent_mac_destroy_dl_config(dl_config_elem->dl_info);
       free(dl_config_elem);
     } else { // next subframe, nothing to do now
-      enb_agent_create_empty_dl_config(mod_id, dl_info);
+      enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
       return;
     }
   }
@@ -87,7 +87,7 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
     } else { // Intended for future subframe. Store it in local cache
       dl_mac_config_element_t *e = malloc(sizeof(dl_mac_config_element_t));
       TAILQ_INSERT_TAIL(&queue_head, e, configs);
-      enb_agent_create_empty_dl_config(mod_id, dl_info);
+      enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
       // No need to look for another. Messages arrive ordered
       return;
     }
@@ -95,7 +95,7 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
   }
   
   // We found no pending command, so we will simply pass an empty one
-  enb_agent_create_empty_dl_config(mod_id, dl_info);
+  enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
 }
 
 int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {

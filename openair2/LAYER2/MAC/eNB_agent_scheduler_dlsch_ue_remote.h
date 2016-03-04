@@ -45,6 +45,7 @@
 
 #include "ENB_APP/enb_agent_defs.h"
 #include "enb_agent_mac.h"
+#include "LAYER2/MAC/enb_agent_mac_proto.h"
 
 #include <sys/queue.h>
 
