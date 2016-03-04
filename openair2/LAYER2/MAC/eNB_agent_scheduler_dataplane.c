@@ -163,6 +163,12 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	//Check if there is TA command and set the length appropriately
 	ta_len = (dl_data->ce_bitmap[0] & PROTOCOL__PRP_CE_TYPE__PRPCET_TA) ? 2 : 0; 
       }
+
+      if (ta_len > 0) {
+	// Reset the measurement
+	ue_sched_ctl->ta_timer = 20;
+	eNB_UE_stats->timing_advance_update = 0;
+      }
       
       n_lc = dl_data->n_rlc_pdu;
       num_sdus = 0;
@@ -333,6 +339,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   int           size_bits, size_bytes;
   eNB_MAC_INST         *eNB      = &eNB_mac_inst[mod_id];
   UE_list_t            *UE_list  = &eNB->UE_list;
+  LTE_eNB_UE_stats *eNB_UE_stats = NULL;
 
   int UE_id = find_ue(rnti, PHY_vars_eNB_g[mod_id][CC_id]);
 
@@ -346,6 +353,15 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
   DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
   
   frame_parms[CC_id] = mac_xface->get_lte_frame_parms(mod_id, CC_id);
+
+  if (dl_dci->has_tpc == 1) {
+    // Check if tpc has been set and reset measurement */
+    if ((dl_dci->tpc == 0) || (dl_dci->tpc == 2)) {
+      eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+      eNB_UE_stats->Po_PUCCH_update = 0;
+    }
+  }
+  
   
   switch (frame_parms[CC_id]->N_RB_DL) {
   case 6:
