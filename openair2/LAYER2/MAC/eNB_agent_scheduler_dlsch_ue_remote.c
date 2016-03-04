@@ -46,7 +46,7 @@ int queue_initialized = 0;
 void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
 			     int *mbsfn_flag, Protocol__ProgranMessage **dl_info) {
 
-  if (queue_initialized) {
+  if (!queue_initialized) {
     TAILQ_INIT(&queue_head);
     queue_initialized = 1;
   }
@@ -54,22 +54,26 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
   dl_mac_config_element_t *dl_config_elem;
 
   int diff;
-  
+  LOG_D(MAC, "Current frame and subframe %d, %d\n", frame, subframe);
   // First we check to see if we have a scheduling decision for this sfn_sf already in our queue
   while(queue_head.tqh_first != NULL) {
     dl_config_elem = queue_head.tqh_first;
+  
     diff = get_sf_difference(mod_id, dl_config_elem->dl_info->dl_mac_config_msg->sfn_sf);
     // Check if this decision is for now, for a later or a previous subframe
     if ( diff == 0) { // Now
+      LOG_D(MAC, "Found a decision for this subframe in the queue. Let's use it!\n");
       TAILQ_REMOVE(&queue_head, queue_head.tqh_first, configs);
       *dl_info = dl_config_elem->dl_info;
       free(dl_config_elem);
       return;
     } else if (diff < 0) { //previous subframe , delete message and free memory
+      LOG_D(MAC, "Found a decision for a previous subframe in the queue. Let's get rid of it\n");
       TAILQ_REMOVE(&queue_head, queue_head.tqh_first, configs);
       enb_agent_mac_destroy_dl_config(dl_config_elem->dl_info);
       free(dl_config_elem);
     } else { // next subframe, nothing to do now
+      LOG_D(MAC, "Found a decision for a future subframe in the queue. Nothing to do now\n");
       enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
       return;
     }
@@ -81,17 +85,22 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
 
     diff = get_sf_difference(mod_id, (*dl_info)->dl_mac_config_msg->sfn_sf);
     if (diff == 0) { // Got a command for this sfn_sf
+      LOG_D(MAC, "Found a decision for this subframe pending. Let's use it\n");
       return;
     } else if (diff < 0) {
+      LOG_D(MAC, "Found a decision for a previous subframe. Let's get rid of it\n");
       enb_agent_mac_destroy_dl_config(*dl_info);
+      *dl_info = NULL;
+      enb_agent_get_pending_dl_mac_config(mod_id, dl_info);
     } else { // Intended for future subframe. Store it in local cache
+      LOG_D(MAC, "Found a decision for a future subframe in the queue. Let's store it in the cache\n");
       dl_mac_config_element_t *e = malloc(sizeof(dl_mac_config_element_t));
+      e->dl_info = *dl_info;
       TAILQ_INSERT_TAIL(&queue_head, e, configs);
       enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
       // No need to look for another. Messages arrive ordered
       return;
     }
-    enb_agent_get_pending_dl_mac_config(mod_id, dl_info);
   }
   
   // We found no pending command, so we will simply pass an empty one
@@ -114,25 +123,30 @@ int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {
   
   uint16_t sf_mask = ((1<<4) - 1);
   uint16_t subframe = (sfn_sf & sf_mask);
+
+ LOG_D(MAC, "Target frame and subframe %d, %d\n", frame, subframe);
   
   if (frame == current_frame) {
     return subframe - current_subframe;
   } else if (frame > current_frame) {
-    diff_in_subframes = 9 - current_subframe;
-    diff_in_subframes += (subframe + 1);
-    diff_in_subframes += (frame-2) * 10;
+    diff_in_subframes = ((frame*10)+subframe) - ((current_frame*10)+current_subframe);
+    
+    //    diff_in_subframes = 9 - current_subframe;
+    //diff_in_subframes += (subframe + 1);
+    //diff_in_subframes += (frame-2) * 10;
     if (diff_in_subframes > SCHED_AHEAD_SUBFRAMES) {
       return -1;
     } else {
       return 1;
     }
   } else { //frame < current_frame
-    diff_in_subframes = 9 - current_subframe;
-    diff_in_subframes += (subframe + 1);
-    if (frame > 0) {
-      diff_in_subframes += (frame - 1) * 10;
-    }
-    diff_in_subframes += (1023 - current_frame) * 10;
+    //diff_in_subframes = 9 - current_subframe;
+    //diff_in_subframes += (subframe + 1);
+    //if (frame > 0) {
+    //  diff_in_subframes += (frame - 1) * 10;
+    //}
+    //diff_in_subframes += (1023 - current_frame) * 10;
+    diff_in_subframes = 10240 - ((current_frame*10)+current_subframe) + ((frame*10)+subframe);
     if (diff_in_subframes > SCHED_AHEAD_SUBFRAMES) {
       return -1;
     } else {

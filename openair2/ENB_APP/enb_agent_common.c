@@ -272,31 +272,33 @@ int enb_agent_destroy_echo_reply(Protocol__ProgranMessage *msg) {
 
 
 int enb_agent_destroy_enb_config_reply(Protocol__ProgranMessage *msg) {
-	if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG)
-		goto error;
-	free(msg->enb_config_reply_msg->header);
-	int i, j;
-	Protocol__PrpEnbConfigReply *reply = msg->enb_config_reply_msg;
-
-	for(i = 0; i < reply->n_cell_config;i++){
-		free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
-		free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
-		free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
-		for(j = 0; j < reply->cell_config[i]->si_config->n_si_message;j++){
-			free(reply->cell_config[i]->si_config->si_message[j]);
-		}
-		free(reply->cell_config[i]->si_config->si_message);
-		free(reply->cell_config[i]->si_config);
-		free(reply->cell_config[i]);
-	}
-	free(reply->cell_config);
-	free(reply);
-	free(msg);
-
-	return 0;
-	error:
-	//LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-	return -1;
+  if(msg->msg_case != PROTOCOL__PROGRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG)
+    goto error;
+  free(msg->enb_config_reply_msg->header);
+  int i, j;
+  Protocol__PrpEnbConfigReply *reply = msg->enb_config_reply_msg;
+  
+  for(i = 0; i < reply->n_cell_config;i++){
+    free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
+    free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
+    free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
+    if (reply->cell_config[i]->si_config != NULL) {
+      for(j = 0; j < reply->cell_config[i]->si_config->n_si_message;j++){
+	free(reply->cell_config[i]->si_config->si_message[j]);
+      }
+      free(reply->cell_config[i]->si_config->si_message);
+      free(reply->cell_config[i]->si_config);
+    }
+    free(reply->cell_config[i]);
+  }
+  free(reply->cell_config);
+  free(reply);
+  free(msg);
+  
+  return 0;
+ error:
+  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+  return -1;
 }
 
 int enb_agent_destroy_ue_config_reply(Protocol__ProgranMessage *msg) {
@@ -507,7 +509,7 @@ uint16_t get_sfn_sf (mid_t mod_id) {
   frame = (frame_t) get_current_system_frame_num(mod_id);
   subframe = (sub_frame_t) get_current_subframe(mod_id);
   frame_mask = ((1<<12) - 1);
-  sf_mask = ((1<<4) -1);
+  sf_mask = ((1<<4) - 1);
   sfn_sf = (subframe & sf_mask) | ((frame & frame_mask) << 4);
   
   return sfn_sf;
@@ -1873,42 +1875,42 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       cell_conf[i]->init_nr_pdcch_ofdm_sym = get_num_pdcch_symb(enb_id,i);
       cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
       //TODO: Fill in with actual value
-      Protocol__PrpSiConfig *si_config;
-      si_config = malloc(sizeof(Protocol__PrpSiConfig));
-      if(si_config == NULL)
-	goto error;
-      protocol__prp_si_config__init(si_config);
-      //TODO: Fill in with actual value, Frame number to apply the SI configuration
-      si_config->sfn = 1;
-      si_config->has_sfn = 1;
-      //TODO: Fill in with actual value, the length of SIB1 in bytes
-      si_config->sib1_length = get_sib1_length(enb_id,i);
-      si_config->has_sib1_length = 1;
-      //TODO: Fill in with actual value, Scheduling window for all SIs in SF
-      si_config->si_window_length = (uint32_t) get_si_window_length(enb_id,i);
-      si_config->has_si_window_length = 1;
-      //TODO: Fill in with actual value, the number of SI messages
-      si_config->n_si_message=1;
-      Protocol__PrpSiMessage **si_message;
-      si_message = malloc(sizeof(Protocol__PrpSiMessage *) * si_config->n_si_message);
-      if(si_message == NULL)
-	goto error;
-      for(j = 0; j < si_config->n_si_message; j++){
-	si_message[j] = malloc(sizeof(Protocol__PrpSiMessage));
-	if(si_message[j] == NULL)
-	  goto error;
-	protocol__prp_si_message__init(si_message[j]);
-	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames
-	si_message[j]->periodicity = 1;				//SIPeriod
-	si_message[j]->has_periodicity = 1;
-	//TODO: Fill in with actual value, rhe length of the SI message in bytes
-	si_message[j]->length = 10;
-	si_message[j]->has_length = 1;
-      }
-      if(si_config->n_si_message > 0){
-	si_config->si_message = si_message;
-      }
-      cell_conf[i]->si_config = si_config;
+      /* Protocol__PrpSiConfig *si_config; */
+      /* si_config = malloc(sizeof(Protocol__PrpSiConfig)); */
+      /* if(si_config == NULL) */
+      /* 	goto error; */
+      /* protocol__prp_si_config__init(si_config); */
+      /* //TODO: Fill in with actual value, Frame number to apply the SI configuration */
+      /* si_config->sfn = 1; */
+      /* si_config->has_sfn = 1; */
+      /* //TODO: Fill in with actual value, the length of SIB1 in bytes */
+      /* si_config->sib1_length = get_sib1_length(enb_id,i); */
+      /* si_config->has_sib1_length = 1; */
+      /* //TODO: Fill in with actual value, Scheduling window for all SIs in SF */
+      /* si_config->si_window_length = (uint32_t) get_si_window_length(enb_id,i); */
+      /* si_config->has_si_window_length = 1; */
+      /* //TODO: Fill in with actual value, the number of SI messages */
+      /* si_config->n_si_message=1; */
+      /* Protocol__PrpSiMessage **si_message; */
+      /* si_message = malloc(sizeof(Protocol__PrpSiMessage *) * si_config->n_si_message); */
+      /* if(si_message == NULL) */
+      /* 	goto error; */
+      /* for(j = 0; j < si_config->n_si_message; j++){ */
+      /* 	si_message[j] = malloc(sizeof(Protocol__PrpSiMessage)); */
+      /* 	if(si_message[j] == NULL) */
+      /* 	  goto error; */
+      /* 	protocol__prp_si_message__init(si_message[j]); */
+      /* 	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames */
+      /* 	si_message[j]->periodicity = 1;				//SIPeriod */
+      /* 	si_message[j]->has_periodicity = 1; */
+      /* 	//TODO: Fill in with actual value, rhe length of the SI message in bytes */
+      /* 	si_message[j]->length = 10; */
+      /* 	si_message[j]->has_length = 1; */
+      /* } */
+      /* if(si_config->n_si_message > 0){ */
+      /* 	si_config->si_message = si_message; */
+      /* } */
+      /* cell_conf[i]->si_config = si_config; */
       
       //TODO: Fill in with actual value, the DL transmission bandwidth in RBs
       cell_conf[i]->dl_bandwidth = get_N_RB_DL(enb_id,i);

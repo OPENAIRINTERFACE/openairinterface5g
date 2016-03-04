@@ -41,6 +41,7 @@
 
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/enb_agent_mac_proto.h"
+#include "LAYER2/MAC/eNB_agent_scheduler_dlsch_ue_remote.h"
 
 #include "liblfds700.h"
 
@@ -1369,6 +1370,7 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
   xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
+  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
   xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
 
