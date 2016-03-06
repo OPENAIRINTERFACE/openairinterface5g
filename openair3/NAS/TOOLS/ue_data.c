@@ -375,7 +375,7 @@ static void _gen_emm_data(emm_nvdata_t* data)
      data->imsi.u.num.digit12 = 1;
      data->imsi.u.num.digit13 = 1;
      data->imsi.u.num.digit14 = 1;
-     data->imsi.u.num.digit15 = 0;
+     data->imsi.u.num.digit15 = 1;
 
      data->rplmn.MCCdigit1 = 2;
      data->rplmn.MCCdigit2 = 0;

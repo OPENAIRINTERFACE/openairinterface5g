@@ -281,13 +281,13 @@ int esm_ebr_context_create(
              }
 
              res = sprintf(command_line,
-                           "ifconfig oip1 %s netmask %s broadcast %s up",
+                           "ifconfig oip1 %s netmask %s broadcast %s",
                            ipv4_addr, netmask, broadcast);
              //                            AssertFatal((res > 0) && (res < 128),
              //                                    "error in system command line");
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
-             system(command_line);
+             //system(command_line);
              break;
 
            case NET_PDN_TYPE_IPV6:

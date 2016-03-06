@@ -939,7 +939,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
   // LOG_I(MAC,"store ulsch buffers\n");
   // convert BSR to bytes for comparison with tbs
-  store_ulsch_buffer(module_idP,frameP, subframeP);
+  //  store_ulsch_buffer(module_idP,frameP, subframeP);
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
@@ -1097,7 +1097,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   }
 }
 
-
+/*
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP)
 {
 
@@ -1107,6 +1107,9 @@ void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframe
 
   for (UE_id=UE_list->head_ul; UE_id>=0; UE_id=UE_list->next_ul[UE_id]) {
 
+
+    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+      continue;
 
     UE_template = &UE_list->UE_template[UE_PCCID(module_idP,UE_id)][UE_id];
     //LOG_I(MAC,"[UE %d next %d] SR is %d\n",UE_id, UE_list->next_ul[UE_id], UE_template->ul_SR);
@@ -1138,7 +1141,7 @@ void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframe
     }
   }
 }
-
+*/
 
 
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb)
@@ -1148,13 +1151,14 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   uint16_t           n,UE_id;
   uint8_t            CC_id;
   rnti_t             rnti           = -1;
-  int                mcs=cmin(16,openair_daq_vars.target_ue_ul_mcs);
+  int                mcs;
   int                rb_table_index=0,tbs,tx_power;
   eNB_MAC_INST       *eNB = &eNB_mac_inst[module_idP];
   UE_list_t          *UE_list = &eNB->UE_list;
 
   UE_TEMPLATE       *UE_template;
   LTE_DL_FRAME_PARMS   *frame_parms;
+
 
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
 
@@ -1164,6 +1168,11 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
       continue;
     if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
+
+    if (UE_list->UE_sched_ctrl[i].phr_received == 1)
+      mcs = 20; // if we've received the power headroom information the UE, we can go to maximum mcs
+    else
+      mcs = 10; // otherwise, limit to QPSK PUSCH
 
     UE_id = i;
 

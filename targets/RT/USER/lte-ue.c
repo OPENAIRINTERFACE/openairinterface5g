@@ -447,8 +447,8 @@ static void *UE_thread_synch(void *arg)
 	  }
 #ifndef EXMIMO
 	  openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
-	  openair0.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-	  openair0.trx_stop_func(0);	  
+	  //openair0.trx_set_gains_func(&openair0,&openair0_cfg[0]);
+	  //openair0.trx_stop_func(0);	  
 #else
 	  openair0_set_frequencies(&openair0,&openair0_cfg[0],0);
 	  openair0_set_gains(&openair0,&openair0_cfg[0]);
@@ -1229,7 +1229,7 @@ void *UE_thread(void *arg)
           }
         } else {
           LOG_E( PHY, "[SCHED][UE] UE RX thread busy (IC %d)!!\n", instance_cnt_rx);
-	  if (instance_cnt_rx > 1) {
+	  if (instance_cnt_rx > 2) {
 	    exit_fun("instance_cnt_rx > 1");
 	    return &UE_thread_retval;
 	  }
@@ -1265,7 +1265,7 @@ void *UE_thread(void *arg)
 
           } else {
             LOG_E( PHY, "[SCHED][UE] UE TX thread busy (IC %d)!!\n" );
-	    if (instance_cnt_tx>1) {
+	    if (instance_cnt_tx>2) {
 	      exit_fun("instance_cnt_tx > 1");
 	      return &UE_thread_retval;
 	    }

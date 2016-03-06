@@ -3499,6 +3499,11 @@ int main( int argc, char **argv )
 
 #endif
 
+  write_output("pusch_rb.m","puschrb",PHY_vars_eNB_g[0][0]->pusch_stats_rb,10240,1,2);
+  write_output("pusch_mcs.m","puschmcs",PHY_vars_eNB_g[0][0]->pusch_stats_mcs,10240,1,2);
+  write_output("pusch_round.m","puschround",PHY_vars_eNB_g[0][0]->pusch_stats_round,10240,1,2);
+  write_output("pusch_bsr.m","puschbsr",PHY_vars_eNB_g[0][0]->pusch_stats_bsr,10240,1,2);
+  write_output("pusch_BO.m","puschBO",PHY_vars_eNB_g[0][0]->pusch_stats_BO,10240,1,2);
   // stop threads
 #ifdef XFORMS
   printf("waiting for XFORMS thread\n");
