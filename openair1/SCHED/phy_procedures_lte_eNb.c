@@ -153,8 +153,8 @@ void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid)
    * to be refined in case things don't work properly
    */
   if (harq_pid != DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist]) {
-    //LOG_E(PHY, "%s:%d: critical error, get in touch with the authors\n", __FILE__, __LINE__);
-    //abort();
+    LOG_E(PHY, "%s:%d: critical error, get in touch with the authors\n", __FILE__, __LINE__);
+    abort();
   }
   DLSCH_ptr->head_freelist = (DLSCH_ptr->head_freelist + 1) % 10;
 }

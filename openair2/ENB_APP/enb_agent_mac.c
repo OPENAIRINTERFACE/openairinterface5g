@@ -981,10 +981,10 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       dl_info[i]->harq_status = malloc(sizeof(uint32_t) * dl_info[i]->n_harq_status);
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
 	// TODO: This should be different per TB
- 	  if(harq_status == 0)
-    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_NACK;
-    	  else if (harq_status == 1)
-    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+	if(harq_status == 0)
+	  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
+	else if (harq_status == 1)
+	  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_NACK;
       }
       /*TODO: fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);

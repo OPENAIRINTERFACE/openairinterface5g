@@ -50,7 +50,7 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
     TAILQ_INIT(&queue_head);
     queue_initialized = 1;
   }
-
+  
   dl_mac_config_element_t *dl_config_elem;
 
   int diff;
