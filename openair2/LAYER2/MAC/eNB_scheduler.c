@@ -127,6 +127,8 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
     // increment this, it is cleared when we receive an sdu
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
+
+    eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].cqi_req_timer++;
     
     if (mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti)==NULL) {
       //      mac_remove_ue(module_idP, i, frameP, subframeP);

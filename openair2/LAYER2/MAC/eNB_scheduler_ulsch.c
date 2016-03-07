@@ -873,7 +873,14 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
           UE_template->ul_SR = 0;
           aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!
           status = mac_eNB_get_rrc_status(module_idP,rnti);
-          cqi_req = (status < RRC_CONNECTED)? 0:1;
+	  if (status < RRC_CONNECTED)
+	    cqi_req = 0;
+	  else if (UE_list->UE_sched_ctrl[UE_id].cqi_req_timer>30) {
+	    cqi_req = 1;
+	    UE_list->UE_sched_ctrl[UE_id].cqi_req_timer=0;
+	  }
+	  else
+	    cqi_req = 0;
 
           //power control
           //compute the expected ULSCH RX power (for the stats)
@@ -918,7 +925,9 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
             mcs = cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-
+	    if ((cqi_req==1) && (mcs==20)) {
+		mcs=19;
+	    }
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
               rb_table_index=UE_template->pre_allocated_rb_table_index_ul;
             } else {

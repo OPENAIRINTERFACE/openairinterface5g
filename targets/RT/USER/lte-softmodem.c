@@ -318,7 +318,7 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 
 int multi_thread=1;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 19;
+uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots

@@ -742,6 +742,7 @@ typedef struct {
   uint16_t      ta_timer;
   int16_t       ta_update;
   int32_t       context_active_timer;
+  int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;
   int32_t       ul_failure_timer;
   int32_t       ra_pdcch_order_sent;
