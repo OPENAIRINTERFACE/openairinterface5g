@@ -54,7 +54,7 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
   dl_mac_config_element_t *dl_config_elem;
 
   int diff;
-  LOG_D(MAC, "Current frame and subframe %d, %d\n", frame, subframe);
+  LOG_D(MAC, "[TEST] Current frame and subframe %d, %d\n", frame, subframe);
   // First we check to see if we have a scheduling decision for this sfn_sf already in our queue
   while(queue_head.tqh_first != NULL) {
     dl_config_elem = queue_head.tqh_first;
@@ -107,12 +107,12 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
   enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
 }
 
-int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {
+int get_sf_difference(mid_t mod_id, uint32_t sfn_sf) {
   int diff_in_subframes;
   
   uint16_t current_frame = get_current_system_frame_num(mod_id);
   uint16_t current_subframe = get_current_subframe(mod_id);
-  uint16_t current_sfn_sf = get_sfn_sf(mod_id);
+  uint32_t current_sfn_sf = get_sfn_sf(mod_id);
   
   if (sfn_sf == current_sfn_sf) {
     return 0;
@@ -124,7 +124,7 @@ int get_sf_difference(mid_t mod_id, uint16_t sfn_sf) {
   uint16_t sf_mask = ((1<<4) - 1);
   uint16_t subframe = (sfn_sf & sf_mask);
 
- LOG_D(MAC, "Target frame and subframe %d, %d\n", frame, subframe);
+ LOG_D(MAC, "[TEST] Target frame and subframe %d, %d\n", frame, subframe);
   
   if (frame == current_frame) {
     return subframe - current_subframe;

@@ -72,6 +72,6 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
 // 0 for equal
 // positive for future value
 // Based on  
-int get_sf_difference(mid_t mod_id, uint16_t sfn_sf);
+int get_sf_difference(mid_t mod_id, uint32_t sfn_sf);
 
 #endif
