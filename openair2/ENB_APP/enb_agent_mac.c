@@ -982,9 +982,9 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       for (j = 0; j < dl_info[i]->n_harq_status; j++) {
 	// TODO: This should be different per TB
  	  if(harq_status == 0)
-    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
-    	  else if (harq_status == 1)
     		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_NACK;
+    	  else if (harq_status == 1)
+    		  dl_info[i]->harq_status[j] = PROTOCOL__PRP_HARQ_STATUS__PRHS_ACK;
       }
       /*TODO: fill in the serving cell index for this UE */
       dl_info[i]->serv_cell_index = UE_PCCID(mod_id,i);
@@ -1369,8 +1369,8 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
-  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
-  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
+  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
+  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
   xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
 
