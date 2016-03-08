@@ -428,6 +428,27 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
 
         break;
       }
+    } else if (transmission_mode==4) {
+      DCI_pdu->Num_ue_spec_dci = 1;
+      // user 1
+      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_FDD_t;
+      DCI_pdu->dci_alloc[0].L          = 3;
+      DCI_pdu->dci_alloc[0].rnti       = 0x1235;
+      DCI_pdu->dci_alloc[0].format     = format2;
+      DCI_pdu->dci_alloc[0].ra_flag    = 0;
+
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->tpmi     = 0;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->rv1      = 0;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->ndi1     = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->mcs1     = openair_daq_vars.target_ue_dl_mcs;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->rv2      = 0;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->ndi2     = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->mcs2     = openair_daq_vars.target_ue_dl_mcs;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->tb_swap  = 0;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->harq_pid = DLSCH_ptr->harq_pid_freelist[DLSCH_ptr->head_freelist];
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->TPC      = 0;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->rballoc  = openair_daq_vars.ue_dl_rb_alloc;
+      ((DCI2_5MHz_2A_FDD_t*) (&DCI_pdu->dci_alloc[0].dci_pdu))->rah      = 0;
 
     } else if (transmission_mode==5) {
       DCI_pdu->Num_ue_spec_dci = 2;
