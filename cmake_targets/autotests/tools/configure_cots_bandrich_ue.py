@@ -21,6 +21,10 @@ if openair_dir == None:
   print "Error getting OPENAIR_DIR environment variable"
   sys.exit(1)
 
+sys.path.append(os.path.expandvars('$OPENAIR_DIR/cmake_targets/autotests/tools/'))
+
+from lib_autotest import *
+
 def find_open_port():
    global serial_port, ser
    max_ports=100
@@ -127,6 +131,7 @@ def start_ue () :
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
         os.system ('route add ' + gw + ' ppp0')
+        os.system('sleep 5')
         os.system ('ping ' + gw)
         break
      except Exception, e:
@@ -159,34 +164,11 @@ def reset_ue():
   VendorId=res[0][2]
   ProductId=res[0][3]
   usb_dir= find_usb_path(VendorId, ProductId)
-  print usb_dir
+  print "Bandrich 4G LTE Adapter found in..." + usb_dir
   cmd = "sudo sh -c \"echo 0 > " + usb_dir + "/authorized\""
-  os.system(cmd + " ; sleep 5" )
+  os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
-  os.system(cmd + " ; sleep 5" )
-
-def read_file(filename):
-  try:
-    file = open(filename, 'r')
-    return file.read()
-  except Exception, e:
-    #error = ' Filename ' + filename 
-    #error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
-    #error = error + traceback.format_exc()
-    #print error
-    return ''
-
-
-def find_usb_path(idVendor, idProduct):
-  for root, dirs, files in os.walk("/sys/bus/usb/devices", topdown=False):
-    for name in dirs:
-        tmpdir= os.path.join(root, name)
-        tmpidVendor = read_file(tmpdir+'/idVendor').replace("\n","")
-        tmpidProduct = read_file(tmpdir+'/idProduct').replace("\n","")
-        #print "tmpdir = " + tmpdir + " tmpidVendor = " + tmpidVendor + " tmpidProduct = " + tmpidProduct
-        if tmpidVendor == idVendor and tmpidProduct == idProduct:
-            return tmpdir
-  return ''
+  os.system(cmd + " ; sleep 30" )
 
 i=1
 gw='192.172.0.1'

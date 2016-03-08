@@ -113,7 +113,7 @@ extern int rx_sig_fifo;
 #endif
 
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
@@ -189,7 +189,7 @@ void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe)
   exit(-1);
 }
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 //unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 /*
 unsigned int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL)
@@ -657,7 +657,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
   uint8_t ack_status=0;
   int8_t Po_PUCCH;
   int32_t ulsch_start=0;
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   int overflow=0;
   int k,l;
 #endif
@@ -955,7 +955,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 	  }
           phy_vars_ue->tx_total_RE = nb_rb*12;
 	  
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 	  tx_amp = get_tx_amp(phy_vars_ue->tx_power_dBm,
 			      phy_vars_ue->tx_power_max_dBm,
 			      phy_vars_ue->lte_frame_parms.N_RB_UL,
@@ -1055,7 +1055,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 	  phy_vars_ue->tx_power_dBm = Po_PUCCH;
           phy_vars_ue->tx_total_RE = 12;
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 	  tx_amp = get_tx_amp(Po_PUCCH,
 			      phy_vars_ue->tx_power_max_dBm,
 			      phy_vars_ue->lte_frame_parms.N_RB_UL,
@@ -1119,7 +1119,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 	  phy_vars_ue->tx_power_dBm = Po_PUCCH;
           phy_vars_ue->tx_total_RE = 12;
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
           tx_amp =  get_tx_amp(Po_PUCCH,
 	                       phy_vars_ue->tx_power_max_dBm,
 	                       phy_vars_ue->lte_frame_parms.N_RB_UL,
@@ -1221,7 +1221,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
       if (abstraction_flag == 0) {
         nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
 
-#if defined(EXMIMO) || defined(OAI_USRP) //this is the EXPRESS MIMO case
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
         ulsch_start = (phy_vars_ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
                        openair_daq_vars.timing_advance-
                        phy_vars_ue->timing_advance-
@@ -1248,7 +1248,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
             if (frame_parms->Ncp == 1)
               PHY_ofdm_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
                            dummy_tx_buffer,
 #else
                            &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
@@ -1259,7 +1259,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
                            CYCLIC_PREFIX);
             else
               normal_prefix_mod(&phy_vars_ue->lte_ue_common_vars.txdataF[aa][subframe_tx*nsymb*frame_parms->ofdm_symbol_size],
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
                                 dummy_tx_buffer,
 #else
                                 &phy_vars_ue->lte_ue_common_vars.txdata[aa][ulsch_start],
@@ -1280,7 +1280,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
               }
             */
 #ifndef OFDMA_ULSCH
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,0);
             apply_7_5_kHz(phy_vars_ue,dummy_tx_buffer,1);
 #else
@@ -1295,7 +1295,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
             */
 #endif
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             overflow = ulsch_start - 9*frame_parms->samples_per_tti;
 
             //if ((slot_tx==4) && (aa==0)) printf("ulsch_start %d, overflow %d\n",ulsch_start,overflow);
@@ -1385,7 +1385,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 
             phy_vars_ue->tx_total_RE = 96;
 
-#if defined(EXMIMO) || defined(OAI_USRP)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp = get_tx_amp(phy_vars_ue->tx_power_dBm,
 								     phy_vars_ue->tx_power_max_dBm,
 								     phy_vars_ue->lte_frame_parms.N_RB_UL,
@@ -1534,9 +1534,11 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 
 #else
 #ifndef OAI_USRP
-  #ifndef OAI_BLADERF
+#ifndef OAI_BLADERF
+#ifndef OAI_LMSSDR
     phy_adjust_gain (phy_vars_ue,0);
-  #endif
+#endif
+#endif
 #endif
 #endif
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
@@ -2652,19 +2654,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
           if (ret == (1+phy_vars_ue->dlsch_ue[eNB_id][0]->max_turbo_iterations)) {
             phy_vars_ue->dlsch_errors[eNB_id]++;
 
-	    //#ifdef DEBUG_PHY_PROC
+#ifdef DEBUG_PHY_PROC
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d DLSCH in error (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,
                   harq_pid,frame_rx,subframe_prev,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->rvidx,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->mcs,
                   phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->TBS);
-
-            /*      
-		    if (abstraction_flag ==0 )
-		    dump_dlsch(phy_vars_ue,eNB_id,subframe_prev,harq_pid);
-		    mac_xface->macphy_exit("");
-	    */
           } else {
             LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d subframe %d (slot_rx %d): Received DLSCH (rv %d,mcs %d,TBS %d)\n",
                   phy_vars_ue->Mod_id,phy_vars_ue->dlsch_ue[eNB_id][0]->rnti,

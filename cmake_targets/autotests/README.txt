@@ -163,6 +163,33 @@ Obj.#   Case#   Test#	Description
 01      63      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      63      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
+01      65      00      lte-softmodem tests with BladeRF RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      65      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
+01      65      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
+01      65      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
+01      65      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
+01      65      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
+01      65      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+
+
+01      70      00      lte-softmodem tests with SoDeRa RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      70      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
+01      70      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
+01      70      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
+01      70      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
+01      70      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
+01      70      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+
+
+01      75      00      lte-softmodem + RRH tests with B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX
+01      75      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
+01      75      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
+01      75      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
+01      75      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
+01      75      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
+01      75      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+
+
 01      64              lte-softmodem-noS1 tests
 
 02                      Functional test case
