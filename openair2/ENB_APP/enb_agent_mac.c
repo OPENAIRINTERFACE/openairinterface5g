@@ -1369,8 +1369,8 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
-  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
-  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
+  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
+  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
   xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
 

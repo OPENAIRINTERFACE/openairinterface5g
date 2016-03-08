@@ -247,6 +247,11 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	}
 	
 	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
+
+	// If there is nothing to schedule, just leave
+	if ((sdu_length_total + ta_len) < 0) { 
+	  return;
+	}
 	
 	offset = generate_dlsch_header((unsigned char*)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
 				       num_sdus,              //num_sdus
