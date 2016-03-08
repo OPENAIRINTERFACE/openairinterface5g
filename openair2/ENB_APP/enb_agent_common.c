@@ -873,11 +873,9 @@ int get_sib1_length(mid_t mod_id, int CC_id)
 }
 int get_num_pdcch_symb(mid_t mod_id, int CC_id)
 {
-	/*TODO: add these values to some struct in MAC
-	LTE_UE_PDCCH *lte_ue_pdcch;
-	lte_ue_pdcch = mac_xface->get_lte_ue_pdcch(mod_id, CC_id, mod_id);
-	*/
-	return (PHY_vars_UE_g[mod_id][CC_id]->lte_ue_pdcch_vars[mod_id]->num_pdcch_symbols);
+  /* TODO: This should return the number of PDCCH symbols initially used by the cell CC_id */
+  return 0;
+  //(PHY_vars_UE_g[mod_id][CC_id]->lte_ue_pdcch_vars[mod_id]->num_pdcch_symbols);
 }
 
 /*
@@ -1200,6 +1198,9 @@ int get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
 
 int get_lcg(mid_t ue_id, mid_t lc_id)
 {
+  if (UE_mac_inst == NULL) {
+    return -1;
+  }
   if(UE_mac_inst[ue_id].logicalChannelConfig[lc_id] != NULL) {
     return *UE_mac_inst[ue_id].logicalChannelConfig[lc_id]->ul_SpecificParameters->logicalChannelGroup;
   } else {
