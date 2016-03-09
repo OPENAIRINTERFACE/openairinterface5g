@@ -75,9 +75,9 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-#ifdef XFORMS
+//#ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
-#endif
+//#endif
 
 #ifdef SMBV
 // Rohde&Schwarz SMBV100A vector signal generator
@@ -163,9 +163,10 @@ extern uint16_t Nid_cell;
 
 extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 
-#ifdef XFORMS
+//#ifdef XFORMS
 int otg_enabled;
-#endif
+int xforms=0;
+//#endif
 
 time_stats_t oaisim_stats;
 time_stats_t oaisim_stats_f;
@@ -446,17 +447,18 @@ l2l1_task (void *args_p)
   char fname[64], vname[64];
   int sf;
   protocol_ctxt_t  ctxt;
-#ifdef XFORMS
+  //#ifdef XFORMS
   // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
   // at eNB 0, an UL scope for every UE
-  FD_lte_phy_scope_ue *form_ue[NUMBER_OF_UE_MAX];
+  FD_lte_phy_scope_ue *form_ue[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   FD_lte_phy_scope_enb *form_enb[NUMBER_OF_UE_MAX];
   char title[255];
   char xname[32] = "oaisim";
   int xargc = 1;
   char *xargv[1];
-#endif
+  //#endif
 
+#define PRINT_STATS
 #ifdef PRINT_STATS
   int len;
   FILE *UE_stats[NUMBER_OF_UE_MAX];
@@ -485,31 +487,34 @@ l2l1_task (void *args_p)
       PHY_vars_eNB_g[eNB_inst][CC_id]->proc[9].frame_tx = 1;
     }
 
-#ifdef XFORMS
-  xargv[0] = xname;
-  fl_initialize (&xargc, xargv, NULL, 0, 0);
-  eNB_inst = 0;
+  //#ifdef XFORMS
+  if (xforms==1) {
+    xargv[0] = xname;
+    fl_initialize (&xargc, xargv, NULL, 0, 0);
+    eNB_inst = 0;
+    
+    for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	// DL scope at UEs
+	form_ue[CC_id][UE_inst] = create_lte_phy_scope_ue();
+	sprintf (title, "LTE DL SCOPE eNB %d to UE %d CC_id %d", eNB_inst, UE_inst, CC_id);
+	fl_show_form (form_ue[CC_id][UE_inst]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-  for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
-    // DL scope at UEs
-    form_ue[UE_inst] = create_lte_phy_scope_ue();
-    sprintf (title, "LTE DL SCOPE eNB %d to UE %d", eNB_inst, UE_inst);
-    fl_show_form (form_ue[UE_inst]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-    // UL scope at eNB 0
-    form_enb[UE_inst] = create_lte_phy_scope_enb();
-    sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_inst, eNB_inst);
-    fl_show_form (form_enb[UE_inst]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-    if (openair_daq_vars.use_ia_receiver == 1) {
-      fl_set_button(form_ue[UE_inst]->button_0,1);
-      fl_set_object_label(form_ue[UE_inst]->button_0, "IA Receiver ON");
-      fl_set_object_color(form_ue[UE_inst]->button_0, FL_GREEN, FL_GREEN);
+	if (openair_daq_vars.use_ia_receiver == 1) {
+	  fl_set_button(form_ue[CC_id][UE_inst]->button_0,1);
+	  fl_set_object_label(form_ue[CC_id][UE_inst]->button_0, "IA Receiver ON");
+	  fl_set_object_color(form_ue[CC_id][UE_inst]->button_0, FL_GREEN, FL_GREEN);
+	}
+	
+      }
+      // UL scope at eNB 0
+      form_enb[UE_inst] = create_lte_phy_scope_enb();
+      sprintf (title, "LTE UL SCOPE UE %d to eNB %d", UE_inst, eNB_inst);
+      fl_show_form (form_enb[UE_inst]->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+      
     }
-
   }
-
-#endif
+  //#endif
 
 #ifdef PRINT_STATS
 
@@ -1176,23 +1181,26 @@ l2l1_task (void *args_p)
                     1, 1);
     }
 
-#ifdef XFORMS
+    //#ifdef XFORMS
+    if (xforms==1) {
     eNB_inst = 0;
 
     for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++) {
-      phy_scope_UE(form_ue[UE_inst],
-                   PHY_vars_UE_g[UE_inst][0],
-                   eNB_inst,
-                   UE_inst,
-                   7);
+      for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+	phy_scope_UE(form_ue[CC_id][UE_inst],
+		     PHY_vars_UE_g[UE_inst][CC_id],
+		     eNB_inst,
+		     UE_inst,
+		     7);
+      }
 
       phy_scope_eNB(form_enb[UE_inst],
                     PHY_vars_eNB_g[eNB_inst][0],
                     UE_inst);
 
     }
-
-#endif
+    }
+    //#endif
 
 #ifdef SMBV
 

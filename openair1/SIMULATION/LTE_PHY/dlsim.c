@@ -59,28 +59,14 @@
 
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
+
 extern uint8_t interf_unaw_shift0;
 extern uint8_t interf_unaw_shift1;
 extern uint8_t interf_unaw_shift;
-#ifdef XFORMS
+
 #include "PHY/TOOLS/lte_phy_scope.h"
-#endif
 
 #define PRINT_BYTES
-
-//#define AWGN
-//#define NO_DCI
-
-
-
-//#define ABSTRACTION
-
-/*
-  #define RBmask0 0x00fc00fc
-  #define RBmask1 0x0
-  #define RBmask2 0x0
-  #define RBmask3 0x0
-*/
 
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
@@ -245,11 +231,8 @@ int main(int argc, char **argv)
   uint8_t fdd_flag = 0;
   int xforms = 0;
   frame_t frame_type = FDD;
-
-#ifdef XFORMS
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
-#endif
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;
   int dci_length_bytes=0,dci_length=0;
@@ -319,8 +302,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-
-  while ((c = getopt (argc, argv, "ahdpZDe:m:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:YXV:W:J:")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XYv:W:J:")) != -1) {
 
     switch (c) {
     case 'a':
@@ -619,7 +601,6 @@ int main(int argc, char **argv)
 	break;
     
    }
-    
   }
     
   if (common_flag == 0) {
@@ -664,7 +645,6 @@ int main(int argc, char **argv)
   }
 
 
-#ifdef XFORMS
   if (xforms==1) {
   fl_initialize (&argc, argv, NULL, 0, 0);
   form_ue = create_lte_phy_scope_ue();
@@ -681,8 +661,6 @@ int main(int argc, char **argv)
 
   */
   }
-
-#endif
 
   if (transmission_mode==5) { 
     n_users = 2;
@@ -3538,7 +3516,7 @@ n(tikz_fname,"w");
 	      
 	      if (n_frames==1) {
 		printf("cw %d, round %d: No DLSCH errors found, uncoded ber %f\n",cw,round,uncoded_ber);
-		#ifdef PRINT_BYTES
+#ifdef PRINT_BYTES
 		for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[0]->C;s++) {
 		  if (s<PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[0]->Cminus)
 		    Kr = PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[0]->Kminus;
@@ -3769,7 +3747,6 @@ n(tikz_fname,"w");
 	    if (round == 3) exit(-1);
 	  }
 
-#ifdef XFORMS
 	  if (xforms==1) {
 	    phy_scope_UE(form_ue, 
 			 PHY_vars_UE,
@@ -3777,7 +3754,6 @@ n(tikz_fname,"w");
 			 0,// UE_id
 			 subframe); 
 	  }
-#endif
 	  
 	  round++;
 	}  //round
