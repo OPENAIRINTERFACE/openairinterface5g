@@ -2222,12 +2222,6 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
       
-    case 'M':
-#ifdef ETHERNET
-      strcpy(rrh_eNB_ip,optarg);
-#endif
-      break;
-      
     case 'A':
       timing_advance = atoi (optarg);
       break;
