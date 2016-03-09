@@ -626,7 +626,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     pdsch_magb0 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb0[0];
     pdsch_magb1 = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1[0];
     
-    fl_freeze_form(form);
+    fl_freeze_form(form->lte_phy_scope_ue);
 
     // Received signal in time domain of receive antenna 0
     if (rxsig_t != NULL) { 
@@ -918,7 +918,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     fl_set_xyplot_ybounds(form->pdsch_tput,0,tput_ue_max[UE_id]);
     */
 
-    fl_unfreeze_form(form);
+    fl_unfreeze_form(form->lte_phy_scope_ue);
 
     fl_check_forms();
 
