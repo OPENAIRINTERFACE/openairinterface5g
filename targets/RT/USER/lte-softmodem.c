@@ -2141,9 +2141,12 @@ static void get_options (int argc, char **argv)
   while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
     case LONG_OPTION_RF_CONFIG_FILE:
-      if (strlen(optarg)<=1024)
-         strcpy(rf_config_file,optarg);
-      else {
+      if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
+	printf("no configuration filename is provided\n");
+      }
+      else if (strlen(optarg)<=1024){
+	strcpy(rf_config_file,optarg);
+      }else {
          printf("Configuration filename is too long\n");
          exit(-1);   
       }
