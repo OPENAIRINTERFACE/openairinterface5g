@@ -832,6 +832,7 @@ if (ENB_AGENT_SB_IF)
     ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
     ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
     ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
+    ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
     )
   set(ASYNC_IF_LIB ASYNC_IF)
   include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)

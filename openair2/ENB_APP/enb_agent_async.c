@@ -60,10 +60,10 @@ enb_agent_async_channel_t * enb_agent_async_channel_info(mid_t mod_id, char *dst
    /* 
    * create a message queue
    */ 
-  
-  channel->send_queue = new_message_queue();
+  // Set size of queues statically for now
+  channel->send_queue = new_message_queue(500);
   if (channel->send_queue == NULL) goto error;
-  channel->receive_queue = new_message_queue();
+  channel->receive_queue = new_message_queue(500);
   if (channel->receive_queue == NULL) goto error;
   
    /* 

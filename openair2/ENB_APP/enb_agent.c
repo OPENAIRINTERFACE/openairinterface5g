@@ -135,32 +135,34 @@ void *receive_thread(void *args) {
   Protocol__ProgranMessage *msg;
   
   while (1) {
-    if (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
-      err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING;
-      goto error;
-    }
+    //if (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority)) {
+    //  err_code = PROTOCOL__PROGRAN_ERR__MSG_DEQUEUING;
+    //  goto error;
+    //}
 
-    LOG_D(ENB_AGENT,"received message with size %d\n", size);
+    while (enb_agent_msg_recv(d->enb_id, ENB_AGENT_DEFAULT, &data, &size, &priority) == 0) {
+      
+      LOG_D(ENB_AGENT,"received message with size %d\n", size);
   
     
-    msg=enb_agent_handle_message(d->enb_id, data, size);
+      msg=enb_agent_handle_message(d->enb_id, data, size);
 
-    free(data);
+      free(data);
     
-    // check if there is something to send back to the controller
-    if (msg != NULL){
-      data=enb_agent_pack_message(msg,&size);
+      // check if there is something to send back to the controller
+      if (msg != NULL){
+	data=enb_agent_pack_message(msg,&size);
 
-      if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
-	err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
-	goto error;
-      }
+	if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
+	  goto error;
+	}
       
-      LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+	LOG_D(ENB_AGENT,"sent message with size %d\n", size);
+      } 
     }
-    
   }
-
+    
   return NULL;
 
 error:

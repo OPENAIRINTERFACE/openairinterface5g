@@ -26,45 +26,35 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
 *******************************************************************************/
-/*! \file link_manager.h
- * \brief this is the implementation of a link manager
- * \author Cedric Roux
- * \date November 2015
+/*! \file ringbuffer_queue.h
+ * \brief Lock-free ringbuffer used for async message passing of agent
+ * \author Xenofon Foukas
+ * \date March 2016
  * \version 1.0
- * \email: cedric.roux@eurecom.fr
+ * \email: x.foukas@sms.ed.ac.uk
  * @ingroup _mac
  */
 
-#ifndef LINK_MANAGER_H
-#define LINK_MANAGER_H
+#ifndef RINGBUFFER_QUEUE_H
+#define RINGBUFFER_QUEUE_H
 
-//#include "message_queue.h"
-#include "ringbuffer_queue.h"
-#include "socket_link.h"
+#include "liblfds700.h"
 
-#include <pthread.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef struct message_s {
+  void *data;
+  int size;
+  int priority;
+} message_t;
 
 typedef struct {
-  message_queue_t *send_queue;
-  message_queue_t *receive_queue;
-  socket_link_t   *socket_link;
-  pthread_t       sender;
-  pthread_t       receiver;
-  volatile int    run;
-} link_manager_t;
+  struct lfds700_misc_prng_state ps;
+  struct lfds700_ringbuffer_element *ringbuffer_array;
+  struct lfds700_ringbuffer_state ringbuffer_state;
+} message_queue_t;
 
-link_manager_t *create_link_manager(
-        message_queue_t *send_queue,
-        message_queue_t *receive_queue,
-        socket_link_t   *link);
-void destroy_link_manager(link_manager_t *);
+message_queue_t * new_message_queue(int size);
+int message_put(message_queue_t *queue, void *data, int size, int priority);
+int message_get(message_queue_t *queue, void **data, int *size, int *priority);
+message_queue_t destroy_message_queue(message_queue_t *queue);
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* LINK_MANAGER_H */
+#endif /* RINGBUFFER_QUEUE_H */

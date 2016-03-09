@@ -53,11 +53,15 @@ static void *link_manager_sender_thread(void *_manager)
   LOG_D(MAC, "starting link manager sender thread\n");
 
   while (manager->run) {
-    if (message_get(manager->send_queue, &data, &size, &priority))
-      goto error;
-    if (link_send_packet(manager->socket_link, data, size))
-      goto error;
-    free(data);
+    while (message_get(manager->send_queue, &data, &size, &priority) == 0) {
+      link_send_packet(manager->socket_link, data, size);
+      free(data);
+    }
+    //    if (message_get(manager->send_queue, &data, &size, &priority))
+    //  goto error;
+    //if (link_send_packet(manager->socket_link, data, size))
+    //  goto error;
+    //free(data);
   }
 
   LOG_D(MAC, "link manager sender thread quits\n");
