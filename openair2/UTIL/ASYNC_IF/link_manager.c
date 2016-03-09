@@ -122,6 +122,16 @@ link_manager_t *create_link_manager(
   if (pthread_attr_init(&attr))
     goto error;
 
+  // Make the async interface threads real-time
+  //#ifndef LOWLATENCY
+  struct sched_param sched_param_recv_thread;
+  struct sched_param sched_param_send_thread;
+
+  sched_param_recv_thread.sched_priority = sched_get_priority_max(SCHED_RR) - 1;
+  pthread_attr_setschedparam(&attr, &sched_param_recv_thread);
+  pthread_attr_setschedpolicy(&attr, SCHED_RR);
+  //#endif
+
   if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
     goto error;
 
