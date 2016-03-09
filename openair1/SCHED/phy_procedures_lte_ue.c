@@ -1530,13 +1530,13 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
     if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
         (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
       if  (phy_vars_ue->frame_rx%100==0)
-        gain_control_all(phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id],0);
+        gain_control_all(dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
 
 #else
 #ifndef OAI_USRP
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
-    phy_adjust_gain (phy_vars_ue,0);
+    phy_adjust_gain (phy_vars_ue,dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
 #endif
 #endif
 #endif

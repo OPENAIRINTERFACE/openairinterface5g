@@ -62,9 +62,9 @@ void extract_position(node_list* input_node_list, node_desc_t**, int nb_nodes);/
 void get_beta_map(void);//Abstraction changes
 void get_MIESM_param(void);
 
-void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, uint8_t, uint16_t, uint8_t);//Abstraction changes
+void init_snr(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, uint8_t, uint16_t, uint8_t, uint16_t);//Abstraction changes
 void init_snr_up(channel_desc_t *,  node_desc_t *, node_desc_t *, double*, double*, uint16_t, uint16_t);//Abstraction changes
-void calculate_sinr(channel_desc_t *,  node_desc_t *, node_desc_t *, double *sinr_dB);//Abstraction changes
+void calculate_sinr(channel_desc_t *,  node_desc_t *, node_desc_t *, double *sinr_dB, uint16_t);//Abstraction changes
 void get_beta_map(void);
 int dlsch_abstraction_EESM(double* sinr_dB, uint32_t rb_alloc[4], uint8_t mcs, uint8_t); //temporary testing for PHY abstraction
 int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], uint8_t mcs,uint8_t);
