@@ -2418,8 +2418,8 @@ static void get_options (int argc, char **argv)
     case 'x':
       transmission_mode = atoi(optarg);
 
-      if (transmission_mode > 2) {
-        printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
+      if (transmission_mode > 7) {
+        printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
       break;
