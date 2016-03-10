@@ -1115,7 +1115,8 @@ add_library(L2
   ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 #Test for adding a shared library
-#add_library(alt_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_alt.c)
+add_library(default_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue.c)
+add_library(remote_sched SHARED ${MAC_DIR}/eNB_agent_scheduler_dlsch_ue_remote.c)
 
 # L3 Libs
 ##########################
