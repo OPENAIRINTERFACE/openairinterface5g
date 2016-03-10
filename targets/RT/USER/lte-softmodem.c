@@ -293,6 +293,7 @@ static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 char   rf_config_file[1024];
 
 int chain_offset=0;
+int phy_test = 0;
 
 #ifndef EXMIMO
 char ref[128] = "internal";
@@ -472,7 +473,7 @@ void help (void) {
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
   printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log level \n");
+  printf("  -G Set the global log verbosity \n");
   printf("  -h provides this help message!\n");
   printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
   printf("  -m Set the maximum downlink MCS\n");
@@ -577,12 +578,12 @@ static void *scope_thread(void *arg)
                    0,7);
 
     } else {
-#ifdef OPENAIR2
-      len = dump_eNB_l2_stats (stats_buffer, 0);
-      //fl_set_object_label(form_stats_l2->stats_text, stats_buffer);
-      fl_clear_browser(form_stats_l2->stats_text);
-      fl_add_browser_line(form_stats_l2->stats_text, stats_buffer);
-#endif
+      if (PHY_vars_eNB_g[0][0]->mac_enabled==1) {
+	len = dump_eNB_l2_stats (stats_buffer, 0);
+	//fl_set_object_label(form_stats_l2->stats_text, stats_buffer);
+	fl_clear_browser(form_stats_l2->stats_text);
+	fl_add_browser_line(form_stats_l2->stats_text, stats_buffer);
+      }
       len = dump_eNB_stats (PHY_vars_eNB_g[0][0], stats_buffer, 0);
 
       if (MAX_NUM_CCs>1)
@@ -2117,7 +2118,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_SCANCARRIER,
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
-    LONG_OPTION_LOOPMEMORY
+    LONG_OPTION_LOOPMEMORY,
+    LONG_OPTION_PHYTEST
   };
 
   static const struct option long_options[] = {
@@ -2135,6 +2137,7 @@ static void get_options (int argc, char **argv)
     {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
+    {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {NULL, 0, NULL, 0}
   };
 
@@ -2214,9 +2217,14 @@ static void get_options (int argc, char **argv)
       AssertFatal(input_fd != NULL,"Please provide an input file\n");
       break;
 
-   case LONG_OPTION_DUMP_FRAME:
-     mode = rx_dump_frame;
-     break;   
+    case LONG_OPTION_DUMP_FRAME:
+      mode = rx_dump_frame;
+      break;
+      
+    case LONG_OPTION_PHYTEST:
+      phy_test = 1;
+      break;
+      
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -2272,7 +2280,6 @@ static void get_options (int argc, char **argv)
     case 't':
       target_ul_mcs = atoi (optarg);
       break;
-#ifdef OPENAIR2
 
     case 'W':
       opt_enabled=1;
@@ -2307,7 +2314,6 @@ static void get_options (int argc, char **argv)
       }
 
       break;
-#endif
 
     case 'V':
       ouput_vcd = 1;
@@ -2415,8 +2421,8 @@ static void get_options (int argc, char **argv)
     case 'x':
       transmission_mode = atoi(optarg);
 
-      if (transmission_mode > 2) {
-        printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
+      if (transmission_mode > 7) {
+        printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
       break;
@@ -2511,8 +2517,6 @@ static void get_options (int argc, char **argv)
       }
 
 
-#ifdef OPENAIR2
-
       init_all_otg(0);
       g_otg->seed = 0;
       init_seeds(g_otg->seed);
@@ -2530,7 +2534,6 @@ static void get_options (int argc, char **argv)
 
       init_predef_traffic(enb_properties->properties[i]->num_otg_elements, 1);
 
-#endif
 
       glog_level                     = enb_properties->properties[i]->glog_level;
       glog_verbosity                 = enb_properties->properties[i]->glog_verbosity;
@@ -2592,9 +2595,7 @@ int main( int argc, char **argv )
   int CC_id;
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
-#ifndef OPENAIR2
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-#endif
 
 #ifdef ENABLE_TCXO
   unsigned int tcxo = 114;
@@ -2662,8 +2663,8 @@ int main( int argc, char **argv )
   if (UE_flag==1) {
     printf("configuring for UE\n");
 
-    set_comp_log(HW,      LOG_INFO,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
+    set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
@@ -2679,15 +2680,9 @@ int main( int argc, char **argv )
     printf("configuring for eNB\n");
 
     set_comp_log(HW,      hw_log_level, hw_log_verbosity, 1);
-#ifdef OPENAIR2
     set_comp_log(PHY,     phy_log_level,   phy_log_verbosity, 1);
-
     if (opt_enabled == 1 )
       set_comp_log(OPT,   opt_log_level,      opt_log_verbosity, 1);
-
-#else
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
-#endif
     set_comp_log(MAC,     mac_log_level,  mac_log_verbosity, 1);
     set_comp_log(RLC,     rlc_log_level,   rlc_log_verbosity, 1);
     set_comp_log(PDCP,    pdcp_log_level,  pdcp_log_verbosity, 1);
@@ -2743,8 +2738,6 @@ int main( int argc, char **argv )
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
  
-#ifdef OPENAIR2
-
   if (opt_type != OPT_NONE) {
     radio_type_t radio_type;
 
@@ -2757,7 +2750,6 @@ int main( int argc, char **argv )
       LOG_E(OPT,"failed to run OPT \n");
   }
 
-#endif
 #ifdef PDCP_USE_NETLINK
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
@@ -2827,20 +2819,23 @@ int main( int argc, char **argv )
       PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag,transmission_mode);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
-#ifndef OPENAIR2
 
-      for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+      if (phy_test==1)
+	UE[CC_id]->mac_enabled = 0;
+      else 
+	UE[CC_id]->mac_enabled = 1;
 
-        UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
-        UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
-        UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+      if (UE[CC_id]->mac_enabled == 0) {
+	for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	  
+	  UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
+	  UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
+	  UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	}
       }
-
-#endif
-
 
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
@@ -2850,13 +2845,12 @@ int main( int argc, char **argv )
                         UE[CC_id]->lte_frame_parms.frame_type,
                         UE[CC_id]->X_u);
 
-      UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
-#ifndef OPENAIR2
-      UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
-#endif
+      if (UE[CC_id]->mac_enabled == 1) 
+	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+      else
+	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
 
 #ifdef EXMIMO
-
       for (i=0; i<4; i++) {
         UE[CC_id]->rx_gain_max[i] = rxg_max[i];
         UE[CC_id]->rx_gain_med[i] = rxg_med[i];
@@ -2890,9 +2884,7 @@ int main( int argc, char **argv )
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
 
-
 #ifdef EXMIMO
-
       //N_TA_offset
       if (UE[CC_id]->lte_frame_parms.frame_type == TDD) {
         if (UE[CC_id]->lte_frame_parms.N_RB_DL == 100)
@@ -2904,7 +2896,6 @@ int main( int argc, char **argv )
       } else {
         UE[CC_id]->N_TA_offset = 0;
       }
-
 #else
       //already taken care of in lte-softmodem
       UE[CC_id]->N_TA_offset = 0;
@@ -2928,19 +2919,22 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
-#ifndef OPENAIR2
+      if (phy_test==1)
+	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
+      else 
+	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+      if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) {
+	for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	  
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	}
       }
-
-#endif
 
       compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.prach_config_common,
                         PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.frame_type,
@@ -3150,16 +3144,12 @@ int main( int argc, char **argv )
 
   mac_xface = malloc(sizeof(MAC_xface));
 
-#ifdef OPENAIR2
   int eMBMS_active=0;
-
+  
   l2_init(frame_parms[0],eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
-          0,// cba_group_active
-          0); // HO flag
-
-
-#endif
-
+	  0,// cba_group_active
+	  0); // HO flag
+  
   mac_xface->macphy_exit = &exit_fun;
 
 #if defined(ENABLE_ITTI)
@@ -3172,15 +3162,14 @@ int main( int argc, char **argv )
   printf("ITTI tasks created\n");
 #endif
 
-#ifdef OPENAIR2
-  if (UE_flag==1) {
-    printf("Filling UE band info\n");
-    fill_ue_band_info();
-    mac_xface->dl_phy_sync_success (0, 0, 0, 1);
-  } else
-    mac_xface->mrbch_phy_sync_failure (0, 0, 0);
-
-#endif
+  if (phy_test==0) {
+    if (UE_flag==1) {
+      printf("Filling UE band info\n");
+      fill_ue_band_info();
+      mac_xface->dl_phy_sync_success (0, 0, 0, 1);
+    } else
+      mac_xface->mrbch_phy_sync_failure (0, 0, 0);
+  }
 
   /* #ifdef OPENAIR2
   //if (otg_enabled) {
@@ -3571,9 +3560,6 @@ int main( int argc, char **argv )
     }
   }
 
-#ifdef OPENAIR2
-  //cleanup_pdcp_thread();
-#endif
 
 #ifdef RTAI
   stop_rt_timer();
@@ -3608,12 +3594,8 @@ int main( int argc, char **argv )
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();
 
-#ifdef OPENAIR2
-
   if (opt_enabled == 1)
     terminate_opt();
-
-#endif
 
   logClean();
 
