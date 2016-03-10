@@ -439,7 +439,6 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
     }
   }
   long time_elapsed_nanos = timer_end(vartime);
-  LOG_I(ENB_AGENT, "DID IT IN %lld\n", time_elapsed_nanos);
   *msg = NULL;
   return 0;
 
@@ -890,7 +889,6 @@ int get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 	struct rrc_eNB_ue_context_s* ue_context_p = NULL;
 	uint32_t rntiP = get_ue_crnti(mod_id,ue_id);
 
-	LOG_I(ENB_APP,"The value of rntiP is %d\n",rntiP);
 	ue_context_p = rrc_eNB_get_ue_context(&eNB_rrc_inst[mod_id],rntiP);
 	if(ue_context_p != NULL)
 	{
@@ -1254,8 +1252,6 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  	  int i =find_UE_id(mod_id,rnti);
      	  config->has_rnti = 1;
           config->rnti = rnti;
-	  	  LOG_I(ENB_APP,"The value of i is %d\n",i);
-	  	  LOG_I(ENB_APP,"The value of rnto is %d\n",rnti);
 	  		//TODO: Set the time_alignment_timer
 	  	  if(get_time_alignment_timer(mod_id,i) != -1){
 	  		  config->time_alignment_timer = get_time_alignment_timer(mod_id,i);
