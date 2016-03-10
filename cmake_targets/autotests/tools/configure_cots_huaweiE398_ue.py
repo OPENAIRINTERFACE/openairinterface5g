@@ -30,7 +30,7 @@ def find_open_port():
    max_ports=100
    if os.path.exists(serial_port) == True:
      return serial_port
-   for port in range(2,100):
+   for port in range(0,100):
       serial_port = '/dev/ttyUSB'+str(port)
       if os.path.exists(serial_port) == True:
          print 'New Serial Port : ' + serial_port
@@ -112,7 +112,7 @@ def start_ue () :
    #print 'Enter your commands below.\r\nInsert "exit" to leave the application.'
    timeout=60 #timeout in seconds
    send_command('AT', 'OK' , timeout)
-   send_command('AT+CFUN=1' , 'OK' , timeout)
+   #send_command('AT+CFUN=1' , 'OK' , timeout)
    #send_command('AT+CGATT=0' , 'OK' , timeout)
    send_command('AT+CGATT=1','OK', 300)
    #os.system('wvdial -C ' + bandrich_ppd_config + ' &' )
@@ -147,12 +147,12 @@ def stop_ue():
    os.system('killall wvdial')
    send_command('AT', 'OK' , timeout)
    send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
-   send_command('AT+CFUN=4' , 'OK' , timeout)
+   #send_command('AT+CFUN=4' , 'OK' , timeout)
 
 
 #reset the USB BUS of Bandrich UE
 def reset_ue():
-  stringIdBandrich='BandRich, Inc. 4G LTE adapter'
+  stringIdBandrich='Huawei Technologies Co., Ltd. E398 LTE/UMTS/GSM Modem/Networkcard'
   status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
   if (out == '') :
      print "Bandrich 4G LTE Adapter not found. Exiting now..."
