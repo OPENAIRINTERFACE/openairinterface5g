@@ -1414,12 +1414,12 @@ for oai in oai_list:
          cmd = cmd + 'echo \"Installing core OAI dependencies...Start\" \n'
          cmd = cmd + '$OPENAIR_DIR/cmake_targets/build_oai -I --install-optional-packages \n'
          cmd = cmd + 'echo \"Installing core OAI dependencies...Finished\" \n'
-         cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Start\" \n'
-         cmd = cmd + 'check_install_bladerf_driver \n'
-         cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Finished\" \n'
-         cmd = cmd + 'echo \"Installing USRP OAI dependencies...Start\" \n'
-         cmd = cmd + 'check_install_usrp_uhd_driver \n'
-         cmd = cmd + 'echo \"Installing USRP OAI dependencies...Finished\" \n'
+         #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Start\" \n'
+         #cmd = cmd + 'check_install_bladerf_driver \n'
+         #cmd = cmd + 'echo \"Installing BLADERF OAI dependencies...Finished\" \n'
+         #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Start\" \n'
+         #cmd = cmd + 'check_install_usrp_uhd_driver \n'
+         #cmd = cmd + 'echo \"Installing USRP OAI dependencies...Finished\" \n'
       cmd = cmd +  'cd ' + logdirOpenaircnRepo  + '\n'
       cmd = cmd +  'git checkout ' + GitOpenaircnRepoBranch  + '\n'
       cmd = cmd +  'env |grep OPENAIR'  + '\n'
@@ -1476,7 +1476,8 @@ status, out = commands.getstatusoutput('grep ' +  ' -il \'error\' ' + locallogdi
 if (out != '') :
   print "There is error in setup of machines"
   print "status  = " + str(status) + "\n Check files for error = " + out
-  print "Continuing..."
+  print "Exiting now..."
+  sys.exit(1)
 
 cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
 if cleanUpRemoteMachines == True:
