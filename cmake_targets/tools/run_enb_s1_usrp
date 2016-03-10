@@ -56,6 +56,7 @@ function help()
   echo_error "Mandatory arguments to long options are mandatory for short options too."
   echo_error "  -g, --gdb                           Run with GDB."
   echo_error "  -h, --help                          Print this help."
+  echo_error "  -e, --ulsch-max-errors    num-errs  maximum allowed number of uplink errors"
   echo_error "  -f, --rf-config-file      filename  RF specific configuration file"
   echo_error "  -K, --itti-dump-file      filename  ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
   echo_error "  -M, --target-dl-mcs       mcs       Downlink target MCS."
@@ -138,6 +139,12 @@ function main()
         shift;
         exit 0
         ;;
+     -e | --ulsch-max-errors)
+        ulsch_max_errors=$2
+        echo "setting  --ulsch-max-errors to $ulsch_max_errors"
+        exe_arguments="$exe_arguments --ulsch-max-errors=$ulsch_max_errors"
+        shift 2;
+	 ;;      
      -f | --rf-config-file)
         rf_config_file=$2
         # can omit file name if last arg on the line
