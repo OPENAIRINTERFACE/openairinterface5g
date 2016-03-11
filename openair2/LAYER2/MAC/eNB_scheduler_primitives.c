@@ -707,7 +707,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
       (UE_template->bsr_info[LCGID2]>0) ||
       (UE_template->bsr_info[LCGID3]>0) ||
       (UE_template->ul_SR>0) ||
-      (UE_sched_ctl->ul_inactivity_timer>100)) { // uplink scheduling request
+      ((UE_sched_ctl->ul_inactivity_timer>100)&&(UE_sched_ctl->ul_scheduled>0))) { // uplink scheduling request
 
     LOG_D(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
     return(1);
@@ -1105,7 +1105,8 @@ void SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP, rnti_t rntiP
   UE_list_t *UE_list = &eNB_mac_inst[mod_idP].UE_list;
  
   if (UE_id  != -1) {
-    LOG_D(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
+    if (mac_eNB_get_rrc_status(mod_idP,UE_RNTI(mod_idP,UE_id)) < RRC_CONNECTED)
+      LOG_I(MAC,"[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",mod_idP,rntiP,frameP,subframeP, UE_id,cc_idP);
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
   } else {

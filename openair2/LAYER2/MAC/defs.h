@@ -745,6 +745,7 @@ typedef struct {
   int32_t       cqi_req_timer;
   int32_t       ul_inactivity_timer;
   int32_t       ul_failure_timer;
+  int32_t       ul_scheduled;
   int32_t       ra_pdcch_order_sent;
   int32_t       ul_out_of_sync;
   int32_t       phr_received;

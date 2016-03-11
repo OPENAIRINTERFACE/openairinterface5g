@@ -109,7 +109,9 @@ void rx_sdu(
 
   if (UE_id!=-1) {
     UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
-    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer=0;
+    UE_list->UE_sched_ctrl[UE_id].ul_failure_timer   =0;
+    UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pidP));
+
     if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync=0;
       mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,UE_RNTI(enb_mod_idP,UE_id));
@@ -173,6 +175,7 @@ void rx_sdu(
 
 	// update buffer info
 	//	old_buffer_info = UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
+	
 	UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]=BSR_TABLE[UE_list->UE_template[CC_idP][UE_id].bsr_info[lcgid]];
 
 	UE_list->UE_template[CC_idP][UE_id].ul_total_buffer+= UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
@@ -192,10 +195,10 @@ void rx_sdu(
         if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0 ) {
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid]=frameP;
         }
-	LOG_D(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : ul_total_buffer = %d (lcg increment %d, old %d)\n",
+
+	LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : ul_total_buffer = %d (lcg increment %d)\n",
 	      enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].ul_total_buffer,
-	      UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid],
-	      old_buffer_info);	
+	      UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]);	
       }
       else {
 
@@ -793,6 +796,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
   eNB_MAC_INST      *eNB=&eNB_mac_inst[module_idP];
   UE_list_t         *UE_list=&eNB->UE_list;
   UE_TEMPLATE       *UE_template;
+  UE_sched_ctrl     *UE_sched_ctrl;
+
   //  int                rvidx_tab[4] = {0,2,3,1};
   LTE_DL_FRAME_PARMS   *frame_parms;
   int drop_ue=0;
@@ -851,7 +856,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
       if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
 
         DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
-        UE_template = &UE_list->UE_template[CC_id][UE_id];
+        UE_template   = &UE_list->UE_template[CC_id][UE_id];
+        UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
 
         if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
@@ -867,17 +873,17 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         {
 	  LOG_D(MAC,"[eNB %d][PUSCH] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d)\n",
 		module_idP,frameP,subframeP,UE_id,rnti,round,UE_template->ul_SR,
-		UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer,
-		UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
+		UE_sched_ctrl->ul_inactivity_timer,
+		UE_sched_ctrl->ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
           aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!
           status = mac_eNB_get_rrc_status(module_idP,rnti);
 	  if (status < RRC_CONNECTED)
 	    cqi_req = 0;
-	  else if (UE_list->UE_sched_ctrl[UE_id].cqi_req_timer>30) {
+	  else if (UE_sched_ctrl->cqi_req_timer>30) {
 	    cqi_req = 1;
-	    UE_list->UE_sched_ctrl[UE_id].cqi_req_timer=0;
+	    UE_sched_ctrl->cqi_req_timer=0;
 	  }
 	  else
 	    cqi_req = 0;
@@ -955,12 +961,14 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             first_rb[CC_id]+=rb_table[rb_table_index];
             //store for possible retransmission
             UE_template->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
+	    UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
 
-            LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
-                  module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
-                  first_rb[CC_id],rb_table[rb_table_index],
-                  rb_table_index,TBS,harq_pid);
-
+	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
+	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",
+		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
+		    first_rb[CC_id],rb_table[rb_table_index],
+		    rb_table_index,TBS,harq_pid);
+	    
 	    /*	    
             // Adjust BSR entries for LCGIDs
             adjust_bsr_info(buffer_occupancy,
@@ -1313,7 +1321,7 @@ void schedule_ulsch_cba_rnti(module_id_t module_idP, unsigned char cooperation_f
 
           // simple UE identity based grouping
           if ((UE_id % total_groups) == cba_group) { // this could be simplifed to  active_UEs[UE_id % total_groups]++;
-            if ((mac_get_rrc_status(module_idP,1,UE_id) > RRC_CONNECTED) &&
+            if ((mac_eNB_get_rrc_status(module_idP,rnti) > RRC_CONNECTED) &&
                 (UE_is_to_be_scheduled(module_idP,CC_id,UE_id) == 0)) {
               active_UEs[cba_group]++;
             }
