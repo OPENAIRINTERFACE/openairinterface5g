@@ -107,6 +107,11 @@ void rx_sdu(
 
   LOG_D(MAC,"[eNB %d] CC_id %d Received ULSCH sdu from PHY (rnti %x, UE_id %d), parsing header\n",enb_mod_idP,CC_idP,rntiP,UE_id);
 
+  if (sduP==NULL) { // we've got an error after N rounds
+    UE_list->UE_sched_ctrl[UE_id].ul_scheduled       &= (~(1<<harq_pidP));
+    return;
+  }
+
   if (UE_id!=-1) {
     UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer=0;
     UE_list->UE_sched_ctrl[UE_id].ul_failure_timer   =0;
@@ -117,8 +122,12 @@ void rx_sdu(
       mac_eNB_rrc_ul_in_sync(enb_mod_idP,CC_idP,frameP,subframeP,UE_RNTI(enb_mod_idP,UE_id));
     }
   }
+
+
   payload_ptr = parse_ulsch_header(sduP,&num_ce,&num_sdu,rx_ces,rx_lcids,rx_lengths,sdu_lenP);
- 
+
+
+
   eNB->eNB_stats[CC_idP].ulsch_bytes_rx=sdu_lenP;
   eNB->eNB_stats[CC_idP].total_ulsch_bytes_rx+=sdu_lenP;
   eNB->eNB_stats[CC_idP].total_ulsch_pdus_rx+=1;
@@ -195,10 +204,10 @@ void rx_sdu(
         if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0 ) {
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid]=frameP;
         }
-
-	LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : ul_total_buffer = %d (lcg increment %d)\n",
-	      enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].ul_total_buffer,
-	      UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]);	
+	if (mac_eNB_get_rrc_status(enb_mod_idP,UE_RNTI(enb_mod_idP,UE_id)) < RRC_CONNECTED)
+	  LOG_I(MAC, "[eNB %d] CC_id %d MAC CE_LCID %d : ul_total_buffer = %d (lcg increment %d)\n",
+		enb_mod_idP, CC_idP, rx_ces[i], UE_list->UE_template[CC_idP][UE_id].ul_total_buffer,
+		UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]);	
       }
       else {
 

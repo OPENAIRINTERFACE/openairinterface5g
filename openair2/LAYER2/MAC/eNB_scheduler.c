@@ -125,6 +125,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
           mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti));
     next_i= UE_list->next[i];
 
+    PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63; 
     // increment this, it is cleared when we receive an sdu
     eNB_mac_inst[module_idP].UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
 

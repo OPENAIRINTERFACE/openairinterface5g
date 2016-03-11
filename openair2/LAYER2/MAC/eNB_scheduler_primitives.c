@@ -706,8 +706,8 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
       (UE_template->bsr_info[LCGID1]>0) ||
       (UE_template->bsr_info[LCGID2]>0) ||
       (UE_template->bsr_info[LCGID3]>0) ||
-      (UE_template->ul_SR>0) ||
-      ((UE_sched_ctl->ul_inactivity_timer>100)&&(UE_sched_ctl->ul_scheduled>0))) { // uplink scheduling request
+      (UE_template->ul_SR>0) || // uplink scheduling request
+      ((UE_sched_ctl->ul_inactivity_timer>100)&&(UE_sched_ctl->ul_scheduled!=0xFF))) { 
 
     LOG_D(MAC,"[eNB %d][PUSCH] UE %d/%x should be scheduled\n",module_idP,UE_id,UE_RNTI(module_idP,UE_id));
     return(1);

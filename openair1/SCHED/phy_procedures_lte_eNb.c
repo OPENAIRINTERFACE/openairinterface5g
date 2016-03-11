@@ -3416,6 +3416,15 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid]++;
             phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors++;
             //dump_ulsch(phy_vars_eNB, sched_subframe, i);
+	    // indicate error to MAC
+	    mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
+			      phy_vars_eNB->CC_id,
+			      frame,subframe,
+			      phy_vars_eNB->ulsch_eNB[i]->rnti,
+			      NULL,
+			      0,
+			      harq_pid,
+			      &phy_vars_eNB->ulsch_eNB[i]->Msg3_flag);
           }
         }
       }  // ulsch in error
