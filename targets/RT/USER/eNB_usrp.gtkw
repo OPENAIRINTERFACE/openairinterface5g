@@ -1,16 +1,16 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Wed Sep  9 13:51:16 2015
+[*] Sun Mar 13 08:08:42 2016
 [*]
-[dumpfile] "/homes/kaltenbe/openair_dump_eNB_usrp_note4.gtk"
-[dumpfile_mtime] "Wed Sep  9 13:39:25 2015"
-[dumpfile_size] 323681028
-[savefile] "/homes/kaltenbe/Devel/openair/openair4G/trunk/targets/RT/USER/eNB.gtkw"
-[timestart] 63022760000
-[size] 1855 1056
-[pos] -851 -429
+[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile_mtime] "Sun Mar 13 08:07:27 2016"
+[dumpfile_size] 273954069
+[savefile] "/home/papillon/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[timestart] 0
+[size] 1535 876
+[pos] -1 -1
 *-22.793451 63031840000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[sst_width] 224
+[sst_width] 284
 [signals_width] 230
 [sst_expanded] 1
 [sst_vpaned_height] 294
@@ -50,16 +50,83 @@ functions.eNB_thread_rx9
 functions.eNB_thread_tx9
 functions.phy_procedures_eNb_tx
 functions.phy_procedures_eNb_rx
+@24
+variables.ue0_BO[63:0]
+@420
+variables.ue0_BSR[63:0]
+@28
+functions.phy_enb_ulsch_decoding0
+@420
+variables.ue0_rssi0[63:0]
+variables.ue0_MCS0[63:0]
+variables.ue0_RB0[63:0]
+@24
+variables.ue0_ROUND0[63:0]
+@28
+functions.phy_enb_ulsch_decoding1
+@420
+variables.ue0_rssi1[63:0]
+variables.ue0_MCS1[63:0]
+variables.ue0_RB1[63:0]
+@24
+variables.ue0_ROUND1[63:0]
+@28
+functions.phy_enb_ulsch_decoding2
+@420
+variables.ue0_rssi2[63:0]
+variables.ue0_MCS2[63:0]
+variables.ue0_RB2[63:0]
+@24
+variables.ue0_ROUND2[63:0]
+@28
+functions.phy_enb_ulsch_decoding3
+@420
+variables.ue0_rssi3[63:0]
+variables.ue0_MCS3[63:0]
+variables.ue0_RB3[63:0]
+@24
+variables.ue0_ROUND3[63:0]
+@28
+functions.phy_enb_ulsch_decoding4
+@420
+variables.ue0_rssi4[63:0]
+variables.ue0_MCS4[63:0]
+variables.ue0_RB4[63:0]
+@24
+variables.ue0_ROUND4[63:0]
+@28
+functions.phy_enb_ulsch_decoding5
+@420
+variables.ue0_rssi5[63:0]
+variables.ue0_MCS5[63:0]
+variables.ue0_RB5[63:0]
+@24
+variables.ue0_ROUND5[63:0]
+@28
+functions.phy_enb_ulsch_decoding6
+@420
+variables.ue0_rssi6[63:0]
+variables.ue0_MCS6[63:0]
+variables.ue0_RB6[63:0]
+@24
+variables.ue0_ROUND6[63:0]
+@28
+functions.phy_enb_ulsch_decoding7
+@420
+variables.ue0_rssi7[63:0]
+variables.ue0_MCS7[63:0]
+variables.ue0_RB7[63:0]
+@24
+variables.ue0_ROUND7[63:0]
+@28
 functions.phy_enb_prach_rx
 functions.phy_eNB_dlsch_encoding
 functions.phy_eNB_dlsch_modulation
 functions.phy_eNB_dlsch_scrambling
 functions.phy_enb_pdcch_tx
-functions.phy_enb_ulsch_decoding
 functions.phy_enb_rs_tx
 functions.rrc_mac_config_req
 functions.rlc_data_req
-@29
 functions.udp_enb_task
 [pattern_trace] 1
 [pattern_trace] 0

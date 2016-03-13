@@ -200,7 +200,8 @@ void rx_sdu(
 	  UE_list->UE_template[CC_idP][UE_id].ul_total_buffer = 300000;
 
 	PHY_vars_eNB_g[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP] = (payload_ptr[0] & 0x3f);
-	
+	if (UE_id == UE_list->head)
+	  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,PHY_vars_eNB_g[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP]);	
         if (UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid] == 0 ) {
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_creation_time[lcgid]=frameP;
         }
@@ -877,6 +878,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
                 module_idP,frameP,subframeP,UE_id,CC_id, harq_pid, round,rnti,mode_string[eNB_UE_stats->mode]);
 
 	PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->ul_total_buffer;
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP]);	
         if (((UE_is_to_be_scheduled(module_idP,CC_id,UE_id)>0)) || (round>0))// || ((frameP%10)==0))
           // if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
         {
@@ -953,7 +955,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2=mcs;
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
-            while ((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) &&
+            while (((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) ||
+		    (rb_table[rb_table_index]>39)) &&
                    (rb_table_index>0)) {
               rb_table_index--;
             }
@@ -971,6 +974,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             //store for possible retransmission
             UE_template->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
 	    UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
+	    if (UE_id == UE_list->head)
+	      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
 
 	    if (mac_eNB_get_rrc_status(module_idP,rnti) < RRC_CONNECTED)
 	      LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d)\n",

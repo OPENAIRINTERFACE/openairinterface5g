@@ -3060,8 +3060,6 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
   uint8_t nPRS;
-  //  uint8_t two_ues_connected = 0;
-  uint8_t pusch_active = 0;
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
   int sync_pos;
   uint16_t rnti=0;
@@ -3123,8 +3121,6 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(&phy_vars_eNB->lte_frame_parms,
                                frame,subframe);
-  pusch_active = 0;
-
   // reset the cba flag used for collision detection
   for (i=0; i < NUM_MAX_CBA_GROUP; i++) {
     phy_vars_eNB->cba_last_reception[i]=0;
@@ -3138,16 +3134,14 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
 #endif
 
-    phy_vars_eNB->pusch_stats_rb[i][(frame*10)+subframe] = 0;
+    phy_vars_eNB->pusch_stats_rb[i][(frame*10)+subframe] = -63;
     phy_vars_eNB->pusch_stats_round[i][(frame*10)+subframe] = 0;
-    phy_vars_eNB->pusch_stats_mcs[i][(frame*10)+subframe] = 0;
-    phy_vars_eNB->pusch_stats_bsr[i][(frame*10)+subframe] = 0;
+    phy_vars_eNB->pusch_stats_mcs[i][(frame*10)+subframe] = -63;
 
     if ((phy_vars_eNB->ulsch_eNB[i]) &&
         (phy_vars_eNB->ulsch_eNB[i]->rnti>0) &&
         (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1)) {
 
-      pusch_active = 1;
       round = phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round;
 
       for (int rb=0;
@@ -3246,7 +3240,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                              sched_subframe,
                              0, // control_only_flag
                              phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI,
-                             0);
+			     0);//phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
       }
 
 #ifdef PHY_ABSTRACTION
@@ -3638,7 +3632,6 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
     }
 
-#ifdef PUCCH
     else if ((phy_vars_eNB->dlsch_eNB[i][0]) &&
              (phy_vars_eNB->dlsch_eNB[i][0]->rnti>0)) { // check for PUCCH
 
@@ -3937,9 +3930,12 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                 SR_payload);
         }
       }
-    } // PUCCH processing
-
-#endif //PUCCH
+      // dump stats to VCD
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_MCS0+harq_pid,phy_vars_eNB->pusch_stats_mcs[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RB0+harq_pid,phy_vars_eNB->pusch_stats_rb[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_ROUND0+harq_pid,phy_vars_eNB->pusch_stats_round[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RSSI0+harq_pid,dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[0]->ulsch_power[0]));
+    } // ulsch_eNB[0] && ulsch_eNB[0]->rnti>0 && ulsch_eNB[0]->subframe_scheduling_flag == 1
 
     if ((frame % 100 == 0) && (subframe == 4)) {
       for (harq_idx=0; harq_idx<8; harq_idx++) {
@@ -4015,7 +4011,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                              sched_subframe,
                              0, // control_only_flag
                              phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI,
-                             0);
+                             0);//phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
       }
 
 #ifdef PHY_ABSTRACTION
@@ -4132,10 +4128,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
-  //  if (pusch_active == 0) {
     if (abstraction_flag == 0) {
-      //      LOG_D(PHY,"[eNB] Frame %d, subframe %d Doing I0_measurements\n",
-      //    (((subframe)==9)?-1:0) + phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
       lte_eNB_I0_measurements(phy_vars_eNB,
 			      subframe,
                               0,
