@@ -300,33 +300,46 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid; 
 	UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 	
-	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	//nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	//Find the number of resource blocks and set them to the template for retransmissions
+	nb_rb = get_min_rb_unit(mod_id, CC_id);
+	uint16_t stats_tbs = mac_xface->get_TBS_DL(dl_dci->mcs[0], nb_rb);
+
+	while (stats_tbs < TBS) {
+	  nb_rb += get_min_rb_unit(mod_id, CC_id);
+	  stats_tbs = mac_xface->get_TBS_DL(dl_dci->mcs[0], nb_rb);
+	}
+
+	UE_list->UE_template[CC_id][UE_id].nb_rb[dl_dci->harq_process] = nb_rb;
+	
 	UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;
 	UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=dl_dci->mcs[0];
 	UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=dl_dci->mcs[0];
 	UE_list->eNB_UE_stats[CC_id][UE_id].TBS = TBS;
 	
-	UE_list->eNB_UE_stats[CC_id][UE_id].overhead_bytes= TBS- sdu_length_total;
+	UE_list->eNB_UE_stats[CC_id][UE_id].overhead_bytes= TBS - sdu_length_total;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_sdu_bytes+= sdu_length_total;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_pdu_bytes+= TBS;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_num_pdus+=1;
 	
-	eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-	eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);	
+	//eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
+	//eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
       }
     } else {
       // No need to create anything apart of DCI in case of retransmission
       
       /*TODO: Must add these */
-      //eNB_UE_stats->dlsch_trials[round]++;
+      //      eNB_UE_stats->dlsch_trials[round]++;
       //UE_list->eNB_UE_stats[CC_id][UE_id].num_retransmission+=1;
       //UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used_retx=nb_rb;
       //UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used_retx+=nb_rb;
       //UE_list->eNB_UE_stats[CC_id][UE_id].ncce_used_retx=nCCECC_id];
-      //UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1=eNB_UE_stats->dlsch_mcs1;
-      //UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2=eNB_UE_stats->dlsch_mcs1;
     }
+
+    UE_list->UE_template[CC_id][UE_id].oldNDI[dl_dci->harq_process] = dl_dci->ndi[0];
+    eNB_UE_stats->dlsch_mcs1 = dl_dci->mcs[0];
+
     //Fill the proper DCI of OAI
     fill_oai_dci(mod_id, CC_id, rnti, dl_dci);
   }
@@ -496,7 +509,7 @@ void fill_oai_dci(mid_t mod_id, uint32_t CC_id, uint32_t rnti,
     /*TODO: Need to deal with unsupported DCI type*/
     return;
   }
-
+  
   add_ue_spec_dci(DCI_pdu,
 		  DLSCH_dci,
 		  rnti,
