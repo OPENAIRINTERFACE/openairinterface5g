@@ -36,10 +36,12 @@
 
 #define T_PUT_buffer(argnum, val) \
   do { \
-    T_buffer T_PUT_var = (val); \
-    T_CHECK_SIZE(T_PUT_var.length, argnum); \
-    memcpy(T_LOCAL_buf + T_LOCAL_size, T_PUT_var.addr, T_PUT_var.length); \
-    T_LOCAL_size += T_PUT_var.length; \
+    T_buffer T_PUT_buffer_var = (val); \
+    T_PUT_int(argnum, T_PUT_buffer_var.length); \
+    T_CHECK_SIZE(T_PUT_buffer_var.length, argnum); \
+    memcpy(T_LOCAL_buf + T_LOCAL_size, T_PUT_buffer_var.addr, \
+           T_PUT_buffer_var.length); \
+    T_LOCAL_size += T_PUT_buffer_var.length; \
   } while (0)
 
 #define T_PUT_string(argnum, val) \
@@ -117,7 +119,7 @@ extern T_cache_t *T_cache;
   T_send(T_LOCAL_buf, T_LOCAL_size)
 
 #define T_CHECK_SIZE(len, argnum) \
-  if (T_LOCAL_size + len > T_BUFFER_MAX) { \
+  if (T_LOCAL_size + (len) > T_BUFFER_MAX) { \
     printf("%s:%d:%s: cannot put argument %d in T macro, not enough space" \
              ", consider increasing T_BUFFER_MAX (%d)\n", \
              __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \

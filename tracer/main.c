@@ -73,7 +73,7 @@ void get_string(int s, char *out)
 void get_message(int s)
 {
 #define S(x, y) do { \
-    char str[1024]; \
+    char str[T_BUFFER_MAX]; \
     get_string(s, str); \
     printf("["x"]["y"] %s", str); \
   } while (0)
@@ -85,7 +85,7 @@ void get_message(int s)
   if (GET(s, &m, sizeof(int)) != sizeof(int)) abort();
   switch (m) {
   case T_first: {
-    char str[1024];
+    char str[T_BUFFER_MAX];
     get_string(s, str);
     printf("%s", str);
     break;
@@ -195,6 +195,15 @@ void get_message(int s)
   case T_LEGACY_CLI_WARNING: S("CLI", "WARNING"); break;
   case T_LEGACY_CLI_DEBUG: S("CLI", "DEBUG"); break;
   case T_LEGACY_CLI_TRACE: S("CLI", "TRACE"); break;
+  case T_buf_test: {
+    unsigned char buf[T_BUFFER_MAX];
+    int size;
+    GET(s, &size, sizeof(int));
+    GET(s, buf, size);
+    printf("got buffer size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
+           size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
+    break;
+  }
   default: printf("unkown message type %d\n", m); abort();
   }
 

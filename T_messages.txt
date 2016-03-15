@@ -138,3 +138,4 @@ ID = LEGACY_CLI_DEBUG
 ID = LEGACY_CLI_TRACE
 
 ID = first
+ID = buf_test
