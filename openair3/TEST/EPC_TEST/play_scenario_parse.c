@@ -491,8 +491,7 @@ et_scenario_t* et_generate_scenario(
             *next_packet = packet;
             next_packet = &packet->next;
           } else {
-            fprintf(stdout, "WARNING omitted packet:\n");
-            et_display_node(node, 0);
+            fprintf(stdout, "WARNING omitted packet\n");
           }
         }
         last_packet = packet;

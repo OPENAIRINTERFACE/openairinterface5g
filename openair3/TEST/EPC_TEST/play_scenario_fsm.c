@@ -262,7 +262,8 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_running(et_event_t event)
         fprintf(stderr, "End of scenario: %s\n", g_scenario->name);
         fflush(stderr);
         fflush(stdout);
-        exit(0);
+        return 0;
+        //exit(0);
       }
       fprintf(stderr, "Remaining timers running: %d\n", g_scenario->timer_count);
       return g_fsm_state;
@@ -342,7 +343,7 @@ et_fsm_state_t et_scenario_fsm_notify_event_state_waiting_rx(et_event_t event)
 
     case ET_EVENT_RX_PACKET_TIME_OUT:
       fprintf(stderr, "Error The following packet is not received:\n");
-      et_display_packet(event.u.rx_packet_time_out);
+      //et_display_packet(event.u.rx_packet_time_out);
       AssertFatal(0, "Waited packet not received");
       break;
 

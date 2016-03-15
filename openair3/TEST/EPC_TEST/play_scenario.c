@@ -835,13 +835,13 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
   while (shift) {
     packet = scenario->list_packet;
     while (packet) {
-      fprintf(stdout, "*shift: %p\n", shift);
-      fprintf(stdout, "\tframe_number:       %d\n", shift->frame_number);
-      fprintf(stdout, "\tshift_seconds:      %ld\n", shift->shift_seconds);
-      fprintf(stdout, "\tshift_microseconds: %ld\n", shift->shift_microseconds);
-      fprintf(stdout, "\tsingle:             %d\n\n", shift->single);
-      fprintf(stdout, "\tshift_all_packets_seconds:      %ld\n", shift_all_packets.tv_sec);
-      fprintf(stdout, "\tshift_all_packets_microseconds: %ld\n", shift_all_packets.tv_usec);
+      //fprintf(stdout, "*shift: %p\n", shift);
+      //fprintf(stdout, "\tframe_number:       %d\n", shift->frame_number);
+      //fprintf(stdout, "\tshift_seconds:      %ld\n", shift->shift_seconds);
+      //fprintf(stdout, "\tshift_microseconds: %ld\n", shift->shift_microseconds);
+      //fprintf(stdout, "\tsingle:             %d\n\n", shift->single);
+      //fprintf(stdout, "\tshift_all_packets_seconds:      %ld\n", shift_all_packets.tv_sec);
+      //fprintf(stdout, "\tshift_all_packets_microseconds: %ld\n", shift_all_packets.tv_usec);
 
       AssertFatal((packet->time_relative_to_first_packet.tv_sec >= 0) && (packet->time_relative_to_first_packet.tv_usec >= 0),
           "Bad timing result time_relative_to_first_packet=%d.%d packet num %u, original frame number %u",
@@ -977,7 +977,7 @@ int et_play_scenario(et_scenario_t* const scenario, const struct shift_packet_s 
     }
     packet = packet->next;
   }
-  et_display_scenario(scenario);
+  //et_display_scenario(scenario);
 
   // create SCTP ITTI task: same as eNB code
   if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
@@ -1016,6 +1016,7 @@ static void et_usage (
   fprintf (stdout, "\n");
   fprintf (stdout, "\t-d | --test-dir       <dir>                  Directory where a set of files related to a particular test are located\n");
   fprintf (stdout, "\t-c | --enb-conf-file  <file>                 Provide an eNB config file, valid for the testbed\n");
+  fprintf (stdout, "\t-D | --delay-on-exit  <delay-in-sec>         Wait delay-in-sec before exiting\n");
   fprintf (stdout, "\t-f | --shift-packet   <frame:[+|-]seconds[.usec]> Shift the timing of a packet'\n");
   fprintf (stdout, "\t-F | --shift-packets  <frame:[+|-]seconds[.usec]> Shift the timing of packets starting at frame 'frame' included\n");
   fprintf (stdout, "\t-m | --max-speed                             Play scenario as fast as possible without respecting frame timings\n");
@@ -1035,7 +1036,8 @@ et_config_parse_opt_line (
   char **et_dir_name,
   char **scenario_file_name,
   char **enb_config_file_name,
-  shift_packet_t **shifts)
+  shift_packet_t **shifts,
+  int *delay_on_exit)
 //------------------------------------------------------------------------------
 {
   int                 option   = 0;
@@ -1048,6 +1050,7 @@ et_config_parse_opt_line (
     LONG_OPTION_SCENARIO_FILE,
     LONG_OPTION_MAX_SPEED,
     LONG_OPTION_TEST_DIR,
+    LONG_OPTION_DELAY_EXIT,
     LONG_OPTION_SHIFT_PACKET,
     LONG_OPTION_SHIFT_PACKETS,
     LONG_OPTION_HELP,
@@ -1059,6 +1062,7 @@ et_config_parse_opt_line (
     {"scenario ",      required_argument, 0, LONG_OPTION_SCENARIO_FILE},
     {"max-speed ",     no_argument,       0, LONG_OPTION_MAX_SPEED},
     {"test-dir",       required_argument, 0, LONG_OPTION_TEST_DIR},
+    {"delay-on-exit",  required_argument, 0, LONG_OPTION_DELAY_EXIT},
     {"shift-packet",   required_argument, 0, LONG_OPTION_SHIFT_PACKET},
     {"shift-packets",  required_argument, 0, LONG_OPTION_SHIFT_PACKETS},
     {"help",           no_argument,       0, LONG_OPTION_HELP},
@@ -1100,6 +1104,19 @@ et_config_parse_opt_line (
           printf("Test dir name is %s\n", *et_dir_name);
         }
         break;
+
+      case LONG_OPTION_DELAY_EXIT:
+      case 'D':
+        if (optarg) {
+          delay_on_exit = atoi(optarg);
+          if (0 > delay_on_exit) {
+            fprintf(stderr, "Please provide a valid -D/--delay-on-exit argument, %s is not a valid value\n", delay_on_exit);
+            exit(1);
+          }
+          printf("Delay on exit is %d\n", delay_on_exit);
+        }
+        break;
+
 
       case LONG_OPTION_SHIFT_PACKET:
       case 'f':
@@ -1187,6 +1204,7 @@ int main( int argc, char **argv )
   char            *enb_config_file_name = NULL;
   struct shift_packet_s *shifts         = NULL;
   int              ret                  = 0;
+  int              delay_on_exit        = 0;
   et_scenario_t   *scenario             = NULL;
   char             play_scenario_filename[NAME_MAX];
 
@@ -1205,7 +1223,7 @@ int main( int argc, char **argv )
   asn1_xer_print = 1;
 
   //parameters
-  actions = et_config_parse_opt_line (argc, argv, &et_dir_name, &scenario_file_name, &enb_config_file_name, &shifts); //Command-line options
+  actions = et_config_parse_opt_line (argc, argv, &et_dir_name, &scenario_file_name, &enb_config_file_name, &shifts, &delay_on_exit); //Command-line options
   if  (actions & PLAY_SCENARIO) {
     if (et_generate_xml_scenario(et_dir_name, scenario_file_name,enb_config_file_name, play_scenario_filename) == 0) {
       if (NULL != (scenario = et_generate_scenario(play_scenario_filename))) {
@@ -1223,5 +1241,10 @@ int main( int argc, char **argv )
     et_free_pointer(enb_config_file_name);
   }
   itti_wait_tasks_end();
+  if (0 < delay_on_exit) {
+    sleep(delay_on_exit);
+  }
   return ret;
 }
+
+
