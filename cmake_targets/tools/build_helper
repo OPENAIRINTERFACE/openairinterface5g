@@ -288,7 +288,7 @@ install_asn1c_from_source(){
     asn1_install_dir=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_dir "
     (
-    rm -rf /tmp/asn1c-r1516
+    $SUDO rm -rf /tmp/asn1c-r1516
     mkdir -p /tmp/asn1c-r1516
     cd /tmp/asn1c-r1516
     svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 
