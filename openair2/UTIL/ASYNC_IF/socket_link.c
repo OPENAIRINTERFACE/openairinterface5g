@@ -46,6 +46,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <stdint.h>
 
@@ -56,7 +57,8 @@ socket_link_t *new_link_server(int port)
   struct sockaddr_in addr;
   socklen_t          addrlen;
   int                socket_server = -1;
-
+  int no_delay;
+  
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
@@ -78,6 +80,12 @@ socket_link_t *new_link_server(int port)
     goto error;
   }
 
+  no_delay = 1;
+  if (setsockopt(socket_server, IPPROTO_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
+    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    goto error;
+  }
+  
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
   addr.sin_addr.s_addr = INADDR_ANY;
@@ -115,6 +123,7 @@ socket_link_t *new_link_client(char *server, int port)
 {
   socket_link_t      *ret = NULL;
   struct sockaddr_in addr;
+  int no_delay;
 
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
@@ -131,6 +140,12 @@ socket_link_t *new_link_client(char *server, int port)
     goto error;
   }
 
+  no_delay = 1;
+  if (setsockopt(ret->socket_fd, SOL_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
+    LOG_E(MAC, "%s:%d: setsockopt: %s\n", __FILE__, __LINE__, strerror(errno));
+    goto error;
+  }
+  
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
   if (inet_aton(server, &addr.sin_addr) == 0) {
