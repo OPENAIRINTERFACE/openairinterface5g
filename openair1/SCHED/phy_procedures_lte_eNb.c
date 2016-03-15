@@ -52,12 +52,10 @@
 //#define DEBUG_PHY_PROC (Already defined in cmake)
 //#define DEBUG_ULSCH
 
-//#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/defs.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
-//#endif
 
 #include "assertions.h"
 #include "msc.h"
@@ -479,689 +477,6 @@ void phy_procedures_emos_eNB_RX(unsigned char subframe,PHY_VARS_eNB *phy_vars_eN
 }
 #endif
 
-#ifndef OPENAIR2
-void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB)
-{
-
-  int i;
-  uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
-  uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
-
-  uint32_t rballoc = 0x7FFF;
-  uint32_t rballoc2 = 0x000F;
-  int subframe = phy_vars_eNB->proc[sched_subframe].subframe_tx;
-  /*
-    uint32_t rand = taus();
-    if ((subframe==8) || (subframe==9) || (subframe==0))
-    rand = (rand%5)+5;
-    else
-    rand = (rand%4)+5;
-  */
-  uint32_t bcch_pdu;
-  uint64_t dlsch_pdu;
-
-  DCI_pdu->Num_common_dci = 0;
-  DCI_pdu->Num_ue_spec_dci=0;
-
-
-
-  switch (subframe) {
-  case 5:
-    DCI_pdu->Num_common_dci = 1;
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = SI_RNTI;
-    DCI_pdu->dci_alloc[0].format     = format1A;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-    switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
-    case 6:
-      if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_1_5MHz_FDD_t;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_1_5MHz_FDD_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_1_5MHz_TDD_1_6_t));
-      } else {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_1_5MHz_TDD_1_6_t;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_1_5MHz_TDD_1_6_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_1_5MHz_TDD_1_6_t));
-      }
-
-      break;
-
-    case 25:
-    default:
-      if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_FDD_t;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_5MHz_FDD_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      } else {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_5MHz_TDD_1_6_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      }
-
-      break;
-
-    case 50:
-      if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_10MHz_FDD_t;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_10MHz_FDD_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_10MHz_TDD_1_6_t));
-      } else {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_10MHz_TDD_1_6_t;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_10MHz_TDD_1_6_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_10MHz_TDD_1_6_t));
-      }
-
-      break;
-
-    case 100:
-      if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_20MHz_FDD_t;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_20MHz_FDD_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_20MHz_TDD_1_6_t));
-      } else {
-        DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_20MHz_TDD_1_6_t;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->type              = 1;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->vrb_type          = 0;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->rballoc           = computeRIV(25,10,3);
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->ndi               = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->rv                = 1;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->mcs               = 1;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->harq_pid          = 0;
-        ((DCI1A_20MHz_TDD_1_6_t*)&bcch_pdu)->TPC               = 1;      // set to 3 PRB
-        memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&bcch_pdu,sizeof(DCI1A_20MHz_TDD_1_6_t));
-      }
-
-      break;
-    }
-
-  case 6:
-    /*
-      DCI_pdu->Num_ue_spec_dci = 1;
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI2_5MHz_2A_M10PRB_TDD_t;
-      DCI_pdu->dci_alloc[0].L          = 2;
-      DCI_pdu->dci_alloc[0].rnti       = 0x1236;
-      DCI_pdu->dci_alloc[0].format     = format2_2A_M10PRB;
-      DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-      DLSCH_alloc_pdu1.rballoc          = 0x00ff;
-      DLSCH_alloc_pdu1.TPC              = 0;
-      DLSCH_alloc_pdu1.dai              = 0;
-      DLSCH_alloc_pdu1.harq_pid         = 0;
-      DLSCH_alloc_pdu1.tb_swap          = 0;
-      DLSCH_alloc_pdu1.mcs1             = 0;
-      DLSCH_alloc_pdu1.ndi1             = 1;
-      DLSCH_alloc_pdu1.rv1              = 0;
-      DLSCH_alloc_pdu1.tpmi             = 0;
-      memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1,sizeof(DCI2_5MHz_2A_M10PRB_TDD_t));
-    */
-    break;
-
-  case 7:
-    DCI_pdu->Num_ue_spec_dci = 1;
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-    DCI_pdu->dci_alloc[0].format     = format1;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-    if (transmission_mode<3) {
-      //user 1
-      switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
-      case 25:
-        if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_FDD_t;
-
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_5MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_5MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_5MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_5MHz_TDD_t));
-          */
-        } else {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_TDD_t;
-
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_5MHz_TDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_5MHz_TDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_5MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_5MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_5MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_5MHz_TDD_t));
-          */
-        }
-
-        break;
-
-      case 50:
-
-        if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_10MHz_FDD_t;
-
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_10MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_10MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_10MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_10MHz_TDD_t));
-          */
-        } else {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_10MHz_TDD_t;
-
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_10MHz_TDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_10MHz_TDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_10MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_10MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_10MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_10MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_10MHz_TDD_t));
-          */
-        }
-
-        break;
-
-      case 100:
-        if (phy_vars_eNB->lte_frame_parms.frame_type == FDD) {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_FDD_t;
-
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_5MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_5MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_5MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_5MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_5MHz_TDD_t));
-          */
-        } else {
-          DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_20MHz_TDD_t;
-
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->rballoc          = rballoc;
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->harq_pid         = 0;
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          //((DCI1_20MHz_TDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-          ((DCI1_20MHz_TDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&dlsch_pdu,sizeof(DCI1_20MHz_TDD_t));
-
-          /*
-          //user2
-          DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_20MHz_TDD_t;
-          DCI_pdu->dci_alloc[1].L          = 2;
-          DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-          DCI_pdu->dci_alloc[1].format     = format1;
-          DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->rballoc          = rballoc2;
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->TPC              = 0;
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->dai              = 0;
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->harq_pid         = 1;
-          //((DCI1_20MHz_FDD_t *)&dlsch_pdu)->mcs              = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->mcs              = openair_daq_vars.target_ue_dl_mcs;
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->ndi              = 1;
-          ((DCI1_20MHz_FDD_t *)&dlsch_pdu)->rv               = 0;
-          memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&((DCI1_20MHz_FDD_t *)&dlsch_pdu)->,sizeof(DCI1_5MHz_TDD_t));
-          */
-        }
-
-        break;
-      }
-
-    } else if (transmission_mode==5) {
-      DCI_pdu->Num_ue_spec_dci = 2;
-      // user 1
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-      DCI_pdu->dci_alloc[0].L          = 3;
-      DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-      DCI_pdu->dci_alloc[0].format     = format1E_2A_M10PRB;
-      DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-      DLSCH_alloc_pdu1E.tpmi             = 5; //5=use feedback
-      DLSCH_alloc_pdu1E.rv               = 0;
-      DLSCH_alloc_pdu1E.ndi              = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-      //DLSCH_alloc_pdu1E.mcs            = cqi_to_mcs[phy_vars_eNB->eNB_UE_stats->DL_cqi[0]];
-      //DLSCH_alloc_pdu1E.mcs            = (unsigned char) (taus()%28);
-      DLSCH_alloc_pdu1E.mcs              = openair_daq_vars.target_ue_dl_mcs;
-      //DLSCH_alloc_pdu1E.mcs            = (unsigned char) ((phy_vars_eNB->proc[subframe].frame%1024)%28);
-      phy_vars_eNB->eNB_UE_stats[0].dlsch_mcs1 = DLSCH_alloc_pdu1E.mcs;
-      DLSCH_alloc_pdu1E.harq_pid         = 0;
-      DLSCH_alloc_pdu1E.dai              = 0;
-      DLSCH_alloc_pdu1E.TPC              = 0;
-      DLSCH_alloc_pdu1E.rballoc          = openair_daq_vars.ue_dl_rb_alloc;
-      DLSCH_alloc_pdu1E.rah              = 0;
-      DLSCH_alloc_pdu1E.dl_power_off     = 0; //0=second user present
-      memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-
-      //user 2
-      DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-      DCI_pdu->dci_alloc[1].L          = 0;
-      DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-      DCI_pdu->dci_alloc[1].format     = format1E_2A_M10PRB;
-      DCI_pdu->dci_alloc[1].ra_flag    = 0;
-      //DLSCH_alloc_pdu1E.mcs            = openair_daq_vars.target_ue_dl_mcs;
-      //DLSCH_alloc_pdu1E.mcs            = (unsigned char) (taus()%28);
-      //DLSCH_alloc_pdu1E.mcs            = (unsigned char) ((phy_vars_eNB->frame%1024)%28);
-      DLSCH_alloc_pdu1E.mcs            = (unsigned char) (((phy_vars_eNB->proc[sched_subframe].frame_tx%1024)/3)%28);
-      phy_vars_eNB->eNB_UE_stats[1].dlsch_mcs1 = DLSCH_alloc_pdu1E.mcs;
-
-      memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-
-      // set the precoder of the second UE orthogonal to the first
-      phy_vars_eNB->eNB_UE_stats[1].DL_pmi_single = (phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single ^ 0x1555);
-    }
-
-    break;
-
-    /*
-      case 8:
-      DCI_pdu->Num_common_dci = 1;
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-      DCI_pdu->dci_alloc[0].L          = 2;
-      DCI_pdu->dci_alloc[0].rnti       = 0xbeef;
-      DCI_pdu->dci_alloc[0].format     = format1A;
-      DCI_pdu->dci_alloc[0].ra_flag    = 1;
-
-      RA_alloc_pdu.type                = 1;
-      RA_alloc_pdu.vrb_type            = 0;
-      RA_alloc_pdu.rballoc             = computeRIV(25,12,3);
-      RA_alloc_pdu.ndi      = 1;
-      RA_alloc_pdu.rv       = 1;
-      RA_alloc_pdu.mcs      = 4;
-      RA_alloc_pdu.harq_pid = 0;
-      RA_alloc_pdu.TPC      = 1;
-
-      memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-      break;
-    */
-  case 9:
-    DCI_pdu->Num_ue_spec_dci = 1;
-
-    //user 1
-    if (phy_vars_eNB->lte_frame_parms.frame_type == FDD)
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_FDD_t ;
-    else
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
-
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-    DCI_pdu->dci_alloc[0].format     = format0;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-    UL_alloc_pdu.type    = 0;
-    UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,2,openair_daq_vars.ue_ul_nb_rb);
-    UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
-    UL_alloc_pdu.ndi     = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-    UL_alloc_pdu.TPC     = 0;
-    UL_alloc_pdu.cshift  = 0;
-    UL_alloc_pdu.dai     = 0;
-    UL_alloc_pdu.cqi_req = 1;
-    memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-
-    // user 2
-    /*
-    DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
-    DCI_pdu->dci_alloc[1].L          = 2;
-    DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-    DCI_pdu->dci_alloc[1].format     = format0;
-    DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-    UL_alloc_pdu.type    = 0;
-    UL_alloc_pdu.hopping = 0;
-    if (cooperation_flag==0)
-      UL_alloc_pdu.rballoc = computeRIV(25,2+openair_daq_vars.ue_ul_nb_rb,openair_daq_vars.ue_ul_nb_rb);
-    else
-      UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
-    UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
-    UL_alloc_pdu.ndi     = phy_vars_eNB->proc[sched_subframe].frame_tx&1;
-    UL_alloc_pdu.TPC     = 0;
-    if ((cooperation_flag==0) || (cooperation_flag==1))
-      UL_alloc_pdu.cshift  = 0;
-    else
-      UL_alloc_pdu.cshift  = 1;
-    UL_alloc_pdu.dai     = 0;
-    UL_alloc_pdu.cqi_req = 1;
-    memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-    */
-    break;
-
-  default:
-    break;
-  }
-
-  DCI_pdu->nCCE = 0;
-
-  for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
-    DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
-  }
-
-}
-
-#ifdef EMOS
-void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *phy_vars_eNB)
-{
-
-  int i;
-  uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
-  uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
-
-  //uint32_t rballoc = 0x00F0;
-  //uint32_t rballoc2 = 0x000F;
-  /*
-    uint32_t rand = taus();
-    if ((subframe==8) || (subframe==9) || (subframe==0))
-    rand = (rand%5)+5;
-    else
-    rand = (rand%4)+5;
-  */
-
-  DCI_pdu->Num_common_dci = 0;
-  DCI_pdu->Num_ue_spec_dci=0;
-
-  switch (subframe) {
-  case 5:
-    DCI_pdu->Num_ue_spec_dci = 1;
-
-    if (transmission_mode<3) {
-      //user 1
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1_5MHz_TDD_t;
-      DCI_pdu->dci_alloc[0].L          = 2;
-      DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-      DCI_pdu->dci_alloc[0].format     = format1;
-      DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-      DLSCH_alloc_pdu.rballoc          = openair_daq_vars.ue_dl_rb_alloc;
-      DLSCH_alloc_pdu.TPC              = 0;
-      DLSCH_alloc_pdu.dai              = 0;
-      DLSCH_alloc_pdu.harq_pid         = 1;
-      DLSCH_alloc_pdu.mcs              = openair_daq_vars.target_ue_dl_mcs;
-      DLSCH_alloc_pdu.ndi              = 1;
-      DLSCH_alloc_pdu.rv               = 0;
-      memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu,sizeof(DCI1_5MHz_TDD_t));
-
-      /*
-      //user2
-      DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1_5MHz_TDD_t;
-      DCI_pdu->dci_alloc[1].L          = 2;
-      DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-      DCI_pdu->dci_alloc[1].format     = format1;
-      DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-      DLSCH_alloc_pdu.rballoc          = rballoc2;
-      DLSCH_alloc_pdu.TPC              = 0;
-      DLSCH_alloc_pdu.dai              = 0;
-      DLSCH_alloc_pdu.harq_pid         = 1;
-      DLSCH_alloc_pdu.mcs              = openair_daq_vars.target_ue_dl_mcs;
-      DLSCH_alloc_pdu.ndi              = 1;
-      DLSCH_alloc_pdu.rv               = 0;
-      memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu,sizeof(DCI1_5MHz_TDD_t));
-      */
-    } else if (transmission_mode==5) {
-      DCI_pdu->Num_ue_spec_dci = 2;
-      // user 1
-      DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-      DCI_pdu->dci_alloc[0].L          = 2;
-      DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-      DCI_pdu->dci_alloc[0].format     = format1E_2A_M10PRB;
-      DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-      DLSCH_alloc_pdu1E.tpmi             = 5; //5=use feedback
-      DLSCH_alloc_pdu1E.rv               = 0;
-      DLSCH_alloc_pdu1E.ndi              = 1;
-      DLSCH_alloc_pdu1E.mcs              = openair_daq_vars.target_ue_dl_mcs;
-      DLSCH_alloc_pdu1E.harq_pid         = 1;
-      DLSCH_alloc_pdu1E.dai              = 0;
-      DLSCH_alloc_pdu1E.TPC              = 0;
-      DLSCH_alloc_pdu1E.rballoc          = openair_daq_vars.ue_dl_rb_alloc;
-      DLSCH_alloc_pdu1E.rah              = 0;
-      DLSCH_alloc_pdu1E.dl_power_off     = 0; //0=second user present
-      memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-
-      //user 2
-      DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI1E_5MHz_2A_M10PRB_TDD_t;
-      DCI_pdu->dci_alloc[1].L          = 2;
-      DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-      DCI_pdu->dci_alloc[1].format     = format1E_2A_M10PRB;
-      DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-      memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&DLSCH_alloc_pdu1E,sizeof(DCI1E_5MHz_2A_M10PRB_TDD_t));
-
-      // set the precoder of the second UE orthogonal to the first
-      phy_vars_eNB->eNB_UE_stats[1].DL_pmi_single = (phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single ^ 0x1555);
-    }
-
-    break;
-
-  case 7:
-    DCI_pdu->Num_common_dci = 1;
-    DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI1A_5MHz_TDD_1_6_t;
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = 0xbeef;
-    DCI_pdu->dci_alloc[0].format     = format1A;
-    DCI_pdu->dci_alloc[0].ra_flag    = 1;
-
-    RA_alloc_pdu.type                = 1;
-    RA_alloc_pdu.vrb_type            = 0;
-    RA_alloc_pdu.rballoc             = computeRIV(25,12,3);
-    RA_alloc_pdu.ndi      = 1;
-    RA_alloc_pdu.rv       = 1;
-    RA_alloc_pdu.mcs      = 4;
-    RA_alloc_pdu.harq_pid = 0;
-    RA_alloc_pdu.TPC      = 1;
-
-    memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],&RA_alloc_pdu,sizeof(DCI1A_5MHz_TDD_1_6_t));
-    break;
-
-  case 9:
-    DCI_pdu->Num_ue_spec_dci = 1;
-
-    //user 1
-    DCI_pdu->dci_alloc[0].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
-    DCI_pdu->dci_alloc[0].L          = 2;
-    DCI_pdu->dci_alloc[0].rnti       = 0x1235;
-    DCI_pdu->dci_alloc[0].format     = format0;
-    DCI_pdu->dci_alloc[0].ra_flag    = 0;
-
-    UL_alloc_pdu.type    = 0;
-    UL_alloc_pdu.hopping = 0;
-    UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
-    UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
-    UL_alloc_pdu.ndi     = 1;
-    UL_alloc_pdu.TPC     = 0;
-    UL_alloc_pdu.cshift  = 0;
-    UL_alloc_pdu.dai     = 0;
-    UL_alloc_pdu.cqi_req = 1;
-    memcpy((void*)&DCI_pdu->dci_alloc[0].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-
-    /*
-    //user 2
-    DCI_pdu->dci_alloc[1].dci_length = sizeof_DCI0_5MHz_TDD_1_6_t ;
-    DCI_pdu->dci_alloc[1].L          = 2;
-    DCI_pdu->dci_alloc[1].rnti       = 0x1236;
-    DCI_pdu->dci_alloc[1].format     = format0;
-    DCI_pdu->dci_alloc[1].ra_flag    = 0;
-
-    UL_alloc_pdu.type    = 0;
-    UL_alloc_pdu.hopping = 0;
-    if (cooperation_flag==0)
-    UL_alloc_pdu.rballoc = computeRIV(25,2+openair_daq_vars.ue_ul_nb_rb,openair_daq_vars.ue_ul_nb_rb);
-    else
-    UL_alloc_pdu.rballoc = computeRIV(25,0,openair_daq_vars.ue_ul_nb_rb);
-    UL_alloc_pdu.mcs     = openair_daq_vars.target_ue_ul_mcs;
-    UL_alloc_pdu.ndi     = 1;
-    UL_alloc_pdu.TPC     = 0;
-    if ((cooperation_flag==0) || (cooperation_flag==1))
-    UL_alloc_pdu.cshift  = 0;
-    else
-    UL_alloc_pdu.cshift  = 1;
-    UL_alloc_pdu.dai     = 0;
-    UL_alloc_pdu.cqi_req = 1;
-    memcpy((void*)&DCI_pdu->dci_alloc[1].dci_pdu[0],(void *)&UL_alloc_pdu,sizeof(DCI0_5MHz_TDD_1_6_t));
-    */
-    break;
-
-  default:
-    break;
-  }
-
-  DCI_pdu->nCCE = 0;
-
-  for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
-    DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
-  }
-
-}
-#endif //EMOS
-#endif //OPENAIR2
 
 #define AMP_OVER_SQRT2 ((AMP*ONE_OVER_SQRT2_Q15)>>15)
 #define AMP_OVER_2 (AMP>>1)
@@ -1308,10 +623,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   uint8_t harq_pid;
   DCI_PDU *DCI_pdu;
   uint8_t *DLSCH_pdu=NULL;
-#ifndef OPENAIR2
   DCI_PDU DCI_pdu_tmp;
   uint8_t DLSCH_pdu_tmp[768*8];
-#endif
   int8_t UE_id;
   uint8_t num_pdcch_symbols=0;
   uint8_t ul_subframe;
@@ -1353,13 +666,12 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   }
 
 
-#ifdef OPENAIR2
-
   // Get scheduling info for next subframe
-  if (phy_vars_eNB->CC_id == 0)
-    mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);//,1);
-
-#endif
+  if (phy_vars_eNB->mac_enabled==1) {
+    if (phy_vars_eNB->CC_id == 0) {
+      mac_xface->eNB_dlsch_ulsch_scheduler(phy_vars_eNB->Mod_id,0,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);//,1);
+    }
+  }
 
   if (abstraction_flag==0) {
     // clear the transmit data array for the current subframe
@@ -1687,36 +999,22 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
 #endif
 
-#ifdef OPENAIR2
-
-  // Parse DCI received from MAC
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
-  DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
-                                   phy_vars_eNB->CC_id,
-                                   phy_vars_eNB->proc[sched_subframe].frame_tx,
-                                   subframe);
-#else
-  DCI_pdu = &DCI_pdu_tmp;
-#ifdef EMOS
-  /*
-    if (((phy_vars_eNB->proc[sched_subframe].frame_tx%1024)%3 == 0) && (next_slot == 0)) {
-    //openair_daq_vars.target_ue_dl_mcs = (openair_daq_vars.target_ue_dl_mcs+1)%28;
-    openair_daq_vars.target_ue_dl_mcs = taus()%28;
-    LOG_D(PHY,"[MYEMOS] frame %d, increasing MCS to %d\n",phy_vars_eNB->proc[sched_subframe].frame_tx,openair_daq_vars.target_ue_dl_mcs);
-    }
-  */
-  /*
-    if (phy_vars_eNB->proc[sched_subframe].frame_tx > 28000) {
-    LOG_E(PHY,"More that 28000 frames reached! Exiting!\n");
-    }
-  */
-#endif
+  if (phy_vars_eNB->mac_enabled==1) {
+    // Parse DCI received from MAC
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,1);
+    DCI_pdu = mac_xface->get_dci_sdu(phy_vars_eNB->Mod_id,
+				     phy_vars_eNB->CC_id,
+				     phy_vars_eNB->proc[sched_subframe].frame_tx,
+				     subframe);
+  }
+  else {
+    DCI_pdu = &DCI_pdu_tmp;
 #ifdef EMOS_CHANNEL
-  fill_dci_emos(DCI_pdu,sched_subframe,phy_vars_eNB);
+    fill_dci_emos(DCI_pdu,sched_subframe,phy_vars_eNB);
 #else
-  fill_dci(DCI_pdu,sched_subframe,phy_vars_eNB);
+    fill_dci(DCI_pdu,sched_subframe,phy_vars_eNB);
 #endif
-#endif
+  }
 
   // clear existing ulsch dci allocations before applying info from MAC  (this is table
   ul_subframe = pdcch_alloc2ul_subframe(&phy_vars_eNB->lte_frame_parms,subframe);
@@ -1783,6 +1081,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %"PRIu8"] SI generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
 #endif
+
       generate_eNB_dlsch_params_from_dci(frame,
 					 subframe,
                                          &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1817,6 +1116,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB %"PRIu8"] RA generate_eNB_dlsch_params_from_dci\n", phy_vars_eNB->Mod_id);
 #endif
+
       generate_eNB_dlsch_params_from_dci(frame,
 					 subframe,
                                          &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1851,17 +1151,20 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
     else if (DCI_pdu->dci_alloc[i].format != format0) { // this is a normal DLSCH allocation
 
-#ifdef OPENAIR2
 #ifdef DEBUG_PHY_PROC
       LOG_D(PHY,"[eNB] Searching for RNTI %"PRIx16"\n",DCI_pdu->dci_alloc[i].rnti);
 #endif
-      UE_id = find_ue((int16_t)DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB);
-#else
-      UE_id = i;
-#endif
+
+      if (phy_vars_eNB->mac_enabled==1)
+	UE_id = find_ue((int16_t)DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB);
+      else
+	UE_id = i;
 
       if (UE_id>=0) {
-        //    dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	if ((frame%100)==0) {
+	  LOG_D(PHY,"Frame %3d, SF %d \n",frame,subframe); 
+	  dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
+	}
 #if defined(SMBV) && !defined(EXMIMO)
         // Configure this user
         if (smbv_is_config_frame(phy_vars_eNB->proc[sched_subframe].frame_tx) && (smbv_frame_cnt < 4)) {
@@ -1871,6 +1174,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         }
 
 #endif
+
         generate_eNB_dlsch_params_from_dci(frame,
 					   subframe,
                                            &DCI_pdu->dci_alloc[i].dci_pdu[0],
@@ -1931,14 +1235,13 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       if (harq_pid==255) {
         LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Bad harq_pid for ULSCH allocation\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx);
         //mac_exit_wrapper("Invalid harq_pid (255) detected");
-        return; // not reached
+        return; 
       }
 
-#ifdef OPENAIR2
-      UE_id = find_ue((int16_t)DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB);
-#else
-      UE_id = i;
-#endif
+      if (phy_vars_eNB->mac_enabled==1)
+	UE_id = find_ue((int16_t)DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB);
+      else
+	UE_id = i;
 
       if (UE_id<0) {
         LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Unknown UE_id for rnti %"PRIx16"\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,DCI_pdu->dci_alloc[i].rnti);
@@ -1967,6 +1270,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
       //dump_dci(&phy_vars_eNB->lte_frame_parms,&DCI_pdu->dci_alloc[i]);
       //LOG_D(PHY,"[eNB] cba generate_eNB_ulsch_params_from_dci for ue %d for dci rnti %x\n", UE_id, DCI_pdu->dci_alloc[i].rnti);
+
       generate_eNB_ulsch_params_from_dci(&DCI_pdu->dci_alloc[i].dci_pdu[0],
                                          DCI_pdu->dci_alloc[i].rnti,
                                          sched_subframe,
@@ -2068,19 +1372,19 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
     input_buffer_length = phy_vars_eNB->dlsch_eNB_SI->harq_processes[0]->TBS/8;
 
 
-#ifdef OPENAIR2
-    DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
-                                         phy_vars_eNB->CC_id,
-                                         phy_vars_eNB->proc[sched_subframe].frame_tx,
-                                         SI_RNTI,
-                                         0);
-#else
-    DLSCH_pdu = DLSCH_pdu_tmp;
+    if (phy_vars_eNB->mac_enabled==1) {
+      DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
+					   phy_vars_eNB->CC_id,
+					   phy_vars_eNB->proc[sched_subframe].frame_tx,
+					   SI_RNTI,
+					   0);
+    }
+    else {
+      DLSCH_pdu = DLSCH_pdu_tmp;
 
-    for (i=0; i<input_buffer_length; i++)
-      DLSCH_pdu[i] = (unsigned char)(taus()&0xff);
-
-#endif
+      for (i=0; i<input_buffer_length; i++)
+	DLSCH_pdu[i] = (unsigned char)(taus()&0xff);
+    }
 
 #if defined(SMBV) && !defined(EXMIMO)
 
@@ -2170,7 +1474,6 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
     input_buffer_length = phy_vars_eNB->dlsch_eNB_ra->harq_processes[0]->TBS/8;
 
-#ifdef OPENAIR2
     int16_t crnti = mac_xface->fill_rar(phy_vars_eNB->Mod_id,
                                         phy_vars_eNB->CC_id,
                                         phy_vars_eNB->proc[sched_subframe].frame_tx,
@@ -2219,15 +1522,14 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
             phy_vars_eNB->ulsch_eNB[(uint32_t)UE_id]->Msg3_frame,
             phy_vars_eNB->ulsch_eNB[(uint32_t)UE_id]->Msg3_subframe);
 
-#else
-
-    for (i=0; i<input_buffer_length; i++)
-      dlsch_input_buffer[i]= (unsigned char) i; //(taus()&0xff);
-
-    dlsch_input_buffer[1] = (phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)>>(2+4); // 7 MSBs of timing advance + divide by 4
-    dlsch_input_buffer[2] = ((phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)<<(4-2))&0xf0;  // 4 LSBs of timing advance + divide by 4
-    //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset);
-#endif
+    /*
+      for (i=0; i<input_buffer_length; i++)
+	dlsch_input_buffer[i]= (unsigned char) i; //(taus()&0xff);
+      
+      dlsch_input_buffer[1] = (phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)>>(2+4); // 7 MSBs of timing advance + divide by 4
+      dlsch_input_buffer[2] = ((phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset)<<(4-2))&0xf0;  // 4 LSBs of timing advance + divide by 4
+      //LOG_I(PHY,"UE %d: timing_offset = %d\n",UE_id,phy_vars_eNB->eNB_UE_stats[0].UE_timing_offset);
+    */
 
 #if defined(SMBV) && !defined(EXMIMO)
 
@@ -2296,10 +1598,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
             phy_vars_eNB->proc[sched_subframe].frame_tx, subframe, re_allocated);
 #endif
 
-#ifdef OPENAIR2
     } //max user count
 
-#endif
     phy_vars_eNB->dlsch_eNB_ra->active = 0;
   }
 
@@ -2356,21 +1656,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
         phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].dlsch_trials[harq_pid][0]++;
 
-#ifdef OPENAIR2
-        DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
-                                             phy_vars_eNB->CC_id,
-                                             phy_vars_eNB->proc[sched_subframe].frame_tx,
-                                             phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti,
-                                             0);
-        phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_MAC += phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->TBS;
-#else
-        DLSCH_pdu = DLSCH_pdu_tmp;
-
-        for (i=0; i<input_buffer_length; i++)
-          DLSCH_pdu[i] = (unsigned char)(taus()&0xff);
-
-#endif
-
+	if (phy_vars_eNB->mac_enabled==1) {
+	  DLSCH_pdu = mac_xface->get_dlsch_sdu(phy_vars_eNB->Mod_id,
+					       phy_vars_eNB->CC_id,
+					       phy_vars_eNB->proc[sched_subframe].frame_tx,
+					       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->rnti,
+					       0);
+	  phy_vars_eNB->eNB_UE_stats[UE_id].total_TBS_MAC += phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[harq_pid]->TBS;
+	}
+	else {
+	  DLSCH_pdu = DLSCH_pdu_tmp;
+	  
+	  for (i=0; i<input_buffer_length; i++)
+	    DLSCH_pdu[i] = (unsigned char)(taus()&0xff);
+	}
+	
 #if defined(SMBV) && !defined(EXMIMO)
 
         // Configures the data source of allocation (allocation is configured by DCI)
@@ -2755,7 +2055,7 @@ void process_HARQ_feedback(uint8_t UE_id,
             // then Increment DLSCH round index
             dlsch_harq_proc->round++;
 
-            if (dlsch_harq_proc->round == dlsch->Mdlharq) {
+            if (dlsch_harq_proc->round == 1/*dlsch->Mdlharq*/) {
               // This was the last round for DLSCH so reset round and increment l2_error counter
 #ifdef DEBUG_PHY_PROC
               LOG_W(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
@@ -3061,7 +2361,8 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t 
             preamble_energy_max/10,
             preamble_energy_max%10,
             preamble_delay_list[preamble_max]);
-#ifdef OPENAIR2
+
+      if (phy_vars_eNB->mac_enabled==1) {
         uint8_t update_TA=4;
 
         switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
@@ -3082,16 +2383,14 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t 
           break;
         }
 
-
-
       mac_xface->initiate_ra_proc(phy_vars_eNB->Mod_id,
                                   phy_vars_eNB->CC_id,
                                   frame,
                                   preamble_max,
                                   preamble_delay_list[preamble_max]*update_TA,
 				  0,subframe,0);
-      
-#endif
+      }      
+
     } else {
       MSC_LOG_EVENT(MSC_PHY_ENB, "0 RA Failed add user, too many");
       LOG_I(PHY,"[eNB %d][RAPROC] frame %d, subframe %d: Unable to add user, max user count reached\n",
@@ -3277,11 +2576,13 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
       if ((i == 1) && (phy_vars_eNB->cooperation_flag > 0) && (two_ues_connected == 1))
       break;
     */
-#ifdef OPENAIR2
-    if (phy_vars_eNB->eNB_UE_stats[i].mode == RA_RESPONSE)
-      process_Msg3(phy_vars_eNB,sched_subframe,i,harq_pid);
 
-#endif
+    if (phy_vars_eNB->mac_enabled==1) {
+      if (phy_vars_eNB->eNB_UE_stats[i].mode == RA_RESPONSE) {
+	process_Msg3(phy_vars_eNB,sched_subframe,i,harq_pid);
+      }
+    }
+
 
     /*
     #ifdef DEBUG_PHY_PROC
@@ -3518,12 +2819,12 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             LOG_I(PHY,"[eNB %d][RAPROC] maxHARQ_Msg3Tx reached, abandoning RA procedure for UE %d\n",
                   phy_vars_eNB->Mod_id, i);
             phy_vars_eNB->eNB_UE_stats[i].mode = PRACH;
-#ifdef OPENAIR2
-            mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
-                                      phy_vars_eNB->CC_id,
-                                      frame,
-                                      phy_vars_eNB->eNB_UE_stats[i].crnti);
-#endif
+	    if (phy_vars_eNB->mac_enabled==1) {
+	      mac_xface->cancel_ra_proc(phy_vars_eNB->Mod_id,
+					phy_vars_eNB->CC_id,
+					frame,
+					phy_vars_eNB->eNB_UE_stats[i].crnti);
+	    }
             remove_ue(phy_vars_eNB->eNB_UE_stats[i].crnti,phy_vars_eNB,abstraction_flag);
             phy_vars_eNB->ulsch_eNB[(uint32_t)i]->Msg3_active = 0;
             //phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active = 0;
@@ -3649,7 +2950,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors = 0;
 
         if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
-#ifdef OPENAIR2
+	  if (phy_vars_eNB->mac_enabled==1) {
 	  //#ifdef DEBUG_PHY_PROC
           LOG_I(PHY,"[eNB %d][RAPROC] Frame %d Terminating ra_proc for harq %d, UE %d\n",
                 phy_vars_eNB->Mod_id,
@@ -3682,7 +2983,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->b,
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->TBS>>3);
           */
-#endif
+	  }
 
           phy_vars_eNB->eNB_UE_stats[i].mode = PUSCH;
           phy_vars_eNB->ulsch_eNB[i]->Msg3_flag = 0;
@@ -3731,7 +3032,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
           //dump_ulsch(phy_vars_eNB,sched_subframe,i);
 
 
-#ifdef OPENAIR2
+	  if (phy_vars_eNB->mac_enabled==1) {
           //    if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->calibration_flag == 0) {
           mac_xface->rx_sdu(phy_vars_eNB->Mod_id,
                             phy_vars_eNB->CC_id,
@@ -3758,7 +3059,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
           stop_meas(&phy_vars_eNB->localization_stats);
 #endif
 
-#endif
+	  }
         }
 
         // estimate timing advance for MAC
@@ -3909,12 +3210,12 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                     phy_vars_eNB->ulsch_eNB[i]->rnti,frame,subframe);
             }
 
-#ifdef OPENAIR2
-            mac_xface->SR_indication(phy_vars_eNB->Mod_id,
-                                     phy_vars_eNB->CC_id,
-                                     frame,
-                                     phy_vars_eNB->dlsch_eNB[i][0]->rnti,subframe);
-#endif
+	    if (phy_vars_eNB->mac_enabled==1) {
+	      mac_xface->SR_indication(phy_vars_eNB->Mod_id,
+				       phy_vars_eNB->CC_id,
+				       frame,
+				       phy_vars_eNB->dlsch_eNB[i][0]->rnti,subframe);
+	    }
           }
         }// do_SR==1
 

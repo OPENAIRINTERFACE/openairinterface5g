@@ -42,13 +42,13 @@ THIS_SCRIPT_PATH=$(dirname $(readlink -f $0))
 source $THIS_SCRIPT_PATH/tools/build_helper
 
 MSC_GEN="False"
-XFORMS="False"
+XFORMS="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
 LOWLATENCY_FLAG_USER="False"
 FORCE_LOWLATENCY_FLAG_USER=""
 REL="Rel10"
-HW="EXMIMO"
+HW="None"
 TP="None"
 NOS1=0
 EPC=0
@@ -91,7 +91,7 @@ Options
    default is Rel10,
    Rel8 limits the implementation to 3GPP Release 8 version
 -w | --hardware
-   EXMIMO (Default), USRP, BLADERF, LMSSDR, None
+   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -760,9 +760,9 @@ fi
     rm -fr $OPENAIR_DIR/cmake_targets/autotests/log
     mkdir -p $OPENAIR_DIR/cmake_targets/autotests/log
     if [ "$RUN_GROUP" -eq "1" ]; then
-        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -g "$TEST_CASE_GROUP" -p $mypassword >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     else
-        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p '$mypassword' >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
+        $OPENAIR_DIR/cmake_targets/autotests/run_exec_autotests.bash -p $mypassword >& $OPENAIR_DIR/cmake_targets/autotests/log/autotests.log &
     fi
     wait
   else
