@@ -263,7 +263,7 @@
 #define AMP_OVER_2 (AMP>>1)
 
 /// Threshold for PUCCH Format 1 detection
-#define PUCCH1_THRES 7
+#define PUCCH1_THRES 0
 /// Threshold for PUCCH Format 1a/1b detection
 #define PUCCH1a_THRES 4
 

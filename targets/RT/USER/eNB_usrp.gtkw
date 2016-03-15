@@ -1,17 +1,17 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Sun Mar 13 08:08:42 2016
+[*] Mon Mar 14 12:40:13 2016
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Sun Mar 13 08:07:27 2016"
-[dumpfile_size] 273954069
-[savefile] "/home/papillon/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 0
+[dumpfile_mtime] "Mon Mar 14 11:08:33 2016"
+[dumpfile_size] 54022345
+[savefile] "/home/abeille/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
+[timestart] 12592600000
 [size] 1535 876
 [pos] -1 -1
-*-22.793451 63031840000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.793451 12619679774 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 284
-[signals_width] 230
+[signals_width] 238
 [sst_expanded] 1
 [sst_vpaned_height] 294
 @24
@@ -54,6 +54,15 @@ functions.phy_procedures_eNb_rx
 variables.ue0_BO[63:0]
 @420
 variables.ue0_BSR[63:0]
+@28
+functions.macxface_initiate_ra_proc
+@29
+functions.macxface_terminate_ra_proc
+@28
+functions.macxface_SR_indication
+@420
+variables.ue0_SR_ENERGY[63:0]
+variables.ue0_SR_THRES[63:0]
 @28
 functions.phy_enb_ulsch_decoding0
 @420

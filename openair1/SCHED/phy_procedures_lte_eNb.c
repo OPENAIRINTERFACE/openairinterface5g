@@ -3629,8 +3629,13 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[harq_pid],
             phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_pid][0]);
 #endif
-
-    }
+      
+      // dump stats to VCD
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_MCS0+harq_pid,phy_vars_eNB->pusch_stats_mcs[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RB0+harq_pid,phy_vars_eNB->pusch_stats_rb[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_ROUND0+harq_pid,phy_vars_eNB->pusch_stats_round[0][(frame*10)+subframe]);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RSSI0+harq_pid,dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[0]->ulsch_power[0]));
+    } // ulsch_eNB[0] && ulsch_eNB[0]->rnti>0 && ulsch_eNB[0]->subframe_scheduling_flag == 1
 
     else if ((phy_vars_eNB->dlsch_eNB[i][0]) &&
              (phy_vars_eNB->dlsch_eNB[i][0]->rnti>0)) { // check for PUCCH
@@ -3930,12 +3935,8 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                 SR_payload);
         }
       }
-      // dump stats to VCD
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_MCS0+harq_pid,phy_vars_eNB->pusch_stats_mcs[0][(frame*10)+subframe]);
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RB0+harq_pid,phy_vars_eNB->pusch_stats_rb[0][(frame*10)+subframe]);
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_ROUND0+harq_pid,phy_vars_eNB->pusch_stats_round[0][(frame*10)+subframe]);
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_RSSI0+harq_pid,dB_fixed(phy_vars_eNB->lte_eNB_pusch_vars[0]->ulsch_power[0]));
-    } // ulsch_eNB[0] && ulsch_eNB[0]->rnti>0 && ulsch_eNB[0]->subframe_scheduling_flag == 1
+
+    } 
 
     if ((frame % 100 == 0) && (subframe == 4)) {
       for (harq_idx=0; harq_idx<8; harq_idx++) {
