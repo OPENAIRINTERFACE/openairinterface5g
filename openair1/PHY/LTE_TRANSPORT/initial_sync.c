@@ -48,7 +48,7 @@
 #include "gain_control.h"
 #endif
 
-#if defined(OAI_USRP) || defined(EXMIMO)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_LMSSDR)
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 #endif
@@ -280,7 +280,6 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   uint8_t flip_fdd_ncp,flip_fdd_ecp,flip_tdd_ncp,flip_tdd_ecp;
   //  uint16_t Nid_cell_fdd_ncp=0,Nid_cell_fdd_ecp=0,Nid_cell_tdd_ncp=0,Nid_cell_tdd_ecp=0;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  int i;
   int ret=-1;
   int aarx,rx_power=0;
   /*#ifdef OAI_USRP
@@ -291,17 +290,10 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=FDD;
   init_frame_parms(frame_parms,1);
-
-  //  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
-
-  /*#ifdef OAI_USRP
-  for (aarx = 0; aarx<frame_parms->nb_antennas_rx;aarx++) {
-    rxdata128 = (__m128i*)phy_vars_ue->lte_ue_common_vars.rxdata[aarx];
-    for (i=0; i<(frame_parms->samples_per_tti*10)>>2; i++) {
-      rxdata128[i] = _mm_srai_epi16(rxdata128[i],4);
-    } 
-  }
-  #endif*/
+  /*
+  write_output("rxdata0.m","rxd0",phy_vars_ue->lte_ue_common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+  exit(-1);
+  */
   sync_pos = lte_sync_time(phy_vars_ue->lte_ue_common_vars.rxdata,
                            frame_parms,
                            (int *)&phy_vars_ue->lte_ue_common_vars.eNb_id);
@@ -314,32 +306,6 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n",phy_vars_ue->Mod_id,sync_pos,phy_vars_ue->lte_ue_common_vars.eNb_id);
-#endif
-
-
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
-    rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][sync_pos2],
-                              frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
-
-  phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] = dB_fixed(rx_power/frame_parms->nb_antennas_rx);
-
-#ifdef DEBUG_INITIAL_SYNCH
-  LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] );
-#endif
-
-#ifdef EXMIMO
-
-  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
-      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
-    //phy_adjust_gain(phy_vars_ue,0);
-    gain_control_all(phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],0);
-
-#else
-#ifndef OAI_USRP
-  #ifndef OAI_BLADERF 
-  phy_adjust_gain(phy_vars_ue,0);
-  #endif
-#endif
 #endif
 
   // SSS detection
@@ -530,20 +496,20 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 #endif
 
     if (phy_vars_ue->UE_scan_carrier == 0) {
-#ifdef OPENAIR2
-      LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
-      //mac_resynch();
-      mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
-#endif //OPENAIR2
-      
+      if (phy_vars_ue->mac_enabled==1) {
+	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",phy_vars_ue->Mod_id);
+	//mac_resynch();
+	mac_xface->dl_phy_sync_success(phy_vars_ue->Mod_id,phy_vars_ue->frame_rx,0,1);//phy_vars_ue->lte_ue_common_vars.eNb_id);
+	phy_vars_ue->UE_mode[0] = PRACH;
+      }
+      else {
+	phy_vars_ue->UE_mode[0] = PUSCH;
+      }
+
       generate_pcfich_reg_mapping(frame_parms);
       generate_phich_reg_mapping(frame_parms);
       //    init_prach625(frame_parms);
-#ifndef OPENAIR2
-      phy_vars_ue->UE_mode[0] = PUSCH;
-#else
-      phy_vars_ue->UE_mode[0] = PRACH;
-#endif
+
       //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors=0;
       phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq=0;
     //phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_last=0;
@@ -569,7 +535,7 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
 	  phy_vars_ue->lte_frame_parms.phich_config_common.phich_duration,
 	  phich_string[phy_vars_ue->lte_frame_parms.phich_config_common.phich_resource],
 	  phy_vars_ue->lte_frame_parms.nb_antennas_tx_eNB);
-#if defined(OAI_USRP) || defined(EXMIMO)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_LMSSDR)
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  phy_vars_ue->Mod_id,
 	  phy_vars_ue->frame_rx,
@@ -595,6 +561,65 @@ int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode)
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors++;
     phy_vars_ue->lte_ue_pbch_vars[0]->pdu_errors_conseq++;
 
+  }
+
+  // gain control
+  if (ret!=0) { //we are not synched, so we cannot use rssi measurement (which is based on channel estimates)
+    rx_power = 0;
+
+    // do a measurement on the best guess of the PSS
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+      rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][sync_pos2],
+				frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples);
+    
+    /*
+    // do a measurement on the full frame
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)
+      rx_power += signal_energy(&phy_vars_ue->lte_ue_common_vars.rxdata[aarx][0],
+				frame_parms->samples_per_tti*10);
+    */
+
+    // we might add a low-pass filter here later
+    phy_vars_ue->PHY_measurements.rx_power_avg[0] = rx_power/frame_parms->nb_antennas_rx; 
+
+    phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] = dB_fixed(phy_vars_ue->PHY_measurements.rx_power_avg[0]);
+
+#ifdef DEBUG_INITIAL_SYNCH
+  LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",phy_vars_ue->Mod_id,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0] );
+#endif
+
+#ifdef EXMIMO
+  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
+      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
+    //phy_adjust_gain(phy_vars_ue,0);
+    gain_control_all(phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],0);
+
+#else
+#ifndef OAI_USRP
+#ifndef OAI_BLADERF 
+#ifndef OAI_LMSSDR
+  phy_adjust_gain(phy_vars_ue,phy_vars_ue->PHY_measurements.rx_power_avg_dB[0],0);
+#endif
+#endif
+#endif
+#endif
+  }
+  else {
+#ifdef EXMIMO
+  if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
+      (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
+    //phy_adjust_gain(phy_vars_ue,0);
+    gain_control_all(dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
+
+#else
+#ifndef OAI_USRP
+#ifndef OAI_BLADERF 
+#ifndef OAI_LMSSDR
+  phy_adjust_gain(phy_vars_ue,dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
+#endif
+#endif
+#endif
+#endif
   }
 
   //  exit_fun("debug exit");

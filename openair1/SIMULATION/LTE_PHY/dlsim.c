@@ -61,25 +61,7 @@
 extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
 
-#ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
-#endif
-
-
-
-//#define AWGN
-//#define NO_DCI
-
-
-
-//#define ABSTRACTION
-
-/*
-  #define RBmask0 0x00fc00fc
-  #define RBmask1 0x0
-  #define RBmask2 0x0
-  #define RBmask3 0x0
-*/
 
 PHY_VARS_eNB *PHY_vars_eNB;
 PHY_VARS_UE *PHY_vars_UE;
@@ -237,10 +219,9 @@ int main(int argc, char **argv)
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
-#ifdef XFORMS
+  int xforms=0;
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
-#endif
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;
   int dci_length_bytes=0,dci_length=0;
@@ -305,7 +286,7 @@ int main(int argc, char **argv)
   //  num_layers = 1;
   perfect_ce = 0;
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:Y")) != -1) {
+  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:PLl:XY")) != -1) {
     switch (c) {
     case 'a':
       awgn_flag = 1;
@@ -557,6 +538,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'X':
+      xforms=1;
+      break;
+
     case 'Y':
       perfect_ce=1;
       break;
@@ -636,27 +621,36 @@ int main(int argc, char **argv)
   if ((transmission_mode > 1) && (n_tx != 2))
     printf("n_tx must be >1 for transmission_mode %d\n",transmission_mode);
 
-#ifdef XFORMS
-  fl_initialize (&argc, argv, NULL, 0, 0);
-  form_ue = create_lte_phy_scope_ue();
-  sprintf (title, "LTE PHY SCOPE eNB");
-  fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-  if (!dual_stream_UE==0) {
-    openair_daq_vars.use_ia_receiver = 1;
-    fl_set_button(form_ue->button_0,1);
-    fl_set_object_label(form_ue->button_0, "IA Receiver ON");
-    fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+  if (xforms==1) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
+    form_ue = create_lte_phy_scope_ue();
+    sprintf (title, "LTE PHY SCOPE eNB");
+    fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+    
+    if (!dual_stream_UE==0) {
+      openair_daq_vars.use_ia_receiver = 1;
+      fl_set_button(form_ue->button_0,1);
+      fl_set_object_label(form_ue->button_0, "IA Receiver ON");
+      fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+    }
   }
-
-#endif
 
   if (transmission_mode==5) {
     n_users = 2;
     printf("dual_stream_UE=%d\n", dual_stream_UE);
   }
 
-  lte_param_init(n_tx,n_rx,transmission_mode,extended_prefix_flag,frame_type,Nid_cell,tdd_config,N_RB_DL,threequarter_fs,osf,perfect_ce);
+  lte_param_init(n_tx,
+		 n_rx,
+		 transmission_mode,
+		 extended_prefix_flag,
+		 frame_type,
+		 Nid_cell,
+		 tdd_config,
+		 N_RB_DL,
+		 threequarter_fs,
+		 osf,
+		 perfect_ce);
 
 
     
@@ -3486,13 +3480,13 @@ PMI_FEEDBACK:
             //      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->round++;
           }
 
-#ifdef XFORMS
-          phy_scope_UE(form_ue,
-                       PHY_vars_UE,
-                       eNB_id,
-                       0,// UE_id
-                       subframe);
-#endif
+	  if (xforms==1) {
+	    phy_scope_UE(form_ue,
+			 PHY_vars_UE,
+			 eNB_id,
+			 0,// UE_id
+			 subframe);
+	  }
 
         }  //round
 

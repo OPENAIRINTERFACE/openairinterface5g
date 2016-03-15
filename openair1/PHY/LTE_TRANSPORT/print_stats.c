@@ -50,7 +50,7 @@
 #endif
 
 extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
-#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF)
+#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
 #include "common_lib.h"
 extern openair0_config_t openair0_cfg[];
 #endif
@@ -97,20 +97,20 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 #ifdef EXMIMO
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB (LNA %d, vga %d dB)\n",phy_vars_ue->rx_total_gain_dB, openair0_cfg[0].rxg_mode[0],(int)openair0_cfg[0].rx_gain[0]);
 #endif
-#if defined(OAI_USRP) || defined(OAI_BLADERF)
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
-#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF)
+#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
     len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d), estimated carrier frequency %f Hz\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset,openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset);
 #endif
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
     len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
     if (phy_vars_ue->UE_mode[0]==PUSCH) {
       len += sprintf(&buffer[len], "[UE PROC] Po_PUSCH = %d dBm (PL %d dB, Po_NOMINAL_PUSCH %d dBm, PHR %d dB)\n", 
-		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->Po_PUSCH,
+		     phy_vars_ue->ulsch_ue[0]->Po_PUSCH,
 		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0),
-		     mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id,0),
-		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->PHR);
+		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH,
+		     phy_vars_ue->ulsch_ue[0]->PHR);
       len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n", 
 		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0)+
 		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
@@ -582,9 +582,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
       len += sprintf(&buffer[len],"%4d ",
                      phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
       if ((i>0) && ((i%25) == 0)) 
-	len += sprintf(&buffer[len],"\n                                 ",
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
-
+	len += sprintf(&buffer[len],"\n");
     }
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\n[eNB PROC] PERFORMANCE PARAMETERS\n");
@@ -644,7 +642,6 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
 		     phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
 		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		     dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
 		     PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
                      phy_vars_eNB->eNB_UE_stats[UE_id].sector);
 
