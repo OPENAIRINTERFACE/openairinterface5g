@@ -1,17 +1,41 @@
+#PHY logs
+ID = ENB_INPUT_SIGNAL
+    DESC = eNodeB received signal in the time domain for a duration of 1ms
+    GROUP = PHY:GRAPHIC:HEAVY
+    FORMAT = int,eNB_ID : int,frame : int,subframe : int,antenna : buffer,rxdata
+
 #legacy logs
 ID = LEGACY_MAC_INFO
-    DESC = MAC legacy logs
+    DESC = MAC legacy logs - info level
     GROUP = MAC:INFO:LEGACY
 ID = LEGACY_MAC_ERROR
+    DESC = MAC legacy logs - error level
+    GROUP = MAC:ERROR:LEGACY
 ID = LEGACY_MAC_WARNING
+    DESC = MAC legacy logs - warning level
+    GROUP = MAC:WARNING:LEGACY
 ID = LEGACY_MAC_DEBUG
+    DESC = MAC legacy logs - debug level
+    GROUP = MAC:DEBUG:LEGACY
 ID = LEGACY_MAC_TRACE
+    DESC = MAC legacy logs - trace level
+    GROUP = MAC:TRACE:LEGACY
 
 ID = LEGACY_PHY_INFO
+    DESC = PHY legacy logs - info level
+    GROUP = PHY:INFO:LEGACY
 ID = LEGACY_PHY_ERROR
+    DESC = PHY legacy logs - error level
+    GROUP = PHY:ERROR:LEGACY
 ID = LEGACY_PHY_WARNING
+    DESC = PHY legacy logs - warning level
+    GROUP = PHY:WARNING:LEGACY
 ID = LEGACY_PHY_DEBUG
+    DESC = PHY legacy logs - debug level
+    GROUP = PHY:DEBUG:LEGACY
 ID = LEGACY_PHY_TRACE
+    DESC = PHY legacy logs - trace level
+    GROUP = PHY:TRACE:LEGACY
 
 ID = LEGACY_S1AP_INFO
 ID = LEGACY_S1AP_ERROR
@@ -137,5 +161,6 @@ ID = LEGACY_CLI_WARNING
 ID = LEGACY_CLI_DEBUG
 ID = LEGACY_CLI_TRACE
 
+#for debug/test - not used
 ID = first
 ID = buf_test

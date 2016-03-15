@@ -27,7 +27,7 @@ $(PROG): $(OBJS)
 T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h
 
-main.o: T.h T_IDs.h
+main.o: T.h T_IDs.h T_defs.h
 
 clean:
 	rm -f *.o $(PROG) $(GENIDS) core T_IDs.h

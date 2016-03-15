@@ -8,9 +8,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include "defs.h"
+
 #define T_ID(x) x
 #include "../T_IDs.h"
 #include "../T_defs.h"
+
+void *ul_plot;
 
 #ifdef T_USE_SHARED_MEMORY
 
@@ -195,6 +199,23 @@ void get_message(int s)
   case T_LEGACY_CLI_WARNING: S("CLI", "WARNING"); break;
   case T_LEGACY_CLI_DEBUG: S("CLI", "DEBUG"); break;
   case T_LEGACY_CLI_TRACE: S("CLI", "TRACE"); break;
+  case T_ENB_INPUT_SIGNAL: {
+    unsigned char buf[T_BUFFER_MAX];
+    int size;
+    int eNB, frame, subframe, antenna;
+    GET(s, &eNB, sizeof(int));
+    GET(s, &frame, sizeof(int));
+    GET(s, &subframe, sizeof(int));
+    GET(s, &antenna, sizeof(int));
+    GET(s, &size, sizeof(int));
+    GET(s, buf, size);
+    printf("got T_ENB_INPUT_SIGNAL eNB %d frame %d subframe %d antenna %d size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
+           eNB, frame, subframe, antenna, size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
+    if (size != 4 * 7680)
+      {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed\n");abort();}
+    iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680);
+    break;
+  }
   case T_buf_test: {
     unsigned char buf[T_BUFFER_MAX];
     int size;
@@ -252,6 +273,9 @@ int main(void)
   if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
   for (l = 0; l < T_NUMBER_OF_IDS; l++)
     if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
+
+  ul_plot = make_plot(512, 100, 7680*2*10);
+
   /* read messages */
   while (1) {
 #ifdef T_USE_SHARED_MEMORY
