@@ -257,11 +257,16 @@ void init_shm(void)
 
 #endif /* T_USE_SHARED_MEMORY */
 
-int main(void)
+int main(int n, char **v)
 {
+  void *database;
   int s;
   int l;
   char t;
+
+  database = parse_database("../T_messages.txt");
+  dump_database(database);
+
 #ifdef T_USE_SHARED_MEMORY
   init_shm();
 #endif

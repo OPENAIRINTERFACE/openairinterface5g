@@ -8,7 +8,7 @@ CFLAGS += -DT_USE_SHARED_MEMORY
 LIBS += -lrt
 
 PROG=tracer
-OBJS=main.o plot.o
+OBJS=main.o plot.o t_data.o
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
