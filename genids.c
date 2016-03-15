@@ -135,6 +135,11 @@ int main(int n, char **v)
     get_line(in, &name, &value);
     if (name == NULL) break;
     printf("name '%s' value '%s'\n", name, value);
+    if (isspace(value[strlen(value)-1])) {
+      printf("bad value '%s' (no space at the end please!)\n", value);
+      unlink(out_name);
+      exit(1);
+    }
     if (!strcmp(name, "ID")) {
       if (!new_unique_id(value)) { unlink(out_name); exit(1); }
       fprintf(out, "#define T_%s T_ID(%d)\n", value, n);
