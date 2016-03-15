@@ -51,9 +51,9 @@
 #include <time.h>
 
 #include "common_lib.h"
-#include "rrh_gw.h" // change to rrh_new.h, put externs in rrh_extern.h
+#include "rrh_gw.h"
 #include "rt_wrapper.h"
-#include "rrh_gw_externs.h" // change to rrh_new.h, put externs in rrh_extern.h
+#include "rrh_gw_externs.h"
 
 
 #include "log_if.h"
@@ -71,8 +71,9 @@
  *****************************************************************************************/
 
 
-
-char rrh_ip[20] = "192.168.12.242"; // there is code to detect the my ip address
+/* local IP/MAC address is detected*/
+char rrh_ip[20] = "0.0.0.0"; 
+unsigned char rrh_mac[6] = "0:0:0:0:0:0"; 
 int  rrh_port = 50000; // has to be an option
 
 /* log */
@@ -86,7 +87,7 @@ int16_t           ue_log_level        = LOG_INFO;
 int16_t           ue_log_verbosity    = LOG_MED;
 
 
-/* flags definitions */
+/* flag definitions */
 uint8_t 	eNB_flag=0;
 uint8_t 	UE_flag=0;
 uint8_t 	EXMIMO_flag=0;
@@ -102,18 +103,15 @@ uint8_t         measurements_flag=0;
    - default ethernet interface is local */
 uint8_t 	    num_eNB_mod=0;
 uint8_t 	    num_UE_mod=0;
-uint8_t 	    num_EXMIMO_mod=0;
-uint8_t 	    num_USRP_mod=0;
-uint8_t             hardware_target=NONE_IF;
-char*               if_name="lo";
+char*           if_name="lo";
+uint8_t         eth_mode=ETH_UDP_MODE;
 
 rrh_module_t 	        *enb_array;
 rrh_module_t            *ue_array;
 
 openair0_vtimestamp 	hw_counter=0;
 
-
-
+char   rf_config_file[1024];
 
 static void debug_init(void);
 static void get_options(int argc, char *argv[]);
@@ -128,14 +126,14 @@ static void print_help(void);
 */
 static rrh_module_t new_module(unsigned int id);
 
-/*!\fn static int get_ip_address(char* if_name)
+/*!\fn static int get_address(char* if_name, uint8_t flag);
  * \brief retrieves IP address from the specified network interface
  * \param[in] name of network interface
  * \return 0 
  * \note
  * @ingroup  _oai
  */
-static int get_ip_address(char* if_name);
+static int get_address(char* if_name, uint8_t flag);
 
 
 
@@ -144,7 +142,7 @@ static int get_ip_address(char* if_name);
 int main(int argc, char **argv) {
   
   unsigned int i;
-  
+  rf_config_file[0]='\0';
   /* parse input arguments */
   get_options(argc, argv);
   /* initialize logger and signal analyzer */
@@ -192,48 +190,53 @@ static rrh_module_t new_module (unsigned int id) {
   rrh_mod.measurements=measurements_flag;
 
   /* each module is associated with an ethernet device */
-  rrh_mod.eth_dev.type=ETH_IF;
+  rrh_mod.eth_dev.type=NONE_DEV;
+  rrh_mod.eth_dev.transp_type=NONE_TP;
   /* ethernet device is functioning within RRH */
-  rrh_mod.eth_dev.func_type=RRH_FUNC; 
-  /* specify IP address */
-  get_ip_address(if_name);
-  openair0_cfg.my_ip=&rrh_ip[0];
-  openair0_cfg.my_port=rrh_port;
+  rrh_mod.eth_dev.host_type=RRH_HOST;
+  /* */
+  rrh_mod.eth_dev.openair0_cfg = (openair0_config_t*)malloc(sizeof(openair0_config_t));
+  memset(rrh_mod.eth_dev.openair0_cfg,0,sizeof(openair0_config_t));
+  /* get IP and MAC address */
+  get_address(if_name,eth_mode);
+  
+  if(eth_mode==ETH_UDP_MODE) {
+    openair0_cfg.my_addr = &rrh_ip[0];
+    openair0_cfg.my_port = rrh_port;
+    LOG_I(RRH,"UDP mode selected for ethernet.\n");
+  } else if (eth_mode==ETH_RAW_MODE) {
+    openair0_cfg.my_addr = &rrh_mac[0];
+    openair0_cfg.my_port = rrh_port;
+    LOG_I(RRH,"RAW mode selected for ethernet.\n");
+  } 
+
+  /* */
+  eth_params_t *eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
+  memset(eth_params, 0, sizeof(eth_params_t));
+  eth_params->local_if_name     = if_name;
+  eth_params->transp_preference = eth_mode;
 
   /* ethernet device initialization */
-  if (openair0_dev_init_eth(&rrh_mod.eth_dev, &openair0_cfg)<0){
+  if (openair0_transport_load(&rrh_mod.eth_dev, &openair0_cfg,eth_params)<0) {
     LOG_E(RRH,"Exiting, cannot initialize ethernet interface.\n");
     exit(-1);
   }
 
   /* allocate space and specify associated RF device */
   openair0_device *oai_dv = (openair0_device *)malloc(sizeof(openair0_device));
-  memset(oai_dv,0, sizeof(openair0_device));
+  memset(oai_dv,0,sizeof(openair0_device));
 
-#ifdef EXMIMO
   rrh_mod.devs=oai_dv;   
-  rrh_mod.devs->type=EXMIMO_IF;
-  LOG_I(RRH,"Setting RF device to EXMIMO\n");	   
-#elif OAI_USRP
-  rrh_mod.devs=oai_dv;	
-  rrh_mod.devs->type=USRP_B200_IF;
-  LOG_I(RRH,"Setting RF device to USRP\n");    	 
-#elif OAI_BLADERF
-  rrh_mod.devs=oai_dv;	
-  rrh_mod.devs->type=BLADERF_IF;
-  LOG_I(RRH,"Setting RF device to BLADERF\n");
-#else
-  rrh_mod.devs=oai_dv;
-  rrh_mod.devs->type=NONE_IF;
-  LOG_I(RRH,"Setting RF interface to NONE_IF... \n");
-#endif  
-  
+  rrh_mod.devs->type=NONE_DEV;
+  rrh_mod.devs->transp_type=NONE_TP;
+  rrh_mod.devs->host_type=RRH_HOST; 
+
   return rrh_mod;
 }
 
 static void debug_init(void) {
   
-  // log initialization
+  /* log initialization */
   logInit();
   set_glog(glog_level,  glog_verbosity);
   
@@ -241,7 +244,7 @@ static void debug_init(void) {
   //set_comp_log(ENB_LOG, enb_log_level,   enb_log_verbosity, 1);
   //set_comp_log(UE_LOG,  ue_log_level,    ue_log_verbosity,  1);
   
-  // vcd initialization
+  /* vcd initialization */
   if (ouput_vcd) {
     vcd_signal_dumper_init("/tmp/openair_dump_rrh.vcd");
     
@@ -253,7 +256,7 @@ static void get_options(int argc, char *argv[]) {
 
   int 	opt;
 
-  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:w:i:")) != -1) {
+  while ((opt = getopt(argc, argv, "xvhlte:n:u:g:r:m:i:f:")) != -1) {
     
     switch (opt) {
     case 'n':
@@ -272,6 +275,9 @@ static void get_options(int argc, char *argv[]) {
 	if_name=strdup(optarg); 
 	printf("RRH interface name is set to %s\n", if_name);	
       }
+      break;
+    case 'm':  
+      eth_mode=atoi(optarg);      
       break;
     case 'r':
       //rrh_log_level=atoi(optarg);
@@ -292,17 +298,27 @@ static void get_options(int argc, char *argv[]) {
       /*In loopback mode rrh sends back to bbu what it receives*/
       loopback_flag=1; 
       break;
+    case 'f':
+      if (optarg){
+	if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
+	  printf("no configuration filename is provided\n");
+	}
+	else if (strlen(optarg)<=1024){
+	  // rf_config_file = strdup(optarg);
+	  strcpy(rf_config_file,optarg);
+	}else {
+	  printf("Configuration filename is too long\n");
+	  exit(-1);   
+	}
+      }
+      break;
     case 't':
-      /*When measurements are enabled statistics related to TX/RX time are printed*/
+      /* When measurements are enabled statistics related to TX/RX time are printed */
       measurements_flag=1; 
-      break;
-    case 'w':
-      /* force to use this target*/    
-      hardware_target=1;
-      break;
-  case 'h':
-    print_help();
-    exit(-1);
+      break;      
+    case 'h':
+      print_help();
+      exit(-1);
     default: /* '?' */
       //fprintf(stderr, "Usage: \n", argv[0]);
       exit(-1);
@@ -311,31 +327,34 @@ static void get_options(int argc, char *argv[]) {
 
 }
 
-static int get_ip_address(char* if_name) {
+static int get_address(char* if_name, uint8_t flag) {
   
   int fd;
   struct ifreq ifr;
-  
-  
-  fd = socket(AF_INET, SOCK_DGRAM, 0);
-  
+    
+  fd = socket(AF_INET, SOCK_DGRAM, 0);  
   /* I want to get an IPv4 IP address */
-  ifr.ifr_addr.sa_family = AF_INET;
-  
+  ifr.ifr_addr.sa_family = AF_INET;  
   /* I want IP address attached to "if_name" */
   strncpy(ifr.ifr_name, if_name, IFNAMSIZ-1);
-  
-  if ( ioctl(fd, SIOCGIFADDR, &ifr)<0 ) {
-    perror("IOCTL:");
-    exit(-1);
-  } 
+
+  if (flag==ETH_UDP_MODE) {
+    if ( ioctl(fd, SIOCGIFADDR, &ifr)<0 ) {
+      perror("IOCTL:");
+      exit(-1);
+    } 
+    snprintf(&rrh_ip[0],20,"%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
+    LOG_I(RRH,"%s: IP address: %s\n",if_name,rrh_ip);
+  } else if (flag==ETH_RAW_MODE) {
+    if ( ioctl(fd, SIOCGIFHWADDR, &ifr)<0 ) {
+      perror("IOCTL:");
+      exit(-1);
+    } 
+    ether_ntoa_r ((unsigned char *)ifr.ifr_hwaddr.sa_data, rrh_mac);
+    LOG_I(RRH,"%s: MAC address: %s\n",if_name,rrh_mac);    
+  }
   
   close(fd);
-  
-  /* display result */
-  snprintf(&rrh_ip[0],20,"%s", inet_ntoa(((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr));
-  LOG_I(RRH,"Got IP address %s from interface %s\n", rrh_ip,if_name);
-
   return 0;
 }
 
@@ -343,19 +362,19 @@ static int get_ip_address(char* if_name) {
 static void print_help(void) {
 
   puts("Usage: \n");
-  puts("     sudo -E chrt 99 ./rrh -n1 -g6 -v -t");
+  puts("     sudo -E chrt 99 ./rrh -n1 -g6 -v -t -i lo -m1");
   puts("Options:\n");
   puts("\t -n create eNB module\n");
   puts("\t -u create UE module\n");
   puts("\t -g define global log level\n");
   puts("\t -i set the RRH interface (default lo)\n");
+  puts("\t -m set ethernet mode to be used by RRH, valid options: (1:raw, 0:udp) \n");
   puts("\t -r define rrh log level\n");
   puts("\t -e define eNB log level\n");
   puts("\t -x enable real time bahaviour\n");
   puts("\t -v enable vcd dump\n");
   puts("\t -l enable loopback mode\n");
   puts("\t -t enable measurements\n");
-  puts("\t -w force to use specified HW\n");
   puts("\t -h display info\n");
 
 }

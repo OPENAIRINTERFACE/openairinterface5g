@@ -56,107 +56,15 @@ PHY_VARS_UE *PHY_vars_UE;
 
 #define UL_RB_ALLOC 0x1ff;
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
-#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
-
-void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmission_mode,unsigned char extended_prefix_flag,uint16_t Nid_cell,uint8_t tdd_config,uint8_t N_RB_DL,
-                    lte_frame_type_t frame_type,uint8_t osf,uint32_t perfect_ce)
-{
-
-  unsigned int i;
-  LTE_DL_FRAME_PARMS *lte_frame_parms;
-
-  printf("Start lte_param_init (Nid_cell %d, extended_prefix %d, transmission_mode %d, N_tx %d, N_rx %d)\n",
-         Nid_cell, extended_prefix_flag,transmission_mode,N_tx,N_rx);
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB1 = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_eNB2 = malloc(sizeof(PHY_VARS_eNB));
-
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
-  //PHY_config = malloc(sizeof(PHY_CONFIG));
-  mac_xface = malloc(sizeof(MAC_xface));
-
-  randominit(0);
-  set_taus_seed(0);
-
-  lte_frame_parms = &(PHY_vars_eNB->lte_frame_parms);
-
-  lte_frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
-  lte_frame_parms->N_RB_UL            = N_RB_DL;
-  lte_frame_parms->Ncp                = extended_prefix_flag;
-  lte_frame_parms->Nid_cell           = Nid_cell;
-  lte_frame_parms->nushift            = Nid_cell%6;
-  lte_frame_parms->nb_antennas_tx_eNB     = N_tx;
-  lte_frame_parms->nb_antennas_tx     = N_tx;
-  lte_frame_parms->nb_antennas_rx     = N_rx;
-  lte_frame_parms->phich_config_common.phich_resource = one; //half
-  lte_frame_parms->tdd_config         = tdd_config;
-  lte_frame_parms->frame_type         = frame_type;
-
-  //  lte_frame_parms->Csrs = 2;
-  //  lte_frame_parms->Bsrs = 0;
-  //  lte_frame_parms->kTC = 0;
-  //  lte_frame_parms->n_RRC = 0;
-  lte_frame_parms->mode1_flag = (transmission_mode == 1)? 1 : 0;
-
-  init_frame_parms(lte_frame_parms,osf);
-
-  //copy_lte_parms_to_phy_framing(lte_frame_parms, &(PHY_config->PHY_framing));
-
-
-  memcpy(&PHY_vars_UE->lte_frame_parms,lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-
-
-  phy_init_lte_top(lte_frame_parms);
-
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
-
-  memcpy((void*)&PHY_vars_eNB1->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB1->lte_frame_parms.nushift=(Nid_cell+1)%6;
-  PHY_vars_eNB1->lte_frame_parms.Nid_cell=Nid_cell+1;
-
-  memcpy((void*)&PHY_vars_eNB2->lte_frame_parms,(void*)&PHY_vars_eNB->lte_frame_parms,sizeof(LTE_DL_FRAME_PARMS));
-  PHY_vars_eNB2->lte_frame_parms.nushift=(Nid_cell+2)%6;
-  PHY_vars_eNB2->lte_frame_parms.Nid_cell=Nid_cell+2;
-
-  phy_init_lte_eNB(PHY_vars_eNB1,0,0,0);
-
-  phy_init_lte_eNB(PHY_vars_eNB2,0,0,0);
-
-  phy_init_lte_top(lte_frame_parms);
-
-  PHY_vars_UE->PHY_measurements.n_adj_cells=2;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[0] = Nid_cell+1;
-  PHY_vars_UE->PHY_measurements.adj_cell_id[1] = Nid_cell+2;
-  PHY_vars_UE->perfect_ce = perfect_ce;
-
-  for (i=0; i<3; i++)
-    lte_gold(lte_frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);
-
-  generate_pcfich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-  generate_phich_reg_mapping(&PHY_vars_UE->lte_frame_parms);
-
-  printf("Done lte_param_init\n");
-
-  CCCH_alloc_pdu.type               = 1;
-  CCCH_alloc_pdu.vrb_type           = 0;
-  CCCH_alloc_pdu.rballoc            = CCCH_RB_ALLOC;
-  CCCH_alloc_pdu.ndi      = 1;
-  CCCH_alloc_pdu.mcs      = 1;
-  CCCH_alloc_pdu.harq_pid = 0;
-
-}
-
-
+#define DLSCH_RB_ALLOC ((uint16_t)0x1fbf) // igore DC component,RB13
 
 DCI_PDU DCI_pdu;
 
 DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2Lcommon, uint8_t format_selector, uint32_t rnti)
 {
-  uint8_t BCCH_alloc_pdu[8];
-  uint8_t DLSCH_alloc_pdu[8];
-  uint8_t UL_alloc_pdu[8];
+  uint32_t BCCH_alloc_pdu[2];
+  uint32_t DLSCH_alloc_pdu[2];
+  uint32_t UL_alloc_pdu[2];
 
   int i;
   int dci_length_bytes,dci_length;
@@ -462,31 +370,35 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
   DCI_pdu.dci_alloc[0].ra_flag    = 0;
   memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &BCCH_alloc_pdu[0], BCCH_pdu_size_bytes);
   DCI_pdu.Num_common_dci++;
-  /*
+  if (lte_frame_parms->N_RB_DL >= 25) {
   // add ue specific dci
-  DCI_pdu.dci_alloc[1].dci_length = dci_length;
-  DCI_pdu.dci_alloc[1].L          = log2L;
-  DCI_pdu.dci_alloc[1].rnti       = rnti;
-  DCI_pdu.dci_alloc[1].format     = format1;
-  DCI_pdu.dci_alloc[1].ra_flag    = 0;
-  memcpy((void*)&DCI_pdu.dci_alloc[1].dci_pdu[0], &DLSCH_alloc_pdu[0], dci_length_bytes);
-  DCI_pdu.Num_ue_spec_dci++;
+    DCI_pdu.dci_alloc[1].dci_length = dci_length;
+    DCI_pdu.dci_alloc[1].L          = log2L;
+    DCI_pdu.dci_alloc[1].rnti       = rnti;
+    DCI_pdu.dci_alloc[1].format     = format1;
+    DCI_pdu.dci_alloc[1].ra_flag    = 0;
+    memcpy((void*)&DCI_pdu.dci_alloc[1].dci_pdu[0], &DLSCH_alloc_pdu[0], dci_length_bytes);
+    DCI_pdu.Num_ue_spec_dci++;
+
+    if (lte_frame_parms->N_RB_DL >= 50) {
+      DCI_pdu.dci_alloc[2].dci_length = UL_pdu_size_bits;
+      DCI_pdu.dci_alloc[2].L          = log2L;
+      DCI_pdu.dci_alloc[2].rnti       = rnti;
+      DCI_pdu.dci_alloc[2].format     = format0;
+      DCI_pdu.dci_alloc[2].ra_flag    = 0;
+      memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &UL_alloc_pdu[0], UL_pdu_size_bytes);
+      DCI_pdu.Num_ue_spec_dci++;
+    }
+  }
 
 
-  DCI_pdu.dci_alloc[0].dci_length = UL_pdu_size_bits;
-  DCI_pdu.dci_alloc[0].L          = log2L;
-  DCI_pdu.dci_alloc[0].rnti       = rnti;
-  DCI_pdu.dci_alloc[0].format     = format0;
-  DCI_pdu.dci_alloc[0].ra_flag    = 0;
-  memcpy((void*)&DCI_pdu.dci_alloc[0].dci_pdu[0], &UL_alloc_pdu[0], UL_pdu_size_bytes);
-  DCI_pdu.Num_ue_spec_dci++;
-  */
+
   DCI_pdu.nCCE = 0;
 
   for (i=0; i<DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci; i++) {
     DCI_pdu.nCCE += (1<<(DCI_pdu.dci_alloc[i].L));
   }
-
+  
   return(&DCI_pdu);
 }
 
@@ -523,10 +435,8 @@ int main(int argc, char **argv)
   uint8_t dci_cnt=0;
   LTE_DL_FRAME_PARMS *frame_parms;
   uint8_t log2L=2, log2Lcommon=2, format_selector=0;
-  uint8_t numCCE,nCCE_max,common_active=0,ul_active=0,dl_active=0;
-  uint32_t rv;
+  uint8_t numCCE,common_active=0,ul_active=0,dl_active=0;
 
-  DCI_format_t format = format1;
   uint32_t n_trials_common=0,n_trials_ul=0,n_trials_dl=0,false_detection_cnt=0;
   uint8_t common_rx,ul_rx,dl_rx;
   uint8_t tdd_config=3;
@@ -540,19 +450,19 @@ int main(int argc, char **argv)
 
   DCI_ALLOC_t dci_alloc_rx[8];
 
-  void* dlsch_pdu = NULL;
-  //  int ret;
+  int ret;
 
   uint8_t harq_pid;
   uint8_t phich_ACK;
 
   uint8_t num_phich_interf = 0;
   lte_frame_type_t frame_type=TDD;
-  int re_offset;
-  uint32_t *txptr;
+  //  int re_offset;
+  //  uint32_t *txptr;
   int aarx;
   int k;
   uint32_t perfect_ce = 0;
+  int CCE_table[800];
 
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
@@ -798,9 +708,10 @@ int main(int argc, char **argv)
                  n_rx,
                  transmission_mode,
                  extended_prefix_flag,
+		 frame_type,
                  Nid_cell,
                  tdd_config,
-                 N_RB_DL,frame_type,
+                 N_RB_DL,
                  osf,
                  perfect_ce);
 
@@ -876,7 +787,7 @@ int main(int argc, char **argv)
     i=0;
 
     while (!feof(input_fd)) {
-      fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+      ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
 
       if ((i%4)==0) {
         ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
@@ -903,7 +814,7 @@ int main(int argc, char **argv)
 
   PHY_vars_UE->UE_mode[0] = PUSCH;
 
-  nCCE_max = get_nCCE(3,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,0));
+  //  nCCE_max = get_nCCE(3,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,0));
   //printf("nCCE_max %d\n",nCCE_max);
 
   //printf("num_phich interferers %d\n",num_phich_interf);
@@ -955,55 +866,62 @@ int main(int argc, char **argv)
         numCCE=0;
         n_trials_common++;
         common_active = 1;
-        n_trials_ul++;
-        ul_active = 1;
-        n_trials_dl++;
-        dl_active = 1;
+	if (PHY_vars_eNB->lte_frame_parms.N_RB_DL >= 50) { 
+	  n_trials_ul++;
+	  ul_active = 1;
+	}
+        if (PHY_vars_eNB->lte_frame_parms.N_RB_DL >= 25) { 
+	  n_trials_dl++;
+	  dl_active = 1; 
+	}
 
-        init_nCCE_table();
         num_pdcch_symbols = get_num_pdcch_symbols(DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci,
                             DCI_pdu.dci_alloc, frame_parms, subframe);
-        DCI_pdu.nCCE = get_nCCE(num_pdcch_symbols,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,subframe));
+	numCCE = get_nCCE(num_pdcch_symbols,&PHY_vars_eNB->lte_frame_parms,get_mi(&PHY_vars_eNB->lte_frame_parms,subframe));
 
         if (n_frames==1) {
           printf("num_dci %d, num_pddch_symbols %d, nCCE %d\n",
                  DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci,
-                 num_pdcch_symbols,
-                 DCI_pdu.nCCE);
+                 num_pdcch_symbols,numCCE);
         }
 
         // apply RNTI-based nCCE allocation
+	memset(CCE_table,0,800*sizeof(int));
+
         for (i = 0; i < DCI_pdu.Num_common_dci + DCI_pdu.Num_ue_spec_dci; i++) {
           // SI RNTI
           if (DCI_pdu.dci_alloc[i].rnti == SI_RNTI) {
-            DCI_pdu.dci_alloc[i].nCCE = get_nCCE_offset(1<<DCI_pdu.dci_alloc[i].L,
-                                        DCI_pdu.nCCE,
-                                        1,
-                                        SI_RNTI,
-                                        subframe);
+            DCI_pdu.dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
+							       1<<DCI_pdu.dci_alloc[i].L,
+							       numCCE,
+							       1,
+							       SI_RNTI,
+							       subframe);
           }
           // RA RNTI
           else if (DCI_pdu.dci_alloc[i].ra_flag == 1) {
-            DCI_pdu.dci_alloc[i].nCCE = get_nCCE_offset(1<<DCI_pdu.dci_alloc[i].L,
-                                        DCI_pdu.nCCE,
-                                        1,
-                                        DCI_pdu.dci_alloc[i].rnti,
-                                        subframe);
+            DCI_pdu.dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
+							       1<<DCI_pdu.dci_alloc[i].L,
+							       numCCE,
+							       1,
+							       DCI_pdu.dci_alloc[i].rnti,
+							       subframe);
           }
           // C RNTI
           else {
-            DCI_pdu.dci_alloc[i].nCCE = get_nCCE_offset(1<<DCI_pdu.dci_alloc[i].L,
-                                        DCI_pdu.nCCE,
-                                        0,
-                                        DCI_pdu.dci_alloc[i].rnti,
-                                        subframe);
+            DCI_pdu.dci_alloc[i].firstCCE = get_nCCE_offset_l1(CCE_table,
+							       1<<DCI_pdu.dci_alloc[i].L,
+							       numCCE,
+							       0,
+							       DCI_pdu.dci_alloc[i].rnti,
+							       subframe);
           }
 
           if (n_frames==1)
             printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i,DCI_pdu.dci_alloc[i].rnti, DCI_pdu.dci_alloc[i].format,
-                   DCI_pdu.dci_alloc[i].L, DCI_pdu.dci_alloc[i].nCCE, DCI_pdu.nCCE, DCI_pdu.dci_alloc[i].dci_length);
+                   DCI_pdu.dci_alloc[i].L, DCI_pdu.dci_alloc[i].firstCCE, numCCE, DCI_pdu.dci_alloc[i].dci_length);
 
-          if (DCI_pdu.dci_alloc[i].nCCE==-1)
+          if (DCI_pdu.dci_alloc[i].firstCCE==-1)
             exit(-1);
         }
 
@@ -1037,7 +955,7 @@ int main(int argc, char **argv)
 
           generate_phich_top(PHY_vars_eNB,
                              subframe,AMP,0,0);
-          /*
+          
           // generate 3 interfering PHICH
           if (num_phich_interf>0) {
             PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 4;
@@ -1064,7 +982,7 @@ int main(int argc, char **argv)
           }
 
           PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->first_rb = 0;
-          */
+          
         }
 
         //  write_output("pilotsF.m","rsF",txdataF[0],lte_PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -1084,7 +1002,7 @@ int main(int argc, char **argv)
           if (PHY_vars_eNB->lte_frame_parms.Ncp == 1)
             PHY_ofdm_mod(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][subframe*nsymb*PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size],        // input,
                          &txdata[aa][subframe*PHY_vars_eNB->lte_frame_parms.samples_per_tti],         // output
-                         PHY_vars_eNB->lte_frame_parms.log2_symbol_size,                // log2_fft_size
+                         PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size,
                          2*nsymb,                 // number of symbols
                          PHY_vars_eNB->lte_frame_parms.nb_prefix_samples,               // number of prefix samples
                          CYCLIC_PREFIX);
@@ -1244,7 +1162,7 @@ int main(int argc, char **argv)
 
             for (i = 0; i < dci_cnt; i++)
               printf("dci %d: rnti 0x%x, format %d, L %d, nCCE %d/%d dci_length %d\n",i, dci_alloc_rx[i].rnti, dci_alloc_rx[i].format,
-                     dci_alloc_rx[i].L, dci_alloc_rx[i].nCCE, numCCE, dci_alloc_rx[i].dci_length);
+                     dci_alloc_rx[i].L, dci_alloc_rx[i].firstCCE, numCCE, dci_alloc_rx[i].dci_length);
           }
 
           for (i=0; i<dci_cnt; i++) {
@@ -1319,8 +1237,8 @@ int main(int argc, char **argv)
     } //trials
 
     printf("SNR %f : n_errors_common = %d/%d (%e)\n", SNR,n_errors_common,n_trials_common,(double)n_errors_common/n_trials_common);
-    printf("SNR %f : n_errors_ul = %d/%d (%e)\n", SNR,n_errors_ul,n_trials_ul,(double)n_errors_ul/n_trials_ul);
-    printf("SNR %f : n_errors_dl = %d/%d (%e)\n", SNR,n_errors_dl,n_trials_dl,(double)n_errors_dl/n_trials_dl);
+    if (ul_active==1) printf("SNR %f : n_errors_ul = %d/%d (%e)\n", SNR,n_errors_ul,n_trials_ul,(double)n_errors_ul/n_trials_ul);
+    if (dl_active==1) printf("SNR %f : n_errors_dl = %d/%d (%e)\n", SNR,n_errors_dl,n_trials_dl,(double)n_errors_dl/n_trials_dl);
     printf("SNR %f : n_errors_cfi = %d/%d (%e)\n", SNR,n_errors_cfi,trial,(double)n_errors_cfi/trial);
     printf("SNR %f : n_errors_hi = %d/%d (%e)\n", SNR,n_errors_hi,trial,(double)n_errors_hi/trial);
 

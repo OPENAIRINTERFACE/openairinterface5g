@@ -47,8 +47,7 @@
 #include "LAYER2/MAC/vars.h"
 
 #ifdef XFORMS
-#include <forms.h>
-#include "../../USERSPACE_TOOLS/SCOPE/lte_scope.h"
+#include "PHY/TOOLS/lte_phy_scope.h"
 #endif //XFORMS
 
 
@@ -176,13 +175,13 @@ int main(int argc, char **argv)
 
 
 #ifdef XFORMS
-  FD_lte_scope *form_dl;
+  FD_lte_phy_scope_ue *form_ue;
   char title[255];
 
   fl_initialize (&argc, argv, NULL, 0, 0);
-  form_dl = create_form_lte_scope();
+  form_ue = create_lte_phy_scope_ue();
   sprintf (title, "LTE DL SCOPE UE");
-  fl_show_form (form_dl->lte_scope, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 #endif
 
   logInit();
@@ -457,7 +456,7 @@ int main(int argc, char **argv)
 
       PHY_ofdm_mod(PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0],        // input,
                    txdata[0],         // output
-                   frame_parms->log2_symbol_size,                // log2_fft_size
+                   frame_parms->ofdm_symbol_size,
                    LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,                 // number of symbols
                    frame_parms->nb_prefix_samples,               // number of prefix samples
                    CYCLIC_PREFIX);

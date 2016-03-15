@@ -51,10 +51,6 @@
 #include "UTIL/OPT/opt.h"
 /*----------------------------------------------------------------------------*/
 
-#ifndef HAVE_STRNDUP
-char * strndup (const char *s, size_t size);
-#endif
-
 static int oai_emulation_;  /*!< \brief indicating that the parsing position is now within OAI_Emulation_*/
 
 static int environment_system_config_;    /*!< \brief indicating that the parsing position is now within Envi_Config_*/
