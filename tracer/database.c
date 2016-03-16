@@ -9,6 +9,7 @@ typedef struct {
   char *desc;
   char **groups;
   int size;
+  int id;
 } id;
 
 typedef struct {
@@ -116,7 +117,7 @@ int string_cmp(const void *_p1, const void *_p2)
   return strcmp(*p1, *p2);
 }
 
-id *add_id(database *r, char *idname)
+id *add_id(database *r, char *idname, int i)
 {
   if (bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp) != NULL)
     { printf("ERROR: ID '%s' declared more than once\n", idname); exit(1); }
@@ -129,6 +130,7 @@ id *add_id(database *r, char *idname)
   r->i[r->isize].desc = NULL;
   r->i[r->isize].groups = NULL;
   r->i[r->isize].size = 0;
+  r->i[r->isize].id = i;
   r->isize++;
   qsort(r->i, r->isize, sizeof(id), id_cmp);
   return (id*)bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp);
@@ -221,6 +223,7 @@ void *parse_database(char *filename)
   database *r;
   char *name, *value;
   id *last_id = NULL;
+  int i;
 
   r = calloc(1, sizeof(*r)); if (r == NULL) abort();
   memset(&p, 0, sizeof(p));
@@ -229,11 +232,13 @@ void *parse_database(char *filename)
 
   in = fopen(filename, "r"); if (in == NULL) { perror(filename); abort(); }
 
+  i = 0;
+
   while (1) {
     get_line(&p, in, &name, &value);
     if (name == NULL) break;
 //printf("%s %s\n", name, value);
-    if (!strcmp(name, "ID")) last_id = add_id(r, value);
+    if (!strcmp(name, "ID")) { last_id = add_id(r, value, i); i++; }
     if (!strcmp(name, "GROUP")) add_groups(r, last_id, value);
     if (!strcmp(name, "DESC")) add_desc(last_id, value);
   }
@@ -279,4 +284,28 @@ void list_groups(void *_d)
   database *d = _d;
   int i;
   for (i = 0; i < d->gsize; i++) printf("%s\n", d->g[i].name);
+}
+
+static void onoff_id(database *d, char *name, int *a, int onoff)
+{
+  id *i;
+  i = bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
+  if (i == NULL) return;
+  a[i->id] = onoff;
+  printf("turning %s %s\n", name, onoff ? "ON" : "OFF");
+}
+
+static void onoff_group(database *d, char *name, int *a, int onoff)
+{
+  group *g;
+  int i;
+  g = bsearch(&(group){name:name}, d->g, d->gsize, sizeof(group), group_cmp);
+  if (g == NULL) return;
+  for (i = 0; i < g->size; i++) onoff_id(d, g->ids[i], a, onoff);
+}
+
+void on_off(void *d, char *item, int *a, int onoff)
+{
+  onoff_group(d, item, a, onoff);
+  onoff_id(d, item, a, onoff);
 }

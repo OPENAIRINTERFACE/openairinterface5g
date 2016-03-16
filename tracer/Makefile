@@ -1,6 +1,8 @@
 CC=gcc
 CFLAGS=-Wall -g -pthread
 
+CFLAGS += -O3 -ffast-math -fomit-frame-pointer
+
 LIBS=-lX11 -lm
 
 #comment those two lines to NOT use shared memory

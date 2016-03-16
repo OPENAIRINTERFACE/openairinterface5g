@@ -15,6 +15,7 @@
 #include "../T_defs.h"
 
 void *ul_plot;
+void *chest_plot;
 
 #ifdef T_USE_SHARED_MEMORY
 
@@ -209,11 +210,30 @@ void get_message(int s)
     GET(s, &antenna, sizeof(int));
     GET(s, &size, sizeof(int));
     GET(s, buf, size);
+#if 0
     printf("got T_ENB_INPUT_SIGNAL eNB %d frame %d subframe %d antenna %d size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
            eNB, frame, subframe, antenna, size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
+#endif
     if (size != 4 * 7680)
       {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed\n");abort();}
-    iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680);
+    if (ul_plot) iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680);
+    break;
+  }
+  case T_ENB_UL_CHANNEL_ESTIMATE: {
+    unsigned char buf[T_BUFFER_MAX];
+    int size;
+    int eNB, UE, frame, subframe, antenna;
+    GET(s, &eNB, sizeof(int));
+    GET(s, &UE, sizeof(int));
+    GET(s, &frame, sizeof(int));
+    GET(s, &subframe, sizeof(int));
+    GET(s, &antenna, sizeof(int));
+    GET(s, &size, sizeof(int));
+    GET(s, buf, size);
+    if (size != 512*4)
+      {printf("bad T_ENB_UL_CHANNEL_ESTIMATE, only 512 samples allowed\n");
+       abort();}
+    if (chest_plot) iq_plot_set(chest_plot, (short*)buf, 512, 0);
     break;
   }
   case T_buf_test: {
@@ -265,6 +285,11 @@ void usage(void)
 "    -li                       print IDs in the database\n"
 "    -lg                       print GROUPs in the database\n"
 "    -dump                     dump the database\n"
+"    -x                        run with XFORMS (revisited)\n"
+"    -on <GROUP or ID>         turn log ON for given GROUP or ID\n"
+"    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
+"note: you may pass several -on and -off, they will be processed in order\n"
+"      by default, all is off\n"
   );
   exit(1);
 }
@@ -280,6 +305,16 @@ int main(int n, char **v)
   int do_list_ids = 0;
   int do_list_groups = 0;
   int do_dump_database = 0;
+  int do_xforms = 0;
+  char **on_off_name;
+  int *on_off_action;
+  int on_off_n = 0;
+  int is_on[T_NUMBER_OF_IDS];
+
+  memset(is_on, 0, sizeof(is_on));
+
+  on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
+  on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
@@ -288,6 +323,12 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-li")) { do_list_ids = 1; continue; }
     if (!strcmp(v[i], "-lg")) { do_list_groups = 1; continue; }
     if (!strcmp(v[i], "-dump")) { do_dump_database = 1; continue; }
+    if (!strcmp(v[i], "-x")) { do_xforms = 1; continue; }
+    if (!strcmp(v[i], "-on")) { if (i > n-2) usage();
+      on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=1; continue; }
+    if (!strcmp(v[i], "-off")) { if (i > n-2) usage();
+      on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=0; continue; }
+    printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }
 
@@ -303,7 +344,13 @@ int main(int n, char **v)
   if (do_list_groups) { list_groups(database); return 0; }
   if (do_dump_database) { dump_database(database); return 0; }
 
-  ul_plot = make_plot(512, 100, 7680*2*10);
+  if (do_xforms) {
+    ul_plot = make_plot(512, 100, 7680*2*10, "UL Input Signal");
+    chest_plot = make_plot(512, 100, 512*2, "UL Channel Estimate UE 0");
+  }
+
+  for (i = 0; i < on_off_n; i++)
+    on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
 #ifdef T_USE_SHARED_MEMORY
   init_shm();
@@ -312,10 +359,12 @@ int main(int n, char **v)
   /* send the first message - activate all traces */
   t = 0;
   if (write(s, &t, 1) != 1) abort();
-  l = T_NUMBER_OF_IDS;
+  l = 0;
+  for (i = 0; i < T_NUMBER_OF_IDS; i++) if (is_on[i]) l++;
   if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
   for (l = 0; l < T_NUMBER_OF_IDS; l++)
-    if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
+    if (is_on[l])
+      if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
 
   /* read messages */
   while (1) {

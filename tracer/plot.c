@@ -44,15 +44,15 @@ static void *plot_thread(void *_p)
 
   {
     int i;
-    for (i = 0; i < 512*150; i++)
+    for (i = 0; i < p->bufsize/2; i++)
       p->buf[i] = 10*log10(1.0+(float)(p->iqbuf[2*i]*p->iqbuf[2*i]+
                                        p->iqbuf[2*i+1]*p->iqbuf[2*i+1]));
   }
     s = p->buf;
     for (i = 0; i < 512; i++) {
       v = 0;
-      for (j = 0; j < 150; j++, s++) v += *s;
-      v /= 150;
+      for (j = 0; j < p->bufsize/2/512; j++, s++) v += *s;
+      v /= p->bufsize/2/512;
       XDrawLine(p->d, p->p, DefaultGC(p->d, DefaultScreen(p->d)), i, 100, i, 100-v);
     }
 
@@ -79,7 +79,7 @@ static void new_thread(void *(*f)(void *), void *data)
     { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
 }
 
-void *make_plot(int width, int height, int bufsize)
+void *make_plot(int width, int height, int bufsize, char *title)
 {
   plot *p;
   Display *d;
@@ -91,6 +91,8 @@ void *make_plot(int width, int height, int bufsize)
         0, WhitePixel(d, DefaultScreen(d)), WhitePixel(d, DefaultScreen(d)));
   XSelectInput(d, w, ExposureMask);
   XMapWindow(d, w);
+
+  XStoreName(d, w, title);
 
   pm = XCreatePixmap(d, w, width, height, DefaultDepth(d, DefaultScreen(d)));
 

@@ -3,6 +3,10 @@ ID = ENB_INPUT_SIGNAL
     DESC = eNodeB received signal in the time domain for a duration of 1ms
     GROUP = PHY:GRAPHIC:HEAVY
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,antenna : buffer,rxdata
+ID = ENB_UL_CHANNEL_ESTIMATE
+    DESC = eNodeB channel estimation in the time domain
+    GROUP = PHY:GRAPHIC:HEAVY
+    FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,antenna : buffer,chest_t
 
 #legacy logs
 ID = LEGACY_MAC_INFO
