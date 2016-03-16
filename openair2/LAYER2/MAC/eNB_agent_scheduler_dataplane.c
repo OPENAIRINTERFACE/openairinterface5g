@@ -264,7 +264,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
 
 	// If there is nothing to schedule, just leave
-	if ((sdu_length_total + ta_len) <= 0) { 
+	if ((sdu_length_total) <= 0) { 
 	  return;
 	}
 	
