@@ -182,41 +182,56 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	if (rlc_size > 0) {
 	  
 	  rlc_status = mac_rlc_status_ind(mod_id,
-					  rnti,
-					  mod_id,
-					  frame,
-					  ENB_FLAG_YES,
-					  MBMS_FLAG_NO,
-					  lcid,
-					  rlc_size); // transport block set size
+	   				  rnti,
+	   				  mod_id,
+	   				  frame,
+	   				  ENB_FLAG_YES,
+	   				  MBMS_FLAG_NO,
+	   				  lcid,
+	   				  0);
+
+	  if (rlc_status.bytes_in_buffer > 0) {
+
+	    rlc_status = mac_rlc_status_ind(mod_id,
+					    rnti,
+					    mod_id,
+					    frame,
+					    ENB_FLAG_YES,
+					    MBMS_FLAG_NO,
+					    lcid,
+					    rlc_size); // transport block set size
 	  
-	  sdu_lengths[i] = 0;
+	    sdu_lengths[i] = 0;
 	  
-	  LOG_D(MAC, "[TEST] RLC can give %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
+	    LOG_D(MAC, "[TEST] RLC can give %d bytes for LCID %d during second call\n", rlc_status.bytes_in_buffer, lcid);
 	  
-	  sdu_lengths[i] += mac_rlc_data_req(mod_id,
-					     rnti,
-					     mod_id,
-					     frame,
-					     ENB_FLAG_YES,
-					     MBMS_FLAG_NO,
-					     lcid,
-					     (char *)&dlsch_buffer[sdu_length_total]);
-	  
-	  LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
-	  sdu_length_total += sdu_lengths[i];
-	  sdu_lcids[i] = lcid;
-	  
-	  UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
-	  UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
-	  
-	  if (sdu_lengths[i] < 128) {
-	    header_len += 2;
-	  } else {
-	    header_len += 3;
+	    if (rlc_status.bytes_in_buffer > 0) {
+	      
+	      sdu_lengths[i] += mac_rlc_data_req(mod_id,
+						 rnti,
+						 mod_id,
+						 frame,
+						 ENB_FLAG_YES,
+						 MBMS_FLAG_NO,
+						 lcid,
+						 (char *)&dlsch_buffer[sdu_length_total]);
+	      
+	      LOG_D(MAC,"[eNB %d][LCID %d] CC_id %d Got %d bytes from RLC\n",mod_id, lcid, CC_id, sdu_lengths[i]);
+	      sdu_length_total += sdu_lengths[i];
+	      sdu_lcids[i] = lcid;
+	      
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid] += 1;
+	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[i];
+	      
+	      if (sdu_lengths[i] < 128) {
+		header_len += 2;
+	      } else {
+		header_len += 3;
+	      }
+	      
+	      num_sdus++;
+	    }
 	  }
-	  
-	  num_sdus++;
 	}
       } // SDU creation end
       
@@ -249,7 +264,7 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	ta_update = (ta_len > 0) ? ue_sched_ctl->ta_update : 0;
 
 	// If there is nothing to schedule, just leave
-	if ((sdu_length_total + ta_len) < 0) { 
+	if ((sdu_length_total + ta_len) <= 0) { 
 	  return;
 	}
 	
