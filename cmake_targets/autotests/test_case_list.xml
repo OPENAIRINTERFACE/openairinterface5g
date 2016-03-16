@@ -10,7 +10,7 @@
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; uname -a; dmesg|tail</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
- <TestCaseExclusionList>0102+ 010304 010305 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 0159+ 0160+ 0161+ 0162+ 0163+ 0165+ 0170+ 017502 017505</TestCaseExclusionList>
+ <TestCaseExclusionList>0102+ 010304 010305 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 0170+ 017502 017505</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
  <MachineListGeneric>mozart calisson stevens nano amerique</MachineListGeneric>
      <testCase id="010101" >
