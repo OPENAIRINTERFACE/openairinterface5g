@@ -7,6 +7,8 @@
 typedef struct {
   char *name;
   char *desc;
+  char **groups;
+  int size;
 } id;
 
 typedef struct {
@@ -16,6 +18,7 @@ typedef struct {
 } group;
 
 typedef struct {
+  char *name;
   id *i;
   int isize;
   group *g;
@@ -92,17 +95,6 @@ void get_line(parser *p, FILE *f, char **name, char **value)
   *value = p->value.data;
 }
 
-void add_id(database *r, char *id)
-{
-  if ((r->isize & 1023) == 0) {
-    r->i = realloc(r->i, (r->isize + 1024) * sizeof(id));
-    if (r->i == NULL) { printf("out of memory\n"); exit(1); }
-  }
-  r->i[r->isize].name = strdup(id);
-  if (r->i[r->isize].name == NULL) { printf("out of memory\n"); exit(1); }
-  r->isize++;
-}
-
 int group_cmp(const void *_p1, const void *_p2)
 {
   const group *p1 = _p1;
@@ -110,13 +102,44 @@ int group_cmp(const void *_p1, const void *_p2)
   return strcmp(p1->name, p2->name);
 }
 
+int id_cmp(const void *_p1, const void *_p2)
+{
+  const id *p1 = _p1;
+  const id *p2 = _p2;
+  return strcmp(p1->name, p2->name);
+}
+
+int string_cmp(const void *_p1, const void *_p2)
+{
+  char * const *p1 = _p1;
+  char * const *p2 = _p2;
+  return strcmp(*p1, *p2);
+}
+
+id *add_id(database *r, char *idname)
+{
+  if (bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp) != NULL)
+    { printf("ERROR: ID '%s' declared more than once\n", idname); exit(1); }
+  if ((r->isize & 1023) == 0) {
+    r->i = realloc(r->i, (r->isize + 1024) * sizeof(id));
+    if (r->i == NULL) { printf("out of memory\n"); exit(1); }
+  }
+  r->i[r->isize].name = strdup(idname);
+  if (r->i[r->isize].name == NULL) { printf("out of memory\n"); exit(1); }
+  r->i[r->isize].desc = NULL;
+  r->i[r->isize].groups = NULL;
+  r->i[r->isize].size = 0;
+  r->isize++;
+  qsort(r->i, r->isize, sizeof(id), id_cmp);
+  return (id*)bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp);
+}
+
 group *get_group(database *r, char *group_name)
 {
-  group gsearch;
   group *ret;
 
-  gsearch.name = group_name;
-  ret = bsearch(&gsearch, r->g, r->gsize, sizeof(group), group_cmp);
+  ret = bsearch(&(group){name:group_name},
+                r->g, r->gsize, sizeof(group), group_cmp);
   if (ret != NULL) return ret;
 
   if ((r->gsize & 1023) == 0) {
@@ -131,7 +154,8 @@ group *get_group(database *r, char *group_name)
 
   qsort(r->g, r->gsize, sizeof(group), group_cmp);
 
-  return bsearch(&gsearch, r->g, r->gsize, sizeof(group), group_cmp);
+  return bsearch(&(group){name:group_name},
+                 r->g, r->gsize, sizeof(group), group_cmp);
 }
 
 void group_add_id(group *g, char *id)
@@ -144,10 +168,24 @@ void group_add_id(group *g, char *id)
   g->size++;
 }
 
-void add_groups(database *r, char *groups)
+void id_add_group(id *i, char *group)
+{
+  char *g = bsearch(&group, i->groups, i->size, sizeof(char *), string_cmp);
+  if (g != NULL) return;
+
+  if ((i->size & 1023) == 0) {
+    i->groups = realloc(i->groups, (i->size+1024) * sizeof(char *));
+    if (i->groups == NULL) abort();
+  }
+  i->groups[i->size] = group;
+  i->size++;
+  qsort(i->groups, i->size, sizeof(char *), string_cmp);
+}
+
+void add_groups(database *r, id *i, char *groups)
 {
   group *g;
-
+  if (i == NULL) {printf("ERROR: GROUP line before ID line\n");exit(1);}
   while (1) {
     char *start = groups;
     char *end = start;
@@ -159,7 +197,8 @@ void add_groups(database *r, char *groups)
     if (*end == 0) end = NULL; else *end = 0;
 
     g = get_group(r, start);
-    group_add_id(g, r->i[r->isize-1].name);
+    group_add_id(g, i->name);
+    id_add_group(i, g->name);
 
     if (end == NULL) break;
     end++;
@@ -169,24 +208,34 @@ void add_groups(database *r, char *groups)
   }
 }
 
+void add_desc(id *i, char *desc)
+{
+  if (i == NULL) {printf("ERROR: DESC line before ID line\n");exit(1);}
+  i->desc = strdup(desc); if (i->desc == NULL) abort();
+}
+
 void *parse_database(char *filename)
 {
   FILE *in;
   parser p;
   database *r;
   char *name, *value;
+  id *last_id = NULL;
 
   r = calloc(1, sizeof(*r)); if (r == NULL) abort();
   memset(&p, 0, sizeof(p));
+
+  r->name = strdup(filename); if (r->name == NULL) abort();
 
   in = fopen(filename, "r"); if (in == NULL) { perror(filename); abort(); }
 
   while (1) {
     get_line(&p, in, &name, &value);
     if (name == NULL) break;
-    printf("%s %s\n", name, value);
-    if (!strcmp(name, "ID")) add_id(r, value);
-    if (!strcmp(name, "GROUP")) add_groups(r, value);
+//printf("%s %s\n", name, value);
+    if (!strcmp(name, "ID")) last_id = add_id(r, value);
+    if (!strcmp(name, "GROUP")) add_groups(r, last_id, value);
+    if (!strcmp(name, "DESC")) add_desc(last_id, value);
   }
 
   fclose(in);
@@ -201,13 +250,33 @@ void dump_database(void *_d)
   database *d = _d;
   int i;
 
-  printf("database: %d IDs, %d GROUPs\n", d->isize, d->gsize);
-  for (i = 0; i < d->isize; i++)
-    printf("ID %s [%s]\n", d->i[i].name, d->i[i].desc);
+  printf("database %s: %d IDs, %d GROUPs\n", d->name, d->isize, d->gsize);
+  for (i = 0; i < d->isize; i++) {
+    int j;
+    printf("ID %s [%s] [in %d group%s]\n",
+           d->i[i].name, d->i[i].desc ? d->i[i].desc : "",
+           d->i[i].size, d->i[i].size > 1 ? "s" : "");
+    for (j = 0; j < d->i[i].size; j++)
+      printf("    in GROUP: %s\n", d->i[i].groups[j]);
+  }
   for (i = 0; i < d->gsize; i++) {
     int j;
     printf("GROUP %s [size %d]\n", d->g[i].name, d->g[i].size);
     for (j = 0; j < d->g[i].size; j++)
-      printf("  ID %s\n", d->g[i].ids[j]);
+      printf("  contains ID: %s\n", d->g[i].ids[j]);
   }
+}
+
+void list_ids(void *_d)
+{
+  database *d = _d;
+  int i;
+  for (i = 0; i < d->isize; i++) printf("%s\n", d->i[i].name);
+}
+
+void list_groups(void *_d)
+{
+  database *d = _d;
+  int i;
+  for (i = 0; i < d->gsize; i++) printf("%s\n", d->g[i].name);
 }

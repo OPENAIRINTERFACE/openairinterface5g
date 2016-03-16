@@ -257,15 +257,53 @@ void init_shm(void)
 
 #endif /* T_USE_SHARED_MEMORY */
 
+void usage(void)
+{
+  printf(
+"options:\n"
+"    -d <database file>        this option is mandatory\n"
+"    -li                       print IDs in the database\n"
+"    -lg                       print GROUPs in the database\n"
+"    -dump                     dump the database\n"
+  );
+  exit(1);
+}
+
 int main(int n, char **v)
 {
+  char *database_filename = NULL;
   void *database;
   int s;
   int l;
   char t;
+  int i;
+  int do_list_ids = 0;
+  int do_list_groups = 0;
+  int do_dump_database = 0;
 
-  database = parse_database("../T_messages.txt");
-  dump_database(database);
+  for (i = 1; i < n; i++) {
+    if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
+    if (!strcmp(v[i], "-d"))
+      { if (i > n-2) usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-li")) { do_list_ids = 1; continue; }
+    if (!strcmp(v[i], "-lg")) { do_list_groups = 1; continue; }
+    if (!strcmp(v[i], "-dump")) { do_dump_database = 1; continue; }
+    usage();
+  }
+
+  if (database_filename == NULL) {
+    printf("ERROR: provide a database file (-d)\n");
+    exit(1);
+  }
+
+  database = parse_database(database_filename);
+
+  if (do_list_ids + do_list_groups + do_dump_database > 1) usage();
+  if (do_list_ids) { list_ids(database); return 0; }
+  if (do_list_groups) { list_groups(database); return 0; }
+  if (do_dump_database) { dump_database(database); return 0; }
+
+  ul_plot = make_plot(512, 100, 7680*2*10);
 
 #ifdef T_USE_SHARED_MEMORY
   init_shm();
@@ -278,8 +316,6 @@ int main(int n, char **v)
   if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
   for (l = 0; l < T_NUMBER_OF_IDS; l++)
     if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
-
-  ul_plot = make_plot(512, 100, 7680*2*10);
 
   /* read messages */
   while (1) {
