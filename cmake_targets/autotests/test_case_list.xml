@@ -2803,7 +2803,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -2816,7 +2816,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -2875,7 +2875,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -2888,7 +2888,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -2946,7 +2946,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -2960,7 +2960,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -3018,7 +3018,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3030,7 +3030,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -3089,7 +3089,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3101,7 +3101,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -3160,7 +3160,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3172,7 +3172,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -3317,7 +3317,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3641,7 +3641,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3722,7 +3722,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3735,7 +3735,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -3794,7 +3794,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3808,7 +3808,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -3866,7 +3866,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3880,7 +3880,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -3942,7 +3942,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -3954,7 +3954,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -4013,7 +4013,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4025,7 +4025,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -4084,7 +4084,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -4096,7 +4096,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -4740,7 +4740,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -4815,7 +4815,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -4888,7 +4888,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -4963,7 +4963,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -5038,7 +5038,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -5189,7 +5189,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -5264,7 +5264,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -5337,7 +5337,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -5412,7 +5412,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -5487,7 +5487,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -5660,7 +5660,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -5745,7 +5745,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -5828,7 +5828,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -5913,7 +5913,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -5998,7 +5998,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
