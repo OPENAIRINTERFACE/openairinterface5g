@@ -981,7 +981,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -995,7 +995,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1015,7 +1015,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1055,7 +1055,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1069,7 +1069,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1089,7 +1089,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1129,7 +1129,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1141,7 +1141,7 @@
     <UE_main_exec_args></UE_main_exec_args>
     <UE_traffic_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/iperf_script 1 ppp0 -s -i 1 -u -f m -B 192.172.0.2</UE_traffic_exec>
     <UE_traffic_exec_args></UE_traffic_exec_args>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
@@ -1162,7 +1162,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1202,7 +1202,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1215,7 +1215,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -1235,7 +1235,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1275,7 +1275,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1289,7 +1289,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -1309,7 +1309,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1350,7 +1350,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1364,7 +1364,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1384,7 +1384,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.5MHz.FDD.Band_7.UL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1425,7 +1425,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>>
@@ -1438,7 +1438,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1458,7 +1458,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=2.0Mbits/sec max=2.0Mbits/sec average=2.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1498,7 +1498,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1512,7 +1512,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true></UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
     <EPC_working_dir>/tmp</EPC_working_dir>
@@ -1532,7 +1532,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=4.0Mbits/sec max=4.0Mbits/sec average=4.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1572,7 +1572,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1586,7 +1586,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=4.0Mbits/sec max=5.0Mbits/sec average=4.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -1606,7 +1606,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1646,7 +1646,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1660,7 +1660,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=8.0Mbits/sec max=9.0Mbits/sec average=8.5Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -1680,7 +1680,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script  60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -1720,7 +1720,7 @@
     <eNB_traffic_exec_args></eNB_traffic_exec_args>
     <eNB_search_expr_true></eNB_search_expr_true>
     <eNB_search_expr_false></eNB_search_expr_false>
-    <eNB_terminate_missing_procs>True</eNB_terminate_missing_procs>
+    <eNB_terminate_missing_procs>False</eNB_terminate_missing_procs>
 
     <UE_working_dir>/tmp</UE_working_dir>
     <UE_config_file></UE_config_file>
@@ -1734,7 +1734,7 @@
     <UE_traffic_exec_args></UE_traffic_exec_args>
     <UE_search_expr_true>throughput_test min=15.0Mbits/sec max=15.0Mbits/sec average=15.0Mbits/sec   </UE_search_expr_true>
     <UE_search_expr_false></UE_search_expr_false>
-    <UE_terminate_missing_procs>True</UE_terminate_missing_procs>
+    <UE_terminate_missing_procs>False</UE_terminate_missing_procs>
     <UE_stop_script>sudo -S -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --stop-ue </UE_stop_script>
 
 
@@ -1754,7 +1754,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.2TX.2RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -2836,7 +2836,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.5MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -2908,7 +2908,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -2980,7 +2980,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3051,7 +3051,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3122,7 +3122,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3193,7 +3193,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPx310.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3755,7 +3755,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.5MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3828,7 +3828,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3904,7 +3904,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -3975,7 +3975,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4046,7 +4046,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4117,7 +4117,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>EXMIMO.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4760,7 +4760,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4835,7 +4835,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4909,7 +4909,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -4983,7 +4983,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5058,7 +5058,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5209,7 +5209,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>SoDeRa.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5284,7 +5284,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>SoDeRa.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5358,7 +5358,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>BladeRF.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5432,7 +5432,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>SoDeRa.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5507,7 +5507,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>SoDeRa.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5680,7 +5680,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.RRH.ALU_EPC.Bandrich.10MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5765,7 +5765,7 @@
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.RRH.ALU_EPC.Bandrich.20MHz.FDD.Band_7.UL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5849,7 +5849,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.RRH.ALU_EPC.Bandrich.5MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -5933,7 +5933,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.RRH.ALU_EPC.Bandrich.10MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
@@ -6018,7 +6018,7 @@
     <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
-    <EPC_terminate_missing_procs>True</EPC_terminate_missing_procs>
+    <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
     <tags>USRPb210.RRH.ALU_EPC.Bandrich.20MHz.FDD.Band_7.DL.1TX.1RX</tags>
     <nruns>10</nruns>
     </testCase> 
