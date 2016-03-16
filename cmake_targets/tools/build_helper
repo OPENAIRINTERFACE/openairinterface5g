@@ -30,7 +30,7 @@
 ################################################################################
 # file build_helper
 # brief
-# author Laurent Thomas
+# authors Laurent Thomas, Lionel GAUTHIER
 #
 #######################################
 SUDO='sudo -E'
@@ -269,7 +269,9 @@ check_install_oai_software() {
 	pydb \
 	wvdial \
         python-numpy \
-        sshpass
+        sshpass \
+        libxslt1-dev
+
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then
         install_nettle_from_source
@@ -291,10 +293,12 @@ install_asn1c_from_source(){
     $SUDO rm -rf /tmp/asn1c-r1516
     mkdir -p /tmp/asn1c-r1516
     cd /tmp/asn1c-r1516
-    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 
-    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
+    rm -rf /tmp/asn1c-r1516/*
+    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 > /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 >> /tmp/log_compile_asn1c
     ./configure
     make -j`nproc`
     $SUDO make install
@@ -322,7 +326,6 @@ install_nas_tools() {
   fi
 
 }
-
 
 
 ################################
