@@ -216,7 +216,7 @@ def sftp_module (username, password, hostname, ports, paramList,logfile):
 # \brief bash script stub put at the end of scripts to terminate it 
 # \param timeout_cmd terminate script after timeout_cmd seconds
 # \param terminate_missing_procs if True terminate all the processes launched by script if one of them terminates prematurely (due to error)
-def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
+def finalize_deploy_script (timeout_cmd, terminate_missing_procs='False'):
   cmd = 'declare -i timeout_cmd='+str(timeout_cmd) + '\n'
   if terminate_missing_procs == 'True':
     cmd = cmd +  """
