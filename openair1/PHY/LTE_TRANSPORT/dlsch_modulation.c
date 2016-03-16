@@ -1092,6 +1092,8 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
   return(0);
 }
 
+
+
 int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
                            uint32_t *jj,
                            uint16_t re_offset,
@@ -1373,7 +1375,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
         mod_order0,
         mod_order1,
         rb_alloc[0],
-        l);
+        len);
 #endif
 
     if (frame_parms->Ncp==0) { // normal prefix
@@ -1559,7 +1561,8 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
       if (rb_alloc_ind > 0) {
         //    printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
-        allocate_REs_in_RB(frame_parms,
+ 
+	  	allocate_REs_in_RB(frame_parms,
                            txdataF,
                            &jj,
                            &jj2,
@@ -1602,6 +1605,159 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
   return (re_allocated);
 }
+
+
+int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
+                     int16_t amp,
+                     uint32_t subframe_offset,
+                     LTE_DL_FRAME_PARMS *frame_parms,
+                     uint8_t num_pdcch_symbols,
+                     LTE_eNB_DLSCH_t *dlsch0,
+                     LTE_eNB_DLSCH_t *dlsch1,
+		     int G)
+{
+
+  uint8_t nsymb;
+  uint8_t harq_pid = dlsch0->current_harq_pid;
+  LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
+  LTE_DL_eNB_HARQ_t *dlsch1_harq; //= dlsch1->harq_processes[harq_pid];
+  uint32_t i,jj,re_allocated;
+  uint16_t l,rb,re_offset;
+  uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
+  uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
+  uint8_t *x0  = dlsch0_harq->e;
+  uint8_t qam64_table_offset_re = 0;
+  uint8_t qam64_table_offset_im = 0;
+  uint8_t qam16_table_offset_re = 0;
+  uint8_t qam16_table_offset_im = 0;
+  int16_t gain_lin_QPSK;
+ #ifdef DEBUG_DLSCH_MODULATION
+  uint8_t Nl0 = dlsch0_harq->Nl;
+  uint8_t Nl1;
+#endif
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_IN);
+
+  amp=1; //we do full scale here for SIC
+  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15));
+  
+  jj = 0;
+  i = 0;
+  while (jj <= G-1) {
+       
+	re_allocated = re_allocated + 1;
+
+        switch (mod_order0) {
+        case 2:  //QPSK
+       /* TODO: handle more than 1 antenna */
+     //   printf("%d(%d) : %d,%d => ",tti_offset,*jj,((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+        
+          ((int16_t*)&sic_buffer[0][i])[0] += (x0[jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //I //b_i
+          
+          jj = jj + 1;
+          
+	  ((int16_t*)&sic_buffer[0][i])[1] += (x0[jj]==1) ? (-gain_lin_QPSK) : gain_lin_QPSK; //Q //b_{i+1}
+          
+          jj = jj + 1;
+          
+	//  printf("%d,%d\n",((int16_t*)&sic_buffer[0][i])[0],((int16_t*)&sic_buffer[0][i])[1]);
+	  
+	  i++;
+          
+	  break;
+
+        case 4:  //16QAM
+
+          qam16_table_offset_re = 0;
+          qam16_table_offset_im = 0;
+
+          if (x0[jj] == 1)
+            qam16_table_offset_re+=2;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam16_table_offset_im+=2;
+
+          jj=jj+1;
+
+
+          if (x0[jj] == 1)
+            qam16_table_offset_re+=1;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam16_table_offset_im+=1;
+
+          jj=jj+1;
+
+
+            ((int16_t *)&sic_buffer[0][i])[0]+=qam16_table[qam16_table_offset_re];
+            ((int16_t *)&sic_buffer[0][i])[0]+=qam16_table[qam16_table_offset_im];
+	    
+           i++; 
+
+          break;
+
+        case 6:  //64QAM
+
+
+          qam64_table_offset_re = 0;
+          qam64_table_offset_im = 0;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_re+=4;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_im+=4;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_re+=2;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_im+=2;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_re+=1;
+
+          jj=jj+1;
+
+          if (x0[jj] == 1)
+            qam64_table_offset_im+=1;
+
+          jj=jj+1;
+
+
+            ((int16_t *)&sic_buffer[0][i])[0]+=qam64_table[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+            ((int16_t *)&sic_buffer[0][i])[0]+=qam64_table[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+	   
+	   i++;
+          
+	   break;
+      }
+      
+      }
+
+
+#ifdef DEBUG_DLSCH_MODULATION
+  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset));
+#endif
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_OUT);
+
+  return (re_allocated);
+}
+
+
 
 int mch_modulation(mod_sym_t **txdataF,
                    int16_t amp,
@@ -1647,7 +1803,7 @@ int mch_modulation(mod_sym_t **txdataF,
 
       if ((frame_parms->N_RB_DL&1) == 1) { // ODD N_RB_DL
 
-        if (rb==(frame_parms->N_RB_DL>>1))
+	  if (rb==(frame_parms->N_RB_DL>>1))
           skip_dc = 1;
         else
           skip_dc = 0;

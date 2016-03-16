@@ -185,7 +185,6 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t skip_dc,
                            uint8_t skip_half);
 
-
 /** \fn int32_t dlsch_modulation(mod_sym_t **txdataF,
     int16_t amp,
     uint32_t sub_frame_offset,
@@ -210,6 +209,15 @@ int32_t dlsch_modulation(mod_sym_t **txdataF,
                          uint8_t num_pdcch_symbols,
                          LTE_eNB_DLSCH_t *dlsch0,
                          LTE_eNB_DLSCH_t *dlsch1);
+
+int32_t dlsch_modulation_SIC(mod_sym_t **sic_buffer,
+                         int16_t amp,
+                         uint32_t sub_frame_offset,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         uint8_t num_pdcch_symbols,
+                         LTE_eNB_DLSCH_t *dlsch0,
+                         LTE_eNB_DLSCH_t *dlsch1,
+			 int G);
 /*
   \brief This function is the top-level routine for generation of the sub-frame signal (frequency-domain) for MCH.
   @param txdataF Table of pointers for frequency-domain TX signals
@@ -710,6 +718,16 @@ int32_t dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param llr128p pointer to pointer to symbol in dlsch_llr
 */
 
+int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
+                       int **rxdataF_comp,
+		       mod_sym_t **sic_buffer,
+		       int **rho_i,
+                       short *dlsch_llr,
+		       uint8_t num_pdcch_symbols,
+                       uint16_t nb_rb,
+                       uint16_t pbch_pss_sss_adjust,
+		       LTE_UE_DLSCH_t *dlsch0);
+
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
                      int16_t *dlsch_llr,
@@ -719,7 +737,6 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
                      int16_t **llr128p);
-
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
    @param frame_parms Frame descriptor structure
@@ -732,6 +749,17 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
    @param nb_rb number of RBs for this allocation
    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
 */
+void dlsch_16qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
+                         int32_t **rxdataF_comp,
+                         int16_t *dlsch_llr,
+                         int32_t **dl_ch_mag,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
+                         uint16_t pbch_pss_sss_adjust,
+                         int16_t **llr128p);
+
+
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
                      int16_t *dlsch_llr,
@@ -742,6 +770,17 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t nb_rb,
                      uint16_t pbch_pss_sss_adjust,
                      short **llr_save);
+
+void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
+                         int32_t **rxdataF_comp,
+                         int16_t *dlsch_llr,
+                         int32_t **dl_ch_mag,
+                         int32_t **dl_ch_magb,
+                         uint8_t symbol,
+                         uint8_t first_symbol_flag,
+                         uint16_t nb_rb,
+                         uint16_t pbch_pss_sss_adjust,
+                         short **llr_save);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     int32_t **rxdataF_comp,

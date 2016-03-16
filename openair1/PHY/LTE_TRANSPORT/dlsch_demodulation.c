@@ -220,7 +220,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
        printf("\n");*/
 //#endif
 
-   if (rx_type==rx_IC_single_stream) {
+   if (rx_type >= rx_IC_single_stream) {
       if (eNB_id_i<phy_vars_ue->n_connected_eNB) // we are in TM5
        nb_rb = dlsch_extract_rbs_dual(lte_ue_common_vars->rxdataF,
                                        lte_ue_common_vars->dl_ch_estimates[eNB_id_i],
@@ -348,10 +348,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                nb_rb,
                                lte_ue_pdsch_vars[eNB_id]->log2_maxh,
                                phy_measurements); // log2_maxh+I0_shift
- /*
+ 
  if (symbol == 5) {
      write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
- } */
+ } 
     if ((rx_type==rx_IC_single_stream) && 
         (eNB_id_i<phy_vars_ue->n_connected_eNB)) {
          
@@ -452,8 +452,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                      nb_rb, 
                                      lte_ue_pdsch_vars[eNB_id]->log2_maxh0,
 				     lte_ue_pdsch_vars[eNB_id]->log2_maxh1); 
-   	/*   
-       if (symbol == 5) {
+   	   
+      if (symbol == 5) {
    
      write_output("rxF_comp_d00.m","rxF_c_d00",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rxF_comp_d01.m","rxF_c_d01",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
@@ -461,7 +461,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
      write_output("rxF_comp_d11.m","rxF_c_d11",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
 
    
-	}*/
+	} 
+
       // compute correlation between signal and interference channels (rho12 and rho21)
       
 	dlsch_dual_stream_correlation(frame_parms,// this is doing h0'h1, needed for llr[1]
@@ -485,6 +486,16 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
+      
+       if (symbol == 5) {
+   
+     write_output("rho0_0.m","rho0_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
+     write_output("rho2_0.m","rho2_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+     write_output("rho0_1.m.m","rho0_1",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+     write_output("rho2_1.m","rho2_1",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
+
+   
+	} 
 
    }
       else {
@@ -664,6 +675,15 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				 symbol,
 				 nb_rb,
 				 1);
+	
+	 
+       if (symbol == 5) {
+   
+     write_output("rho0_mrc.m","rho0_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
+     write_output("rho2_mrc.m","rho2_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
+    	}
+	
+	
       }
     } else {
 
@@ -728,7 +748,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                        adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
                        lte_ue_pdsch_vars[eNB_id]->llr128);
     }
-      else if ((rx_type==rx_IC_single_stream) || (rx_type==rx_IC_dual_stream)) {
+      else if (rx_type >= rx_IC_single_stream) {
         if (dlsch1_harq->Qm == 2) {
           dlsch_qpsk_qpsk_llr(frame_parms,
                               lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
@@ -4705,8 +4725,13 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
   */
   sprintf(fname,"dlsch%d_r%d_rho.m",eNB_id,round);
   sprintf(vname,"dl_rho_r%d_%d",eNB_id,round);
-  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[0][0][0],12*N_RB_DL*nsymb,1,1);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0],12*N_RB_DL*nsymb,1,1);
 
+  sprintf(fname,"dlsch%d_r%d_rho2.m",eNB_id,round);
+  sprintf(vname,"dl_rho2_r%d_%d",eNB_id,round);
+  write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
+  
+  
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0],12*N_RB_DL*nsymb,1,1);

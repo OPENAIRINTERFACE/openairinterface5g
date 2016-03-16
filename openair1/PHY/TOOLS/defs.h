@@ -131,6 +131,12 @@ int mult_cpx_conj_vector(int16_t *x1,
                          uint32_t N,
                          int output_shift);
 
+int mult_cpx_vector(int16_t *x1,
+                    int16_t  *x2,
+                    int16_t *y,
+                    uint32_t N,
+                    int output_shift);
+
 // lte_dfts.c
 void init_fft(uint16_t size,
               uint8_t logsize,
@@ -213,6 +219,11 @@ int32_t add_cpx_vector(int16_t *x,
                        int16_t *alpha,
                        int16_t *y,
                        uint32_t N);
+
+int32_t sub_cpx_vector16(int16_t *x,
+			  int16_t *y,
+			  int16_t *z,
+			  uint32_t N);
 
 int32_t add_cpx_vector32(int16_t *x,
                          int16_t *y,

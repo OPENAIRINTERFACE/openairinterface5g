@@ -768,13 +768,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     // PDSCH LLRs CW0
     if (pdsch_llr != NULL) {
-        for (i=0; i<coded_bits_per_codeword0/mod0; i++) {
-            llr[i] = (float) pdsch_llr[mod0*i];
+        for (i=0; i<coded_bits_per_codeword0; i++) {
+            llr[i] = (float) pdsch_llr[i];
             bit[i] = (float) i;
         }
 
-        fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword0/mod0);        
-        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword0/mod0,"","","");
+        fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword0);        
+        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword0,"","","");
     }
 
   // PDSCH I/Q of MF Output
@@ -836,13 +836,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
     // PDSCH LLRs CW1
     if (pdsch_llr1 != NULL) {
-        for (i=0; i<coded_bits_per_codeword1/mod1; i++) {
-            llr[i] = (float) pdsch_llr1[mod1*i];
+        for (i=0; i<coded_bits_per_codeword1; i++) {
+            llr[i] = (float) pdsch_llr1[i];
             bit[i] = (float) i;
         }
 
-        fl_set_xyplot_xbounds(form->pdsch_llr1,0,coded_bits_per_codeword1/mod1);        
-        fl_set_xyplot_data(form->pdsch_llr1,bit,llr,coded_bits_per_codeword1/mod1,"","","");
+        fl_set_xyplot_xbounds(form->pdsch_llr1,0,coded_bits_per_codeword1);        
+        fl_set_xyplot_data(form->pdsch_llr1,bit,llr,coded_bits_per_codeword1,"","","");
     }
     
     // PDSCH I/Q of MF Output

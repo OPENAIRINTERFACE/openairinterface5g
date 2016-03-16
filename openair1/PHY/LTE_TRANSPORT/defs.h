@@ -742,6 +742,7 @@ typedef enum {
   rx_standard=0,
   rx_IC_single_stream,
   rx_IC_dual_stream,
+  rx_SIC_dual_stream
 } RX_type_t;
 
 typedef enum {
