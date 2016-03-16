@@ -147,18 +147,22 @@ void config_BBU_mod( rrh_module_t *mod_enb, uint8_t RT_flag, uint8_t NRT_flag) {
   mod_enb->devs->openair0_cfg = mod_enb->eth_dev.openair0_cfg;
 
   /* check sanity of configuration parameters and print */
-  check_dev_config(mod_enb);    
-  
+  check_dev_config(mod_enb);  
+  if (rf_config_file[0] == '\0')  
+    mod_enb->devs->openair0_cfg->configFilename = NULL;
+  else
+    mod_enb->devs->openair0_cfg->configFilename = rf_config_file;
   /* initialize and configure the RF device */
   if (openair0_device_load(mod_enb->devs, mod_enb->devs->openair0_cfg)<0) {
     LOG_E(RRH,"Exiting, cannot initialize RF device.\n");
     exit(-1);
-  } else {
+  } else {   
     if (mod_enb->devs->type != NONE_DEV) {
       /* start RF device */
       if (mod_enb->devs->type == EXMIMO_DEV) {
 	//call start function for exmino
       } else {
+
 	if (mod_enb->devs->trx_start_func(mod_enb->devs)!=0)
 	  LOG_E(RRH,"Unable to initiate RF device.\n");
 	else
