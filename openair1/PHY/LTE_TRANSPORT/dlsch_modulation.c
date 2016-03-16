@@ -1621,7 +1621,7 @@ int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
   uint8_t harq_pid = dlsch0->current_harq_pid;
   LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
   LTE_DL_eNB_HARQ_t *dlsch1_harq; //= dlsch1->harq_processes[harq_pid];
-  uint32_t i,jj,re_allocated;
+  uint32_t i,jj,re_allocated=0;
   uint16_t l,rb,re_offset;
   uint32_t *rb_alloc = dlsch0_harq->rb_alloc;
   uint8_t mod_order0 = get_Qm(dlsch0_harq->mcs);
