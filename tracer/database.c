@@ -292,7 +292,7 @@ static void onoff_id(database *d, char *name, int *a, int onoff)
   i = bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
   if (i == NULL) return;
   a[i->id] = onoff;
-  printf("turning %s %s\n", name, onoff ? "ON" : "OFF");
+  printf("turning %s %s\n", onoff ? "ON" : "OFF", name);
 }
 
 static void onoff_group(database *d, char *name, int *a, int onoff)
