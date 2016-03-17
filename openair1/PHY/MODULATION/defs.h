@@ -99,6 +99,40 @@ void remove_625_Hz(PHY_VARS_eNB *phy_vars_eNB,int16_t *prach);
 
 void apply_625_Hz(PHY_VARS_UE *phy_vars_ue,int16_t *prach);
 
+/** \brief This function performs UE specific beamforming especially for
+ * transmission mode TM7-10
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param txdataF_BF Table of pointers for frequency-domain TX signals
+after beamforming
+    @param frame_parms Frame descriptor structure
+    @param ue_spec_bf_weights UE specific beamforming weights applied on
+each antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act*/
+int ue_spec_beamforming(int32_t **txdataF,
+	                int32_t **txdataF_BF,
+                        LTE_DL_FRAME_PARMS *frame_parms,
+	                int32_t ***ue_spec_bf_weights,
+                        int slot,
+                        int symbol);
+
+/** \brief This function performs cell specific beamforming for common
+ * data
+    @param txdataF Table of pointers for frequency-domain TX signals
+    @param txdataF_BF Table of pointers for frequency-domain TX signals
+    @param frame_parms Frame descriptor structure
+after beamforming
+    @param cell_spec_bf_weights Common beamforming weights applied on each
+antenna element and each carrier
+    @param slot Slot number
+    @param symbol Symbol index on which to act*/
+int cell_spec_beamforming(int32_t **txdataF,
+	                  int32_t **txdataF_BF,
+                          LTE_DL_FRAME_PARMS *frame_parms,
+	                  int32_t ***cell_spec_bf_weights,
+                          int slot,
+                          int symbol);
+
 #endif
 /** @}*/
 #endif

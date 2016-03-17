@@ -27,13 +27,13 @@ Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 069
 
  *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/beamforming.c
+/*! \file PHY/MODULATION/beamforming.c
  * \brief 
- * \author R. Knopp, F. Kaltenberger, X. JIANG
- * \date 2015
+ * \author X. JIANG, F. Kaltenberger, R. KNOPP
+ * \date 2016
  * \version 0.1
  * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr,xiwen.jiang@eurecom.fr
+ * \email: xiwen.jiang@eurecom.fr,florian.kaltenberger@eurecom.fr,raymond.knopp@eurecom.fr
  * \note
  * \warning
  */

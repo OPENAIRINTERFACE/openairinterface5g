@@ -336,41 +336,6 @@ int32_t generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 int32_t generate_pbch_emul(PHY_VARS_eNB *phy_vars_eNB,uint8_t *pbch_pdu);
 
-
-/** \brief This function performs UE specific beamforming especially for
- * transmission mode TM7-10
-    @param txdataF Table of pointers for frequency-domain TX signals
-    @param txdataF_BF Table of pointers for frequency-domain TX signals
-after beamforming
-    @param frame_parms Frame descriptor structure
-    @param ue_spec_bf_weights UE specific beamforming weights applied on
-each antenna element and each carrier
-    @param slot Slot number
-    @param symbol Symbol index on which to act*/
-int ue_spec_beamforming(int32_t **txdataF,
-	                int32_t **txdataF_BF,
-                        LTE_DL_FRAME_PARMS *frame_parms,
-	                int32_t ***ue_spec_bf_weights,
-                        int slot,
-                        int symbol);
-
-/** \brief This function performs cell specific beamforming for common
- * data
-    @param txdataF Table of pointers for frequency-domain TX signals
-    @param txdataF_BF Table of pointers for frequency-domain TX signals
-    @param frame_parms Frame descriptor structure
-after beamforming
-    @param cell_spec_bf_weights Common beamforming weights applied on each
-antenna element and each carrier
-    @param slot Slot number
-    @param symbol Symbol index on which to act*/
-int cell_spec_beamforming(int32_t **txdataF,
-	                  int32_t **txdataF_BF,
-                          LTE_DL_FRAME_PARMS *frame_parms,
-	                  int32_t ***cell_spec_bf_weights,
-                          int slot,
-                          int symbol);
-
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
