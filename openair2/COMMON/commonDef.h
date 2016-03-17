@@ -48,7 +48,19 @@ Description Contains global common definitions
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
+typedef signed char        boolean_t;
+
+#if !defined(TRUE)
+#define TRUE               (boolean_t)0x01
+#endif
+
+#if !defined(FALSE)
+#define FALSE              (boolean_t)0x00
+#endif
+
+#define BOOL_NOT(b) (b^TRUE)
 
 #define NAS_UE_ID_FMT "0x%06x"
 
@@ -58,13 +70,6 @@ Description Contains global common definitions
 
 #define RETURNok        (0)
 #define RETURNerror     (-1)
-
-#ifndef FALSE
-#define FALSE           (0)
-#endif
-#ifndef TRUE
-#define TRUE            (1)
-#endif
 
 /*
  * Name of the environment variable which defines the default directory
