@@ -218,7 +218,7 @@ void get_message(int s)
 #endif
     if (size != 4 * 7680)
       {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed\n");abort();}
-    if (ul_plot) iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680);
+    if (ul_plot) iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680, 0);
     break;
   }
   case T_ENB_UL_CHANNEL_ESTIMATE: {
@@ -235,7 +235,7 @@ void get_message(int s)
     if (size != 512*4)
       {printf("bad T_ENB_UL_CHANNEL_ESTIMATE, only 512 samples allowed\n");
        abort();}
-    if (chest_plot) iq_plot_set(chest_plot, (short*)buf, 512, 0);
+    if (chest_plot) iq_plot_set(chest_plot, (short*)buf, 512, 0, 0);
     break;
   }
   case T_PUSCH_IQ: {
@@ -260,7 +260,7 @@ void get_message(int s)
         src = (uint32_t*)buf + l * 12 * 25;
         for (i = 0; i < nb_rb*12; i++) *dst++ = *src++;
       }
-      iq_plot_set_sized(pusch_iq_plot, (short*)buf, nb_rb*12*14);
+      iq_plot_set_sized(pusch_iq_plot, (short*)buf, nb_rb*12*14, 0);
     }
     break;
   }
@@ -273,7 +273,7 @@ void get_message(int s)
     GET(s, &I, sizeof(int));
     GET(s, &Q, sizeof(int));
 printf("receiving %d %d\n", I, Q);
-    if (pucch_iq_plot) iq_plot_add_point_loop(pucch_iq_plot, I*10, Q*10);
+    if (pucch_iq_plot) iq_plot_add_point_loop(pucch_iq_plot, I*10, Q*10, 0);
     break;
   }
   case T_buf_test: {
@@ -385,11 +385,14 @@ int main(int n, char **v)
   if (do_dump_database) { dump_database(database); return 0; }
 
   if (do_xforms) {
-    ul_plot = make_plot(512, 100, 7680*10, "UL Input Signal", PLOT_VS_TIME);
-    chest_plot = make_plot(512, 100, 512, "UL Channel Estimate UE 0",
-                           PLOT_VS_TIME);
-    pusch_iq_plot = make_plot(100, 100, 12*25*14, "PUSCH IQ",PLOT_IQ_POINTS);
-    pucch_iq_plot = make_plot(100, 100, 1000, "PUCCH IQ", PLOT_IQ_POINTS);
+    ul_plot = make_plot(512, 100, "UL Input Signal", 1,
+                        7680*10, PLOT_VS_TIME, "blue");
+    chest_plot = make_plot(512, 100, "UL Channel Estimate UE 0", 1,
+                           512, PLOT_VS_TIME, "blue");
+    pusch_iq_plot = make_plot(100, 100, "PUSCH IQ", 1,
+                              12*25*14, PLOT_IQ_POINTS, "blue");
+    pucch_iq_plot = make_plot(100, 100, "PUCCH IQ", 1,
+                              1000, PLOT_IQ_POINTS, "blue");
   }
 
   for (i = 0; i < on_off_n; i++)
