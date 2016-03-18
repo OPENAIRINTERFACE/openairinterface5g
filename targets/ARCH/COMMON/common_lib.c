@@ -103,14 +103,18 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   if (flag == BBU_LOCAL_RADIO_HEAD) {
       lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
       if (!lib_handle) {
-	printf( "Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
-	return 0;
+	fprintf(stderr,"Unable to locate %s: HW device set to NONE_DEV.\n", OAI_RF_LIBNAME);
+	fprintf(stderr,"%s\n",dlerror());
+	return -1;
       } 
       
       dp = dlsym(lib_handle,"device_init");
       
       if (dp != NULL ) {
-	dp(device,openair0_cfg);
+	if (dp(device,openair0_cfg)!=0) {
+	  fprintf(stderr,"Error initializing device\n");
+	  return -1;
+	}
       } else {
 	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
 	return -1;
@@ -119,7 +123,8 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
       lib_handle = dlopen(OAI_TP_LIBNAME, RTLD_LAZY);
       if (!lib_handle) {
 	printf( "Unable to locate %s: transport protocol set to NONE_TP.\n", OAI_TP_LIBNAME);
-	return 0;
+	printf( "%s\n",dlerror());
+	return -1;
       } 
       
       tp = dlsym(lib_handle,"transport_init");
@@ -152,7 +157,7 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
     }   
   }
   #endif
-  return 0;
+  return rc;
 }
 
 int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params) {
@@ -164,7 +169,7 @@ int openair0_transport_load(openair0_device *device, openair0_config_t *openair0
       return -1;		   
       }   
   }
-  return 0;
+  return rc;
 
 }
 
