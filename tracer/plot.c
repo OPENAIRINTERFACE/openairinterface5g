@@ -118,6 +118,8 @@ static void *plot_thread(void *_p)
                 0, 0, p->width, p->height, 0, 0);
     }
 
+    XFlush(p->d);
+
     FD_ZERO(&rset);
     FD_SET(p->timer_pipe[0], &rset);
     FD_SET(xfd, &rset);
