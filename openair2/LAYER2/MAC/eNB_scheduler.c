@@ -216,12 +216,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   }
   
-#ifndef DISABLE_SF_TRIGGER
-  //Send subframe trigger to the controller
-  if (mac_agent_registered[module_idP]) {
-    agent_mac_xface[module_idP]->enb_agent_send_sf_trigger(module_idP);
-  }
-#endif
+/* #ifndef DISABLE_SF_TRIGGER */
+/*   //Send subframe trigger to the controller */
+/*   if (mac_agent_registered[module_idP]) { */
+/*     agent_mac_xface[module_idP]->enb_agent_send_sf_trigger(module_idP); */
+/*   } */
+/* #endif */
   
   //if (subframeP%5 == 0)
   //#ifdef EXMIMO
@@ -971,12 +971,14 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     allocate_CCEs(module_idP,CC_id,subframeP,0);
 
+
 #ifndef DISABLE_CONT_STATS
   //Send subframe trigger to the controller
   if (mac_agent_registered[module_idP]) {
     agent_mac_xface[module_idP]->enb_agent_send_update_mac_stats(module_idP);
   }
 #endif
+
 
   LOG_D(MAC,"frameP %d, subframeP %d\n",frameP,subframeP);
 

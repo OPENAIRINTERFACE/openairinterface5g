@@ -514,6 +514,32 @@ uint16_t get_sfn_sf (mid_t mod_id) {
   return sfn_sf;
 }
 
+uint16_t get_future_sfn_sf (mid_t mod_id, int ahead_of_time) {
+  
+  frame_t frame;
+  sub_frame_t subframe;
+  uint16_t sfn_sf, frame_mask, sf_mask;
+  
+  frame = (frame_t) get_current_system_frame_num(mod_id);
+  subframe = (sub_frame_t) get_current_subframe(mod_id);
+
+  subframe = ((subframe + ahead_of_time) % 10);
+
+  int full_frames_ahead = ((ahead_of_time / 10) % 10);
+  
+  frame = frame + full_frames_ahead;
+
+  if (subframe < get_current_subframe(mod_id)) {
+    frame++;
+  }
+
+  frame_mask = ((1<<12) - 1);
+  sf_mask = ((1<<4) - 1);
+  sfn_sf = (subframe & sf_mask) | ((frame & frame_mask) << 4);
+  
+  return sfn_sf;
+}
+
 int get_num_ues (mid_t mod_id){
 
   return  ((UE_list_t *)enb_ue[mod_id])->num_UEs;

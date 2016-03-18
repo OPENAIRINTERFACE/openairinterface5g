@@ -67,6 +67,12 @@
 #   endif
 #endif
 
+
+//Agent-related headers
+#include "ENB_APP/enb_agent_extern.h"
+#include "ENB_APP/enb_agent_mac.h"
+#include "LAYER2/MAC/enb_agent_mac_proto.h"
+
 //#define DIAG_PHY
 
 #define NS_PER_SLOT 500000
@@ -1411,6 +1417,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 #endif
 #endif
 
+
     if (abstraction_flag == 0) {
 
       start_meas(&phy_vars_eNB->dlsch_encoding_stats);
@@ -1602,6 +1609,13 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
     phy_vars_eNB->dlsch_eNB_ra->active = 0;
   }
+
+#ifndef DISABLE_SF_TRIGGER
+  //Send subframe trigger to the controller
+  if (mac_agent_registered[phy_vars_eNB->Mod_id]) {
+    agent_mac_xface[phy_vars_eNB->Mod_id]->enb_agent_send_sf_trigger(phy_vars_eNB->Mod_id);
+  }
+#endif
 
   // Now scan UE specific DLSCH
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)

@@ -947,9 +947,27 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
   }
   protocol__prp_sf_trigger__init(sf_trigger_msg);
 
+  frame_t frame;
+  sub_frame_t subframe;
+
+  int ahead_of_time = 1;
+  
+  frame = (frame_t) get_current_system_frame_num(mod_id);
+  subframe = (sub_frame_t) get_current_subframe(mod_id);
+
+  subframe = ((subframe + ahead_of_time) % 10);
+
+  int full_frames_ahead = ((ahead_of_time / 10) % 10);
+  
+  frame = frame + full_frames_ahead;
+
+  if (subframe < get_current_subframe(mod_id)) {
+    frame++;
+  }
+
   sf_trigger_msg->header = header;
   sf_trigger_msg->has_sfn_sf = 1;
-  sf_trigger_msg->sfn_sf = get_sfn_sf(mod_id);
+  sf_trigger_msg->sfn_sf = get_future_sfn_sf(mod_id, 1);
 
   /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
    *transmitting UEs
@@ -973,7 +991,7 @@ int enb_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Progran
       /*TODO: fill in the right id of this round's HARQ process for this UE*/
       int harq_id;
       int harq_status;
-      get_harq(mod_id,UE_PCCID(mod_id,i),i,get_current_frame(mod_id),get_current_subframe(mod_id),&harq_id, &harq_status);
+      get_harq(mod_id, UE_PCCID(mod_id,i), i, frame, subframe, &harq_id, &harq_status);
       dl_info[i]->harq_process_id = harq_id;
       dl_info[i]->has_harq_process_id = 1;
       /*TODO: fill in the status of the HARQ process (2 TBs)*/
@@ -1369,8 +1387,8 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_send_sr_info = enb_agent_send_sr_info;
   xface->enb_agent_send_sf_trigger = enb_agent_send_sf_trigger;
   xface->enb_agent_send_update_mac_stats = enb_agent_send_update_mac_stats;
-  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
-  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
+  //xface->enb_agent_schedule_ue_spec = schedule_ue_spec_default;
+  xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
   xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
 

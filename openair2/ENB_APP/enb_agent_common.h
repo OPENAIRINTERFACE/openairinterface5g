@@ -145,6 +145,8 @@ unsigned int get_current_subframe(mid_t mod_id);
   Bits 0-3 subframe, rest for frame. Required by progRAN protocol*/
 uint16_t get_sfn_sf (mid_t mod_id);
 
+uint16_t get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
+
 int get_num_ues(mid_t mod_id);
 
 int get_ue_crnti (mid_t mod_id, mid_t ue_id);

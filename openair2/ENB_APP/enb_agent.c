@@ -180,6 +180,13 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
     fprintf(stderr, "pthread_attr_init err\n"); 
     exit(1); 
   }
+
+  struct sched_param sched_param_recv_thread;
+
+  sched_param_recv_thread.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
+  pthread_attr_setschedparam(&att, &sched_param_recv_thread);
+  pthread_attr_setschedpolicy(&att, SCHED_FIFO);
+
   if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED)) { 
     fprintf(stderr, "pthread_attr_setdetachstate err\n"); 
     exit(1); 
