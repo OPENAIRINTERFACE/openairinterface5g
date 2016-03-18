@@ -122,6 +122,7 @@ const char* eurecomVariablesNames[] = {
   "ue0_BSR",
   "ue0_BO",
   "ue0_scheduled",
+  "ue0_timing_advance",
   "ue0_SR_ENERGY",
   "ue0_SR_THRES",
   "ue0_rssi0",

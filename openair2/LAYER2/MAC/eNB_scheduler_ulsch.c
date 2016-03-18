@@ -525,54 +525,6 @@ uint32_t bytes_to_bsr_index(int32_t nbytes)
   return(i-1);
 }
 
-/*
-void adjust_bsr_info(int buffer_occupancy,
-                     uint16_t TBS,
-                     UE_TEMPLATE *UE_template)
-{
-
-  uint32_t         tmp_bsr;
-
-  // could not serve all the uplink traffic
-  if (buffer_occupancy > 0 ) {
-    if (BSR_TABLE[UE_template->bsr_info[LCGID0]] <=  TBS ) {
-      tmp_bsr = BSR_TABLE[UE_template->bsr_info[LCGID0]]; // serving this amout of  bytes
-      UE_template->bsr_info[LCGID0] = 0;
-
-      if (BSR_TABLE[UE_template->bsr_info[LCGID1]] <= (TBS-tmp_bsr)) {
-        tmp_bsr += BSR_TABLE[UE_template->bsr_info[LCGID1]];
-        UE_template->bsr_info[LCGID1] = 0;
-
-        if (BSR_TABLE[UE_template->bsr_info[LCGID2]] <= (TBS-tmp_bsr)) {
-          tmp_bsr += BSR_TABLE[UE_template->bsr_info[LCGID2]];
-          UE_template->bsr_info[LCGID2] = 0;
-
-          if (BSR_TABLE[UE_template->bsr_info[LCGID3]] <= (TBS-tmp_bsr)) {
-            tmp_bsr += BSR_TABLE[UE_template->bsr_info[LCGID3]];
-            UE_template->bsr_info[LCGID3] = 0;
-          } else {
-            UE_template->bsr_info[LCGID3] = bytes_to_bsr_index((int32_t)BSR_TABLE[UE_template->bsr_info[LCGID3]] - ((int32_t) TBS - (int32_t)tmp_bsr));
-          }
-        } else {
-          UE_template->bsr_info[LCGID2] = bytes_to_bsr_index((int32_t)BSR_TABLE[UE_template->bsr_info[LCGID2]] - ((int32_t)TBS - (int32_t)tmp_bsr));
-        }
-      } else {
-        UE_template->bsr_info[LCGID1] = bytes_to_bsr_index((int32_t)BSR_TABLE[UE_template->bsr_info[LCGID1]] - ((int32_t)TBS - (int32_t)tmp_bsr));
-      }
-    } else {
-      UE_template->bsr_info[LCGID0] = bytes_to_bsr_index((int32_t)BSR_TABLE[UE_template->bsr_info[LCGID0]] - (int32_t)TBS);
-    }
-  } else { // we have flushed all buffers so clear bsr
-    UE_template->bsr_info[LCGID0] = 0;
-    UE_template->bsr_info[LCGID1] = 0;
-    UE_template->bsr_info[LCGID2] = 0;
-    UE_template->bsr_info[LCGID3] = 0;
-  }
-
-
-}
-*/
-
 void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id, sub_frame_t subframeP, UE_ULSCH_STATUS status)
 {
 
@@ -583,66 +535,6 @@ void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id, sub_frame_t
   eNB_ulsch_info[module_idP][CC_id][UE_id].serving_num++;
 
 }
-
-// This seems not to be used anymore
-/*
-int schedule_next_ulue(module_id_t module_idP, int UE_id, sub_frame_t subframeP){
-
-  int next_ue;
-
-  // first phase: scheduling for ACK
-  switch (subframeP) {
-    // scheduling for subframeP 2: for scheduled user during subframeP 5 and 6
-  case 8:
-    if  ((eNB_dlsch_info[module_idP][UE_id].status == S_DL_SCHEDULED) &&
-   (eNB_dlsch_info[module_idP][UE_id].subframe == 5 || eNB_dlsch_info[module_idP][UE_id].subframe == 6)){
-      // set the downlink status
-      eNB_dlsch_info[module_idP][UE_id].status = S_DL_BUFFERED;
-      return UE_id;
-    }
-    break;
-    // scheduling for subframeP 3: for scheduled user during subframeP 7 and 8
-  case 9:
-    if  ((eNB_dlsch_info[module_idP][UE_id].status == S_DL_SCHEDULED) &&
-   (eNB_dlsch_info[module_idP][UE_id].subframe == 7 || eNB_dlsch_info[module_idP][UE_id].subframe == 8)){
-      eNB_dlsch_info[module_idP][UE_id].status = S_DL_BUFFERED;
-      return UE_id;
-    }
-    break;
-    // scheduling UL subframeP 4: for scheduled user during subframeP 9 and 0
-  case 0 :
-    if  ((eNB_dlsch_info[module_idP][UE_id].status == S_DL_SCHEDULED) &&
-   (eNB_dlsch_info[module_idP][UE_id].subframe == 9 || eNB_dlsch_info[module_idP][UE_id].subframe == 0)){
-      eNB_dlsch_info[module_idP][UE_id].status = S_DL_BUFFERED;
-      return UE_id;
-    }
-    break;
-  default:
-    break;
-  }
-
-  // second phase
-  for (next_ue=0; next_ue <NUMBER_OF_UE_MAX; next_ue++ ){
-
-    if  (eNB_ulsch_info[module_idP][next_ue].status == S_UL_WAITING )
-      return next_ue;
-    else if (eNB_ulsch_info[module_idP][next_ue].status == S_UL_SCHEDULED){
-      eNB_ulsch_info[module_idP][next_ue].status = S_UL_BUFFERED;
-    }
-  }
-  for (next_ue=0; next_ue <NUMBER_OF_UE_MAX; next_ue++ ){
-    if (eNB_ulsch_info[module_idP][next_ue].status != S_UL_NONE )// do this just for active UEs
-      eNB_ulsch_info[module_idP][next_ue].status = S_UL_WAITING;
-  }
-  next_ue = 0;
-  return next_ue;
-
-}
- */
-
-
-
-
 
 unsigned char *parse_ulsch_header(unsigned char *mac_header,
                                   unsigned char *num_ce,
@@ -957,7 +849,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
             while (((rb_table[rb_table_index]>(frame_parms->N_RB_UL-1-first_rb[CC_id])) ||
-		    (rb_table[rb_table_index]>39)) &&
+		    (rb_table[rb_table_index]>45)) &&
                    (rb_table_index>0)) {
               rb_table_index--;
             }
@@ -984,12 +876,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		    first_rb[CC_id],rb_table[rb_table_index],
 		    rb_table_index,TBS,harq_pid);
 	    
-	    /*	    
-            // Adjust BSR entries for LCGIDs
-            adjust_bsr_info(buffer_occupancy,
-                            TBS,
-                            UE_template);
-	    */
 	    // adjust total UL buffer status by TBS, wait for UL sdus to do final update
 	    LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,TBS);
 	    if (UE_template->ul_total_buffer > TBS)
@@ -998,16 +884,8 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	      UE_template->ul_total_buffer = 0;
 	    LOG_D(MAC,"ul_total_buffer, new %d\n", UE_template->ul_total_buffer);
 	    // Cyclic shift for DM RS
-	    if(cooperation_flag == 2) {
-	      if(UE_id == 1) { // For Distriibuted Alamouti, cyclic shift applied to 2nd UE
-		cshift = 1;
-	      } else {
-		cshift = 0;
-	      }
-	    } else {
-	      cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
-	    }
-	    
+	    cshift = 0;// values from 0 to 7 can be used for mapping the cyclic shift (36.211 , Table 5.5.2.1.1-1)
+	    	    
 	    if (frame_parms->frame_type == TDD) {
 	      switch (frame_parms->N_RB_UL) {
 	      case 6:
