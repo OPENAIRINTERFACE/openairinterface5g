@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread
+CFLAGS=-Wall -g -pthread -DT_TRACER
 
 #comment those two lines to NOT use shared memory
 CFLAGS += -DT_USE_SHARED_MEMORY

@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread
+CFLAGS=-Wall -g -pthread -DT_TRACER
 
-CFLAGS += -O3 -ffast-math -fomit-frame-pointer
+#CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
 LIBS=-lX11 -lm
 

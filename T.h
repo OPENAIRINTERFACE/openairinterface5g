@@ -1,6 +1,8 @@
 #ifndef _T_T_T_
 #define _T_T_T_
 
+#if T_TRACER
+
 #include <stdint.h>
 
 #include "T_defs.h"
@@ -516,5 +518,12 @@ return;
 extern int *T_active;
 
 void T_connect_to_tracer(char *addr, int port);
+
+#else /* T_TRACER */
+
+/* if T_TRACER is not defined or is 0, the T is deactivated */
+#define T(...) /**/
+
+#endif /* T_TRACER */
 
 #endif /* _T_T_T_ */
