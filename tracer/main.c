@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <math.h>
 
 #include "defs.h"
 
@@ -14,10 +15,14 @@
 #include "../T_IDs.h"
 #include "../T_defs.h"
 
+#define BLUE "#0c0c72"
+#define RED "#d72828"
+
 void *ul_plot;
 void *chest_plot;
 void *pusch_iq_plot;
 void *pucch_iq_plot;
+void *pucch_plot;
 
 #ifdef T_USE_SHARED_MEMORY
 
@@ -213,8 +218,12 @@ void get_message(int s)
     GET(s, &size, sizeof(int));
     GET(s, buf, size);
 #if 0
-    printf("got T_ENB_INPUT_SIGNAL eNB %d frame %d subframe %d antenna %d size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
-           eNB, frame, subframe, antenna, size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
+    printf("got T_ENB_INPUT_SIGNAL eNB %d frame %d subframe %d antenna "
+           "%d size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x "
+           "%2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
+           eNB, frame, subframe, antenna, size, buf[0],buf[1],buf[2],
+           buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],
+           buf[11],buf[12],buf[13],buf[14],buf[15]);
 #endif
     if (size != 4 * 7680)
       {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed\n");abort();}
@@ -272,8 +281,22 @@ void get_message(int s)
     GET(s, &subframe, sizeof(int));
     GET(s, &I, sizeof(int));
     GET(s, &Q, sizeof(int));
-printf("receiving %d %d\n", I, Q);
-    if (pucch_iq_plot) iq_plot_add_point_loop(pucch_iq_plot, I*10, Q*10, 0);
+    if (pucch_iq_plot) iq_plot_add_iq_point_loop(pucch_iq_plot,I*10,Q*10, 0);
+    break;
+  }
+  case T_PUCCH_1_ENERGY: {
+    int eNB, UE, frame, subframe, e, t;
+    GET(s, &eNB, sizeof(int));
+    GET(s, &UE, sizeof(int));
+    GET(s, &frame, sizeof(int));
+    GET(s, &subframe, sizeof(int));
+    GET(s, &e, sizeof(int));
+    GET(s, &t, sizeof(int));
+//printf("t %d e %d\n", t, (int)(10*log10(e)));
+    if (pucch_plot) {
+      iq_plot_add_energy_point_loop(pucch_plot, t, 0);
+      iq_plot_add_energy_point_loop(pucch_plot, 10*log10(e), 1);
+    }
     break;
   }
   case T_buf_test: {
@@ -281,8 +304,10 @@ printf("receiving %d %d\n", I, Q);
     int size;
     GET(s, &size, sizeof(int));
     GET(s, buf, size);
-    printf("got buffer size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
-           size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
+    printf("got buffer size %d %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x"
+           " %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x %2.2x\n",
+           size, buf[0],buf[1],buf[2],buf[3],buf[4],buf[5],buf[6],buf[7],
+           buf[8],buf[9],buf[10],buf[11],buf[12],buf[13],buf[14],buf[15]);
     break;
   }
   default: printf("unkown message type %d\n", m); abort();
@@ -386,13 +411,18 @@ int main(int n, char **v)
 
   if (do_xforms) {
     ul_plot = make_plot(512, 100, "UL Input Signal", 1,
-                        7680*10, PLOT_VS_TIME, "blue");
+                        7680*10, PLOT_VS_TIME, BLUE);
     chest_plot = make_plot(512, 100, "UL Channel Estimate UE 0", 1,
-                           512, PLOT_VS_TIME, "blue");
+                           512, PLOT_VS_TIME, BLUE);
     pusch_iq_plot = make_plot(100, 100, "PUSCH IQ", 1,
-                              12*25*14, PLOT_IQ_POINTS, "blue");
+                              12*25*14, PLOT_IQ_POINTS, BLUE);
     pucch_iq_plot = make_plot(100, 100, "PUCCH IQ", 1,
-                              1000, PLOT_IQ_POINTS, "blue");
+                              1000, PLOT_IQ_POINTS, BLUE);
+    pucch_plot = make_plot(512, 100, "PUCCH 1 energy (SR)", 2,
+                           /* threshold */
+                           10240, PLOT_MINMAX, RED,
+                           /* pucch 1 */
+                           10240, PLOT_MINMAX, BLUE);
   }
 
   for (i = 0; i < on_off_n; i++)

@@ -84,9 +84,21 @@ static void *plot_thread(void *_p)
 
       if (pthread_mutex_lock(&p->lock)) abort();
 
+      XFillRectangle(p->d, p->px, p->bg, 0, 0, p->width, p->height);
+
       for (pp = 0; pp < p->nplots; pp++) {
-        XFillRectangle(p->d, p->px, p->bg, 0, 0, p->width, p->height);
-        if (p->p[pp].type == PLOT_VS_TIME) {
+        if (p->p[pp].type == PLOT_MINMAX) {
+          s = p->p[pp].buf;
+          for (i = 0; i < 512; i++) {
+            int min = *s;
+            int max = *s;
+            for (j = 0; j < p->p[pp].count/512; j++, s++) {
+              if (*s < min) min = *s;
+              if (*s > max) max = *s;
+            }
+            XDrawLine(p->d, p->px, p->p[pp].g, i, 100-min, i, 100-max);
+          }
+        } else if (p->p[pp].type == PLOT_VS_TIME) {
           for (i = 0; i < p->p[pp].count; i++)
             p->p[pp].buf[i] =
                 10*log10(1.0+(float)(p->p[pp].iqbuf[2*i]*p->p[pp].iqbuf[2*i]+
@@ -215,6 +227,10 @@ void *make_plot(int width, int height, char *title, int nplots, ...)
       if (p->p[i].buf == NULL) abort();
       p->p[i].iqbuf = malloc(sizeof(short) * count * 2);
       if(p->p[i].iqbuf==NULL)abort();
+    } else if (type == PLOT_MINMAX) {
+      p->p[i].buf = malloc(sizeof(float) * count);
+      if (p->p[i].buf == NULL) abort();
+      p->p[i].iqbuf = NULL;
     } else {
       p->p[i].buf = NULL;
       p->p[i].iqbuf = malloc(sizeof(short) * count * 2);
@@ -269,12 +285,23 @@ void iq_plot_set_sized(void *_plot, short *data, int count, int pp)
   if (pthread_mutex_unlock(&p->lock)) abort();
 }
 
-void iq_plot_add_point_loop(void *_plot, short i, short q, int pp)
+void iq_plot_add_iq_point_loop(void *_plot, short i, short q, int pp)
 {
   plot *p = _plot;
   if (pthread_mutex_lock(&p->lock)) abort();
   p->p[pp].iqbuf[p->p[pp].iq_insert_pos*2] = i;
   p->p[pp].iqbuf[p->p[pp].iq_insert_pos*2+1] = q;
+  if (p->p[pp].iq_count != p->p[pp].count) p->p[pp].iq_count++;
+  p->p[pp].iq_insert_pos++;
+  if (p->p[pp].iq_insert_pos == p->p[pp].count) p->p[pp].iq_insert_pos = 0;
+  if (pthread_mutex_unlock(&p->lock)) abort();
+}
+
+void iq_plot_add_energy_point_loop(void *_plot, int e, int pp)
+{
+  plot *p = _plot;
+  if (pthread_mutex_lock(&p->lock)) abort();
+  p->p[pp].buf[p->p[pp].iq_insert_pos] = e;
   if (p->p[pp].iq_count != p->p[pp].count) p->p[pp].iq_count++;
   p->p[pp].iq_insert_pos++;
   if (p->p[pp].iq_insert_pos == p->p[pp].count) p->p[pp].iq_insert_pos = 0;

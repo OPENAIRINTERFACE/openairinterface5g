@@ -15,6 +15,10 @@ ID = PUCCH_1AB_IQ
     DESC = eNodeB PUCCH received IQ data
     GROUP = PHY:GRAPHIC:HEAVY
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,I : int,Q
+ID = PUCCH_1_ENERGY
+    DESC = eNodeB PUCCH 1 energy and threshold
+    GROUP = PHY:GRAPHIC:HEAVY
+    FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,energy : int,threshold
 
 #legacy logs
 ID = LEGACY_MAC_INFO
