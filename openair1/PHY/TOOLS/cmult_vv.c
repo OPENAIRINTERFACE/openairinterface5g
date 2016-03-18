@@ -169,7 +169,7 @@ int mult_cpx_vector(int16_t *x1,
   x2_128 = (simd_q15_t *)&x2[0];
   y_128  = (simd_q15_t *)&y[0];
   //print_shorts("x1_128:",&x1_128[0]);
-  //print_shorts("x2_128:",&x2_128[0]);
+ // print_shorts("x2_128:",&x2_128[0]);
   
   //right shift by 13 while p_a * x0 and 15 while  
   // we compute 4 cpx multiply for each loop

@@ -882,6 +882,8 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	  break;
 	  
 	}
+	
+	if   (dlsch1_harq) {
 	switch (mod_order1) {
 	case 2:  //QPSK
 
@@ -973,6 +975,7 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	  break;
 	  
 	}
+      }
       }
 
 
@@ -1639,7 +1642,7 @@ int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_IN);
 
   amp=1; //we do full scale here for SIC
-  gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15));
+  gain_lin_QPSK = (int16_t)((ONE_OVER_SQRT2_Q15));
   
   jj = 0;
   i = 0;

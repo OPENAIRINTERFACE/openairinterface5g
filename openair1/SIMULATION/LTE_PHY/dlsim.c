@@ -3520,7 +3520,7 @@ n(tikz_fname,"w");
 	   
 	     
 	    if (ret <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { 
-                 printf("ret=%d\n", ret);
+
 	      if (cw_non_sic==0) {		
 		avg_iter += ret;
 		iter_trials++;
@@ -3649,7 +3649,7 @@ n(tikz_fname,"w");
 			(PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
 			rx_type==rx_SIC_dual_stream) {
 	  
-	  for (round = 0 ; round < 1 ; round++) {
+	 // for (round = 0 ; round < 1 ; round++) {
 	    dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
 	    dlsch0_eNB_harq = PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
 	      
@@ -3676,6 +3676,7 @@ n(tikz_fname,"w");
 			   &PHY_vars_UE->dlsch_rate_matching_stats,
 			   &PHY_vars_UE->dlsch_turbo_encoding_stats,
 			   &PHY_vars_UE->dlsch_interleaving_stats);
+	 
 	      
 	    coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
 					    PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
@@ -3698,7 +3699,7 @@ n(tikz_fname,"w");
 					        subframe,
 					        &PHY_vars_UE->lte_frame_parms,
 					        num_pdcch_symbols,
-					        &PHY_vars_UE->dlsch_eNB[0][0],
+						&PHY_vars_UE->dlsch_eNB[0][0],
 					        NULL,
 					        coded_bits_per_codeword);
 	      
@@ -3716,7 +3717,7 @@ n(tikz_fname,"w");
                                dlsch0_eNB_harq->nb_rb,
                                adjust_G2(&PHY_vars_UE->lte_frame_parms,&dlsch0_eNB_harq->rb_alloc[0],2,subframe,num_pdcch_symbols),
 		               PHY_vars_UE->dlsch_ue[eNB_id][0]);
-	        }// round
+	       // }// round
 	
             write_output("rxdata_llr1.m","llr1", PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
 	

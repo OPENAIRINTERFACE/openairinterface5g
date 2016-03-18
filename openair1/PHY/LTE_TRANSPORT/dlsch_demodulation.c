@@ -453,7 +453,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                      lte_ue_pdsch_vars[eNB_id]->log2_maxh0,
 				     lte_ue_pdsch_vars[eNB_id]->log2_maxh1); 
    	   
-      if (symbol == 5) {
+  /*   if (symbol == 5) {
    
      write_output("rxF_comp_d00.m","rxF_c_d00",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rxF_comp_d01.m","rxF_c_d01",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
@@ -461,33 +461,33 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
      write_output("rxF_comp_d11.m","rxF_c_d11",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[harq_pid][round][1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
 
    
-	} 
+	} */
 
       // compute correlation between signal and interference channels (rho12 and rho21)
       
-	dlsch_dual_stream_correlation(frame_parms,// this is doing h0'h1, needed for llr[1]
+	dlsch_dual_stream_correlation(frame_parms, // this is doing h11'*h12 and h21'*h22
                                     symbol,
                                     nb_rb,
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                     &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
-                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                                    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext, 
 			   	    lte_ue_pdsch_vars[eNB_id]->log2_maxh0);
 	
 	//printf("rho stream1 =%d\n", &lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round] );
 
       //to be optimized (just take complex conjugate)
 
-      dlsch_dual_stream_correlation(frame_parms, // this is doing h1'h0, needed for llr[0]
+      dlsch_dual_stream_correlation(frame_parms, // this is doing h12'*h11 and h22'*h21
                                     symbol,
                                     nb_rb,
 				    &(lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext[2]),
                                     lte_ue_pdsch_vars[eNB_id]->dl_ch_estimates_ext,
-				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				    lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 				    lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
     //  printf("rho stream2 =%d\n",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext );
       //printf("TM3 log2_maxh : %d\n",lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       
-       if (symbol == 5) {
+  /*     if (symbol == 5) {
    
      write_output("rho0_0.m","rho0_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rho2_0.m","rho2_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
@@ -495,7 +495,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
      write_output("rho2_1.m","rho2_1",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be QAM
 
    
-	} 
+	} */
 
    }
       else {
@@ -677,11 +677,11 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				 1);
 	
 	 
-       if (symbol == 5) {
+    /*   if (symbol == 5) {
    
      write_output("rho0_mrc.m","rho0_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round][0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);// should be QAM
      write_output("rho2_mrc.m","rho2_0",&lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);//should be almost 0
-    	}
+    	} */
 	
 	
       }
@@ -753,7 +753,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
           dlsch_qpsk_qpsk_llr(frame_parms,
                               lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                               rxdataF_comp_ptr,
-                              lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                              lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                               lte_ue_pdsch_vars[eNB_id]->llr[0],
                               symbol,first_symbol_flag,nb_rb,
                               adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
@@ -762,7 +762,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
             dlsch_qpsk_qpsk_llr(frame_parms,
                                 rxdataF_comp_ptr,
                                 lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
-                                lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+                                lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                 lte_ue_pdsch_vars[eNB_id]->llr[1],
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,subframe,symbol),
@@ -774,7 +774,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                                rxdataF_comp_ptr,//i
                                dl_ch_mag_ptr,//i
-                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                                lte_ue_pdsch_vars[eNB_id]->llr[0],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
@@ -784,7 +784,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                  rxdataF_comp_ptr,
                                  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                  dl_ch_mag_ptr,
-                                 lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+                                 lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                  lte_ue_pdsch_vars[eNB_id]->llr[1],
                                  symbol,first_symbol_flag,nb_rb,
                                  adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,subframe,symbol),
@@ -796,7 +796,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                                rxdataF_comp_ptr,//i
                                dl_ch_mag_ptr,//i
-                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                                lte_ue_pdsch_vars[eNB_id]->llr[0],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,2,subframe,symbol),
@@ -806,7 +806,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                  rxdataF_comp_ptr,
                                  lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                  dl_ch_mag_ptr,
-                                 lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+                                 lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                  lte_ue_pdsch_vars[eNB_id]->llr[1],
                                  symbol,first_symbol_flag,nb_rb,
                                  adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,subframe,symbol),
@@ -831,7 +831,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                              lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
                              rxdataF_comp_ptr,//i
                              lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
-                             lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+                             lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
                              lte_ue_pdsch_vars[eNB_id]->llr[0],
                              symbol,first_symbol_flag,nb_rb,
                              adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
@@ -841,7 +841,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                rxdataF_comp_ptr,
                                lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
                                lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,//i
-                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+                               lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
                                lte_ue_pdsch_vars[eNB_id]->llr[1],
                                symbol,first_symbol_flag,nb_rb,
                                adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,subframe,symbol),
@@ -854,7 +854,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			      rxdataF_comp_ptr,//i
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
 			      dl_ch_mag_ptr,//i
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 			      lte_ue_pdsch_vars[eNB_id]->llr[0],
 			      symbol,first_symbol_flag,nb_rb,
 			      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
@@ -865,7 +865,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
 				dl_ch_mag_ptr,
 				lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,//i
-				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 				lte_ue_pdsch_vars[eNB_id]->llr[1],
 				symbol,first_symbol_flag,nb_rb,
 				adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,subframe,symbol),
@@ -878,7 +878,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			      rxdataF_comp_ptr,//i
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
 			      dl_ch_mag_ptr,//i
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 			      lte_ue_pdsch_vars[eNB_id]->llr[0],
 			      symbol,first_symbol_flag,nb_rb,
 			      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,4,subframe,symbol),
@@ -889,7 +889,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
 				dl_ch_mag_ptr,
 				lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
-				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 				lte_ue_pdsch_vars[eNB_id]->llr[1],
 				symbol,first_symbol_flag,nb_rb,
 				adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,subframe,symbol),
@@ -915,7 +915,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			     lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,
 			     rxdataF_comp_ptr,//i
 			     lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
-			     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+			     lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 			     lte_ue_pdsch_vars[eNB_id]->llr[0],
 			     symbol,first_symbol_flag,nb_rb,
 			     adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
@@ -925,7 +925,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			       rxdataF_comp_ptr,
 			       lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
 			       lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
-			       lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+			       lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 			       lte_ue_pdsch_vars[eNB_id]->llr[1],
 			       symbol,first_symbol_flag,nb_rb,
 			       adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,2,subframe,symbol),
@@ -938,7 +938,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			      rxdataF_comp_ptr,//i
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
 			      dl_ch_mag_ptr,//i
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 			      lte_ue_pdsch_vars[eNB_id]->llr[0],
 			      symbol,first_symbol_flag,nb_rb,
 			      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
@@ -949,7 +949,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
 				dl_ch_mag_ptr,
 				lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,//i
-				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 				lte_ue_pdsch_vars[eNB_id]->llr[1],
 				symbol,first_symbol_flag,nb_rb,
 				adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,4,subframe,symbol),
@@ -962,7 +962,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 			      rxdataF_comp_ptr,//i
 			      lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,
 			      dl_ch_mag_ptr,//i
-			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
+			      lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
 			      lte_ue_pdsch_vars[eNB_id]->llr[0],
 			      symbol,first_symbol_flag,nb_rb,
 			      adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,6,subframe,symbol),
@@ -973,7 +973,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0,//i
 				dl_ch_mag_ptr,
 				lte_ue_pdsch_vars[eNB_id]->dl_ch_mag0,//i
-				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext,
+				lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
 				lte_ue_pdsch_vars[eNB_id]->llr[1],
 				symbol,first_symbol_flag,nb_rb,
 				adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,subframe,symbol),

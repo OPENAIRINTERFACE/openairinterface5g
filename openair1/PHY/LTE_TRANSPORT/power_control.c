@@ -29,7 +29,7 @@
 #include "PHY/defs.h"
 #include "PHY/impl_defs_lte.h"
 
-#define DEBUG_PC 0
+//#define DEBUG_PC 0
 /*
 double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
           { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};

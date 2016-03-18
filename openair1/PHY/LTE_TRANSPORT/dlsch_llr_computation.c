@@ -740,7 +740,8 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 				        1,
 				        len);	
     
-    printf ("Got x0*rho_a\n");
+     
+ //   printf ("Got x0*rho_a\n");
    
     mult_cpx_vector((int16_t *)rho_amp_x0,
                     (int16_t *)rho_1,
@@ -749,30 +750,32 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
 
     write_output("rho_rho.m","rho2", rho_rho_amp_x0,len,1,1);
-    printf ("Computed  rho*rho_a*x0\n");
+ //   printf ("Computed  rho*rho_a*x0\n");
   
+    
     sub_cpx_vector16((int16_t *)rxF,
 		     (int16_t *)rho_rho_amp_x0,
-		     //(int16_t *)clean_x1,
+		    // (int16_t *)clean_x1,
 		     (int16_t *)rxF,
 		     len*2); 
 
+    
     write_output("clean_x1.m","x1", clean_x1,len,1,1);
-    printf ("Interference removed \n");
+  //  printf ("Interference removed \n");
 
-    printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
+  //  printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
 
  
     //this is for QPSK only!!!
     for (i=0; i<len*2; i++) {
-      *llr16 = rxF[i];
+      *llr16 =rxF[i];
       //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
       llr16++;
     }
     
   }
 
-  printf("dlsch_qpsk_llr_SIC: acc_len=%d\n",len_acc);
+ // printf("dlsch_qpsk_llr_SIC: acc_len=%d\n",len_acc);
 
   return(0);
 }
@@ -900,7 +903,7 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-void dlsch_16qam_llr_SIC  (LTE_DL_FRAME_PARMS *frame_parms,
+void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
 			  int16_t *dlsch_llr,
 			  int32_t **dl_ch_mag,
