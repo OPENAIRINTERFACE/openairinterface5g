@@ -172,6 +172,11 @@ void get_message(int s)
   case T_LEGACY_OCG_WARNING: S("OCG", "WARNING"); break;
   case T_LEGACY_OCG_DEBUG: S("OCG", "DEBUG"); break;
   case T_LEGACY_OCG_TRACE: S("OCG", "TRACE"); break;
+  case T_LEGACY_OCM_INFO: S("OCM", "INFO"); break;
+  case T_LEGACY_OCM_ERROR: S("OCM", "ERROR"); break;
+  case T_LEGACY_OCM_WARNING: S("OCM", "WARNING"); break;
+  case T_LEGACY_OCM_DEBUG: S("OCM", "DEBUG"); break;
+  case T_LEGACY_OCM_TRACE: S("OCM", "TRACE"); break;
   case T_LEGACY_OMG_INFO: S("OMG", "INFO"); break;
   case T_LEGACY_OMG_ERROR: S("OMG", "ERROR"); break;
   case T_LEGACY_OMG_WARNING: S("OMG", "WARNING"); break;
@@ -353,7 +358,9 @@ void usage(void)
 "    -x                        run with XFORMS (revisited)\n"
 "    -on <GROUP or ID>         turn log ON for given GROUP or ID\n"
 "    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
-"note: you may pass several -on and -off, they will be processed in order\n"
+"    -ON                       turn all logs ON\n"
+"    -OFF                      turn all logs OFF\n"
+"note: you may pass several -on/-off/-ON/-OFF, they will be processed in order\n"
 "      by default, all is off\n"
   );
   exit(1);
@@ -393,6 +400,10 @@ int main(int n, char **v)
       on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-off")) { if (i > n-2) usage();
       on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=0; continue; }
+    if (!strcmp(v[i], "-ON"))
+      { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
+    if (!strcmp(v[i], "-OFF"))
+      { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }

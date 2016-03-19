@@ -304,8 +304,15 @@ static void onoff_group(database *d, char *name, int *a, int onoff)
   for (i = 0; i < g->size; i++) onoff_id(d, g->ids[i], a, onoff);
 }
 
-void on_off(void *d, char *item, int *a, int onoff)
+void on_off(void *_d, char *item, int *a, int onoff)
 {
+  database *d = _d;
+  int i;
+  if (item == NULL) {
+    for (i = 0; i < d->isize; i++) a[i] = onoff;
+    printf("turning %s all traces\n", onoff ? "ON" : "OFF");
+    return;
+  }
   onoff_group(d, item, a, onoff);
   onoff_id(d, item, a, onoff);
 }
