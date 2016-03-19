@@ -115,10 +115,23 @@ extern T_cache_t *T_cache;
 
 #define T_ACTIVE(x) T_active[(intptr_t)x]
 
+#ifdef T_USE_SHARED_MEMORY
+
 #define T_SEND() \
   T_cache[T_LOCAL_slot].busy = 1; \
   T_cache[T_LOCAL_slot].length = T_LOCAL_size; \
   T_send(T_LOCAL_buf, T_LOCAL_size)
+
+#else /* T_USE_SHARED_MEMORY */
+
+/* when not using shared memory, wait for send to finish */
+#define T_SEND() \
+  T_cache[T_LOCAL_slot].busy = 1; \
+  T_cache[T_LOCAL_slot].length = T_LOCAL_size; \
+  T_send(T_LOCAL_buf, T_LOCAL_size); \
+  while (T_cache[T_LOCAL_slot].busy) usleep(1*1000)
+
+#endif /* T_USE_SHARED_MEMORY */
 
 #define T_CHECK_SIZE(len, argnum) \
   if (T_LOCAL_size + (len) > T_BUFFER_MAX) { \

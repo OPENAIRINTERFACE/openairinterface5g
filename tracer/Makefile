@@ -10,7 +10,7 @@ CFLAGS += -DT_USE_SHARED_MEMORY
 LIBS += -lrt
 
 PROG=tracer
-OBJS=main.o plot.o database.o
+OBJS=main.o plot.o database.o forward.o
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)

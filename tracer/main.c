@@ -371,7 +371,7 @@ void init_shm(void)
 void usage(void)
 {
   printf(
-"options:\n"
+"common options:\n"
 "    -d <database file>        this option is mandatory\n"
 "    -li                       print IDs in the database\n"
 "    -lg                       print GROUPs in the database\n"
@@ -383,6 +383,10 @@ void usage(void)
 "    -OFF                      turn all logs OFF\n"
 "note: you may pass several -on/-off/-ON/-OFF, they will be processed in order\n"
 "      by default, all is off\n"
+"\n"
+"remote mode options: in this mode you run a local tracer and a remote one\n"
+"    -r                        remote side\n"
+"    -l <IP address> <port>    local side (forwards packets to remote IP:port)\n"
   );
   exit(1);
 }
@@ -403,6 +407,13 @@ int main(int n, char **v)
   int *on_off_action;
   int on_off_n = 0;
   int is_on[T_NUMBER_OF_IDS];
+  int remote_local = 0;
+  int remote_remote = 0;
+  char *remote_ip = NULL;
+  int remote_port = -1;
+#ifdef T_USE_SHARED_MEMORY
+  void *f;
+#endif
 
   memset(is_on, 0, sizeof(is_on));
 
@@ -425,9 +436,42 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
+    if (!strcmp(v[i], "-r")) { remote_remote = 1; continue; }
+    if (!strcmp(v[i], "-l")) { if (i > n-3) usage(); remote_local = 1;
+      remote_ip = v[++i]; remote_port = atoi(v[++i]); continue; }
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }
+
+#ifndef T_USE_SHARED_MEMORY
+  /* gcc shut up */
+  (void)remote_port;
+  (void)remote_ip;
+#endif
+
+#ifdef T_USE_SHARED_MEMORY
+  if (remote_remote) {
+    printf("ERROR: remote 'remote side' does not run with shared memory\n");
+    printf("recompile without T_USE_SHARED_MEMORY (edit Makefile)\n");
+    exit(1);
+  }
+#endif
+
+  if (remote_remote) {
+    /* TODO: setup 'secure' connection with remote part */
+  }
+
+#ifndef T_USE_SHARED_MEMORY
+  if (remote_local) {
+    printf("ERROR: remote 'local side' does not run without shared memory\n");
+    printf("recompile with T_USE_SHARED_MEMORY (edit Makefile)\n");
+    exit(1);
+  }
+#endif
+
+#ifdef T_USE_SHARED_MEMORY
+  if (remote_local) f = forwarder(remote_ip, remote_port);
+#endif
 
   if (database_filename == NULL) {
     printf("ERROR: provide a database file (-d)\n");
@@ -479,6 +523,18 @@ int main(int n, char **v)
 #ifdef T_USE_SHARED_MEMORY
     wait_message();
 #endif
+
+#ifdef T_USE_SHARED_MEMORY
+    if (remote_local) {
+      forward(f, T_cache[T_busylist_head].buffer,
+              T_cache[T_busylist_head].length);
+      T_cache[T_busylist_head].busy = 0;
+      T_busylist_head++;
+      T_busylist_head &= T_CACHE_SIZE - 1;
+      continue;
+    }
+#endif
+
     get_message(s);
   }
   return 0;

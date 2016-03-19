@@ -21,4 +21,7 @@ void list_ids(void *database);
 void list_groups(void *database);
 void on_off(void *d, char *item, int *a, int onoff);
 
+void *forwarder(char *ip, int port);
+void forward(void *forwarder, char *buf, int size);
+
 #endif /* _TRACER_DEFS_H_ */
