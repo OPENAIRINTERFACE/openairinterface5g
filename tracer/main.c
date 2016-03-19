@@ -44,7 +44,22 @@ static inline int GET(int s, void *out, int count)
 
 #else /* T_USE_SHARED_MEMORY */
 
-#define GET read
+#define GET fullread
+
+int fullread(int fd, void *_buf, int count)
+{
+  char *buf = _buf;
+  int ret = 0;
+  int l;
+  while (count) {
+    l = read(fd, buf, count);
+    if (l <= 0) { printf("read socket problem\n"); abort(); }
+    count -= l;
+    buf += l;
+    ret += l;
+  }
+  return ret;
+}
 
 #endif /* T_USE_SHARED_MEMORY */
 
@@ -236,7 +251,8 @@ void get_message(int s)
            buf[11],buf[12],buf[13],buf[14],buf[15]);
 #endif
     if (size != 4 * 7680)
-      {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed\n");abort();}
+      {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed "
+              "(received %d bytes = %d samples)\n", size, size/4);abort();}
     if (ul_plot) iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680, 0);
     break;
   }
