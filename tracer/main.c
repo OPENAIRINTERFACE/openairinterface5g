@@ -182,6 +182,11 @@ void get_message(int s)
   case T_LEGACY_OMG_WARNING: S("OMG", "WARNING"); break;
   case T_LEGACY_OMG_DEBUG: S("OMG", "DEBUG"); break;
   case T_LEGACY_OMG_TRACE: S("OMG", "TRACE"); break;
+  case T_LEGACY_OIP_INFO: S("OIP", "INFO"); break;
+  case T_LEGACY_OIP_ERROR: S("OIP", "ERROR"); break;
+  case T_LEGACY_OIP_WARNING: S("OIP", "WARNING"); break;
+  case T_LEGACY_OIP_DEBUG: S("OIP", "DEBUG"); break;
+  case T_LEGACY_OIP_TRACE: S("OIP", "TRACE"); break;
   case T_LEGACY_GTPU_INFO: S("GTPU", "INFO"); break;
   case T_LEGACY_GTPU_ERROR: S("GTPU", "ERROR"); break;
   case T_LEGACY_GTPU_WARNING: S("GTPU", "WARNING"); break;
