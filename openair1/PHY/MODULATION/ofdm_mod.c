@@ -145,12 +145,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
 #ifndef __AVX2__
     // handle 128-bit alignment for 128-bit SIMD (SSE4,NEON,AltiVEC)
-    idft((int16_t *)&input[i<<log2fftsize],
+    idft((int16_t *)&input[i*fftsize],
          (fftsize==128) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
 #else
     // on AVX2 need 256-bit alignment
-    idft((int16_t *)&input[i<<log2fftsize],
+    idft((int16_t *)&input[i*fftsize],
          (fftsize<=512) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
 
