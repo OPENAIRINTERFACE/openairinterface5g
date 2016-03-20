@@ -286,26 +286,29 @@ void list_groups(void *_d)
   for (i = 0; i < d->gsize; i++) printf("%s\n", d->g[i].name);
 }
 
-static void onoff_id(database *d, char *name, int *a, int onoff)
+static int onoff_id(database *d, char *name, int *a, int onoff)
 {
   id *i;
   i = bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
-  if (i == NULL) return;
+  if (i == NULL) return 0;
   a[i->id] = onoff;
   printf("turning %s %s\n", onoff ? "ON" : "OFF", name);
+  return 1;
 }
 
-static void onoff_group(database *d, char *name, int *a, int onoff)
+static int onoff_group(database *d, char *name, int *a, int onoff)
 {
   group *g;
   int i;
   g = bsearch(&(group){name:name}, d->g, d->gsize, sizeof(group), group_cmp);
-  if (g == NULL) return;
+  if (g == NULL) return 0;
   for (i = 0; i < g->size; i++) onoff_id(d, g->ids[i], a, onoff);
+  return 1;
 }
 
 void on_off(void *_d, char *item, int *a, int onoff)
 {
+  int done;
   database *d = _d;
   int i;
   if (item == NULL) {
@@ -313,6 +316,10 @@ void on_off(void *_d, char *item, int *a, int onoff)
     printf("turning %s all traces\n", onoff ? "ON" : "OFF");
     return;
   }
-  onoff_group(d, item, a, onoff);
-  onoff_id(d, item, a, onoff);
+  done = onoff_group(d, item, a, onoff);
+  done += onoff_id(d, item, a, onoff);
+  if (done == 0) {
+    printf("ERROR: ID/group '%s' not found in database\n", item);
+    exit(1);
+  }
 }
