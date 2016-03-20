@@ -216,7 +216,7 @@ def sftp_module (username, password, hostname, ports, paramList,logfile):
 # \brief bash script stub put at the end of scripts to terminate it 
 # \param timeout_cmd terminate script after timeout_cmd seconds
 # \param terminate_missing_procs if True terminate all the processes launched by script if one of them terminates prematurely (due to error)
-def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
+def finalize_deploy_script (timeout_cmd, terminate_missing_procs='False'):
   cmd = 'declare -i timeout_cmd='+str(timeout_cmd) + '\n'
   if terminate_missing_procs == 'True':
     cmd = cmd +  """
@@ -1105,6 +1105,7 @@ pw =''
 i = 0
 dlsim=0
 localshell=0
+GitOAI5GRepo=''
 GitOAI5GRepoBranch=''
 GitOAI5GHeadVersion=''
 user=''
@@ -1141,6 +1142,9 @@ while i < len (sys.argv):
         i = i +1   
     elif arg == '-c':
         cleanUpRemoteMachines=True
+    elif arg == '-5GRepo':
+        GitOAI5GRepo = sys.argv[i+1]
+        i = i +1
     elif arg == '-5GRepoBranch':
         GitOAI5GRepoBranch = sys.argv[i+1]
         i = i +1
@@ -1190,6 +1194,7 @@ while i < len (sys.argv):
         print "-r:  Remove the log directory in autotests"
         print "-g:  Run test cases in a group"
         print "-c:  Run cleanup scripts on remote machines and exit"
+        print "-5GRepo:  Repository for OAI 5G to use to run tests (overrides GitOAI5GRepo in test_case_list.xml)"
         print "-5GRepoBranch:  Branch for OAI 5G Repository to run tests (overrides the branch in test_case_list.xml)"
         print "-5GRepoHeadVersion:  Head commit on which to run tests (overrides the branch in test_case_list.xml)"
         print "-u:  use the user name passed as argument"
@@ -1278,7 +1283,9 @@ if MachineList =='':
    MachineList = xmlRoot.findtext('MachineList',default='')
 NFSResultsShare = xmlRoot.findtext('NFSResultsShare',default='')
 GitOpenaircnRepo = xmlRoot.findtext('GitOpenair-cnRepo',default='')
-GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
+
+if GitOAI5GRepo == '':
+   GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
 
 if GitOAI5GRepoBranch == '':
    GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
