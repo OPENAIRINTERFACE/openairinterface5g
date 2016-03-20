@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
+#include <pthread.h>
 
 #include "defs.h"
 
@@ -368,6 +369,23 @@ void init_shm(void)
 
 #endif /* T_USE_SHARED_MEMORY */
 
+void new_thread(void *(*f)(void *), void *data)
+{
+  pthread_t t;
+  pthread_attr_t att;
+
+  if (pthread_attr_init(&att))
+    { fprintf(stderr, "pthread_attr_init err\n"); exit(1); }
+  if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED))
+    { fprintf(stderr, "pthread_attr_setdetachstate err\n"); exit(1); }
+  if (pthread_attr_setstacksize(&att, 10000000))
+    { fprintf(stderr, "pthread_attr_setstacksize err\n"); exit(1); }
+  if (pthread_create(&t, &att, f, data))
+    { fprintf(stderr, "pthread_create err\n"); exit(1); }
+  if (pthread_attr_destroy(&att))
+    { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
+}
+
 void usage(void)
 {
   printf(
@@ -473,6 +491,8 @@ int main(int n, char **v)
   if (remote_local) f = forwarder(remote_ip, remote_port);
 #endif
 
+  if (remote_local) goto no_database;
+
   if (database_filename == NULL) {
     printf("ERROR: provide a database file (-d)\n");
     exit(1);
@@ -485,6 +505,10 @@ int main(int n, char **v)
   if (do_list_groups) { list_groups(database); return 0; }
   if (do_dump_database) { dump_database(database); return 0; }
 
+  for (i = 0; i < on_off_n; i++)
+    on_off(database, on_off_name[i], is_on, on_off_action[i]);
+
+no_database:
   if (do_xforms) {
     ul_plot = make_plot(512, 100, "UL Input Signal", 1,
                         7680*10, PLOT_VS_TIME, BLUE);
@@ -501,13 +525,18 @@ int main(int n, char **v)
                            10240, PLOT_MINMAX, BLUE);
   }
 
-  for (i = 0; i < on_off_n; i++)
-    on_off(database, on_off_name[i], is_on, on_off_action[i]);
-
 #ifdef T_USE_SHARED_MEMORY
   init_shm();
 #endif
   s = get_connection("127.0.0.1", 2020);
+
+  if (remote_local) {
+#ifdef T_USE_SHARED_MEMORY
+    forward_start_client(f, s);
+#endif
+    goto no_init_message;
+  }
+
   /* send the first message - activate all traces */
   t = 0;
   if (write(s, &t, 1) != 1) abort();
@@ -517,6 +546,8 @@ int main(int n, char **v)
   for (l = 0; l < T_NUMBER_OF_IDS; l++)
     if (is_on[l])
       if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
+
+no_init_message:
 
   /* read messages */
   while (1) {

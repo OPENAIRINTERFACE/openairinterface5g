@@ -6,7 +6,6 @@
 #include <pthread.h>
 #include <math.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <sys/select.h>
 #include <stdarg.h>
 
@@ -144,23 +143,6 @@ static void *plot_thread(void *_p)
   }
 
   return NULL;
-}
-
-static void new_thread(void *(*f)(void *), void *data)
-{
-  pthread_t t;
-  pthread_attr_t att;
-
-  if (pthread_attr_init(&att))
-    { fprintf(stderr, "pthread_attr_init err\n"); exit(1); }
-  if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED))
-    { fprintf(stderr, "pthread_attr_setdetachstate err\n"); exit(1); }
-  if (pthread_attr_setstacksize(&att, 10000000))
-    { fprintf(stderr, "pthread_attr_setstacksize err\n"); exit(1); }
-  if (pthread_create(&t, &att, f, data))
-    { fprintf(stderr, "pthread_create err\n"); exit(1); }
-  if (pthread_attr_destroy(&att))
-    { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
 }
 
 void *make_plot(int width, int height, char *title, int nplots, ...)

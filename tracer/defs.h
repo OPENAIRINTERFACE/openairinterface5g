@@ -6,6 +6,8 @@
 #define PLOT_IQ_POINTS 1
 #define PLOT_MINMAX    2
 
+void new_thread(void *(*f)(void *), void *data);
+
 /* ... is { int count; int type; char *color; } for 'nplots' plots */
 void *make_plot(int width, int height, char *title, int nplots, ...);
 void plot_set(void *plot, float *data, int len, int pos, int pp);
@@ -23,5 +25,6 @@ void on_off(void *d, char *item, int *a, int onoff);
 
 void *forwarder(char *ip, int port);
 void forward(void *forwarder, char *buf, int size);
+void forward_start_client(void *forwarder, int socket);
 
 #endif /* _TRACER_DEFS_H_ */
