@@ -281,7 +281,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
 
 
-    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2);
+    lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2)+1;
     // + log2_approx(frame_parms->nb_antennas_tx_eNB-1) //-1 because log2_approx counts the number of bits
     //      + log2_approx(frame_parms->nb_antennas_rx-1);
 

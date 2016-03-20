@@ -243,6 +243,9 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     return(max_turbo_iterations);
   }
   */
+
+  harq_process->trials[harq_process->round]++;
+
   A = harq_process->TBS; //2072 for QPSK 1/3
 
   ret = dlsch->max_turbo_iterations;
@@ -457,6 +460,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     dlsch->harq_ack[subframe].ack = 0;
     dlsch->harq_ack[subframe].harq_id = harq_pid;
     dlsch->harq_ack[subframe].send_harq_status = 1;
+    harq_process->errors[harq_process->round]++;
     harq_process->round++;
 
     //    LOG_D(PHY,"[UE %d] DLSCH: Setting NACK for subframe %d (pid %d, round %d)\n",phy_vars_ue->Mod_id,subframe,harq_pid,harq_process->round);

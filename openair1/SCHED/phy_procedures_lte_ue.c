@@ -2637,7 +2637,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
                                  subframe_prev,
                                  harq_pid,
-                                 1,0);
+                                 1,1);
             stop_meas(&phy_vars_ue->dlsch_decoding_stats);
           }
 
@@ -3320,7 +3320,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                                phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0],
                                subframe_prev,
                                0,
-                               0,0);
+                               0,1);
         } else { // abstraction
 #ifdef PHY_ABSTRACTION
           ret = dlsch_decoding_emul(phy_vars_ue,

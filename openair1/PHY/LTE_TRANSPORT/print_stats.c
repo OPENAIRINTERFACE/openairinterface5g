@@ -61,6 +61,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
   uint8_t eNB=0;
   uint32_t RRC_status;
   int len=length;
+  int harq_pid,round;
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -488,13 +489,27 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
       if (phy_vars_ue->transmission_mode[eNB] == 6)
         len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
 
+      for (harq_pid=0;harq_pid<8;harq_pid++) {
+	len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 0 harq_pid %d, mcs %d:",eNB,harq_pid,phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->mcs);
+	for (round=0;round<8;round++)
+	  len+=sprintf(&buffer[len],"%d/%d ",
+		       phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->errors[round],
+		       phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->trials[round]);
+	len+=sprintf(&buffer[len],"\n");
+      }
       if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
         len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %jx (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
 
         len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->dl_power_off);
 
-        len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
-        len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
+	for (harq_pid=0;harq_pid<8;harq_pid++) {
+	  len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 1 harq_pid %d, mcs %d:",eNB,harq_pid,phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
+	  for (round=0;round<8;round++)
+	    len+=sprintf(&buffer[len],"%d/%d ",
+			 phy_vars_ue->dlsch_ue[0][1]->harq_processes[harq_pid]->errors[round],
+			 phy_vars_ue->dlsch_ue[0][1]->harq_processes[harq_pid]->trials[round]);
+	  len+=sprintf(&buffer[len],"\n");
+	}
       }
 
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
