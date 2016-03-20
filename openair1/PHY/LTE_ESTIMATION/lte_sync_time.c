@@ -52,8 +52,8 @@
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;
 int* sync_corr_ue2 = NULL;
-int sync_tmp[2048*4] __attribute__((aligned(16)));
-short syncF_tmp[2048*2] __attribute__((aligned(16)));
+int sync_tmp[2048*4] __attribute__((aligned(32)));
+short syncF_tmp[2048*2] __attribute__((aligned(32)));
 
 
 

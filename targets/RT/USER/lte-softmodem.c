@@ -942,7 +942,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 {
 
   unsigned int aa,slot_offset, slot_offset_F;
-  int dummy_tx_b[7680*4] __attribute__((aligned(16)));
+  int dummy_tx_b[7680*4] __attribute__((aligned(32)));
   int i, tx_offset;
   int slot_sizeF = (phy_vars_eNB->lte_frame_parms.ofdm_symbol_size)*
                    ((phy_vars_eNB->lte_frame_parms.Ncp==1) ? 6 : 7);

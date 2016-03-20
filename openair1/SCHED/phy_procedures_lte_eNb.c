@@ -77,9 +77,9 @@ extern int exit_openair;
 //extern void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
 
-unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(16)));
-int eNB_sync_buffer0[640*6] __attribute__ ((aligned(16)));
-int eNB_sync_buffer1[640*6] __attribute__ ((aligned(16)));
+unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(32)));
+int eNB_sync_buffer0[640*6] __attribute__ ((aligned(32)));
+int eNB_sync_buffer1[640*6] __attribute__ ((aligned(32)));
 int *eNB_sync_buffer[2] = {eNB_sync_buffer0, eNB_sync_buffer1};
 
 extern uint16_t hundred_times_log10_NPRB[100];
