@@ -26,6 +26,9 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
+#ifndef __TIME_MEAS_DEFS__H__
+#define __TIME_MEAS_DEFS__H__
+
 #include <unistd.h>
 #include <math.h>
 #include <stdint.h>
@@ -148,3 +151,4 @@ static inline void copy_meas(time_stats_t *dst_ts,time_stats_t *src_ts)
     dst_ts->max=src_ts->max;
   }
 }
+#endif

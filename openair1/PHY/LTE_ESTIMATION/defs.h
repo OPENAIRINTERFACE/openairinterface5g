@@ -213,6 +213,7 @@ int8_t set_RSRQ_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,floa
 
 //! Automatic gain control
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
+		      uint32_t rx_power_fil_dB,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
@@ -243,15 +244,16 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 
 int lte_est_timing_advance_pusch(PHY_VARS_eNB* phy_vars_eNB,module_id_t UE_id,uint8_t subframe);
 
-void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNb,
+void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
+			     int subframe,
                              module_id_t eNB_id,
                              unsigned char clear);
 
-void lte_eNB_I0_measurements_emul(PHY_VARS_eNB *phy_vars_eNb,
+void lte_eNB_I0_measurements_emul(PHY_VARS_eNB *phy_vars_eNB,
                                   uint8_t sect_id);
 
 
-void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNb,
+void lte_eNB_srs_measurements(PHY_VARS_eNB *phy_vars_eNBy,
                               module_id_t eNB_id,
                               module_id_t UE_id,
                               unsigned char init_averaging);

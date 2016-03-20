@@ -61,9 +61,9 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
            txdata+(i*(frame_parms->samples_per_tti>>1)));
 #endif
 
-    PHY_ofdm_mod(txdataF+(i*NUMBER_OF_OFDM_CARRIERS*frame_parms->symbols_per_tti>>1),        // input
+    PHY_ofdm_mod(txdataF+(i*frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti>>1),        // input
                  txdata+(i*frame_parms->samples_per_tti>>1),         // output
-                 frame_parms->log2_symbol_size,                // log2_fft_size
+                 frame_parms->ofdm_symbol_size,                
                  1,                 // number of symbols
                  frame_parms->nb_prefix_samples0,               // number of prefix samples
                  CYCLIC_PREFIX);
@@ -71,9 +71,9 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
     printf("slot i %d (txdata offset %d)\n",i,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*frame_parms->samples_per_tti>>1));
 #endif
 
-    PHY_ofdm_mod(txdataF+NUMBER_OF_OFDM_CARRIERS+(i*NUMBER_OF_OFDM_CARRIERS*(frame_parms->symbols_per_tti>>1)),        // input
+    PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size+(i*frame_parms->ofdm_symbol_size*(frame_parms->symbols_per_tti>>1)),        // input
                  txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0+(i*(frame_parms->samples_per_tti>>1)),         // output
-                 frame_parms->log2_symbol_size,                // log2_fft_size
+                 frame_parms->ofdm_symbol_size,                
                  (short_offset==1) ? 1 :(frame_parms->symbols_per_tti>>1)-1,//6,                 // number of symbols
                  frame_parms->nb_prefix_samples,               // number of prefix samples
                  CYCLIC_PREFIX);
@@ -84,7 +84,7 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
 
 void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                   int *output,                      /// pointer to complex output
-                  unsigned char log2fftsize,        /// log2(FFT_SIZE)
+                  int fftsize,            /// FFT_SIZE
                   unsigned char nb_symbols,         /// number of OFDM symbols
                   unsigned short nb_prefix_samples,  /// cyclic prefix length
                   Extension_t etype                /// type of extension
@@ -100,24 +100,28 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   int *temp_ptr=(int*)0;
   void (*idft)(int16_t *,int16_t *, int);
 
-  switch (log2fftsize) {
-  case 7:
+  switch (fftsize) {
+  case 128:
     idft = idft128;
     break;
 
-  case 8:
+  case 256:
     idft = idft256;
     break;
 
-  case 9:
+  case 512:
     idft = idft512;
     break;
 
-  case 10:
+  case 1024:
     idft = idft1024;
     break;
 
-  case 11:
+  case 1536:
+    idft = idft1536;
+    break;
+
+  case 2048:
     idft = idft2048;
     break;
 
@@ -127,8 +131,8 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   }
 
 #ifdef DEBUG_OFDM_MOD
-  msg("[PHY] OFDM mod (size %d,prefix %d) Symbols %d, input %p, output %p\n",
-      1<<log2fftsize,nb_prefix_samples,nb_symbols,input,output);
+  printf("[PHY] OFDM mod (size %d,prefix %d) Symbols %d, input %p, output %p\n",
+      fftsize,nb_prefix_samples,nb_symbols,input,output);
 #endif
 
 
@@ -136,49 +140,45 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
   for (i=0; i<nb_symbols; i++) {
 
 #ifdef DEBUG_OFDM_MOD
-    msg("[PHY] symbol %d/%d (%p,%p -> %p)\n",i,nb_symbols,input,&input[i<<log2fftsize],&output[(i<<log2fftsize) + ((i)*nb_prefix_samples)]);
+    printf("[PHY] symbol %d/%d offset %d (%p,%p -> %p)\n",i,nb_symbols,i*fftsize+(i*nb_prefix_samples),input,&input[i*fftsize],&output[(i*fftsize) + ((i)*nb_prefix_samples)]);
 #endif
 
 #ifndef __AVX2__
     // handle 128-bit alignment for 128-bit SIMD (SSE4,NEON,AltiVEC)
     idft((int16_t *)&input[i<<log2fftsize],
-         (log2fftsize==7) ? (int16_t *)temp : (int16_t *)&output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)],
+         (fftsize==128) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
 #else
     // on AVX2 need 256-bit alignment
     idft((int16_t *)&input[i<<log2fftsize],
-         (log2fftsize<=9) ? (int16_t *)temp : (int16_t *)&output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)],
+         (fftsize<=512) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
 
 #endif
-
 
     // Copy to frame buffer with Cyclic Extension
     // Note:  will have to adjust for synchronization offset!
 
     switch (etype) {
     case CYCLIC_PREFIX:
-      output_ptr = &output[(i<<log2fftsize) + ((1+i)*nb_prefix_samples)];
+      output_ptr = &output[(i*fftsize) + ((1+i)*nb_prefix_samples)];
       temp_ptr = (int *)temp;
 
 
       //      msg("Doing cyclic prefix method\n");
 
 #ifndef __AVX2__
-      if (log2fftsize==7) 
+      if (fftsize==128) 
 #else
-      if (log2fftsize<=9) 
+      if (fftsize<=512) 
 #endif
       {
-        for (j=0; j<((1<<log2fftsize)) ; j++) {
+        for (j=0; j<fftsize ; j++) {
           output_ptr[j] = temp_ptr[j];
         }
       }
 
-
-
-
-      j=(1<<log2fftsize);
+      j=fftsize;
 
       for (k=-1; k>=-nb_prefix_samples; k--) {
         output_ptr[k] = output_ptr[--j];
@@ -189,19 +189,19 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case CYCLIC_SUFFIX:
 
 
-      output_ptr = &output[(i<<log2fftsize)+ (i*nb_prefix_samples)];
+      output_ptr = &output[(i*fftsize)+ (i*nb_prefix_samples)];
 
       temp_ptr = (int *)temp;
 
       //      msg("Doing cyclic suffix method\n");
 
-      for (j=0; j<(1<<log2fftsize) ; j++) {
+      for (j=0; j<fftsize ; j++) {
         output_ptr[j] = temp_ptr[2*j];
       }
 
 
       for (j=0; j<nb_prefix_samples; j++)
-        output_ptr[(1<<log2fftsize)+j] = output_ptr[j];
+        output_ptr[fftsize+j] = output_ptr[j];
 
       break;
 
@@ -212,11 +212,11 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     case NONE:
 
       //      msg("NO EXTENSION!\n");
-      output_ptr = &output[(i<<log2fftsize)];
+      output_ptr = &output[fftsize];
 
       temp_ptr = (int *)temp;
 
-      for (j=0; j<(1<<log2fftsize) ; j++) {
+      for (j=0; j<fftsize ; j++) {
         output_ptr[j] = temp_ptr[2*j];
 
 
@@ -233,14 +233,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   }
 
-  /*
-  printf("input %p, output %p, log2fftsize %d, nsymb %d\n",input,output,log2fftsize,nb_symbols);
-  for (i=0;i<16;i++)
-    printf("%d %d\n",((short *)input)[i<<1],((short *)input)[1+(i<<1)]);
-  printf("------\n");
-  for (i=0;i<16;i++)
-    printf("%d %d\n",((short *)output)[i<<1],((short *)output)[1+(i<<1)]);
-  */
+
 }
 
 
@@ -258,7 +251,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t 
         LOG_D(PHY,"Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset);
         PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                      &txdata[aa][slot_offset],         // output
-                     frame_parms->log2_symbol_size,                // log2_fft_size
+                     frame_parms->ofdm_symbol_size,                
                      12,                 // number of symbols
                      frame_parms->ofdm_symbol_size>>2,               // number of prefix samples
                      CYCLIC_PREFIX);
@@ -266,7 +259,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t 
         if (frame_parms->Ncp == EXTENDED)
           PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                        &txdata[aa][slot_offset],         // output
-                       frame_parms->log2_symbol_size,                // log2_fft_size
+                       frame_parms->ofdm_symbol_size,                
                        2,                 // number of symbols
                        frame_parms->nb_prefix_samples,               // number of prefix samples
                        CYCLIC_PREFIX);
@@ -282,7 +275,7 @@ void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t 
       if (frame_parms->Ncp == EXTENDED)
         PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
                      &txdata[aa][slot_offset],         // output
-                     frame_parms->log2_symbol_size,                // log2_fft_size
+                     frame_parms->ofdm_symbol_size,                
                      6,                 // number of symbols
                      frame_parms->nb_prefix_samples,               // number of prefix samples
                      CYCLIC_PREFIX);
