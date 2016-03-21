@@ -1409,7 +1409,7 @@ for oai in oai_list:
       cmd = cmd + 'git_head=`git ls-remote |grep \'' + GitOAI5GRepoBranch + '\'` \n'
       cmd = cmd + 'git_head=($git_head) \n'
       cmd = cmd + 'git_head=${git_head[0]} \n'
-      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
+      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\" \n'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
       if flag_skip_git_head_check==True:
          cmd = cmd + 'echo \"skipping GitHead check...\" \n '
