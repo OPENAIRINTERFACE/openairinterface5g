@@ -151,6 +151,7 @@ void forward(void *_forwarder, char *buf, int size)
   new->l = size;
   new->next = NULL;
   if (f->head == NULL) f->head = new;
+  if (f->tail != NULL) f->tail->next = new;
   f->tail = new;
 
   if (pthread_cond_signal(&f->datacond)) abort();
