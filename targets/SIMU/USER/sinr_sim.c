@@ -244,20 +244,19 @@ void calc_path_loss(node_desc_t* enb_data, node_desc_t* ue_data, channel_desc_t 
 
 
 
-void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, uint8_t transmission_mode, uint16_t q, uint8_t dl_power_off)
+void init_snr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double* sinr_dB, double* N0, uint8_t transmission_mode, uint16_t q, uint8_t dl_power_off, uint16_t nb_rb)
 {
 
-  uint16_t nb_rb = 25; //No. of resource blocks
   double thermal_noise,abs_channel,channelx, channely,channelx_i, channely_i ;
   int count;
   int aarx,aatx;
   uint8_t qq;
 
-  /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(eNB2UE->sampling_rate*1e6); //value in dBm
+  /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth*/
+  thermal_noise = -174 + 10*log10(15000); //per RE; value in dBm
 
   //for (aarx=0; aarx<eNB2UE->nb_rx; aarx++)
-  *N0 = thermal_noise + ue_data->rx_noise_level;//? all the element have the same noise level?????
+  *N0 = thermal_noise + ue_data->rx_noise_level;
 
   LOG_D(OCM,"Path loss %lf, noise (N0) %lf, signal %lf, snr %lf\n",
         eNB2UE->path_loss_dB,
@@ -549,15 +548,14 @@ void init_snr_up(channel_desc_t* UE2eNB, node_desc_t *enb_data, node_desc_t *ue_
 
 #endif
 
-void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double *sinr_dB)
+void calculate_sinr(channel_desc_t* eNB2UE, node_desc_t *enb_data, node_desc_t *ue_data, double *sinr_dB, uint16_t nb_rb)
 {
 
   double sir, thermal_noise;
-  short nb_rb = 25; //No. of resource blocks
   short count;
 
   /* Thermal noise is calculated using 10log10(K*T*B) K = Boltzmann's constant T = room temperature B = bandwidth */
-  thermal_noise = -174 + 10*log10(eNB2UE->sampling_rate*1e6); //value in dBm
+  thermal_noise = -174 + 10*log10(15000); //per RE, value in dBm
 
   for (count = 0; count < 12 * nb_rb; count++) {
     sir = enb_data->tx_power_dBm

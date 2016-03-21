@@ -12,7 +12,7 @@ trap handle_ctrl_c INT
 source $OPENAIR_DIR/cmake_targets/tools/test_helper
 
 
-#SUDO="sudo -E "
+SUDO="sudo -E -S"
 tdir=$OPENAIR_DIR/cmake_targets/autotests
 rm -fr $tdir/bin 
 mkdir -p $tdir/bin
@@ -388,6 +388,7 @@ until [ -z "$1" ]
        -g | --run-group)
             RUN_GROUP=1
             test_case_group=$2
+            test_case_group=`sed "s/\+/\*/g" <<<  "${test_case_group}"` # Replace + with * for bash string substituion
             echo_info "Will execute test cases only in group $test_case_group"
             shift 2;;
         -p)
@@ -404,14 +405,12 @@ until [ -z "$1" ]
    esac
   done
 
-if [ "$SET_PASSWORD" == "1" ]; then
-   mypassword=$passwd
-else
-   read -s -p "Enter Password: " mypassword
+if [ "$SET_PASSWORD" != "1" ]; then
+   read -s -p "Enter Password: " passwd
 fi
 
 tmpfile=`mktemp`
-echo \'$passwd\' | $SUDO echo $HOME >& $tmpfile
+echo $passwd | $SUDO echo $HOME > $tmpfile
 tstsudo=`cat $tmpfile`
 if [ "$tstsudo" != "$HOME" ]; then
   echo "$USER might not have sudo privileges. Exiting" 
@@ -425,8 +424,16 @@ rm -fr $tmpfile
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
 test_case_list=`xmlstarlet sel -T -t -m /testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
+test_case_excl_list=`xmlstarlet sel -t -v "/testCaseList/TestCaseExclusionList" $xml_conf`
+echo "Test Case Exclusion List = $test_case_excl_list "
+
+test_case_excl_list=`sed "s/\+/\*/g" <<< "$test_case_excl_list" ` # Replace + with * for bash string substituion
+
+read -a test_case_excl_array <<< "$test_case_excl_list"
 
 echo "test_case_list = $test_case_list"
+
+echo "Test Case Exclusion List = $test_case_excl_list \n"
 
 readarray -t test_case_array <<<"$test_case_list"
 
@@ -448,6 +455,15 @@ for search_expr in "${test_case_array[@]}"
     else
        flag_run_test_case=1
     fi
+
+    for search_excl in "${test_case_excl_array[@]}"
+       do  
+          if [[ $search_expr == $search_excl ]];then
+             flag_run_test_case=0
+             echo_info "Test case $search_expr match found in test case excl group. Will skip the test case for execution..."
+             break
+          fi
+       done
 
 
     #We skip this test case if it is not in the group list
@@ -509,7 +525,7 @@ for search_expr in "${test_case_array[@]}"
     if [ "$class" == "compilation" ]; then
         test_compile "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags"
     elif  [ "$class" == "execution" ]; then
-        $SUDO killall -q oaisim_nos1
+        echo \'passwd\' | $SUDO killall -q oaisim_nos1
         test_compile_and_run "$name" "$compile_prog" "$compile_prog_args" "$pre_exec" "$pre_exec_args" "$main_exec" "$main_exec_args" "search_array_true[@]" "$search_expr_false" "$nruns" "$pre_compile_prog" "$class" "$compile_prog_out" "$tags" "$mypassword" "$test_config_file"
     else
         echo "Unexpected class of test case...Skipping the test case $name ...."

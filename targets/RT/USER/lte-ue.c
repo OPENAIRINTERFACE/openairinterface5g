@@ -529,11 +529,11 @@ static void *UE_thread_synch(void *arg)
 	    
 #endif
 
-#ifdef OAI_USRP
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	    
 	    
-
+#if 0
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;
@@ -555,7 +555,7 @@ static void *UE_thread_synch(void *arg)
               printf("Unknown number of RBs %d\n",UE->lte_frame_parms.N_RB_DL);
               break;
             }
-	    
+#endif	    
 #endif
           }
         }
@@ -925,9 +925,7 @@ static void *UE_thread_rx(void *arg)
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
-#ifdef OPENAIR2
-
-      if (i==0) {
+      if ((UE->mac_enabled==1) && (i==0)) {
         ret = mac_xface->ue_scheduler(UE->Mod_id,
                                       UE->frame_tx,
                                       UE->slot_rx>>1,
@@ -950,7 +948,6 @@ static void *UE_thread_rx(void *arg)
         }
       }
 
-#endif
       UE->slot_rx++;
 
       if (UE->slot_rx == 20) {

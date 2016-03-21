@@ -169,8 +169,6 @@ void do_DL_sig(double **r_re0,double **r_im0,
       int32_t **dl_channel_est = PHY_vars_UE_g[UE_id][CC_id]->lte_ue_common_vars.dl_ch_estimates[0];
       //      double scale = pow(10.0,(enb_data[att_eNB_id]->tx_power_dBm + eNB2UE[att_eNB_id][UE_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id]->rx_total_gain_dB)/20.0);
       double scale = pow(10.0,(frame_parms->pdsch_config_common.referenceSignalPower+eNB2UE[att_eNB_id][UE_id][CC_id]->path_loss_dB + (double) PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB)/20.0);
-      //this factor is not really needed (it was actually wrong in the non abstraction mode)
-      //scale = scale * sqrt(512.0/300.0); //TODO: make this variable for all BWs
       LOG_D(OCM,"scale =%lf (%d dB)\n",scale,(int) (20*log10(scale)));
       // freq_channel(desc1,frame_parms->N_RB_DL,nb_samples);
       //write_output("channel.m","ch",desc1->ch[0],desc1->channel_length,1,8);
@@ -204,12 +202,13 @@ void do_DL_sig(double **r_re0,double **r_im0,
 
       // calculate the SNR for the attached eNB (this assumes eNB always uses PMI stored in eNB_UE_stats; to be improved)
       init_snr(eNB2UE[att_eNB_id][UE_id][CC_id], enb_data[att_eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id][CC_id]->sinr_dB, &PHY_vars_UE_g[UE_id][CC_id]->N0,
-               PHY_vars_UE_g[UE_id][CC_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id][CC_id]->eNB_UE_stats[UE_id].DL_pmi_single,PHY_vars_eNB_g[att_eNB_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off);
+               PHY_vars_UE_g[UE_id][CC_id]->transmission_mode[att_eNB_id], PHY_vars_eNB_g[att_eNB_id][CC_id]->eNB_UE_stats[UE_id].DL_pmi_single,
+	       PHY_vars_eNB_g[att_eNB_id][CC_id]->mu_mimo_mode[UE_id].dl_pow_off,PHY_vars_eNB_g[att_eNB_id][CC_id]->lte_frame_parms.N_RB_DL);
 
       // calculate sinr here
       for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++) {
         if (att_eNB_id != eNB_id) {
-          calculate_sinr(eNB2UE[eNB_id][UE_id][CC_id], enb_data[eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id][CC_id]->sinr_dB);
+          calculate_sinr(eNB2UE[eNB_id][UE_id][CC_id], enb_data[eNB_id], ue_data[UE_id], PHY_vars_UE_g[UE_id][CC_id]->sinr_dB,PHY_vars_eNB_g[att_eNB_id][CC_id]->lte_frame_parms.N_RB_DL);
         }
       }
     } // hold channel
@@ -220,18 +219,6 @@ void do_DL_sig(double **r_re0,double **r_im0,
        Call do_OFDM_mod from phy_procedures_eNB_TX function
     */
 
-
-
-    //for (UE_id=0;UE_id<NB_UE_INST;UE_id++) {
-    // Compute RX signal for UE = UE_id
-    /*
-    for (i=0;i<(frame_parms->samples_per_tti>>1);i++) {
-    for (aa=0;aa<nb_antennas_rx;aa++) {
-    r_re[aa][i]=0.0;
-    r_im[aa][i]=0.0;
-    }
-    }
-    */
     //      printf("r_re[0] %p\n",r_re[0]);
     for (aa=0; aa<nb_antennas_rx; aa++) {
       memset((void*)r_re[aa],0,(frame_parms->samples_per_tti>>1)*sizeof(double));
