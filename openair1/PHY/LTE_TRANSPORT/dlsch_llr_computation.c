@@ -747,9 +747,9 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     (int16_t *)rho_1,
                     (int16_t*)rho_rho_amp_x0,
                     len,
-                    13);
+                    15);
 
-    write_output("rho_rho.m","rho2", rho_rho_amp_x0,len,1,1);
+ //   write_output("rho_rho.m","rho2", rho_rho_amp_x0,len,1,1);
  //   printf ("Computed  rho*rho_a*x0\n");
   
     
@@ -760,7 +760,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 		     len*2); 
 
     
-    write_output("clean_x1.m","x1", clean_x1,len,1,1);
+   // write_output("clean_x1.m","x1", clean_x1,len,1,1);
   //  printf ("Interference removed \n");
 
   //  printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);

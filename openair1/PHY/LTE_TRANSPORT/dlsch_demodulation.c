@@ -2682,7 +2682,7 @@ void dlsch_dual_stream_correlation(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-void dlsch_dual_stream_correlationTM34(LTE_DL_FRAME_PARMS *frame_parms,
+/*void dlsch_dual_stream_correlationTM34(LTE_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,
                                    unsigned short nb_rb,
                                    int **dl_ch_estimates_ext,
@@ -2801,7 +2801,7 @@ void dlsch_dual_stream_correlationTM34(LTE_DL_FRAME_PARMS *frame_parms,
 
 #endif
 }
-
+*/
 
 void dlsch_detection_mrc(LTE_DL_FRAME_PARMS *frame_parms,
                          int **rxdataF_comp,

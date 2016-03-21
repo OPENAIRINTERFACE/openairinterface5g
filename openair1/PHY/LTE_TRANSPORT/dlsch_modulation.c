@@ -1643,7 +1643,7 @@ int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
 
   amp=1; //we do full scale here for SIC
   gain_lin_QPSK = (int16_t)((ONE_OVER_SQRT2_Q15));
-  
+ 
   jj = 0;
   i = 0;
   while (jj <= G-1) {
