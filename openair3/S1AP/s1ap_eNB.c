@@ -72,9 +72,9 @@ s1ap_eNB_config_t s1ap_config;
 static int s1ap_eNB_generate_s1_setup_request(
   s1ap_eNB_instance_t *instance_p, s1ap_eNB_mme_data_t *s1ap_mme_data_p);
 
-static
+
 void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB);
-static
+
 void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
 uint32_t s1ap_generate_eNB_id(void)
@@ -150,7 +150,7 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
 
-static
+
 void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *s1ap_register_eNB)
 {
   s1ap_eNB_instance_t *new_instance;
@@ -210,7 +210,6 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
   }
 }
 
-static
 void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
 {
   s1ap_eNB_instance_t *instance_p;
