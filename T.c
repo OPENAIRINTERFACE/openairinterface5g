@@ -54,9 +54,16 @@ static void *T_send_thread(void *_)
 {
   while (1) {
     usleep(5000);
+    __sync_synchronize();
     while (T_cache[T_busylist_head].busy) {
-      char *b = T_cache[T_busylist_head].buffer;
-      int l = T_cache[T_busylist_head].length;
+      char *b;
+      int l;
+      /* TODO: be sure about those memory barriers - in doubt one is
+       * put here too
+       */
+      __sync_synchronize();
+      b = T_cache[T_busylist_head].buffer;
+      l = T_cache[T_busylist_head].length;
       while (l) {
         int done = write(T_socket, b, l);
         if (done <= 0) {
@@ -123,7 +130,7 @@ void T_connect_to_tracer(char *addr, int port)
 
 #ifdef T_USE_SHARED_MEMORY
   /* setup shared memory */
-  T_shm_fd = shm_open(T_SHM_FILENAME, O_RDWR, 0666);
+  T_shm_fd = shm_open(T_SHM_FILENAME, O_RDWR /*| O_SYNC*/, 0666);
   shm_unlink(T_SHM_FILENAME);
   if (T_shm_fd == -1) { perror(T_SHM_FILENAME); abort(); }
   T_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),

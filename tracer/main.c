@@ -356,7 +356,8 @@ void wait_message(void)
 
 void init_shm(void)
 {
-  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT, 0666);
+  int i;
+  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
   if (s == -1) { perror(T_SHM_FILENAME); abort(); }
   if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
     { perror(T_SHM_FILENAME); abort(); }
@@ -365,6 +366,12 @@ void init_shm(void)
   if (T_cache == NULL)
     { perror(T_SHM_FILENAME); abort(); }
   close(s);
+
+  /* let's garbage the memory to catch some potential problems
+   * (think multiprocessor sync issues, barriers, etc.)
+   */
+  memset(T_cache, 0x55, T_CACHE_SIZE * sizeof(T_cache_t));
+  for (i = 0; i < T_CACHE_SIZE; i++) T_cache[i].busy = 0;
 }
 
 #endif /* T_USE_SHARED_MEMORY */
@@ -555,6 +562,7 @@ no_init_message:
   while (1) {
 #ifdef T_USE_SHARED_MEMORY
     wait_message();
+    __sync_synchronize();
 #endif
 
 #ifdef T_USE_SHARED_MEMORY
