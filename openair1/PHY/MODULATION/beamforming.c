@@ -61,7 +61,7 @@ int ue_spec_beamforming(int32_t **txdataF,
   
   slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
 
-  // clear txdata_BF[aa][re] for each call of spec_spec_beamforming
+  // clear txdata_BF[aa][re] for each call of ue_spec_beamforming
   for(aa=0;aa<frame_parms->nb_antennas_tx;aa++)
     memset(txdataF_BF[aa],0,4*(frame_parms->ofdm_symbol_size));
 
@@ -89,7 +89,7 @@ int ue_spec_beamforming(int32_t **txdataF,
       }
     }
 
-    if (txdataF[7][re+symbol*frame_parms->ofdm_symbol_size]!=0) { //that means this RE is actually using TM8-10
+    if (txdataF[7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually using TM8-10
       for (p=0;p<8;p++) {
         if (txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually allocated
           for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
@@ -130,7 +130,6 @@ int cell_spec_beamforming(int32_t **txdataF,
     for (p=0;p<frame_parms->nb_antenna_ports_eNB;p++) {
       if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually allocated
         for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-          //printf("cell_spec_beamforming():txdata_BF[%d][%d]=%d+j%d\n",aa,re,((int16_t*)&txdataF_BF[aa][re])[0],((int16_t*)&txdataF_BF[aa][re])[1]);
         
           ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
                                                 *((int16_t*)&cell_spec_bf_weights[p][aa][re])[0])>>15);
@@ -154,6 +153,10 @@ int cell_spec_beamforming(int32_t **txdataF,
     }
   }
 }
+
+
+
+
 /*
 int ue_spec_beamforming(int32_t **txdataF,
 	                int32_t **txdataF_BF,
