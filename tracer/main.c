@@ -403,7 +403,7 @@ void usage(void)
 "      by default, all is off\n"
 "\n"
 "remote mode options: in this mode you run a local tracer and a remote one\n"
-"    -r                        remote side\n"
+"    -r <port>                 remote side (use given port)\n"
 "    -l <IP address> <port>    local side (forwards packets to remote IP:port)\n"
   );
   exit(1);
@@ -429,6 +429,7 @@ int main(int n, char **v)
   int remote_remote = 0;
   char *remote_ip = NULL;
   int remote_port = -1;
+  int port = 2020;
 #ifdef T_USE_SHARED_MEMORY
   void *f;
 #endif
@@ -454,7 +455,8 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
-    if (!strcmp(v[i], "-r")) { remote_remote = 1; continue; }
+    if (!strcmp(v[i], "-r")) { if (i > n-2) usage(); remote_remote = 1;
+      port = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-l")) { if (i > n-3) usage(); remote_local = 1;
       remote_ip = v[++i]; remote_port = atoi(v[++i]); continue; }
     printf("ERROR: unknown option %s\n", v[i]);
@@ -528,7 +530,7 @@ no_database:
 #ifdef T_USE_SHARED_MEMORY
   init_shm();
 #endif
-  s = get_connection("127.0.0.1", 2020);
+  s = get_connection("127.0.0.1", port);
 
   if (remote_local) {
 #ifdef T_USE_SHARED_MEMORY
