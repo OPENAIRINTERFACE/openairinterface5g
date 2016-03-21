@@ -2520,14 +2520,21 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   if (abstraction_flag==0)
   {
     start_meas(&phy_vars_eNB->ofdm_mod_stats);
-    do_OFDM_mod(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
-                phy_vars_eNB->lte_eNB_common_vars.txdata[0],
-                phy_vars_eNB->proc[sched_subframe].frame_tx,subframe<<1,
-                &phy_vars_eNB->lte_frame_parms);
-    do_OFDM_mod(phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
-                phy_vars_eNB->lte_eNB_common_vars.txdata[0],
-                phy_vars_eNB->proc[sched_subframe].frame_tx,1+(subframe<<1),
-                &phy_vars_eNB->lte_frame_parms);
+    
+    do_OFDM_mod_l(phy_vars_eNB->lte_eNB_common_vars,
+                  0,
+                  subframe<<1,
+                  &phy_vars_eNB->lte_frame_parms,
+                  num_pdcch_symbols,
+                  eNB->transmission_mode[(uint8_t)UE_id]); 
+                  
+    do_OFDM_mod_l(phy_vars_eNB->lte_eNB_common_vars,
+                  0,
+                  1+(subframe<<1),
+                  &phy_vars_eNB->lte_frame_parms,
+                  num_pdcch_symbols,
+                  eNB->transmission_mode[(uint8_t)UE_id]); 
+
     stop_meas(&phy_vars_eNB->ofdm_mod_stats);
   }
 

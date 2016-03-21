@@ -645,6 +645,11 @@ typedef struct {
   /// - third index: tx antenna [0..nb_antennas_tx[
   /// - fourth index: sample [0..]
   int32_t **ue_spec_bf_weights[3][8];
+  /// \brief Holds the tdd reciprocity calibration coefficients 
+  /// - first index: eNB id [0..2] (hard coded) 
+  /// - second index: tx antenna [0..nb_antennas_tx[
+  /// - third index: frenquency [0..]
+  int32_t **tdd_calib_coeffs[3];
 } LTE_eNB_COMMON;
 
 typedef struct {

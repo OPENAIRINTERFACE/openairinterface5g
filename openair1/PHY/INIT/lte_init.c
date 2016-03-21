@@ -1305,7 +1305,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       for (i=0; i<2; i++) { // 2 is the total number of cell specific antenna ports
         eNB_common_vars->cell_spec_bf_weights[eNB_id][i] = (int32_t **)malloc16_clear(frame_parms->nb_antennas_tx*sizeof(int32_t*));
         for (j=0; j<frame_parms->nb_antennas_tx; j++) {
-          eNB_common_vars->cell_spec_bf_weights[eNB_id][i][j] = (int32_t*)malloc16_clear(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+          eNB_common_vars->cell_spec_bf_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 #ifdef DEBUG_PUY
           msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->cell_spec_bf_weights[%d][%d][%d] = %p (%d bytes)\n",
               eNB_id,i,j,eNB_common_vars->cell_spec_bf_weights[eNB_id][i][j],

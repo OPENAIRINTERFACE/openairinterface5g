@@ -2755,7 +2755,7 @@ int main( int argc, char **argv )
       frame_parms[CC_id]->nb_antenna_ports_eNB = (transmission_mode == 1 || transmission_mode ==7) ? 1 : 2; //initial value overwritten by initial sync later
     }
 
-    frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
+    frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1 || transmission_mode ==7) ? 1 : 0;
     frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
     frame_parms[CC_id]->phich_config_common.phich_duration = normal;
     // UL RS Config
@@ -3188,7 +3188,7 @@ int main( int argc, char **argv )
     openair_daq_vars.timing_advance = 160;
 #endif
     if (setup_ue_buffers(UE,&openair0_cfg[0],rf_map)!=0) {
-      printf("Error setting up eNB buffer\n");
+      printf("Error setting up UE buffer\n");
       exit(-1);
     }
 
