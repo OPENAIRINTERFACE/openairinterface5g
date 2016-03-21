@@ -92,9 +92,11 @@ static void *forward_s_to_sc(void *_f)
 
 static void *forward_sc_to_s(void *_f)
 {
+#if 0
   forward_data *f = _f;
   do_forward(f, f->sc, f->s, 1);
   printf("INFO: forwarder exits\n");
+#endif
   return NULL;
 }
 
