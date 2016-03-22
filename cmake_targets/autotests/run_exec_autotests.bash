@@ -388,6 +388,7 @@ until [ -z "$1" ]
        -g | --run-group)
             RUN_GROUP=1
             test_case_group=$2
+            test_case_group=`sed "s/\+/\*/g" <<<  "${test_case_group}"` # Replace + with * for bash string substituion
             echo_info "Will execute test cases only in group $test_case_group"
             shift 2;;
         -p)
@@ -423,8 +424,16 @@ rm -fr $tmpfile
 xml_conf="$OPENAIR_DIR/cmake_targets/autotests/test_case_list.xml"
 
 test_case_list=`xmlstarlet sel -T -t -m /testCaseList/testCase -s A:N:- "@id" -v "@id" -n $xml_conf`
+test_case_excl_list=`xmlstarlet sel -t -v "/testCaseList/TestCaseExclusionList" $xml_conf`
+echo "Test Case Exclusion List = $test_case_excl_list "
+
+test_case_excl_list=`sed "s/\+/\*/g" <<< "$test_case_excl_list" ` # Replace + with * for bash string substituion
+
+read -a test_case_excl_array <<< "$test_case_excl_list"
 
 echo "test_case_list = $test_case_list"
+
+echo "Test Case Exclusion List = $test_case_excl_list \n"
 
 readarray -t test_case_array <<<"$test_case_list"
 
@@ -446,6 +455,15 @@ for search_expr in "${test_case_array[@]}"
     else
        flag_run_test_case=1
     fi
+
+    for search_excl in "${test_case_excl_array[@]}"
+       do  
+          if [[ $search_expr == $search_excl ]];then
+             flag_run_test_case=0
+             echo_info "Test case $search_expr match found in test case excl group. Will skip the test case for execution..."
+             break
+          fi
+       done
 
 
     #We skip this test case if it is not in the group list
