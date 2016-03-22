@@ -4467,7 +4467,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
     if (TPC!=1)
-      LOG_I(PHY,"format1 TPC %d, dlsch0_harq->delta_PUCCH %d\n",TPC,dlsch0_harq->delta_PUCCH);
+      LOG_D(PHY,"format1 TPC %d, dlsch0_harq->delta_PUCCH %d\n",TPC,dlsch0_harq->delta_PUCCH);
 
     dlsch0_harq->rvidx     = rv;
 
@@ -4476,7 +4476,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    LOG_D(PHY,"UE (%x/%d): Subframe %d Format2 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
+    LOG_D(PHY,"UE (%x/%d): Subframe %d Format1 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
           dlsch0_harq->first_tx,dlsch0_harq->status);
 
     //    printf("Format2 DCI (UE, hard pid %d): ndi %d, old_ndi %d (first tx %d)\n",harq_pid,ndi,dlsch0_harq->DCINdi,

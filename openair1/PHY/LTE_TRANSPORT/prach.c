@@ -608,7 +608,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
   uint8_t preamble_index     = phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
   uint8_t tdd_mapindex       = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
   int16_t *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
-  static int16_t prach_tmp[45600*2] __attribute__((aligned(16)));
+  static int16_t prach_tmp[45600*2] __attribute__((aligned(32)));
   int16_t *prach            = prach_tmp;
   int16_t *prach2;
   int16_t amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;

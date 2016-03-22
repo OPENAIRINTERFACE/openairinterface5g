@@ -213,6 +213,7 @@ int8_t set_RSRQ_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,floa
 
 //! Automatic gain control
 void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
+		      uint32_t rx_power_fil_dB,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,

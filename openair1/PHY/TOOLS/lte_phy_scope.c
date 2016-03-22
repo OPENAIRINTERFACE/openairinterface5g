@@ -719,13 +719,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   // PDSCH LLRs
   if (pdsch_llr != NULL) {
-    for (i=0; i<coded_bits_per_codeword/4; i++) {
-      llr[i] = (float) pdsch_llr[4*i];
+    for (i=0; i<coded_bits_per_codeword; i++) {
+      llr[i] = (float) pdsch_llr[i];
       bit[i] = (float) i;
     }
 
-    fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword/4);
-    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword/4,"","","");
+    fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
+    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
   }
 
   // PDSCH I/Q of MF Output
