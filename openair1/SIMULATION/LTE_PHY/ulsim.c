@@ -513,11 +513,6 @@ int main(int argc, char **argv)
 
   nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
 
-  coded_bits_per_codeword = nb_rb * (12 * get_Qm(mcs)) * nsymb;
-
-  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
-
-  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm(mcs),coded_bits_per_codeword);
 
   sprintf(bler_fname,"ULbler_mcs%d_nrb%d_ChannelModel%d_nsim%d.csv",mcs,nb_rb,chMod,n_frames);
   bler_fd = fopen(bler_fname,"w");
@@ -809,6 +804,13 @@ int main(int argc, char **argv)
                                      CBA_RNTI,
                                      srs_flag);
 
+  coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
+
+  if (cqi_flag == 1) coded_bits_per_codeword-=PHY_vars_UE->ulsch_ue[0]->O;
+
+  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
+
+  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
 
   PHY_vars_UE->frame_tx = (PHY_vars_UE->frame_tx+1)&1023;
@@ -1516,7 +1518,7 @@ int main(int argc, char **argv)
              rate*effective_rate,
              100*effective_rate,
              rate,
-             rate*get_Qm(mcs),
+             rate*get_Qm_ul(mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
