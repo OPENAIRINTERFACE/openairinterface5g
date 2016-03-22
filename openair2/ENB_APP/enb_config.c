@@ -271,7 +271,7 @@ static const eutra_band_t eutra_bands[] = {
 
 Enb_properties_array_t enb_properties;
 
-static void enb_config_display(void)
+void enb_config_display(void)
 {
   int i,j;
 
