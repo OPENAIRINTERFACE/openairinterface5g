@@ -212,9 +212,9 @@ typedef struct UE_RRC_INFO_s {
 } __attribute__ ((__packed__)) UE_RRC_INFO;
 
 typedef struct UE_S_TMSI_s {
-  uint8_t  presence;
-  uint8_t  mme_code;
-  uint32_t m_tmsi;
+  boolean_t  presence;
+  mme_code_t mme_code;
+  m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI;
 
 #if defined(ENABLE_ITTI)

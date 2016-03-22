@@ -61,7 +61,6 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 {
 
   int i,k;
-  //unsigned short ds = frame_parms->log2_symbol_size - 7;
 
   sync_corr_ue0 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
   sync_corr_ue1 = (int *)malloc16(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*sizeof(int)*frame_parms->samples_per_tti);
@@ -184,13 +183,6 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     LOG_E(PHY,"Unsupported N_RB_DL %d\n",frame_parms->N_RB_DL);
     break;
   }
-  /*
-      frame_parms->twiddle_ifft,    /// complex twiddle factors
-      frame_parms->rev,             /// bit reversed permutation vector
-      frame_parms->log2_symbol_size,/// log2(FFT_SIZE)
-      (frame_parms->log2_symbol_size/2),
-      0);                            /// 0 - input is in complex Q1.15 format, 1 - input is in complex redundant Q1.15 format)
-  */
 
   for (i=0; i<frame_parms->ofdm_symbol_size; i++)
     ((int32_t*)primary_synch0_time)[i] = sync_tmp[i];
@@ -491,13 +483,10 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   *eNB_id = sync_source;
 
+  LOG_D(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val,dB_fixed(peak_val)/2);
+
+
 #ifdef DEBUG_PHY
-  msg("[PHY][UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d\n",
-      sync_source,peak_pos,peak_val);
-
-
-
-
   if (debug_cnt == 0) {
     write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
     write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
