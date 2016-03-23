@@ -264,6 +264,7 @@ typedef struct Enb_properties_array_s {
   Enb_properties_t    *properties[MAX_ENB];
 } Enb_properties_array_t;
 
+void                          enb_config_display(void);
 const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 
 const Enb_properties_array_t *enb_config_get(void);

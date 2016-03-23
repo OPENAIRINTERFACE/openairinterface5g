@@ -483,6 +483,24 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
                                         time_stats_t *intl1_stats,
                                         time_stats_t *intl2_stats);
 
+uint8_t phy_threegpplte_turbo_decoder16avx2(int16_t *y,
+					    int16_t *y2,
+					    uint8_t *decoded_bytes,
+					    uint8_t *decoded_bytes2,
+					    uint16_t n,
+					    uint16_t interleaver_f1,
+					    uint16_t interleaver_f2,
+					    uint8_t max_iterations,
+					    uint8_t crc_type,
+					    uint8_t F,
+					    time_stats_t *init_stats,
+					    time_stats_t *alpha_stats,
+					    time_stats_t *beta_stats,
+					    time_stats_t *gamma_stats,
+					    time_stats_t *ext_stats,
+					    time_stats_t *intl1_stats,
+					    time_stats_t *intl2_stats);
+
 /*!
 \brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 8-bit
 LLR arithmetic, and requires SSE2,SSSE3 and SSE4.1 (gcc >=4.3 and appropriate CPU)

@@ -61,6 +61,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
   uint8_t eNB=0;
   uint32_t RRC_status;
   int len=length;
+  int harq_pid,round;
 
   if (phy_vars_ue==NULL)
     return 0;
@@ -107,10 +108,10 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
     len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
     if (phy_vars_ue->UE_mode[0]==PUSCH) {
       len += sprintf(&buffer[len], "[UE PROC] Po_PUSCH = %d dBm (PL %d dB, Po_NOMINAL_PUSCH %d dBm, PHR %d dB)\n", 
-		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->Po_PUSCH,
+		     phy_vars_ue->ulsch_ue[0]->Po_PUSCH,
 		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0),
-		     mac_xface->get_Po_NOMINAL_PUSCH(phy_vars_ue->Mod_id,0),
-		     PHY_vars_UE_g[0][0]->ulsch_ue[0]->PHR);
+		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUSCH,
+		     phy_vars_ue->ulsch_ue[0]->PHR);
       len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n", 
 		     get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,0)+
 		     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
@@ -488,13 +489,27 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
       if (phy_vars_ue->transmission_mode[eNB] == 6)
         len += sprintf(&buffer[len], "[UE PROC] Mode 6 Wideband CQI eNB %d : %d dB\n",eNB,phy_vars_ue->PHY_measurements.precoded_cqi_dB[eNB][0]);
 
+      for (harq_pid=0;harq_pid<8;harq_pid++) {
+	len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 0 harq_pid %d, mcs %d:",eNB,harq_pid,phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->mcs);
+	for (round=0;round<8;round++)
+	  len+=sprintf(&buffer[len],"%d/%d ",
+		       phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->errors[round],
+		       phy_vars_ue->dlsch_ue[0][0]->harq_processes[harq_pid]->trials[round]);
+	len+=sprintf(&buffer[len],"\n");
+      }
       if (phy_vars_ue->dlsch_ue[0] && phy_vars_ue->dlsch_ue[0][0] && phy_vars_ue->dlsch_ue[0][1]) {
         len += sprintf(&buffer[len], "[UE PROC] Saved PMI for DLSCH eNB %d : %jx (%p)\n",eNB,pmi2hex_2Ar1(phy_vars_ue->dlsch_ue[0][0]->pmi_alloc),phy_vars_ue->dlsch_ue[0][0]);
 
         len += sprintf(&buffer[len], "[UE PROC] eNB %d: dl_power_off = %d\n",eNB,phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->dl_power_off);
 
-        len += sprintf(&buffer[len], "[UE PROC] DL mcs1 (dlsch cw1) %d\n",phy_vars_ue->dlsch_ue[0][0]->harq_processes[0]->mcs);
-        len += sprintf(&buffer[len], "[UE PROC] DL mcs2 (dlsch cw2) %d\n",phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
+	for (harq_pid=0;harq_pid<8;harq_pid++) {
+	  len+=sprintf(&buffer[len],"[UE PROC] eNB %d: CW 1 harq_pid %d, mcs %d:",eNB,harq_pid,phy_vars_ue->dlsch_ue[0][1]->harq_processes[0]->mcs);
+	  for (round=0;round<8;round++)
+	    len+=sprintf(&buffer[len],"%d/%d ",
+			 phy_vars_ue->dlsch_ue[0][1]->harq_processes[harq_pid]->errors[round],
+			 phy_vars_ue->dlsch_ue[0][1]->harq_processes[harq_pid]->trials[round]);
+	  len+=sprintf(&buffer[len],"\n");
+	}
       }
 
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",phy_vars_ue->dlsch_received[0],phy_vars_ue->dlsch_errors[0],phy_vars_ue->dlsch_fer[0]);
@@ -582,9 +597,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
       len += sprintf(&buffer[len],"%4d ",
                      phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
       if ((i>0) && ((i%25) == 0)) 
-	len += sprintf(&buffer[len],"\n                                 ",
-                     phy_vars_eNB->PHY_measurements_eNB[eNB].n0_subband_power_tot_dBm[i]);
-
+	len += sprintf(&buffer[len],"\n");
     }
     len += sprintf(&buffer[len],"\n");
     len += sprintf(&buffer[len],"\nPERFORMANCE PARAMETERS\n");

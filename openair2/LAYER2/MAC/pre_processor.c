@@ -47,6 +47,7 @@
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -807,6 +808,9 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
     ue_sched_ctl->ta_timer--;
     ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
   }
+  if (UE_id==0) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_TIMING_ADVANCE,ue_sched_ctl->ta_update);
+  }
   nb_rbs_required[CC_id][UE_id]=0;
   ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
   ue_sched_ctl->dl_pow_off[CC_id] = 2;
@@ -937,9 +941,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
 
-  // LOG_I(MAC,"store ulsch buffers\n");
-  // convert BSR to bytes for comparison with tbs
-  //  store_ulsch_buffer(module_idP,frameP, subframeP);
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
@@ -1097,51 +1098,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   }
 }
 
-/*
-void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP)
-{
-
-  int                 UE_id,pCC_id,lcgid;
-  UE_list_t           *UE_list = &eNB_mac_inst[module_idP].UE_list;
-  UE_TEMPLATE         *UE_template;
-
-  for (UE_id=UE_list->head_ul; UE_id>=0; UE_id=UE_list->next_ul[UE_id]) {
-
-
-    if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
-      continue;
-
-    UE_template = &UE_list->UE_template[UE_PCCID(module_idP,UE_id)][UE_id];
-    //LOG_I(MAC,"[UE %d next %d] SR is %d\n",UE_id, UE_list->next_ul[UE_id], UE_template->ul_SR);
-
-    UE_template->ul_total_buffer=0;
-
-    for (lcgid=0; lcgid<MAX_NUM_LCGID; lcgid++) {
-      UE_template->ul_buffer_info[lcgid]=BSR_TABLE[UE_template->bsr_info[lcgid]];
-      UE_template->ul_total_buffer+= UE_template->ul_buffer_info[lcgid]; // apply traffic aggregtaion if packets are small
-      //   UE_template->ul_buffer_creation_time_max=cmax(UE_template->ul_buffer_creation_time_max, frame_cycle*1024 + frameP-UE_template->ul_buffer_creation_time[lcgid]));
-    }
-
-    if ( UE_template->ul_total_buffer >0)
-      LOG_D(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: LCGID0 %d, LCGID1 %d, LCGID2 %d LCGID3 %d, BO %d\n",
-            module_idP, frameP,subframeP, UE_id, UE_PCCID(module_idP,UE_id),
-            UE_template->ul_buffer_info[LCGID0],
-            UE_template->ul_buffer_info[LCGID1],
-            UE_template->ul_buffer_info[LCGID2],
-            UE_template->ul_buffer_info[LCGID3],
-            UE_template->ul_total_buffer);
-    else if (UE_is_to_be_scheduled(module_idP,UE_PCCID(module_idP,UE_id),UE_id) > 0 ) {
-      if (UE_template->ul_total_buffer == 0 ) {
-        UE_template->ul_total_buffer = BSR_TABLE[11];
-      }
-
-      LOG_D(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: SR active, set BO to %d \n",
-            module_idP, frameP,subframeP, UE_id, UE_PCCID(module_idP,UE_id),
-            UE_template->ul_total_buffer);
-    }
-  }
-}
-*/
 
 
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb)

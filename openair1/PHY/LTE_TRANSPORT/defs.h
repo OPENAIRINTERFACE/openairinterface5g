@@ -572,6 +572,10 @@ typedef struct {
   vrb_t vrb_type;
   /// downlink power offset field
   uint8_t dl_power_off;
+  /// trials per round statistics
+  uint32_t trials[8];
+  /// error statistics per round
+  uint32_t errors[8];
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {

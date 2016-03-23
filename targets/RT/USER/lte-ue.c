@@ -504,6 +504,16 @@ static void *UE_thread_synch(void *arg)
 	
 	  if (abs(freq_offset) > 7500) {
 	    LOG_I( PHY, "[initial_sync] No cell synchronization found, abandoning\n" );
+	    FILE *fd;
+	    if (fd = fopen("rxsig_frame0.dat","w")) {
+	      fwrite((void*)&UE->lte_ue_common_vars.rxdata[0][0],
+		     sizeof(int32_t),
+		     10*UE->lte_frame_parms.samples_per_tti,
+		     fd);
+	      LOG_I(PHY,"Dummping Frame ... bye bye \n");
+	      fclose(fd);
+	      exit(0);
+	    }
 	    mac_xface->macphy_exit("No cell synchronization found, abandoning");
 	    return &UE_thread_synch_retval; // not reached
 	  }
@@ -925,9 +935,7 @@ static void *UE_thread_rx(void *arg)
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
-#ifdef OPENAIR2
-
-      if (i==0) {
+      if ((UE->mac_enabled==1) && (i==0)) {
         ret = mac_xface->ue_scheduler(UE->Mod_id,
                                       UE->frame_tx,
                                       UE->slot_rx>>1,
@@ -950,7 +958,6 @@ static void *UE_thread_rx(void *arg)
         }
       }
 
-#endif
       UE->slot_rx++;
 
       if (UE->slot_rx == 20) {

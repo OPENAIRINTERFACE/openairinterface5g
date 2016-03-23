@@ -131,6 +131,7 @@ def start_ue () :
         ip = IPRoute()
         idx = ip.link_lookup(ifname=iface)[0]
         os.system ('route add ' + gw + ' ppp0')
+        os.system('sleep 5')
         os.system ('ping ' + gw)
         break
      except Exception, e:

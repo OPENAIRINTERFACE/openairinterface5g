@@ -326,6 +326,7 @@ int main(int argc, char **argv)
 		 Nid_cell,
 		 3,
 		 N_RB_DL,
+		 0,
 		 osf,
 		 0);
 

@@ -22,7 +22,7 @@
 #  Contact Information
 #  OpenAirInterface Admin: openair_admin@eurecom.fr
 #  OpenAirInterface Tech : openair_tech@eurecom.fr
-#  OpenAirInterface Dev  : openair4g-devel@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
 #
 #  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 #
@@ -121,6 +121,7 @@ function main()
       echo "Cleaning TEST_EPC"
     fi
     rm -f $OPENAIR_DIR/targets/bin/test_epc_generate_scenario
+    rm -f $OPENAIR_DIR/targets/bin/test_epc_play_scenario
     rm -Rf build 2>&1
     mkdir -m 777 -p -v build
   fi
@@ -140,6 +141,13 @@ function main()
   compilations \
       epc_test test_epc_generate_scenario \
       test_epc_generate_scenario $dbin/test_epc_generate_scenario
+
+  compilations \
+      epc_test test_epc_play_scenario \
+      test_epc_play_scenario $dbin/test_epc_play_scenario
+      
+  $SUDO cp -upv test_epc_generate_scenario /usr/local/bin
+  $SUDO cp -upv test_epc_play_scenario     /usr/local/bin
 }
 
 

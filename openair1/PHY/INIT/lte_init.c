@@ -888,12 +888,16 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms)
   ccodelte_init();
   ccodelte_init_inv();
 
+  treillis_table_init();
+
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
 
   init_td8();
   init_td16();
-
+#ifdef __AVX2__
+  init_td16avx2();
+#endif
 
   lte_sync_time_init(lte_frame_parms);
 

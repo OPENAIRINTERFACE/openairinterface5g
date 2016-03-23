@@ -50,7 +50,7 @@ int mult_cpx_conj_vector(int16_t *x1,
                          uint32_t N,
                          int output_shift)
 {
-  // Multiply elementwise two complex vectors of N elements with repeated formatted output
+  // Multiply elementwise the complex conjugate of x1 with x2. 
   // x1       - input 1    in the format  |Re0 Im0 Re1 Im1|,......,|Re(N-2)  Im(N-2) Re(N-1) Im(N-1)|
   //            We assume x1 with a dinamic of 15 bit maximum
   //
@@ -90,7 +90,7 @@ int mult_cpx_conj_vector(int16_t *x1,
     tmp_im = _mm_shufflelo_epi16(*x1_128,_MM_SHUFFLE(2,3,0,1));
     tmp_im = _mm_shufflehi_epi16(tmp_im,_MM_SHUFFLE(2,3,0,1));
     tmp_im = _mm_sign_epi16(tmp_im,*(__m128i*)&conjug[0]);
-    tmp_im = _mm_madd_epi16(tmp_im,*x1_128);
+    tmp_im = _mm_madd_epi16(tmp_im,*x2_128);
     tmp_re = _mm_srai_epi32(tmp_re,output_shift);
     tmp_im = _mm_srai_epi32(tmp_im,output_shift);
     tmpy0  = _mm_unpacklo_epi32(tmp_re,tmp_im);
@@ -130,3 +130,4 @@ int mult_cpx_conj_vector(int16_t *x1,
 
   return(0);
 }
+
