@@ -531,6 +531,15 @@ rrc_rx_tx(
 	  break;
 	}
       }
+      if (ue_context_p->ue_context.ue_release_timer>0) {
+	ue_context_p->ue_context.ue_release_timer++;
+	if (ue_context_p->ue_context.ue_release_timer >= 100) {
+	  // remove UE after 10 frames after RRCConnectionRelease is triggered
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  ue_to_be_removed = ue_context_p;
+	  break;
+	}
+      }
     }
     if (ue_to_be_removed)
       rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);

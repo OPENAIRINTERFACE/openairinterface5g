@@ -1090,6 +1090,8 @@ rrc_eNB_generate_RRCConnectionRelease(
   memset(buffer, 0, RRC_BUF_SIZE);
 
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
+  // set release timer
+  ue_context_pP->ue_context.ue_release_timer=1;
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",

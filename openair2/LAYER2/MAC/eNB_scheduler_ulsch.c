@@ -400,7 +400,6 @@ void rx_sdu(
 	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
 
         //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
-        if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
           LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d \n",
                 enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
 
@@ -418,7 +417,6 @@ void rx_sdu(
 			   NULL);//(unsigned int*)crc_status);
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
-        }
       } /* UE_id != -1 */
 
       //      }

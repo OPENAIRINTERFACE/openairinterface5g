@@ -193,7 +193,7 @@ uint8_t find_active_UEs(module_id_t module_idP,int CC_id){
 // get aggregatiob form phy for a give UE
 unsigned char process_ue_cqi (module_id_t module_idP, int ue_idP)
 {
-  unsigned char aggregation=2;
+  unsigned char aggregation=1;
   // check the MCS and SNR and set the aggregation accordingly
   return aggregation;
 }
@@ -707,7 +707,7 @@ uint8_t UE_is_to_be_scheduled(module_id_t module_idP,int CC_id,uint8_t UE_id)
       (UE_template->bsr_info[LCGID2]>0) ||
       (UE_template->bsr_info[LCGID3]>0) ||
       (UE_template->ul_SR>0) || // uplink scheduling request
-      ((UE_sched_ctl->ul_inactivity_timer>50)&&
+      ((UE_sched_ctl->ul_inactivity_timer>20)&&
        (UE_sched_ctl->ul_scheduled==0))||  // every 2 frames when RRC_CONNECTED
       ((UE_sched_ctl->ul_inactivity_timer>10)&&
        (UE_sched_ctl->ul_scheduled==0)&&

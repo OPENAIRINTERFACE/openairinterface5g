@@ -2980,8 +2980,9 @@ void prach_procedures(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t 
     mac_xface->macphy_exit("Exiting for PRACH debug\n");
     */
 
-    UE_id = find_next_ue_index(phy_vars_eNB);
 
+    UE_id = find_next_ue_index(phy_vars_eNB);
+ 
     if (UE_id>=0) {
       phy_vars_eNB->eNB_UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
       //phy_vars_eNb->eNB_UE_stats[(uint32_t)UE_id].mode = PRACH;
