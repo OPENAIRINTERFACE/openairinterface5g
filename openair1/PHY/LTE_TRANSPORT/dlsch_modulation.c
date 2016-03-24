@@ -1295,7 +1295,7 @@ uint8_t get_pmi(uint8_t N_RB_DL,MIMO_mode_t mode, uint32_t pmi_alloc,uint16_t rb
 
 
 int dlsch_modulation(mod_sym_t **txdataF,
-                     int16_t amp,
+                     int16_t amp, //512
                      uint32_t subframe_offset,
                      LTE_DL_FRAME_PARMS *frame_parms,
                      uint8_t num_pdcch_symbols,
@@ -1336,7 +1336,7 @@ int dlsch_modulation(mod_sym_t **txdataF,
 
   nsymb = (frame_parms->Ncp==0) ? 14:12;
 
-  amp_rho_a = (int16_t)(((int32_t)amp*dlsch0->sqrt_rho_a)>>13);
+  amp_rho_a = (int16_t)(((int32_t)amp*dlsch0->sqrt_rho_a)>>13); //amp=512 in  full scale; dlsch0->sqrt_rho_a=8192in Q2.13, 1 in full scale
   amp_rho_b = (int16_t)(((int32_t)amp*dlsch0->sqrt_rho_b)>>13);
 
   if (mod_order0 == 4)

@@ -3511,7 +3511,7 @@ n(tikz_fname,"w");
 	    stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);	      
 
 	    start_meas(&PHY_vars_UE->dlsch_decoding_stats);
-	    ret[0] = dlsch_decoding(PHY_vars_UE,
+	    ret[cw_non_sic] = dlsch_decoding(PHY_vars_UE,
 				 PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],		 
 				 &PHY_vars_UE->lte_frame_parms,
 				 PHY_vars_UE->dlsch_ue[0][cw_non_sic],
@@ -3522,7 +3522,7 @@ n(tikz_fname,"w");
 	    stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
 	   
 	     
-	    if (ret[0] <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { 
+	    if (ret[cw_non_sic] <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { 
 
 	      if (cw_non_sic==0) {		
 		avg_iter[0] += ret[0];
@@ -3862,11 +3862,16 @@ n(tikz_fname,"w");
 		iter_trials[0]++;
 	      }
 	      
+	        if (rx_type==rx_SIC_dual_stream) {
+		 errs[1][round]++;
+	      }
+	      
 	        if (cw_non_sic==1) {
 		avg_iter[1] += ret[1]-1;
 		iter_trials[1]++;
 	      }
 	      
+	      	      
 	      if (n_frames==1) {
 		//if ((n_frames==1) || (SNR>=30)) {
 		printf("cw %d, round %d: DLSCH errors found, uncoded ber %f\n",cw_non_sic,round,uncoded_ber);
