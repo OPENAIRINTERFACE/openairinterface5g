@@ -1032,6 +1032,8 @@ pdcp_remove_UE(
 
   }
 
+  (void)h_rc; /* remove gcc warning "set but not used" */
+
   return 1;
 }
 

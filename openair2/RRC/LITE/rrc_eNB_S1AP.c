@@ -672,7 +672,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
-        int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
+        //int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
@@ -859,7 +859,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 {
   uint16_t                        ue_initial_id;
   uint32_t                        eNB_ue_s1ap_id;
-  MessageDef                     *message_gtpv1u_p = NULL;
+  //MessageDef                     *message_gtpv1u_p = NULL;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 
@@ -1170,7 +1170,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
     */
     {
       int      e_rab;
-      int      mod_id = 0;
+      //int      mod_id = 0;
       MessageDef *msg_delete_tunnels_p = NULL;
 
       MSC_LOG_TX_MESSAGE(

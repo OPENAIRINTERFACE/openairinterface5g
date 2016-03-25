@@ -50,13 +50,13 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
   PHY_MEASUREMENTS_eNB *phy_measurements = &phy_vars_eNB->PHY_measurements_eNB[eNB_id];
   int32_t *rb_mask = phy_vars_eNB->rb_mask_ul;
 
-  uint32_t aarx,rx_power_correction;
+  uint32_t aarx /* ,rx_power_correction */;
   uint32_t rb;
   int32_t *ul_ch;
   int32_t n0_power_tot;
   int len;
   int offset;
-  int Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
+  //int Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
   // noise measurements
   // for the moment we measure the noise on the 7th OFDM symbol (in S subframe)
 

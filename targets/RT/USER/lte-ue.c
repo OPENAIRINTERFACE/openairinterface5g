@@ -607,7 +607,7 @@ static void *UE_thread_synch(void *arg)
 static void *UE_thread_tx(void *arg)
 {
   static int UE_thread_tx_retval;
-  int ret;
+  //int ret;
 
   PHY_VARS_UE *UE = (PHY_VARS_UE*)arg;
 

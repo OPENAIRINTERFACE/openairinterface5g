@@ -128,8 +128,8 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
-  LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
-  int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
+  //LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
+  //int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
   int i;
 
   LOG_D(PHY,"[eNB%d] CCid %d Frame %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id,PHY_vars_eNB_g[Mod_id][CC_id]->proc[8].frame_tx);
@@ -683,11 +683,11 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     int CC_id)
 {
 
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
+  //PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
   uint8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
   //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
-  PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
+  //PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
   ARFCN_ValueEUTRA_t dl_CarrierFreq_r10 = sCellToAddMod_r10->cellIdentification_r10->dl_CarrierFreq_r10;
   uint32_t carrier_freq_local;
 

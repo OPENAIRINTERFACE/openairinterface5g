@@ -392,14 +392,13 @@
  }
 --- skeletons/constr_SEQUENCE.c	2015-12-08 14:39:33.346543533 +0100
 +++ skeletons/constr_SEQUENCE.c	2015-12-08 10:39:52.442558000 +0100
-@@ -1761,3 +1761,66 @@
+@@ -1761,3 +1761,65 @@
  
  	_ASN_ENCODED_OK(er);
  }
 +
 +asn_comp_rval_t * SEQUENCE_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2) {
 +  int edx;
-+  int ret;
 +  asn_comp_rval_t *res = NULL;
 +  asn_comp_rval_t *res2 = NULL;
 +
@@ -563,7 +562,7 @@
   * Some handy helpers. *
 --- skeletons/constr_SET_OF.c	2015-12-08 14:39:33.338543533 +0100
 +++ skeletons/constr_SET_OF.c	2015-12-08 10:45:54.466557000 +0100
-@@ -1039,3 +1039,55 @@
+@@ -1039,3 +1039,54 @@
  	rv.consumed = 0;
  	return rv;
  }
@@ -575,7 +574,6 @@
 +  asn_TYPE_member_t *elm2 = td2->elements;
 +  const asn_anonymous_set_ *list1 = _A_CSET_FROM_VOID(sptr1);
 +  const asn_anonymous_set_ *list2 = _A_CSET_FROM_VOID(sptr2);
-+  int ret;
 +  int i;
 +  asn_comp_rval_t *res = NULL;
 +  asn_comp_rval_t *res2 = NULL;

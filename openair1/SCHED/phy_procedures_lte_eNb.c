@@ -1822,6 +1822,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   stop_meas(&phy_vars_eNB->phy_proc_tx);
 
 
+  (void)re_allocated; /* remove gcc warning "set but not used" */
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t UE_id, uint8_t harq_pid)
@@ -2493,6 +2494,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   }
 
   sect_id = 0;
+  (void)sect_id; /* remove gcc warning "set but not used" */
 
   /*
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
@@ -3604,6 +3606,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
+  (void)pusch_active; /* remove gcc warning "set but not used" */
   //  if (pusch_active == 0) {
     if (abstraction_flag == 0) {
       //      LOG_D(PHY,"[eNB] Frame %d, subframe %d Doing I0_measurements\n",

@@ -74,7 +74,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
   int eNB_id,UE_id,number_of_cards;
   int len= length;
   int CC_id=0;
-  int i,j;
+  int i;
   protocol_ctxt_t      ctxt;
   rlc_op_status_t rlc_status;
   unsigned int stat_rlc_mode;

@@ -1276,7 +1276,7 @@ static void* eNB_thread_rx( void* param )
 
   FILE  *rx_time_file;
   char rx_time_name[101];
-  int i;
+  //int i;
 
   if (opp_enabled == 1){
     snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf_%d", "eNB", proc->subframe);
@@ -3225,10 +3225,11 @@ int main( int argc, char **argv )
 
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
-      fread(UE[0]->lte_ue_common_vars.rxdata[0],
-	    sizeof(int32_t),
-	    frame_parms[0]->samples_per_tti*10,
-	    input_fd);
+      if (fread(UE[0]->lte_ue_common_vars.rxdata[0],
+	        sizeof(int32_t),
+	        frame_parms[0]->samples_per_tti*10,
+	        input_fd) != frame_parms[0]->samples_per_tti*10)
+        printf("error reading from file\n");
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {

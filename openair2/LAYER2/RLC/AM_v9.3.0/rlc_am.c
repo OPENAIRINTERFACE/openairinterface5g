@@ -599,6 +599,7 @@ rlc_am_mac_status_indication (
 			  rlc_sn_t             sn_end       = (rlc->vt_a - 1) & RLC_AM_SN_MASK;
 			  int                  found_pdu    = 0;
 			  rlc_sn_t             found_pdu_sn = 0; // avoid warning
+                          (void)found_pdu_sn; /* avoid gcc warning "set but not used" */
 
 
 			  while (sn != sn_end) {
@@ -916,6 +917,8 @@ rlc_am_mac_data_indication (
 #   endif
   int                 octet_index, index;
 #endif
+
+  (void)l_rlc_p; /* avoid gcc warning "unused variable" */
 
 #if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
 

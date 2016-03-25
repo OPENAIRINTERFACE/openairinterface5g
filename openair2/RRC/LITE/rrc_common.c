@@ -411,7 +411,7 @@ rrc_rx_tx(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t        UE_id;
+  //uint8_t        UE_id;
   int32_t        current_timestamp_ms, ref_timestamp_ms;
   struct timeval ts;
 #ifdef LOCALIZATION
@@ -547,6 +547,9 @@ rrc_rx_tx(
     }
 
 #endif
+    (void)ts; /* remove gcc warning "unused variable" */
+    (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
+    (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);

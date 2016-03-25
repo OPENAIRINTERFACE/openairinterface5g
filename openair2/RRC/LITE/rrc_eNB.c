@@ -1131,8 +1131,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   int                                 i;
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
-  eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
-  struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
+  //eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
+  //struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
 
   struct SRB_ToAddMod                *SRB2_config                      = NULL;
   struct SRB_ToAddMod__rlc_Config    *SRB2_rlc_config                  = NULL;
@@ -1145,7 +1145,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   struct DRB_ToAddMod                *DRB_config                       = NULL;
   struct RLC_Config                  *DRB_rlc_config                   = NULL;
   struct PDCP_Config                 *DRB_pdcp_config                  = NULL;
-  struct PDCP_Config__rlc_AM         *PDCP_rlc_AM                      = NULL;
+  //struct PDCP_Config__rlc_AM         *PDCP_rlc_AM                      = NULL;
   struct PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
   struct LogicalChannelConfig        *DRB_lchan_config                 = NULL;
   struct LogicalChannelConfig__ul_SpecificParameters
@@ -1163,7 +1163,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 #if Rel10
   long                               *sr_ProhibitTimer_r9              = NULL;
   //     uint8_t sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
-  uint8_t                            sCellIndexToAdd = 0;
+  //uint8_t                            sCellIndexToAdd = 0;
 #endif
 
   long                               *logicalchannelgroup, *logicalchannelgroup_drb;
@@ -2097,8 +2097,8 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   QuantityConfig_t                   *quantityConfig;
   MobilityControlInfo_t              *mobilityInfo;
   // HandoverCommand_t handoverCommand;
-  uint8_t                             sourceModId =
-    get_adjacent_cell_mod_id(ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId);
+  //uint8_t                             sourceModId =
+  //  get_adjacent_cell_mod_id(ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId);
 #if Rel10
   long                               *sr_ProhibitTimer_r9;
 #endif
@@ -3010,7 +3010,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   uint8_t                            *kUPenc = NULL;
 
   DRB_ToAddModList_t*                 DRB_configList = ue_context_pP->ue_context.DRB_configList;
-  SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  //SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
 
 #if defined(ENABLE_SECURITY)
 

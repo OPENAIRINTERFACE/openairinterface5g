@@ -261,6 +261,7 @@ static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
 #ifdef Rel10
 //-----------------------------------------------------------------------------
+#if 0
 static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
 {
   int i;
@@ -273,6 +274,7 @@ static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
 
   }
 }
+#endif
 #endif
 
 //-----------------------------------------------------------------------------

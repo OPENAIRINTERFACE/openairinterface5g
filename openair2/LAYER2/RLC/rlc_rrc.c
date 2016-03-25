@@ -634,7 +634,7 @@ rlc_op_status_t rrc_rlc_config_req   (
   const rlc_info_t      rlc_infoP)
 {
   //-----------------------------------------------------------------------------
-  rlc_op_status_t status;
+  //rlc_op_status_t status;
 
   LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG_REQ for RAB %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
