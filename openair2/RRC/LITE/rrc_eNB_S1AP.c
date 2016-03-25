@@ -392,6 +392,7 @@ rrc_pdcp_config_security(
 #define DEBUG_SECURITY 1
 
 #if defined (DEBUG_SECURITY)
+#undef msg
 #define msg printf
 
   if (print_keys ==1 ) {
