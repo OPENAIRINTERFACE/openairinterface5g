@@ -226,7 +226,7 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
     DCI_pdu->dci_alloc[0].format     = format1;
     DCI_pdu->dci_alloc[0].ra_flag    = 0;
 
-    if (transmission_mode<3) {
+    if (transmission_mode<3 || transmission_mode == 7) {
       //user 1
       switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
       case 25:

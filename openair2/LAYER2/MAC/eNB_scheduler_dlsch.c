@@ -653,6 +653,7 @@ schedule_ue_spec(
           switch (mac_xface->get_transmission_mode(module_idP,CC_id,rnti)) {
           case 1:
           case 2:
+          case 7:
           default:
             switch (frame_parms[CC_id]->N_RB_DL) {
             case 6:
@@ -1545,6 +1546,8 @@ fill_DLSCH_dci(
         case 1:
 
         case 2:
+
+        case 7:
           LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS \n",module_idP, CC_id, UE_id, nb_rb);
 
           if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {

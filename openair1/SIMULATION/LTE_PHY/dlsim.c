@@ -1151,7 +1151,7 @@ int main(int argc, char **argv)
                                              P_RNTI,
                                              PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
 
-          if(transmission_mode==7)
+          if (transmission_mode == 7)
 	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mimo_mode = TM7; //Xiwen: to check about harq_pid
 
           num_dci++;
