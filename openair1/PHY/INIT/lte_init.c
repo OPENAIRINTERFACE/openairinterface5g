@@ -733,7 +733,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
   }
 
   if (physicalConfigDedicatedSCell_r10) {
-#warning " phy_vars_eNB->physicalConfigDedicatedSCell_r10 does not exist in phy_vars_eNB"
+//#warning " phy_vars_eNB->physicalConfigDedicatedSCell_r10 does not exist in phy_vars_eNB"
     //  phy_vars_eNB->physicalConfigDedicatedSCell_r10[UE_id] = physicalConfigDedicatedSCell_r10;
     LOG_I(PHY,"[eNB %d] Frame %d: Configured phyConfigDedicatedSCell with CC_id %d for UE %d\n",Mod_id,/*phy_vars_eNB->frame*/0,CC_id,UE_id);
   } else {

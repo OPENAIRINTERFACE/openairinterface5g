@@ -2945,7 +2945,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
      handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.buf = buffer;
      handoverCommand.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage.size = size;
    */
-#warning "COMPILATION PROBLEM"
+//#warning "COMPILATION PROBLEM"
 #ifdef PROBLEM_COMPILATION_RESOLVED
 
   if (sourceModId != 0xFF) {
@@ -3700,7 +3700,7 @@ rrc_eNB_decode_ccch(
              * the current one must be removed from MAC/PHY (zombie UE)
              */
             if ((ue_context_p = rrc_eNB_ue_context_random_exist(ctxt_pP, random_value))) {
-#warning "TODO: random_exist: remove UE from MAC/PHY (how?)"
+//#warning "TODO: random_exist: remove UE from MAC/PHY (how?)"
 	      //              AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
               ue_context_p = NULL;
             } else {
@@ -3713,7 +3713,7 @@ rrc_eNB_decode_ccch(
             m_tmsi_t   m_tmsi   = BIT_STRING_to_uint32(&s_TMSI.m_TMSI);
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
-#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
+//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
               ue_context_p = NULL;
             } else {
@@ -4175,7 +4175,7 @@ rrc_eNB_decode_dcch(
       // cancel the security mode in PDCP
 
       // followup with the remaining procedure
-#warning "LG Removed rrc_eNB_generate_UECapabilityEnquiry after receiving securityModeFailure"
+//#warning "LG Removed rrc_eNB_generate_UECapabilityEnquiry after receiving securityModeFailure"
       rrc_eNB_generate_UECapabilityEnquiry(ctxt_pP, ue_context_p);
       break;
 
@@ -4443,7 +4443,7 @@ rrc_enb_task(
       //SPECTRA: Add the RRC connection reconfiguration with Second cell configuration
     case RRC_RAL_CONNECTION_RECONFIGURATION_REQ:
       //                 ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
-#warning "TODO GET RIGHT RNTI"
+//#warning "TODO GET RIGHT RNTI"
       PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                     instance,
                                     ENB_FLAG_YES,

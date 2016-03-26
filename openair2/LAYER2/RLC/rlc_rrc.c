@@ -196,7 +196,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           break;
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
-#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
+//#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
           if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
             config_req_rlc_um_asn1(
               ctxt_pP,

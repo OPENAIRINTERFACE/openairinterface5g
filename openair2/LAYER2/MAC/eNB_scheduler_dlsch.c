@@ -1125,7 +1125,7 @@ schedule_ue_spec(
           if (frame_parms[CC_id]->frame_type == TDD) {
             UE_list->UE_template[CC_id][UE_id].DAI++;
             //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
-#warning only for 5MHz channel
+//#warning only for 5MHz channel
             update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
           }
 

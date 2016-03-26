@@ -148,7 +148,7 @@ sctp_handle_new_association_req(
   DevAssert(sctp_new_association_req_p != NULL);
 
   /* Create new socket with IPv6 affinity */
-#warning "SCTP may Force IPv4 only, here"
+//#warning "SCTP may Force IPv4 only, here"
 #ifdef NO_VIRTUAL_MACHINE
 
   // in init chunk appears a list of host addresses, IPv4 and IPv4 in an arbitrary (unsorted) order

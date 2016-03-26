@@ -859,7 +859,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t               assoc_id,
 
     break;
 
-#warning "TODO mapping mme_ue_s1ap_id  enb_ue_s1ap_id?"
+//#warning "TODO mapping mme_ue_s1ap_id  enb_ue_s1ap_id?"
 
   case S1ap_UE_S1AP_IDs_PR_mME_UE_S1AP_ID:
     mme_ue_s1ap_id = ueContextReleaseCommand_p->uE_S1AP_IDs.choice.mME_UE_S1AP_ID;

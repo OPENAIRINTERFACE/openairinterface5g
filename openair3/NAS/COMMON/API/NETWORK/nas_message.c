@@ -323,7 +323,7 @@ int nas_message_decrypt(
 #if defined(NAS_MME)
       LOG_FUNC_RETURN (TLV_DECODE_MAC_MISMATCH);
 #else
-#warning "added test on integrity algorithm because of SECURITY_MODE_COMMAND not correctly handled in UE (check integrity)"
+//#warning "added test on integrity algorithm because of SECURITY_MODE_COMMAND not correctly handled in UE (check integrity)"
 
       if (emm_security_context->selected_algorithms.integrity !=
           NAS_SECURITY_ALGORITHMS_EIA0) {

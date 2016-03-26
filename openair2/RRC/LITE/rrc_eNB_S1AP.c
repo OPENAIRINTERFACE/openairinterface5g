@@ -233,7 +233,7 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
 static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
 {
 
-#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
+//#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {

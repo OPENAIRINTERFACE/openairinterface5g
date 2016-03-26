@@ -333,7 +333,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             gtpv1u_teid_data_p->eps_bearer_id);
 #endif
 
-#warning "LG eps bearer mapping to DRB id to do (offset -4)"
+//#warning "LG eps bearer mapping to DRB id to do (offset -4)"
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
 
       MSC_LOG_TX_MESSAGE(
@@ -611,7 +611,7 @@ gtpv1u_new_data_req(
   if (bearer_p->state != BEARER_UP) {
     LOG_W(GTPU, "Trying to send data over bearer with state(%u) != BEARER_UP\n",
           bearer_p->state);
-#warning  LG: HACK WHILE WAITING FOR NAS, normally return -1
+//#warning  LG: HACK WHILE WAITING FOR NAS, normally return -1
 
     if (bearer_p->state != BEARER_IN_CONFIG)
       return -1;

@@ -1488,7 +1488,7 @@ pdcp_config_req_asn1 (
 
   case CONFIG_ACTION_REMOVE:
     DevAssert(pdcp_pP != NULL);
-#warning "TODO pdcp_module_id_to_rnti"
+//#warning "TODO pdcp_module_id_to_rnti"
     //pdcp_module_id_to_rnti[ctxt_pP.module_id ][dst_id] = NOT_A_RNTI;
     LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_REMOVE LCID %d RBID %d configured\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
