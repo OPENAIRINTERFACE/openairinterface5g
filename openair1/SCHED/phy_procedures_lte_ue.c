@@ -42,8 +42,6 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
@@ -2637,7 +2635,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
                                  subframe_prev,
                                  harq_pid,
-                                 1,1);
+                                 1,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb>10 ? 1 : 0);
             stop_meas(&phy_vars_ue->dlsch_decoding_stats);
           }
 

@@ -75,13 +75,9 @@
 #endif
 
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
-//#include "SCHED/defs.h"
 #include "SCHED/extern.h"
-#ifdef OPENAIR2
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/proto.h"
-#endif
 
 #include "UTIL/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"

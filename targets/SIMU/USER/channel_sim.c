@@ -39,7 +39,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 
 #ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"

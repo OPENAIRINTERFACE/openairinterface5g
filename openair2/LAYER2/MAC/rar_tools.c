@@ -39,8 +39,6 @@
 #include "defs.h"
 #include "proto.h"
 #include "extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 #include "UTIL/LOG/log.h"
 #include "OCG.h"

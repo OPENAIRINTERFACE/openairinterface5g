@@ -9,7 +9,7 @@ if(${CMAKE_MAJOR_VERSION} GREATER 2)
 endif()
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC")
 endif()
 
 # set up include-directories

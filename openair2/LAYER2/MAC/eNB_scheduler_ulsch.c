@@ -318,6 +318,12 @@ void rx_sdu(
 
     switch (rx_lcids[i]) {
     case CCCH :
+      if (rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) {
+        LOG_E(MAC, "[eNB %d/%d] frame %d received CCCH of size %d (too big, maximum allowed is %d), dropping packet\n",
+              enb_mod_idP, CC_idP, frameP, rx_lengths[i], CCCH_PAYLOAD_SIZE_MAX);
+        break;
+      }
+
       LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Received CCCH:  %x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
             enb_mod_idP,CC_idP,frameP,
             payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4], payload_ptr[5], rntiP);
@@ -399,7 +405,6 @@ void rx_sdu(
 	else
 	  UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[UE_list->UE_template[CC_idP][UE_id].lcgidmap[rx_lcids[i]]] = 0;
 
-        //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
           LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d \n",
                 enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
 

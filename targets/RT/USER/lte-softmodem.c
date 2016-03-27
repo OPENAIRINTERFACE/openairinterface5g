@@ -77,8 +77,6 @@ struct gps_fix_t dummy_gps_data;
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
-//#include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 
@@ -88,13 +86,11 @@ struct gps_fix_t dummy_gps_data;
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "LAYER2/MAC/proto.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#endif
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"

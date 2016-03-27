@@ -53,7 +53,6 @@
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 

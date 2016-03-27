@@ -51,7 +51,6 @@
 #include "oaisim_functions.h"
 
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 #include "LAYER2/MAC/extern.h"
 #ifdef OPENAIR2
 #include "LAYER2/MAC/proto.h"

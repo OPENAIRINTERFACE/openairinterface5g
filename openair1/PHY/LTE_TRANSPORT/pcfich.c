@@ -38,7 +38,6 @@
 * \warning
 */
 #include "PHY/defs.h"
-#include "MAC_INTERFACE/extern.h"
 
 //uint16_t pcfich_reg[4];
 //uint8_t pcfich_first_reg_idx = 0;
