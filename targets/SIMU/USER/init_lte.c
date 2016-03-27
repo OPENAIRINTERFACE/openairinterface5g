@@ -38,14 +38,11 @@
 #include "init_lte.h"
 
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log_if.h"
 #include "PHY_INTERFACE/extern.h"
-#endif
 
 
 

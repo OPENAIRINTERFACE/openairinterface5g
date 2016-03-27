@@ -40,12 +40,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
-#endif
 
 #include "assertions.h"
 

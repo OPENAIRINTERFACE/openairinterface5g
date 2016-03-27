@@ -40,7 +40,6 @@
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "MAC_INTERFACE/extern.h"
 #include "UTIL/LOG/log.h"
 
 //-----------------------------------------------------------------------------
