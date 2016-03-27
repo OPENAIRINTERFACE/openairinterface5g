@@ -2268,6 +2268,9 @@ static const char* SIB2preambleTransMax( long value )
   case 10:
     return "n200";
   }
+
+  /* unreachable but gcc warns... */
+  return "ERR";
 }
 static const char* SIB2ra_ResponseWindowSize( long value )
 {
@@ -3063,9 +3066,10 @@ uint64_t arfcn_to_freq(long arfcn) {
     return((uint64_t)3400000000 + ((arfcn-41590)*100000));
   else if (arfcn <45590) // Band 43
     return((uint64_t)3600000000 + ((arfcn-43950)*100000));
-  else
+  else {
     LOG_E(RRC,"Unknown EARFCN %d\n",arfcn);
-
+    exit(1);
+  }
 }
 static void dump_sib5( SystemInformationBlockType5_t *sib5 )
 {

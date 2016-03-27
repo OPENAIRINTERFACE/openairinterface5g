@@ -463,7 +463,7 @@ static void *UE_thread_synch(void *arg)
 	 if( UE->mode == rx_dump_frame ){
 	   FILE *fd;
 	   if ((UE->frame_rx&1) == 0) {  // this guarantees SIB1 is present 
-	     if (fd = fopen("rxsig_frame0.dat","w")) {
+	     if ((fd = fopen("rxsig_frame0.dat","w")) != NULL) {
 	       fwrite((void*)&UE->lte_ue_common_vars.rxdata[0][0],
 		      sizeof(int32_t),
 		      10*UE->lte_frame_parms.samples_per_tti,

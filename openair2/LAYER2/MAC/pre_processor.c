@@ -748,7 +748,7 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
-  uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
+  uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
   int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
   //int subframe05_limit=0;

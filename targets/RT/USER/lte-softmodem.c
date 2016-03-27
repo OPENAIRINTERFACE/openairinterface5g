@@ -394,7 +394,7 @@ struct timespec clock_difftime(struct timespec start, struct timespec end)
     return temp;
 }
 
-void print_difftimes()
+void print_difftimes(void)
 {
 #ifdef DEBUG
     printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
@@ -1055,7 +1055,7 @@ static void* eNB_thread_tx( void* param )
   static int eNB_thread_tx_status[NUM_ENB_THREADS];
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
-  FILE  *tx_time_file;
+  FILE  *tx_time_file = NULL;
   char tx_time_name[101];
 
   if (opp_enabled == 1) {
@@ -1274,7 +1274,7 @@ static void* eNB_thread_rx( void* param )
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
 
-  FILE  *rx_time_file;
+  FILE  *rx_time_file = NULL;
   char rx_time_name[101];
   //int i;
 
@@ -1681,7 +1681,7 @@ static void* eNB_thread( void* arg )
 #ifdef RTAI
   printf( "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
 #else
-  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %d\n", sched_getcpu(), gettid());
+  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld\n", sched_getcpu(), gettid());
 #endif
 
 #ifdef HARD_RT

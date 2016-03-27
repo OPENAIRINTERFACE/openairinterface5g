@@ -60,6 +60,9 @@
 #endif
 #include "msc.h"
 
+#include "gtpv1u_eNB_task.h"
+#include "RRC/LITE/rrc_eNB_GTPV1U.h"
+
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 

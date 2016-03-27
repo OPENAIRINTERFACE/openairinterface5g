@@ -694,7 +694,7 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t st
   if(thiz) {
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
-    thiz->seq   = (uint16_t) ((uint32_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
+    thiz->seq   = (uint16_t) ((uintptr_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
     RB_INIT(&(thiz->outstandingTxSeqNumMap));
     RB_INIT(&(thiz->outstandingRxSeqNumMap));
     RB_INIT(&(thiz->sessionMap));

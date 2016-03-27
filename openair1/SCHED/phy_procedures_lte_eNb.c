@@ -612,6 +612,7 @@ void phy_eNB_lte_check_measurement_thresholds(instance_t instanceP, ral_threshol
 #endif
 
 
+unsigned int taus(void);
 
 void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,
                            relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn)
