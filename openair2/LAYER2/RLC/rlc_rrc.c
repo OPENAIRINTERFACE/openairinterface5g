@@ -87,6 +87,11 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
 #endif
 
+  /* for no gcc warnings */
+  (void)rlc_union_p;
+  (void)key;
+  (void)h_rc;
+
   LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ ASN1 \n",
         PROTOCOL_CTXT_ARGS(ctxt_pP));
 
@@ -462,6 +467,9 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
   CHECK_CTXT_ARGS(ctxt_pP)
 
 #endif
+
+  /* for no gcc warnings */
+  (void)lcid;
 
 #ifdef Rel10
 

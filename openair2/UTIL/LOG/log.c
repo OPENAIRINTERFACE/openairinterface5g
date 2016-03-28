@@ -698,6 +698,10 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
   char *log_start;
   char *log_end;
 
+  /* for no gcc warnings */
+  (void)log_start;
+  (void)log_end;
+
   c = &g_log->log_component[comp];
 
   // do not apply filtering for LOG_F
@@ -970,6 +974,10 @@ void logRecord_mt(const char *file, const char *func, int line, int comp,
    * big enough so that the buffer is never full.
    */
   char log_buffer[MAX_LOG_TOTAL];
+
+  /* for no gcc warnings */
+  (void)log_start;
+  (void)log_end;
 
   c = &g_log->log_component[comp];
 

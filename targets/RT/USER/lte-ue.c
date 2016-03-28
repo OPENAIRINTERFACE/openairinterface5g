@@ -1401,14 +1401,14 @@ void *UE_thread(void *arg)
   RT_TASK *task;
 #endif
   // RTIME in, out, diff;
-  int slot=0,frame=0,hw_slot,last_slot,next_slot;
+  int slot=0,frame=0,hw_slot;
   // unsigned int aa;
   int delay_cnt;
   RTIME time_in;
-  int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
+  int /* hw_slot_offset=0, */ rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
-  int i, ret;
-  int CC_id,card;
+  int /* i, */ ret;
+  int /* CC_id, */ card;
   volatile unsigned int *DAQ_MBOX = openair0_daq_cnt();
 
   int wait_sync_cnt = 0;
@@ -1688,7 +1688,7 @@ void *UE_thread(void *arg)
         frame++;
       }
     } else if (UE->is_synchronized == 0) { // we are not yet synchronized
-      hw_slot_offset = 0;
+      //hw_slot_offset = 0;
       first_synch = 1;
       slot = 0;
 

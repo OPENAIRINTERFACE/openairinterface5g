@@ -253,6 +253,9 @@ openair_rrc_top_init(
   OAI_UECapability_t *UECap     = NULL;
   int                 CC_id;
 
+  /* for no gcc warnings */
+  (void)CC_id;
+
   LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
 
   if (NB_UE_INST > 0) {

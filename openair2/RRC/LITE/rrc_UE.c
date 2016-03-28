@@ -141,7 +141,9 @@ static uint8_t check_trigger_meas_event(
   Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys,
   Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt);
 
+#ifdef Rel10
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+#endif
 
 
 
@@ -151,10 +153,13 @@ static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_in
 
 
 /*------------------------------------------------------------------------------*/
+/* to avoid gcc warnings when compiling with certain options */
+#if defined(ENABLE_USE_MME) || ENABLE_RAL
 static Rrc_State_t rrc_get_state (module_id_t ue_mod_idP)
 {
   return UE_rrc_inst[ue_mod_idP].RrcState;
 }
+#endif
 
 static Rrc_Sub_State_t rrc_get_sub_state (module_id_t ue_mod_idP)
 {
@@ -1298,7 +1303,7 @@ rrc_ue_process_radioResourceConfigDedicated(
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif OAI_EMU
+#    endif /* OAI_EMU */
 #endif
 }
 

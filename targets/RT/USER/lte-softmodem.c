@@ -1638,6 +1638,11 @@ static void* eNB_thread( void* arg )
   int CC_id=0;	
   struct timespec trx_time0, trx_time1, trx_time2;
 
+  /* avoid gcc warnings */
+  (void)trx_time0;
+  (void)trx_time1;
+  (void)trx_time2;
+
 #ifdef RTAI
   RT_TASK* task = rt_task_init_schmod(nam2num("eNBmain"), 0, 0, 0, SCHED_FIFO, 0xF);
 #else

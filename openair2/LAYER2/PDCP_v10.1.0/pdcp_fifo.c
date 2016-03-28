@@ -313,6 +313,8 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
   hash_key_t                     key       = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t                 h_rc;
   struct pdcp_netlink_element_s* data_p    = NULL;
+  /* avoid gcc warnings */
+  (void)data_p;
   module_id_t                    ue_id     = 0;
   pdcp_t*                        pdcp_p    = NULL;
 # if defined(PDCP_USE_NETLINK_QUEUES)
@@ -565,7 +567,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
               }
             } else  { // rb_id =0, thus interpreated as broadcast and transported as multiple unicast
               // is a broadcast packet, we have to send this packet on all default RABS of all connected UEs
-#warning CODE TO BE REVIEWED, ONLY WORK FOR SIMPLE TOPOLOGY CASES
+//#warning CODE TO BE REVIEWED, ONLY WORK FOR SIMPLE TOPOLOGY CASES
               for (ue_id = 0; ue_id < NB_UE_INST; ue_id++) {
                 if (oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id] != NOT_A_RNTI) {
                   ctxt.rnti = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt_cpy.module_id][ue_id];

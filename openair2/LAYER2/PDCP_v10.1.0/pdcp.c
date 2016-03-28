@@ -692,7 +692,7 @@ pdcp_data_ind(
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   if (oai_emulation.info.otg_enabled == 1) {
-    unsigned int dst_instance;
+    //unsigned int dst_instance;
     int    ctime;
 
     if ((pdcp_p->rlc_mode == RLC_MODE_AM)&&(MBMS_flagP==0) ) {

@@ -682,6 +682,12 @@ rlc_am_mac_data_request (
   MessageDef         *msg_p;
 #   endif
   int                 octet_index, index;
+  /* for no gcc warnings */
+  (void)num_nack;
+  (void)message_string;
+  (void)message_string_size;
+  (void)octet_index;
+  (void)index;
 #endif
 
   list_init (&data_req.data, NULL);
@@ -916,6 +922,12 @@ rlc_am_mac_data_indication (
   MessageDef         *msg_p;
 #   endif
   int                 octet_index, index;
+  /* for no gcc warnings */
+  (void)num_nack;
+  (void)message_string;
+  (void)message_string_size;
+  (void)octet_index;
+  (void)index;
 #endif
 
   (void)l_rlc_p; /* avoid gcc warning "unused variable" */

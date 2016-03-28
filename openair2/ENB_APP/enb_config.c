@@ -649,6 +649,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   char*             osa_log_level                 = NULL;
   char*             osa_log_verbosity             = NULL;
 
+  /* for no gcc warnings */
+  (void)astring;
+  (void)my_int;
+
   memset((char*) (enb_properties.properties), 0 , MAX_ENB * sizeof(Enb_properties_t *));
   memset((char*)active_enb,     0 , MAX_ENB * sizeof(char*));
 

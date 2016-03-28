@@ -796,6 +796,8 @@ rrc_eNB_free_UE(
   protocol_ctxt_t                     ctxt;
 #if !defined(ENABLE_USE_MME)
   module_id_t                         ue_module_id;
+  /* avoid gcc warnings */
+  (void)ue_module_id;
 #endif
   AssertFatal(enb_mod_idP < NB_eNB_INST, "eNB inst invalid (%d/%d) for UE %x!", enb_mod_idP, NB_eNB_INST, rntiP);
   ue_context_p = rrc_eNB_get_ue_context(
@@ -1176,6 +1178,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   CellsToAddModList_t                *CellsToAddModList                = NULL;
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
   DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
+  /* for no gcc warnings */
+  (void)dedicatedInfoNas;
 
   C_RNTI_t                           *cba_RNTI                         = NULL;
 #ifdef CBA
