@@ -1,0 +1,4 @@
+1007c1007
+< 				(int)nelems, (int)ct ? ct->effective_bits : -1);
+---
+> 				(int)nelems, ct ? ct->effective_bits : -1);

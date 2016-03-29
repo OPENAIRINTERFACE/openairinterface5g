@@ -78,6 +78,24 @@ typedef struct mme_ip_address_s {
   char     *ipv6_address;
 } mme_ip_address_t;
 
+typedef struct rrh_gw_config_s {
+  unsigned  udp:1;
+  unsigned  raw:1;
+  unsigned  active:1;
+  char     *local_address;
+  char     *remote_address;
+  uint16_t  local_port;
+  uint16_t  remote_port;
+  int tx_scheduling_advance;
+  int tx_sample_advance;
+  int iq_txshift;
+  unsigned  exmimo:1;
+  unsigned  usrp_b200:1;
+  unsigned  usrp_x300:1;
+  unsigned  bladerf:1; 
+  unsigned  lmssdr:1;  
+} rrh_gw_config_t;
+
 typedef struct Enb_properties_s {
   /* Unique eNB_id to identify the eNB within EPC.
    * For macro eNB ids this field should be 20 bits long.
@@ -203,6 +221,13 @@ typedef struct Enb_properties_s {
   char               *enb_interface_name_for_S1_MME;
   in_addr_t           enb_ipv4_address_for_S1_MME;
 
+
+  /* Nb of RRH to connect to */
+  uint8_t             nb_rrh_gw;
+  char               *rrh_gw_if_name;
+  /* List of MME to connect to */
+  rrh_gw_config_t       rrh_gw_config[4];
+
   // otg config
   /* Nb of OTG elements */
   uint8_t            num_otg_elements;
@@ -239,6 +264,7 @@ typedef struct Enb_properties_array_s {
   Enb_properties_t    *properties[MAX_ENB];
 } Enb_properties_array_t;
 
+void                          enb_config_display(void);
 const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 
 const Enb_properties_array_t *enb_config_get(void);

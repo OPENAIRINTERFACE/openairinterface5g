@@ -468,6 +468,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->get_transmission_mode     = get_transmission_mode;
   mac_xface->get_rballoc               = get_rballoc;
   mac_xface->get_nb_rb                 = conv_nprb;
+  mac_xface->get_prb                   = get_prb;
   //  mac_xface->get_SB_size               = Get_SB_size;
   mac_xface->get_subframe_direction    = get_subframe_direction;
   mac_xface->Msg3_transmitted          = Msg3_tx;
@@ -507,7 +508,7 @@ int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer,ui
   mac_xface->computeRIV             = computeRIV;
   mac_xface->get_TBS_DL             = get_TBS_DL;
   mac_xface->get_TBS_UL             = get_TBS_UL;
-  mac_xface->get_nCCE_max           = get_nCCE_max;
+  mac_xface->get_nCCE_max           = get_nCCE_mac;
   mac_xface->get_nCCE_offset        = get_nCCE_offset;
   mac_xface->get_ue_mode            = get_ue_mode;
   mac_xface->phy_config_sib1_eNB    = phy_config_sib1_eNB;

@@ -247,7 +247,7 @@ int openair0_stop_without_reset(int card)
 #define MY_RF_MODE      (RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX)
 #define RF_MODE_BASE    (LNA1ON + RFBBNORM)
 
-int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair0_cfg) {
+int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   // Initialize card
   //  exmimo_config_t         *p_exmimo_config;
@@ -287,6 +287,8 @@ int openair0_dev_init_exmimo(openair0_device *device, openair0_config_t *openair
     return(-1);
   }
 
+  device->type             = EXMIMO_DEV; 
+
   return(0);
 }
 
@@ -296,6 +298,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
   int ant, card;
   int resampling_factor=2;
   int rx_filter=RXLPF25, tx_filter=TXLPF25;
+  int ACTIVE_RF=0;
 
   exmimo_config_t         *p_exmimo_config;
   exmimo_id_t             *p_exmimo_id;
@@ -315,14 +318,18 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
     else
       p_exmimo_config->framing.eNB_flag   = !UE_flag;
 
-    p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD + TXRXSWITCH_LSB;
-
     if (openair0_num_detected_cards==1)
       p_exmimo_config->framing.multicard_syncmode=SYNCMODE_FREE;
     else if (card==0)
       p_exmimo_config->framing.multicard_syncmode=SYNCMODE_MASTER;
     else
       p_exmimo_config->framing.multicard_syncmode=SYNCMODE_SLAVE;
+
+    /* device specific */
+    openair0_cfg[card].txlaunch_wait = 1;//manage when TX processing is triggered
+    openair0_cfg[card].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+    openair0_cfg[card].iq_txshift = 4;//shift
+    openair0_cfg[card].iq_rxrescale = 15;//rescale iqs
 
     if (openair0_cfg[card].sample_rate==30.72e6) {
       resampling_factor = 0;
@@ -355,6 +362,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 
     for (ant=0; ant<4; ant++) {
       if (openair0_cfg[card].rx_freq[ant] || openair0_cfg[card].tx_freq[ant]) {
+	ACTIVE_RF += (1<<ant)<<5;
         p_exmimo_config->rf.rf_mode[ant] = RF_MODE_BASE;
         p_exmimo_config->rf.do_autocal[ant] = 1;//openair0_cfg[card].autocal[ant];
 	printf("card %d, antenna %d, autocal %d\n",card,ant,openair0_cfg[card].autocal[ant]);
@@ -406,6 +414,15 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
         p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal[ant];
         p_exmimo_config->rf.rffe_band_mode[ant] = 0;
       }
+    }
+
+    if (openair0_cfg[card].duplex_mode==duplex_mode_FDD) {
+      p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD;
+      printf("!!!!!setting FDD (tdd_config=%d)\n",p_exmimo_config->framing.tdd_config);
+    } 
+    else {
+      p_exmimo_config->framing.tdd_config = DUPLEXMODE_TDD + TXRXSWITCH_LSB + ACTIVE_RF;
+      printf("!!!!!setting TDD (tdd_config=%d)\n",p_exmimo_config->framing.tdd_config);
     }
 
     ret = ioctl(openair0_fd, openair_DUMP_CONFIG, card);
