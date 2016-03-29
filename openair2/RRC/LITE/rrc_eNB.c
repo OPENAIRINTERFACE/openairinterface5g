@@ -1294,6 +1294,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 
   /* avoid gcc warnings */
   (void)PDCP_rlc_AM;
+  (void)PDCP_rlc_UM;
 
 #ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));

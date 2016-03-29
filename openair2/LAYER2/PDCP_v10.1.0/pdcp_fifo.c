@@ -494,7 +494,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                   pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
 #else // OAI_EMU
           pdcp_read_header_g.inst = 0;
-#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
+//#warning "TO DO CORRCT VALUES FOR ue mod id, enb mod id"
           ctxt.frame         = ctxt_cpy.frame;
           ctxt.enb_flag      = ctxt_cpy.enb_flag;
 
