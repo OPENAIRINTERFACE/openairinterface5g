@@ -1147,7 +1147,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   struct DRB_ToAddMod                *DRB_config                       = NULL;
   struct RLC_Config                  *DRB_rlc_config                   = NULL;
   struct PDCP_Config                 *DRB_pdcp_config                  = NULL;
-  //struct PDCP_Config__rlc_AM         *PDCP_rlc_AM                      = NULL;
+  struct PDCP_Config__rlc_AM         *PDCP_rlc_AM                      = NULL;
   struct PDCP_Config__rlc_UM         *PDCP_rlc_UM                      = NULL;
   struct LogicalChannelConfig        *DRB_lchan_config                 = NULL;
   struct LogicalChannelConfig__ul_SpecificParameters
@@ -1291,6 +1291,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   *DRB_pdcp_config->discardTimer = PDCP_Config__discardTimer_infinity;
   DRB_pdcp_config->rlc_AM = NULL;
   DRB_pdcp_config->rlc_UM = NULL;
+
+  /* avoid gcc warnings */
+  (void)PDCP_rlc_AM;
 
 #ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
@@ -3007,6 +3010,10 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
   module_id_t                         ue_module_id   = -1;
+  /* avoid gcc warnings */
+  (void)oip_ifup;
+  (void)dest_ip_offset;
+  (void)ue_module_id;
 #endif
 
   uint8_t                            *kRRCenc = NULL;

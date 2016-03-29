@@ -458,6 +458,7 @@ l2l1_task (void *args_p)
   char *xargv[1];
   //#endif
 
+#undef PRINT_STATS /* this undef is to avoid gcc warnings */
 #define PRINT_STATS
 #ifdef PRINT_STATS
   int len;
