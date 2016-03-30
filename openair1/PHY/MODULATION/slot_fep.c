@@ -58,24 +58,28 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[256];  // This is for misalignment issues for 6 and 15 PRBs
 
-  switch (frame_parms->log2_symbol_size) {
-  case 7:
+  switch (frame_parms->ofdm_symbol_size) {
+  case 128:
     dft = dft128;
     break;
 
-  case 8:
+  case 256:
     dft = dft256;
     break;
 
-  case 9:
+  case 512:
     dft = dft512;
     break;
 
-  case 10:
+  case 1024:
     dft = dft1024;
     break;
 
-  case 11:
+  case 1536:
+    dft = dft1536;
+    break;
+
+  case 2048:
     dft = dft2048;
     break;
 
@@ -96,12 +100,12 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
 
   if (l<0 || l>=7-frame_parms->Ncp) {
-    msg("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
+    printf("slot_fep: l must be between 0 and %d\n",7-frame_parms->Ncp);
     return(-1);
   }
 
   if (Ns<0 || Ns>=20) {
-    msg("slot_fep: Ns must be between 0 and 19\n");
+    printf("slot_fep: Ns must be between 0 and 19\n");
     return(-1);
   }
 
@@ -116,7 +120,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef DEBUG_FEP
     //  if (phy_vars_ue->frame <100)
-    msg("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d\n", phy_vars_ue->frame_rx,Ns, symbol,
+    printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d\n", phy_vars_ue->frame_rx,Ns, symbol,
         nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset,rx_offset);
 #endif
 
@@ -147,7 +151,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
 #ifdef DEBUG_FEP
       //  if (phy_vars_ue->frame <100)
-      msg("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d\n", phy_vars_ue->frame_rx,Ns, symbol,
+      printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d\n", phy_vars_ue->frame_rx,Ns, symbol,
           nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset,rx_offset);
 #endif
 
@@ -182,7 +186,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
       for (aa=0; aa<frame_parms->nb_antennas_tx_eNB; aa++) {
 
 #ifdef DEBUG_FEP
-        msg("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+        printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
         start_meas(&phy_vars_ue->dlsch_channel_estimation_stats);
         lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
@@ -205,7 +209,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
       // do frequency offset estimation here!
       // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1})
 #ifdef DEBUG_FEP
-      msg("Frequency offset estimation\n");
+      printf("Frequency offset estimation\n");
 #endif
 
       if (l==(4-frame_parms->Ncp)) {
@@ -222,7 +226,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   }
 
 #ifdef DEBUG_FEP
-  msg("slot_fep: done\n");
+  printf("slot_fep: done\n");
 #endif
   return(0);
 }

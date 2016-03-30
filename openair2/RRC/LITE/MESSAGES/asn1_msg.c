@@ -2110,6 +2110,67 @@ do_RRCConnectionReestablishmentReject(
   return((enc_rval.encoded+7)/8);
 }
 
+//------------------------------------------------------------------------------
+uint8_t
+do_RRCConnectionReject(
+  uint8_t                    Mod_id,
+  uint8_t*                   const buffer)
+//------------------------------------------------------------------------------
+{
+
+  asn_enc_rval_t enc_rval;
+
+  DL_CCCH_Message_t dl_ccch_msg;
+  RRCConnectionReject_t *rrcConnectionReject;
+
+  memset((void *)&dl_ccch_msg,0,sizeof(DL_CCCH_Message_t));
+  dl_ccch_msg.message.present           = DL_CCCH_MessageType_PR_c1;
+  dl_ccch_msg.message.choice.c1.present = DL_CCCH_MessageType__c1_PR_rrcConnectionReject;
+  rrcConnectionReject                   = &dl_ccch_msg.message.choice.c1.choice.rrcConnectionReject;
+
+  // RRCConnectionReject
+  rrcConnectionReject->criticalExtensions.present = RRCConnectionReject__criticalExtensions_PR_c1;
+  rrcConnectionReject->criticalExtensions.choice.c1.present = RRCConnectionReject__criticalExtensions__c1_PR_rrcConnectionReject_r8;
+  /* let's put a wait time of 1s for the moment */
+  rrcConnectionReject->criticalExtensions.choice.c1.choice.rrcConnectionReject_r8.waitTime = 1;
+
+#ifdef XER_PRINT
+  xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
+#endif
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+                                   (void*)&dl_ccch_msg,
+                                   buffer,
+                                   100);
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %ld)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+#if defined(ENABLE_ITTI)
+# if !defined(DISABLE_XER_SPRINT)
+  {
+    char        message_string[20000];
+    size_t      message_string_size;
+
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message, (void *) &dl_ccch_msg)) > 0) {
+      MessageDef *msg_p;
+
+      msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
+      msg_p->ittiMsg.rrc_dl_ccch.size = message_string_size;
+      memcpy(&msg_p->ittiMsg.rrc_dl_ccch.text, message_string, message_string_size);
+
+      itti_send_msg_to_task(TASK_UNKNOWN, Mod_id, msg_p);
+    }
+  }
+# endif
+#endif
+
+#ifdef USER_MODE
+  LOG_D(RRC,"RRCConnectionReject Encoded %d bits (%d bytes)\n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8);
+#endif
+
+  return((enc_rval.encoded+7)/8);
+}
+
 uint8_t do_RRCConnectionRelease(
   uint8_t                             Mod_id,
   uint8_t                            *buffer,

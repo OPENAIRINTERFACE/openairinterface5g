@@ -399,8 +399,9 @@ uint32_t pdcch_alloc2ul_frame(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame, ui
 
 uint16_t get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1);
 
-int get_nCCE_offset(unsigned char L, int nCCE, int common_dci, unsigned short rnti, unsigned char subframe);
 
+void put_harq_pid_in_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid);
+void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid);
 
 int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB);

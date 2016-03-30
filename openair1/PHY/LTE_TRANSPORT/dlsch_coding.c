@@ -117,7 +117,7 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 
 }
 
-LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigned char N_RB_DL, uint8_t abstraction_flag)
+LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag)
 {
 
   LTE_eNB_DLSCH_t *dlsch;
@@ -148,9 +148,13 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
     bzero(dlsch,sizeof(LTE_eNB_DLSCH_t));
     dlsch->Kmimo = Kmimo;
     dlsch->Mdlharq = Mdlharq;
+    dlsch->Nsoft = Nsoft;
 
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = Mdlharq;
+
+    dlsch->head_freelist = 0;
+    dlsch->tail_freelist = 0;
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (LTE_DL_eNB_HARQ_t *)malloc16(sizeof(LTE_DL_eNB_HARQ_t));
@@ -192,6 +196,8 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,unsigne
         msg("Can't get harq_p %d\n",i);
         exit_flag=3;
       }
+
+      put_harq_pid_in_freelist(dlsch, i);
     }
 
     if (exit_flag==0) {
@@ -395,7 +401,7 @@ int dlsch_encoding(unsigned char *a,
                                         dlsch->harq_processes[harq_pid]->w[r],
                                         dlsch->harq_processes[harq_pid]->e+r_offset,
                                         dlsch->harq_processes[harq_pid]->C, // C
-                                        NSOFT,                    // Nsoft,
+                                        dlsch->Nsoft,                    // Nsoft,
                                         dlsch->Mdlharq,
                                         dlsch->Kmimo,
                                         dlsch->harq_processes[harq_pid]->rvidx,
