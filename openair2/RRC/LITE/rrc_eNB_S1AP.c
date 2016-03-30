@@ -1372,30 +1372,36 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
 	e_rabs_failed++;
 	// TODO add cause when it will be integrated
       }
+      
+      
+      S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
+      S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
+      // NN: add conditions for e_rabs_failed 
+      if ((e_rabs_done > 0) ){  
+
+	LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d \n",
+	      ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+	MSC_LOG_TX_MESSAGE(
+			   MSC_RRC_ENB,
+			   MSC_S1AP_ENB,
+			   (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
+			   sizeof(s1ap_e_rab_setup_resp_t),
+			   MSC_AS_TIME_FMT" E_RAB_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
+			   MSC_AS_TIME_ARGS(ctxt_pP),
+			   ue_context_pP->ue_id_rnti,
+			   S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
+			   e_rabs_done, e_rabs_failed);
+	
+	
+	itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+      }
+
+    } else {
+      /*debug info for the xid */ 
+      LOG_D (RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d) \n ",
+	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid);
     }
     
-    LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: nb_of_erabs %d, total e_rabs %d, index %d \n",
-	  ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-    MSC_LOG_TX_MESSAGE(
-		       MSC_RRC_ENB,
-		       MSC_S1AP_ENB,
-		       (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
-		       sizeof(s1ap_e_rab_setup_resp_t),
-		       MSC_AS_TIME_FMT" E_RAB_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-		       MSC_AS_TIME_ARGS(ctxt_pP),
-		       ue_context_pP->ue_id_rnti,
-		       S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
-		       e_rabs_done, e_rabs_failed);
-
-    
-    S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
-    S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
-    if ((e_rabs_done > 0) )
-      itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
-  } else {
-    /*debug info for the xid */ 
-    LOG_D (RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d) \n ",
-	   e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid);
   }
   
   return 0;
