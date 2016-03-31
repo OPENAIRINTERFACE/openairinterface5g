@@ -54,9 +54,9 @@ int decode_ms_network_feature_support(MsNetworkFeatureSupport *msnetworkfeatures
 }
 int encode_ms_network_feature_support(MsNetworkFeatureSupport *msnetworkfeaturesupport, uint8_t iei, uint8_t *buffer, uint32_t len)
 {
-  uint8_t *lenPtr;
+  //uint8_t *lenPtr;
   uint32_t encoded = 0;
-  int encode_result;
+  //int encode_result;
   /* Checking IEI and pointer */
   CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, MS_NETWORK_FEATURE_SUPPORT_MINIMUM_LENGTH, len);
 #if defined (NAS_DEBUG)

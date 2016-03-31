@@ -748,10 +748,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
-  uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
+  uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
   int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
-  int subframe05_limit=0;
+  //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
@@ -1085,7 +1085,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP)
 {
 
-  int                 UE_id,pCC_id,lcgid;
+  int                 UE_id, /* pCC_id, */ lcgid;
   UE_list_t           *UE_list = &eNB_mac_inst[module_idP].UE_list;
   UE_TEMPLATE         *UE_template;
 
@@ -1231,7 +1231,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
   int               UE_id1,UE_id2;
   int               pCCid1,pCCid2;
   int               round1,round2;
-  int               i=0,ii=0,j=0;
+  int               i=0,ii=0;
   rnti_t            rnti1,rnti2;
 
   UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;

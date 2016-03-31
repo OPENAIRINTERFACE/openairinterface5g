@@ -4,7 +4,7 @@
  
  asn_enc_rval_t OCTET_STRING_encode_aper(asn_TYPE_descriptor_t *td, asn_per_constraints_t *cts, void *sptr, asn_per_outp_t *po) { asn_enc_rval_t er = { 0, 0, 0 }; (void)td; (void)cts; (void)sptr; (void)po; return er; }
  
-+asn_comp_rval_t *  OCTET_STRING_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2) { (void)td1; (void)sptr1; (void)td2; (void)sptr2; return 0; }
++asn_comp_rval_t *  OCTET_STRING_compare(asn_TYPE_descriptor_t *td1, const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2) { (void)td1; (void)sptr1; (void)td2; (void)sptr2; return 0; }
 +
  size_t xer_whitespace_span(const void *chunk_buf, size_t chunk_size) {  (void)chunk_buf; (void)chunk_size; return 0; }
 --- libasn1compiler/asn1c_C.c	2015-12-08 14:39:33.366543533 +0100
@@ -51,9 +51,9 @@
 +  if(HIDE_INNER_DEFS) OUT("_%d", expr->_type_unique_index);
 +    OUT("_compare(asn_TYPE_descriptor_t *td1,\n");
 +  INDENTED(
-+  OUT("\tvoid *structure1,\n");
++  OUT("\tconst void *structure1,\n");
 +  OUT("\tasn_TYPE_descriptor_t *td2,\n");
-+  OUT("\tvoid *structure2) {\n");
++  OUT("\tconst void *structure2) {\n");
 +  OUT("asn_comp_rval_t * res  = NULL;\n");
 +  OUT("%s_%d_inherit_TYPE_descriptor(td1);\n",
 +    p, expr->_type_unique_index);
@@ -142,8 +142,8 @@
 +typedef struct asn_comp_rval_s {
 +  enum COMPARE_ERR_CODE_e err_code;
 +  char                   *name; // e_S1ap_ProtocolIE_ID not available for all ASN1 use (RRC vs S1AP, X2AP)
-+  void                   *structure1;
-+  void                   *structure2;
++  const void             *structure1;
++  const void             *structure2;
 +  struct asn_comp_rval_s *next;
 +} asn_comp_rval_t;
 +
@@ -234,7 +234,7 @@
 +
 +asn_comp_rval_t *
 +BOOLEAN_compare(asn_TYPE_descriptor_t *td1,
-+  void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2) {
++  const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2) {
 +  const BOOLEAN_t *st1 = (const BOOLEAN_t *)sptr1;
 +  const BOOLEAN_t *st2 = (const BOOLEAN_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
@@ -279,9 +279,9 @@
 +
 +typedef asn_comp_rval_t * (type_compare_f)(
 +  struct asn_TYPE_descriptor_s *type_descriptor1,
-+  void *struct_ptr1,
++  const void *struct_ptr1,
 +  struct asn_TYPE_descriptor_s *type_descriptor2,
-+  void *struct_ptr2
++  const void *struct_ptr2
 +);
 +
 +
@@ -299,7 +299,7 @@
  }
 +
 +asn_comp_rval_t *
-+CHOICE_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2)
++CHOICE_compare(asn_TYPE_descriptor_t *td1, const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2)
 +{
 +  asn_CHOICE_specifics_t *specs1 = (asn_CHOICE_specifics_t *)td1->specifics;
 +  asn_CHOICE_specifics_t *specs2 = (asn_CHOICE_specifics_t *)td2->specifics;
@@ -392,14 +392,13 @@
  }
 --- skeletons/constr_SEQUENCE.c	2015-12-08 14:39:33.346543533 +0100
 +++ skeletons/constr_SEQUENCE.c	2015-12-08 10:39:52.442558000 +0100
-@@ -1761,3 +1761,66 @@
+@@ -1761,3 +1761,65 @@
  
  	_ASN_ENCODED_OK(er);
  }
 +
-+asn_comp_rval_t * SEQUENCE_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2) {
++asn_comp_rval_t * SEQUENCE_compare(asn_TYPE_descriptor_t *td1, const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2) {
 +  int edx;
-+  int ret;
 +  asn_comp_rval_t *res = NULL;
 +  asn_comp_rval_t *res2 = NULL;
 +
@@ -498,7 +497,7 @@
  }
 +
 +asn_comp_rval_t *
-+SET_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2)
++SET_compare(asn_TYPE_descriptor_t *td1, const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2)
 +{
 +  int edx;
 +  asn_comp_rval_t *res = NULL;
@@ -563,19 +562,18 @@
   * Some handy helpers. *
 --- skeletons/constr_SET_OF.c	2015-12-08 14:39:33.338543533 +0100
 +++ skeletons/constr_SET_OF.c	2015-12-08 10:45:54.466557000 +0100
-@@ -1039,3 +1039,55 @@
+@@ -1039,3 +1039,54 @@
  	rv.consumed = 0;
  	return rv;
  }
 +
 +asn_comp_rval_t *
-+SET_OF_compare(asn_TYPE_descriptor_t *td1, void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2)
++SET_OF_compare(asn_TYPE_descriptor_t *td1, const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2)
 +{
 +  asn_TYPE_member_t *elm1 = td1->elements;
 +  asn_TYPE_member_t *elm2 = td2->elements;
 +  const asn_anonymous_set_ *list1 = _A_CSET_FROM_VOID(sptr1);
 +  const asn_anonymous_set_ *list2 = _A_CSET_FROM_VOID(sptr2);
-+  int ret;
 +  int i;
 +  asn_comp_rval_t *res = NULL;
 +  asn_comp_rval_t *res2 = NULL;
@@ -667,10 +665,10 @@
  }
 +
 +asn_comp_rval_t *
-+ENUMERATED_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+                   asn_TYPE_descriptor_t *td2, void *sptr2) {
-+  ENUMERATED_t *st1 = (ENUMERATED_t *)sptr1;
-+  ENUMERATED_t *st2 = (ENUMERATED_t *)sptr2;
++ENUMERATED_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++                   asn_TYPE_descriptor_t *td2, const void *sptr2) {
++  const ENUMERATED_t *st1 = (const ENUMERATED_t *)sptr1;
++  const ENUMERATED_t *st2 = (const ENUMERATED_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
 +
 +  COMPARE_CHECK_ARGS(td1, td2, sptr1, sptr2, res)
@@ -774,10 +772,10 @@
  
  
 +asn_comp_rval_t *
-+INTEGER_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+                asn_TYPE_descriptor_t *td2, void *sptr2) {
-+  INTEGER_t *st1 = (INTEGER_t *)sptr1;
-+  INTEGER_t *st2 = (INTEGER_t *)sptr2;
++INTEGER_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++                asn_TYPE_descriptor_t *td2, const void *sptr2) {
++  const INTEGER_t *st1 = (const INTEGER_t *)sptr1;
++  const INTEGER_t *st2 = (const INTEGER_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
 +
 +  COMPARE_CHECK_ARGS(td1, td2, sptr1, sptr2, res)
@@ -857,8 +855,8 @@
  }
 +
 +asn_comp_rval_t *
-+NativeEnumerated_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+    asn_TYPE_descriptor_t *td2, void *sptr2) {
++NativeEnumerated_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++    asn_TYPE_descriptor_t *td2, const void *sptr2) {
 +  const asn_INTEGER_enum_map_t *a = sptr1;
 +  const asn_INTEGER_enum_map_t *b = sptr2;
 +  asn_comp_rval_t *res = NULL;
@@ -902,8 +900,8 @@
  
 +
 +asn_comp_rval_t *
-+NativeInteger_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+                      asn_TYPE_descriptor_t *td2, void *sptr2) {
++NativeInteger_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++                      asn_TYPE_descriptor_t *td2, const void *sptr2) {
 +  const long *native1 = (const long *)sptr1;
 +  const long *native2 = (const long *)sptr2;
 +  asn_comp_rval_t *res = NULL;
@@ -945,10 +943,10 @@
  }
  
 +asn_comp_rval_t *
-+NativeReal_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+                   asn_TYPE_descriptor_t *td2, void *sptr2) {
-+  REAL_t *st1 = (REAL_t *)sptr1;
-+  REAL_t *st2 = (REAL_t *)sptr2;
++NativeReal_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++                   asn_TYPE_descriptor_t *td2, const void *sptr2) {
++  const REAL_t *st1 = (const REAL_t *)sptr1;
++  const REAL_t *st2 = (const REAL_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
 +
 +  COMPARE_CHECK_ARGS(td1, td2, sptr1, sptr2, res)
@@ -999,8 +997,8 @@
  }
 +
 +asn_comp_rval_t *
-+NULL_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+             asn_TYPE_descriptor_t *td2, void *sptr2) {
++NULL_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++             asn_TYPE_descriptor_t *td2, const void *sptr2) {
 +
 +  return NULL;
 +}
@@ -1068,9 +1066,9 @@
  
 +asn_comp_rval_t *
 +OCTET_STRING_compare(asn_TYPE_descriptor_t *td1,
-+  void *sptr1, asn_TYPE_descriptor_t *td2, void *sptr2) {
-+  OCTET_STRING_t *st1 = (OCTET_STRING_t *)sptr1;
-+  OCTET_STRING_t *st2 = (OCTET_STRING_t *)sptr2;
++  const void *sptr1, asn_TYPE_descriptor_t *td2, const void *sptr2) {
++  const OCTET_STRING_t *st1 = (const OCTET_STRING_t *)sptr1;
++  const OCTET_STRING_t *st2 = (const OCTET_STRING_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
 +
 +  COMPARE_CHECK_ARGS(td1, td2, sptr1, sptr2, res)
@@ -1134,10 +1132,10 @@
 +
 +
 +asn_comp_rval_t *
-+REAL_compare(asn_TYPE_descriptor_t *td1, void *sptr1,
-+             asn_TYPE_descriptor_t *td2,  void *sptr2) {
-+  REAL_t *st1 = (REAL_t *)sptr1;
-+  REAL_t *st2 = (REAL_t *)sptr2;
++REAL_compare(asn_TYPE_descriptor_t *td1, const void *sptr1,
++             asn_TYPE_descriptor_t *td2, const void *sptr2) {
++  const REAL_t *st1 = (const REAL_t *)sptr1;
++  const REAL_t *st2 = (const REAL_t *)sptr2;
 +  asn_comp_rval_t *res = NULL;
 +
 +  COMPARE_CHECK_ARGS(td1, td2, sptr1, sptr2, res)

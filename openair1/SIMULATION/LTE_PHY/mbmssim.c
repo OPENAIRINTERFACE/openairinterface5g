@@ -583,10 +583,10 @@ int main(int argc, char **argv)
               mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
               mcs,N_RB_DL,mcs,N_RB_DL,trials);
     else
-      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %d]; errs_mch_awgn_%d =[errs_mch_awgn_%f  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
-              mcs,N_RB_DL,mcs,N_RB_DL,SNR,
-              mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
-              mcs,N_RB_DL,mcs,N_RB_DL,trials);
+      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
+              N_RB_DL,N_RB_DL,SNR,
+              N_RB_DL,N_RB_DL,errs[0],
+              N_RB_DL,N_RB_DL,trials);
 
     fflush(fd);
 
