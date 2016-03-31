@@ -392,8 +392,8 @@ int rotate_cpx_vector(int16_t *x,
     m3 = _mm_sra_epi32(m3,shift);        // shift right by shift in order to  compensate for the input amplitude
 
     y_128[0] = _mm_packs_epi32(m2,m3);        // pack in 16bit integers with saturation [re im re im re im re im]
-    print_ints("y_128[0]=", &y_128[0]);
-    #elif defined(__arm__)
+    //print_ints("y_128[0]=", &y_128[0]);
+#elif defined(__arm__)
 
   ab_re0 = vmull_s16(((int16x4_t*)xd)[0],((int16x4_t*)&bconj)[0]);
   ab_re1 = vmull_s16(((int16x4_t*)xd)[1],((int16x4_t*)&bconj)[1]);

@@ -3277,7 +3277,7 @@ rrc_eNB_generate_RRCConnectionSetup(
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-                          (mac_xface->lte_frame_parms->nb_antennas_tx==2)?2:1,
+			  mac_xface->get_transmission_mode(ctxt_pP->module_id,CC_id,ue_context_pP->ue_id_rnti),
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           mac_xface->lte_frame_parms,
                           SRB_configList,

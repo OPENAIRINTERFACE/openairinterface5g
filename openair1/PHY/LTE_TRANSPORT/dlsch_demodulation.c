@@ -990,6 +990,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     break;
   }
 
+  if (dlsch1_harq) {
   switch (get_Qm(dlsch1_harq->mcs)) {
   case 2 : 
     if (rx_type==rx_standard) {
@@ -1033,6 +1034,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     return(-1);
     break;
   } 
+  }
+
   return(0);    
 
 }
