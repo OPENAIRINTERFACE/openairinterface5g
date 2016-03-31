@@ -829,7 +829,6 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     return(-1);
     break;
   }
-
   return(0);
 }
 
