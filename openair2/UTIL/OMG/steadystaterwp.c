@@ -173,7 +173,7 @@ place_steadystaterwp_node (node_struct * node)
 void
 sleep_steadystaterwp_node (pair_struct * pair, double cur_time)
 {
-  static int initial = 1;
+  //static int initial = 1;
   node_struct *node;
   node = pair->b;
   node->mobile = 0;
@@ -209,10 +209,10 @@ sleep_steadystaterwp_node (pair_struct * pair, double cur_time)
 void
 move_steadystaterwp_node (pair_struct * pair, double cur_time)
 {
-  static int initial = 1;
+  //static int initial = 1;
   double distance, journeytime_next, max_distance;
   double temp_x, temp_y, u1, u2;
-  int loc_num;
+  //int loc_num;
   double pr, block_xmin, block_ymin;
 
   //LOG_D (OMG, "[STEADY_RWP] move node: %d\n", node->ID);

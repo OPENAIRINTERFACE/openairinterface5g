@@ -1125,7 +1125,7 @@ schedule_ue_spec(
           if (frame_parms[CC_id]->frame_type == TDD) {
             UE_list->UE_template[CC_id][UE_id].DAI++;
             //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
-#warning only for 5MHz channel
+//#warning only for 5MHz channel
             update_ul_dci(module_idP,CC_id,rnti,UE_list->UE_template[CC_id][UE_id].DAI);
           }
 
@@ -1488,23 +1488,23 @@ fill_DLSCH_dci(
 
   // loop over all allocated UEs and compute frequency allocations for PDSCH
   int   UE_id = -1;
-  uint8_t            first_rb,nb_rb=3;
+  uint8_t            /* first_rb, */ nb_rb=3;
   rnti_t        rnti;
-  unsigned char *vrb_map;
+  //unsigned char *vrb_map;
   uint8_t            rballoc_sub[25];
   //uint8_t number_of_subbands=13;
 
-  unsigned char round;
+  //unsigned char round;
   unsigned char harq_pid;
   void         *DLSCH_dci=NULL;
   DCI_PDU      *DCI_pdu;
   int           i;
-  void         *BCCH_alloc_pdu;
+  //void         *BCCH_alloc_pdu;
   int           size_bits,size_bytes;
   int CC_id;
   eNB_MAC_INST *eNB  =&eNB_mac_inst[module_idP];
   UE_list_t    *UE_list = &eNB->UE_list;
-  RA_TEMPLATE  *RA_template;
+  //RA_TEMPLATE  *RA_template;
 
   start_meas(&eNB->fill_DLSCH_dci);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_FILL_DLSCH_DCI,VCD_FUNCTION_IN);

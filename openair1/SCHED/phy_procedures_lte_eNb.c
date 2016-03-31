@@ -561,6 +561,7 @@ void phy_eNB_lte_check_measurement_thresholds(instance_t instanceP, ral_threshol
 #endif
 
 
+unsigned int taus(void);
 
 void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,
                            relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn)
@@ -1755,6 +1756,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   stop_meas(&phy_vars_eNB->phy_proc_tx);
 
 
+  (void)re_allocated; /* remove gcc warning "set but not used" */
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t UE_id, uint8_t harq_pid)
@@ -3429,13 +3431,13 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
-    if (abstraction_flag == 0) {
-      lte_eNB_I0_measurements(phy_vars_eNB,
-			      subframe,
-                              0,
-                              phy_vars_eNB->first_run_I0_measurements);
-      phy_vars_eNB->first_run_I0_measurements = 0;
-    }
+  if (abstraction_flag == 0) {
+    lte_eNB_I0_measurements(phy_vars_eNB,
+			    subframe,
+			    0,
+			    phy_vars_eNB->first_run_I0_measurements);
+    phy_vars_eNB->first_run_I0_measurements = 0;
+  }
 
 #ifdef PHY_ABSTRACTION
     else {

@@ -284,7 +284,8 @@ rrc_mac_config_req(
     if (eNB_flagP==1) {
       mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
     } else {
-#warning "phy_config_dedicated_scell_ue is empty"
+
+	//#warning "phy_config_dedicated_scell_ue is empty"
       mac_xface->phy_config_dedicated_scell_ue(Mod_idP,eNB_index,sCellToAddMod_r10,1);
       UE_mac_inst[Mod_idP].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
     }

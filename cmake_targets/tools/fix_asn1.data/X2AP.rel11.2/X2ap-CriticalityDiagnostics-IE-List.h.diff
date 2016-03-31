@@ -1,0 +1,15 @@
+29,31c29
+< /* X2ap-CriticalityDiagnostics-IE-List */
+< typedef struct X2ap_CriticalityDiagnostics_IE_List {
+< 	A_SEQUENCE_OF(struct X2ap_CriticalityDiagnostics_IE_List__Member {
+---
+> struct X2ap_CriticalityDiagnostics_IE_List__Member {
+43c41,46
+< 	} ) list;
+---
+> 	};
+> 
+> /* X2ap-CriticalityDiagnostics-IE-List */
+> typedef struct X2ap_CriticalityDiagnostics_IE_List {
+> 	A_SEQUENCE_OF(struct X2ap_CriticalityDiagnostics_IE_List__Member
+> 	) list;

@@ -86,7 +86,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   int mbsfn_status[MAX_NUM_CCs];
   protocol_ctxt_t   ctxt;
 #ifdef EXMIMO
-  int ret;
+  //int ret;
 #endif
 #if defined(ENABLE_ITTI)
   MessageDef   *msg_p;
