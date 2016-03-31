@@ -113,7 +113,7 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
       dst_instance = otg_hdr_rx->dst_instance;
 
       if (dst_instance != dst_instanceP) {
-#warning "LG: TODO think about multicast traffic"
+//#warning "LG: TODO think about multicast traffic"
         LOG_W(OTG,"[SRC %d][DST %d] [FLOW_idx %d][APP TYPE %d] RX INFO pkt at time %d: flag 0x %x, seq number %d, tx time %d, size (hdr %d, pdcp %d)  not for dest instance %u\n",
               dst_instanceP);
       }

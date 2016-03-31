@@ -63,6 +63,8 @@ rrc_eNB_S1AP_compare_ue_ids(
   struct rrc_ue_s1ap_ids_s* c2_pP
 );
 
+struct rrc_rnti_tree_s;
+
 RB_PROTOTYPE(rrc_rnti_tree_s, rrc_ue_s1ap_ids_s, entries, rrc_eNB_S1AP_compare_ue_ids);
 
 struct rrc_ue_s1ap_ids_s*
