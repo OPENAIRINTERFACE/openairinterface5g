@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#arg1 timeout to wait before running the script
+#arg2 interface
+#arg3 iperf arguments
+
+args=($*)
+timeout=${args[0]}
+device_id=${args[1]}
+iperf_args=(${args[@]:2})
+
+#array=${1:-1}
+echo "args =  ${args[@]}"
+echo "timeout = $timeout"
+echo "device_id = $device_id"
+echo "iperf_args = ${iperf_args[@]}"
+
+sleep $timeout
+
+sudo adb -s $device_id shell /data/local/tmp/iperf ${iperf_args[@]}
