@@ -45,7 +45,7 @@
 #include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "RRC/LITE/proto.h"
 #include "pdcp_primitives.h"
 #include "OCG.h"
 #include "OCG_extern.h"

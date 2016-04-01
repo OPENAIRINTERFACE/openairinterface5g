@@ -898,7 +898,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
       memmove( prach, prach+512, Ncp<<2 );
       prach_len = 256+Ncp;
     } else {
-      idft1536(prachF,prach2);
+      idft1536(prachF,prach2,1);
       memmove( prach, prach+3072, Ncp<<2 );
       prach_len = 1536+Ncp;
 
@@ -1338,10 +1338,10 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
           if (prach_fmt == 4) {
             dft256(prach2,rxsigF[aa],1);
           } else {
-            dft1536(prach2,rxsigF[aa]);
+            dft1536(prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft1536(prach2+3072,rxsigF[aa]+3072);
+              dft1536(prach2+3072,rxsigF[aa]+3072,1);
           }
 
           break;

@@ -1413,6 +1413,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   return(iteration_cnt);
 }
 
-#endif __AVX2__
+#endif //__AVX2__
 
 

@@ -841,7 +841,7 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     rrc_eNB_remove_ue_context(
       &ctxt,
       &eNB_rrc_inst[enb_mod_idP],
-      ue_context_pP);
+      (struct rrc_eNB_ue_context_s*) ue_context_pP);
   }
 }
 

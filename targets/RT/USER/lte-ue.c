@@ -501,7 +501,7 @@ static void *UE_thread_synch(void *arg)
 	  if (abs(freq_offset) > 7500) {
 	    LOG_I( PHY, "[initial_sync] No cell synchronization found, abandoning\n" );
 	    FILE *fd;
-	    if (fd = fopen("rxsig_frame0.dat","w")) {
+	    if ((fd = fopen("rxsig_frame0.dat","w"))!=NULL) {
 	      fwrite((void*)&UE->lte_ue_common_vars.rxdata[0][0],
 		     sizeof(int32_t),
 		     10*UE->lte_frame_parms.samples_per_tti,
