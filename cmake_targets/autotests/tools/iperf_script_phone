@@ -17,4 +17,16 @@ echo "iperf_args = ${iperf_args[@]}"
 
 sleep $timeout
 
+while true ; do
+  cmd=`sudo adb -s $device_id shell netcfg |grep 192.`
+  if [ -z "$cmd" ]; then
+     print "Wating for UE to connect and get IP Address..."
+  else 
+     echo "UE is not connected. IP Address settings are... $cmd"
+     break
+
+done
+
+print "Starting iperf now..."
+
 sudo adb -s $device_id shell /data/local/tmp/iperf ${iperf_args[@]}

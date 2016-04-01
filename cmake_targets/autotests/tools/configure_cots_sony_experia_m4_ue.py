@@ -50,7 +50,7 @@ def kill_processes(name):
        break;
      out_arr = out.split()
      pid_to_kill = out_arr[1]
-     print "Now killing process ID" + pid_to_kill + " on Phone" 
+     print "Now killing process ID " + pid_to_kill + " on Phone" 
      cmd = 'sudo adb -s ' + device_id +' shell "kill ' + pid_to_kill + '"' 
      status, out = commands.getstatusoutput(cmd)
      if status != 0:
@@ -74,8 +74,7 @@ def start_ue () :
         cmd = 'sudo adb -s ' + device_id + ' shell netcfg |grep 192.'
         status, out = commands.getstatusoutput(cmd)
         if (out == '') :
-            print "Wating for UE to connect and get IP Address..."
-            sys.exit()
+            print "Waiting for UE to connect and get IP Address..."
         else :
             print "UE is now connected. IP Address settings are..." + out
             os.system('sleep 5')
