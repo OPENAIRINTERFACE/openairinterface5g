@@ -24,7 +24,7 @@ while true ; do
   else 
      echo "UE is not connected. IP Address settings are... $cmd"
      break
-
+  fi
 done
 
 print "Starting iperf now..."
