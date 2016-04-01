@@ -20,7 +20,8 @@ sleep $timeout
 while true ; do
   cmd=`sudo adb -s $device_id shell netcfg |grep 192.`
   if [ -z "$cmd" ]; then
-     print "Wating for UE to connect and get IP Address..."
+     echo "Wating for UE to connect and get IP Address..."
+     sleep 1
   else 
      echo "UE is not connected. IP Address settings are... $cmd"
      break

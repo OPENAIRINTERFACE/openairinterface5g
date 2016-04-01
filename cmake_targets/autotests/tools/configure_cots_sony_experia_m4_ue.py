@@ -29,7 +29,7 @@ from lib_autotest import *
 
 def signal_handler(signal, frame):
         print('You pressed Ctrl+C!')
-        print('Resetting the UE to detached state')
+        print('Exiting now...')
         timeout=10
         exit_flag=1
         sys.exit(0)
