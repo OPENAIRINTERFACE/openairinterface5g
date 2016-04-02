@@ -2539,7 +2539,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                              sched_subframe,
                              0, // control_only_flag
                              phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI,
-			     0);//phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
+			     phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
       }
 
 #ifdef PHY_ABSTRACTION
@@ -3312,7 +3312,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                              sched_subframe,
                              0, // control_only_flag
                              phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->V_UL_DAI,
-                             0);//phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
+                             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->nb_rb>20 ? 1 : 0);
       }
 
 #ifdef PHY_ABSTRACTION
