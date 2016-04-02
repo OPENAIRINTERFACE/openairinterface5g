@@ -114,6 +114,9 @@ int emm_reg_send(const emm_reg_t *msg)
   emm_reg_primitive_t primitive = msg->primitive;
   assert( (primitive > _EMMREG_START) && (primitive < _EMMREG_END));
 
+  /* avoid gcc warnings */
+  (void)primitive;
+
   /* Execute the EMM procedure */
   rc = emm_fsm_process(msg);
 

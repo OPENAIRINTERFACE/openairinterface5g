@@ -170,12 +170,13 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp); /// complex output
+	     (short*)sync_tmp,
+	     1); /// complex output
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp, /// complex output
-	    1);
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   default:
     LOG_E(PHY,"Unsupported N_RB_DL %d\n",frame_parms->N_RB_DL);
@@ -217,8 +218,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp /// complex output
-	    );
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input
@@ -265,8 +266,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp /// complex output
-	    );
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input

@@ -158,6 +158,7 @@ remove_node_entry (node_struct * node, node_list * node_vector)
 
       if (list->next->node->id == node->id) {
         toremove = tmp; // TODO delete the entry
+        (void)toremove; /* avoid gcc warning "set but not used" */
         tmp = list->next->next;
 
         if (tmp != NULL) {
@@ -259,13 +260,11 @@ node_list *
 remove_node (node_list * list, int nid, int node_type)
 {
 
-  int found;
   node_list *current = NULL, *previous = NULL;
 
   //int cond=0;
   //int i=0;
   if (list == NULL) {
-    found = 1;    //false
     return NULL;
   } else {
     //start search
@@ -280,12 +279,10 @@ remove_node (node_list * list, int nid, int node_type)
 
     //holds: current = NULL or  type != node_type or.., but not both
     if (current == NULL) {
-      found = 1;
       LOG_E (OMG, " Element to remove is not found\n ");
       return NULL;
     }     //value not found
     else {
-      found = 0;    // true                value found
 
       if (current == list) {
         list = current->next;
@@ -322,7 +319,6 @@ node_struct *
 find_node (node_list * list, int nid, int node_type)
 {
 
-  int found;
   node_list *current;
 
   if (list == NULL) {
@@ -340,7 +336,6 @@ find_node (node_list * list, int nid, int node_type)
 
     //holds: current = NULL or  type != node_type or.., but not both
     if (current == NULL) {
-      found = 1;
       LOG_D (OMG,
              " Element to find in Node_Vector with ID: %d could not be found\n ",
              nid);
@@ -380,7 +375,7 @@ node_list *
 reset_node_list (node_list * list)
 {
   node_list *tmp;
-  node_list *last = list;
+  //node_list *last = list;
 
   if (list == NULL) {
     //printf("Node_list is NULL\n");

@@ -291,10 +291,11 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
     memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
+
     //#define USIM_API_SQN_MS_SIZE  3
     printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
-#warning "LG:BUG HERE TODO"
+      //#warning "LG:BUG HERE TODO"
       printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
         ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];

@@ -303,6 +303,10 @@ void ccodedot11_init(void);
 \brief This function initializes the trellis structure for decoding an 802.11 convolutional code.*/
 void ccodedot11_init_inv(void);
 
+/*!\fn void teillis_table_init(void)
+\brief This function initializes the trellis structure for 3GPP LTE Turbo code.*/
+void treillis_table_init(void);
+
 /*\fn void threegpplte_turbo_encoder(uint8_t *input,uint16_t input_length_bytes,uint8_t *output,uint8_t F,uint16_t interleaver_f1,uint16_t interleaver_f2)
 \brief This function implements a rate 1/3 8-state parralel concatenated turbo code (3GPP-LTE).
 @param input Pointer to input buffer
@@ -352,6 +356,8 @@ void ccodedab_init(void);
 /*!\fn void ccodelte_init_inv(void)
 \brief This function initializes the trellis structure for decoding an DAB convolutional code (first 3 bits).*/
 void ccodedab_init_inv(void);
+
+
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/

@@ -639,8 +639,7 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
 		       phy_vars_eNB->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
 		       dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
 		       dB_fixed(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above/phy_vars_eNB->lte_frame_parms.N_RB_UL)-phy_vars_eNB->rx_total_gain_eNB_dB,
-		       PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL),
-		       phy_vars_eNB->eNB_UE_stats[UE_id].sector);
+		       PUCCH1_THRES+phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm-dB_fixed(phy_vars_eNB->lte_frame_parms.N_RB_UL));
 	
 	len+= sprintf(&buffer[len],"DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d, ",
 		      phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->harq_processes[0]->mcs,
@@ -688,11 +687,33 @@ int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length)
                        phy_vars_eNB->eNB_UE_stats[UE_id].sr_total-phy_vars_eNB->eNB_UE_stats[UE_id].sr_received);
 	
 	len += sprintf(&buffer[len],"DL Subband CQI: ");
-	
-	for (i=0; i<25; i++)
+
+	int nb_sb;
+	switch (phy_vars_eNB->lte_frame_parms.N_RB_DL) {
+	case 6:
+	  nb_sb=0;
+	  break;
+	case 15:
+	  nb_sb = 4;
+	case 25:
+	  nb_sb = 7;
+	  break;
+	case 50:
+	  nb_sb = 9;
+	  break;
+	case 75:
+	  nb_sb = 10;
+	  break;
+	case 100:
+	  nb_sb = 13;
+	  break;
+	default:
+	  nb_sb=0;
+	  break;
+	}	
+	for (i=0; i<nb_sb; i++)
 	  len += sprintf(&buffer[len],"%2d ",
 			 phy_vars_eNB->eNB_UE_stats[UE_id].DL_subband_cqi[0][i]);
-	
 	len += sprintf(&buffer[len],"\n");
 	
 

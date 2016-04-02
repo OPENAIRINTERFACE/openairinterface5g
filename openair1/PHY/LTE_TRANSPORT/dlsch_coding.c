@@ -45,6 +45,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include "PHY/LTE_TRANSPORT/proto.h"
+#include "SCHED/defs.h"
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 

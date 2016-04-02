@@ -220,7 +220,7 @@ int main(int argc, char **argv)
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
   int xforms=0;
-  FD_lte_phy_scope_ue *form_ue;
+  FD_lte_phy_scope_ue *form_ue = NULL;
   char title[255];
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;
@@ -2624,6 +2624,8 @@ PMI_FEEDBACK:
                                               num_pdcch_symbols,
                                               PHY_vars_eNB->dlsch_eNB[k][0],
                                               PHY_vars_eNB->dlsch_eNB[k][1]);	      
+              /* avoid gcc warnings */
+              (void)re_allocated;
 
               stop_meas(&PHY_vars_eNB->dlsch_modulation_stats);
               /*

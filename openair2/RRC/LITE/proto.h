@@ -38,6 +38,8 @@
  *  @{
  */
 
+#include "RRC/LITE/defs.h"
+
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
