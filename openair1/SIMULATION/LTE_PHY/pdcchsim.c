@@ -34,7 +34,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"

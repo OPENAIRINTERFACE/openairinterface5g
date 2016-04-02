@@ -45,7 +45,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
