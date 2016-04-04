@@ -28,17 +28,21 @@ from lib_autotest import *
 def find_open_port():
    global serial_port, ser
    max_ports=100
-   if os.path.exists(serial_port) == True:
-     return serial_port
-   for port in range(2,100):
-      serial_port = '/dev/ttyUSB'+str(port)
-      if os.path.exists(serial_port) == True:
-         print 'New Serial Port : ' + serial_port
-         break
-
-   ser = serial.Serial(port=serial_port)
-   return
-
+   while True:
+     if os.path.exists(serial_port) == True:
+       return serial_port
+     for port in range(2,100):
+        serial_port_tmp = '/dev/ttyUSB'+str(port)
+        if os.path.exists(serial_port_tmp) == True:
+           print 'New Serial Port : ' + serial_port_tmp
+           serial_port = serial_port_tmp
+           break
+     if serial_port == '':
+        print" Not able to detect valid serial ports. Resetting the modem now..."
+        reset_ue()
+     else :
+        ser = serial.Serial(port=serial_port)
+        return
 
     
 #serial_port = '/dev/ttyUSB2'
