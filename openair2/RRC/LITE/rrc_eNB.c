@@ -1280,6 +1280,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     }
     
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
+    ue_context_pP->ue_context.e_rab[i].xid =rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
     
   }
   
@@ -1287,7 +1288,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
    size = do_RRCConnectionReconfiguration(ctxt_pP,
 					  buffer,
-					  rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id,
+					  ue_context_pP->ue_context.e_rab[i].xid,
 					  (SRB_ToAddModList_t*)NULL, 
 					  (DRB_ToAddModList_t*)*DRB_configList,
 					  (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
@@ -4244,6 +4245,7 @@ rrc_eNB_decode_dcch(
           rrcConnectionReconfigurationComplete.
           criticalExtensions.choice.
           rrcConnectionReconfigurationComplete_r8);
+	/*NN: revise the condition */
         if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
 	  dedicated_DRB = 1;
 	  LOG_I(RRC,
@@ -4261,7 +4263,8 @@ rrc_eNB_decode_dcch(
       if (EPC_MODE_ENABLED == 1) {
 	if (dedicated_DRB == 1){
 	  rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
-					     ue_context_p);
+					     ue_context_p,
+					     ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 	}else {
 	  rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
 						       ue_context_p);

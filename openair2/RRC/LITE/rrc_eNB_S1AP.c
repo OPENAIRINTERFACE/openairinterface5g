@@ -1,6 +1,6 @@
 /*******************************************************************************
     OpenAirInterface
-    Copyright(c) 1999 - 2014 Eurecom
+    Copyright(c) 1999 - 2016 Eurecom
 
     OpenAirInterface is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 *******************************************************************************/
 /*! \file rrc_eNB_S1AP.c
  * \brief rrc S1AP procedures for eNB
- * \author Laurent Winckel and Sebastien ROUX and Navid Nikaein and Lionel GAUTHIER
- * \date 2013-2014
+ * \author Laurent Winckel, Sebastien ROUX, Navid Nikaein and Lionel GAUTHIER
+ * \date 2013-2016
  * \version 1.0
  * \company Eurecom
  * \email: navid.nikaein@eurecom.fr
@@ -1325,8 +1325,10 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
   }
 }
 
-rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
-				   rrc_eNB_ue_context_t*          const ue_context_pP){
+/*NN: careful about the typcast of xid (long -> uint8_t*/
+int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
+				   rrc_eNB_ue_context_t*          const ue_context_pP,
+				   uint8_t xid ){  
 
   MessageDef      *msg_p         = NULL;
   int e_rab;
@@ -1337,58 +1339,72 @@ rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
   S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
  
   for (e_rab = 0; e_rab <  ue_context_pP->ue_context.setup_e_rabs ; e_rab++) {
-   
-       
-    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
-     
-      S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
-      // TODO add other information from S1-U when it will be integrated
-      S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].gtp_teid = ue_context_pP->ue_context.enb_gtp_teid[e_rab];
-      S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr = ue_context_pP->ue_context.enb_gtp_addrs[e_rab];
-      //S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length += 4;
-      ue_context_pP->ue_context.e_rab[e_rabs_done].status = E_RAB_STATUS_ESTABLISHED;
-      
-      LOG_I (RRC,"enb_gtp_addr (msg index %d, context index %d, status %d): nb_of_e_rabs %d,  e_rab_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
-	     e_rabs_done,  e_rab, ue_context_pP->ue_context.e_rab[e_rab].status,
-	     ue_context_pP->ue_context.nb_of_e_rabs,
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id,
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].gtp_teid,
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[0],
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[1],
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[2],
-	     S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[3]);
 
-      e_rabs_done++;
-    } else if ((ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_NEW)  || 
-	       (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_ESTABLISHED)){
-      LOG_D (RRC,"E-RAB is NEW or already ESTABLISHED\n");
-    }else {
-      ue_context_pP->ue_context.e_rab[e_rabs_failed].status = E_RAB_STATUS_FAILED;
-      S1AP_E_RAB_SETUP_RESP  (msg_p).e_rabs_failed[e_rabs_failed].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
-      e_rabs_failed++;
-      // TODO add cause when it will be integrated
+    /* only respond to the corresponding transaction */ 
+    if (xid == ue_context_pP->ue_context.e_rab[e_rab].xid) {
+      
+      if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
+     
+	S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+	// TODO add other information from S1-U when it will be integrated
+	S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].gtp_teid = ue_context_pP->ue_context.enb_gtp_teid[e_rab];
+	S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr = ue_context_pP->ue_context.enb_gtp_addrs[e_rab];
+	//S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length += 4;
+	ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
+	
+	LOG_I (RRC,"enb_gtp_addr (msg index %d, context index %d, status %d, xid %d): nb_of_e_rabs %d,  e_rab_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
+	       e_rabs_done,  e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid,
+	       ue_context_pP->ue_context.nb_of_e_rabs,
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id,
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].gtp_teid,
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[0],
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[1],
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[2],
+	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].eNB_addr.buffer[3]);
+	
+	e_rabs_done++;
+      } else if ((ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_NEW)  || 
+		 (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_ESTABLISHED)){
+	LOG_D (RRC,"E-RAB is NEW or already ESTABLISHED\n");
+      }else { /* to be improved */
+	ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_FAILED;
+	S1AP_E_RAB_SETUP_RESP  (msg_p).e_rabs_failed[e_rabs_failed].e_rab_id = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+	e_rabs_failed++;
+	// TODO add cause when it will be integrated
+      }
+      
+      
+      S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
+      S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
+      // NN: add conditions for e_rabs_failed 
+      if ((e_rabs_done > 0) ){  
+
+	LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d \n",
+	      ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+	MSC_LOG_TX_MESSAGE(
+			   MSC_RRC_ENB,
+			   MSC_S1AP_ENB,
+			   (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
+			   sizeof(s1ap_e_rab_setup_resp_t),
+			   MSC_AS_TIME_FMT" E_RAB_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
+			   MSC_AS_TIME_ARGS(ctxt_pP),
+			   ue_context_pP->ue_id_rnti,
+			   S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
+			   e_rabs_done, e_rabs_failed);
+	
+	
+	itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+      }
+
+    } else {
+      /*debug info for the xid */ 
+      LOG_D (RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d) \n ",
+	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid);
     }
+    
   }
   
-  LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: nb_of_erabs %d, total e_rabs %d, index %d \n",
-	ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
-  MSC_LOG_TX_MESSAGE(
-    MSC_RRC_ENB,
-    MSC_S1AP_ENB,
-    (const char *)&S1AP_E_RAB_SETUP_RESP (msg_p),
-    sizeof(s1ap_e_rab_setup_resp_t),
-    MSC_AS_TIME_FMT" E_RAB_SETUP_RESP UE %X eNB_ue_s1ap_id %u e_rabs:%u succ %u fail",
-    MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_context_pP->ue_id_rnti,
-    S1AP_E_RAB_SETUP_RESP (msg_p).eNB_ue_s1ap_id,
-    e_rabs_done, e_rabs_failed);
-
-
-  S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs = e_rabs_done;
-  S1AP_E_RAB_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
-  if ((e_rabs_done > 0) )
-    itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
-      
+  return 0;
 }
 
 # endif /* defined(ENABLE_ITTI) */

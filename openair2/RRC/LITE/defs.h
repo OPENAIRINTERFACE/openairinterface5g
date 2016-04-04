@@ -228,6 +228,7 @@ typedef enum e_rab_satus_e {
 typedef struct e_rab_param_s {
   e_rab_t param;
   uint8_t status;
+  uint8_t xid; // transaction_id
 } __attribute__ ((__packed__)) e_rab_param_t;
 #endif
 
