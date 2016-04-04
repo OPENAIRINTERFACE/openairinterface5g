@@ -42,7 +42,7 @@ int lfds611_stack_new( struct lfds611_stack_state **ss, lfds611_atom_t number_el
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_stack_use( struct lfds611_stack_state *ss )
 {
@@ -53,14 +53,14 @@ void lfds611_stack_use( struct lfds611_stack_state *ss )
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 int lfds611_stack_internal_freelist_init_function( void **user_data, void *user_state )
 {
@@ -78,7 +78,7 @@ int lfds611_stack_internal_freelist_init_function( void **user_data, void *user_
   return( rv );
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 

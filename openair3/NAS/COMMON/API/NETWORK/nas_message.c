@@ -323,7 +323,7 @@ int nas_message_decrypt(
 #if defined(NAS_MME)
       LOG_FUNC_RETURN (TLV_DECODE_MAC_MISMATCH);
 #else
-#warning "added test on integrity algorithm because of SECURITY_MODE_COMMAND not correctly handled in UE (check integrity)"
+//#warning "added test on integrity algorithm because of SECURITY_MODE_COMMAND not correctly handled in UE (check integrity)"
 
       if (emm_security_context->selected_algorithms.integrity !=
           NAS_SECURITY_ALGORITHMS_EIA0) {
@@ -1016,10 +1016,10 @@ static int _nas_message_decrypt(
       stream_cipher.count      = count;
       stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
       stream_cipher.direction  = direction;
-      stream_cipher.message    = src;
+      stream_cipher.message    = (unsigned char *)src;
       /* length in bits */
       stream_cipher.blength    = length << 3;
-      nas_stream_encrypt_eea1(&stream_cipher, dest);
+      nas_stream_encrypt_eea1(&stream_cipher, (unsigned char *)dest);
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
@@ -1050,10 +1050,10 @@ static int _nas_message_decrypt(
       stream_cipher.count      = count;
       stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
       stream_cipher.direction  = direction;
-      stream_cipher.message    = src;
+      stream_cipher.message    = (unsigned char *)src;
       /* length in bits */
       stream_cipher.blength    = length << 3;
-      nas_stream_encrypt_eea1(&stream_cipher, dest);
+      nas_stream_encrypt_eea1(&stream_cipher, (unsigned char *)dest);
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
@@ -1178,10 +1178,10 @@ static int _nas_message_encrypt(
       stream_cipher.count      = count;
       stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
       stream_cipher.direction  = direction;
-      stream_cipher.message    = src;
+      stream_cipher.message    = (unsigned char *)src;
       /* length in bits */
       stream_cipher.blength    = length << 3;
-      nas_stream_encrypt_eea1(&stream_cipher, dest);
+      nas_stream_encrypt_eea1(&stream_cipher, (unsigned char *)dest);
 
       LOG_FUNC_RETURN (length);
 
@@ -1209,10 +1209,10 @@ static int _nas_message_encrypt(
       stream_cipher.count      = count;
       stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
       stream_cipher.direction  = direction;
-      stream_cipher.message    = src;
+      stream_cipher.message    = (unsigned char *)src;
       /* length in bits */
       stream_cipher.blength    = length << 3;
-      nas_stream_encrypt_eea2(&stream_cipher, dest);
+      nas_stream_encrypt_eea2(&stream_cipher, (unsigned char *)dest);
 
       LOG_FUNC_RETURN (length);
 
@@ -1344,7 +1344,7 @@ static uint32_t _nas_message_get_mac(
     stream_cipher.count      = count;
     stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
     stream_cipher.direction  = direction;
-    stream_cipher.message    = buffer;
+    stream_cipher.message    = (unsigned char *)buffer;
     /* length in bits */
     stream_cipher.blength    = length << 3;
 
@@ -1390,7 +1390,7 @@ static uint32_t _nas_message_get_mac(
     stream_cipher.count      = count;
     stream_cipher.bearer     = 0x00; //33.401 section 8.1.1
     stream_cipher.direction  = direction;
-    stream_cipher.message    = buffer;
+    stream_cipher.message    = (unsigned char *)buffer;
     /* length in bits */
     stream_cipher.blength    = length << 3;
 

@@ -112,6 +112,7 @@ int nas_stream_encrypt_eia2(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
   cmac_ctx = CMAC_CTX_new();
   ret = CMAC_Init(cmac_ctx, stream_cipher->key, stream_cipher->key_length, cipher, NULL);
   ret = CMAC_Update(cmac_ctx, m, m_length + 8);
+  (void)ret; /* avoid gcc warning "set but not used" */
   CMAC_Final(cmac_ctx, data, &size);
   CMAC_CTX_free(cmac_ctx);
 
