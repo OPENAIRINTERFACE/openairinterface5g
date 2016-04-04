@@ -58,6 +58,7 @@ from lib_autotest import *
 def find_open_port():
    global serial_port, ser
    max_ports=100
+   serial_port=''
    while True:
      if os.path.exists(serial_port) == True:
        return serial_port
