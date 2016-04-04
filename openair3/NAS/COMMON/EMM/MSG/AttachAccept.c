@@ -214,7 +214,7 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
 
   *(buffer + encoded) = (encode_u8_eps_attach_result(&attach_accept->epsattachresult) & 0x0f);
   encoded++;
-#warning "LG TEST override t3412value"
+//#warning "LG TEST override t3412value"
   attach_accept->t3412value.unit = GPRS_TIMER_UNIT_360S;
   attach_accept->t3412value.timervalue = 10;
 
@@ -288,7 +288,7 @@ int encode_attach_accept(attach_accept_msg *attach_accept, uint8_t *buffer, uint
       encoded += encode_result;
   }
 
-#warning "LG TEST override t3402value"
+//#warning "LG TEST override t3402value"
   attach_accept->presencemask |= ATTACH_ACCEPT_T3402_VALUE_PRESENT;
   attach_accept->t3402value.unit = GPRS_TIMER_UNIT_60S;
   attach_accept->t3402value.timervalue = 12;

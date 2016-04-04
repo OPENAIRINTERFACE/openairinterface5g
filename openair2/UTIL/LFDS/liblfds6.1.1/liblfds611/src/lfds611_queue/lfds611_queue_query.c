@@ -5,7 +5,7 @@
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_queue_query( struct lfds611_queue_state *qs, enum lfds611_queue_query_type query_type, void *query_input, void *query_output )
 {
@@ -31,7 +31,7 @@ void lfds611_queue_query( struct lfds611_queue_state *qs, enum lfds611_queue_que
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 

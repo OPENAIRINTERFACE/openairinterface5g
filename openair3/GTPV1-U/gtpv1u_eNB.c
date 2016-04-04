@@ -333,7 +333,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
             gtpv1u_teid_data_p->eps_bearer_id);
 #endif
 
-#warning "LG eps bearer mapping to DRB id to do (offset -4)"
+//#warning "LG eps bearer mapping to DRB id to do (offset -4)"
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gtpv1u_teid_data_p->enb_id, ENB_FLAG_YES,  gtpv1u_teid_data_p->ue_id, 0, 0,gtpv1u_teid_data_p->enb_id);
 
       MSC_LOG_TX_MESSAGE(
@@ -611,7 +611,7 @@ gtpv1u_new_data_req(
   if (bearer_p->state != BEARER_UP) {
     LOG_W(GTPU, "Trying to send data over bearer with state(%u) != BEARER_UP\n",
           bearer_p->state);
-#warning  LG: HACK WHILE WAITING FOR NAS, normally return -1
+//#warning  LG: HACK WHILE WAITING FOR NAS, normally return -1
 
     if (bearer_p->state != BEARER_IN_CONFIG)
       return -1;
@@ -673,7 +673,7 @@ gtpv1u_create_s1u_tunnel(
   teid_t                   s1u_teid             = 0;
   gtpv1u_teid_data_t      *gtpv1u_teid_data_p   = NULL;
   gtpv1u_ue_data_t        *gtpv1u_ue_data_p     = NULL;
-  MessageDef              *message_p            = NULL;
+  //MessageDef              *message_p            = NULL;
   hashtable_rc_t           hash_rc              = HASH_TABLE_KEY_NOT_EXISTS;
   int                      i;
   ebi_t                    eps_bearer_id        = 0;
@@ -996,7 +996,7 @@ void *gtpv1u_eNB_task(void *args)
 {
   int                       rc = 0;
   instance_t                instance;
-  const char               *msg_name_p;
+  //const char               *msg_name_p;
 
   rc = gtpv1u_eNB_init();
   AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
@@ -1014,7 +1014,7 @@ void *gtpv1u_eNB_task(void *args)
     DevAssert(received_message_p != NULL);
 
     instance = ITTI_MSG_INSTANCE(received_message_p);
-    msg_name_p = ITTI_MSG_NAME(received_message_p);
+    //msg_name_p = ITTI_MSG_NAME(received_message_p);
 
     switch (ITTI_MSG_ID(received_message_p)) {
 
@@ -1081,6 +1081,7 @@ void *gtpv1u_eNB_task(void *args)
             LOG_E(GTPU, "nwGtpv1uGpduMsgNew failed: 0x%x\n", rc);
             MSC_LOG_EVENT(MSC_GTPU_ENB,"0 Failed send G-PDU ltid %u rtid %u size %u",
             		enb_s1u_teid,sgw_s1u_teid,data_req_p->length);
+            (void)enb_s1u_teid; /* avoid gcc warning "set but not used" */
           } else {
             rc = nwGtpv1uProcessUlpReq(gtpv1u_data_g.gtpv1u_stack, &stack_req);
 
