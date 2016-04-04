@@ -147,7 +147,8 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
   int rc;
   //ToDo: EXMIMO harmonization is not complete. That is the reason for this ifdef
   #ifdef EXMIMO
-  device_init(device, openair0_cfg);
+  int device_init(openair0_device *device, openair0_config_t *openair0_cfg);
+  rc = device_init(device, openair0_cfg);
   #else
   rc=load_lib(device, openair0_cfg, NULL,BBU_LOCAL_RADIO_HEAD );
   if ( rc >= 0) {       

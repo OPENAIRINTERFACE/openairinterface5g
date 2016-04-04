@@ -630,7 +630,7 @@ nwGtpv1uHandleEchoReq(NW_IN NwGtpv1uStackT *thiz,
 
   bufLen = sizeof(NwGtpv1uIeTv1T)+ ((NwGtpv1uMsgT*)hMsg)->msgLen;
 
-#warning CROUX DIRTY +16, TO BE FIXED!!!
+//#warning CROUX DIRTY +16, TO BE FIXED!!!
   /* the +16 is there because by analyzing memory allocation with some external
    * tool, I saw that there were 6 bytes accessed after bufLen in nwGtpv1uCreateAndSendMsg
    * the value "16" has been chosen arbitrarily, just bigger than 6
@@ -694,7 +694,7 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t st
   if(thiz) {
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
-    thiz->seq   = (uint16_t) ((uint32_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
+    thiz->seq   = (uint16_t) ((uintptr_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
     RB_INIT(&(thiz->outstandingTxSeqNumMap));
     RB_INIT(&(thiz->outstandingRxSeqNumMap));
     RB_INIT(&(thiz->sessionMap));

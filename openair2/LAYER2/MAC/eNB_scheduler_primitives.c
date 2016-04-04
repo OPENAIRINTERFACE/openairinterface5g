@@ -1082,7 +1082,7 @@ boolean_t CCE_allocation_infeasible(int module_idP,
 
 
   DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
-  DCI_ALLOC_t *dci_alloc;
+  //DCI_ALLOC_t *dci_alloc;
   int ret;
   boolean_t res=FALSE;
 

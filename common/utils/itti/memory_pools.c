@@ -54,7 +54,9 @@ uint64_t vcd_mp_free;
 #endif
 
 /*------------------------------------------------------------------------------*/
+#ifndef CHARS_TO_UINT32
 #define CHARS_TO_UINT32(c1, c2, c3, c4) (((c1) << 24) | ((c2) << 16) | ((c3) << 8) | (c4))
+#endif
 
 #define MEMORY_POOL_ITEM_INFO_NUMBER    2
 

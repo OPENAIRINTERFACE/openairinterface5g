@@ -215,7 +215,7 @@ emm_fsm_state_t _emm_fsm_status[EMM_FSM_NB_UE_MAX];
  ***************************************************************************/
 void emm_fsm_initialize(void)
 {
-  int ueid;
+  //int ueid;
   LOG_FUNC_IN;
 
   _emm_fsm_status[0] = EMM_NULL;

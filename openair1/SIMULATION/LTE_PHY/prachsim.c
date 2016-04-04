@@ -58,6 +58,8 @@ PHY_VARS_UE *PHY_vars_UE;
 
 extern uint16_t prach_root_sequence_map0_3[838];
 
+void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+
 int main(int argc, char **argv)
 {
 
@@ -74,7 +76,7 @@ int main(int argc, char **argv)
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim=0.0;
-  int trial, ntrials=1;
+  int trial; //, ntrials=1;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
@@ -82,7 +84,7 @@ int main(int argc, char **argv)
   uint8_t hs_flag=0;
   int n_frames=1;
   channel_desc_t *UE2eNB;
-  uint32_t nsymb,tx_lev,tx_lev_dB;
+  uint32_t nsymb,tx_lev; //,tx_lev_dB;
   uint8_t extended_prefix_flag=0;
   //  int8_t interf1=-19,interf2=-19;
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -101,8 +103,8 @@ int main(int argc, char **argv)
   uint16_t preamble_energy_list[64],preamble_tx=99,preamble_delay_list[64];
   uint16_t preamble_max,preamble_energy_max;
   PRACH_RESOURCES_t prach_resources;
-  uint8_t prach_fmt;
-  int N_ZC;
+  //uint8_t prach_fmt;
+  //int N_ZC;
   int delay = 0;
   double delay_avg=0;
   double ue_speed = 0;
@@ -126,7 +128,8 @@ int main(int argc, char **argv)
     case 'a':
       printf("Running AWGN simulation\n");
       awgn_flag = 1;
-      ntrials=1;
+      /* ntrials not used later, no need to set */
+      //ntrials=1;
       break;
 
     case 'd':
@@ -404,9 +407,11 @@ int main(int argc, char **argv)
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag=hs_flag;
   PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
 
-  prach_fmt = get_prach_fmt(PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-                            PHY_vars_eNB->lte_frame_parms.frame_type);
-  N_ZC = (prach_fmt <4)?839:139;
+  /* N_ZC not used later, so prach_fmt is also useless, don't set */
+  //prach_fmt = get_prach_fmt(PHY_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+  //                          PHY_vars_eNB->lte_frame_parms.frame_type);
+  /* N_ZC not used later, no need to set */
+  //N_ZC = (prach_fmt <4)?839:139;
 
   compute_prach_seq(&PHY_vars_eNB->lte_frame_parms.prach_config_common,PHY_vars_eNB->lte_frame_parms.frame_type,PHY_vars_eNB->X_u);
 
@@ -430,7 +435,8 @@ int main(int argc, char **argv)
                           subframe,
                           0); //Nf
 
-  tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
+  /* tx_lev_dB not used later, no need to set */
+  //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
   write_output("txsig0_new.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
   //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
