@@ -288,7 +288,7 @@ int emu_transport_handle_ue_info(bypass_msg_header_t *messg,
               n_ue, total_header+total_tbs,total_header,total_tbs);
       }
 
-#warning "CC id should be adjusted, set to zero for the moment"
+//#warning "CC id should be adjusted, set to zero for the moment"
       memcpy(&UE_transport_info[n_ue][CC_id], UE_info, total_header + total_tbs);
 
       /* Go to the next UE info */

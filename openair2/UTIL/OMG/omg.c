@@ -301,7 +301,7 @@ set_new_mob_type (int id, int node_t, int mob_t, double cur_time)
 
   int prev_mob;
   node_list *tmp;
-  job_list *tmp2, *prev_job;
+  //job_list *tmp2, *prev_job;
   pair_struct *pair;
   double pause_p;
 

@@ -141,7 +141,9 @@ static uint8_t check_trigger_meas_event(
   Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys,
   Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt);
 
+#ifdef Rel10
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+#endif
 
 
 
@@ -151,10 +153,13 @@ static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_in
 
 
 /*------------------------------------------------------------------------------*/
+/* to avoid gcc warnings when compiling with certain options */
+#if defined(ENABLE_USE_MME) || ENABLE_RAL
 static Rrc_State_t rrc_get_state (module_id_t ue_mod_idP)
 {
   return UE_rrc_inst[ue_mod_idP].RrcState;
 }
+#endif
 
 static Rrc_Sub_State_t rrc_get_sub_state (module_id_t ue_mod_idP)
 {
@@ -261,6 +266,7 @@ static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
 #ifdef Rel10
 //-----------------------------------------------------------------------------
+#if 0
 static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
 {
   int i;
@@ -273,6 +279,7 @@ static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
 
   }
 }
+#endif
 #endif
 
 //-----------------------------------------------------------------------------
@@ -697,6 +704,10 @@ rrc_ue_establish_drb(
   // add descriptor from RRC PDU
 #ifdef PDCP_USE_NETLINK
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
+  /* avoid gcc warnings */
+  (void)oip_ifup;
+  (void)ip_addr_offset3;
+  (void)ip_addr_offset4;
 #endif
 
   LOG_I(RRC,"[UE %d] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
@@ -1296,7 +1307,7 @@ rrc_ue_process_radioResourceConfigDedicated(
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif OAI_EMU
+#    endif /* OAI_EMU */
 #endif
 }
 
@@ -2266,6 +2277,9 @@ static const char* SIB2preambleTransMax( long value )
   case 10:
     return "n200";
   }
+
+  /* unreachable but gcc warns... */
+  return "ERR";
 }
 static const char* SIB2ra_ResponseWindowSize( long value )
 {
@@ -3061,9 +3075,10 @@ uint64_t arfcn_to_freq(long arfcn) {
     return((uint64_t)3400000000 + ((arfcn-41590)*100000));
   else if (arfcn <45590) // Band 43
     return((uint64_t)3600000000 + ((arfcn-43950)*100000));
-  else
+  else {
     LOG_E(RRC,"Unknown EARFCN %d\n",arfcn);
-
+    exit(1);
+  }
 }
 static void dump_sib5( SystemInformationBlockType5_t *sib5 )
 {

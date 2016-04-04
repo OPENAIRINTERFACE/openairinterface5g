@@ -67,9 +67,9 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
   uint32_t UL_alloc_pdu[2];
 
   int i;
-  int dci_length_bytes,dci_length;
-  int BCCH_pdu_size_bits, BCCH_pdu_size_bytes;
-  int UL_pdu_size_bits, UL_pdu_size_bytes;
+  int dci_length_bytes=0,dci_length=0;
+  int BCCH_pdu_size_bits=0, BCCH_pdu_size_bytes=0;
+  int UL_pdu_size_bits=0, UL_pdu_size_bytes=0;
   int mcs = 3;
 
   DCI_pdu.Num_ue_spec_dci = 0;
@@ -788,6 +788,11 @@ int main(int argc, char **argv)
 
     while (!feof(input_fd)) {
       ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+
+      if (ret != 2) {
+        printf("%s:%d:%s: fscanf error, exiting\n", __FILE__, __LINE__, __FUNCTION__);
+        exit(1);
+      }
 
       if ((i%4)==0) {
         ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));

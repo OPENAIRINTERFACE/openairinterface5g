@@ -65,10 +65,12 @@
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
-#ifdef __AVX2__
-#define malloc16(x) memalign(32,x)
-#else
-#define malloc16(x) memalign(16,x)
+#ifndef malloc16
+#  ifdef __AVX2__
+#    define malloc16(x) memalign(32,x)
+#  else
+#    define malloc16(x) memalign(16,x)
+#  endif
 #endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc

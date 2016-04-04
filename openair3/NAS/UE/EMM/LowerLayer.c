@@ -261,7 +261,7 @@ int lowerlayer_data_req(unsigned int ueid, const OctetString *data)
   int rc;
   emm_sap_t emm_sap;
   emm_security_context_t    *sctx = NULL;
-  struct emm_data_context_s *ctx  = NULL;
+  //struct emm_data_context_s *ctx  = NULL;
 
   emm_sap.primitive = EMMAS_DATA_REQ;
   emm_sap.u.emm_as.u.data.guti = _emm_data.guti;
