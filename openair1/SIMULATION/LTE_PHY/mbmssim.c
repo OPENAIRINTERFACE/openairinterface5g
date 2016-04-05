@@ -337,7 +337,11 @@ int main(int argc, char **argv)
   else
     sprintf(fname,"embms_awgn_%d_%d.m",mcs,N_RB_DL);
 
-  fd = fopen(fname,"w");
+  if (!(fd = fopen(fname,"w"))) {
+    printf("Cannot open %s, check permissions\n",fname);
+    exit(-1);
+  }
+	
 
   if (awgn_flag==0)
     fprintf(fd,"SNR_%d_%d=[];errs_mch_%d_%d=[];mch_trials_%d_%d=[];\n",
