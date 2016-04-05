@@ -1,4 +1,34 @@
 #!/bin/bash
+#******************************************************************************
+
+#    OpenAirInterface 
+#    Copyright(c) 1999 - 2014 Eurecom
+
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#   You should have received a copy of the GNU General Public License
+#   along with OpenAirInterface.The full GNU General Public License is 
+#   included in this distribution in the file called "COPYING". If not, 
+#   see <http://www.gnu.org/licenses/>.
+
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+  
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+
+# *******************************************************************************/
+# \author Navid Nikaein, Rohit Gupta
 
 if [ -s $OPENAIR_DIR/cmake_targets/tools/build_helper ] ; then
    source $OPENAIR_DIR/cmake_targets/tools/build_helper
@@ -111,6 +141,8 @@ function test_compile() {
           compile_log_dir=`eval echo \"$OPENAIR_DIR/cmake_targets/log/\"`
           echo "Removing compilation log files in $compile_log_dir"
           rm -frv $compile_log_dir
+          echo "Executing $pre_exec_file $pre_exe_args ...."
+          eval $pre_exec_file  $pre_exec_args
           echo "Executing $compile_prog $compile_prog_args ...."
           eval $compile_prog  $compile_prog_args
           echo "Copying compilation log files to test case log directory: $log_dir"
@@ -280,7 +312,7 @@ function test_compile_and_run() {
            
           if [ -n "$pre_exec_file" ]; then
             {  echo " Executing $pre_exec_file $pre_exec_args " 
-               eval " echo '$mypassword' |sudo -S -E $pre_exec_file $pre_exec_args " ; }>> $temp_exec_log  2>&1
+               eval " $pre_exec_file $pre_exec_args " ; }>> $temp_exec_log  2>&1
 
           fi
           echo "Executing $main_exec $main_exec_args_array_index "
@@ -502,6 +534,7 @@ for search_expr in "${test_case_array[@]}"
     echo "search_expr_true = $search_expr_true"
     echo "search_expr_false = $search_expr_false"
     echo "nruns = $nruns"
+
 
     #eval $pre_exec
     compile_prog_out=`eval echo \"$compile_prog_out\"`
