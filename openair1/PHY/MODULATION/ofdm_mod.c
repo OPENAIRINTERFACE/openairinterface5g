@@ -237,7 +237,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 }
 
 
-void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   int aa, slot_offset, slot_offset_F;

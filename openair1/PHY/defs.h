@@ -122,7 +122,6 @@ static inline void* malloc16_clear( size_t size )
 #define UNUSED(x) (void)x;
 
 
-#include "spec_defs_top.h"
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
 

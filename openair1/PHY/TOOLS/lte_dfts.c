@@ -5973,7 +5973,6 @@ simd256_q15_t *W4_12_256=(simd256_q15_t *)W4_12s_256;
 simd256_q15_t *W6_12_256=(simd256_q15_t *)W6_12s_256;
 
 
-static simd256_q15_t norm256;
 
 static inline void dft12f_simd256(simd256_q15_t *x0,
 				  simd256_q15_t *x1,

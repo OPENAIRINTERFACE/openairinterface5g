@@ -121,7 +121,7 @@ int16_t W3_im[3][6] = {{0    ,0     ,0     },
 
 char pucch_format_string[6][20] = {"format 1\0","format 1a\0","format 1b\0","format 2\0","format 2a\0","format 2b\0"};
 
-void generate_pucch(mod_sym_t **txdataF,
+void generate_pucch(int32_t **txdataF,
                     LTE_DL_FRAME_PARMS *frame_parms,
                     uint8_t ncs_cell[20][7],
                     PUCCH_FMT_t fmt,
@@ -145,7 +145,7 @@ void generate_pucch(mod_sym_t **txdataF,
   uint8_t m,l,refs;
   uint8_t n_cs,S,alpha_ind,rem;
   int16_t tmp_re,tmp_im,ref_re,ref_im,W_re=0,W_im=0;
-  mod_sym_t *txptr;
+  int32_t *txptr;
   uint32_t symbol_offset;
 
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;

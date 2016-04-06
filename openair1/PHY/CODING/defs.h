@@ -372,6 +372,17 @@ void init_td8 (void);
 \brief This function initializes the tables for 16-bit LLR Turbo decoder.*/
 void init_td16 (void);
 
+#ifdef __AVX2__
+/*!\fn void init_td8(void)
+\brief This function initializes the tables for 8-bit LLR Turbo decoder (AVX2).*/
+void init_td8avx2 (void);
+
+
+/*!\fn void init_td16(void)
+\brief This function initializes the tables for 16-bit LLR Turbo decoder (AVX2).*/
+void init_td16avx2 (void);
+#endif
+
 /*!\fn uint32_t crc24a(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('a' variant for overall transport block)
 based on 3GPP UMTS/LTE specifications.

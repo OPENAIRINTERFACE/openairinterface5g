@@ -50,7 +50,7 @@
 //#define DEBUG_ULSCH_MODULATION
 
 #ifndef OFDMA_ULSCH
-void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
+void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -373,7 +373,7 @@ void dft_lte(mod_sym_t *z,mod_sym_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
 }
 
 #endif
-void ulsch_modulation(mod_sym_t **txdataF,
+void ulsch_modulation(int32_t **txdataF,
                       short amp,
                       uint32_t frame,
                       uint32_t subframe,
@@ -393,7 +393,7 @@ void ulsch_modulation(mod_sym_t **txdataF,
   //  uint8_t harq_pid = (rag_flag == 1) ? 0 : subframe2harq_pid_tdd(frame_parms->tdd_config,subframe);
   uint8_t harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
   uint8_t Q_m;
-  mod_sym_t *txptr;
+  int32_t *txptr;
   uint32_t symbol_offset;
   uint16_t first_rb;
   uint16_t nb_rb;

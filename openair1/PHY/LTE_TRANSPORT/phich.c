@@ -393,8 +393,8 @@ void generate_phich_emul(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
-mod_sym_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
-mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
+int32_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
+int32_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
 
 // This routine generates the PHICH
 
@@ -404,7 +404,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
                     uint8_t ngroup_PHICH,
                     uint8_t HI,
                     uint8_t subframe,
-                    mod_sym_t **y)
+                    int32_t **y)
 {
 
   int16_t d[24],*dp;
@@ -1425,7 +1425,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
   LTE_eNB_ULSCH_t **ulsch_eNB = phy_vars_eNB->ulsch_eNB;
-  mod_sym_t **txdataF = phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id];
+  int32_t **txdataF = phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id];
   uint8_t harq_pid;
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;

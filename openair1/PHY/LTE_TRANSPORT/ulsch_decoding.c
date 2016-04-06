@@ -52,10 +52,6 @@
 #include "PHY_INTERFACE/extern.h"
 #endif
 
-#ifdef OMP
-#include <omp.h>
-#endif
-
 #ifdef PHY_ABSTRACTION
 #include "UTIL/OCG/OCG.h"
 #include "UTIL/OCG/OCG_extern.h"
@@ -70,7 +66,7 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
   int i,r;
 
   if (ulsch) {
-    for (i=0; i<ulsch->Mdlharq; i++) {
+    for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {
         if (ulsch->harq_processes[i]->b) {
           free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
@@ -98,7 +94,7 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
   }
 }
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag)
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag)
 {
 
   LTE_eNB_ULSCH_t *ulsch;
@@ -127,10 +123,10 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint
 
   if (ulsch) {
     memset(ulsch,0,sizeof(LTE_eNB_ULSCH_t));
-    ulsch->Mdlharq = Mdlharq;
     ulsch->max_turbo_iterations = max_turbo_iterations;
+    ulsch->Mlimit = 4;
 
-    for (i=0; i<Mdlharq; i++) {
+    for (i=0; i<8; i++) {
       //      msg("new_ue_ulsch: Harq process %d\n",i);
       ulsch->harq_processes[i] = (LTE_UL_eNB_HARQ_t *)malloc16(sizeof(LTE_UL_eNB_HARQ_t));
 
@@ -180,15 +176,13 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint
 void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
 
-  unsigned char Mdlharq;
   unsigned char i;
 
   //ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
-    Mdlharq = ulsch->Mdlharq;
     ulsch->rnti = 0;
 
-    for (i=0; i<Mdlharq; i++) {
+    for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {
         //    ulsch->harq_processes[i]->Ndi = 0;
         ulsch->harq_processes[i]->status = 0;
@@ -1266,7 +1260,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                                    ulsch_harq->e+r_offset,
                                    ulsch_harq->C,
                                    NSOFT,
-                                   ulsch->Mdlharq,
+                                   0,   //Uplink
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
@@ -1299,12 +1293,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     #endif
     */
   }
-
-#ifdef OMP
-  #pragma omp parallel private(r,ret) shared(ulsch,harq_pid,crc_type,Kr,f1f2mat_old,phy_vars_eNB,status,iind,)
-  {
-    #pragma omp for nowait
-#endif
 
     for (r=0; r<ulsch_harq->C; r++) {
       //    msg("Clearing c, %p\n",ulsch_harq->c[r]);
@@ -1365,9 +1353,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
     }
 
-#ifdef OMP
-  }
-#endif
   // Reassembly of Transport block here
   offset = 0;
   //  msg("F %d, Fbytes %d\n",ulsch_harq->F,ulsch_harq->F>>3);

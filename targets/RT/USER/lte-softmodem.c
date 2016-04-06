@@ -513,7 +513,7 @@ void reset_stats(FL_OBJECT *button, long arg)
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mdlharq; j++) {
+      for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mlimit; j++) {
         phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].dlsch_ACK[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].dlsch_trials[k][j]=0;
@@ -523,7 +523,7 @@ void reset_stats(FL_OBJECT *button, long arg)
       phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[k]=0;
       phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
 
-      for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mdlharq; j++) {
+      for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mlimit; j++) {
         phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[k][j]=0;

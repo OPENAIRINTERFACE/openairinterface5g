@@ -72,7 +72,6 @@
 #define PUCCH 1
 
 extern int exit_openair;
-//extern void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(32)));
@@ -636,7 +635,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
     for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB; aa++) {
 
       memset(&phy_vars_eNB->lte_eNB_common_vars.txdataF[0][aa][subframe*phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)],
-             0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(mod_sym_t));
+             0,phy_vars_eNB->lte_frame_parms.ofdm_symbol_size*(phy_vars_eNB->lte_frame_parms.symbols_per_tti)*sizeof(int32_t));
     }
   }
 
@@ -1990,7 +1989,7 @@ void process_HARQ_feedback(uint8_t UE_id,
             // then Increment DLSCH round index
             dlsch_harq_proc->round++;
 
-            if (dlsch_harq_proc->round == 1/*dlsch->Mdlharq*/) {
+            if (dlsch_harq_proc->round == dlsch->Mlimit) {
               // This was the last round for DLSCH so reset round and increment l2_error counter
 #ifdef DEBUG_PHY_PROC
               LOG_W(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
@@ -2673,7 +2672,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                 phy_vars_eNB->Mod_id,harq_pid,
                 frame,subframe, i,
                 phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round-1,
-                phy_vars_eNB->ulsch_eNB[i]->Mdlharq,
+                phy_vars_eNB->ulsch_eNB[i]->Mlimit,
                 phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->o_ACK[0],
                 phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->o_ACK[1]);
 
@@ -2701,11 +2700,11 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
           //    dump_ulsch(phy_vars_eNB,sched_subframe,i);
           //mac_exit_wrapper("ULSCH error");
 
-          if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mdlharq) {
-            LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mdlharq %d reached\n",
+          if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round== phy_vars_eNB->ulsch_eNB[i]->Mlimit) {
+            LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d UE %d ULSCH Mlimit %d reached\n",
                   phy_vars_eNB->Mod_id,harq_pid,
                   frame,subframe, i,
-                  phy_vars_eNB->ulsch_eNB[i]->Mdlharq);
+                  phy_vars_eNB->ulsch_eNB[i]->Mlimit);
 
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round=0;
             phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->phich_active=0;
@@ -2817,7 +2816,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 	    //#endif //DEBUG_PHY_PROC
 
           for (k=0; k<8; k++) { //harq_processes
-            for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mdlharq; j++) {
+            for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mlimit; j++) {
               phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK[k][j]=0;
               phy_vars_eNB->eNB_UE_stats[i].dlsch_ACK[k][j]=0;
               phy_vars_eNB->eNB_UE_stats[i].dlsch_trials[k][j]=0;
@@ -2827,7 +2826,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
             phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[k]=0;
             phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
 
-            for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mdlharq; j++) {
+            for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mlimit; j++) {
               phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[k][j]=0;
               phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
               phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[k][j]=0;
@@ -3242,7 +3241,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
     if ((frame % 100 == 0) && (subframe == 4)) {
       for (harq_idx=0; harq_idx<8; harq_idx++) {
-        for (round=0; round<phy_vars_eNB->ulsch_eNB[i]->Mdlharq; round++) {
+        for (round=0; round<phy_vars_eNB->ulsch_eNB[i]->Mlimit; round++) {
           if ((phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[harq_idx][round] -
                phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[harq_idx][round]) != 0) {
             phy_vars_eNB->eNB_UE_stats[i].ulsch_round_fer[harq_idx][round] =

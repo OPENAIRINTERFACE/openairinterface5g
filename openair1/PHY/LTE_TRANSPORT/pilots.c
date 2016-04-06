@@ -41,7 +41,7 @@
 #include "PHY/defs.h"
 
 void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      int16_t amp,
                      uint16_t Ntti)
 {
@@ -168,7 +168,7 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 int generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
-                         mod_sym_t **txdataF,
+                         int32_t **txdataF,
                          int16_t amp,
                          uint16_t slot,
                          int first_pilot_only)

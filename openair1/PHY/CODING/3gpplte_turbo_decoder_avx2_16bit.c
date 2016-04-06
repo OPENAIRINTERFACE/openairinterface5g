@@ -940,9 +940,8 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   uint32_t db;
 
 
-  __m128i *yp128,*yp128_cw2;
   __m256i tmp, zeros=_mm256_setzero_si256();
-  __m128i tmpe,tmpe_cw2;
+
 
   int offset8_flag=0;
 
@@ -988,9 +987,6 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
   }
 
 
-  yp128 = (__m128i*)y;
-  yp128_cw2 = (__m128i*)y2;
-
   s = systematic0;
   s1 = systematic1;
   s2 = systematic2;
@@ -999,6 +995,13 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 
 
 #if 0
+  __m128i *yp128,*yp128_cw2;
+  __m128i tmpe,tmpe_cw2;
+  yp128 = (__m128i*)y;
+  yp128_cw2 = (__m128i*)y2;
+
+
+
   for (i=0; i<n; i+=8) {
     pi2_p = &pi2tab16avx2[iind][i];
 
