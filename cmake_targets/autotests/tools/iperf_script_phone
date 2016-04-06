@@ -53,7 +53,7 @@ while true ; do
      echo "Wating for UE to connect and get IP Address..."
      sleep 1
   else 
-     echo "UE is not connected. IP Address settings are... $cmd"
+     echo "UE is now connected. IP Address settings are... $cmd"
      break
   fi
 done
