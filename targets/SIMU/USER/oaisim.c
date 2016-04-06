@@ -458,6 +458,7 @@ l2l1_task (void *args_p)
   char *xargv[1];
   //#endif
 
+#undef PRINT_STATS /* this undef is to avoid gcc warnings */
 #define PRINT_STATS
 #ifdef PRINT_STATS
   int len;
@@ -530,19 +531,23 @@ l2l1_task (void *args_p)
 
   if(abstraction_flag==0) {
     for (UE_inst=0; UE_inst<NB_UE_INST; UE_inst++) {
-      sprintf(UE_stats_th_filename,"UE_stats_th%d_tx%d.txt",UE_inst,oai_emulation.info.transmission_mode);
+      /* TODO: transmission_mode is defined per CC, we set 0 for now */
+      sprintf(UE_stats_th_filename,"UE_stats_th%d_tx%d.txt",UE_inst,oai_emulation.info.transmission_mode[0]);
       UE_stats_th[UE_inst] = fopen (UE_stats_th_filename, "w");
     }
 
-    sprintf(eNB_stats_th_filename,"eNB_stats_th_tx%d.txt",oai_emulation.info.transmission_mode);
+    /* TODO: transmission_mode is defined per CC, we set 0 for now */
+    sprintf(eNB_stats_th_filename,"eNB_stats_th_tx%d.txt",oai_emulation.info.transmission_mode[0]);
     eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
   } else {
     for (UE_inst=0; UE_inst<NB_UE_INST; UE_inst++) {
-      sprintf(UE_stats_th_filename,"UE_stats_abs_th%d_tx%d.txt",UE_inst,oai_emulation.info.transmission_mode);
+      /* TODO: transmission_mode is defined per CC, we set 0 for now */
+      sprintf(UE_stats_th_filename,"UE_stats_abs_th%d_tx%d.txt",UE_inst,oai_emulation.info.transmission_mode[0]);
       UE_stats_th[UE_inst] = fopen (UE_stats_th_filename, "w");
     }
 
-    sprintf(eNB_stats_th_filename,"eNB_stats_abs_th_tx%d.txt",oai_emulation.info.transmission_mode);
+    /* TODO: transmission_mode is defined per CC, we set 0 for now */
+    sprintf(eNB_stats_th_filename,"eNB_stats_abs_th_tx%d.txt",oai_emulation.info.transmission_mode[0]);
     eNB_avg_thr = fopen (eNB_stats_th_filename, "w");
   }
 
@@ -977,7 +982,7 @@ l2l1_task (void *args_p)
 
           for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++)
             for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-#warning figure out what to do with UE frame_parms during initial_sync
+//#warning figure out what to do with UE frame_parms during initial_sync
               do_DL_sig (r_re0,
                          r_im0,
                          r_re,
@@ -1000,7 +1005,7 @@ l2l1_task (void *args_p)
           start_meas (&ul_chan_stats);
 
           for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-#warning figure out what to do with UE frame_parms during initial_sync
+//#warning figure out what to do with UE frame_parms during initial_sync
             do_UL_sig (r_re0, r_im0, r_re, r_im, s_re, s_im, UE2eNB,
                        enb_data, ue_data, next_slot,
                        abstraction_flag,
@@ -1034,7 +1039,7 @@ l2l1_task (void *args_p)
 
             for (UE_inst = 0; UE_inst < NB_UE_INST; UE_inst++)
               for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-#warning  check dimensions of r_reN,r_imN for multiple CCs
+//#warning  check dimensions of r_reN,r_imN for multiple CCs
                 do_DL_sig (r_re0,
                            r_im0,
                            r_re,
@@ -1061,7 +1066,7 @@ l2l1_task (void *args_p)
             start_meas (&ul_chan_stats);
 
             for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-#warning  check dimensions of r_reN,r_imN for multiple CCs
+//#warning  check dimensions of r_reN,r_imN for multiple CCs
               do_UL_sig (r_re0,
                          r_im0,
                          r_re,
@@ -1770,6 +1775,7 @@ print_opp_meas (void)
 
 }
 
+#if !defined(ENABLE_ITTI)
 static void *
 sigh (void *arg)
 {
@@ -1805,6 +1811,7 @@ sigh (void *arg)
 
   pthread_exit (NULL);
 }
+#endif /* !defined(ENABLE_ITTI) */
 
 void
 oai_shutdown (void)

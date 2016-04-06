@@ -9,13 +9,13 @@ RRC_Rel10=(
 
 X2AP_Rel11_2=(
   "X2ap-CriticalityDiagnostics-IE-List.h" ae96308b37fcbcbf39da5012e42968135fc5f27b "fix_asn1.data/X2AP.rel11.2/X2ap-CriticalityDiagnostics-IE-List.h.diff"
-  "NativeInteger.c"                       9f173e87daa1e7378618dbb060a10aae752d74be "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
-  "constr_SET_OF.c"                       5c8765a1e0fc44a48e406d0aa7628004bf3aac2a "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
+  "NativeInteger.c"                       1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/X2AP.rel11.2/NativeInteger.c.diff"
+  "constr_SET_OF.c"                       808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/X2AP.rel11.2/constr_SET_OF.c.diff"
 )
 
 S1AP_Rel10_5=(
-  "NativeInteger.c" 9f173e87daa1e7378618dbb060a10aae752d74be "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
-  "constr_SET_OF.c" 5c8765a1e0fc44a48e406d0aa7628004bf3aac2a "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
+  "NativeInteger.c" 1a55f5402fd363318cf5444ffe1f67530dcf66ff "fix_asn1.data/S1AP.rel10.5/NativeInteger.c.diff"
+  "constr_SET_OF.c" 808cbbdf19b118c0bdb04e3acf2cbe6e4133be2b "fix_asn1.data/S1AP.rel10.5/constr_SET_OF.c.diff"
 )
 
 red_color="$(tput setaf 1)"

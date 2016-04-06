@@ -51,7 +51,7 @@ void lfds611_stack_clear( struct lfds611_stack_state *ss, void (*user_data_clear
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_stack_internal_freelist_delete_function( void *user_data, void *user_state )
 {
@@ -63,5 +63,5 @@ void lfds611_stack_internal_freelist_delete_function( void *user_data, void *use
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
