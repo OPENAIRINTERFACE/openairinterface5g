@@ -918,8 +918,8 @@ schedule_ue_spec(
 
 	    if (rlc_status.bytes_in_buffer > 0) {
 	      
-	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH%d->DLSCH, Requesting %d bytes from RLC (total hdr len dtch %d)\n",
-		    module_idP,frameP,lcid,TBS-header_len_dcch-sdu_length_total-header_len_dtch,header_len_dtch);
+	      LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+		    module_idP,frameP,TBS-header_len_dcch-sdu_length_total-header_len_dtch,lcid, header_len_dtch);
 	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP,
 						       rnti,
 						       module_idP,

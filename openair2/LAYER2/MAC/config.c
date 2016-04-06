@@ -191,7 +191,7 @@ rrc_mac_config_req(
     }
     else {
       eNB_mac_inst[Mod_id].lcid_active[logicalChannelIdentity]=1;
-      LOG_I(MAC,"[CONFIG][eNB %d] lcid %d is active for UE rnti %x on cc_id % \n",Mod_id,rntiP,CC_id);
+      LOG_I(MAC,"[CONFIG][eNB %d] lcid %d is active for UE rnti %x on cc_id %d \n",Mod_id,logicalChannelIdentity, rntiP,CC_id);
     }
   }
 

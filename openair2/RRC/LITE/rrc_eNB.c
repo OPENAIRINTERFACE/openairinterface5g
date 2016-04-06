@@ -113,7 +113,7 @@ extern void*                        bigphys_malloc(int);
 extern uint16_t                     two_tier_hexagonal_cellIds[7];
 
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
-static const uint8_t                RRC_TRANSACTION_IDENTIFIER_NUMBER = 4;
+static const uint8_t                RRC_TRANSACTION_IDENTIFIER_NUMBER = 3;
 
 mui_t                               rrc_eNB_mui = 0;
 
@@ -504,6 +504,7 @@ rrc_eNB_get_next_transaction_identifier(
 {
   static uint8_t                      rrc_transaction_identifier[NUMBER_OF_eNB_MAX];
   rrc_transaction_identifier[enb_mod_idP] = (rrc_transaction_identifier[enb_mod_idP] + 1) % RRC_TRANSACTION_IDENTIFIER_NUMBER;
+  LOG_T(RRC,"generated xid is %d\n",rrc_transaction_identifier[enb_mod_idP]);
   return rrc_transaction_identifier[enb_mod_idP];
 }
 /*------------------------------------------------------------------------------*/
@@ -1140,7 +1141,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   struct LogicalChannelConfig        *DRB_lchan_config                 = NULL;
   struct LogicalChannelConfig__ul_SpecificParameters
     *DRB_ul_SpecificParameters        = NULL;
-  DRB_ToAddModList_t**                DRB_configList=&ue_context_pP->ue_context.DRB_configList; 
+  //  DRB_ToAddModList_t**                DRB_configList=&ue_context_pP->ue_context.DRB_configList; 
+  DRB_ToAddModList_t*                DRB_configList=ue_context_pP->ue_context.DRB_configList; 
+  DRB_ToAddModList_t*                DRB_configList2=NULL;
   //DRB_ToAddModList_t**                RRC_DRB_configList=&ue_context_pP->ue_context.DRB_configList;
 
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
@@ -1148,17 +1151,19 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
   long                               *logicalchannelgroup, *logicalchannelgroup_drb;
   int drb_identity_index=0, nas_sequence_flag = 0;
-  
+
+  uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
+
 // Configure DRB
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
-  *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
+  DRB_configList2 = CALLOC(1, sizeof(*DRB_configList2));
   dedicatedInfoNASList = CALLOC(1, sizeof(struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
   
   for ( i = 0  ;
 	i < ue_context_pP->ue_context.setup_e_rabs ;
 	i++){
     
-    // bypass the already configured erabs
+    // bypass the new and already configured erabs
     if (ue_context_pP->ue_context.e_rab[i].status >= E_RAB_STATUS_DONE) {
       drb_identity_index++;
       continue;
@@ -1242,7 +1247,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     *logicalchannelgroup_drb = 1;//(i+1) % 3;
     DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
 
-    ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+    ASN_SEQUENCE_ADD(&DRB_configList->list, DRB_config);
+    ASN_SEQUENCE_ADD(&DRB_configList2->list, DRB_config);
     //ue_context_pP->ue_context.DRB_configList2[drb_identity_index] = &(*DRB_configList);
     
     LOG_I(RRC,"EPS ID %d, DRB ID %d (index %d), QCI %d, priority %d, LCID %d LCGID %d \n",
@@ -1280,7 +1286,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     }
     
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
-    ue_context_pP->ue_context.e_rab[i].xid =rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
+    ue_context_pP->ue_context.e_rab[i].xid = xid;
     
   }
   
@@ -1288,9 +1294,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
    size = do_RRCConnectionReconfiguration(ctxt_pP,
 					  buffer,
-					  ue_context_pP->ue_context.e_rab[i].xid,
+					  xid,
 					  (SRB_ToAddModList_t*)NULL, 
-					  (DRB_ToAddModList_t*)*DRB_configList,
+					  (DRB_ToAddModList_t*)DRB_configList2,
 					  (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
                                          (struct SPS_Config*)NULL,    // *sps_Config,
 					  NULL, NULL, NULL, NULL,NULL,
@@ -1482,6 +1488,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 
   // Configure DRB
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
+  if (*DRB_configList) {
+    free(*DRB_configList);
+  }
   *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
   /// DRB
   DRB_config = CALLOC(1, sizeof(*DRB_config));
