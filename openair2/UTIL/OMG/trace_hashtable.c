@@ -58,8 +58,6 @@ hash_table_t **table;
 void
 create_new_table (int node_type)
 {
-  int i;
-
   if(table==NULL)
     table = (hash_table_t **) calloc (MAX_NUM_NODE_TYPES, sizeof (hash_table_t*));
 

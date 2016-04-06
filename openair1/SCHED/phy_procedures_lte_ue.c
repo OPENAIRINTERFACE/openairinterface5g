@@ -902,6 +902,8 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
           }
           */
 
+          unsigned int taus(void);
+
           for (i=0; i<input_buffer_length; i++)
             ulsch_input_buffer[i]= (uint8_t)(taus()&0xff);
 

@@ -777,6 +777,7 @@ rrc_get_estimated_ue_distance(
   const int         CC_idP,
   const uint8_t     loc_typeP);
 
+void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB);
 
 #endif
 /** @}*/

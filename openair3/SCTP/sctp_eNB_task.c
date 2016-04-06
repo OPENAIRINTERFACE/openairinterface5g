@@ -100,6 +100,7 @@ static STAILQ_HEAD(sctp_cnx_list_head, sctp_cnx_list_elm_s) sctp_cnx_list;
 static uint16_t sctp_nb_cnx = 0;
 
 
+//------------------------------------------------------------------------------
 struct sctp_cnx_list_elm_s *sctp_get_cnx(int32_t assoc_id, int sd)
 {
   struct sctp_cnx_list_elm_s *elm;
@@ -119,6 +120,7 @@ struct sctp_cnx_list_elm_s *sctp_get_cnx(int32_t assoc_id, int sd)
   return NULL;
 }
 
+//------------------------------------------------------------------------------
 void
 sctp_handle_new_association_req(
   const instance_t instance,
@@ -146,7 +148,7 @@ sctp_handle_new_association_req(
   DevAssert(sctp_new_association_req_p != NULL);
 
   /* Create new socket with IPv6 affinity */
-#warning "SCTP may Force IPv4 only, here"
+//#warning "SCTP may Force IPv4 only, here"
 #ifdef NO_VIRTUAL_MACHINE
 
   // in init chunk appears a list of host addresses, IPv4 and IPv4 in an arbitrary (unsorted) order
@@ -388,6 +390,7 @@ sctp_handle_new_association_req(
              sd, sctp_nb_cnx, assoc_id);
 }
 
+  //------------------------------------------------------------------------------
 void sctp_send_data(
   instance_t       instance,
   task_id_t        task_id,
@@ -430,6 +433,7 @@ void sctp_send_data(
              sctp_cnx->assoc_id);
 }
 
+//------------------------------------------------------------------------------
 static int sctp_close_association(
   const instance_t instance,
   const task_id_t  requestor,
@@ -456,6 +460,7 @@ static int sctp_close_association(
   return 0;
 }
 
+//------------------------------------------------------------------------------
 static int sctp_create_new_listener(
   const instance_t instance,
   const task_id_t  requestor,
@@ -580,6 +585,7 @@ err:
   return -1;
 }
 
+//------------------------------------------------------------------------------
 static inline
 void
 sctp_eNB_accept_associations(
@@ -646,6 +652,7 @@ sctp_eNB_accept_associations(
   }
 }
 
+//------------------------------------------------------------------------------
 static inline
 void
 sctp_eNB_read_from_socket(
@@ -770,6 +777,7 @@ sctp_eNB_read_from_socket(
   }
 }
 
+//------------------------------------------------------------------------------
 void
 sctp_eNB_flush_sockets(
   struct epoll_event *events, int nb_events)
@@ -799,6 +807,7 @@ sctp_eNB_flush_sockets(
 }
 
 
+//------------------------------------------------------------------------------
 void *sctp_eNB_task(void *arg)
 {
   int                 nb_events;

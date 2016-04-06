@@ -132,16 +132,19 @@ Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
   set(C_FLAGS_PROCESSOR "-gdwarf-2 -mfloat-abi=hard -mfpu=neon -lgcc -lrt")
 else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
-  file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
-  #Message("CPUINFO is ${CPUINFO}")
-  if (CPUINFO MATCHES "avx2")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
-  endif()
-  if (CPUINFO MATCHES "sse4_1")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
-  endif()
-  if (CPUINFO MATCHES "ssse3")
-    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
+  if(EXISTS  "/proc/cpuinfo")
+    file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
+    if (CPUINFO MATCHES "avx2")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
+    endif()
+    if (CPUINFO MATCHES "sse4_1")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
+    endif()
+    if (CPUINFO MATCHES "ssse3")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
+    endif()
+  else()
+    Message("/proc/cpuinfo does not exit. We will use manual CPU flags")
   endif()
 endif()
 
@@ -151,7 +154,7 @@ Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
   if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) )
-    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1\" ")
+    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -mavx2\" ")
   endif()
 endif()
 
@@ -176,42 +179,65 @@ add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
 
-Message("RF_BOARD is ${RF_BOARD}")
-# Below has been put in comment because does not work with
-# SVN authentication.
-#
-#find_package(Subversion)
-#if(SUBVERSION_FOUND)
-#  Subversion_WC_INFO(${OPENAIR_DIR} openair)
-#  set (FIRMWARE_VERSION "${openair_WC_REVISION} - ${openair_WC_LAST_CHANGED_DATE}")
-#  Subversion_WC_LOG(${OPENAIR_DIR} Project)
-#else()
-#  set (FIRMWARE_VERSION "No svn information")
-#endif()
-#add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
+
+set(GIT_BRANCH        "UNKNOWN")
+set(GIT_COMMIT_HASH   "UNKNOWN")
+set(GIT_COMMIT_DATE   "UNKNOWN")
+
+
+find_package(Git)
+if(GIT_FOUND)
+  message("git found: ${GIT_EXECUTABLE}")
+  # Get the current working branch
+  execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # Get the latest abbreviated commit hash of the working branch
+  execute_process(
+    COMMAND git log -1 --format=%h
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  
+  # Get the latest commit date of the working branch
+  execute_process(
+    COMMAND git log -1 --format=%cd
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_DATE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+endif()
+
 
 # Below is a hard-coded info
 set (FIRMWARE_VERSION "No svn information")
 add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
-add_definitions("-DPACKAGE_VERSION=\"${FIRMWARE_VERSION}\"")
-add_definitions("-DPACKAGE_BUGREPORT=\"OpenAirInterface web site\"")
+add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
+add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
 
 
 # Debug related options
 #########################################
-add_boolean_option(MSG_PRINT  False "print debug messages")
-add_boolean_option(DISABLE_XER_PRINT False "print XER Format")
-add_boolean_option(XER_PRINT False "print XER Format")
-add_boolean_option(RRC_MSG_PRINT False "print RRC messages")
-add_boolean_option(PDCP_MSG_PRINT False "print PDCP messages to /tmp/pdcp.log")
-add_boolean_option(DEBUG_PDCP_PAYLOAD False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(ASN_DEBUG           False "ASN1 coder/decoder Debug")
+add_boolean_option(EMIT_ASN_DEBUG      False "ASN1 coder/decoder Debug")
+add_boolean_option(MSG_PRINT           False "print debug messages")
+add_boolean_option(DISABLE_XER_PRINT   False "print XER Format")
+add_boolean_option(XER_PRINT           False "print XER Format")
+add_boolean_option(RRC_MSG_PRINT       False "print RRC messages")
+add_boolean_option(PDCP_MSG_PRINT      False "print PDCP messages to /tmp/pdcp.log")
+add_boolean_option(DEBUG_PDCP_PAYLOAD  False "print PDCP PDU to stdout")  # if true, make sure that global and PDCP log levels are trace 
 add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace 
-add_boolean_option(TRACE_RLC_PAYLOAD False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
-add_boolean_option(TEST_OMG False "???")
-add_boolean_option(DEBUG_OMG False "???")
-add_boolean_option(XFORMS False "This adds the possibility to see the signal oscilloscope")
-add_boolean_option(PRINT_STATS False "This adds the possibility to see the status")
+add_boolean_option(TRACE_RLC_PAYLOAD   False "print RLC PDU to stdout") # if true, make sure that global and PDCP log levels are trace 
+add_boolean_option(TEST_OMG            False "???")
+add_boolean_option(DEBUG_OMG           False "???")
+add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
+add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
@@ -252,6 +278,7 @@ endif (${RTAI})
 # New C code source file, cmake must be re-run (instead of re-running make only)
 #############
 set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
+set(fix_asn1c_call "${OPENAIR_CMAKE}/tools/fix_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 
 set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
@@ -273,7 +300,19 @@ set (RRC_FULL_DIR ${asn1_generated_dir}/${RRC_ASN1_VERSION})
 if(NOT EXISTS ${asn1c_call})
   message( FATAL_ERROR "The script ${asn1c_call} must be present" )
 endif(NOT EXISTS ${asn1c_call})
-execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR})
+execute_process(COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+if(NOT EXISTS ${fix_asn1c_call})
+  message( FATAL_ERROR "The script ${fix_asn1c_call} must be present" )
+endif(NOT EXISTS ${fix_asn1c_call})
+execute_process(COMMAND ${fix_asn1c_call} ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${fix_asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 set(rrc_source  ${rrc_source} ${OPENAIR2_DIR}/RRC/LITE/MESSAGES/asn1_msg.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
@@ -287,6 +326,7 @@ include_directories ("${RRC_FULL_DIR}")
 add_custom_command (
   OUTPUT ${RRC_FULL_DIR}/asn1_constants.h
   COMMAND ${asn1c_call}  ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+  COMMAND ${fix_asn1c_call}  ${RRC_FULL_DIR} RRC ${RRC_ASN1_VERSION}
   DEPENDS ${RRC_GRAMMAR}
   )
 
@@ -315,13 +355,28 @@ set(S1AP_ASN_FILES
   )
 set(S1AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
 #message("calling ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES})
+execute_process(COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "asn1tostruct.py: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${fix_asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
 set(S1AP_OAI_generated
   ${S1AP_C_DIR}/s1ap_decoder.c
   ${S1AP_C_DIR}/s1ap_encoder.c
   ${S1AP_C_DIR}/s1ap_xer_print.c
+  ${S1AP_C_DIR}/s1ap_compare.c
   ${S1AP_C_DIR}/s1ap_ies_defs.h
   )
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
@@ -331,6 +386,7 @@ add_custom_command (
   OUTPUT ${S1AP_OAI_generated}
   COMMAND ${asn1c_call} ${S1AP_C_DIR} ${S1AP_ASN_FILES}
   COMMAND python ${S1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f${S1AP_ASN_DIR}/S1AP-PDU-Contents.asn -o${S1AP_C_DIR}
+  COMMAND ${fix_asn1c_call} ${S1AP_C_DIR} S1AP ${S1AP_VERSION}
   DEPENDS ${S1AP_ASN_FILES}
   )
 add_library(S1AP_LIB
@@ -382,7 +438,21 @@ set(X2AP_ASN_FILES
 
 set(X2AP_C_DIR ${asn1_generated_dir}/${ASN1RELDIR})
 #message("calling ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}")
-execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES})
+execute_process(COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "asn1tostruct.py: error")
+endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
+                RESULT_VARIABLE ret)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${fix_asn1c_call}: error")
+endif (NOT ${ret} STREQUAL 0)
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
 set(X2AP_OAI_generated
@@ -399,6 +469,7 @@ add_custom_command (
   OUTPUT ${X2AP_OAI_generated}
   COMMAND ${asn1c_call} ${X2AP_C_DIR} ${X2AP_ASN_FILES}
   COMMAND python ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}
+  COMMAND ${fix_asn1c_call} ${X2AP_C_DIR} X2AP ${X2AP_VERSION}
   DEPENDS ${X2AP_ASN_FILES}
   )
 
@@ -1086,7 +1157,6 @@ add_library(CN_UTILS
   ${OPENAIR3_DIR}/UTILS/conversions.c
   ${OPENAIR3_DIR}/UTILS/enum_string.c
   ${OPENAIR3_DIR}/UTILS/log.c
-  ${OPENAIR3_DIR}/UTILS/mme_config.c
   ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
@@ -1427,6 +1497,9 @@ include(FindPkgConfig)
 pkg_search_module(LIBXML2 libxml-2.0 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIRS})
 
+pkg_search_module(LIBXSLT libxslt REQUIRED)
+include_directories(${LIBXSLT_INCLUDE_DIRS})
+
 pkg_search_module(OPENSSL openssl REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIRS})
 
@@ -1718,6 +1791,7 @@ endforeach(myExe)
 
 add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/generate_scenario.h
   ${OPENAIR2_DIR}/ENB_APP/enb_config.h
   ${OPENAIR2_DIR}/COMMON/commonDef.h
   ${OPENAIR2_DIR}/COMMON/messages_def.h
@@ -1726,7 +1800,28 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR_BIN_DIR}/messages_xml.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
+  )
+
+add_executable(test_epc_play_scenario
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_decode.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_display.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_fsm.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_parse.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap_compare_ie.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_s1ap_eNB_defs.h
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario_sctp.c
+  ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.h
+  ${OPENAIR2_DIR}/COMMON/commonDef.h
+  ${OPENAIR2_DIR}/COMMON/messages_def.h
+  ${OPENAIR2_DIR}/COMMON/messages_types.h
+  ${OPENAIR_BIN_DIR}/messages_xml.h
+  )
+target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
+target_link_libraries (test_epc_play_scenario
+  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}  
   )
 
 

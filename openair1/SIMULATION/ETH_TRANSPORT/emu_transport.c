@@ -291,7 +291,6 @@ void fill_phy_enb_vars(unsigned int enb_id, uint8_t CC_id,unsigned int next_slot
   LTE_eNB_DLSCH_t *dlsch_eNB;
   unsigned short ue_id;
   uint8_t nb_total_dci;
-  int i;
 
   // eNB
   // PBCH : copy payload

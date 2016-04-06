@@ -285,6 +285,9 @@ void *eNB_app_task(void *args_p)
   instance_t                      instance;
   int                             result;
 
+  /* for no gcc warnings */
+  (void)instance;
+
   itti_mark_task_ready (TASK_ENB_APP);
 
 # if defined(ENABLE_USE_MME)
@@ -419,6 +422,9 @@ void *eNB_app_task(void *args_p)
   } while (1);
 
 #endif
+
+  /* for no gcc warnings */
+  (void)enb_properties_p;
 
   return NULL;
 }
