@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa,aarx,k;
+  int i,l,l2,aa,aarx,k;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
@@ -337,7 +337,11 @@ int main(int argc, char **argv)
   else
     sprintf(fname,"embms_awgn_%d_%d.m",mcs,N_RB_DL);
 
-  fd = fopen(fname,"w");
+  if (!(fd = fopen(fname,"w"))) {
+    printf("Cannot open %s, check permissions\n",fname);
+    exit(-1);
+  }
+	
 
   if (awgn_flag==0)
     fprintf(fd,"SNR_%d_%d=[];errs_mch_%d_%d=[];mch_trials_%d_%d=[];\n",
@@ -538,11 +542,25 @@ int main(int argc, char **argv)
 	    }
 	  }
 	}
-	
-	rx_pmch(PHY_vars_UE,
-                0,
-                subframe%10,
-                l);
+
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==11)
+          for (l2=7;l2<12;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
       }
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
