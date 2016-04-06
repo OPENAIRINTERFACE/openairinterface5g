@@ -36,17 +36,28 @@
 
 args=($*)
 timeout=${args[0]}
-iface=${args[1]}
+device_id=${args[1]}
 iperf_args=(${args[@]:2})
 
 #array=${1:-1}
 echo "args =  ${args[@]}"
 echo "timeout = $timeout"
-echo "iface = $iface"
+echo "device_id = $device_id"
 echo "iperf_args = ${iperf_args[@]}"
 
 sleep $timeout
 
-while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5
+while true ; do
+  cmd=`sudo adb -s $device_id shell netcfg |grep 192.`
+  if [ -z "$cmd" ]; then
+     echo "Wating for UE to connect and get IP Address..."
+     sleep 1
+  else 
+     echo "UE is not connected. IP Address settings are... $cmd"
+     break
+  fi
+done
 
-iperf ${iperf_args[@]}
+print "Starting iperf now..."
+
+sudo adb -s $device_id shell /data/local/tmp/iperf ${iperf_args[@]}

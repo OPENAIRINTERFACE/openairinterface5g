@@ -2071,7 +2071,7 @@ void process_HARQ_feedback(uint8_t UE_id,
             // then Increment DLSCH round index
             dlsch_harq_proc->round++;
 
-            if (dlsch_harq_proc->round == 1/*dlsch->Mdlharq*/) {
+            if (dlsch_harq_proc->round == dlsch->Mdlharq) {
               // This was the last round for DLSCH so reset round and increment l2_error counter
 #ifdef DEBUG_PHY_PROC
               LOG_W(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
