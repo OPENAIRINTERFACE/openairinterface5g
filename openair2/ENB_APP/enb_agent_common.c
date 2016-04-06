@@ -561,7 +561,6 @@ int get_ue_phr (mid_t mod_id, mid_t ue_id) {
 }
 
 int get_ue_wcqi (mid_t mod_id, mid_t ue_id) {
-
   return ((UE_list_t *)enb_ue[mod_id])->eNB_UE_stats[UE_PCCID(mod_id,ue_id)][ue_id].dl_cqi;
 }
 int get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
@@ -576,6 +575,10 @@ int get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id,int CC_id)
 {
 	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
 	LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+	
+	if (eNB_UE_stats == NULL) {
+	  return 0;
+	}
 
 	int32_t time_advance;
 	switch (PHY_vars_eNB_g[mod_id][CC_id]->lte_frame_parms.N_RB_DL) {
@@ -622,6 +625,11 @@ int get_current_RI(mid_t mod_id, mid_t ue_id, int CC_id)
 	rnti_t rnti = get_ue_crnti(mod_id,ue_id);
 
 	eNB_UE_stats = mac_xface->get_eNB_UE_stats(mod_id,CC_id,rnti);
+	
+	if (eNB_UE_stats == NULL) {
+	  return 0;
+	}
+
 	return eNB_UE_stats[CC_id].rank;
 }
 
@@ -636,9 +644,15 @@ int get_tpc(mid_t mod_id, mid_t ue_id)
 
 	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, pCCid, rnti);
 
-	normalized_rx_power = eNB_UE_stats->UL_rssi[0];
-
 	target_rx_power = mac_xface->get_target_pusch_rx_power(mod_id,pCCid);
+
+	if (eNB_UE_stats == NULL) {
+	  normalized_rx_power = target_rx_power;
+	} else if (eNB_UE_stats->UL_rssi != NULL) {
+	  normalized_rx_power = eNB_UE_stats->UL_rssi[0];
+	} else {
+	  normalized_rx_power = target_rx_power;
+	}
 
 	if (normalized_rx_power>(target_rx_power+1)) {
 		tpc = 0; //-1
@@ -680,6 +694,11 @@ int get_p0_pucch_dbm(mid_t mod_id, mid_t ue_id, int CC_id)
 	uint32_t rnti = get_ue_crnti(mod_id,ue_id);
 
 	eNB_UE_stats =  mac_xface->get_eNB_UE_stats(mod_id, CC_id, rnti);
+	
+	if (eNB_UE_stats == NULL) {
+	  return -1;
+	}
+	
 	if(eNB_UE_stats->Po_PUCCH_update == 1)
 	{
 		return eNB_UE_stats->Po_PUCCH_dBm;
