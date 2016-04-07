@@ -608,7 +608,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 23040000:
-      s->usrp->set_master_clock_rate(46.08e6);
+      s->usrp->set_master_clock_rate(23.04e6); //to be checked
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 20e6;
@@ -616,7 +616,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
-      s->usrp->set_master_clock_rate(30.72e6);
+      s->usrp->set_master_clock_rate(15.36e06);
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 10e6;
@@ -624,7 +624,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
-      s->usrp->set_master_clock_rate(30.72e6);
+      s->usrp->set_master_clock_rate(7.68e6);
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 70;//103;
       openair0_cfg[0].tx_bw                 = 5e6;
@@ -632,7 +632,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
-      s->usrp->set_master_clock_rate(30.72e6);
+      s->usrp->set_master_clock_rate(7.68e6);
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 40;
       openair0_cfg[0].tx_bw                 = 1.25e6;
@@ -686,6 +686,8 @@ extern "C" {
 
   // display USRP settings
   std::cout << boost::format("Actual master clock: %fMHz...") % (s->usrp->get_master_clock_rate()/1e6) << std::endl;
+  
+  sleep(1);
 
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
