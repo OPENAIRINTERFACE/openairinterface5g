@@ -462,6 +462,13 @@ typedef struct {
   //
   uint32_t total_ulsch_pdus_rx;
   
+  
+  /// MAC agent-related stats
+  /// total number of scheduling decisions
+  int sched_decisions;
+  /// missed deadlines
+  int missed_deadlines;
+
 } eNB_STATS;
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
