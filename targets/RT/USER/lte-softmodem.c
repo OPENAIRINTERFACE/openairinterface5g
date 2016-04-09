@@ -1402,7 +1402,7 @@ static void* eNB_thread_rx( void* param )
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD */
   CPU_ZERO(&cpuset);
-  for (j = 2; j < get_nprocs(); j++)
+  for (j = 1; j < get_nprocs(); j++)
      CPU_SET(j, &cpuset);
 
   s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -3296,6 +3296,8 @@ int main( int argc, char **argv )
 
 #endif
   }
+
+#ifndef LOWLATENCY
   cpu_set_t cpuset;
   int s;
   char cpu_affinity[1024];
@@ -3329,6 +3331,7 @@ int main( int argc, char **argv )
   }
 
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
+#endif
 
   /* device host type is set*/
   openair0.host_type = BBU_HOST;
