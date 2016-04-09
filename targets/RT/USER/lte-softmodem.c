@@ -1122,9 +1122,10 @@ static void* eNB_thread_tx( void* param )
 
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
+  /* CPU 1 is reserved for all TX threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
+  //for (j = 1; j < get_nprocs(); j++)
+  CPU_SET(1, &cpuset);
 
   s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   if (s != 0)
@@ -1402,8 +1403,10 @@ static void* eNB_thread_rx( void* param )
 
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD */
+  /* CPU 1 is reserved for all TX threads */
+  /* CPU 2..MAX_CPUS is reserved for all RX threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
+  for (j = 2; j < get_nprocs(); j++)
      CPU_SET(j, &cpuset);
 
   s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
