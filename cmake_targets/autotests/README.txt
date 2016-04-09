@@ -205,6 +205,14 @@ Obj.#   Case#   Test#	Description
 01      85      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
 01      85      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
+02      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Sony Experia M4 COTS UE for TX/1RX
+02      55      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
+02      55      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
+02      55      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
+02      55      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
+02      55      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
+02      55      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+  
 
 01      64              lte-softmodem-noS1 tests
 
