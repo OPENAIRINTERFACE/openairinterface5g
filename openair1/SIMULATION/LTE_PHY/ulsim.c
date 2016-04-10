@@ -635,8 +635,8 @@ int main(int argc, char **argv)
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,max_turbo_iterations,N_RB_DL,0);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,N_RB_DL,0);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(N_RB_DL,0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {

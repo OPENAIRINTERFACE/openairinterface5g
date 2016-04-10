@@ -184,6 +184,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;
 	      break;
+	    case 15:/*
+	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->type = 1;
+	      ((DCI1A_2_5MHz_FDD_t*)DLSCH_dci)->rballoc = 31;
+	      size_bytes = sizeof(DCI1A_1_5MHz_FDD_t);
+	      size_bits  = sizeof_DCI1A_1_5MHz_FDD_t;*/
+	      break;
 	    case 25:
 	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->type = 1;
 	      ((DCI1A_5MHz_FDD_t*)DLSCH_dci)->rballoc = 511;
@@ -195,6 +201,12 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 	      ((DCI1A_10MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
 	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
 	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;
+		break;
+	    case 75:
+	      /*	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->type = 1;
+	      ((DCI1A_15MHz_FDD_t*)DLSCH_dci)->rballoc = 2047;
+	      size_bytes = sizeof(DCI1A_10MHz_FDD_t);
+	      size_bits  = sizeof_DCI1A_10MHz_FDD_t;*/
 		break;
 	    case 100:
 	      ((DCI1A_20MHz_FDD_t*)DLSCH_dci)->type = 1;

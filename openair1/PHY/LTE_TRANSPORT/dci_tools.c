@@ -7127,10 +7127,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
     harq_pid = subframe2harq_pid(frame_parms,
                                  pdcch_alloc2ul_frame(frame_parms,
-                                     phy_vars_eNB->proc[sched_subframe].frame_tx,
-                                     subframe),
+						      phy_vars_eNB->proc[sched_subframe].frame_tx,
+						      subframe),
                                  pdcch_alloc2ul_subframe(frame_parms,subframe));
-
+    
     //    printf("eNB: sched_subframe %d, subframe %d, frame_tx %d\n",sched_subframe,subframe,phy_vars_eNB->proc[sched_subframe].frame_tx);
 
     switch (frame_parms->N_RB_DL) {
@@ -7598,9 +7598,9 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
         break;
       }
     } else {
-      ulsch->harq_processes[harq_pid]->O_RI = 0;//1;
+      ulsch->harq_processes[harq_pid]->O_RI = 0;
       ulsch->harq_processes[harq_pid]->Or2                                   = 0;
-      ulsch->harq_processes[harq_pid]->Or1                                   = 0;//sizeof_HLC_subband_cqi_nopmi_5MHz;
+      ulsch->harq_processes[harq_pid]->Or1                                   = 0;
       ulsch->harq_processes[harq_pid]->uci_format                            = HLC_subband_cqi_nopmi;
     }
 

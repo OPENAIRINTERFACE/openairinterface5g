@@ -183,21 +183,10 @@ void rx_sdu(
         UE_list->UE_template[CC_idP][UE_id].bsr_info[lcgid] = (payload_ptr[0] & 0x3f);
 
 	// update buffer info
-	//	old_buffer_info = UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
 	
 	UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid]=BSR_TABLE[UE_list->UE_template[CC_idP][UE_id].bsr_info[lcgid]];
 
-	UE_list->UE_template[CC_idP][UE_id].ul_total_buffer+= UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
-
-	/*
-	if (UE_list->UE_template[CC_idP][UE_id].ul_total_buffer >= old_buffer_info)
-	  UE_list->UE_template[CC_idP][UE_id].ul_total_buffer -= old_buffer_info;
-	else
-	  UE_list->UE_template[CC_idP][UE_id].ul_total_buffer = 0;
-	*/
-
-	if (UE_list->UE_template[CC_idP][UE_id].ul_total_buffer >= 300000)
-	  UE_list->UE_template[CC_idP][UE_id].ul_total_buffer = 300000;
+	UE_list->UE_template[CC_idP][UE_id].ul_total_buffer= UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid];
 
 	PHY_vars_eNB_g[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP*10)+subframeP] = (payload_ptr[0] & 0x3f);
 	if (UE_id == UE_list->head)
@@ -784,7 +773,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		UE_sched_ctrl->ul_failure_timer);
           // reset the scheduling request
           UE_template->ul_SR = 0;
-          aggregation = process_ue_cqi(module_idP,UE_id); // =2 by default!!
+          aggregation = process_ue_cqi(module_idP,UE_id); 
           status = mac_eNB_get_rrc_status(module_idP,rnti);
 	  if (status < RRC_CONNECTED)
 	    cqi_req = 0;
@@ -838,7 +827,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1=UE_template->pre_assigned_mcs_ul;
             mcs = cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
-	    if ((cqi_req==1) && (mcs==20)) {
+	    if ((cqi_req==1) && (mcs>19)) {
 		mcs=19;
 	    }
             if (UE_template->pre_allocated_rb_table_index_ul >=0) {
