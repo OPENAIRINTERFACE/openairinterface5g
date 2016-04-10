@@ -114,6 +114,10 @@ char smbv_ip[16];
 # include "create_tasks.h"
 #endif
 
+#if T_TRACER
+#include "T.h"
+#endif
+
 /*
  DCI0_5MHz_TDD0_t          UL_alloc_pdu;
  DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
@@ -1264,6 +1268,14 @@ main (int argc, char **argv)
   int node_id;
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
+
+#if T_TRACER
+  char *T_ip = "127.0.0.1";
+  int T_port = 2020;
+  printf("connecting to T tracer IP %s port %d\n", T_ip, T_port);
+  T_connect_to_tracer(T_ip, T_port);
+#endif
+
   //default parameters
   oai_emulation.info.n_frames = 0xffff; //1024;          //10;
   oai_emulation.info.n_frames_flag = 0; //fixme

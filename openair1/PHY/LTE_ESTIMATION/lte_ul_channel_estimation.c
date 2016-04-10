@@ -331,6 +331,11 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
 	break;
       }
 
+      if (aa == 0)
+        T(T_ENB_UL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(UE_id),
+          T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx), T_INT(subframe),
+          T_INT(0), T_BUFFER(ul_ch_estimates_time[0], 512  * 4));
+
 #ifdef DEBUG_CH
 
       if (aa==0) {

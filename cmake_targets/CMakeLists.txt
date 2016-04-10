@@ -1484,6 +1484,13 @@ endif (${XFORMS})
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
+#add the T tracer
+add_boolean_option(T_TRACER True "Activate the T tracer" )
+include_directories("${OPENAIR_DIR}/common/utils/T")
+add_boolean_option(T_USE_SHARED_MEMORY True "Use shared memory to communicate with the T tracer" )
+set(T_SOURCE
+    ${OPENAIR_DIR}/common/utils/T/T.c)
+set (T_LIB "-lrt")
 
 # Hack on a test of asn1c version (already dirty)
 add_definitions(-DASN1_MINIMUM_VERSION=924)
@@ -1516,6 +1523,7 @@ add_executable(lte-softmodem
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
   )
 
 target_link_libraries (lte-softmodem
@@ -1528,6 +1536,8 @@ target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
+
+target_link_libraries (lte-softmodem ${T_LIB})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
 ###################################################
@@ -1552,6 +1562,7 @@ add_executable(lte-softmodem-nos1
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
@@ -1562,6 +1573,8 @@ target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
+
+target_link_libraries (lte-softmodem ${T_LIB})
 
 # rrh
 ################################
@@ -1687,6 +1700,7 @@ add_executable(oaisim_nos1
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   ${XFORMS_SOURCE}
+  ${T_SOURCE}
 )
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
@@ -1700,6 +1714,7 @@ target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYP
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)
 
+target_link_libraries (lte-softmodem ${T_LIB})
 
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################

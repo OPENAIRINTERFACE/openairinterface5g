@@ -2443,6 +2443,10 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,frame, subframe);
 #endif
 
+  T(T_ENB_INPUT_SIGNAL, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
+    T_BUFFER(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
+             phy_vars_eNB->lte_frame_parms.samples_per_tti * 4));
+
   /*
 #ifdef OAI_USRP
   for (aa=0;aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx;aa++)

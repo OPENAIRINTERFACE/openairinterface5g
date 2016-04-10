@@ -51,6 +51,10 @@
 #include <execinfo.h>
 #include <getopt.h>
 
+#if T_TRACER
+#include "T.h"
+#endif
+
 #include "rt_wrapper.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -2614,6 +2618,13 @@ int main( int argc, char **argv )
 #endif
 
   PHY_VARS_UE *UE[MAX_NUM_CCs];
+
+#if T_TRACER
+  char *T_ip = "127.0.0.1";
+  int T_port = 2020;
+  printf("connecting to T tracer IP %s port %d\n", T_ip, T_port);
+  T_connect_to_tracer(T_ip, T_port);
+#endif
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
