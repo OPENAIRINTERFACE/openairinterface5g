@@ -50,8 +50,9 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <getopt.h>
-
+#include <sys/sysinfo.h>
 #include "rt_wrapper.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
@@ -1114,7 +1115,67 @@ static void* eNB_thread_tx( void* param )
 
   LOG_I( HW, "[SCHED] eNB TX deadline thread %d(TID %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
 #else
-  LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %d\n", proc->subframe, sched_getcpu(),gettid() );
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  /* CPU 1 is reserved for all TX threads */
+  CPU_ZERO(&cpuset);
+  //for (j = 1; j < get_nprocs(); j++)
+  CPU_SET(1, &cpuset);
+
+  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+     perror( "pthread_setaffinity_np");
+     exit_fun("Error setting processor affinity");
+  }
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity,0,sizeof(cpu_affinity));
+  for (j = 0; j < CPU_SETSIZE; j++)
+     if (CPU_ISSET(j, &cpuset))
+     {  
+        char temp[1024];
+        sprintf (temp, " CPU_%d", j);
+        strcat(cpu_affinity, temp);
+     }
+
+  memset(&sparam, 0 , sizeof (sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+  policy = SCHED_FIFO ; 
+  
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam : ");
+     exit_fun("Error getting thread priority");
+
+   }
+
+ LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n", proc->subframe, sched_getcpu(),gettid(),
+                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                   (policy == SCHED_RR)    ? "SCHED_RR" :
+                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                   "???",
+                   sparam.sched_priority, cpu_affinity );
+
+
 #endif
 
 #endif
@@ -1201,7 +1262,7 @@ static void* eNB_thread_tx( void* param )
     /*
     short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
     int i;
-    for (i=0;i<7680*2;i+=8) {
+    for (i=0;i<PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*2;i+=8) {
       txdata[i] = 2047;
       txdata[i+1] = 0;
       txdata[i+2] = 0;
@@ -1335,7 +1396,73 @@ static void* eNB_thread_rx( void* param )
 
   LOG_I( HW, "[SCHED] eNB RX deadline thread %d(TID %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
 #else
-  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %d\n", proc->subframe, sched_getcpu(),gettid() );
+    int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD */
+  /* CPU 1 is reserved for all TX threads */
+  /* CPU 2..MAX_CPUS is reserved for all RX threads */
+  CPU_ZERO(&cpuset);
+  for (j = 2; j < get_nprocs(); j++)
+     CPU_SET(j, &cpuset);
+
+  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_setaffinity_np");  
+    exit_fun (" Error setting processor affinity :");
+  }
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+     perror ("pthread_getaffinity_np");
+     exit_fun (" Error getting processor affinity :");
+  }
+  memset(cpu_affinity,0, sizeof(cpu_affinity));
+
+  for (j = 0; j < CPU_SETSIZE; j++)
+     if (CPU_ISSET(j, &cpuset))
+     {  
+        char temp[1024];
+        sprintf (temp, " CPU_%d", j);
+        strcat(cpu_affinity, temp);
+     }
+
+
+  memset(&sparam, 0 , sizeof (sparam)); 
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+
+  policy = SCHED_FIFO ; 
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+
+  memset(&sparam, 0 , sizeof (sparam));
+
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam");
+     exit_fun("Error getting thread priority");
+   }
+
+
+LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", proc->subframe, sched_getcpu(),gettid(),
+       (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+       (policy == SCHED_RR)    ? "SCHED_RR" :
+       (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+        "???",
+        sparam.sched_priority, cpu_affinity);
+
+
 #endif
 #endif // RTAI
 
@@ -1676,6 +1803,69 @@ static void* eNB_thread( void* arg )
           gettid(),sched_getcpu());
   }
 
+#else
+
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  CPU_ZERO(&cpuset);
+  for (j = 1; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+
+  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+     perror( "pthread_setaffinity_np");
+     exit_fun("Error setting processor affinity");
+  }
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (j = 0; j < CPU_SETSIZE; j++)
+  if (CPU_ISSET(j, &cpuset))
+  {  
+     char temp[1024];
+     sprintf(temp, " CPU_%d ", j);    
+     strcat(cpu_affinity, temp);
+  }
+
+  memset(&sparam, 0 , sizeof (sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  policy = SCHED_FIFO ; 
+  
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam : ");
+     exit_fun("Error getting thread priority");
+
+   }
+
+
+  LOG_I( HW, "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld , sched_policy = %s, priority = %d, CPU Affinity = %s \n", (int)sched_getcpu(), gettid(),
+                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                   (policy == SCHED_RR)    ? "SCHED_RR" :
+                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                   "???",
+                   (int) sparam.sched_priority, cpu_affinity);
+
+
 #endif
 #endif
 
@@ -1685,9 +1875,7 @@ static void* eNB_thread( void* arg )
     goto eNB_thread_cleanup;
 
 #ifdef RTAI
-  printf( "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
-#else
-  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld\n", sched_getcpu(), gettid());
+  LOG_I( HW, "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
 #endif
 
 #ifdef HARD_RT
@@ -3112,6 +3300,43 @@ int main( int argc, char **argv )
 
 #endif
   }
+
+#ifndef LOWLATENCY
+  cpu_set_t cpuset;
+  int s;
+  char cpu_affinity[1024];
+
+  LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+ 
+  CPU_ZERO(&cpuset);
+  CPU_SET(0, &cpuset);
+
+  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+     perror( "pthread_setaffinity_np");
+     exit_fun("Error setting processor affinity");
+  }
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (int j = 0; j < CPU_SETSIZE; j++)
+  if (CPU_ISSET(j, &cpuset))
+  {  
+     char temp[1024];
+     sprintf(temp, " CPU_%d ", j);    
+     strcat(cpu_affinity, temp);
+  }
+
+  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
+#endif
+
   /* device host type is set*/
   openair0.host_type = BBU_HOST;
   /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
