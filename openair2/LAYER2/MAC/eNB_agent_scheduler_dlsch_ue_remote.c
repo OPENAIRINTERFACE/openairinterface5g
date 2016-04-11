@@ -39,6 +39,9 @@
 
 #include "eNB_agent_scheduler_dlsch_ue_remote.h"
 
+#include "LAYER2/MAC/defs.h"
+#include "LAYER2/MAC/extern.h"
+
 struct DlMacConfigHead queue_head;
 
 int queue_initialized = 0;
@@ -46,10 +49,15 @@ int queue_initialized = 0;
 void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
 			     int *mbsfn_flag, Protocol__ProgranMessage **dl_info) {
 
+
+  eNB_MAC_INST *eNB;
+
   if (!queue_initialized) {
     TAILQ_INIT(&queue_head);
     queue_initialized = 1;
   }
+
+  eNB = &eNB_mac_inst[mod_id]; 
   
   dl_mac_config_element_t *dl_config_elem;
 
@@ -66,12 +74,15 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
       TAILQ_REMOVE(&queue_head, queue_head.tqh_first, configs);
       *dl_info = dl_config_elem->dl_info;
       free(dl_config_elem);
+      eNB->eNB_stats[mod_id].sched_decisions++;
       return;
     } else if (diff < 0) { //previous subframe , delete message and free memory
       LOG_D(MAC, "Found a decision for a previous subframe in the queue. Let's get rid of it\n");
       TAILQ_REMOVE(&queue_head, queue_head.tqh_first, configs);
       enb_agent_mac_destroy_dl_config(dl_config_elem->dl_info);
       free(dl_config_elem);
+      eNB->eNB_stats[mod_id].sched_decisions++;
+      eNB->eNB_stats[mod_id].missed_deadlines++;
     } else { // next subframe, nothing to do now
       LOG_D(MAC, "Found a decision for a future subframe in the queue. Nothing to do now\n");
       enb_agent_mac_create_empty_dl_config(mod_id, dl_info);
@@ -86,12 +97,15 @@ void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
     diff = get_sf_difference(mod_id, (*dl_info)->dl_mac_config_msg->sfn_sf);
     if (diff == 0) { // Got a command for this sfn_sf
       LOG_D(MAC, "Found a decision for this subframe pending. Let's use it\n");
+      eNB->eNB_stats[mod_id].sched_decisions++;
       return;
     } else if (diff < 0) {
       LOG_D(MAC, "Found a decision for a previous subframe. Let's get rid of it\n");
       enb_agent_mac_destroy_dl_config(*dl_info);
       *dl_info = NULL;
       enb_agent_get_pending_dl_mac_config(mod_id, dl_info);
+      eNB->eNB_stats[mod_id].sched_decisions++;
+      eNB->eNB_stats[mod_id].missed_deadlines++;
     } else { // Intended for future subframe. Store it in local cache
       LOG_D(MAC, "Found a decision for a future subframe in the queue. Let's store it in the cache\n");
       dl_mac_config_element_t *e = malloc(sizeof(dl_mac_config_element_t));
