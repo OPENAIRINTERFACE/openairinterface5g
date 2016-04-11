@@ -28,10 +28,6 @@ printf("ADD_CHILD toplevel_window\n");
     WARN("toplevel window already has a child\n");
     return;
   }
-  if (position)
-    WARN("toplevel window doesn't care about 'position' "
-         "(you passed %d, you should always pass 0)\n",
-        position);
   widget_add_child_internal(_gui, _this, child, 0); /* this does the REPACK */
 }
 
