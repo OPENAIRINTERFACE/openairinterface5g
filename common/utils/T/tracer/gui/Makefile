@@ -1,0 +1,17 @@
+CC=gcc
+CFLAGS=-Wall -g -pthread
+
+OBJS=init.o loop.o toplevel_window.o x.o container.o widget.o \
+     gui.o label.o event.o xy_plot.o text_list.o
+
+gui.a: $(OBJS)
+	ar cr gui.a $(OBJS)
+
+test: test.o gui.a
+	$(CC) -o test $(OBJS) test.o -lX11 -pthread -lm
+
+%.o: %.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+clean:
+	rm -f *.a *.o test
