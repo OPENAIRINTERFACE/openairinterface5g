@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX(a, b) ((a)>(b)?(a):(b))
+
 static void repack(gui *g, widget *_this)
 {
 printf("REPACK container %p\n", _this);
@@ -84,7 +86,7 @@ hints_ok:
     l->item->hints(g, l->item, &cwidth, &cheight);
     l->item->allocate(g, l->item, this->common.x, this->common.y + cy,
         //this->hint_width, cheight);
-        width, cheight);
+        MAX(width, cwidth), cheight);
     cy += cheight;
     l = l->next;
   }
@@ -118,7 +120,7 @@ hints_ok:
   while (l) {
     l->item->hints(g, l->item, &cwidth, &cheight);
     l->item->allocate(g, l->item, this->common.x + cx, this->common.y,
-        cwidth, this->hint_height);
+        cwidth, MAX(height, cheight)/* this->hint_height */);
     cx += cwidth;
     l = l->next;
   }
