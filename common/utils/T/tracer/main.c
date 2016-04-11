@@ -546,7 +546,7 @@ no_database:
     goto no_init_message;
   }
 
-  /* send the first message - activate all traces */
+  /* send the first message - activate selected traces */
   t = 0;
   if (write(s, &t, 1) != 1) abort();
   l = 0;
