@@ -10,10 +10,12 @@ CFLAGS += -DT_USE_SHARED_MEMORY
 LIBS += -lrt
 
 PROG=tracer
-OBJS=main.o plot.o database.o forward.o gui/gui.a
+OBJS=main.o plot.o database.o forward.o gui.o
 
-$(PROG): $(OBJS)
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
+$(PROG): $(OBJS) gui/gui.a
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS) gui/gui.a
+
+.PHONY: gui/gui.a
 
 gui/gui.a:
 	cd gui && make
