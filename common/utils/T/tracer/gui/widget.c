@@ -6,6 +6,7 @@
 #include <stdarg.h>
 #include <string.h>
 
+static void default_clear(gui *gui, widget *_this);
 static void default_repack(gui *gui, widget *_this);
 static void default_allocate(
     gui *gui, widget *_this, int x, int y, int width, int height);
@@ -41,6 +42,7 @@ widget *new_widget(struct gui *g, enum widget_type type, int size)
   ret = calloc(1, size);
   if (ret == NULL) OOM;
 
+  ret->clear     = default_clear;
   ret->repack    = default_repack;
   ret->add_child = default_add_child;
   ret->allocate  = default_allocate;
@@ -119,6 +121,14 @@ repack:
 /*************************************************************************/
 /*                           default functions                           */
 /*************************************************************************/
+
+static void default_clear(gui *_gui, widget *_this)
+{
+  struct gui *g = _gui;
+  struct widget *this = _this;
+  x_fill_rectangle(g->x, g->xwin, BACKGROUND_COLOR,
+      this->x, this->y, this->width, this->height);
+}
 
 static void default_repack(gui *gui, widget *_this)
 {

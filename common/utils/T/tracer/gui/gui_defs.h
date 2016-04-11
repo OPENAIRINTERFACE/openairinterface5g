@@ -46,6 +46,7 @@ struct widget {
   void (*allocate)(gui *g, widget *this, int x, int y, int width, int height);
   void (*hints)(gui *g, widget *this, int *width, int *height);
   void (*paint)(gui *g, widget *this);
+  void (*clear)(gui *g, widget *this);
 };
 
 struct widget_list {

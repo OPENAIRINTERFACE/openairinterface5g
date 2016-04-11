@@ -132,6 +132,7 @@ static void dirty_event(struct gui *g, int id)
   if (win == NULL)
     { WARN("widget id %d not contained in a window\n", id); return; }
   g->xwin = win->x;
+  w->clear(g, w);
   w->paint(g, w);
   g->xwin = NULL;
   g->repainted = 1;
