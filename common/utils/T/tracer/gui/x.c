@@ -74,6 +74,8 @@ x_window *x_create_window(x_connection *_x, int width, int height,
 
   ret->p = XCreatePixmap(x->d, ret->w, width, height,
       DefaultDepth(x->d, DefaultScreen(x->d)));
+  XFillRectangle(x->d, ret->p, x->colors[BACKGROUND_COLOR],
+      0, 0, width, height);
 
   /* enable backing store */
   {
@@ -194,6 +196,8 @@ printf("resize old %d %d new %d %d\n", xw->width, xw->height, xw->new_width, xw-
         XFreePixmap(x->d, xw->p);
         xw->p = XCreatePixmap(x->d, xw->w, xw->width, xw->height,
             DefaultDepth(x->d, DefaultScreen(x->d)));
+        XFillRectangle(x->d, xw->p, x->colors[BACKGROUND_COLOR],
+            0, 0, xw->width, xw->height);
         //xw->repaint = 1;
       }
     }
