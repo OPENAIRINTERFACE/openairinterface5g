@@ -23,6 +23,8 @@ widget *new_text_list(gui *_gui, int width, int nlines, int background_color);
 
 void xy_plot_set_range(gui *gui, widget *this,
     float xmin, float xmax, float ymin, float ymax);
+void xy_plot_set_points(gui *gui, widget *this,
+    int npoints, float *x, float *y);
 
 void text_list_add(gui *gui, widget *this, const char *text, int position);
 

@@ -20,6 +20,7 @@ static void paint(gui *_gui, widget *_this)
   float allocated_xmin, allocated_xmax;
   float allocated_ymin, allocated_ymax;
   float center;
+  int i;
 
 printf("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this->common.width, this->common.height);
 
@@ -128,6 +129,24 @@ printf("ymin/max %g %g height wanted allocated %d %d alloc ymin/max %g %g ticste
       this->common.y + this->common.height - this->label_height
           + this->label_baseline,
       this->label);
+
+  /* points */
+  float ax, bx, ay, by;
+  ax = (allocated_plot_width-1) / (allocated_xmax - allocated_xmin);
+  bx = -ax * allocated_xmin;
+  ay = (allocated_plot_height-1) / (allocated_ymax - allocated_ymin);
+  by = -ay * allocated_ymin;
+  for (i = 0; i < this->npoints; i++) {
+    int x, y;
+    x = ax * this->x[i] + bx;
+    y = ay * this->y[i] + by;
+    if (x >= 0 && x < allocated_plot_width &&
+        y >= 0 && y < allocated_plot_height)
+      x_add_point(g->x,
+          this->common.x + this->vrule_width + x,
+          this->common.y + y);
+  }
+  x_plot_points(g->x, g->xwin, FOREGROUND_COLOR);
 }
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
@@ -170,4 +189,50 @@ printf("XY PLOT label wh %d %d\n", w->label_width, w->label_height);
   gunlock(g);
 
   return w;
+}
+
+/*************************************************************************/
+/*                           public functions                            */
+/*************************************************************************/
+
+void xy_plot_set_range(gui *_gui, widget *_this,
+    float xmin, float xmax, float ymin, float ymax)
+{
+  struct gui *g = _gui;
+  struct xy_plot_widget *this = _this;
+
+  glock(g);
+
+  this->xmin = xmin;
+  this->xmax = xmax;
+  this->ymin = ymin;
+  this->ymax = ymax;
+
+  send_event(g, DIRTY, this->common.id);
+
+  gunlock(g);
+}
+
+void xy_plot_set_points(gui *_gui, widget *_this,
+    int npoints, float *x, float *y)
+{
+  struct gui *g = _gui;
+  struct xy_plot_widget *this = _this;
+
+  glock(g);
+
+  if (npoints != this->npoints) {
+    free(this->x);
+    free(this->y);
+    this->x = calloc(sizeof(float), npoints);
+    this->y = calloc(sizeof(float), npoints);
+    this->npoints = npoints;
+  }
+
+  memcpy(this->x, x, npoints * sizeof(float));
+  memcpy(this->y, y, npoints * sizeof(float));
+
+  send_event(g, DIRTY, this->common.id);
+
+  gunlock(g);
 }
