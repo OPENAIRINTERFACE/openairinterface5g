@@ -12,8 +12,8 @@ LIBS += -lrt
 PROG=tracer
 OBJS=main.o plot.o database.o forward.o gui.o
 
-$(PROG): $(OBJS) gui/gui.a
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS) gui/gui.a
+$(PROG): gui/gui.a $(OBJS)
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
 
 .PHONY: gui/gui.a
 
