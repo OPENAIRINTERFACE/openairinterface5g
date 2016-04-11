@@ -76,7 +76,8 @@ printf("xmin/max %g %g width wanted allocated %d %d alloc xmin/max %g %g ticstep
     x_text_get_dimensions(g->x, v, &vwidth, &dummy, &dummy);
     x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x + this->vrule_width + x - vwidth/2,
-        this->common.y + this->common.height - this->label_height * 2 + this->label_baseline,
+        this->common.y + this->common.height - this->label_height * 2 +
+            this->label_baseline,
         v);
 printf("tic k %d val %g x %g\n", k, k * ticstep, x);
   }
