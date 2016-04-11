@@ -41,6 +41,12 @@ void x_fill_rectangle(x_connection *c, x_window *w, int color,
 void x_draw_string(x_connection *_c, x_window *_w, int color,
     int x, int y, const char *t);
 
+/* specials functions to plot many points
+ * you call several times x_add_point() then x_plot_points()
+ */
+void x_add_point(x_connection *c, int x, int y);
+void x_plot_points(x_connection *c, x_window *w, int color);
+
 /* this function copies the pixmap to the window */
 void x_draw(x_connection *c, x_window *w);
 

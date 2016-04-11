@@ -7,6 +7,9 @@ struct x_connection {
   Display *d;
   GC *colors;
   int ncolors;
+  XPoint *pts;
+  int pts_size;
+  int pts_maxsize;
 };
 
 struct x_window {

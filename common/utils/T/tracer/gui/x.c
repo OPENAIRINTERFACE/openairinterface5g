@@ -286,3 +286,31 @@ void x_draw(x_connection *_c, x_window *_w)
 printf("x_draw XCopyArea w h %d %d display %p window %d pixmap %d\n", w->width, w->height, c->d, (int)w->w, (int)w->p);
   XCopyArea(c->d, w->p, w->w, c->colors[1], 0, 0, w->width, w->height, 0, 0);
 }
+
+/* those two special functions are to plot many points
+ * first call x_add_point many times then x_plot_points once
+ */
+void x_add_point(x_connection *_c, int x, int y)
+{
+  struct x_connection *c = _c;
+
+  if (c->pts_size == c->pts_maxsize) {
+    c->pts_maxsize += 65536;
+    c->pts = realloc(c->pts, c->pts_maxsize * sizeof(XPoint));
+    if (c->pts == NULL) OOM;
+  }
+
+  c->pts[c->pts_size].x = x;
+  c->pts[c->pts_size].y = y;
+  c->pts_size++;
+}
+
+void x_plot_points(x_connection *_c, x_window *_w, int color)
+{
+  struct x_connection *c = _c;
+fprintf(stderr, "x_plot_points %d points\n", c->pts_size);
+  struct x_window *w = _w;
+  XDrawPoints(c->d, w->p, c->colors[color], c->pts, c->pts_size,
+      CoordModeOrigin);
+  c->pts_size = 0;
+}
