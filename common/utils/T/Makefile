@@ -31,3 +31,4 @@ main.o: T.h T_IDs.h T_defs.h
 
 clean:
 	rm -f *.o $(PROG) $(GENIDS) core T_IDs.h
+	cd tracer && make clean
