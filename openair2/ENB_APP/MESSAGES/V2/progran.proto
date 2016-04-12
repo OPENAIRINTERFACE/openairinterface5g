@@ -27,6 +27,7 @@ message progran_message {
 	      prp_dl_mac_config dl_mac_config_msg = 14;
 	      prp_ue_state_change ue_state_change_msg = 15;
 	      prp_control_delegation control_delegation_msg = 16;
+	      prp_agent_reconfiguration agent_reconfiguration_msg = 17;
 	}
 }
 
@@ -180,7 +181,16 @@ message prp_control_delegation {
 	optional prp_header header = 1;
 	optional uint32 delegation_type = 2;	// Bitmap of PRCDT_* flags
 	optional bytes payload = 3;	  	// Byte array of shared lib containing the delegated functions
-	repeated string name = 4;		// The delegated functions names ordered based on bitmap flags
+	optional string name = 4;		// The delegated functions names ordered based on bitmap flags
+}
+
+//
+// Agent reconfiguration message
+//
+
+message prp_agent_reconfiguration {
+	optional prp_header header = 1;
+	optional string policy = 2;		// The policy changes using YAML syntax in string format
 }
 
 // Extensions of the echo request and reply
