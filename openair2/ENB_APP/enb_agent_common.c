@@ -35,10 +35,10 @@
  */
 
 #include<stdio.h>
-#include <dlfcn.h>
 #include <time.h>
 
 #include "enb_agent_common.h"
+#include "enb_agent_common_internal.h"
 #include "enb_agent_extern.h"
 #include "PHY/extern.h"
 #include "log.h"
@@ -403,7 +403,6 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
 
   uint32_t delegation_type = control_delegation_msg->delegation_type;
 
-  void *lib;
   int i;
 
   struct timespec vartime = timer_start();
@@ -411,7 +410,7 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
   //Write the payload lib into a file in the cache and load the lib
   char lib_name[120];
   char target[512];
-  snprintf(lib_name, sizeof(lib_name), "/delegation_lib_%d.so", control_delegation_msg->header->xid);
+  snprintf(lib_name, sizeof(lib_name), "/%s.so", control_delegation_msg->name);
   strcpy(target, local_cache);
   strcat(target, lib_name);
 
@@ -419,25 +418,7 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
   f = fopen(target, "wb");
   fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
   fclose(f);
-  lib = dlopen(target, RTLD_NOW);
-  if (lib == NULL) {
-    goto error;
-  }
 
-  i = 0;
-  //Check functions that need to be delegated
-  
-  //DL UE scheduler delegation
-  if (delegation_type & PROTOCOL__PRP_CONTROL_DELEGATION_TYPE__PRCDT_MAC_DL_UE_SCHEDULER) {  
-    void *loaded_scheduler = dlsym(lib, control_delegation_msg->name[i]);
-    i++;
-    if (loaded_scheduler) {
-      if (mac_agent_registered[mod_id]) {
-	agent_mac_xface[mod_id]->enb_agent_schedule_ue_spec = loaded_scheduler;
-	LOG_D(ENB_APP,"Delegated control for DL UE scheduler successfully\n");
-      }
-    }
-  }
   long time_elapsed_nanos = timer_end(vartime);
   *msg = NULL;
   return 0;
@@ -448,6 +429,20 @@ int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__Pro
 
 int enb_agent_destroy_control_delegation(Protocol__ProgranMessage *msg) {
   /*TODO: Dealocate memory for a dynamically allocated control delegation message*/
+}
+
+int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg) {
+  Protocol__ProgranMessage *input = (Protocol__ProgranMessage *)params;
+  Protocol__PrpAgentReconfiguration *agent_reconfiguration_msg = input->agent_reconfiguration_msg;
+
+  apply_reconfiguration_policy(mod_id, agent_reconfiguration_msg->policy, strlen(agent_reconfiguration_msg->policy));
+
+  *msg = NULL;
+  return 0;
+}
+
+int enb_agent_destroy_agent_reconfiguration(Protocol__ProgranMessage *msg) {
+  /*TODO: Dealocate memory for a dynamically allocated agent reconfiguration message*/
 }
 
 /*

@@ -114,6 +114,9 @@ int enb_agent_destroy_ue_state_change(Protocol__ProgranMessage *msg);
 int enb_agent_control_delegation(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
 int enb_agent_destroy_control_delegation(Protocol__ProgranMessage *msg);
 
+int enb_agent_reconfiguration(mid_t mod_id, const void *params, Protocol__ProgranMessage **msg);
+int enb_agent_destroy_agent_reconfiguration(Protocol__ProgranMessage *msg);
+
 Protocol__ProgranMessage* enb_agent_handle_message (mid_t mod_id, 
 						    uint8_t *data, 
 						    uint32_t size);

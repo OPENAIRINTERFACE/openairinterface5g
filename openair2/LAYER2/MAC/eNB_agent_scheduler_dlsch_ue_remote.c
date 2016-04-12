@@ -37,6 +37,8 @@
 
  */
 
+#include "enb_agent_common_internal.h"
+
 #include "eNB_agent_scheduler_dlsch_ue_remote.h"
 
 #include "LAYER2/MAC/defs.h"
@@ -46,9 +48,25 @@ struct DlMacConfigHead queue_head;
 
 int queue_initialized = 0;
 
+//uint32_t skip_subframe = 1;
+//uint32_t period = 10;
+//uint32_t sched [] = {1, 2, 3};
+
 void schedule_ue_spec_remote(mid_t mod_id, uint32_t frame, uint32_t subframe,
 			     int *mbsfn_flag, Protocol__ProgranMessage **dl_info) {
 
+  
+  //if ((subframe == skip_subframe) && (frame % period == 0)) {
+  //  LOG_I(MAC, "Will skip subframe %d %d\n", subframe, frame);
+  //  for (int i = 0; i < 3; i++) {
+  //    LOG_I(MAC, "%d\n", sched[i]);
+  //  }
+  //}
+
+  /* if (frame == 500 && subframe == 1) { */
+  /*   char policy[] = "rrc: \n - ul_scheduler: \n    behavior : tester_function\n    parameters:\n      period: !!int 3\nmac: \n - dl_scheduler: \n    parameters: \n      period : !!int 40\n      skip_subframe : !!int 3\n      sched : [!!int 4, !!int 5, !!int 6]"; */
+  /*   apply_reconfiguration_policy(mod_id, policy, strlen(policy)); */
+  /* } */
 
   eNB_MAC_INST *eNB;
 

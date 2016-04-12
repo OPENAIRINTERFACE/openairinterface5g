@@ -39,9 +39,11 @@
 
 #include <pthread.h>
 
+#include <yaml.h>
+
 #include "enb_agent_mac.h"
 #include "enb_agent_common.h"
-
+#include "enb_agent_defs.h"
 
 /*This will be used for producing continuous status updates for the MAC
  *Needs to be thread-safe
@@ -97,5 +99,16 @@ int compare_ue_stats_reports(Protocol__PrpUeStatsReport *rep1,
 
 int compare_cell_stats_reports(Protocol__PrpCellStatsReport *rep1,
 			    Protocol__PrpCellStatsReport *rep2);
+
+
+/* Functions for parsing the MAC agent policy reconfiguration command */
+
+int parse_mac_config(mid_t mod_id, yaml_parser_t *parser);
+
+int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser);
+
+int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser);
+
+int load_dl_scheduler_function(mid_t mod_id, const char *function_name);
 
 #endif /*ENB_AGENT_MAC_INTERNAL_H_*/

@@ -34,6 +34,9 @@
  * \version 0.1
  */
 
+#include <string.h>
+#include <dlfcn.h>
+
 #include "enb_agent_mac_internal.h"
 
 Protocol__ProgranMessage * enb_agent_generate_diff_mac_stats_report(Protocol__ProgranMessage *new_message,
@@ -557,4 +560,236 @@ Protocol__PrpNoiseInterferenceReport * copy_noise_inter_report(Protocol__PrpNois
   
  error:
   return NULL;
+}
+
+
+int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
+  
+  yaml_event_t event;
+  
+  int done = 0;
+
+  int sequence_started = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+   
+    switch (event.type) {
+    case YAML_SEQUENCE_START_EVENT:
+      LOG_I(ENB_APP, "A sequence just started as expected\n");
+      sequence_started = 1;
+      break;
+    case YAML_SEQUENCE_END_EVENT:
+      LOG_I(ENB_APP, "A sequence ended\n");
+      sequence_started = 0;
+      break;
+    case YAML_MAPPING_START_EVENT:
+      if (!sequence_started) {
+	goto error;
+      }
+      LOG_I(ENB_APP, "A mapping started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      LOG_I(ENB_APP, "A mapping ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      // Check the types of subsystems offered and handle their values accordingly
+      if (strcmp(event.data.scalar.value, "dl_scheduler") == 0) {
+	LOG_I(ENB_APP, "This is for the dl_scheduler subsystem\n");
+	// Call the proper handler
+	if (parse_dl_scheduler_config(mod_id, parser) == -1) {
+	  LOG_I(ENB_APP, "An error occured\n");
+	  goto error;
+	}
+      } else if (strcmp(event.data.scalar.value, "ul_scheduler") == 0) {
+	// Call the proper handler
+	LOG_I(ENB_APP, "This is for the ul_scheduler subsystem\n");
+	goto error;
+	// TODO
+      } else if (strcmp(event.data.scalar.value, "ra_scheduler") == 0) {
+	// Call the proper handler
+	// TODO
+      } else if (strcmp(event.data.scalar.value, "page_scheduler") == 0) {
+	// Call the proper handler
+	// TODO
+      } else {
+	// Unknown subsystem
+	goto error;
+      }
+      break;
+    default: // We expect nothing else at this level of the hierarchy
+      goto error;
+    }
+   
+    done = (event.type == YAML_SEQUENCE_END_EVENT);
+
+    yaml_event_delete(&event);
+ 
+  }
+  
+  return 0;
+
+  error:
+  yaml_event_delete(&event);
+  return -1;
+
+}
+
+int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
+  
+  yaml_event_t event;
+
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping (behavior and parameters)
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the subsystem started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the subsystem ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      // Check what key needs to be set
+      if (strcmp(event.data.scalar.value, "behavior") == 0) {
+	LOG_D(ENB_APP, "Time to set the behavior attribute\n");
+	yaml_event_delete(&event);
+	if (!yaml_parser_parse(parser, &event)) {
+	  goto error;
+	}
+	if (event.type == YAML_SCALAR_EVENT) {
+	  if (load_dl_scheduler_function(mod_id, event.data.scalar.value) == -1) {
+	    goto error;
+	  }
+	} else {
+	  goto error;
+	}
+      } else if (strcmp(event.data.scalar.value, "parameters") == 0) {
+	LOG_D(ENB_APP, "Now it is time to set the parameters for this subsystem\n");
+	if (parse_dl_scheduler_parameters(mod_id, parser) == -1) {
+	  goto error;
+	}
+      }
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  return 0;
+
+ error:
+  yaml_event_delete(&event);
+  return -1;
+}
+
+int parse_dl_scheduler_parameters(mid_t mod_id, yaml_parser_t *parser) {
+  yaml_event_t event;
+  
+  void *param;
+  
+  int done = 0;
+  int mapping_started = 0;
+
+  while (!done) {
+    
+    if (!yaml_parser_parse(parser, &event))
+      goto error;
+
+    switch (event.type) {
+      // We are expecting a mapping of parameters
+    case YAML_MAPPING_START_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters started\n");
+      mapping_started = 1;
+      break;
+    case YAML_MAPPING_END_EVENT:
+      LOG_D(ENB_APP, "The mapping of the parameters ended\n");
+      mapping_started = 0;
+      break;
+    case YAML_SCALAR_EVENT:
+      if (!mapping_started) {
+	goto error;
+      }
+      // Check what key needs to be set
+      if (mac_agent_registered[mod_id]) {
+	LOG_D(ENB_APP, "Setting parameter %s\n", event.data.scalar.value);
+	param = dlsym(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib,
+		      event.data.scalar.value);
+	if (param == NULL) {
+	  goto error;
+	}
+	apply_parameter_modification(param, parser);
+      } else {
+	goto error;
+      }
+      break;
+    default:
+      goto error;
+    }
+
+    done = (event.type == YAML_MAPPING_END_EVENT);
+    yaml_event_delete(&event);
+  }
+
+  return 0;
+  
+ error:
+  yaml_event_delete(&event);
+  return -1;
+}
+
+int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
+  void *lib;
+
+  char lib_name[120];
+  char target[512];
+  sprintf(lib_name, sizeof(lib_name), "/%s.so", function_name);
+  strcpy(target, local_cache);
+  strcat(target, lib_name);
+
+  lib = dlopen(target, RTLD_NOW);
+  if (lib == NULL) {
+    goto error;
+  }
+  
+  void *loaded_scheduler = dlsym(lib, function_name);
+  if (loaded_scheduler) {
+    if (mac_agent_registered[mod_id]) {
+      agent_mac_xface[mod_id]->enb_agent_schedule_ue_spec = loaded_scheduler;
+      dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
+      agent_mac_xface[mod_id]->dl_scheduler_loaded_lib = lib;
+      LOG_D(ENB_APP, "Delegated control for DL UE scheduler succesfully\n");
+    }
+  }
+
+  return 0;
+
+ error:
+  return -1;
+  
 }

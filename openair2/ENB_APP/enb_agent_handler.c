@@ -58,7 +58,7 @@ enb_agent_message_decoded_callback agent_messages_callback[][3] = {
   {enb_agent_mac_handle_dl_mac_config, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
   {0, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG*/
   {enb_agent_control_delegation, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_CONTROL_DELEGATION_MSG*/
-
+  {enb_agent_reconfiguration, 0, 0}, /*PROTOCOL__PROGRAN_MESSAGE__MSG_AGENT_RECONFIGURATION_MSG*/
 };
 
 enb_agent_message_destruction_callback message_destruction_callback[] = {
@@ -78,6 +78,7 @@ enb_agent_message_destruction_callback message_destruction_callback[] = {
   enb_agent_mac_destroy_dl_config,
   enb_agent_destroy_ue_state_change,
   enb_agent_destroy_control_delegation,
+  enb_agent_destroy_agent_reconfiguration,
 };
 
 static const char *enb_agent_direction2String[] = {

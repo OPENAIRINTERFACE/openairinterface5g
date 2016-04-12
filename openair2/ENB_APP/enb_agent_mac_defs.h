@@ -74,6 +74,8 @@ typedef struct {
   void (*enb_agent_notify_ue_state_change)(mid_t mod_id, uint32_t rnti,
 					   uint32_t state_change);
   
+  
+  void *dl_scheduler_loaded_lib;
   /*TODO: Fill in with the rest of the MAC layer technology specific callbacks (UL/DL scheduling, RACH info etc)*/
 
 } AGENT_MAC_xface;

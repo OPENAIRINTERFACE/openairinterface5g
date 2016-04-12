@@ -1391,6 +1391,8 @@ int enb_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_schedule_ue_spec = schedule_ue_spec_remote;
   xface->enb_agent_get_pending_dl_mac_config = enb_agent_get_pending_dl_mac_config;
   xface->enb_agent_notify_ue_state_change = enb_agent_ue_state_change;
+  
+  xface->dl_scheduler_loaded_lib = NULL;
 
   mac_agent_registered[mod_id] = 1;
   agent_mac_xface[mod_id] = xface;
@@ -1407,6 +1409,8 @@ int enb_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
   xface->enb_agent_schedule_ue_spec = NULL;
   xface->enb_agent_get_pending_dl_mac_config = NULL;
   xface->enb_agent_notify_ue_state_change = NULL;
+
+  xface->dl_scheduler_loaded_lib = NULL;
 
   mac_agent_registered[mod_id] = 0;
   agent_mac_xface[mod_id] = NULL;
