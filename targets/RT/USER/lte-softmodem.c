@@ -3302,39 +3302,46 @@ int main( int argc, char **argv )
   }
 
 #ifndef LOWLATENCY
-  cpu_set_t cpuset;
-  int s;
-  char cpu_affinity[1024];
 
-  LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+  /* Currently we set affinity for UHD to CPU 0 for eNB only and only if number of CPUS >2 */
+  /* ToDo: Set CPU affinity for UE */
+  if (UE_flag == 0 && get_nprocs() > 2)
+  {
+    cpu_set_t cpuset;
+    int s;
+    char cpu_affinity[1024];
+
+    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
  
-  CPU_ZERO(&cpuset);
-  CPU_SET(0, &cpuset);
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
 
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
-  }
-  /* Check the actual affinity mask assigned to the thread */
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
 
-  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
+    /* Check the actual affinity mask assigned to the thread */
+    s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_getaffinity_np");
+      exit_fun("Error getting processor affinity ");
+    }
+    memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+    for (int j = 0; j < CPU_SETSIZE; j++)
+    {
+      if (CPU_ISSET(j, &cpuset))
+      {  
+        char temp[1024];
+        sprintf(temp, " CPU_%d ", j);    
+        strcat(cpu_affinity, temp);
+      }
+    }
+    LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
   }
-  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
-  for (int j = 0; j < CPU_SETSIZE; j++)
-  if (CPU_ISSET(j, &cpuset))
-  {  
-     char temp[1024];
-     sprintf(temp, " CPU_%d ", j);    
-     strcat(cpu_affinity, temp);
-  }
-
-  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 
   /* device host type is set*/
