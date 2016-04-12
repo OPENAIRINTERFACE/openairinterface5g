@@ -22,9 +22,16 @@ static void paint(gui *_gui, widget *_this)
   float center;
   int i;
 
+# define FLIP(v) (-(v) + allocated_plot_height-1)
+
 printf("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this->common.width, this->common.height);
 
 //x_draw_rectangle(g->x, g->xwin, 1, this->common.x, this->common.y, this->common.width, this->common.height);
+
+  wanted_plot_width = this->wanted_width;
+  allocated_plot_width = this->common.width - this->vrule_width;
+  wanted_plot_height = this->wanted_height;
+  allocated_plot_height = this->common.height - this->label_height * 2;
 
   /* plot zone */
   /* TODO: refine height - height of hrule text may be != from label */
@@ -35,8 +42,6 @@ printf("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this-
       this->common.height - this->label_height * 2);
 
   /* horizontal tics */
-  wanted_plot_width = this->wanted_width;
-  allocated_plot_width = this->common.width - this->vrule_width;
   pxsize = (this->xmax - this->xmin) / wanted_plot_width;
   ticdist = 100;
   tic = floor(log10(ticdist * pxsize));
@@ -83,8 +88,6 @@ printf("tic k %d val %g x %g\n", k, k * ticstep, x);
   }
 
   /* vertical tics */
-  wanted_plot_height = this->wanted_height;
-  allocated_plot_height = this->common.height - this->label_height * 2;
   pxsize = (this->ymax - this->ymin) / wanted_plot_height;
   ticdist = 30;
   tic = floor(log10(ticdist * pxsize));
@@ -115,12 +118,12 @@ printf("ymin/max %g %g height wanted allocated %d %d alloc ymin/max %g %g ticste
     x_text_get_dimensions(g->x, v, &vwidth, &dummy, &dummy);
     x_draw_line(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x + this->vrule_width,
-        this->common.y + y,
+        this->common.y + FLIP(y),
         this->common.x + this->vrule_width + 5,
-        this->common.y + y);
+        this->common.y + FLIP(y));
     x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x + this->vrule_width - vwidth - 2,
-        this->common.y + y - this->label_height / 2 + this->label_baseline,
+        this->common.y + FLIP(y) - this->label_height/2+this->label_baseline,
         v);
   }
 
@@ -145,7 +148,7 @@ printf("ymin/max %g %g height wanted allocated %d %d alloc ymin/max %g %g ticste
         y >= 0 && y < allocated_plot_height)
       x_add_point(g->x,
           this->common.x + this->vrule_width + x,
-          this->common.y + y);
+          this->common.y + FLIP(y));
   }
   x_plot_points(g->x, g->xwin, FOREGROUND_COLOR);
 }
