@@ -449,7 +449,7 @@ function main() {
     compilations \
       $lte_build_dir ue_ip \
       CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
-      
+
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
 #    cmake ..
@@ -472,6 +472,11 @@ function main() {
     # generate USIM data
     if [ -f $dbin/nvram ]; then
       install_nas_tools $dbin $dconf
+      echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
+      cp -Rvf $dbin/.ue_emm.nvram $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.ue.nvram $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.usim.nvram $DIR/$lte_build_dir/build
+
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
