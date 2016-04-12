@@ -1,0 +1,23 @@
+57,61d56
+< /* SystemInformation-r8-IEs */
+< typedef struct SystemInformation_r8_IEs {
+< 	struct SystemInformation_r8_IEs__sib_TypeAndInfo {
+< 		A_SEQUENCE_OF(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member {
+< 			SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR present;
+79c74,78
+< 			} choice;
+---
+> 			};
+> 
+> 		struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member {
+> 			SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR present;
+> 			union SystemInformation_r8_IEs__sib_TypeAndInfo__Member_u choice;
+83c82,87
+< 		} ) list;
+---
+> 		};
+> 
+> /* SystemInformation-r8-IEs */
+> typedef struct SystemInformation_r8_IEs {
+> 	struct SystemInformation_r8_IEs__sib_TypeAndInfo {
+> 		A_SEQUENCE_OF(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member) list;
