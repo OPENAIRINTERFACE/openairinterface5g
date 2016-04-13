@@ -1090,13 +1090,9 @@ static void* eNB_thread_tx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = (uint64_t) (get_runtime_tx(proc->subframe, runtime_phy_tx, target_dl_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx) *  1000000); 
+  uint64_t runtime  = 900000 ;  
   uint64_t deadline = 1   *  1000000; // each tx thread will finish within 1ms
   uint64_t period   = 1   * 10000000; // each tx thread has a period of 10ms from the starting point
-  if (runtime > 1000000 ){
-    LOG_W(HW,"estimated runtime %d is larger than 1ms, adjusting\n",runtime);
-    runtime = (0.97 * 100) * 10000; 
-  }
 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
@@ -1123,16 +1119,19 @@ static void* eNB_thread_tx( void* param )
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   /* CPU 1 is reserved for all TX threads */
+  /* Enable CPU Affinity only if number of CPUs >2 */
   CPU_ZERO(&cpuset);
-  //for (j = 1; j < get_nprocs(); j++)
-  CPU_SET(1, &cpuset);
-
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
+  if (get_nprocs() > 2)
   {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
+    CPU_SET(1, &cpuset);
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
   }
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -1370,15 +1369,10 @@ static void* eNB_thread_rx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = get_runtime_rx(proc->subframe, runtime_phy_rx, target_ul_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx)  *  1000000; 
+  uint64_t runtime  = 900000 ;
   uint64_t deadline = 1   *  1000000;
   uint64_t period   = 1   * 10000000; // each rx thread has a period of 10ms from the starting point
-  if (runtime  > 2300000 ) {
-    LOG_W(HW,"estimated rx runtime %d is larger than expected, adjusting\n",runtime);
-    runtime   = 2300000;
-    deadline  = runtime + 100000;
-  }
-
+ 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
   attr.sched_nice = 0;
@@ -1405,16 +1399,21 @@ static void* eNB_thread_rx( void* param )
   /* CPU 0 is reserved for UHD */
   /* CPU 1 is reserved for all TX threads */
   /* CPU 2..MAX_CPUS is reserved for all RX threads */
+  /* Set CPU Affinity only if number of CPUs >2 */
   CPU_ZERO(&cpuset);
-  for (j = 2; j < get_nprocs(); j++)
-     CPU_SET(j, &cpuset);
-
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
+  if (get_nprocs() >2)
   {
-    perror( "pthread_setaffinity_np");  
-    exit_fun (" Error setting processor affinity :");
+    for (j = 2; j < get_nprocs(); j++)
+       CPU_SET(j, &cpuset);
+  
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");  
+      exit_fun (" Error setting processor affinity :");
+    }
   }
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -3303,9 +3302,8 @@ int main( int argc, char **argv )
 
 #ifndef LOWLATENCY
 
-  /* Currently we set affinity for UHD to CPU 0 for eNB only and only if number of CPUS >2 */
-  /* ToDo: Set CPU affinity for UE */
-  if (UE_flag == 0 && get_nprocs() > 2)
+  /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
+  if (get_nprocs() > 2)
   {
     cpu_set_t cpuset;
     int s;
