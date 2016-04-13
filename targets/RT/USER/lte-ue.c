@@ -221,15 +221,22 @@ static void *UE_thread_synch(void *arg)
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
+
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
 
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
   }
+  #endif
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -724,15 +731,22 @@ static void *UE_thread_tx(void *arg)
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
+
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
 
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
   }
+  #endif
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -935,15 +949,22 @@ static void *UE_thread_rx(void *arg)
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
+
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
 
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
   }
+  #endif
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);

@@ -1121,6 +1121,8 @@ static void* eNB_thread_tx( void* param )
   /* CPU 1 is reserved for all TX threads */
   /* Enable CPU Affinity only if number of CPUs >2 */
   CPU_ZERO(&cpuset);
+
+  #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
     CPU_SET(1, &cpuset);
@@ -1131,6 +1133,7 @@ static void* eNB_thread_tx( void* param )
       exit_fun("Error setting processor affinity");
     }
   }
+  #endif
 
   /* Check the actual affinity mask assigned to the thread */
 
@@ -1401,6 +1404,7 @@ static void* eNB_thread_rx( void* param )
   /* CPU 2..MAX_CPUS is reserved for all RX threads */
   /* Set CPU Affinity only if number of CPUs >2 */
   CPU_ZERO(&cpuset);
+  #ifdef CPU_AFFINITY
   if (get_nprocs() >2)
   {
     for (j = 2; j < get_nprocs(); j++)
@@ -1413,7 +1417,7 @@ static void* eNB_thread_rx( void* param )
       exit_fun (" Error setting processor affinity :");
     }
   }
-
+  #endif
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -1788,12 +1792,6 @@ static void* eNB_thread( void* arg )
   attr.sched_deadline = (0.9 * 100) * 10000;
   attr.sched_period   = 1 * 1000000;
 
-
-  /* pin the eNB main thread to CPU0*/
-  /* if (pthread_setaffinity_np(pthread_self(), sizeof(mask),&mask) <0) {
-     perror("[MAIN_ENB_THREAD] pthread_setaffinity_np failed\n");
-     }*/
-
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] main eNB thread: sched_setattr failed\n");
     exit_fun("Nothing to add");
@@ -1812,15 +1810,21 @@ static void* eNB_thread( void* arg )
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   CPU_ZERO(&cpuset);
-  for (j = 1; j < get_nprocs(); j++)
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
       CPU_SET(j, &cpuset);
 
-  s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-     perror( "pthread_setaffinity_np");
-     exit_fun("Error setting processor affinity");
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
   }
+  #endif
+
   /* Check the actual affinity mask assigned to the thread */
 
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -3303,43 +3307,43 @@ int main( int argc, char **argv )
 #ifndef LOWLATENCY
 
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
+  
+  cpu_set_t cpuset;
+  int s;
+  char cpu_affinity[1024];
+  CPU_ZERO(&cpuset);
+  #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
-    cpu_set_t cpuset;
-    int s;
-    char cpu_affinity[1024];
-
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
- 
-    CPU_ZERO(&cpuset);
     CPU_SET(0, &cpuset);
-
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0)
     {
       perror( "pthread_setaffinity_np");
       exit_fun("Error setting processor affinity");
     }
-
-    /* Check the actual affinity mask assigned to the thread */
-    s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
-    {
-      perror( "pthread_getaffinity_np");
-      exit_fun("Error getting processor affinity ");
-    }
-    memset(cpu_affinity, 0 , sizeof(cpu_affinity));
-    for (int j = 0; j < CPU_SETSIZE; j++)
-    {
-      if (CPU_ISSET(j, &cpuset))
-      {  
-        char temp[1024];
-        sprintf(temp, " CPU_%d ", j);    
-        strcat(cpu_affinity, temp);
-      }
-    }
-    LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
+    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
   }
+  #endif
+
+  /* Check the actual affinity mask assigned to the thread */
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (int j = 0; j < CPU_SETSIZE; j++)
+  {
+    if (CPU_ISSET(j, &cpuset))
+    {  
+      char temp[1024];
+      sprintf(temp, " CPU_%d ", j);    
+      strcat(cpu_affinity, temp);
+    }
+  }
+  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 
   /* device host type is set*/
@@ -3523,17 +3527,6 @@ int main( int argc, char **argv )
 
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-
-  /*  this is moved to the eNB main thread */ 
-
-//#if defined(ENABLE_ITTI)
-  // Wait for eNB application initialization to be complete (eNB registration to MME)
-  //  if (UE_flag==0) {
-  // printf("Waiting for eNB application to be ready\n");
-    //wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-  // }
-  //#endif
-
 
   // this starts the DMA transfers
 #ifdef EXMIMO

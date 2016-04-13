@@ -261,6 +261,7 @@ endif (${ENABLE_ITTI})
 add_boolean_option(RTAI False "Use RTAI")
 if (${RTAI})
   set(LOWLATENCY False)
+  set(CPU_AFFINITY False)
   add_definitions("-DENABLE_RTAI_CLOCK")
   add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
   include_directories ("/usr/realtime/include")
@@ -576,7 +577,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
   set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
-  set(LOWLATENCY False)
   set(option_HW_lib "-lLMS_SDR -lLMS7002M -lSi5351C -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
@@ -606,6 +606,7 @@ endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
 Message("LOWLATENCY flag  is ${LOWLATENCY}")
+Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -619,6 +620,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
 add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
