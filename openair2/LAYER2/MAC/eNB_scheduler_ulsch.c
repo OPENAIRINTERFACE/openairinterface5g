@@ -753,7 +753,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
         DCI_pdu = &eNB->common_channels[CC_id].DCI_pdu;
         UE_template = &UE_list->UE_template[CC_id][UE_id];
 
-        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,1) == -1 ) {
+        if (mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL) == -1 ) {
           LOG_W(MAC,"[eNB %d] Scheduler Frame %d, subframeP %d: candidate harq_pid from PHY for UE %d CC %d RNTI %x\n",
                 module_idP,frameP,subframeP, UE_id, CC_id, rnti);
           //  NN --> RK: Don't schedule UE if we cannot get harq pid

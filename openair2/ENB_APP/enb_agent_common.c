@@ -43,6 +43,7 @@
 #include "PHY/extern.h"
 #include "log.h"
 
+#include "SCHED/defs.h"
 #include "RRC/LITE/extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
@@ -671,7 +672,7 @@ int get_harq(const mid_t mod_id, const uint8_t CC_id, const mid_t ue_id, const i
 
   uint16_t rnti = get_ue_crnti(mod_id,ue_id);
 
-  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,0);
+  mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&round,openair_harq_DL);
 
   *id = harq_pid;
   if (round > 0) {
