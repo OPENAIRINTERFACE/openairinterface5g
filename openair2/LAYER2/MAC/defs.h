@@ -609,6 +609,12 @@ typedef struct {
   /// Flag to indicate UE has been configured (ACK from RRCConnectionSetup received)
   boolean_t configured;
 
+  /// MCS from last scheduling
+  uint8_t mcs[8];
+
+  /// TPC from last scheduling
+  uint8_t oldTPC[8];
+
   // PHY interface info
 
   /// DCI format for DLSCH

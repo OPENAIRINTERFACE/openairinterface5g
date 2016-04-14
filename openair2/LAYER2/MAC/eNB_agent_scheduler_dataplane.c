@@ -324,8 +324,6 @@ void apply_ue_spec_scheduling_decisions(mid_t mod_id,
 	  nb_rb += get_min_rb_unit(mod_id, CC_id);
 	  stats_tbs = mac_xface->get_TBS_DL(dl_dci->mcs[0], nb_rb);
 	}
-
-	UE_list->UE_template[CC_id][UE_id].nb_rb[dl_dci->harq_process] = nb_rb;
 	
 	UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used = nb_rb;
 	UE_list->eNB_UE_stats[CC_id][UE_id].total_rbs_used += nb_rb;

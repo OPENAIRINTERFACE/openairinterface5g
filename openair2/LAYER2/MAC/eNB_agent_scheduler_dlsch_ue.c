@@ -137,7 +137,7 @@ schedule_ue_spec_default(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH,VCD_FUNCTION_IN);
 
   //weight = get_ue_weight(module_idP,UE_id);
-  aggregation = 1; // set to the maximum aggregation level
+  aggregation = 2; // set to the maximum aggregation level
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     min_rb_unit[CC_id] = get_min_rb_unit(mod_id, CC_id);
@@ -248,6 +248,7 @@ schedule_ue_spec_default(
       // initializing the rb allocation indicator for each UE
       for(j = 0; j < frame_parms[CC_id]->N_RBG; j++) {
         UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = 0;
+	rballoc_sub[j] = 0;
       }
 
       LOG_D(MAC,"[eNB %d] Frame %d: Scheduling UE %d on CC_id %d (rnti %x, harq_pid %d, round %d, rb %d, cqi %d, mcs %d, rrc %d)\n",
@@ -269,19 +270,19 @@ schedule_ue_spec_default(
 
       if (round > 0) {
 
-	mcs = UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1;
-
-	  // get freq_allocation
-	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
-	  
-	dci_tbs = mac_xface->get_TBS_DL(mcs, nb_rb);
-
 	if (frame_parms[CC_id]->frame_type == TDD) {
 	  UE_list->UE_template[CC_id][UE_id].DAI++;
 	  update_ul_dci(mod_id, CC_id, rnti, UE_list->UE_template[CC_id][UE_id].DAI);
 	  LOG_D(MAC,"DAI update: CC_id %d subframeP %d: UE %d, DAI %d\n",
 		CC_id, subframe,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
 	}
+
+	mcs = UE_list->UE_template[CC_id][UE_id].mcs[harq_pid];
+
+	  // get freq_allocation
+	nb_rb = UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid];
+	  
+	dci_tbs = mac_xface->get_TBS_DL(mcs, nb_rb);
 
 	if (nb_rb <= nb_available_rb) {
 	  
@@ -296,6 +297,7 @@ schedule_ue_spec_default(
 	    while((nb_rb_temp > 0) && (j < frame_parms[CC_id]->N_RBG)) {
 	      if(ue_sched_ctl->rballoc_sub_UE[CC_id][j] == 1) {
 		UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j] = ue_sched_ctl->rballoc_sub_UE[CC_id][j];
+		
 		if((j == frame_parms[CC_id]->N_RBG-1) &&
 		   ((frame_parms[CC_id]->N_RB_DL == 25)||
 		    (frame_parms[CC_id]->N_RB_DL == 50))) {
@@ -316,21 +318,20 @@ schedule_ue_spec_default(
 	  
 	  for(j=0; j<frame_parms[CC_id]->N_RBG; j++) {
 	    PHY_vars_eNB_g[mod_id][CC_id]->mu_mimo_mode[UE_id].rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
+	    rballoc_sub[j] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][j];
 	  }
-
-	  for(i=0; i<PHY_vars_eNB_g[mod_id][CC_id]->lte_frame_parms.N_RBG; i++) {
-	    rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
-          }	
 
 	  // Keep the old NDI, do not toggle
 	  ndi = UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
-	  tpc = 1;
-	  
+	  tpc = UE_list->UE_template[CC_id][UE_id].oldTPC[harq_pid];
+	  UE_list->UE_template[CC_id][UE_id].mcs[harq_pid] = mcs;
+
 	  ue_has_transmission = 1;
 	  num_ues_added++;
 	} else {
 	  LOG_D(MAC,"[eNB %d] Frame %d CC_id %d : don't schedule UE %d, its retransmission takes more resources than we have\n",
                 mod_id, frame, CC_id, UE_id);
+	  ue_has_transmission = 0;
 	}
 	//End of retransmission
       } else { /* This is a potentially new SDU opportunity */
@@ -516,7 +517,6 @@ schedule_ue_spec_default(
 	  
           UE_list->UE_template[CC_id][UE_id].nb_rb[harq_pid] = nb_rb;
 
-
 	  if (frame_parms[CC_id]->frame_type == TDD) {
             UE_list->UE_template[CC_id][UE_id].DAI++;
             //  printf("DAI update: subframeP %d: UE %d, DAI %d\n",subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].DAI);
@@ -572,6 +572,9 @@ schedule_ue_spec_default(
           UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid]= 1 - UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	  ndi =  UE_list->UE_template[CC_id][UE_id].oldNDI[harq_pid];
 	  
+	  UE_list->UE_template[CC_id][UE_id].mcs[harq_pid] = mcs;
+	  UE_list->UE_template[CC_id][UE_id].oldTPC[harq_pid] = tpc;
+
 	  // Increase the pointer for the number of scheduled UEs
 	  num_ues_added++;
 	  ue_has_transmission = 1;
