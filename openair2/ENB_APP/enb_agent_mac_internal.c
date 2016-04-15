@@ -579,25 +579,25 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
    
     switch (event.type) {
     case YAML_SEQUENCE_START_EVENT:
-      LOG_I(ENB_APP, "A sequence just started as expected\n");
+      LOG_D(ENB_APP, "A sequence just started as expected\n");
       sequence_started = 1;
       break;
     case YAML_SEQUENCE_END_EVENT:
-      LOG_I(ENB_APP, "A sequence ended\n");
+      LOG_D(ENB_APP, "A sequence ended\n");
       sequence_started = 0;
       break;
     case YAML_MAPPING_START_EVENT:
       if (!sequence_started) {
 	goto error;
       }
-      LOG_I(ENB_APP, "A mapping started\n");
+      LOG_D(ENB_APP, "A mapping started\n");
       mapping_started = 1;
       break;
     case YAML_MAPPING_END_EVENT:
       if (!mapping_started) {
 	goto error;
       }
-      LOG_I(ENB_APP, "A mapping ended\n");
+      LOG_D(ENB_APP, "A mapping ended\n");
       mapping_started = 0;
       break;
     case YAML_SCALAR_EVENT:
@@ -606,15 +606,15 @@ int parse_mac_config(mid_t mod_id, yaml_parser_t *parser) {
       }
       // Check the types of subsystems offered and handle their values accordingly
       if (strcmp(event.data.scalar.value, "dl_scheduler") == 0) {
-	LOG_I(ENB_APP, "This is for the dl_scheduler subsystem\n");
+	LOG_D(ENB_APP, "This is for the dl_scheduler subsystem\n");
 	// Call the proper handler
 	if (parse_dl_scheduler_config(mod_id, parser) == -1) {
-	  LOG_I(ENB_APP, "An error occured\n");
+	  LOG_D(ENB_APP, "An error occured\n");
 	  goto error;
 	}
       } else if (strcmp(event.data.scalar.value, "ul_scheduler") == 0) {
 	// Call the proper handler
-	LOG_I(ENB_APP, "This is for the ul_scheduler subsystem\n");
+	LOG_D(ENB_APP, "This is for the ul_scheduler subsystem\n");
 	goto error;
 	// TODO
       } else if (strcmp(event.data.scalar.value, "ra_scheduler") == 0) {
@@ -674,7 +674,7 @@ int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
       }
       // Check what key needs to be set
       if (strcmp(event.data.scalar.value, "behavior") == 0) {
-	LOG_D(ENB_APP, "Time to set the behavior attribute\n");
+	LOG_I(ENB_APP, "Time to set the behavior attribute\n");
 	yaml_event_delete(&event);
 	if (!yaml_parser_parse(parser, &event)) {
 	  goto error;
@@ -682,7 +682,7 @@ int parse_dl_scheduler_config(mid_t mod_id, yaml_parser_t *parser) {
 	if (event.type == YAML_SCALAR_EVENT) {
 	  if (load_dl_scheduler_function(mod_id, event.data.scalar.value) == -1) {
 	    goto error;
-	  }
+	  } 
 	} else {
 	  goto error;
 	}
@@ -768,7 +768,7 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
 
   char lib_name[120];
   char target[512];
-  sprintf(lib_name, sizeof(lib_name), "/%s.so", function_name);
+  snprintf(lib_name, sizeof(lib_name), "/%s.so", function_name);
   strcpy(target, local_cache);
   strcat(target, lib_name);
 
@@ -781,7 +781,9 @@ int load_dl_scheduler_function(mid_t mod_id, const char *function_name) {
   if (loaded_scheduler) {
     if (mac_agent_registered[mod_id]) {
       agent_mac_xface[mod_id]->enb_agent_schedule_ue_spec = loaded_scheduler;
-      dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
+      if (agent_mac_xface[mod_id]->dl_scheduler_loaded_lib != NULL) {
+	dlclose(agent_mac_xface[mod_id]->dl_scheduler_loaded_lib);
+      }
       agent_mac_xface[mod_id]->dl_scheduler_loaded_lib = lib;
       LOG_D(ENB_APP, "Delegated control for DL UE scheduler succesfully\n");
     }
