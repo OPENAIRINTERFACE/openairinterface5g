@@ -213,6 +213,8 @@ schedule_ue_spec_default(
         set_ul_DAI(mod_id, UE_id, CC_id, frame, subframe,frame_parms);
       }
 
+      channels_added = 0;
+
       // After this point all the UEs will be scheduled
       dl_data[num_ues_added] = (Protocol__PrpDlData *) malloc(sizeof(Protocol__PrpDlData));
       protocol__prp_dl_data__init(dl_data[num_ues_added]);
