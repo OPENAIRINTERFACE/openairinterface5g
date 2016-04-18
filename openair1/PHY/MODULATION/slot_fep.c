@@ -189,7 +189,9 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
         start_meas(&phy_vars_ue->dlsch_channel_estimation_stats);
-        lte_dl_channel_estimation(phy_vars_ue,eNB_id,0,
+        lte_dl_channel_estimation(phy_vars_ue,
+				  eNB_id,
+				  0,
                                   Ns,
                                   aa,
                                   l,
@@ -197,7 +199,9 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
         stop_meas(&phy_vars_ue->dlsch_channel_estimation_stats);
 
         for (i=0; i<phy_vars_ue->PHY_measurements.n_adj_cells; i++) {
-          lte_dl_channel_estimation(phy_vars_ue,eNB_id,i+1,
+          lte_dl_channel_estimation(phy_vars_ue,
+				    eNB_id,
+				    i+1,
                                     Ns,
                                     aa,
                                     l,

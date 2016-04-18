@@ -523,7 +523,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     int16_t *pbch_comp;
     float Re,Im,ymax=1;
     int num_pdcch_symbols=3;
-    float *llr, *bit, *chest_f_abs, llr_pbch[1920], bit_pbch[1920], *llr_pdcch, *bit_pdcch;
+    float *llr0, *bit0, *llr1, *bit1, *chest_f_abs, llr_pbch[1920], bit_pbch[1920], *llr_pdcch, *bit_pdcch;
     float *I, *Q;
     float rxsig_t_dB[nb_antennas_rx][FRAME_LENGTH_COMPLEX_SAMPLES];
     float **chest_t_abs;
@@ -602,8 +602,10 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         chest_t_abs[arx] = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
     }
     chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
-    llr = (float*) calloc(coded_bits_per_codeword0,sizeof(float)); // init to zero
-    bit = malloc(coded_bits_per_codeword0*sizeof(float));
+    llr0 = (float*) calloc(coded_bits_per_codeword0,sizeof(float)); // init to zero
+    bit0 = malloc(coded_bits_per_codeword0*sizeof(float));
+    llr1 = (float*) calloc(coded_bits_per_codeword1,sizeof(float)); // init to zero
+    bit1 = malloc(coded_bits_per_codeword1*sizeof(float));
     llr_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float)); // init to zero
     bit_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float));
     
@@ -769,12 +771,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     // PDSCH LLRs CW0
     if (pdsch_llr != NULL) {
         for (i=0; i<coded_bits_per_codeword0; i++) {
-            llr[i] = (float) pdsch_llr[i];
-            bit[i] = (float) i;
+            llr0[i] = (float) pdsch_llr[i];
+            bit0[i] = (float) i;
         }
 
         fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword0);        
-        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword0,"","","");
+        fl_set_xyplot_data(form->pdsch_llr,bit0,llr0,coded_bits_per_codeword0,"","","");
     }
 
 
@@ -838,12 +840,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     // PDSCH LLRs CW1
     if (pdsch_llr1 != NULL) {
         for (i=0; i<coded_bits_per_codeword1; i++) {
-            llr[i] = (float) pdsch_llr1[i];
-            bit[i] = (float) i;
+            llr1[i] = (float) pdsch_llr1[i];
+            bit1[i] = (float) i;
         }
 
         fl_set_xyplot_xbounds(form->pdsch_llr1,0,coded_bits_per_codeword1);        
-        fl_set_xyplot_data(form->pdsch_llr1,bit,llr,coded_bits_per_codeword1,"","","");
+        fl_set_xyplot_data(form->pdsch_llr1,bit1,llr1,coded_bits_per_codeword1,"","","");
     }
     
     // PDSCH I/Q of MF Output
@@ -926,8 +928,10 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     free(I);
     free(Q);
     free(chest_f_abs);
-    free(llr);
-    free(bit);
+    free(llr0);
+    free(bit0);
+    free(llr1);
+    free(bit1);
     free(bit_pdcch);
     free(llr_pdcch);
     for (arx=0;arx<nb_antennas_rx;arx++) {

@@ -932,7 +932,7 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 				   maxDoppler,
 				   channel_offset, 
 				   path_loss_dB,
-				   0);
+				   1);
       break;
       
       case Rayleigh1_orth_eff_ch_TM4_prec_imag:

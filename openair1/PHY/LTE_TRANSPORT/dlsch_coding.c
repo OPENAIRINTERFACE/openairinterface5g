@@ -299,7 +299,7 @@ int dlsch_encoding(unsigned char *a,
     printf("\n");
     */
     // Add 24-bit crc (polynomial A) to payload
-    crc = crc24a(a,
+    crc = crc24a(a, //input bits for computation, A is a size of a
                  A)>>8;
     a[A>>3] = ((uint8_t*)&crc)[2];
     a[1+(A>>3)] = ((uint8_t*)&crc)[1];
@@ -310,15 +310,15 @@ int dlsch_encoding(unsigned char *a,
     //    dlsch->harq_processes[harq_pid]->b = a;
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
-    if (lte_segmentation(dlsch->harq_processes[harq_pid]->b,
-                         dlsch->harq_processes[harq_pid]->c,
-                         dlsch->harq_processes[harq_pid]->B,
-                         &dlsch->harq_processes[harq_pid]->C,
-                         &dlsch->harq_processes[harq_pid]->Cplus,
-                         &dlsch->harq_processes[harq_pid]->Cminus,
-                         &dlsch->harq_processes[harq_pid]->Kplus,
-                         &dlsch->harq_processes[harq_pid]->Kminus,
-                         &dlsch->harq_processes[harq_pid]->F)<0)
+    if (lte_segmentation(dlsch->harq_processes[harq_pid]->b, // bits after CRC attachement
+                         dlsch->harq_processes[harq_pid]->c, // output from segmentation
+                         dlsch->harq_processes[harq_pid]->B, //size of B=L+A
+                         &dlsch->harq_processes[harq_pid]->C, //number of codeblocks
+                         &dlsch->harq_processes[harq_pid]->Cplus, //Number of segments of size K+
+                         &dlsch->harq_processes[harq_pid]->Cminus,//Number of segments of size K_
+                         &dlsch->harq_processes[harq_pid]->Kplus, //First segmentation size
+                         &dlsch->harq_processes[harq_pid]->Kminus, //Second segmentation size
+                         &dlsch->harq_processes[harq_pid]->F)<0) //Number of filler bits
       return(-1);
 
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
@@ -399,7 +399,7 @@ int dlsch_encoding(unsigned char *a,
     r_offset += lte_rate_matching_turbo(dlsch->harq_processes[harq_pid]->RTC[r],
                                         G,  //G
                                         dlsch->harq_processes[harq_pid]->w[r],
-                                        dlsch->harq_processes[harq_pid]->e+r_offset,
+                                        dlsch->harq_processes[harq_pid]->e+r_offset, // sequence of bits for transmission
                                         dlsch->harq_processes[harq_pid]->C, // C
                                         dlsch->Nsoft,                    // Nsoft,
                                         dlsch->Mdlharq,

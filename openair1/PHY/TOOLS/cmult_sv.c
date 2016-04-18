@@ -66,10 +66,10 @@ void multadd_complex_vector_real_scalar(int16_t *x,
 
   if (zero_flag == 1)
     for (n=0; n<N>>2; n++) {
-      //print_shorts("x_128[n]=", &x_128[n]);
-      //print_shorts("alpha_128", &alpha_128);
+     // print_shorts("x_128[n]=", &x_128[n]);
+     // print_shorts("alpha_128", &alpha_128);
       y_128[n] = mulhi_int16(x_128[n],alpha_128);
-      //print_shorts("y_128[n]=", &y_128[n]); //Q2.13
+     // print_shorts("y_128[n]=", &y_128[n]);
     }
 
   else

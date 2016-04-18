@@ -137,8 +137,8 @@ int mult_cpx_conj_vector(int16_t *x1,
 }
 
 
-int mult_cpx_vector(int16_t *x1,
-                    int16_t *x2,
+int mult_cpx_vector(int16_t *x1, //Q15
+                    int16_t *x2,//Q13
                     int16_t *y,
                     uint32_t N,
                     int output_shift)
@@ -174,26 +174,26 @@ int mult_cpx_vector(int16_t *x1,
   //right shift by 13 while p_a * x0 and 15 while  
   // we compute 4 cpx multiply for each loop
   for(i=0; i<(N>>2); i++) {
-    tmp_re = _mm_sign_epi16(*x1_128,*(__m128i*)&conjug2[0]);
+    tmp_re = _mm_sign_epi16(*x1_128,*(__m128i*)&conjug2[0]);// Q15
     //print_shorts("tmp_re1:",&tmp_re[i]);
-    tmp_re = _mm_madd_epi16(tmp_re,*x2_128);
+    tmp_re = _mm_madd_epi16(tmp_re,*x2_128); //Q28
     //print_ints("tmp_re2:",&tmp_re[i]);
 
-    tmp_im = _mm_shufflelo_epi16(*x1_128,_MM_SHUFFLE(2,3,0,1));
+    tmp_im = _mm_shufflelo_epi16(*x1_128,_MM_SHUFFLE(2,3,0,1)); //Q15
     //print_shorts("tmp_im1:",&tmp_im[i]);
-    tmp_im = _mm_shufflehi_epi16(tmp_im,_MM_SHUFFLE(2,3,0,1));
+    tmp_im = _mm_shufflehi_epi16(tmp_im,_MM_SHUFFLE(2,3,0,1)); //Q15
     //print_shorts("tmp_im2:",&tmp_im[i]);
-    tmp_im = _mm_madd_epi16(tmp_im, *x2_128);
+    tmp_im = _mm_madd_epi16(tmp_im, *x2_128); //Q28
     //print_ints("tmp_im3:",&tmp_im[i]);
-    tmp_re = _mm_srai_epi32(tmp_re,output_shift);
+    tmp_re = _mm_srai_epi32(tmp_re,output_shift);//Q(28-shift)
     //print_ints("tmp_re shifted:",&tmp_re[i]);
-    tmp_im = _mm_srai_epi32(tmp_im,output_shift);
+    tmp_im = _mm_srai_epi32(tmp_im,output_shift); //Q(28-shift)
     //print_ints("tmp_im shifted:",&tmp_im[i]);
-    tmpy0  = _mm_unpacklo_epi32(tmp_re,tmp_im);
+    tmpy0  = _mm_unpacklo_epi32(tmp_re,tmp_im); //Q(28-shift)
     //print_ints("unpack lo :",&tmpy0[i]);
-    tmpy1  = _mm_unpackhi_epi32(tmp_re,tmp_im);
+    tmpy1  = _mm_unpackhi_epi32(tmp_re,tmp_im); //Q(28-shift)
     //print_ints("mrc rho0:",&tmpy1[i]);
-    *y_128 = _mm_packs_epi32(tmpy0,tmpy1);
+    *y_128 = _mm_packs_epi32(tmpy0,tmpy1); //must be Q15 
     //print_shorts("*y_128:",&y_128[i]);
 
     x1_128++;
