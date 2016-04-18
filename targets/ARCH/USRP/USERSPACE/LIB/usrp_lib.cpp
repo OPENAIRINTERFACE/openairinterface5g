@@ -617,19 +617,19 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
-      s->usrp->set_master_clock_rate(15.36e06);
+      s->usrp->set_master_clock_rate(30.72e06);
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 153; 
-      openair0_cfg[0].tx_bw                 = 10e6;
-      openair0_cfg[0].rx_bw                 = 10e6;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
       openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
-      s->usrp->set_master_clock_rate(7.68e6);
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 103;
-      openair0_cfg[0].tx_bw                 = 5e6;
-      openair0_cfg[0].rx_bw                 = 5e6;
+      openair0_cfg[0].tx_sample_advance     = 153;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
