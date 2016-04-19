@@ -229,7 +229,6 @@ int main(int argc, char **argv)
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   uint8_t fdd_flag = 0;
-  int xforms = 0;
   frame_t frame_type = FDD;
   int xforms=0;
   FD_lte_phy_scope_ue *form_ue = NULL;
