@@ -316,7 +316,7 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        LOWLATENCY_FLAG_USER="True"
+        LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
         LOWLATENCY_FLAG_USER="True"
      elif [ "$HW" = "OAI_USRP" ] ; then 
