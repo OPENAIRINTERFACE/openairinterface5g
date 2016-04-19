@@ -1090,8 +1090,8 @@ static void* eNB_thread_tx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = 900000 ;  
-  uint64_t deadline = 1   *  1000000; // each tx thread will finish within 1ms
+  uint64_t runtime  = 850000 ;  
+  uint64_t deadline = 1   *  1000000 ; // each tx thread will finish within 1ms
   uint64_t period   = 1   * 10000000; // each tx thread has a period of 10ms from the starting point
 
   attr.size = sizeof(attr);
@@ -1125,7 +1125,8 @@ static void* eNB_thread_tx( void* param )
   #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
-    CPU_SET(1, &cpuset);
+    for (j = 1; j < get_nprocs(); j++)
+        CPU_SET(j, &cpuset);
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0)
     {
@@ -1372,7 +1373,7 @@ static void* eNB_thread_rx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = 900000 ;
+  uint64_t runtime  = 870000 ;
   uint64_t deadline = 1   *  1000000;
   uint64_t period   = 1   * 10000000; // each rx thread has a period of 10ms from the starting point
  
@@ -1407,7 +1408,7 @@ static void* eNB_thread_rx( void* param )
   #ifdef CPU_AFFINITY
   if (get_nprocs() >2)
   {
-    for (j = 2; j < get_nprocs(); j++)
+    for (j = 1; j < get_nprocs(); j++)
        CPU_SET(j, &cpuset);
   
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
