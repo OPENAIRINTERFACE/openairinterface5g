@@ -130,7 +130,7 @@ int emm_proc_status(unsigned int ueid, int emm_cause)
   emm_sap_t emm_sap;
 
   emm_security_context_t    *sctx = NULL;
-  struct emm_data_context_s *ctx  = NULL;
+  //struct emm_data_context_s *ctx  = NULL;
 
   LOG_TRACE(INFO,"EMM-PROC  - EMM status procedure requested");
 

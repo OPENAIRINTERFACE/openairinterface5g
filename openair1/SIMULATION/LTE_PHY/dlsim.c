@@ -231,7 +231,8 @@ int main(int argc, char **argv)
   uint8_t fdd_flag = 0;
   int xforms = 0;
   frame_t frame_type = FDD;
-  FD_lte_phy_scope_ue *form_ue;
+  int xforms=0;
+  FD_lte_phy_scope_ue *form_ue = NULL;
   char title[255];
   uint32_t DLSCH_RB_ALLOC = 0x1fff;
   int numCCE=0;

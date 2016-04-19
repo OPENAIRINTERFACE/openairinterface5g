@@ -46,16 +46,16 @@ int8_t pucch_power_cntl(PHY_VARS_UE *phy_vars_ue,uint8_t subframe,uint8_t eNB_id
 {
 
   int8_t Po_PUCCH;
-  uint8_t harq_pid;
+  //uint8_t harq_pid;
 
   // P_pucch =  P_opucch+ PL + h(nCQI,nHARQ) + delta_pucchF(pucch_fmt) + g(i))
   //
-  if ((pucch_fmt == pucch_format1a) ||
-      (pucch_fmt == pucch_format1b)) {  // Update g_pucch based on TPC/delta_PUCCH received in PDCCH for this process
-    harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe].harq_id;
+  //if ((pucch_fmt == pucch_format1a) ||
+  //    (pucch_fmt == pucch_format1b)) {  // Update g_pucch based on TPC/delta_PUCCH received in PDCCH for this process
+    //harq_pid = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_ack[subframe].harq_id;
     //this is now done in dci_tools
     //phy_vars_ue->g_pucch[eNB_id] += phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->delta_PUCCH;
-  }
+  //}
 
   Po_PUCCH = get_PL(phy_vars_ue->Mod_id,phy_vars_ue->CC_id,eNB_id)+
     phy_vars_ue->lte_frame_parms.ul_power_control_config_common.p0_NominalPUCCH+

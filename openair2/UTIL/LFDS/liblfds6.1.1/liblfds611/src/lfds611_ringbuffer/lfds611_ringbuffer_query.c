@@ -5,7 +5,7 @@
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_ringbuffer_query( struct lfds611_ringbuffer_state *rs, enum lfds611_ringbuffer_query_type query_type, void *query_input, void *query_output )
 {
@@ -26,7 +26,7 @@ void lfds611_ringbuffer_query( struct lfds611_ringbuffer_state *rs, enum lfds611
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 

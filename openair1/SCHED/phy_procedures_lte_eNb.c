@@ -612,6 +612,7 @@ void phy_eNB_lte_check_measurement_thresholds(instance_t instanceP, ral_threshol
 #endif
 
 
+unsigned int taus(void);
 
 void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,
                            relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn)
@@ -1822,6 +1823,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   stop_meas(&phy_vars_eNB->phy_proc_tx);
 
 
+  (void)re_allocated; /* remove gcc warning "set but not used" */
 }
 
 void process_Msg3(PHY_VARS_eNB *phy_vars_eNB,uint8_t sched_subframe,uint8_t UE_id, uint8_t harq_pid)
@@ -2055,7 +2057,7 @@ void process_HARQ_feedback(uint8_t UE_id,
             // then Increment DLSCH round index
             dlsch_harq_proc->round++;
 
-            if (dlsch_harq_proc->round == 1/*dlsch->Mdlharq*/) {
+            if (dlsch_harq_proc->round == dlsch->Mdlharq) {
               // This was the last round for DLSCH so reset round and increment l2_error counter
 #ifdef DEBUG_PHY_PROC
               LOG_W(PHY,"[eNB %d][PDSCH %x/%d] DLSCH retransmissions exhausted, dropping packet\n",phy_vars_eNB->Mod_id,
@@ -2493,6 +2495,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
   }
 
   sect_id = 0;
+  (void)sect_id; /* remove gcc warning "set but not used" */
 
   /*
     for (UE_id=0;UE_id<NUMBER_OF_UE_MAX;UE_id++) {
@@ -3604,6 +3607,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
+  (void)pusch_active; /* remove gcc warning "set but not used" */
   //  if (pusch_active == 0) {
     if (abstraction_flag == 0) {
       //      LOG_D(PHY,"[eNB] Frame %d, subframe %d Doing I0_measurements\n",
