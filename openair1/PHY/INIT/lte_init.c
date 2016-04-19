@@ -1127,15 +1127,16 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 	  ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
         }
 
+      const size_t num = 7*2*frame_parms->N_RB_DL*12+4;
       for (k=0;k<8;k++) { //harq_pid
 	for (l=0;l<8;l++) { //round
 	  ue_pdsch_vars[eNB_id]->rxdataF_comp1[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
 	  ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[k][l] = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-	      
+	 // ue_pdsch_vars[eNB_id]->clean_x1[k][l] = (int16_t*)malloc16_clear( sizeof(int32_t) * num);    
+	  
 	  for (int i=0; i<frame_parms->nb_antennas_rx; i++) 
 	    for (int j=0; j<4; j++) { //frame_parms->nb_antennas_tx; j++)
 	      const int idx = (j<<1)+i;
-	      const size_t num = 7*2*frame_parms->N_RB_DL*12+4;
 	      ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[k][l][idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
 	      ue_pdsch_vars[eNB_id]->rxdataF_comp1[k][l][idx] = (int32_t*)malloc16_clear( sizeof(int32_t) * num );
 	    }

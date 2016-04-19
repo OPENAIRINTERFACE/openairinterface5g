@@ -58,8 +58,8 @@
 //#define DEBUG_DLSCH_DEMOD 1
 
 int avg[4]; 
-int avg_0[4];
-int avg_1[4];
+int avg_0[2];
+int avg_1[2];
 
 // [MCS][i_mod (0,1,2) = (2,4,6)]
 unsigned char offset_mumimo_llr_drange_fix=0;
@@ -329,9 +329,8 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
-
-   lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2) + interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
-    
+     lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2); //+ interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
+   // printf("TM4 I-A log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }
     
     
@@ -349,9 +348,9 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                lte_ue_pdsch_vars[eNB_id]->log2_maxh,
                                phy_measurements); // log2_maxh+I0_shift
  
- if (symbol == 5) {
+ /*if (symbol == 5) {
      write_output("rxF_comp_d.m","rxF_c_d",&lte_ue_pdsch_vars[eNB_id]->rxdataF_comp0[0][symbol*frame_parms->N_RB_DL*12],frame_parms->N_RB_DL*12,1,1);
- } 
+ } */
     if ((rx_type==rx_IC_single_stream) && 
         (eNB_id_i<phy_vars_ue->n_connected_eNB)) {
          
@@ -413,6 +412,10 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 				 symbol,
 				 nb_rb,
                                  dlsch0_harq->mimo_mode);
+	
+	  
+
+ //  write_output("dlsch0_r0_aver_chan_1.m","dl_aver_ch1_r0_0",&avg_1[0],1,1,2);
 	    
 	
 	if (rx_type>rx_standard) {
@@ -438,7 +441,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 	//printf("TM4 I-UA log2_maxh1 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh1);
         }
       }
-    
+
       dlsch_channel_compensation_TM34(frame_parms, 
                                      lte_ue_pdsch_vars[eNB_id],
                                      phy_measurements, 
@@ -2961,7 +2964,7 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
   int **rxdataF_comp0 		=lte_ue_pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1 		=lte_ue_pdsch_vars->rxdataF_comp1[harq_pid][round];
-  int **dl_ch_rho_ext 		=lte_ue_pdsch_vars->dl_ch_rho_ext[harq_pid][round]; //for first stream
+  int **dl_ch_rho_ext 		=lte_ue_pdsch_vars->dl_ch_rho_ext[harq_pid][round]; //for second stream
   int **dl_ch_rho2_ext 		=lte_ue_pdsch_vars->dl_ch_rho2_ext;
   int **dl_ch_mag0            	= lte_ue_pdsch_vars->dl_ch_mag0;
   int **dl_ch_mag1            	= lte_ue_pdsch_vars->dl_ch_mag1;
@@ -2990,8 +2993,8 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
       }    }
 
    // if (rho) {
-      rho128_0 = (__m128i *) &dl_ch_rho_ext[0][symbol*frame_parms->N_RB_DL*12];
-      rho128_1 = (__m128i *) &dl_ch_rho_ext[1][symbol*frame_parms->N_RB_DL*12];
+      rho128_0 = (__m128i *) &dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12];
+      rho128_1 = (__m128i *) &dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12];
       for (i=0;i<nb_rb*3;i++) {
            //  print_shorts("mrc rho0:",&rho128_0[i]);
             //  print_shorts("mrc rho1:",&rho128_1[i]);
@@ -3001,8 +3004,8 @@ void dlsch_detection_mrc_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
 
     if (dual_stream_UE == 1) {
-      rho128_i0 = (__m128i *) &dl_ch_rho2_ext[0][symbol*frame_parms->N_RB_DL*12];
-      rho128_i1 = (__m128i *) &dl_ch_rho2_ext[1][symbol*frame_parms->N_RB_DL*12];
+      rho128_i0 = (__m128i *) &dl_ch_rho_ext[0][symbol*frame_parms->N_RB_DL*12];
+      rho128_i1 = (__m128i *) &dl_ch_rho_ext[1][symbol*frame_parms->N_RB_DL*12];
       rxdataF_comp128_i0   = (__m128i *)&rxdataF_comp1[0][symbol*frame_parms->N_RB_DL*12];  
       rxdataF_comp128_i1   = (__m128i *)&rxdataF_comp1[1][symbol*frame_parms->N_RB_DL*12];  
       dl_ch_mag128_i0      = (__m128i *)&dl_ch_mag1[0][symbol*frame_parms->N_RB_DL*12];  
@@ -3056,6 +3059,7 @@ void dlsch_scale_channel(int **dl_ch_estimates_ext,
 ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
     LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
+   // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
 
   ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
 
@@ -3147,7 +3151,7 @@ void dlsch_channel_level(int **dl_ch_estimates_ext,
                              ((int*)&avg128D)[2] + 
                              ((int*)&avg128D)[3])/(nb_rb*nre);
 
-      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+                //  printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
     }
 
   _mm_empty();
@@ -3313,14 +3317,15 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
 	  prec2A_TM4_128(pmi_ext[rb],&dl_ch0_128_tmp,&dl_ch1_128_tmp);
         //      mmtmpD2 = _mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp);
 	
-        avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
-      
 	avg_1_128D = _mm_add_epi32(avg_1_128D,_mm_madd_epi16(dl_ch1_128_tmp,dl_ch1_128_tmp));
-
+	avg_0_128D = _mm_add_epi32(avg_0_128D,_mm_madd_epi16(dl_ch0_128_tmp,dl_ch0_128_tmp));
+	
         dl_ch0_128+=3;  
         dl_ch1_128+=3;
       }          
     }
+       
+      
 
     avg_0[aarx] = (((int*)&avg_0_128D)[0])/(nb_rb*nre) +
       (((int*)&avg_0_128D)[1])/(nb_rb*nre) +
@@ -3332,17 +3337,19 @@ void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
       (((int*)&avg_1_128D)[1])/(nb_rb*nre) +
       (((int*)&avg_1_128D)[2])/(nb_rb*nre) +
       (((int*)&avg_1_128D)[3])/(nb_rb*nre);   
-    //  printf("From Chan_level aver stream 1 %d =%d\n", aarx, avg_1[aarx]);
+  //    printf("From Chan_level aver stream 1 %d =%d\n", aarx, avg_1[aarx]);
   }
 //avg_0[0] = max(avg_0[0],avg_0[1]);
 //avg_1[0] = max(avg_1[0],avg_1[1]);
 //avg_0[0]= max(avg_0[0], avg_1[0]);
 
   avg_0[0] = avg_0[0] + avg_0[1];
+ // printf("From Chan_level aver stream 0 final =%d\n", avg_0[0]);
   avg_1[0] = avg_1[0] + avg_1[1];
-  avg_0[0] = max (avg_0[0], avg_1[0]);
-  avg_1[0] = avg_0[0];
-  
+ // printf("From Chan_level aver stream 1 final =%d\n", avg_1[0]);
+ avg_0[0] = min (avg_0[0], avg_1[0]);
+ avg_1[0] = avg_0[0];
+
   _mm_empty();
   _m_empty();
 
@@ -4734,6 +4741,10 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per
   sprintf(vname,"dl_rho2_r%d_%d",eNB_id,round);
   write_output(fname,vname,phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho2_ext[0],12*N_RB_DL*nsymb,1,1);
   
+  
+ // sprintf(fname,"dlsch%d_r%d_aver_chan_1.m",eNB_id,round);
+ // sprintf(vname,"dl_aver_ch1_r%d_%d",eNB_id,round);
+ // write_output(fname,vname,&avg_1[0],1,1,1);
   
   sprintf(fname,"dlsch%d_rxF_r%d_comp0.m",eNB_id,round);
   sprintf(vname,"dl%d_rxF_r%d_comp0",eNB_id,round);

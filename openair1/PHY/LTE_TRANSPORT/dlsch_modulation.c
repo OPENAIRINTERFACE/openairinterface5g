@@ -803,7 +803,9 @@ int allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 	  ((int16_t*)&txdataF[0][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample1)[0]*ONE_OVER_2_Q15)>>15);
 	  ((int16_t*)&txdataF[0][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample1)[1]*ONE_OVER_2_Q15)>>15);
 
-	  if (frame_parms->nb_antennas_tx == 2) {
+	//   printf("%d,%d\n",((int16_t*)&txdataF[0][tti_offset])[0],((int16_t*)&txdataF[0][tti_offset])[1]);
+	 
+	   if (frame_parms->nb_antennas_tx == 2) {
 	    layer1prec2A(&tmp_sample1,&tmp_sample2,precoder_index0);
 	    ((int16_t*)&txdataF[1][tti_offset])[0] += (int16_t)((((int16_t*)&tmp_sample2)[0]*ONE_OVER_2_Q15)>>15);
 	    ((int16_t*)&txdataF[1][tti_offset])[1] += (int16_t)((((int16_t*)&tmp_sample2)[1]*ONE_OVER_2_Q15)>>15);
@@ -1643,6 +1645,7 @@ int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
 
   amp=1; //we do full scale here for SIC
   gain_lin_QPSK = (int16_t)((ONE_OVER_SQRT2_Q15));
+ // printf("gain=%d\n", gain_lin_QPSK);
  
   jj = 0;
   i = 0;
@@ -1663,7 +1666,7 @@ int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
           
           jj = jj + 1;
           
-	//  printf("%d,%d\n",((int16_t*)&sic_buffer[0][i])[0],((int16_t*)&sic_buffer[0][i])[1]);
+	//  printf("recon %d,%d\n",((int16_t*)&sic_buffer[0][i])[0],((int16_t*)&sic_buffer[0][i])[1]);
 	  
 	  i++;
           

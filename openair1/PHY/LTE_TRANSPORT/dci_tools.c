@@ -5897,7 +5897,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
         pmi_im += meas->subband_pmi_im[eNB_id][i][aarx];
 	//printf("meas->subband_pmi_im[eNB_id][i][%d]=%d\n",aarx, meas->subband_pmi_im[eNB_id][i][aarx]);
       }
-     if (((pmi_re >= pmi_im) && (pmi_re >= -pmi_im)) || ((pmi_re >= pmi_im) && (pmi_re <= -pmi_im)))
+     if (((pmi_re >= pmi_im) && (pmi_re >= -pmi_im)) || ((pmi_re <= pmi_im) && (pmi_re >= -pmi_im)))
 	pmiq = PMI_2A_R1_11;
       else 
 	pmiq = PMI_2A_R1_1j;

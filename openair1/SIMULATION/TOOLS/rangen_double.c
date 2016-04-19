@@ -68,8 +68,35 @@ void randominit(unsigned seed_init)
     ir[i]= seed;                   /* initialize the shuffle table    */
   }
 
-  iy=1;
-}
+ iy=1;
+} 
+
+
+/*void randominit(unsigned seed_init)
+{
+  int i;
+  // this need to be integrated with the existing rng, like taus: navid
+  msg("Initializing random number generator, seed %x\n",seed_init);
+
+  seed_init = 62110;
+  
+  if (seed_init == 0) {
+    srand((unsigned)time(NULL));
+
+    seed = (unsigned int) rand();
+  } else {
+    seed = seed_init;
+  }
+
+  if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
+
+//  for (i=1; i<=97; i++) {
+//    seed = a*seed;                 /* mod 2**32  */
+//    ir[i]= seed;                   /* initialize the shuffle table    */
+//  }
+
+//  iy=1;
+//}
 
 /*!\brief Uniform linear congruential random number generator on \f$[0,1)\f$.  Returns a double-precision floating-point number.*/
 
