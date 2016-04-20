@@ -598,10 +598,10 @@ extern "C" {
       openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
       bw_gain_adjust=1;
     }
+
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
       s->usrp->set_master_clock_rate(30.72e6);
-            // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 4096;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
@@ -625,7 +625,6 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
-      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 80;
       openair0_cfg[0].tx_bw                 = 20e6;
@@ -636,8 +635,8 @@ extern "C" {
       s->usrp->set_master_clock_rate(7.68e6);
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 40;
-      openair0_cfg[0].tx_bw                 = 1.25e6;
-      openair0_cfg[0].rx_bw                 = 1.25e6;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
