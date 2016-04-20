@@ -1153,6 +1153,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
   *DRB_configList = CALLOC(1, sizeof(**DRB_configList));
   dedicatedInfoNASList = CALLOC(1, sizeof(struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
+
+  int e_rab_done=0;
   
   for ( i = 0  ;
 	i < ue_context_pP->ue_context.setup_e_rabs ;
@@ -1167,9 +1169,10 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_config = CALLOC(1, sizeof(*DRB_config));
 
     DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
-    *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;  
+    // allowed value 5..15, value : x+4
+    *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 4;  
 
-    DRB_config->drb_Identity =  1 + drb_identity_index ;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+    DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
     // 1 + drb_identiy_index;  
 
     DRB_config->logicalChannelIdentity = CALLOC(1, sizeof(long));
@@ -1273,12 +1276,14 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
       }
       
       /* If list is empty free the list and reset the address */
-      if (dedicatedInfoNASList->list.count == 0) {
-	free(dedicatedInfoNASList);
-	dedicatedInfoNASList = NULL;
-      }					       
+      if (dedicatedInfoNASList != NULL) {
+	if (dedicatedInfoNASList->list.count == 0) {
+	  free(dedicatedInfoNASList);
+	  dedicatedInfoNASList = NULL;
+	}				
+      }
     }
-    
+    e_rab_done++;
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
     ue_context_pP->ue_context.e_rab[i].xid =rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
     
@@ -1477,7 +1482,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   SRB2_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
 
   SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters = SRB2_ul_SpecificParameters;
+  // this list has the configuration for SRB1 and SRB2
   ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  // this list has only the configuration for SRB2
   ASN_SEQUENCE_ADD(&SRB_configList2->list, SRB2_config);
 
   // Configure DRB
@@ -1898,7 +1905,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   size = do_RRCConnectionReconfiguration(ctxt_pP,
                                          buffer,
                                          rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),   //Transaction_id,
-                                         (SRB_ToAddModList_t*)NULL, /// NN: do not reconfig srb1: SRB_configList2,
+                                         (SRB_ToAddModList_t*)SRB_configList, // SRB_configList
                                          (DRB_ToAddModList_t*)*DRB_configList,
                                          (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
                                          (struct SPS_Config*)NULL,    // *sps_Config,
@@ -3306,7 +3313,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 
   rrc_pdcp_config_asn1_req(
     ctxt_pP,
-    NULL,  //LG-RK 14/05/2014 SRB_configList,
+    SRB_configList, //NULL,  //LG-RK 14/05/2014 SRB_configList,
     DRB_configList, 
     (DRB_ToReleaseList_t *) NULL,
     /*eNB_rrc_inst[ctxt_pP->module_id].ciphering_algorithm[ue_mod_idP] |
@@ -3323,7 +3330,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   // Refresh SRBs/DRBs
   rrc_rlc_config_asn1_req(
     ctxt_pP,
-    NULL,  //LG-RK 14/05/2014 SRB_configList,
+    SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
     DRB_configList,
     (DRB_ToReleaseList_t *) NULL
 #ifdef Rel10
@@ -4581,9 +4588,9 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
 			       rrc_eNB_ue_context_t*  ue_context_pP){
 
   int i;
-
+  int e_rab_done=0;
   for (i = 0; 
-       i < NB_RB_MAX - 3;  // S1AP_MAX_E_RAB
+       i < 3;//NB_RB_MAX - 3;  // S1AP_MAX_E_RAB
        i++) {
     
     if ( ue_context_pP->ue_context.e_rab[i].status < E_RAB_STATUS_DONE){ 
@@ -4600,14 +4607,13 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
       ue_context_pP->ue_context.e_rab[i].param.gtp_teid=0;
       
       ue_context_pP->ue_context.nb_of_e_rabs++;
-      
+      e_rab_done++;
       LOG_I(RRC,"setting up the dedicated DRBs %d (index %d) status %d \n", 
 	    ue_context_pP->ue_context.e_rab[i].param.e_rab_id, i, ue_context_pP->ue_context.e_rab[i].status);
     }
-    
-    ue_context_pP->ue_context.setup_e_rabs+=ue_context_pP->ue_context.nb_of_e_rabs;
   }
-  
+  ue_context_pP->ue_context.setup_e_rabs+=e_rab_done;
+ 
   rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(ctxt_pP, ue_context_pP, 0);
 }
 
