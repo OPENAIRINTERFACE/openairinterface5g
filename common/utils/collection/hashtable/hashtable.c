@@ -177,7 +177,6 @@ hashtable_rc_t hashtable_dump_content (const hash_table_t * const hashtblP, char
 {
     hash_node_t  *node         = NULL;
     unsigned int  i            = 0;
-    unsigned int  num_elements = 0;
     if (hashtblP == NULL) {
         *remaining_bytes_in_buffer_pP = snprintf(
                 buffer_pP,

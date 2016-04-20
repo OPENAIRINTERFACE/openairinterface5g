@@ -87,6 +87,11 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
 #endif
 
+  /* for no gcc warnings */
+  (void)rlc_union_p;
+  (void)key;
+  (void)h_rc;
+
   LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG REQ ASN1 \n",
         PROTOCOL_CTXT_ARGS(ctxt_pP));
 
@@ -196,7 +201,7 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
           break;
 
         case SRB_ToAddMod__rlc_Config_PR_defaultValue:
-#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
+//#warning TO DO SRB_ToAddMod__rlc_Config_PR_defaultValue
           if (rrc_rlc_add_rlc   (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_UM) != NULL) {
             config_req_rlc_um_asn1(
               ctxt_pP,
@@ -463,6 +468,9 @@ rlc_op_status_t rrc_rlc_remove_rlc   (
 
 #endif
 
+  /* for no gcc warnings */
+  (void)lcid;
+
 #ifdef Rel10
 
   if (MBMS_flagP == TRUE) {
@@ -634,7 +642,7 @@ rlc_op_status_t rrc_rlc_config_req   (
   const rlc_info_t      rlc_infoP)
 {
   //-----------------------------------------------------------------------------
-  rlc_op_status_t status;
+  //rlc_op_status_t status;
 
   LOG_D(RLC, PROTOCOL_CTXT_FMT" CONFIG_REQ for RAB %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),

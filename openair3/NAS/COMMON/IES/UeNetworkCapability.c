@@ -81,7 +81,7 @@ int decode_ue_network_capability(UeNetworkCapability *uenetworkcapability, uint8
         LOG_TRACE(INFO, "uenetworkcapability decoded GPRS\n");
       }
 
-#warning "Force GPRS present if UMTS present"
+//#warning "Force GPRS present if UMTS present"
       uenetworkcapability->gprs_present =1;
     }
   }
@@ -131,7 +131,7 @@ int encode_ue_network_capability(UeNetworkCapability *uenetworkcapability, uint8
   }
 
   if (uenetworkcapability->gprs_present) {
-#warning "Force gea to 0x60"
+//#warning "Force gea to 0x60"
     *(buffer + encoded) = 0x00 | 0x60;
     ////((uenetworkcapability->spare & 0x7) << 5) | // spare coded as zero
     //((uenetworkcapability->csfb  & 0x1) << 4) |

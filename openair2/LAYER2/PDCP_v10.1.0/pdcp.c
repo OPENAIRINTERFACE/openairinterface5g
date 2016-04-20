@@ -692,7 +692,7 @@ pdcp_data_ind(
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   if (oai_emulation.info.otg_enabled == 1) {
-    unsigned int dst_instance;
+    //unsigned int dst_instance;
     int    ctime;
 
     if ((pdcp_p->rlc_mode == RLC_MODE_AM)&&(MBMS_flagP==0) ) {
@@ -1031,6 +1031,8 @@ pdcp_remove_UE(
     h_rc = hashtable_remove(pdcp_coll_p, key);
 
   }
+
+  (void)h_rc; /* remove gcc warning "set but not used" */
 
   return 1;
 }
@@ -1486,7 +1488,7 @@ pdcp_config_req_asn1 (
 
   case CONFIG_ACTION_REMOVE:
     DevAssert(pdcp_pP != NULL);
-#warning "TODO pdcp_module_id_to_rnti"
+//#warning "TODO pdcp_module_id_to_rnti"
     //pdcp_module_id_to_rnti[ctxt_pP.module_id ][dst_id] = NOT_A_RNTI;
     LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_REMOVE LCID %d RBID %d configured\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),

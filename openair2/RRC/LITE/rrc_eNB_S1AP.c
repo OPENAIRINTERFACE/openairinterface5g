@@ -60,6 +60,9 @@
 #endif
 #include "msc.h"
 
+#include "gtpv1u_eNB_task.h"
+#include "RRC/LITE/rrc_eNB_GTPV1U.h"
+
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 
@@ -233,7 +236,7 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
 static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
 {
 
-#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
+//#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
@@ -392,6 +395,7 @@ rrc_pdcp_config_security(
 #define DEBUG_SECURITY 1
 
 #if defined (DEBUG_SECURITY)
+#undef msg
 #define msg printf
 
   if (print_keys ==1 ) {
@@ -673,7 +677,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
-        int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
+        //int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
@@ -860,7 +864,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 {
   uint16_t                        ue_initial_id;
   uint32_t                        eNB_ue_s1ap_id;
-  MessageDef                     *message_gtpv1u_p = NULL;
+  //MessageDef                     *message_gtpv1u_p = NULL;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 
@@ -921,7 +925,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
           &create_tunnel_resp); 
-      ue_context_p->ue_context.setup_e_rabs =ue_context_p->ue_context.nb_of_e_rabs;
+      ue_context_p->ue_context.setup_e_rabs=ue_context_p->ue_context.nb_of_e_rabs;
     }
 
     /* TODO parameters yet to process ... */
@@ -1172,7 +1176,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
     */
     {
       int      e_rab;
-      int      mod_id = 0;
+      //int      mod_id = 0;
       MessageDef *msg_delete_tunnels_p = NULL;
 
       MSC_LOG_TX_MESSAGE(
@@ -1341,6 +1345,7 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
   for (e_rab = 0; e_rab <  ue_context_pP->ue_context.setup_e_rabs ; e_rab++) {
 
     /* only respond to the corresponding transaction */ 
+    //if (((xid+1)%4) == ue_context_pP->ue_context.e_rab[e_rab].xid) {
     if (xid == ue_context_pP->ue_context.e_rab[e_rab].xid) {
       
       if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
@@ -1352,7 +1357,7 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
 	//S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rab].eNB_addr.length += 4;
 	ue_context_pP->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
 	
-	LOG_I (RRC,"enb_gtp_addr (msg index %d, context index %d, status %d, xid %d): nb_of_e_rabs %d,  e_rab_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
+	LOG_I (RRC,"enb_gtp_addr (msg index %d, e_rab index %d, status %d, xid %d): nb_of_e_rabs %d,  e_rab_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
 	       e_rabs_done,  e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid,
 	       ue_context_pP->ue_context.nb_of_e_rabs,
 	       S1AP_E_RAB_SETUP_RESP (msg_p).e_rabs[e_rabs_done].e_rab_id,
@@ -1379,7 +1384,7 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
       // NN: add conditions for e_rabs_failed 
       if ((e_rabs_done > 0) ){  
 
-	LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d \n",
+	LOG_I(RRC,"S1AP_E_RAB_SETUP_RESP: sending the message: nb_of_erabs %d, total e_rabs %d, index %d\n",
 	      ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
 	MSC_LOG_TX_MESSAGE(
 			   MSC_RRC_ENB,
@@ -1398,8 +1403,8 @@ int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP,
 
     } else {
       /*debug info for the xid */ 
-      LOG_D (RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d) \n ",
-	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid);
+      LOG_D(RRC,"xid does not corresponds  (context e_rab index %d, status %d, xid %d/%d) \n ",
+      	     e_rab, ue_context_pP->ue_context.e_rab[e_rab].status, xid, ue_context_pP->ue_context.e_rab[e_rab].xid);
     }
     
   }

@@ -270,7 +270,8 @@ check_install_oai_software() {
 	wvdial \
         python-numpy \
         sshpass \
-        libxslt1-dev
+        libxslt1-dev \
+        android-tools-adb
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     if [ `lsb_release -rs` = '12.04' ] ; then

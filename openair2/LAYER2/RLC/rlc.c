@@ -602,6 +602,9 @@ rlc_module_init (void)
   int          k;
   module_id_t  module_id1;
 
+  /* for no gcc warnings */
+  (void)k;
+
   LOG_D(RLC, "MODULE INIT\n");
   rlc_rrc_data_ind  = NULL;
   rlc_rrc_data_conf = NULL;

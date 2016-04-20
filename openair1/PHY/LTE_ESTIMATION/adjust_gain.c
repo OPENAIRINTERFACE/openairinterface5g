@@ -46,7 +46,6 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB
   uint16_t i;
 #endif
 
-
   LOG_D(PHY,"Gain control: rssi %d (%d,%d)\n",
          rx_power_fil_dB,
          phy_vars_ue->PHY_measurements.rssi,

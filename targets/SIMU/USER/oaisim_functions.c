@@ -957,7 +957,7 @@ void init_openair1(void)
   openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
   openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode[0];
-#warning "NN->FK: OAI EMU channel abstraction does not work for MCS higher than"
+//#warning "NN->FK: OAI EMU channel abstraction does not work for MCS higher than"
   openair_daq_vars.target_ue_dl_mcs = cmin(target_dl_mcs,16);
   openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
   openair_daq_vars.ue_dl_rb_alloc=0x1fff;
@@ -1049,7 +1049,7 @@ void init_openair2(void)
   module_id_t enb_id;
   module_id_t UE_id;
   int CC_id;
-#warning "eNB index is hard coded to zero"
+//#warning "eNB index is hard coded to zero"
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
     l2_init (&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
@@ -1270,10 +1270,10 @@ void update_ocm()
           LOG_I(OCM,"Path loss (CCid %d) between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f, angle %f\n",
                 CC_id,eNB_id,enb_data[eNB_id]->x,enb_data[eNB_id]->y,UE_id,ue_data[UE_id]->x,ue_data[UE_id]->y,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB, eNB2UE[eNB_id][UE_id][CC_id]->aoa);
-          double dx, dy, distance;
-          dx = enb_data[eNB_id]->x - ue_data[UE_id]->x;
-          dy = enb_data[eNB_id]->y - ue_data[UE_id]->y;
-          distance = sqrt(dx * dx + dy * dy);
+          //double dx, dy, distance;
+          //dx = enb_data[eNB_id]->x - ue_data[UE_id]->x;
+          //dy = enb_data[eNB_id]->y - ue_data[UE_id]->y;
+          //distance = sqrt(dx * dx + dy * dy);
           /*LOG_D(LOCALIZE, " OCM distance between eNB %d at (%f,%f) and UE %d at (%f,%f) is %f \n",
                   eNB_id, enb_data[eNB_id]->x,enb_data[eNB_id]->y,
                   UE_id, ue_data[UE_id]->x,ue_data[UE_id]->y,
@@ -1313,7 +1313,7 @@ void update_otg_eNB(module_id_t enb_module_idP, unsigned int ctime)
 
 #if defined(USER_MODE) && defined(OAI_EMU)
 
-  int rrc_state=0; 
+  //int rrc_state=0;
 
   if (oai_emulation.info.otg_enabled ==1 ) {
 

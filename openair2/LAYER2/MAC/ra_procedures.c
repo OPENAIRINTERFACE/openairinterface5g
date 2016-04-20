@@ -152,6 +152,9 @@ void get_prach_resources(module_id_t module_idP,
     }
   }
 
+  /* TODO: gcc warns if this variable is not always set, let's put -1 for no more warning */
+  messageSizeGroupA = -1;
+
   if (!rach_ConfigCommon->preambleInfo.preamblesGroupAConfig) {
     noGroupB = 1;
   } else {
@@ -171,6 +174,8 @@ void get_prach_resources(module_id_t module_idP,
       break;
     }
 
+    /* TODO: what value to use as default? */
+    messagePowerOffsetGroupB = -9999;
     switch (rach_ConfigCommon->preambleInfo.preamblesGroupAConfig->messagePowerOffsetGroupB) {
     case 0:
       messagePowerOffsetGroupB = -9999;
@@ -495,7 +500,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP,int CC_id,frame_t frameP, 
           UE_mac_inst[module_idP].RA_PREAMBLE_TRANSMISSION_COUNTER++;
           UE_mac_inst[module_idP].RA_prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER +=
             (rach_ConfigCommon->powerRampingParameters.powerRampingStep<<1);  // 2dB increments in ASN.1 definition
-	  int preambleTransMax;
+	  int preambleTransMax = -1;
 	  switch (rach_ConfigCommon->ra_SupervisionInfo.preambleTransMax) {
 	  case RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3:
 	    preambleTransMax = 3;

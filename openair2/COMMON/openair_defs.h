@@ -41,7 +41,13 @@
 #if !defined (msg)
 # define msg(aRGS...) LOG_D(PHY, ##aRGS)
 #endif
-#define malloc16(x) memalign(16,x) //malloc(x)
+#ifndef malloc16
+#  ifdef __AVX2__
+#    define malloc16(x) memalign(32,x)
+#  else
+#    define malloc16(x) memalign(16,x)
+#  endif
+#endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
 #define bigmalloc16 malloc16

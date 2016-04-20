@@ -355,6 +355,10 @@ mac_rrc_lite_data_ind(
   SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
   sdu_size_t      sdu_size = 0;
+
+  /* for no gcc warnings */
+  (void)sdu_size;
+
   /*
   int si_window;
    */
@@ -389,7 +393,7 @@ mac_rrc_lite_data_ind(
         itti_send_msg_to_task (TASK_RRC_UE, ctxt.instance, message_p);
       }
 #else
-      decode_BCCH_DLSCH_Message(&ctxt,eNB_indexP,sduP,sdu_lenP, 0, 0);
+      decode_BCCH_DLSCH_Message(&ctxt,eNB_indexP,(uint8_t*)sduP,sdu_lenP, 0, 0);
 #endif
     }
 
@@ -634,7 +638,7 @@ rrc_lite_data_ind(
       buffer_pP,
       sdu_sizeP);
   } else {
-#warning "LG put 0 to arg4 that is eNB index"
+//#warning "LG put 0 to arg4 that is eNB index"
     rrc_ue_decode_dcch(
       ctxt_pP,
       DCCH_index,

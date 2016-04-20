@@ -48,7 +48,7 @@ int lfds611_ringbuffer_new( struct lfds611_ringbuffer_state **rs, lfds611_atom_t
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_ringbuffer_use( struct lfds611_ringbuffer_state *rs )
 {
@@ -59,5 +59,5 @@ void lfds611_ringbuffer_use( struct lfds611_ringbuffer_state *rs )
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 

@@ -289,9 +289,9 @@ int usim_api_authenticate(const OctetString* rand_pP, const OctetString* autn_pP
 #define USIM_API_SQN_MS_SIZE  3
 
     for (i = 0; i < USIM_API_SQN_MS_SIZE; i++) {
-#warning "LG:BUG HERE TODO"
+//#warning "LG:BUG HERE TODO"
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQN_MS_SIZE - i];
+        ((uint8_t*)(&_usim_api_data.sqn_ms))[USIM_API_SQN_MS_SIZE - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
