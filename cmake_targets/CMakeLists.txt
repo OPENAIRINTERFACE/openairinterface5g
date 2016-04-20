@@ -123,7 +123,7 @@ endmacro(add_list_string_option)
 ####################################################
 # compilation flags
 #############################################
-set (CMAKE_BUILD_TYPE "Debug")
+#set (CMAKE_BUILD_TYPE "Debug")
 if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
