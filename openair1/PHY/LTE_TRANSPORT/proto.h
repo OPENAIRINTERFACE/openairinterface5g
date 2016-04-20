@@ -762,6 +762,19 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 			  uint32_t rb_alloc,
 			  LTE_UE_DLSCH_t *dlsch0);
 
+void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
+                          int32_t **rxdataF_comp,
+			  mod_sym_t **sic_buffer,  //Q15
+		          int32_t **rho_i,
+			  int16_t *dlsch_llr,
+			  uint8_t num_pdcch_symbols,
+			  int32_t **dl_ch_mag,
+			  int32_t **dl_ch_magb,
+			  uint16_t nb_rb,
+			  uint8_t subframe,
+			  uint32_t rb_alloc,
+			  LTE_UE_DLSCH_t *dlsch0);
+
 
 void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
@@ -774,16 +787,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t pbch_pss_sss_adjust,
                      short **llr_save);
 
-void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int16_t *dlsch_llr,
-                         int32_t **dl_ch_mag,
-                         int32_t **dl_ch_magb,
-                         uint8_t symbol,
-                         uint8_t first_symbol_flag,
-                         uint16_t nb_rb,
-                         uint16_t pbch_pss_sss_adjust,
-                         short **llr_save);
 
 /** \fn dlsch_siso(LTE_DL_FRAME_PARMS *frame_parms,
     int32_t **rxdataF_comp,

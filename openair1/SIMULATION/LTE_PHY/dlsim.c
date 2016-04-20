@@ -3743,8 +3743,21 @@ n(tikz_fname,"w");
 			  dlsch0_eNB_harq->rb_alloc[0],
 			  PHY_vars_UE->dlsch_ue[eNB_id][0]);
 	      break;
-	    }
-	       // }// round
+	      case 6:
+		dlsch_64qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			  sic_buffer,
+		          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+			  num_pdcch_symbols,
+			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
+			  dlsch0_eNB_harq->nb_rb,
+			  subframe,
+			  dlsch0_eNB_harq->rb_alloc[0],
+			  PHY_vars_UE->dlsch_ue[eNB_id][0]);
+	      break;
+	        }// round
 	
           //  write_output("rxdata_llr1.m","llr1", PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
 	

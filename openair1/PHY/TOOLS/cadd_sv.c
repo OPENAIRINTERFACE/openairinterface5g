@@ -65,7 +65,7 @@ int add_cpx_vector(short *x,
 int add_vector32_scalar(short *x,
                         int alpha,
                         short *y,
-                        unsigned int 
+                        unsigned int N)
 {
   unsigned int i;                 // loop counter
 
