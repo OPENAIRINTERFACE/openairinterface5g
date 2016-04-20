@@ -51,7 +51,7 @@
 
 // Maximum value of schedule ahead of time
 // Required to identify if a dl_command is for the future or not
-#define SCHED_AHEAD_SUBFRAMES 10
+#define SCHED_AHEAD_SUBFRAMES 20
 
 typedef struct dl_mac_config_element_s {
   Protocol__ProgranMessage *dl_info;
