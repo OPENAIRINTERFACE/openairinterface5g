@@ -215,7 +215,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber;//,avg_ber;
+  double blerr[4],uncoded_ber,avg_ber;
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -2623,7 +2623,7 @@ PMI_FEEDBACK:
                                               &PHY_vars_eNB->lte_frame_parms,
                                               num_pdcch_symbols,
                                               PHY_vars_eNB->dlsch_eNB[k][0],
-                                              PHY_vars_eNB->dlsch_eNB[k][1]);	      
+                                              (transmission_mode==3)||(transmission_mode==4) ? PHY_vars_eNB->dlsch_eNB[k][1] : NULL);	      
               /* avoid gcc warnings */
               (void)re_allocated;
 
@@ -3292,7 +3292,7 @@ PMI_FEEDBACK:
             PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
 
 
-            /*
+            
             // calculate uncoded BLER
             uncoded_ber=0;
             for (i=0;i<coded_bits_per_codeword;i++)
@@ -3308,7 +3308,7 @@ PMI_FEEDBACK:
 
             if (n_frames==1)
               write_output("uncoded_ber_bit.m","uncoded_ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
-            */
+            
 
             start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);
             dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,

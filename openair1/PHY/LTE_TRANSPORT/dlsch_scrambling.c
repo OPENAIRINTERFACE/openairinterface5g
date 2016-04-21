@@ -56,10 +56,11 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       uint8_t Ns)
 {
 
-  int i,j,k=0;
+  int i;
   //  uint8_t reset;
   uint32_t x1, x2, s=0;
-  uint8_t *e=dlsch->harq_processes[dlsch->current_harq_pid]->e;
+  uint8_t *dlsch_e=dlsch->harq_processes[dlsch->current_harq_pid]->e;
+  uint8_t *e=dlsch_e;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_IN);
 
@@ -78,23 +79,55 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<(1+(G>>5)); i++) {
 
-    for (j=0; j<32; j++,k++) {
 #ifdef DEBUG_SCRAMBLING
-      printf("scrambling %d : %d => ",k,e[k]);
+    printf("scrambling %d : %d => ",k,e[k]);
 #endif
-      e[k] = (e[k]&1) ^ ((s>>j)&1);
+    
+    e[0] = (e[0]&1) ^ (s&1);      
+    e[1] = (e[1]&1) ^ ((s>>1)&1);      
+    e[2] = (e[2]&1) ^ ((s>>2)&1);      
+    e[3] = (e[3]&1) ^ ((s>>3)&1);      
+    e[4] = (e[4]&1) ^ ((s>>4)&1);      
+    e[5] = (e[5]&1) ^ ((s>>5)&1);      
+    e[6] = (e[6]&1) ^ ((s>>6)&1);      
+    e[7] = (e[7]&1) ^ ((s>>7)&1);      
+    e[8] = (e[8]&1) ^ ((s>>8)&1);      
+    e[9] = (e[9]&1) ^ ((s>>9)&1);      
+    e[10] = (e[10]&1) ^ ((s>>10)&1);      
+    e[11] = (e[11]&1) ^ ((s>>11)&1);      
+    e[12] = (e[12]&1) ^ ((s>>12)&1);      
+    e[13] = (e[13]&1) ^ ((s>>13)&1);      
+    e[14] = (e[14]&1) ^ ((s>>14)&1);      
+    e[15] = (e[15]&1) ^ ((s>>15)&1);      
+    e[16] = (e[16]&1) ^ ((s>>16)&1);      
+    e[17] = (e[17]&1) ^ ((s>>17)&1);      
+    e[18] = (e[18]&1) ^ ((s>>18)&1);      
+    e[19] = (e[19]&1) ^ ((s>>19)&1);      
+    e[20] = (e[20]&1) ^ ((s>>20)&1);      
+    e[21] = (e[21]&1) ^ ((s>>21)&1);      
+    e[22] = (e[22]&1) ^ ((s>>22)&1);      
+    e[23] = (e[23]&1) ^ ((s>>23)&1);      
+    e[24] = (e[24]&1) ^ ((s>>24)&1);      
+    e[25] = (e[25]&1) ^ ((s>>25)&1);      
+    e[26] = (e[26]&1) ^ ((s>>26)&1);      
+    e[27] = (e[27]&1) ^ ((s>>27)&1);      
+    e[28] = (e[28]&1) ^ ((s>>28)&1);      
+    e[29] = (e[29]&1) ^ ((s>>29)&1);      
+    e[30] = (e[30]&1) ^ ((s>>30)&1);      
+    e[31] = (e[31]&1) ^ ((s>>31)&1);      
+    
 #ifdef DEBUG_SCRAMBLING
-      printf("%d\n",e[k]);
+    printf("%d\n",e[k]);
 #endif
-    }
-
+    
+    
     s = lte_gold_generic(&x1, &x2, 0);
+    e += 32;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_OUT);
 
 }
-
 
 void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         int mbsfn_flag,

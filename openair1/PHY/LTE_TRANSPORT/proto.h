@@ -183,7 +183,9 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
                            int16_t *qam_table_s1,
                            uint32_t *re_allocated,
                            uint8_t skip_dc,
-                           uint8_t skip_half);
+                           uint8_t skip_half,
+			   int *P1_SHIFT,
+			   int *P2_SHIFT);
 
 
 /** \fn int32_t dlsch_modulation(mod_sym_t **txdataF,

@@ -105,7 +105,6 @@ static inline void cmacc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
 
 
 
-
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
 
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
@@ -1754,7 +1753,8 @@ int16_t tw64c[96] __attribute__((aligned(16))) = { 0,32767,3212,32609,6393,32137
 #define simdshort_q15_t __m64
 #define shiftright_int16(a,shift) _mm_srai_epi16(a,shift)
 #define set1_int16(a) _mm_set1_epi16(a);
-#define mulhi_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),1);
+//#define mulhi_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),1);
+#define mulhi_int16(a,b) _mm_mulhrs_epi16 (a,b)
 #elif defined(__arm__)
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
