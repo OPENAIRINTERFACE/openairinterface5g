@@ -520,7 +520,7 @@ rrc_rx_tx(
   } else { // eNB
     check_handovers(ctxt_pP);
     // counetr, and get the value and aggregate
-#ifdef LOCALIZATION
+#ifdef RRC_LOCALIZATION
 
     /* for the localization, only primary CC_id might be relevant*/
     gettimeofday(&ts, NULL);
