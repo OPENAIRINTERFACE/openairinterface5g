@@ -625,6 +625,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 80;
       openair0_cfg[0].tx_bw                 = 20e6;
