@@ -142,7 +142,6 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
         if (abstraction_flag==0) {
           for (r=0; r<MAX_NUM_ULSCH_SEGMENTS/bw_scaling; r++) {
             ulsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(((r==0)?8:0) + 3+768);
-
             if (ulsch->harq_processes[i]->c[r])
               memset(ulsch->harq_processes[i]->c[r],0,((r==0)?8:0) + 3+768);
             else
@@ -338,6 +337,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     //  CLEAR LLR's HERE for first packet in process
   }
 
+  //  printf("after segmentation c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   sumKr = 0;
 
@@ -449,6 +449,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   //  Rmux       = Hpp*Q_m/Cmux;
   Rmux_prime = Hpp/Cmux;
 
+
   // Clear "tag" interleaving matrix to allow for CQI/DATA identification
   memset(ytag,0,Cmux*Rmux_prime);
 
@@ -457,6 +458,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   i=0;
   memset(y,LTE_NULL,Q_m*Hpp);
 
+  //  printf("before unscrambling c[%d] = %p\n",0,ulsch_harq->c[0]);
   // read in buffer and unscramble llrs for everything but placeholder bits
   // llrs stored per symbol correspond to columns of interleaving matrix
 
@@ -471,6 +473,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
     s = lte_gold_generic(&x1, &x2, 0);
   }
+
+  //  printf("after unscrambling c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   if (frame_parms->Ncp == 0)
     columnset = cs_ri_normal;
@@ -494,6 +498,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     j=(j+3)&3;
 
   }
+
+  //  printf("after RI c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   // HARQ-ACK Bits (Note these overwrite some bits)
   if (frame_parms->Ncp == 0)
@@ -664,6 +670,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     j=(j+3)&3;
   }
 
+  //  printf("after ACKNAK c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   // RI BITS
 
@@ -708,6 +715,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
     j=(j+3)&3;
   }
 
+  //  printf("after RI2 c[%d] = %p\n",0,ulsch_harq->c[0]);
+
   // CQI and Data bits
   j=0;
   j2=0;
@@ -736,10 +745,10 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       j2+=Q_m;
     }
     
-    
+        
     switch (Q_m) {
     case 2:
-      for (iprime=0; iprime<G<<1;) {
+      for (iprime=0; iprime<G;) {
 	while (ytag[j]==LTE_NULL) {
 	  j++;
 	  j2+=2;
@@ -754,7 +763,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       break;
       
     case 4:
-      for (iprime=0; iprime<G<<2;) {
+      for (iprime=0; iprime<G;) {
 	while (ytag[j]==LTE_NULL) {
 	  j++;
 	  j2+=4;
@@ -770,7 +779,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       break;
       
     case 6:
-      for (iprime=0; iprime<G*6;) {
+      for (iprime=0; iprime<G;) {
 	while (ytag[j]==LTE_NULL) {
 	  j++;
 	  j2+=6;
@@ -788,8 +797,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       break;
 
     }
-  }
+    
+
+  } // Q_RI>0
   else {
+
     for (i=0; i<(Q_CQI/Q_m); i++) {
       
       for (q=0; q<Q_m; q++) {
@@ -804,16 +816,16 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       
       j2+=Q_m;
     }
-    
+    //    printf("after CQI0 c[%d] = %p\n",0,ulsch_harq->c[0]);
     switch (Q_m) {
     case 2:
-      for (iprime=0; iprime<G<<1;) {
+      for (iprime=0; iprime<G;) {
 	ulsch_harq->e[iprime++] = y[j2++];
 	ulsch_harq->e[iprime++] = y[j2++];
       }
       break;
     case 4:
-      for (iprime=0; iprime<G<<2;) {
+      for (iprime=0; iprime<G;) {
 	ulsch_harq->e[iprime++] = y[j2++];
 	ulsch_harq->e[iprime++] = y[j2++];
 	ulsch_harq->e[iprime++] = y[j2++];
@@ -821,7 +833,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       }
       break;
     case 6:
-      for (iprime=0; iprime<G*6;) {
+      for (iprime=0; iprime<G;) {
 	ulsch_harq->e[iprime++] = y[j2++];
 	ulsch_harq->e[iprime++] = y[j2++];
 	ulsch_harq->e[iprime++] = y[j2++];
@@ -832,6 +844,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
       break;
     }
   }
+  //  printf("after ACKNAK2 c[%d] = %p (iprime %d, G %d)\n",0,ulsch_harq->c[0],iprime,G);
+
   // Do CQI/RI/HARQ-ACK Decoding first and pass to MAC
 
   // HARQ-ACK
@@ -904,6 +918,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
   // CQI
 
+  //  printf("before cqi c[%d] = %p\n",0,ulsch_harq->c[0]);
   if (Q_CQI>0) {
     memset((void *)&dummy_w_cc[0],0,3*(ulsch_harq->Or1+8+32));
 
@@ -971,6 +986,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
 
   for (r=0; r<ulsch_harq->C; r++) {
 
+    //    printf("before subblock deinterleaving c[%d] = %p\n",r,ulsch_harq->c[r]);
     // Get Turbo interleaver parameters
     if (r<ulsch_harq->Cminus)
       Kr = ulsch_harq->Kminus;
@@ -1042,6 +1058,10 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
   }
 
     for (r=0; r<ulsch_harq->C; r++) {
+
+      /*      printf("c[%d] : %p\n",r,
+	     ulsch_harq->c[r]);
+      */
 
       if (ulsch_harq->C == 1)
         crc_type = CRC24_A;

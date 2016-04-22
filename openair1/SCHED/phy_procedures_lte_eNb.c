@@ -2547,6 +2547,7 @@ void cba_procedures(const unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_eN
   const int frame = phy_vars_eNB->proc[sched_subframe].frame_rx;
   uint16_t rnti=0;
   int ret=0;
+  int i;
 
   num_active_cba_groups = phy_vars_eNB->ulsch_eNB[UE_id]->num_active_cba_groups;
   

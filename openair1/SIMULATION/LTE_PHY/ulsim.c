@@ -308,7 +308,7 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model!\n");
         exit(-1);
         break;
       }
@@ -332,7 +332,7 @@ int main(int argc, char **argv)
 
       if ((transmission_mode!=1) &&
           (transmission_mode!=2)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+        printf("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
 
@@ -382,10 +382,10 @@ int main(int argc, char **argv)
 
     case 'i':
       input_fdUL = fopen(optarg,"r");
-      msg("Reading in %s (%p)\n",optarg,input_fdUL);
+      printf("Reading in %s (%p)\n",optarg,input_fdUL);
 
       if (input_fdUL == (FILE*)NULL) {
-        msg("Unknown file %s\n",optarg);
+        printf("Unknown file %s\n",optarg);
         exit(-1);
       }
 
@@ -509,7 +509,7 @@ int main(int argc, char **argv)
   //  r_re0 = malloc(2*sizeof(double*));
   //  r_im0 = malloc(2*sizeof(double*));
 
-  nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == NORMAL) ? 14 : 12;
 
 
   sprintf(bler_fname,"ULbler_mcs%d_nrb%d_ChannelModel%d_nsim%d.csv",mcs,nb_rb,chMod,n_frames);
@@ -760,9 +760,9 @@ int main(int argc, char **argv)
     PHY_vars_eNB->proc[sf].subframe_rx=sf;
   }
 
-  msg("Init UL hopping UE\n");
+  printf("Init UL hopping UE\n");
   init_ul_hopping(&PHY_vars_UE->lte_frame_parms);
-  msg("Init UL hopping eNB\n");
+  printf("Init UL hopping eNB\n");
   init_ul_hopping(&PHY_vars_eNB->lte_frame_parms);
 
   PHY_vars_eNB->proc[subframe].frame_rx = PHY_vars_UE->frame_tx;
@@ -1063,7 +1063,7 @@ int main(int argc, char **argv)
             start_meas(&PHY_vars_UE->ofdm_mod_stats);
 
             for (aa=0; aa<1; aa++) {
-              if (frame_parms->Ncp == 1)
+              if (frame_parms->Ncp == EXTENDED)
                 PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
                              &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],         // output
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,
@@ -1257,6 +1257,7 @@ int main(int argc, char **argv)
 	  */
 
           start_meas(&PHY_vars_eNB->ulsch_decoding_stats);
+
           ret= ulsch_decoding(PHY_vars_eNB,
                               0, // UE_id
                               subframe,
@@ -1293,7 +1294,7 @@ int main(int argc, char **argv)
           if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
             ack_errors++;
 
-          //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
+          //    printf("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
 
 
           if (ret <= PHY_vars_eNB->ulsch_eNB[0]->max_turbo_iterations) {

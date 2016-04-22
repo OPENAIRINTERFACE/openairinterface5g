@@ -247,6 +247,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     (frame_parms[CC_id])->phich_config_common.phich_resource = oneSixth;
     (frame_parms[CC_id])->phich_config_common.phich_duration = normal;
     (frame_parms[CC_id])->Ncp                = extended_prefix_flag;
+    (frame_parms[CC_id])->Ncp_UL             = extended_prefix_flag; 
     (frame_parms[CC_id])->Nid_cell           = Nid_cell;
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
     (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
