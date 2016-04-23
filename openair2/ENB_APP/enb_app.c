@@ -294,7 +294,7 @@ void *eNB_app_task(void *args_p)
 
   itti_mark_task_ready (TASK_ENB_APP);
 
-# if defined(ENABLE_USE_MME)
+  # if defined(ENABLE_ITTI)
 #   if defined(OAI_EMU)
   enb_nb =        oai_emulation.info.nb_enb_local;
   enb_id_start =  oai_emulation.info.first_enb_local;
@@ -304,7 +304,7 @@ void *eNB_app_task(void *args_p)
                "Last eNB index is greater or equal to maximum eNB index (%d/%d)!",
                enb_id_end, NUMBER_OF_eNB_MAX);
 #   endif
-# endif
+  # endif
 
   enb_properties_p = enb_config_get();
 
