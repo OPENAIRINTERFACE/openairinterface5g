@@ -59,13 +59,15 @@ void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
 Protocol__ProgranMessage *enb_agent_timeout(void* args);
 
+
+int agent_task_created = 0;
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
  * and can interact with other itti tasks
 */
 void *enb_agent_task(void *args){
 
-  enb_agent_instance_t         *d = (enb_agent_instance_t *) args;
+  //enb_agent_instance_t         *d = (enb_agent_instance_t *) args;
   Protocol__ProgranMessage *msg;
   void *data;
   int size;
@@ -76,7 +78,7 @@ void *enb_agent_task(void *args){
   const char                     *msg_name        = NULL;
   instance_t                      instance;
   int                             result;
-
+  struct enb_agent_timer_element_s * elem = NULL;
 
   itti_mark_task_ready(TASK_ENB_AGENT);
 
@@ -100,7 +102,8 @@ void *enb_agent_task(void *args){
       msg = enb_agent_process_timeout(msg_p->ittiMsg.timer_has_expired.timer_id, msg_p->ittiMsg.timer_has_expired.arg);
       if (msg != NULL){
 	data=enb_agent_pack_message(msg,&size);
-	if (enb_agent_msg_send(d->enb_id, ENB_AGENT_DEFAULT, data, size, priority)) {
+	elem = get_timer_entry(msg_p->ittiMsg.timer_has_expired.timer_id);
+	if (enb_agent_msg_send(elem->agent_id, ENB_AGENT_DEFAULT, data, size, priority)) {
 	  err_code = PROTOCOL__PROGRAN_ERR__MSG_ENQUEUING;
 	  goto error;
 	}
@@ -203,6 +206,7 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
   return t;
 }
 
+int channel_container_init = 0;
 int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   
   int channel_id;
@@ -240,8 +244,10 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   /*
    * Initialize the channel container
    */
-  enb_agent_init_channel_container();
-
+  if (!channel_container_init) {
+    enb_agent_init_channel_container();
+    channel_container_init = 1;
+  }
   /*Create the async channel info*/
   enb_agent_instance_t *channel_info = enb_agent_async_channel_info(mod_id, in_ip, in_port);
 
@@ -294,12 +300,14 @@ int enb_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties){
   /* 
    * start the enb agent task for tx and interaction with the underlying network function
    */ 
+  if (!agent_task_created) {
+    if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &enb_agent[mod_id]) < 0) {
+      LOG_E(ENB_AGENT, "Create task for eNB Agent failed\n");
+      return -1;
+    }
+    agent_task_created = 1;
+  }
   
-  if (itti_create_task (TASK_ENB_AGENT, enb_agent_task, (void *) &enb_agent[mod_id]) < 0) {
-    LOG_E(ENB_AGENT, "Create task for eNB Agent failed\n");
-    return -1;
-  } 
-
   LOG_I(ENB_AGENT,"client ends\n");
   return 0;
 

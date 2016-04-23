@@ -2090,11 +2090,14 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
 
 //struct enb_agent_map agent_map;
 enb_agent_timer_instance_t timer_instance;
+int agent_timer_init = 0;
 err_code_t enb_agent_init_timer(void){
   
   LOG_I(ENB_AGENT, "init RB tree\n");
-
-  RB_INIT(&timer_instance.enb_agent_head);
+  if (!agent_timer_init) {
+    RB_INIT(&timer_instance.enb_agent_head);
+    agent_timer_init = 1;
+  }
  
   /*
     struct enb_agent_timer_element_s e;
