@@ -644,6 +644,9 @@ void rrc_eNB_emulation_notify_ue_module_id(
 
   // find enb_module_id
   for (enb_module_id = 0; enb_module_id < NUMBER_OF_eNB_MAX; enb_module_id++) {
+    if(enb_module_id>1){ /*FIX LATER*/
+      return;
+    }
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       if (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1 != NULL) {
         if (
@@ -652,7 +655,6 @@ void rrc_eNB_emulation_notify_ue_module_id(
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[2] == cell_identity_byte2P) &&
           (eNB_rrc_inst[enb_module_id].carrier[CC_id].sib1->cellAccessRelatedInfo.cellIdentity.buf[3] == cell_identity_byte3P)
         ) {
-          oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
           ue_context_p = rrc_eNB_get_ue_context(
                            &eNB_rrc_inst[enb_module_id],
                            rntiP
@@ -662,10 +664,11 @@ void rrc_eNB_emulation_notify_ue_module_id(
             oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[enb_module_id][ue_context_p->local_uid] = ue_module_idP;
           }
 
-          return;
+          //return;
         }
       }
     }
+    oai_emulation.info.eNB_ue_module_id_to_rnti[enb_module_id][ue_module_idP] = rntiP;
   }
 
   AssertFatal(enb_module_id == NUMBER_OF_eNB_MAX,
@@ -4026,8 +4029,8 @@ rrc_eNB_decode_dcch(
               PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED \n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-	if (mac_agent_registered[ctxt_pP->eNB_index]) {
-	  agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->eNB_index,
+	if (mac_agent_registered[ctxt_pP->module_id]) {
+	  agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
 										PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_UPDATED);
 	}
@@ -4116,8 +4119,8 @@ rrc_eNB_decode_dcch(
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-	  if (mac_agent_registered[ctxt_pP->eNB_index]) {
-	    agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->eNB_index,
+	  if (mac_agent_registered[ctxt_pP->module_id]) {
+	    agent_mac_xface[ctxt_pP->eNB_index]->enb_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
 										  PROTOCOL__PRP_UE_STATE_CHANGE_TYPE__PRUESC_ACTIVATED);
 	  }

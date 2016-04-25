@@ -1418,6 +1418,9 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  		  config->has_extended_bsr_size = 1;
 	  		  config->extended_bsr_size = get_extended_bsr_size(mod_id,i);
 	  	  }
+		  //TODO: Set index of primary cell
+		  config->has_pcell_carrier_index = 1;
+		  config->pcell_carrier_index = UE_PCCID(mod_id, i);
 	  	  //TODO: Set carrier aggregation support (boolean)
 	  	  config->has_ca_support = 0;
 	  	  config->ca_support = 0;
@@ -1425,9 +1428,6 @@ int enb_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change)
 	  		  //TODO: Set cross carrier scheduling support (boolean)
 	  		  config->has_cross_carrier_sched_support = 1;
 	  		  config->cross_carrier_sched_support = 0;
-	  		  //TODO: Set index of primary cell
-	  		  config->has_pcell_carrier_index = 1;
-	  		  config->pcell_carrier_index = 1;
 	  		  //TODO: Set secondary cells configuration
 	  		  // We do not set it for now. No carrier aggregation support
 
@@ -1754,16 +1754,15 @@ int enb_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Progra
       //TODO: Set carrier aggregation support (boolean)
       ue_config[i]->has_ca_support = 0;
       ue_config[i]->ca_support = 0;
+      //TODO: Set index of primary cell
+      ue_config[i]->has_pcell_carrier_index = 1;
+      ue_config[i]->pcell_carrier_index = UE_PCCID(mod_id, i);
       if(ue_config[i]->has_ca_support){
 	//TODO: Set cross carrier scheduling support (boolean)
 	ue_config[i]->has_cross_carrier_sched_support = 1;
 	ue_config[i]->cross_carrier_sched_support = 0;
-	//TODO: Set index of primary cell
-	ue_config[i]->has_pcell_carrier_index = 1;
-	ue_config[i]->pcell_carrier_index = 1;
 	//TODO: Set secondary cells configuration
 	// We do not set it for now. No carrier aggregation support
-	
 	//TODO: Set deactivation timer for secondary cell
 	ue_config[i]->has_scell_deactivation_timer = 1;
 	ue_config[i]->scell_deactivation_timer = 1;
@@ -1874,9 +1873,9 @@ int enb_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__Progr
       protocol__prp_cell_config__init(cell_conf[i]);
       //TODO: Fill in with actual value, the PCI of this cell
       cell_conf[i]->phy_cell_id = 1;
-      cell_conf[i]->has_phy_cell_id = 1;
+      cell_conf[i]->has_phy_cell_id = get_cell_id(enb_id,i);
       //TODO: Fill in with actual value, the PLMN cell id of this cell
-      cell_conf[i]->cell_id = get_cell_id(enb_id,i);
+      cell_conf[i]->cell_id = i;
       cell_conf[i]->has_cell_id = 1;
       //TODO: Fill in with actual value, PUSCH resources in RBs for hopping
       cell_conf[i]->pusch_hopping_offset = get_hopping_offset(enb_id,i);
