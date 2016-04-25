@@ -635,7 +635,7 @@ static inline void bfly2_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x
 
 }
 #endif
-
+ 
 #if defined(__x86_64__) || defined(__i386__)
 
 
@@ -689,9 +689,9 @@ static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *
 
 #elif defined(__arm__)
 
-static inline void bfly2_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1)__attribute__((always_inline));
+static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)__attribute__((always_inline));
 
-static inline void bfly2_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1)
+static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)
 {
 
   *y0  = vqaddq_s16(*x0,*x1);
@@ -2633,6 +2633,7 @@ int16_t tw64crep[192] __attribute__((aligned(32))) = {
 #define shiftright_int16_simd256(a,shift) _mm256_srai_epi16(a,shift)
 #define set1_int16_simd256(a) _mm256_set1_epi16(a);
 #define mulhi_int16_simd256(a,b) _mm256_slli_epi16(_mm256_mulhi_epi16(a,b),1);
+#endif
 
 #elif defined(__arm__)
 #define simd_q15_t int16x8_t
@@ -2643,7 +2644,6 @@ int16_t tw64crep[192] __attribute__((aligned(32))) = {
 #define _mm_empty() 
 #define _m_empty()
 
-#endif
 #endif
 
 #ifndef __AVX2__

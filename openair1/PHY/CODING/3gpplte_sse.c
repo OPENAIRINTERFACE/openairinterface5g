@@ -598,7 +598,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 	
 #elif defined(__arm__)
 	*ptr_output++ = vadd_u8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
-				all_treillis[state0][cur_s1].parity1_64[code_rate]);
+				all_treillis[state0][cur_s1].parity2_64[code_rate]);
 #endif
       }
       

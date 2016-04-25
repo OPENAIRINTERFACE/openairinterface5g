@@ -55,6 +55,10 @@
 #  include <immintrin.h>
 #endif
 
+#ifdef __arm__
+#  include <arm_neon.h>
+#endif
+
 /** @addtogroup _USRP_PHY_RF_INTERFACE_
  * @{
  */
