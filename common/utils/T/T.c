@@ -113,15 +113,27 @@ void T_connect_to_tracer(char *addr, int port)
   int T_shm_fd;
 #endif
 
+  if (strcmp(addr, "127.0.0.1") != 0) {
+    printf("error: local tracer must be on same host\n");
+    abort();
+  }
+
+  printf("connecting to local tracer on port %d\n", port);
+again:
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s == -1) { perror("socket"); exit(1); }
 
   a.sin_family = AF_INET;
   a.sin_port = htons(port);
-  a.sin_addr.s_addr = inet_addr(addr);
+  a.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-  if (connect(s, (struct sockaddr *)&a, sizeof(a)) == -1)
-    { perror("connect"); exit(1); }
+  if (connect(s, (struct sockaddr *)&a, sizeof(a)) == -1) {
+    perror("connect");
+    close(s);
+    printf("trying again in 1s\n");
+    sleep(1);
+    goto again;
+  }
 
   /* wait for first message - initial list of active T events */
   get_message(s);
