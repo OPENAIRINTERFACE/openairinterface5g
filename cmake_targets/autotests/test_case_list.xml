@@ -4638,7 +4638,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
@@ -4714,7 +4714,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
@@ -4789,7 +4789,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
@@ -4864,7 +4864,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
@@ -4938,7 +4938,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
@@ -5012,7 +5012,7 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w BLADERF -x -c </eNB_compile_prog_args>
-    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  ; sudo -E $OPENAIR_DIR/cmake_targets/tools/start_bladerf.py</eNB_pre_exec>
+    <eNB_pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash  </eNB_pre_exec>
     <eNB_pre_exec_args></eNB_pre_exec_args>
     <eNB_main_exec>sudo -E chrt -f 99 $OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem</eNB_main_exec>
     <eNB_main_exec_args> -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.bladerfx40.conf  -W </eNB_main_exec_args>
