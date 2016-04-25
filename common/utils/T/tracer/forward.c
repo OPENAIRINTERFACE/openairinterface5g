@@ -122,6 +122,9 @@ void *forwarder(char *ip, int port)
   f->sc = -1;
   f->head = f->tail = NULL;
 
+  printf("connecting to remote tracer %s:%d\n", ip, port);
+
+again:
   f->s = socket(AF_INET, SOCK_STREAM, 0);
   if (f->s == -1) { perror("socket"); exit(1); }
 
@@ -129,8 +132,15 @@ void *forwarder(char *ip, int port)
   a.sin_port = htons(port);
   a.sin_addr.s_addr = inet_addr(ip);
 
-  if (connect(f->s, (struct sockaddr *)&a, sizeof(a)) == -1)
-    { perror("connect"); exit(1); }
+  if (connect(f->s, (struct sockaddr *)&a, sizeof(a)) == -1) {
+    perror("connect");
+    close(f->s);
+    printf("trying again in 1s\n");
+    sleep(1);
+    goto again;
+  }
+
+  printf("connected\n");
 
   new_thread(data_sender, f);
 

@@ -12,6 +12,8 @@
 
 #include "defs.h"
 
+#define DEFAULT_REMOTE_PORT 2020
+
 #define T_ID(x) x
 #include "../T_IDs.h"
 #include "../T_defs.h"
@@ -24,26 +26,6 @@ void *chest_plot;
 void *pusch_iq_plot;
 void *pucch_iq_plot;
 void *pucch_plot;
-
-#ifdef T_USE_SHARED_MEMORY
-
-T_cache_t *T_cache;
-int T_busylist_head;
-int T_pos;
-
-static inline int GET(int s, void *out, int count)
-{
-  if (count == 1) {
-    *(char *)out = T_cache[T_busylist_head].buffer[T_pos];
-    T_pos++;
-    return 1;
-  }
-  memcpy(out, T_cache[T_busylist_head].buffer + T_pos, count);
-  T_pos += count;
-  return count;
-}
-
-#else /* T_USE_SHARED_MEMORY */
 
 #define GET fullread
 
@@ -62,13 +44,13 @@ int fullread(int fd, void *_buf, int count)
   return ret;
 }
 
-#endif /* T_USE_SHARED_MEMORY */
-
 int get_connection(char *addr, int port)
 {
   struct sockaddr_in a;
   socklen_t alen;
   int s, t;
+
+  printf("waiting for connection on %s:%d\n", addr, port);
 
   s = socket(AF_INET, SOCK_STREAM, 0);
   if (s == -1) { perror("socket"); exit(1); }
@@ -86,6 +68,9 @@ int get_connection(char *addr, int port)
   t = accept(s, (struct sockaddr *)&a, &alen);
   if (t == -1) { perror("accept"); exit(1); }
   close(s);
+
+  printf("connected\n");
+
   return t;
 }
 
@@ -107,9 +92,6 @@ void get_message(int s)
   } while (0)
 
   int m;
-#ifdef T_USE_SHARED_MEMORY
-  T_pos = 0;
-#endif
   if (GET(s, &m, sizeof(int)) != sizeof(int)) abort();
   switch (m) {
   case T_first: {
@@ -255,6 +237,7 @@ void get_message(int s)
       {printf("bad T_ENB_INPUT_SIGNAL, only 7680 samples allowed "
               "(received %d bytes = %d samples)\n", size, size/4);abort();}
     if (ul_plot) iq_plot_set(ul_plot, (short*)buf, 7680, subframe*7680, 0);
+    t_gui_set_input_signal(eNB, frame, subframe, antenna, size, buf);
     break;
   }
   case T_ENB_UL_CHANNEL_ESTIMATE: {
@@ -339,42 +322,7 @@ void get_message(int s)
   }
   default: printf("unkown message type %d\n", m); abort();
   }
-
-#ifdef T_USE_SHARED_MEMORY
-  T_cache[T_busylist_head].busy = 0;
-  T_busylist_head++;
-  T_busylist_head &= T_CACHE_SIZE - 1;
-#endif
 }
-
-#ifdef T_USE_SHARED_MEMORY
-
-void wait_message(void)
-{
-  while (T_cache[T_busylist_head].busy == 0) usleep(1000);
-}
-
-void init_shm(void)
-{
-  int i;
-  int s = shm_open(T_SHM_FILENAME, O_RDWR | O_CREAT /*| O_SYNC*/, 0666);
-  if (s == -1) { perror(T_SHM_FILENAME); abort(); }
-  if (ftruncate(s, T_CACHE_SIZE * sizeof(T_cache_t)))
-    { perror(T_SHM_FILENAME); abort(); }
-  T_cache = mmap(NULL, T_CACHE_SIZE * sizeof(T_cache_t),
-                 PROT_READ | PROT_WRITE, MAP_SHARED, s, 0);
-  if (T_cache == NULL)
-    { perror(T_SHM_FILENAME); abort(); }
-  close(s);
-
-  /* let's garbage the memory to catch some potential problems
-   * (think multiprocessor sync issues, barriers, etc.)
-   */
-  memset(T_cache, 0x55, T_CACHE_SIZE * sizeof(T_cache_t));
-  for (i = 0; i < T_CACHE_SIZE; i++) T_cache[i].busy = 0;
-}
-
-#endif /* T_USE_SHARED_MEMORY */
 
 void new_thread(void *(*f)(void *), void *data)
 {
@@ -396,22 +344,22 @@ void new_thread(void *(*f)(void *), void *data)
 void usage(void)
 {
   printf(
-"common options:\n"
+"tracer - remote side\n"
+"options:\n"
 "    -d <database file>        this option is mandatory\n"
 "    -li                       print IDs in the database\n"
 "    -lg                       print GROUPs in the database\n"
 "    -dump                     dump the database\n"
 "    -x                        run with XFORMS (revisited)\n"
+"    -T                        run with T GUI\n"
 "    -on <GROUP or ID>         turn log ON for given GROUP or ID\n"
 "    -off <GROUP or ID>        turn log OFF for given GROUP or ID\n"
 "    -ON                       turn all logs ON\n"
 "    -OFF                      turn all logs OFF\n"
 "note: you may pass several -on/-off/-ON/-OFF, they will be processed in order\n"
 "      by default, all is off\n"
-"\n"
-"remote mode options: in this mode you run a local tracer and a remote one\n"
-"    -r <port>                 remote side (use given port)\n"
-"    -l <IP address> <port>    local side (forwards packets to remote IP:port)\n"
+"    -r <port>                 remote side: use given port (default %d)\n",
+  DEFAULT_REMOTE_PORT
   );
   exit(1);
 }
@@ -428,18 +376,12 @@ int main(int n, char **v)
   int do_list_groups = 0;
   int do_dump_database = 0;
   int do_xforms = 0;
+  int do_T_gui = 0;
   char **on_off_name;
   int *on_off_action;
   int on_off_n = 0;
   int is_on[T_NUMBER_OF_IDS];
-  int remote_local = 0;
-  int remote_remote = 0;
-  char *remote_ip = NULL;
-  int remote_port = -1;
-  int port = 2020;
-#ifdef T_USE_SHARED_MEMORY
-  void *f;
-#endif
+  int port = DEFAULT_REMOTE_PORT;
 
   memset(is_on, 0, sizeof(is_on));
 
@@ -454,6 +396,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-lg")) { do_list_groups = 1; continue; }
     if (!strcmp(v[i], "-dump")) { do_dump_database = 1; continue; }
     if (!strcmp(v[i], "-x")) { do_xforms = 1; continue; }
+    if (!strcmp(v[i], "-T")) { do_T_gui = 1; continue; }
     if (!strcmp(v[i], "-on")) { if (i > n-2) usage();
       on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-off")) { if (i > n-2) usage();
@@ -462,45 +405,13 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
-    if (!strcmp(v[i], "-r")) { if (i > n-2) usage(); remote_remote = 1;
+    if (!strcmp(v[i], "-r")) { if (i > n-2) usage();
       port = atoi(v[++i]); continue; }
-    if (!strcmp(v[i], "-l")) { if (i > n-3) usage(); remote_local = 1;
-      remote_ip = v[++i]; remote_port = atoi(v[++i]); continue; }
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }
 
-#ifndef T_USE_SHARED_MEMORY
-  /* gcc shut up */
-  (void)remote_port;
-  (void)remote_ip;
-#endif
-
-#ifdef T_USE_SHARED_MEMORY
-  if (remote_remote) {
-    printf("ERROR: remote 'remote side' does not run with shared memory\n");
-    printf("recompile without T_USE_SHARED_MEMORY (edit Makefile)\n");
-    exit(1);
-  }
-#endif
-
-  if (remote_remote) {
-    /* TODO: setup 'secure' connection with remote part */
-  }
-
-#ifndef T_USE_SHARED_MEMORY
-  if (remote_local) {
-    printf("ERROR: remote 'local side' does not run without shared memory\n");
-    printf("recompile with T_USE_SHARED_MEMORY (edit Makefile)\n");
-    exit(1);
-  }
-#endif
-
-#ifdef T_USE_SHARED_MEMORY
-  if (remote_local) f = forwarder(remote_ip, remote_port);
-#endif
-
-  if (remote_local) goto no_database;
+  /* TODO: setup 'secure' connection with remote part */
 
   if (database_filename == NULL) {
     printf("ERROR: provide a database file (-d)\n");
@@ -517,7 +428,6 @@ int main(int n, char **v)
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
-no_database:
   if (do_xforms) {
     ul_plot = make_plot(512, 100, "UL Input Signal", 1,
                         7680*10, PLOT_VS_TIME, BLUE);
@@ -533,18 +443,11 @@ no_database:
                            /* pucch 1 */
                            10240, PLOT_MINMAX, BLUE);
   }
-
-#ifdef T_USE_SHARED_MEMORY
-  init_shm();
-#endif
-  s = get_connection("127.0.0.1", port);
-
-  if (remote_local) {
-#ifdef T_USE_SHARED_MEMORY
-    forward_start_client(f, s);
-#endif
-    goto no_init_message;
+  if (do_T_gui) {
+    t_gui_start();
   }
+
+  s = get_connection("127.0.0.1", port);
 
   /* send the first message - activate selected traces */
   t = 0;
@@ -556,26 +459,8 @@ no_database:
     if (is_on[l])
       if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
 
-no_init_message:
-
   /* read messages */
   while (1) {
-#ifdef T_USE_SHARED_MEMORY
-    wait_message();
-    __sync_synchronize();
-#endif
-
-#ifdef T_USE_SHARED_MEMORY
-    if (remote_local) {
-      forward(f, T_cache[T_busylist_head].buffer,
-              T_cache[T_busylist_head].length);
-      T_cache[T_busylist_head].busy = 0;
-      T_busylist_head++;
-      T_busylist_head &= T_CACHE_SIZE - 1;
-      continue;
-    }
-#endif
-
     get_message(s);
   }
   return 0;

@@ -27,4 +27,9 @@ void *forwarder(char *ip, int port);
 void forward(void *forwarder, char *buf, int size);
 void forward_start_client(void *forwarder, int socket);
 
+/* T gui functions */
+void t_gui_start(void);
+void t_gui_set_input_signal(int eNB, int frame, int subframe, int antenna,
+    int size, void *buf);
+
 #endif /* _TRACER_DEFS_H_ */

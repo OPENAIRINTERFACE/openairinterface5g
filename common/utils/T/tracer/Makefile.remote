@@ -1,0 +1,26 @@
+CC=gcc
+CFLAGS=-Wall -g -pthread -DT_TRACER
+
+#CFLAGS += -O3 -ffast-math -fomit-frame-pointer
+
+LIBS=-lX11 -lm
+
+PROG=tracer_remote
+OBJS=remote.o plot.o database.o gui.o
+
+$(PROG): gui/gui.a $(OBJS)
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
+
+.PHONY: gui/gui.a
+
+gui/gui.a:
+	cd gui && make
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+main.o: ../T_IDs.h ../T_defs.h
+
+clean:
+	rm -f *.o $(PROG) core
+	cd gui && make clean
