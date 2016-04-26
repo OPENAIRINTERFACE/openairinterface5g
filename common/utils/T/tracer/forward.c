@@ -150,15 +150,18 @@ again:
 void forward(void *_forwarder, char *buf, int size)
 {
   forward_data *f = _forwarder;
+  int32_t ssize = size;
   databuf *new;
 
   new = malloc(sizeof(*new)); if (new == NULL) abort();
 
   if (pthread_mutex_lock(&f->datalock)) abort();
 
-  new->d = malloc(size); if (new->d == NULL) abort();
-  memcpy(new->d, buf, size);
-  new->l = size;
+  new->d = malloc(size + 4); if (new->d == NULL) abort();
+  /* put the size of the message at the head */
+  memcpy(new->d, &ssize, 4);
+  memcpy(new->d+4, buf, size);
+  new->l = size+4;
   new->next = NULL;
   if (f->head == NULL) f->head = new;
   if (f->tail != NULL) f->tail->next = new;

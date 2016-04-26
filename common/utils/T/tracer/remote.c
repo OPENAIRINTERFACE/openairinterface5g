@@ -91,7 +91,9 @@ void get_message(int s)
     printf("["x"]["y"] %s", str); \
   } while (0)
 
+  int32_t size;
   int m;
+  if (GET(s, &size, 4) != 4) abort();
   if (GET(s, &m, sizeof(int)) != sizeof(int)) abort();
   switch (m) {
   case T_first: {
