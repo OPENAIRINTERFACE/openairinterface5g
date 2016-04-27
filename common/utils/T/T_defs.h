@@ -1,6 +1,9 @@
 #ifndef _T_defs_H_
 #define _T_defs_H_
 
+/* maximum number of arguments for the T macro */
+#define T_MAX_ARGS 16
+
 /* maximum size of a message - increase if needed */
 #define T_BUFFER_MAX (1024*64)
 
