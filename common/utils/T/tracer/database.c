@@ -409,3 +409,20 @@ void on_off(void *_d, char *item, int *a, int onoff)
     exit(1);
   }
 }
+
+database_event_format get_format(void *_database, int event_id)
+{
+  database *d = _database;
+  database_event_format ret;
+
+  if (event_id < 0 || event_id >= d->isize) {
+    printf("%s:%d: bad event ID (%d)\n", __FILE__, __LINE__, event_id);
+    abort();
+  }
+
+  ret.type = d->i[event_id].arg_type;
+  ret.name = d->i[event_id].arg_name;
+  ret.count = d->i[event_id].asize;
+
+  return ret;
+}
