@@ -422,6 +422,15 @@ char *event_name_from_id(void *_database, int id)
   return d->i[d->pos[id]].name;
 }
 
+int event_id_from_name(void *_database, char *name)
+{
+  database *d = _database;
+  id *i = (id*)bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
+  if (i == NULL)
+    { printf("%s:%d: '%s' not found\n", __FILE__, __LINE__, name); abort(); }
+  return i->id;
+}
+
 database_event_format get_format(void *_database, int event_id)
 {
   database *d = _database;
@@ -437,4 +446,10 @@ database_event_format get_format(void *_database, int event_id)
   ret.count = d->i[d->pos[event_id]].asize;
 
   return ret;
+}
+
+int number_of_ids(void *_d)
+{
+  database *d = _d;
+  return d->isize;
 }
