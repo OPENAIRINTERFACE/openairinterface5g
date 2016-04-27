@@ -22,8 +22,6 @@ gui/gui.a:
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-main.o: ../T_IDs.h ../T_defs.h
-
 clean:
 	rm -f *.o $(PROG) core textlog
 	cd gui && make clean
