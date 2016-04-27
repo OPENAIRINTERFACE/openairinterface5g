@@ -11,6 +11,9 @@ OBJS=remote_old.o plot.o database.o gui.o
 $(PROG): gui/gui.a $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
 
+textlog: remote.o database.o event.o handler.o textlog.o
+	$(CC) $(CFLAGS) -o textlog $^
+
 .PHONY: gui/gui.a
 
 gui/gui.a:
@@ -22,5 +25,5 @@ gui/gui.a:
 main.o: ../T_IDs.h ../T_defs.h
 
 clean:
-	rm -f *.o $(PROG) core
+	rm -f *.o $(PROG) core textlog
 	cd gui && make clean
