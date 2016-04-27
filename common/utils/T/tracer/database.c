@@ -8,8 +8,11 @@ typedef struct {
   char *name;
   char *desc;
   char **groups;
-  int size;
-  int id;
+  int  gsize;
+  char **arg_type;
+  char **arg_name;
+  int  asize;
+  int  id;
 } id;
 
 typedef struct {
@@ -129,7 +132,10 @@ id *add_id(database *r, char *idname, int i)
   if (r->i[r->isize].name == NULL) { printf("out of memory\n"); exit(1); }
   r->i[r->isize].desc = NULL;
   r->i[r->isize].groups = NULL;
-  r->i[r->isize].size = 0;
+  r->i[r->isize].gsize = 0;
+  r->i[r->isize].arg_type = NULL;
+  r->i[r->isize].arg_name = NULL;
+  r->i[r->isize].asize = 0;
   r->i[r->isize].id = i;
   r->isize++;
   qsort(r->i, r->isize, sizeof(id), id_cmp);
@@ -172,16 +178,16 @@ void group_add_id(group *g, char *id)
 
 void id_add_group(id *i, char *group)
 {
-  char *g = bsearch(&group, i->groups, i->size, sizeof(char *), string_cmp);
+  char *g = bsearch(&group, i->groups, i->gsize, sizeof(char *), string_cmp);
   if (g != NULL) return;
 
-  if ((i->size & 1023) == 0) {
-    i->groups = realloc(i->groups, (i->size+1024) * sizeof(char *));
+  if ((i->gsize & 1023) == 0) {
+    i->groups = realloc(i->groups, (i->gsize+1024) * sizeof(char *));
     if (i->groups == NULL) abort();
   }
-  i->groups[i->size] = group;
-  i->size++;
-  qsort(i->groups, i->size, sizeof(char *), string_cmp);
+  i->groups[i->gsize] = group;
+  i->gsize++;
+  qsort(i->groups, i->gsize, sizeof(char *), string_cmp);
 }
 
 void add_groups(database *r, id *i, char *groups)
@@ -216,6 +222,76 @@ void add_desc(id *i, char *desc)
   i->desc = strdup(desc); if (i->desc == NULL) abort();
 }
 
+char *format_get_next_token(char **cur)
+{
+  char *start;
+  char *end;
+  char *ret;
+
+  start = *cur;
+
+  /* remove spaces */
+  while (*start && isspace(*start)) start ++;
+  if (*start == 0) return NULL;
+
+  /* special cases: ',' and ':' */
+  if (*start == ',' || *start == ':') { end = start + 1; goto special; }
+
+  end = start;
+
+  /* go to end of token */
+  while (*end && !isspace(*end) && *end != ',' && *end != ':') end++;
+
+special:
+  ret = malloc(end-start+1); if (ret == NULL) abort();
+  memcpy(ret, start, end-start);
+  ret[end-start] = 0;
+
+  *cur = end;
+  return ret;
+}
+
+void add_format(id *id, char *format)
+{
+  char *cur = format;
+  char *type;
+  char *name;
+  char *sep;
+  while (1) {
+    /* parse next type/name: expected " <type> , <name> :" */
+    /* get type */
+    type = format_get_next_token(&cur);
+    if (type == NULL) break;
+    /* get comma */
+    sep = format_get_next_token(&cur);
+    if (sep == NULL || strcmp(sep, ",") != 0) goto error;
+    free(sep);
+    /* get name */
+    name = format_get_next_token(&cur);
+    if (name == NULL) goto error;
+    /* if there is a next token it has to be : */
+    sep = format_get_next_token(&cur);
+    if (sep != NULL && strcmp(sep, ":") != 0) goto error;
+    free(sep);
+
+    /* add type/name */
+    if (id->asize % 64 == 0) {
+      id->arg_type = realloc(id->arg_type, (id->asize + 64) * sizeof(char *));
+      if (id->arg_type == NULL) abort();
+      id->arg_name = realloc(id->arg_name, (id->asize + 64) * sizeof(char *));
+      if (id->arg_name == NULL) abort();
+    }
+    id->arg_type[id->asize] = type;
+    id->arg_name[id->asize] = name;
+    id->asize++;
+  }
+  return;
+
+error:
+  printf("bad format '%s'\n", format);
+  abort();
+}
+
 void *parse_database(char *filename)
 {
   FILE *in;
@@ -241,6 +317,7 @@ void *parse_database(char *filename)
     if (!strcmp(name, "ID")) { last_id = add_id(r, value, i); i++; }
     if (!strcmp(name, "GROUP")) add_groups(r, last_id, value);
     if (!strcmp(name, "DESC")) add_desc(last_id, value);
+    if (!strcmp(name, "FORMAT")) add_format(last_id, value);
   }
 
   fclose(in);
@@ -260,9 +337,18 @@ void dump_database(void *_d)
     int j;
     printf("ID %s [%s] [in %d group%s]\n",
            d->i[i].name, d->i[i].desc ? d->i[i].desc : "",
-           d->i[i].size, d->i[i].size > 1 ? "s" : "");
-    for (j = 0; j < d->i[i].size; j++)
+           d->i[i].gsize, d->i[i].gsize > 1 ? "s" : "");
+    for (j = 0; j < d->i[i].gsize; j++)
       printf("    in GROUP: %s\n", d->i[i].groups[j]);
+    if (d->i[i].asize == 0) printf("    no FORMAT\n");
+    else {
+      int j;
+      printf("    FORMAT: ");
+      for (j = 0; j < d->i[i].asize; j++)
+        printf("'%s' , '%s' %s", d->i[i].arg_type[j], d->i[i].arg_name[j],
+               j == d->i[i].asize-1 ? "" : " : ");
+      printf("\n");
+    }
   }
   for (i = 0; i < d->gsize; i++) {
     int j;
