@@ -11,6 +11,7 @@
 #include <pthread.h>
 
 #include "defs.h"
+#include "database.h"
 
 #define DEFAULT_REMOTE_PORT 2020
 
