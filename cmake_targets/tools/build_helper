@@ -132,10 +132,21 @@ compilations() {
 ############################################
 
 install_nettle_from_source() {
+    nettle_install_log=$OPENAIR_DIR/cmake_targets/log/nettle_install_log.txt
+    echo_info "\nInstalling Nettle. The log file for nettle installation is here: $nettle_install_log "
+    (
     cd /tmp
     echo "Downloading nettle archive"
-    rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
-    wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz 
+    $SUDO rm -rf /tmp/nettle-2.5.tar.gz* /tmp/nettle-2.5
+    wget https://ftp.gnu.org/gnu/nettle/nettle-2.5.tar.gz
+    if [ $? -ne 0 ]; then
+      wget ftp://ftp.lysator.liu.se/pub/security/lsh/nettle-2.5.tar.gz
+    fi
+    if [ ! -f nettle-2.5.tar.gz ]; then
+      echo_error "Could not download nettle source files"
+      cd -
+      return
+    fi
     tar -xzf nettle-2.5.tar.gz
     cd nettle-2.5/
     ./configure --disable-openssl --enable-shared --prefix=/usr 
@@ -143,21 +154,32 @@ install_nettle_from_source() {
     make -j`nproc`
     make check 
     $SUDO make install 
-    rm -rf /tmp/nettle-2.5.tar.gz /tmp/nettle-2.5
+    ) >& $nettle_install_log
 }
 
 install_gnutls_from_source(){
+    gnutls_install_log=$OPENAIR_DIR/cmake_targets/log/gnutls_install_log.txt
+    echo_info "\nInstalling Gnutls. The log file for Gnutls installation is here: $gnutls_install_log "
+    (
     cd /tmp 
     echo "Downloading gnutls archive"
-    rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
-    wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz 
-    tar -xzf gnutls-3.1.23.tar.xz
+    $SUDO rm -rf /tmp/gnutls-3.1.23.tar.xz* /tmp/gnutls-3.1.23
+    wget http://mirrors.dotsrc.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
+    if [ $? -ne 0 ]; then
+      wget ftp://ftp.gnutls.org/gcrypt/gnutls/v3.1/gnutls-3.1.23.tar.xz
+    fi
+    if [ ! -f gnutls-3.1.23.tar.xz ]; then
+      echo_error "Could not download gnutls source files"
+      cd -
+      return
+    fi
+    tar -xJf gnutls-3.1.23.tar.xz
     cd gnutls-3.1.23/
     ./configure --prefix=/usr
     echo "Compiling gnutls"
     make -j`nproc`
     $SUDO make install 
-    rm -rf /tmp/gnutls-3.1.23.tar.xz /tmp/gnutls-3.1.23
+    )>& $gnutls_install_log
 }
 
 
@@ -274,12 +296,12 @@ check_install_oai_software() {
         android-tools-adb
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-    if [ `lsb_release -rs` = '12.04' ] ; then
-        install_nettle_from_source
-        install_gnutls_from_source
-    else
-        $SUDO apt-get install -y libgnutls-dev nettle-dev nettle-bin 
-    fi
+    
+    # First we remove gnutls/nettle installation and then install from sources
+    $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
+    install_nettle_from_source
+    install_gnutls_from_source
+
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
     install_asn1c_from_source
@@ -288,8 +310,8 @@ check_install_oai_software() {
 }
 
 install_asn1c_from_source(){
-    asn1_install_dir=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
-    echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_dir "
+    asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
+    echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c-r1516
     mkdir -p /tmp/asn1c-r1516
@@ -303,7 +325,7 @@ install_asn1c_from_source(){
     ./configure
     make -j`nproc`
     $SUDO make install
-    ) > $asn1_install_dir 2>&1
+    ) > $asn1_install_log 2>&1
 }
 
 #################################################
