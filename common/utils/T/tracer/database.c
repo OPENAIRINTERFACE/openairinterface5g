@@ -27,6 +27,7 @@ typedef struct {
   int isize;
   group *g;
   int gsize;
+  int *pos;
 } database;
 
 typedef struct {
@@ -324,6 +325,11 @@ void *parse_database(char *filename)
   free(p.name.data);
   free(p.value.data);
 
+  /* setup pos */
+  r->pos = malloc(sizeof(int) * r->isize); if (r->pos == NULL) abort();
+  for (i = 0; i < r->isize; i++)
+    r->pos[r->i[i].id] = i;
+
   return r;
 }
 
@@ -410,6 +416,12 @@ void on_off(void *_d, char *item, int *a, int onoff)
   }
 }
 
+char *event_name_from_id(void *_database, int id)
+{
+  database *d = _database;
+  return d->i[d->pos[id]].name;
+}
+
 database_event_format get_format(void *_database, int event_id)
 {
   database *d = _database;
@@ -420,9 +432,9 @@ database_event_format get_format(void *_database, int event_id)
     abort();
   }
 
-  ret.type = d->i[event_id].arg_type;
-  ret.name = d->i[event_id].arg_name;
-  ret.count = d->i[event_id].asize;
+  ret.type = d->i[d->pos[event_id]].arg_type;
+  ret.name = d->i[d->pos[event_id]].arg_name;
+  ret.count = d->i[d->pos[event_id]].asize;
 
   return ret;
 }
