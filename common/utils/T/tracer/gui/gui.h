@@ -27,6 +27,7 @@ void xy_plot_set_points(gui *gui, widget *this,
     int npoints, float *x, float *y);
 
 void text_list_add(gui *gui, widget *this, const char *text, int position);
+void text_list_del(gui *gui, widget *this, int position);
 
 void gui_loop(gui *gui);
 

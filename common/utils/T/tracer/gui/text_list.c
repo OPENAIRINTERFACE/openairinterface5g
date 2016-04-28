@@ -93,3 +93,31 @@ void text_list_add(gui *_gui, widget *_this, const char *text, int position)
 
   gunlock(g);
 }
+
+void text_list_del(gui *_gui, widget *_this, int position)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+
+  glock(g);
+
+  /* TODO: useful check? */
+  if (this->text_count == 0) goto done;
+
+  if (position < 0) position = this->text_count;
+  if (position > this->text_count-1) position = this->text_count-1;
+
+  free(this->text[position]);
+
+  memmove(this->text + position, this->text + position + 1,
+          (this->text_count-1 - position) * sizeof(char *));
+
+  this->text_count--;
+  this->text = realloc(this->text, this->text_count * sizeof(char *));
+  if (this->text == NULL) OOM;
+
+  send_event(g, DIRTY, this->common.id);
+
+done:
+  gunlock(g);
+}
