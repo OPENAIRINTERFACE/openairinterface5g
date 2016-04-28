@@ -164,6 +164,42 @@ printf("HINTS container horizontal %p\n", _w);
   *height = this->hint_height;
 }
 
+static void horizontal_button(gui *_g, widget *_this, int x, int y,
+    int button, int up)
+{
+printf("BUTTON container horizontal %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  struct gui *g = _g;
+  struct container_widget *this = _this;
+  struct widget_list *l;
+
+  l = this->common.children;
+  while (l) {
+    if (l->item->x <= x && x < l->item->x + l->item->width) {
+      l->item->button(g, l->item, x - l->item->x, y, button, up);
+      break;
+    }
+    l = l->next;
+  }
+}
+
+static void vertical_button(gui *_g, widget *_this, int x, int y,
+    int button, int up)
+{
+printf("BUTTON container vertical %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  struct gui *g = _g;
+  struct container_widget *this = _this;
+  struct widget_list *l;
+
+  l = this->common.children;
+  while (l) {
+    if (l->item->y <= y && y < l->item->y + l->item->height) {
+      l->item->button(g, l->item, x, y - l->item->y, button, up);
+      break;
+    }
+    l = l->next;
+  }
+}
+
 static void paint(gui *_gui, widget *_this)
 {
 printf("PAINT container\n");
@@ -197,9 +233,11 @@ widget *new_container(gui *_gui, int vertical)
   if (vertical) {
     w->common.allocate  = vertical_allocate;
     w->common.hints     = vertical_hints;
+    w->common.button    = vertical_button;
   } else {
     w->common.allocate  = horizontal_allocate;
     w->common.hints     = horizontal_hints;
+    w->common.button    = horizontal_button;
   }
 
   gunlock(g);

@@ -158,7 +158,7 @@ printf("XEV %d\n", ev.type);
       }
       break;
     case ConfigureNotify:
-      if ((w = find_x_window(g, ev.xexpose.window)) != NULL) {
+      if ((w = find_x_window(g, ev.xconfigure.window)) != NULL) {
         struct x_window *xw = w->x;
         xw->resize = 1;
         xw->new_width = ev.xconfigure.width;
@@ -168,9 +168,21 @@ printf("XEV %d\n", ev.type);
 printf("ConfigureNotify %d %d\n", ev.xconfigure.width, ev.xconfigure.height);
       }
       break;
+    case ButtonPress:
+      if ((w = find_x_window(g, ev.xbutton.window)) != NULL) {
+        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y,
+            ev.xbutton.button, 0);
+      }
+      break;
+    case ButtonRelease:
+      if ((w = find_x_window(g, ev.xbutton.window)) != NULL) {
+        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y,
+            ev.xbutton.button, 1);
+      }
+      break;
 #if 0
     case MapNotify:
-      if ((w = find_x_window(g, ev.xexpose.window)) != NULL) {
+      if ((w = find_x_window(g, ev.xmap.window)) != NULL) {
         struct x_window *xw = w->x;
         xw->repaint = 1;
       }

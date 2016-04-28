@@ -44,6 +44,12 @@ static void allocate(
 printf("ALLOCATE text_list %p xywh %d %d %d %d nlines %d\n", this, x, y, width, height, this->allocated_nlines);
 }
 
+static void button(gui *g, widget *_this, int x, int y, int button, int up)
+{
+  struct text_list_widget *this = _this;
+printf("BUTTON test_list %p xy %d %d button %d up %d\n", this, x, y, button, up);
+}
+
 widget *new_text_list(gui *_gui, int width, int nlines, int bgcol)
 {
   struct gui *g = _gui;
@@ -62,6 +68,8 @@ widget *new_text_list(gui *_gui, int width, int nlines, int bgcol)
   w->common.paint = paint;
   w->common.hints = hints;
   w->common.allocate = allocate;
+
+  w->common.button = button;
 
   gunlock(g);
 
