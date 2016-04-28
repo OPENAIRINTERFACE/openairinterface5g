@@ -1,8 +1,10 @@
 #include "textlog.h"
 #include "handler.h"
 #include "database.h"
+#include "view/view.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 enum format_item_type {
   INSTRING,
@@ -23,25 +25,62 @@ struct textlog {
   char *format;
   void *database;
   unsigned long handler_id;
+  /* parsed format string */
   struct format_item *f;
   int fsize;
+  /* list of views */
+  view **v;
+  int vsize;
+  /* local output buffer */
+  int osize;
+  int omaxsize;
+  char *obuf;
 };
 
-#include <stdio.h>
+static void PUTC(struct textlog *l, char c)
+{
+  if (l->osize == l->omaxsize) {
+    l->omaxsize += 512;
+    l->obuf = realloc(l->obuf, l->omaxsize);
+    if (l->obuf == NULL) abort();
+  }
+  l->obuf[l->osize] = c;
+  l->osize++;
+}
+
+static void PUTS(struct textlog *l, char *s)
+{
+  while (*s) PUTC(l, *s++);
+}
+
+static void PUTI(struct textlog *l, int i)
+{
+  char s[64];
+  sprintf(s, "%d", i);
+  PUTS(l, s);
+}
+
 static void _event(void *p, event e)
 {
   struct textlog *l = p;
   int i;
-//printf("%s %s\n", l->event_name, l->format);
+
+  l->osize = 0;
 
   for (i = 0; i < l->fsize; i++)
   switch(l->f[i].type) {
-  case INSTRING: printf("%s", l->f[i].s); break;
-  case INT:      printf("%d", e.e[l->f[i].event_arg].i); break;
-  case STRING:   printf("%s", e.e[l->f[i].event_arg].s); break;
-  case BUFFER:   printf("{buffer size:%d}",e.e[l->f[i].event_arg].bsize);break;
+  case INSTRING: PUTS(l, l->f[i].s); break;
+  case INT:      PUTI(l, e.e[l->f[i].event_arg].i); break;
+  case STRING:   PUTS(l, e.e[l->f[i].event_arg].s); break;
+  case BUFFER:
+    PUTS(l, "{buffer size:");
+    PUTI(l, e.e[l->f[i].event_arg].bsize);
+    PUTS(l, "}");
+    break;
   }
-  printf("\n");
+  PUTC(l, 0);
+
+  for (i = 0; i < l->vsize; i++) l->v[i]->append(l->v[i], l->obuf);
 }
 
 enum chunk_type { C_ERROR, C_STRING, C_ARG_NAME, C_EVENT_NAME };
@@ -165,4 +204,12 @@ printf("after chunk, cur is '%s' (%d) (type %d)\n", cur, *cur, c.type);
 error:
   printf("%s:%d: bad format '%s'\n", __FILE__, __LINE__, format);
   abort();
+}
+
+void textlog_add_view(textlog *_l, view *v)
+{
+  struct textlog *l = _l;
+  l->vsize++;
+  l->v = realloc(l->v, l->vsize * sizeof(view *)); if (l->v == NULL) abort();
+  l->v[l->vsize-1] = v;
 }

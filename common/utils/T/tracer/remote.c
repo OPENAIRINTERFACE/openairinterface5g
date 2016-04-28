@@ -8,6 +8,9 @@
 #include "event.h"
 #include "handler.h"
 #include "textlog.h"
+#include "view/view.h"
+#include "gui/gui.h"
+#include "utils.h"
 #include "../T_defs.h"
 
 #define DEFAULT_REMOTE_PORT 2021
@@ -55,6 +58,7 @@ void usage(void)
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
 "    -p <port>                 use given port (default %d)\n"
+"    -x                        GUI output\n",
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -88,6 +92,13 @@ event get_event(int s, char *v, void *d)
   return new_event(type, length, v, d);
 }
 
+static void *gui_thread(void *_g)
+{
+  gui *g = _g;
+  gui_loop(g);
+  return NULL;
+}
+
 int main(int n, char **v)
 {
   char *database_filename = NULL;
@@ -104,6 +115,7 @@ int main(int n, char **v)
   int l;
   event_handler *h;
   textlog *textlog;
+  int gui_mode = 0;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -122,6 +134,7 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=1; continue; }
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
+    if (!strcmp(v[i], "-x")) { gui_mode = 1; continue; }
     usage();
   }
 
@@ -141,6 +154,23 @@ int main(int n, char **v)
   textlog = new_textlog(h, database,
       "ENB_UL_CHANNEL_ESTIMATE",
       "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
+
+  if (gui_mode) {
+    view *tout;
+    gui *g;
+    widget *w, *win;
+    g = gui_init();
+    w = new_text_list(g, 600, 20, 0);
+    win = new_toplevel_window(g, 600, 20*12, "textlog");
+    widget_add_child(g, win, w, -1);
+    //tout = new_textlist(1000, 10, g, w);
+    tout = new_textlist(7, 4, g, w);
+    new_thread(gui_thread, g);
+    textlog_add_view(textlog, tout);
+  } else {
+    view *sout = new_stdout();
+    textlog_add_view(textlog, sout);
+  }
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);

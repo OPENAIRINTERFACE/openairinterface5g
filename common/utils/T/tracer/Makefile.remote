@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread -DT_TRACER
+CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 #CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
@@ -11,10 +11,14 @@ OBJS=remote_old.o plot.o database.o gui.o
 $(PROG): gui/gui.a $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
 
-textlog: remote.o database.o event.o handler.o textlog.o
-	$(CC) $(CFLAGS) -o textlog $^
+textlog: utils.o remote.o database.o event.o handler.o textlog.o \
+         view/view.a gui/gui.a
+	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
 
-.PHONY: gui/gui.a
+.PHONY: gui/gui.a view/view.a
+
+view/view.a:
+	cd view && make
 
 gui/gui.a:
 	cd gui && make
@@ -25,3 +29,4 @@ gui/gui.a:
 clean:
 	rm -f *.o $(PROG) core textlog
 	cd gui && make clean
+	cd view && make clean
