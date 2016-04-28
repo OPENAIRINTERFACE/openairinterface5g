@@ -9,6 +9,9 @@
 #include <fcntl.h>
 #include <pthread.h>
 
+#define DEFAULT_REMOTE_IP   "127.0.0.1"
+#define DEFAULT_REMOTE_PORT 2021
+
 #include "defs.h"
 
 #include "../T_defs.h"
@@ -94,7 +97,9 @@ void usage(void)
   printf(
 "tracer - local side\n"
 "options:\n"
-"    -l <IP address> <port>    local side (forwards packets to remote IP:port)\n"
+"    -r <IP address> <port>    forwards packets to remote IP:port\n"
+"                              (default %s:%d)\n",
+    DEFAULT_REMOTE_IP, DEFAULT_REMOTE_PORT
   );
   exit(1);
 }
@@ -103,8 +108,8 @@ int main(int n, char **v)
 {
   int s;
   int i;
-  char *remote_ip = NULL;
-  int remote_port = -1;
+  char *remote_ip = DEFAULT_REMOTE_IP;
+  int remote_port = DEFAULT_REMOTE_PORT;
   int port = 2020;
   void *f;
 
@@ -115,8 +120,6 @@ int main(int n, char **v)
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }
-
-  if (remote_port == -1 || remote_ip == NULL) usage();
 
   f = forwarder(remote_ip, remote_port);
   init_shm();
