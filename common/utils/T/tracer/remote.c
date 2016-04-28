@@ -10,7 +10,7 @@
 #include "textlog.h"
 #include "../T_defs.h"
 
-#define DEFAULT_REMOTE_PORT 2020
+#define DEFAULT_REMOTE_PORT 2021
 
 int get_connection(char *addr, int port)
 {
@@ -54,7 +54,7 @@ void usage(void)
 "                              note: you may pass several -on/-off/-ON/-OFF,\n"
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
-"    -r <port>                 remote side: use given port (default %d)\n",
+"    -p <port>                 use given port (default %d)\n"
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -112,7 +112,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
-    if (!strcmp(v[i], "-r"))
+    if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-on")) { if (i > n-2) usage();
       on_off_name[on_off_n]=v[++i]; on_off_action[on_off_n++]=1; continue; }
