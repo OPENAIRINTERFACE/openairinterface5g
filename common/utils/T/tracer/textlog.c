@@ -178,9 +178,7 @@ textlog *new_textlog(event_handler *h, void *database,
   cur = ret->format;
 
   while (*cur) {
-printf("before chunk cur '%s'\n", cur);
     struct chunk c = next_chunk(&cur, f);
-printf("after chunk, cur is '%s' (%d) (type %d)\n", cur, *cur, c.type);
     switch (c.type) {
     case C_ERROR: goto error;
     case C_STRING:
