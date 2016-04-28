@@ -41,6 +41,10 @@ void x_fill_rectangle(x_connection *c, x_window *w, int color,
 void x_draw_string(x_connection *_c, x_window *_w, int color,
     int x, int y, const char *t);
 
+void x_draw_clipped_string(x_connection *_c, x_window *_w, int color,
+    int x, int y, const char *t,
+    int clipx, int clipy, int clipwidth, int clipheight);
+
 /* specials functions to plot many points
  * you call several times x_add_point() then x_plot_points()
  */

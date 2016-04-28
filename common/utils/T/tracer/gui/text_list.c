@@ -16,10 +16,12 @@ printf("PAINT text_list %p xywh %d %d %d %d\n", _this, this->common.x, this->com
       this->common.width, this->common.height);
   for (i = 0, j = this->starting_line;
        i < this->allocated_nlines && j < this->text_count; i++, j++)
-    x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
+    x_draw_clipped_string(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x,
         this->common.y + i * this->line_height + this->baseline,
-        this->text[j]);
+        this->text[j],
+        this->common.x, this->common.y,
+        this->common.width, this->common.height);
 }
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)

@@ -279,6 +279,18 @@ void x_draw_string(x_connection *_c, x_window *_w, int color,
   XDrawString(c->d, w->p, c->colors[color], x, y, t, tlen);
 }
 
+void x_draw_clipped_string(x_connection *_c, x_window *_w, int color,
+    int x, int y, const char *t,
+    int clipx, int clipy, int clipwidth, int clipheight)
+{
+  struct x_connection *c = _c;
+
+  XRectangle clip = { clipx, clipy, clipwidth, clipheight };
+  XSetClipRectangles(c->d, c->colors[color], 0, 0, &clip, 1, Unsorted);
+  x_draw_string(_c, _w, color, x, y, t);
+  XSetClipMask(c->d, c->colors[color], None);
+}
+
 void x_draw(x_connection *_c, x_window *_w)
 {
   struct x_connection *c = _c;
