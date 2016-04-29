@@ -12,6 +12,8 @@ gui *gui_init(void)
 {
   struct gui *ret;
 
+  x_init_threading();
+
   ret = calloc(1, sizeof(struct gui));
   if (ret == NULL) OOM;
 
