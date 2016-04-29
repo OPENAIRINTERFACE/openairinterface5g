@@ -194,7 +194,6 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
 
 /*! \brief Terminate operation of the BladeRF transceiver -- free all associated resources 
  * \param device the hardware to use
- * \returns 0 in success 
  */
 void trx_brf_end(openair0_device *device) {
 
@@ -286,7 +285,7 @@ int trx_brf_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) 
 int16_t cos_fsover8[8]  = {2047,   1447,      0,  -1448,  -2047,  -1448,     0,   1447};
 int16_t cos_3fsover8[8] = {2047,  -1448,      0,   1447,  -2047,   1447,     0,  -1448};
 
-/*! \brief calibration table for LMSSDR */
+/*! \brief calibration table for BladeRF */
 rx_gain_calib_table_t calib_table_fx4[] = {
   {2300000000.0,53.5},
   {1880000000.0,57.0},
