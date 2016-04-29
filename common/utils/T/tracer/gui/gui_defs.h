@@ -144,6 +144,24 @@ struct repack_event {
 };
 
 /*************************************************************************/
+/*                           notifications                               */
+/*************************************************************************/
+
+/* same type as in gui.h */
+typedef void (*notifier)(void *private, gui *g,
+    char *notification, widget *w, void *notification_data);
+
+struct notifier {
+  notifier handler;
+  unsigned long id;
+  char *notification;
+  widget *w;
+  void *private;
+  /* done is used bu gui_notify */
+  int done;
+};
+
+/*************************************************************************/
 /*                          main structure                               */
 /*************************************************************************/
 
@@ -161,6 +179,9 @@ struct gui {
   void                *xwin;           /* set by a toplevel_window when
                                         * it paints itself, to be used
                                         * by its children */
+  struct notifier     *notifiers;
+  int                 notifiers_count;
+  unsigned long       next_notifier_id;
 };
 
 /*************************************************************************/
@@ -177,5 +198,8 @@ void send_event(gui *gui, enum event_type type, ...);
 void gui_events(gui *gui);
 
 struct widget *find_widget(struct gui *g, int id);
+
+void gui_notify(struct gui *g, char *notification, widget *w,
+    void *notification_data);
 
 #endif /* _GUI_DEFS_H_ */

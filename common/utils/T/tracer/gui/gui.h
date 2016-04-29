@@ -36,4 +36,19 @@ void gunlock(gui *gui);
 
 int new_color(gui *gui, char *color);
 
+/* notifications */
+/* known notifications:
+ * - text_list:
+ *      - scrollup   { }
+ *      - scrolldown { }
+ *      //- click      { int line, int button }
+ */
+
+/* same type as in gui_defs.h */
+typedef void (*notifier)(void *private, gui *g,
+    char *notification, widget *w, void *notification_data);
+unsigned long register_notifier(gui *g, char *notification, widget *w,
+    notifier handler, void *private);
+void unregister_notifier(gui *g, unsigned long notifier_id);
+
 #endif /* _GUI_H_ */

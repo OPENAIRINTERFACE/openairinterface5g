@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-Wall -g -pthread
 
 OBJS=init.o loop.o toplevel_window.o x.o container.o widget.o \
-     gui.o label.o event.o xy_plot.o text_list.o
+     gui.o label.o event.o xy_plot.o text_list.o notify.o
 
 gui.a: $(OBJS)
 	ar cr gui.a $(OBJS)
