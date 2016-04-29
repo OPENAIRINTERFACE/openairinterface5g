@@ -84,6 +84,8 @@ printf("ALLOCATE container vertical %p\n", _this);
   struct gui *g = _gui;
   struct container_widget *this = _this;
   struct widget_list *l;
+  int over_pixels = 0;
+  int i;
 
   if (this->hints_are_valid == 1) goto hints_ok;
 
@@ -96,18 +98,29 @@ hints_ok:
   this->common.width = width;
   this->common.height = height;
 
-  /* allocate */
-  l = this->common.children;
-  while (l) {
-    l->item->hints(g, l->item, &cwidth, &cheight);
-    l->item->allocate(g, l->item, this->common.x, this->common.y + cy,
-        //this->hint_width, cheight);
-        MAX(width, cwidth), cheight);
-    cy += cheight;
-    l = l->next;
+  /* TODO: some pixels won't be allocated, take care of it? */
+  if (height > this->hint_height) {
+    int ngrowable = 0;
+    for (i = 0; i < this->nchildren; i++) if (this->growable[i]) ngrowable++;
+    if (ngrowable)
+      over_pixels = (height - this->hint_height) / ngrowable;
   }
 
-  if (cy != this->hint_height) ERR("reachable?\n");
+  /* allocate */
+  l = this->common.children;
+  i = 0;
+  while (l) {
+    int allocated_height;
+    l->item->hints(g, l->item, &cwidth, &cheight);
+    allocated_height = cheight + (this->growable[i] ? over_pixels : 0);
+    l->item->allocate(g, l->item, this->common.x, this->common.y + cy,
+        MAX(width, cwidth), allocated_height);
+    cy += allocated_height;
+    l = l->next;
+    i++;
+  }
+
+//  if (cy != this->hint_height) ERR("reachable?\n");
 }
 
 static void horizontal_allocate(gui *_gui, widget *_this,
@@ -119,6 +132,8 @@ printf("ALLOCATE container horizontal %p\n", _this);
   struct gui *g = _gui;
   struct container_widget *this = _this;
   struct widget_list *l;
+  int over_pixels = 0;
+  int i;
 
   if (this->hints_are_valid == 1) goto hints_ok;
 
@@ -131,17 +146,29 @@ hints_ok:
   this->common.width = width;
   this->common.height = height;
 
-  /* allocate */
-  l = this->common.children;
-  while (l) {
-    l->item->hints(g, l->item, &cwidth, &cheight);
-    l->item->allocate(g, l->item, this->common.x + cx, this->common.y,
-        cwidth, MAX(height, cheight)/* this->hint_height */);
-    cx += cwidth;
-    l = l->next;
+  /* TODO: some pixels won't be allocated, take care of it? */
+  if (width > this->hint_width) {
+    int ngrowable = 0;
+    for (i = 0; i < this->nchildren; i++) if (this->growable[i]) ngrowable++;
+    if (ngrowable)
+      over_pixels = (width - this->hint_width) / ngrowable;
   }
 
-  if (cx != this->hint_width) ERR("reachable?\n");
+  /* allocate */
+  l = this->common.children;
+  i = 0;
+  while (l) {
+    int allocated_width;
+    l->item->hints(g, l->item, &cwidth, &cheight);
+    allocated_width = cwidth + (this->growable[i] ? over_pixels : 0);
+    l->item->allocate(g, l->item, this->common.x + cx, this->common.y,
+        allocated_width, MAX(height, cheight)/* this->hint_height */);
+    cx += allocated_width;
+    l = l->next;
+    i++;
+  }
+
+//  if (cx != this->hint_width) ERR("reachable?\n");
 }
 
 static void vertical_hints(gui *_gui, widget *_w, int *width, int *height)
