@@ -16,7 +16,7 @@ printf("PAINT text_list %p xywh %d %d %d %d\n", _this, this->common.x, this->com
       this->common.width, this->common.height);
   for (i = 0, j = this->starting_line;
        i < this->allocated_nlines && j < this->text_count; i++, j++)
-    x_draw_clipped_string(g->x, g->xwin, FOREGROUND_COLOR,
+    x_draw_clipped_string(g->x, g->xwin, this->color[j],
         this->common.x,
         this->common.y + i * this->line_height + this->baseline,
         this->text[j],
@@ -44,10 +44,25 @@ static void allocate(
 printf("ALLOCATE text_list %p xywh %d %d %d %d nlines %d\n", this, x, y, width, height, this->allocated_nlines);
 }
 
-static void button(gui *g, widget *_this, int x, int y, int button, int up)
+static void button(gui *_g, widget *_this, int x, int y, int button, int up)
 {
+  struct gui *g = _g;
   struct text_list_widget *this = _this;
-printf("BUTTON test_list %p xy %d %d button %d up %d\n", this, x, y, button, up);
+printf("BUTTON test_list %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  /* scroll up */
+  if (button == 4 && up == 0) {
+    gui_notify(g, "scrollup", _this, NULL);
+  }
+  /* scroll down */
+  if (button == 5 && up == 0) {
+    gui_notify(g, "scrolldown", _this, NULL);
+  }
+  /* button 1/2/3 click */
+  if (button >= 1 && button <= 3 && up == 0) {
+    int line = this->starting_line + y / this->line_height;
+    if (line >= 0 && line < this->text_count)
+      gui_notify(g, "click", _this, (int[2]){ line, button });
+  }
 }
 
 widget *new_text_list(gui *_gui, int width, int nlines, int bgcol)
@@ -80,7 +95,8 @@ widget *new_text_list(gui *_gui, int width, int nlines, int bgcol)
 /*                             public functions                          */
 /*************************************************************************/
 
-void text_list_add(gui *_gui, widget *_this, const char *text, int position)
+void text_list_add(gui *_gui, widget *_this, const char *text, int position,
+    int color)
 {
   struct gui *g = _gui;
   struct text_list_widget *this = _this;
@@ -93,11 +109,16 @@ void text_list_add(gui *_gui, widget *_this, const char *text, int position)
   this->text_count++;
   this->text = realloc(this->text, this->text_count * sizeof(char *));
   if (this->text == NULL) OOM;
+  this->color = realloc(this->color, this->text_count * sizeof(int));
+  if (this->color == NULL) OOM;
 
   memmove(this->text + position + 1, this->text + position,
           (this->text_count-1 - position) * sizeof(char *));
+  memmove(this->color + position + 1, this->color + position,
+          (this->text_count-1 - position) * sizeof(int));
 
   this->text[position] = strdup(text); if (this->text[position] == NULL) OOM;
+  this->color[position] = color;
 
   send_event(g, DIRTY, this->common.id);
 
@@ -121,13 +142,81 @@ void text_list_del(gui *_gui, widget *_this, int position)
 
   memmove(this->text + position, this->text + position + 1,
           (this->text_count-1 - position) * sizeof(char *));
+  memmove(this->color + position, this->color + position + 1,
+          (this->text_count-1 - position) * sizeof(int));
 
   this->text_count--;
   this->text = realloc(this->text, this->text_count * sizeof(char *));
   if (this->text == NULL) OOM;
+  this->color = realloc(this->color, this->text_count * sizeof(int));
+  if (this->color == NULL) OOM;
 
   send_event(g, DIRTY, this->common.id);
 
 done:
+  gunlock(g);
+}
+
+void text_list_state(gui *_gui, widget *_this,
+    int *visible_lines, int *start_line, int *number_of_lines)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+
+  glock(g);
+
+  *visible_lines   = this->allocated_nlines;
+  *start_line      = this->starting_line;
+  *number_of_lines = this->text_count;
+
+  gunlock(g);
+}
+
+void text_list_set_start_line(gui *_gui, widget *_this, int line)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+
+  glock(g);
+
+  this->starting_line = line;
+
+  send_event(g, DIRTY, this->common.id);
+
+  gunlock(g);
+}
+
+void text_list_get_line(gui *_gui, widget *_this, int line,
+    char **text, int *color)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+
+  glock(g);
+
+  if (line < 0 || line >= this->text_count) {
+    *text = NULL;
+    *color = -1;
+  } else {
+    *text = this->text[line];
+    *color = this->color[line];
+  }
+
+  gunlock(g);
+}
+
+void text_list_set_color(gui *_gui, widget *_this, int line, int color)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+
+  glock(g);
+
+  if (line >= 0 && line < this->text_count) {
+    this->color[line] = color;
+
+    send_event(g, DIRTY, this->common.id);
+  }
+
   gunlock(g);
 }

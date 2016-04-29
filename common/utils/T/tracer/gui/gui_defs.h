@@ -74,6 +74,7 @@ struct container_widget {
 struct text_list_widget {
   struct widget common;
   char **text;
+  int *color;
   int text_count;
   int wanted_width;
   int wanted_nlines;    /* number of lines of text the user wants to see */

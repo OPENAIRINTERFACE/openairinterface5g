@@ -29,8 +29,15 @@ void xy_plot_set_range(gui *gui, widget *this,
 void xy_plot_set_points(gui *gui, widget *this,
     int npoints, float *x, float *y);
 
-void text_list_add(gui *gui, widget *this, const char *text, int position);
+void text_list_add(gui *gui, widget *this, const char *text, int position,
+    int color);
 void text_list_del(gui *gui, widget *this, int position);
+void text_list_state(gui *_gui, widget *_this,
+    int *visible_lines, int *start_line, int *number_of_lines);
+void text_list_set_start_line(gui *gui, widget *this, int line);
+void text_list_get_line(gui *gui, widget *this, int line,
+    char **text, int *color);
+void text_list_set_color(gui *gui, widget *this, int line, int color);
 
 void gui_loop(gui *gui);
 
@@ -42,9 +49,9 @@ int new_color(gui *gui, char *color);
 /* notifications */
 /* known notifications:
  * - text_list:
- *      - scrollup   { }
- *      - scrolldown { }
- *      //- click      { int line, int button }
+ *      - scrollup   { void *: NULL }
+ *      - scrolldown { void *: NULL }
+ *      - click      { int [2]: line, button }
  */
 
 /* same type as in gui_defs.h */

@@ -23,7 +23,7 @@ static void _append(struct textlist *this, char *s)
     text_list_del(this->g, this->w, 0);
     this->cursize--;
   }
-  text_list_add(this->g, this->w, s, -1);
+  text_list_add(this->g, this->w, s, -1, FOREGROUND_COLOR);
   this->cursize++;
 }
 
