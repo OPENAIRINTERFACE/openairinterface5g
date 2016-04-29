@@ -69,6 +69,8 @@ struct container_widget {
   int hints_are_valid;     /* used to cache hints values */
   int hint_width;          /* cached hint values - invalid if */
   int hint_height;         /* repack_was_called == 1          */
+  int *growable;
+  int nchildren;
 };
 
 struct text_list_widget {

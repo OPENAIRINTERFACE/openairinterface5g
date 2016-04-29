@@ -2,6 +2,7 @@
 #include "gui_defs.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX(a, b) ((a)>(b)?(a):(b))
 
@@ -19,6 +20,19 @@ printf("ADD_CHILD container\n");
   struct container_widget *this = _this;
   this->hints_are_valid = 0;
   widget_add_child_internal(g, this, child, position);
+
+  /* initially not growable */
+  this->growable = realloc(this->growable, (this->nchildren+1)*sizeof(int));
+  if (this->growable == NULL) abort();
+
+  if (position == -1) position = this->nchildren;
+
+  memmove(this->growable + position+1, this->growable + position,
+          (this->nchildren - position) * sizeof(int));
+
+  this->growable[position] = 0;
+
+  this->nchildren++;
 }
 
 static void compute_vertical_hints(struct gui *g,
@@ -245,4 +259,34 @@ widget *new_container(gui *_gui, int vertical)
   gunlock(g);
 
   return w;
+}
+
+/*************************************************************************/
+/*                             public functions                          */
+/*************************************************************************/
+
+void container_set_child_growable(gui *_gui, widget *_this,
+    widget *child, int growable)
+{
+  gui *g = _gui;
+  struct container_widget *this = _this;
+  struct widget_list *lcur;
+  int i;
+
+  glock(g);
+
+  lcur = this->common.children;
+  i = 0;
+  while (lcur) {
+    if (lcur->item == child) break;
+    lcur = lcur->next;
+    i++;
+  }
+  if (lcur == NULL) ERR("%s:%d: child not found\n", __FILE__, __LINE__);
+
+  this->growable[i] = growable;
+
+  send_event(g, DIRTY, this->common.id);
+
+  gunlock(g);
 }

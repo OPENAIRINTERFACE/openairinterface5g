@@ -24,6 +24,9 @@ widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
 widget *new_text_list(gui *_gui, int width, int nlines, int background_color);
 
+void container_set_child_growable(gui *_gui, widget *_this,
+    widget *child, int growable);
+
 void xy_plot_set_range(gui *gui, widget *this,
     float xmin, float xmax, float ymin, float ymax);
 void xy_plot_set_points(gui *gui, widget *this,
