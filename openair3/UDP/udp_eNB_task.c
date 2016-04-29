@@ -300,8 +300,8 @@ void *udp_eNB_task(void *args_p)
   int                 nb_events;
   struct epoll_event *events;
   MessageDef         *received_message_p    = NULL;
-  const char         *msg_name = NULL;
-  instance_t          instance  = 0;
+  //const char         *msg_name = NULL;
+  //instance_t          instance  = 0;
   udp_enb_init(NULL);
 
   itti_mark_task_ready(TASK_UDP);
@@ -316,8 +316,8 @@ void *udp_eNB_task(void *args_p)
 
     if (received_message_p != NULL) {
 
-      msg_name = ITTI_MSG_NAME (received_message_p);
-      instance = ITTI_MSG_INSTANCE (received_message_p);
+      //msg_name = ITTI_MSG_NAME (received_message_p);
+      //instance = ITTI_MSG_INSTANCE (received_message_p);
 
       switch (ITTI_MSG_ID(received_message_p)) {
       case UDP_INIT: {

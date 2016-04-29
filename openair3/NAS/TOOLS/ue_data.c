@@ -481,7 +481,7 @@ static void _display_emm_data(const emm_nvdata_t* data)
              data->imsi.u.num.digit13,
              data->imsi.u.num.digit14);
     } else {
-      printf("%u%u%u.%u%u%u.%u%u%u%u%u%u%u%u\n",
+      printf("%u%u%u.%u%u%u.%u%u%u%u%u%u%u%u%u\n",
              data->imsi.u.num.digit1,
              data->imsi.u.num.digit2,
              data->imsi.u.num.digit3,

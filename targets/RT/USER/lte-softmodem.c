@@ -290,7 +290,10 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
+char   rf_config_file[1024];
+
 int chain_offset=0;
+int phy_test = 0;
 
 #ifndef EXMIMO
 char ref[128] = "internal";
@@ -391,7 +394,7 @@ struct timespec clock_difftime(struct timespec start, struct timespec end)
     return temp;
 }
 
-void print_difftimes()
+void print_difftimes(void)
 {
 #ifdef DEBUG
     printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
@@ -454,6 +457,7 @@ void help (void) {
   printf("  sudo -E lte-softmodem [options]\n");
   printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
   printf("Options:\n");
+  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
   printf("  --ulsch-max-errors set the max ULSCH erros\n");
   printf("  --calib-ue-rx set UE RX calibration\n");
   printf("  --calib-ue-rx-med \n");
@@ -469,7 +473,7 @@ void help (void) {
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
   printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log level \n");
+  printf("  -G Set the global log verbosity \n");
   printf("  -h provides this help message!\n");
   printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
   printf("  -m Set the maximum downlink MCS\n");
@@ -574,12 +578,12 @@ static void *scope_thread(void *arg)
                    0,7);
 
     } else {
-#ifdef OPENAIR2
-      len = dump_eNB_l2_stats (stats_buffer, 0);
-      //fl_set_object_label(form_stats_l2->stats_text, stats_buffer);
-      fl_clear_browser(form_stats_l2->stats_text);
-      fl_add_browser_line(form_stats_l2->stats_text, stats_buffer);
-#endif
+      if (PHY_vars_eNB_g[0][0]->mac_enabled==1) {
+	len = dump_eNB_l2_stats (stats_buffer, 0);
+	//fl_set_object_label(form_stats_l2->stats_text, stats_buffer);
+	fl_clear_browser(form_stats_l2->stats_text);
+	fl_add_browser_line(form_stats_l2->stats_text, stats_buffer);
+      }
       len = dump_eNB_stats (PHY_vars_eNB_g[0][0], stats_buffer, 0);
 
       if (MAX_NUM_CCs>1)
@@ -980,10 +984,17 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti>>1;
       else
 	len = phy_vars_eNB->lte_frame_parms.samples_per_tti;
- 
-     for (i=0; i<len; i++) {
+      /*
+      for (i=0;i<len;i+=4) {
+	dummy_tx_b[i] = 0x100;
+	dummy_tx_b[i+1] = 0x01000000;
+	dummy_tx_b[i+2] = 0xff00;
+	dummy_tx_b[i+3] = 0xff000000;
+	}*/
+      for (i=0; i<len; i++) {
         tx_offset = (int)slot_offset+time_offset[aa]+i;
 
+	
         if (tx_offset<0)
           tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->lte_frame_parms.samples_per_tti;
 
@@ -993,7 +1004,6 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
 	
 	((short*)&phy_vars_eNB->lte_eNB_common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
-  
      }
      // if S-subframe switch to RX in second subframe
      if (subframe_select(&phy_vars_eNB->lte_frame_parms,subframe) == SF_S) {
@@ -1045,7 +1055,7 @@ static void* eNB_thread_tx( void* param )
   static int eNB_thread_tx_status[NUM_ENB_THREADS];
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
-  FILE  *tx_time_file;
+  FILE  *tx_time_file = NULL;
   char tx_time_name[101];
 
   if (opp_enabled == 1) {
@@ -1264,9 +1274,9 @@ static void* eNB_thread_rx( void* param )
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
 
-  FILE  *rx_time_file;
+  FILE  *rx_time_file = NULL;
   char rx_time_name[101];
-  int i;
+  //int i;
 
   if (opp_enabled == 1){
     snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf_%d", "eNB", proc->subframe);
@@ -1628,6 +1638,11 @@ static void* eNB_thread( void* arg )
   int CC_id=0;	
   struct timespec trx_time0, trx_time1, trx_time2;
 
+  /* avoid gcc warnings */
+  (void)trx_time0;
+  (void)trx_time1;
+  (void)trx_time2;
+
 #ifdef RTAI
   RT_TASK* task = rt_task_init_schmod(nam2num("eNBmain"), 0, 0, 0, SCHED_FIFO, 0xF);
 #else
@@ -1671,7 +1686,7 @@ static void* eNB_thread( void* arg )
 #ifdef RTAI
   printf( "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
 #else
-  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %d\n", sched_getcpu(), gettid());
+  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld\n", sched_getcpu(), gettid());
 #endif
 
 #ifdef HARD_RT
@@ -2095,6 +2110,7 @@ static void get_options (int argc, char **argv)
 
   enum long_option_e {
     LONG_OPTION_START = 0x100, /* Start after regular single char options */
+    LONG_OPTION_RF_CONFIG_FILE,
     LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS,
     LONG_OPTION_CALIB_UE_RX,
     LONG_OPTION_CALIB_UE_RX_MED,
@@ -2107,10 +2123,12 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_SCANCARRIER,
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
-    LONG_OPTION_LOOPMEMORY
+    LONG_OPTION_LOOPMEMORY,
+    LONG_OPTION_PHYTEST
   };
 
   static const struct option long_options[] = {
+    {"rf-config-file",required_argument,  NULL, LONG_OPTION_RF_CONFIG_FILE},
     {"ulsch-max-errors",required_argument,  NULL, LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS},
     {"calib-ue-rx",     required_argument,  NULL, LONG_OPTION_CALIB_UE_RX},
     {"calib-ue-rx-med", required_argument,  NULL, LONG_OPTION_CALIB_UE_RX_MED},
@@ -2124,16 +2142,28 @@ static void get_options (int argc, char **argv)
     {"ue-max-power",   required_argument,  NULL, LONG_OPTION_MAXPOWER},
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
+    {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {NULL, 0, NULL, 0}
   };
 
   while ((c = getopt_long (argc, argv, "A:a:C:dEK:g:F:G:hqO:m:SUVRM:r:P:Ws:t:Tx:",long_options,NULL)) != -1) {
     switch (c) {
+    case LONG_OPTION_RF_CONFIG_FILE:
+      if ((strcmp("null", optarg) == 0) || (strcmp("NULL", optarg) == 0)) {
+	printf("no configuration filename is provided\n");
+      }
+      else if (strlen(optarg)<=1024){
+	strcpy(rf_config_file,optarg);
+      }else {
+         printf("Configuration filename is too long\n");
+         exit(-1);   
+      }
+      break;
     case LONG_OPTION_MAXPOWER:
       tx_max_power[0]=atoi(optarg);
       for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++)
 	tx_max_power[CC_id]=tx_max_power[0];
-
+      break;
     case LONG_OPTION_ULSCH_MAX_CONSECUTIVE_ERRORS:
       ULSCH_max_consecutive_errors = atoi(optarg);
       printf("Set ULSCH_max_consecutive_errors = %d\n",ULSCH_max_consecutive_errors);
@@ -2192,9 +2222,14 @@ static void get_options (int argc, char **argv)
       AssertFatal(input_fd != NULL,"Please provide an input file\n");
       break;
 
-   case LONG_OPTION_DUMP_FRAME:
-     mode = rx_dump_frame;
-     break;   
+    case LONG_OPTION_DUMP_FRAME:
+      mode = rx_dump_frame;
+      break;
+      
+    case LONG_OPTION_PHYTEST:
+      phy_test = 1;
+      break;
+      
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -2250,7 +2285,6 @@ static void get_options (int argc, char **argv)
     case 't':
       target_ul_mcs = atoi (optarg);
       break;
-#ifdef OPENAIR2
 
     case 'W':
       opt_enabled=1;
@@ -2285,7 +2319,6 @@ static void get_options (int argc, char **argv)
       }
 
       break;
-#endif
 
     case 'V':
       ouput_vcd = 1;
@@ -2393,8 +2426,8 @@ static void get_options (int argc, char **argv)
     case 'x':
       transmission_mode = atoi(optarg);
 
-      if (transmission_mode > 2) {
-        printf("Transmission mode > 2 (%d) not supported for the moment\n",transmission_mode);
+      if (transmission_mode > 7) {
+        printf("Transmission mode %d not supported for the moment\n",transmission_mode);
         exit(-1);
       }
       break;
@@ -2443,22 +2476,29 @@ static void get_options (int argc, char **argv)
 	  local_remote_radio = BBU_REMOTE_RADIO_HEAD;
 	  eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
 	  memset(eth_params, 0, sizeof(eth_params_t));
-	 
-	  printf( "\n\tRRH GW %d config for eNB %u:\n\n", j, i);
-	  printf( "\tinterface name :       \t%s:\n",enb_properties->properties[i]->rrh_gw_if_name);
-	  printf( "\tlocal address  :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].local_address);
-	  printf( "\tlocal port     :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].local_port);
-	  printf( "\tremote address :       \t%s:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_address);
-	  printf( "\tremote port    :       \t%d:\n",enb_properties->properties[i]->rrh_gw_config[j].remote_port);
-	  printf( "\ttransport      :       \t%s Ethernet:\n\n",(enb_properties->properties[i]->rrh_gw_config[j].raw == 1)? "RAW" : "UDP");
 	  
 	  eth_params->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
 	  eth_params->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
 	  eth_params->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
 	  eth_params->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
 	  eth_params->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;
- 
+	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
+	  eth_params->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
+	  eth_params->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
+	  eth_params->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
+	  if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
+	     eth_params->rf_preference          = EXMIMO_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
+	    eth_params->rf_preference          = USRP_B200_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
+	   eth_params->rf_preference          = USRP_X300_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
+	    eth_params->rf_preference          = BLADERF_DEV;
+	  } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
+	    //eth_params->rf_preference          = LMSSDR_DEV;
+	  } else {
+	    eth_params->rf_preference          = 0;
+	  } 
 	} else {
 	  local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
 	}
@@ -2482,8 +2522,6 @@ static void get_options (int argc, char **argv)
       }
 
 
-#ifdef OPENAIR2
-
       init_all_otg(0);
       g_otg->seed = 0;
       init_seeds(g_otg->seed);
@@ -2501,7 +2539,6 @@ static void get_options (int argc, char **argv)
 
       init_predef_traffic(enb_properties->properties[i]->num_otg_elements, 1);
 
-#endif
 
       glog_level                     = enb_properties->properties[i]->glog_level;
       glog_verbosity                 = enb_properties->properties[i]->glog_verbosity;
@@ -2563,9 +2600,7 @@ int main( int argc, char **argv )
   int CC_id;
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
-#ifndef OPENAIR2
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-#endif
 
 #ifdef ENABLE_TCXO
   unsigned int tcxo = 114;
@@ -2617,8 +2652,12 @@ int main( int argc, char **argv )
   }
   logInit();
  
+  rf_config_file[0]='\0';
   get_options (argc, argv); //Command-line options
- 
+  if (rf_config_file[0] == '\0')
+    openair0_cfg[0].configFilename = NULL;
+  else
+    openair0_cfg[0].configFilename = rf_config_file;
   
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
@@ -2629,8 +2668,8 @@ int main( int argc, char **argv )
   if (UE_flag==1) {
     printf("configuring for UE\n");
 
-    set_comp_log(HW,      LOG_INFO,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
+    set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
+    set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
     set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(RLC,     LOG_INFO,   LOG_HIGH, 1);
     set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
@@ -2646,15 +2685,9 @@ int main( int argc, char **argv )
     printf("configuring for eNB\n");
 
     set_comp_log(HW,      hw_log_level, hw_log_verbosity, 1);
-#ifdef OPENAIR2
     set_comp_log(PHY,     phy_log_level,   phy_log_verbosity, 1);
-
     if (opt_enabled == 1 )
       set_comp_log(OPT,   opt_log_level,      opt_log_verbosity, 1);
-
-#else
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
-#endif
     set_comp_log(MAC,     mac_log_level,  mac_log_verbosity, 1);
     set_comp_log(RLC,     rlc_log_level,   rlc_log_verbosity, 1);
     set_comp_log(PDCP,    pdcp_log_level,  pdcp_log_verbosity, 1);
@@ -2710,8 +2743,6 @@ int main( int argc, char **argv )
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
  
-#ifdef OPENAIR2
-
   if (opt_type != OPT_NONE) {
     radio_type_t radio_type;
 
@@ -2724,7 +2755,6 @@ int main( int argc, char **argv )
       LOG_E(OPT,"failed to run OPT \n");
   }
 
-#endif
 #ifdef PDCP_USE_NETLINK
   netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
@@ -2794,20 +2824,23 @@ int main( int argc, char **argv )
       PHY_vars_UE_g[0][CC_id] = init_lte_UE(frame_parms[CC_id], 0,abstraction_flag,transmission_mode);
       UE[CC_id] = PHY_vars_UE_g[0][CC_id];
       printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
-#ifndef OPENAIR2
 
-      for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-        UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+      if (phy_test==1)
+	UE[CC_id]->mac_enabled = 0;
+      else 
+	UE[CC_id]->mac_enabled = 1;
 
-        UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
-        UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
-        UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+      if (UE[CC_id]->mac_enabled == 0) {
+	for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	  
+	  UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
+	  UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
+	  UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	}
       }
-
-#endif
-
 
       UE[CC_id]->UE_scan = UE_scan;
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
@@ -2817,13 +2850,12 @@ int main( int argc, char **argv )
                         UE[CC_id]->lte_frame_parms.frame_type,
                         UE[CC_id]->X_u);
 
-      UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
-#ifndef OPENAIR2
-      UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
-#endif
+      if (UE[CC_id]->mac_enabled == 1) 
+	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+      else
+	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
 
 #ifdef EXMIMO
-
       for (i=0; i<4; i++) {
         UE[CC_id]->rx_gain_max[i] = rxg_max[i];
         UE[CC_id]->rx_gain_med[i] = rxg_med[i];
@@ -2857,9 +2889,7 @@ int main( int argc, char **argv )
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
 
 
-
 #ifdef EXMIMO
-
       //N_TA_offset
       if (UE[CC_id]->lte_frame_parms.frame_type == TDD) {
         if (UE[CC_id]->lte_frame_parms.N_RB_DL == 100)
@@ -2871,7 +2901,6 @@ int main( int argc, char **argv )
       } else {
         UE[CC_id]->N_TA_offset = 0;
       }
-
 #else
       //already taken care of in lte-softmodem
       UE[CC_id]->N_TA_offset = 0;
@@ -2895,19 +2924,22 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
-#ifndef OPENAIR2
+      if (phy_test==1)
+	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
+      else 
+	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
-      for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-        PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
-        PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+      if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) {
+	for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	  
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = i;
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(i%3);
+	  PHY_vars_eNB_g[0][CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;
+	}
       }
-
-#endif
 
       compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.prach_config_common,
                         PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.frame_type,
@@ -3117,16 +3149,12 @@ int main( int argc, char **argv )
 
   mac_xface = malloc(sizeof(MAC_xface));
 
-#ifdef OPENAIR2
   int eMBMS_active=0;
-
+  
   l2_init(frame_parms[0],eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
-          0,// cba_group_active
-          0); // HO flag
-
-
-#endif
-
+	  0,// cba_group_active
+	  0); // HO flag
+  
   mac_xface->macphy_exit = &exit_fun;
 
 #if defined(ENABLE_ITTI)
@@ -3139,15 +3167,14 @@ int main( int argc, char **argv )
   printf("ITTI tasks created\n");
 #endif
 
-#ifdef OPENAIR2
-  if (UE_flag==1) {
-    printf("Filling UE band info\n");
-    fill_ue_band_info();
-    mac_xface->dl_phy_sync_success (0, 0, 0, 1);
-  } else
-    mac_xface->mrbch_phy_sync_failure (0, 0, 0);
-
-#endif
+  if (phy_test==0) {
+    if (UE_flag==1) {
+      printf("Filling UE band info\n");
+      fill_ue_band_info();
+      mac_xface->dl_phy_sync_success (0, 0, 0, 1);
+    } else
+      mac_xface->mrbch_phy_sync_failure (0, 0, 0);
+  }
 
   /* #ifdef OPENAIR2
   //if (otg_enabled) {
@@ -3203,10 +3230,11 @@ int main( int argc, char **argv )
 
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
-      fread(UE[0]->lte_ue_common_vars.rxdata[0],
-	    sizeof(int32_t),
-	    frame_parms[0]->samples_per_tti*10,
-	    input_fd);
+      if (fread(UE[0]->lte_ue_common_vars.rxdata[0],
+	        sizeof(int32_t),
+	        frame_parms[0]->samples_per_tti*10,
+	        input_fd) != frame_parms[0]->samples_per_tti*10)
+        printf("error reading from file\n");
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {
@@ -3538,9 +3566,6 @@ int main( int argc, char **argv )
     }
   }
 
-#ifdef OPENAIR2
-  //cleanup_pdcp_thread();
-#endif
 
 #ifdef RTAI
   stop_rt_timer();
@@ -3575,12 +3600,8 @@ int main( int argc, char **argv )
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();
 
-#ifdef OPENAIR2
-
   if (opt_enabled == 1)
     terminate_opt();
-
-#endif
 
   logClean();
 

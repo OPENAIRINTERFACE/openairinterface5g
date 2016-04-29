@@ -104,8 +104,9 @@ static void trx_brf_stats(openair0_device *device){
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param cc index of the component carrier
+      @param flags Ignored for the moment
 */ 
-static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc) {
+static int trx_brf_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc, int flags) {
   
   int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
@@ -411,7 +412,7 @@ void calibrate_rf(openair0_device *device) {
   bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_LMS_DCOFF_I,offIold);
   for (i=0;i<10;i++) {
     trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
   }
   for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
     switch (i&3) {
@@ -437,7 +438,7 @@ void calibrate_rf(openair0_device *device) {
   bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_LMS_DCOFF_I,offI);
   for (i=0;i<10;i++) {
     trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
   }
   for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
     switch (i&3) {
@@ -473,7 +474,7 @@ void calibrate_rf(openair0_device *device) {
 
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
       switch (i&3) {
@@ -502,7 +503,7 @@ void calibrate_rf(openair0_device *device) {
   bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_LMS_DCOFF_Q,offQold);
   for (i=0;i<10;i++) {
     trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
   }
   // project on fs/4
   for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
@@ -529,7 +530,7 @@ void calibrate_rf(openair0_device *device) {
   bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_LMS_DCOFF_Q,offQ);
   for (i=0;i<10;i++) {
     trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+    trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
   }
   for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
     switch (i&3) {
@@ -567,7 +568,7 @@ void calibrate_rf(openair0_device *device) {
 
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
       switch (i&3) {
@@ -600,7 +601,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_FPGA_PHASE,offphaseold);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on fs/8 (Image of TX signal in +ve frequencies)
     for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
@@ -617,7 +618,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_FPGA_PHASE,offphase);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on fs/8 (Image of TX signal in +ve frequencies)
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -647,7 +648,7 @@ void calibrate_rf(openair0_device *device) {
       
       for (i=0;i<10;i++) {
 	trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
       }
       // project on fs/8 (Image of TX signal in +ve frequencies)
       for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -669,7 +670,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_FPGA_GAIN,offgainold);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on fs/8 (Image of TX signal in +ve frequencies)
     for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
@@ -686,7 +687,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_TX,BLADERF_CORR_FPGA_GAIN,offgain);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on fs/8 (Image of TX signal in +ve frequencies)
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -715,7 +716,7 @@ void calibrate_rf(openair0_device *device) {
       
       for (i=0;i<10;i++) {
 	trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
       }
       // project on fs/8 (Image of TX signal in +ve frequencies)
       for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -740,7 +741,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_RX,BLADERF_CORR_FPGA_PHASE,offphaseold);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on -3fs/8 (Image of TX signal in -ve frequencies)
     for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
@@ -757,7 +758,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_RX,BLADERF_CORR_FPGA_PHASE,offphase);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on -3fs/8 (Image of TX signal in -ve frequencies)
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -787,7 +788,7 @@ void calibrate_rf(openair0_device *device) {
       
       for (i=0;i<10;i++) {
 	trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
       }
       // project on -3fs/8 (Image of TX signal in -ve frequencies)
       for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -809,7 +810,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_RX,BLADERF_CORR_FPGA_GAIN,offgainold);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0,0);
     }
     // project on -3fs/8 (Image of TX signal in +ve frequencies)
     for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
@@ -826,7 +827,7 @@ void calibrate_rf(openair0_device *device) {
     bladerf_set_correction(brf->dev,BLADERF_MODULE_RX,BLADERF_CORR_FPGA_GAIN,offgain);
     for (i=0;i<10;i++) {
       trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+      trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
     }
     // project on 3fs/8 (Image of TX signal in -ve frequencies)
     for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -855,7 +856,7 @@ void calibrate_rf(openair0_device *device) {
       
       for (i=0;i<10;i++) {
 	trx_brf_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0);
+	trx_brf_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
       }
       // project on -3fs/8 (Image of TX signal in -ve frequencies)
       for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
@@ -1067,7 +1068,6 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg->log_level));
   
   printf("BLADERF: Initializing openair0_device\n");
-  device->priv           = brf; 
   device->Mod_id         = num_devices++;
   device->type             = BLADERF_DEV; 
   device->trx_start_func = trx_brf_start;
@@ -1080,6 +1080,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_set_freq_func    = trx_brf_set_freq;
   device->trx_set_gains_func   = trx_brf_set_gains;
   device->openair0_cfg = openair0_cfg;
+  device->priv = (void *)brf;
 
   calibrate_rf(device);
 

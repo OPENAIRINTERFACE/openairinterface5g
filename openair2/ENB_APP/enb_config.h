@@ -86,7 +86,14 @@ typedef struct rrh_gw_config_s {
   char     *remote_address;
   uint16_t  local_port;
   uint16_t  remote_port;
-
+  int tx_scheduling_advance;
+  int tx_sample_advance;
+  int iq_txshift;
+  unsigned  exmimo:1;
+  unsigned  usrp_b200:1;
+  unsigned  usrp_x300:1;
+  unsigned  bladerf:1; 
+  unsigned  lmssdr:1;  
 } rrh_gw_config_t;
 
 typedef struct Enb_properties_s {
@@ -257,6 +264,7 @@ typedef struct Enb_properties_array_s {
   Enb_properties_t    *properties[MAX_ENB];
 } Enb_properties_array_t;
 
+void                          enb_config_display(void);
 const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP);
 
 const Enb_properties_array_t *enb_config_get(void);

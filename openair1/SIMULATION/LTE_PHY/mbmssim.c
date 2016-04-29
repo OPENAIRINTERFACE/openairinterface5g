@@ -128,7 +128,7 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa,aarx,k;
+  int i,l,l2,aa,aarx,k;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
@@ -173,7 +173,9 @@ int main(int argc, char **argv)
 
   lte_frame_type_t frame_type = FDD;
 
+  uint32_t Nsoft = 1827072;
 
+  /*
 #ifdef XFORMS
   FD_lte_phy_scope_ue *form_ue;
   char title[255];
@@ -183,6 +185,7 @@ int main(int argc, char **argv)
   sprintf (title, "LTE DL SCOPE UE");
   fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 #endif
+  */
 
   logInit();
   number_of_cards = 1;
@@ -334,7 +337,11 @@ int main(int argc, char **argv)
   else
     sprintf(fname,"embms_awgn_%d_%d.m",mcs,N_RB_DL);
 
-  fd = fopen(fname,"w");
+  if (!(fd = fopen(fname,"w"))) {
+    printf("Cannot open %s, check permissions\n",fname);
+    exit(-1);
+  }
+	
 
   if (awgn_flag==0)
     fprintf(fd,"SNR_%d_%d=[];errs_mch_%d_%d=[];mch_trials_%d_%d=[];\n",
@@ -382,14 +389,14 @@ int main(int argc, char **argv)
                                 0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
-  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,N_RB_DL,0);
+  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,Nsoft,N_RB_DL,0);
 
   if (!PHY_vars_eNB->dlsch_eNB_MCH) {
     printf("Can't get eNB dlsch structures\n");
     exit(-1);
   }
 
-  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,MAX_TURBO_ITERATIONS_MBSFN,N_RB_DL,0);
+  PHY_vars_UE->dlsch_ue_MCH[0]  = new_ue_dlsch(1,8,Nsoft,MAX_TURBO_ITERATIONS_MBSFN,N_RB_DL,0);
 
   PHY_vars_eNB->lte_frame_parms.num_MBSFN_config = 1;
   PHY_vars_eNB->lte_frame_parms.MBSFN_config[0].radioframeAllocationPeriod = 0;
@@ -535,11 +542,25 @@ int main(int argc, char **argv)
 	    }
 	  }
 	}
-	
-	rx_pmch(PHY_vars_UE,
-                0,
-                subframe%10,
-                l);
+
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==11)
+          for (l2=7;l2<12;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
       }
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
@@ -580,10 +601,10 @@ int main(int argc, char **argv)
               mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
               mcs,N_RB_DL,mcs,N_RB_DL,trials);
     else
-      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %d]; errs_mch_awgn_%d =[errs_mch_awgn_%f  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
-              mcs,N_RB_DL,mcs,N_RB_DL,SNR,
-              mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
-              mcs,N_RB_DL,mcs,N_RB_DL,trials);
+      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
+              N_RB_DL,N_RB_DL,SNR,
+              N_RB_DL,N_RB_DL,errs[0],
+              N_RB_DL,N_RB_DL,trials);
 
     fflush(fd);
 

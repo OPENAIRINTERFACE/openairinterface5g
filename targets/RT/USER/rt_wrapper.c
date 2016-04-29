@@ -38,6 +38,10 @@
 * \warning
 */
 
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+
 #include "rt_wrapper.h"
 static int latency_target_fd = -1;
 static int32_t latency_target_value = 0;
@@ -154,6 +158,7 @@ int fill_modeled_runtime_table(uint16_t runtime_phy_rx[29][6],
       runtime_phy_tx[i][j] = cell_processing_dl[j] + platform_processing_dl + user_processing_dl_err[j] + user_processing_dl_a[j]*i+  user_processing_dl_b[j];
     }
   }
+  return 0;
 }
  
 // int runtime_upper_layers[6]; // values for different RBs

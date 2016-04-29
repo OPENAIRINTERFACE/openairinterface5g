@@ -463,7 +463,7 @@ static void *UE_thread_synch(void *arg)
 	 if( UE->mode == rx_dump_frame ){
 	   FILE *fd;
 	   if ((UE->frame_rx&1) == 0) {  // this guarantees SIB1 is present 
-	     if (fd = fopen("rxsig_frame0.dat","w")) {
+	     if ((fd = fopen("rxsig_frame0.dat","w")) != NULL) {
 	       fwrite((void*)&UE->lte_ue_common_vars.rxdata[0][0],
 		      sizeof(int32_t),
 		      10*UE->lte_frame_parms.samples_per_tti,
@@ -529,11 +529,11 @@ static void *UE_thread_synch(void *arg)
 	    
 #endif
 
-#ifdef OAI_USRP
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 	    
 	    
-
+#if 0
             switch(UE->lte_frame_parms.N_RB_DL) {
             case 6:
               openair0_cfg[card].rx_gain[i] -= 12;
@@ -555,7 +555,7 @@ static void *UE_thread_synch(void *arg)
               printf("Unknown number of RBs %d\n",UE->lte_frame_parms.N_RB_DL);
               break;
             }
-	    
+#endif	    
 #endif
           }
         }
@@ -607,7 +607,7 @@ static void *UE_thread_synch(void *arg)
 static void *UE_thread_tx(void *arg)
 {
   static int UE_thread_tx_retval;
-  int ret;
+  //int ret;
 
   PHY_VARS_UE *UE = (PHY_VARS_UE*)arg;
 
@@ -925,9 +925,7 @@ static void *UE_thread_rx(void *arg)
         phy_procedures_UE_RX( UE, 0, 0, UE->mode, no_relay, NULL );
       }
 
-#ifdef OPENAIR2
-
-      if (i==0) {
+      if ((UE->mac_enabled==1) && (i==0)) {
         ret = mac_xface->ue_scheduler(UE->Mod_id,
                                       UE->frame_tx,
                                       UE->slot_rx>>1,
@@ -950,7 +948,6 @@ static void *UE_thread_rx(void *arg)
         }
       }
 
-#endif
       UE->slot_rx++;
 
       if (UE->slot_rx == 20) {
@@ -1404,14 +1401,14 @@ void *UE_thread(void *arg)
   RT_TASK *task;
 #endif
   // RTIME in, out, diff;
-  int slot=0,frame=0,hw_slot,last_slot,next_slot;
+  int slot=0,frame=0,hw_slot;
   // unsigned int aa;
   int delay_cnt;
   RTIME time_in;
-  int hw_slot_offset=0,rx_offset_mbox=0,mbox_target=0,mbox_current=0;
+  int /* hw_slot_offset=0, */ rx_offset_mbox=0,mbox_target=0,mbox_current=0;
   int diff2;
-  int i, ret;
-  int CC_id,card;
+  int /* i, */ ret;
+  int /* CC_id, */ card;
   volatile unsigned int *DAQ_MBOX = openair0_daq_cnt();
 
   int wait_sync_cnt = 0;
@@ -1691,7 +1688,7 @@ void *UE_thread(void *arg)
         frame++;
       }
     } else if (UE->is_synchronized == 0) { // we are not yet synchronized
-      hw_slot_offset = 0;
+      //hw_slot_offset = 0;
       first_synch = 1;
       slot = 0;
 

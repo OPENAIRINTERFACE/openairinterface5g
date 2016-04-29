@@ -88,7 +88,7 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
   fl_set_object_boxtype( fdui->rxsig_t, FL_EMBOSSED_BOX );
   fl_set_object_color( fdui->rxsig_t, FL_BLACK, FL_RED );
   fl_set_object_lcolor( fdui->rxsig_t, FL_WHITE ); // Label color
-  fl_set_xyplot_ybounds(fdui->rxsig_t,30,70);
+  fl_set_xyplot_ybounds(fdui->rxsig_t,10,70);
 
   // Time-domain channel response
   fdui->chest_t = fl_add_xyplot( FL_NORMAL_XYPLOT, 410, 20, 370, 100, "Channel Impulse Response (samples, abs)" );
@@ -396,7 +396,7 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
   fl_set_object_boxtype( fdui->rxsig_t, FL_EMBOSSED_BOX );
   fl_set_object_color( fdui->rxsig_t, FL_BLACK, FL_RED );
   fl_set_object_lcolor( fdui->rxsig_t, FL_WHITE ); // Label color
-  fl_set_xyplot_ybounds(fdui->rxsig_t,30,70);
+  fl_set_xyplot_ybounds(fdui->rxsig_t,10,70);
 
   // Time-domain channel response
   fdui->chest_t = fl_add_xyplot( FL_NORMAL_XYPLOT, 410, 20, 370, 100, "Channel Impulse Response (samples, abs)" );
@@ -719,13 +719,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   // PDSCH LLRs
   if (pdsch_llr != NULL) {
-    for (i=0; i<coded_bits_per_codeword/4; i++) {
-      llr[i] = (float) pdsch_llr[4*i];
+    for (i=0; i<coded_bits_per_codeword; i++) {
+      llr[i] = (float) pdsch_llr[i];
       bit[i] = (float) i;
     }
 
-    fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword/4);
-    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword/4,"","","");
+    fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
+    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
   }
 
   // PDSCH I/Q of MF Output

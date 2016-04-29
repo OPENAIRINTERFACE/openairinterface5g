@@ -52,9 +52,7 @@
 #include "LAYER2/MAC/vars.h"
 #include "OCG_vars.h"
 
-#ifdef XFORMS
 #include "PHY/TOOLS/lte_phy_scope.h"
-#endif
 
 extern unsigned short dftsizes[33];
 extern short *ul_ref_sigs[30][2][33];
@@ -74,12 +72,9 @@ node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
 //extern  char* namepointer_chMag ;
 
-
-
-#ifdef XFORMS
+int xforms=0;
 FD_lte_phy_scope_enb *form_enb;
 char title[255];
-#endif
 
 /*the following parameters are used to control the processing times*/
 double t_tx_max = -1000000000; /*!< \brief initial max process time for tx */
@@ -194,6 +189,7 @@ int main(int argc, char **argv)
   int nb_rb_set = 0;
   int sf;
 
+  int threequarter_fs=0;
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
@@ -203,7 +199,7 @@ int main(int argc, char **argv)
 
   logInit();
 
-  while ((c = getopt (argc, argv, "hapZbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:L")) != -1) {
+  while ((c = getopt (argc, argv, "hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF")) != -1) {
     switch (c) {
     case 'a':
       channel_model = AWGN;
@@ -373,6 +369,10 @@ int main(int argc, char **argv)
       cyclic_shift = atoi(optarg);
       break;
 
+    case 'E':
+      threequarter_fs=1;
+      break;
+
     case 'N':
       N0 = atoi(optarg);
       break;
@@ -449,6 +449,10 @@ int main(int argc, char **argv)
       max_turbo_iterations=atoi(optarg);
       break;
 
+    case 'F':
+      xforms=1;
+      break;
+
     case 'Z':
       dump_table = 1;
       break;
@@ -470,6 +474,7 @@ int main(int argc, char **argv)
 		 0,
 		 tdd_config,
 		 N_RB_DL,
+		 threequarter_fs,
 		 osf,
 		 0);
 
@@ -588,12 +593,12 @@ int main(int argc, char **argv)
   }
 
 
-#ifdef XFORMS
-  fl_initialize (&argc, argv, NULL, 0, 0);
-  form_enb = create_lte_phy_scope_enb();
-  sprintf (title, "LTE PHY SCOPE eNB");
-  fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-#endif
+  if (xforms==1) {
+    fl_initialize (&argc, argv, NULL, 0, 0);
+    form_enb = create_lte_phy_scope_enb();
+    sprintf (title, "LTE PHY SCOPE eNB");
+    fl_show_form (form_enb->lte_phy_scope_enb, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+  }
 
   PHY_vars_UE->lte_ue_pdcch_vars[0]->crnti = 14;
 
@@ -1348,9 +1353,9 @@ int main(int argc, char **argv)
         if ((errs[0]>=100) && (trials>(n_frames/2)))
           break;
 
-#ifdef XFORMS
-        phy_scope_eNB(form_enb,PHY_vars_eNB,0);
-#endif
+	if (xforms==1)
+	  phy_scope_eNB(form_enb,PHY_vars_eNB,0);
+
         /*calculate the total processing time for each packet, get the max, min, and number of packets that exceed t>3000us*/
 
         double t_tx = (double)PHY_vars_UE->phy_proc_tx.p_time/cpu_freq_GHz/1000.0;

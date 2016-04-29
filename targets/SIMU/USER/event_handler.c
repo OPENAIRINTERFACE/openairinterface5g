@@ -208,15 +208,15 @@ void schedule_events()
 
   a = 5;
 
-  uint16_t *priority[11];//={1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2};
+  //uint16_t *priority[11];//={1, 2, 3, 1, 2, 3, 1, 2, 3, 1, 2};
 
 
-  int tab[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
+  //int tab[NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX];
   Application_Config* application_config;
   application_config = malloc(sizeof(Application_Config));
 
   for(i=0; i<NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++) {
-    tab[i]=i;
+    //tab[i]=i;
     application_config->customized_traffic.aggregation_level[i]=i;
   }
 
@@ -249,7 +249,7 @@ void schedule_events()
   //schedule(READ, MAC_ET, 500, NULL, "");
   //schedule(WRITE, MAC_ET, 100, NULL, "");
   //schedule(READ, TOPO_ET,110,NULL,"",0,0);
-  double b = (double) 45;
+  //double b = (double) 45;
   //schedule(READ, APP_ET,111,NULL,"",0,0);
   //schedule(READ, SYS_ET,112,NULL,"",0,0);
   //schedule(READ, EMU_ET,113,NULL,"",-1,-1);
@@ -1844,7 +1844,6 @@ void update_emu_model(Event_t event)
   printf("\n\n\nA NEW EMU MODEL\n\n\n");
   OAI_Emulation *oai_emulation;
   oai_emulation = get_OAI_emulation();
-  int i=0;
 
   if(event.optype == READ) {
     if(event.key == NULL) {
