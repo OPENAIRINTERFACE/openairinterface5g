@@ -13,9 +13,11 @@ printf("REPACK container %p\n", _this);
   return this->common.parent->repack(g, this->common.parent);
 }
 
-static void add_child(gui *g, widget *this, widget *child, int position)
+static void add_child(gui *g, widget *_this, widget *child, int position)
 {
 printf("ADD_CHILD container\n");
+  struct container_widget *this = _this;
+  this->hints_are_valid = 0;
   widget_add_child_internal(g, this, child, position);
 }
 
