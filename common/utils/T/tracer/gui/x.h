@@ -3,9 +3,6 @@
 
 /* public X interface */
 
-#define BACKGROUND_COLOR 0
-#define FOREGROUND_COLOR 1
-
 typedef void x_connection;
 typedef void x_window;
 

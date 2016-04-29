@@ -9,6 +9,9 @@ typedef void widget;
 #define HORIZONTAL 0
 #define VERTICAL   1
 
+#define BACKGROUND_COLOR 0
+#define FOREGROUND_COLOR 1
+
 gui *gui_init(void);
 
 /* position = -1 to put at the end */
