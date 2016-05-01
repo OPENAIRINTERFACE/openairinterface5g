@@ -10,6 +10,9 @@ gui.a: $(OBJS)
 test: test.o gui.a
 	$(CC) -o test $(OBJS) test.o -lX11 -pthread -lm
 
+x.o:x.c
+	$(CC) $(CFLAGS) -o $@ -c $< -finstrument-functions
+
 %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $<
 
