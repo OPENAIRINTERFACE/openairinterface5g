@@ -12,6 +12,7 @@
 #include "gui/gui.h"
 #include "utils.h"
 #include "../T_defs.h"
+#include "event_selector.h"
 
 #define DEFAULT_REMOTE_PORT 2021
 
@@ -115,6 +116,7 @@ int main(int n, char **v)
   int l;
   event_handler *h;
   textlog *textlog;
+  gui *g;
   int gui_mode = 0;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
@@ -155,17 +157,18 @@ int main(int n, char **v)
       "ENB_UL_CHANNEL_ESTIMATE",
       "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
 
+  g = gui_init();
+  new_thread(gui_thread, g);
+
   if (gui_mode) {
     view *tout;
-    gui *g;
     widget *w, *win;
-    g = gui_init();
-    w = new_text_list(g, 600, 20, 0);
+//    w = new_text_list(g, 600, 20, 0);
+    w = new_text_list(g, 600, 20, new_color(g, "#ffabab"));
     win = new_toplevel_window(g, 600, 20*12, "textlog");
     widget_add_child(g, win, w, -1);
-    //tout = new_textlist(1000, 10, g, w);
-    tout = new_textlist(7, 4, g, w);
-    new_thread(gui_thread, g);
+    tout = new_textlist(1000, 10, g, w);
+    //tout = new_textlist(7, 4, g, w);
     textlog_add_view(textlog, tout);
   } else {
     view *sout = new_stdout();
@@ -175,7 +178,7 @@ int main(int n, char **v)
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
-  s = get_connection("127.0.0.1", port);
+  s = get_connection("0.0.0.0", port);
 
   /* send the first message - activate selected traces */
   t = 0;
@@ -186,6 +189,8 @@ int main(int n, char **v)
   for (l = 0; l < number_of_events; l++)
     if (is_on[l])
       if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
+
+  setup_event_selector(g, database, s, is_on);
 
   /* read messages */
   while (1) {

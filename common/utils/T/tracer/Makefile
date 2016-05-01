@@ -5,6 +5,7 @@ local:
 
 remote:
 	make -f Makefile.remote
+	make -f Makefile.remote textlog
 
 clean:
 	make -f Makefile.local clean

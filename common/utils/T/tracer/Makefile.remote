@@ -12,7 +12,7 @@ $(PROG): gui/gui.a $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
 
 textlog: utils.o remote.o database.o event.o handler.o textlog.o \
-         view/view.a gui/gui.a
+         event_selector.o view/view.a gui/gui.a
 	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
 
 .PHONY: gui/gui.a view/view.a
