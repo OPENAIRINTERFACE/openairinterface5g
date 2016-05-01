@@ -115,7 +115,7 @@ int main(int n, char **v)
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
-    if (!strcmp(v[i], "-l")) { if (i > n-3) usage();
+    if (!strcmp(v[i], "-r")) { if (i > n-3) usage();
       remote_ip = v[++i]; remote_port = atoi(v[++i]); continue; }
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
