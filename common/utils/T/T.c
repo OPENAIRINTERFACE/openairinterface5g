@@ -31,6 +31,7 @@ static void get_message(int s)
   char t;
   int l;
   int id;
+  int is_on;
 
   if (read(s, &t, 1) != 1) abort();
 printf("got mess %d\n", t);
@@ -42,6 +43,18 @@ printf("got mess %d\n", t);
     while (l) {
       if (read(s, &id, sizeof(int)) != sizeof(int)) abort();
       T_IDs[id] = 1 - T_IDs[id];
+      l--;
+    }
+    break;
+  case 1:
+    /* set IDs as given */
+    /* optimize? */
+    if (read(s, &l, sizeof(int)) != sizeof(int)) abort();
+    id = 0;
+    while (l) {
+      if (read(s, &is_on, sizeof(int)) != sizeof(int)) abort();
+      T_IDs[id] = is_on;
+      id++;
       l--;
     }
     break;
