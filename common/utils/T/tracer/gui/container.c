@@ -313,7 +313,7 @@ void container_set_child_growable(gui *_gui, widget *_this,
 
   this->growable[i] = growable;
 
-  send_event(g, DIRTY, this->common.id);
+  send_event(g, REPACK, this->common.id);
 
   gunlock(g);
 }
