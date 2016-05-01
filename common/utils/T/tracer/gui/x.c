@@ -151,6 +151,7 @@ printf("x_events START\n");
     XNextEvent(x->d, &ev);
 printf("XEV %d\n", ev.type);
     switch (ev.type) {
+    case MapNotify:
     case Expose:
       if ((w = find_x_window(g, ev.xexpose.window)) != NULL) {
         struct x_window *xw = w->x;
