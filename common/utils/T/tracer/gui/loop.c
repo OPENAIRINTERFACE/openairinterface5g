@@ -16,14 +16,21 @@ void gui_loop(gui *_gui)
   int maxfd;
   fd_set rd;
 
+  /* lock not necessary but there for consistency (when instrumenting x.c
+   * we need the gui to be locked when calling any function in x.c)
+   */
+  glock(g);
   xfd = x_connection_fd(g->x);
+  gunlock(g);
   eventfd = g->event_pipe[0];
 
   if (eventfd > xfd) maxfd = eventfd;
   else               maxfd = xfd;
 
   while (1) {
+    glock(g);
     x_flush(g->x);
+    gunlock(g);
     FD_ZERO(&rd);
     FD_SET(xfd, &rd);
     FD_SET(eventfd, &rd);

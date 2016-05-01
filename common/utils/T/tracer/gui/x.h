@@ -6,11 +6,6 @@
 typedef void x_connection;
 typedef void x_window;
 
-void x_init_threading(void);
-
-void xlock(x_connection *x);
-void xunlock(x_connection *x);
-
 x_connection *x_open(void);
 
 x_window *x_create_window(x_connection *x, int width, int height,

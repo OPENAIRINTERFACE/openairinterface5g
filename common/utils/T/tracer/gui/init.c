@@ -12,8 +12,6 @@ gui *gui_init(void)
 {
   struct gui *ret;
 
-  x_init_threading();
-
   ret = calloc(1, sizeof(struct gui));
   if (ret == NULL) OOM;
 
@@ -25,7 +23,12 @@ gui *gui_init(void)
   if (pipe(ret->event_pipe))
     ERR("%s\n", strerror(errno));
 
+  /* lock not necessary but there for consistency (when instrumenting x.c
+   * we need the gui to be locked when calling any function in x.c)
+   */
+  glock(ret);
   ret->x = x_open();
+  gunlock(ret);
 
   return ret;
 }

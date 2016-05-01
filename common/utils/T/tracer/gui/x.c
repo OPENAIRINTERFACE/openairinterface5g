@@ -6,23 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-void x_init_threading(void)
-{
-  if (XInitThreads() == False) abort();
-}
-
-void xlock(x_connection *_x)
-{
-  struct x_connection *x = _x;
-  XLockDisplay(x->d);
-}
-
-void xunlock(x_connection *_x)
-{
-  struct x_connection *x = _x;
-  XUnlockDisplay(x->d);
-}
-
 int x_connection_fd(x_connection *_x)
 {
   struct x_connection *x = _x;
