@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <unistd.h>
 
 void new_thread(void *(*f)(void *), void *data)
 {
@@ -58,4 +59,47 @@ list *list_append(list *l, void *data)
   l->last->next = new;
   l->last = new;
   return l;
+}
+
+/****************************************************************************/
+/* socket                                                                   */
+/****************************************************************************/
+
+void socket_send(int socket, void *buffer, int size)
+{
+  char *x = buffer;
+  int ret;
+  while (size) {
+    ret = write(socket, x, size);
+    if (ret <= 0) abort();
+    size -= ret;
+    x += ret;
+  }
+}
+
+/****************************************************************************/
+/* buffer                                                                   */
+/****************************************************************************/
+
+void PUTC(OBUF *o, char c)
+{
+  if (o->osize == o->omaxsize) {
+    o->omaxsize += 512;
+    o->obuf = realloc(o->obuf, o->omaxsize);
+    if (o->obuf == NULL) abort();
+  }
+  o->obuf[o->osize] = c;
+  o->osize++;
+}
+
+void PUTS(OBUF *o, char *s)
+{
+  while (*s) PUTC(o, *s++);
+}
+
+void PUTI(OBUF *o, int i)
+{
+  char s[64];
+  sprintf(s, "%d", i);
+  PUTS(o, s);
 }

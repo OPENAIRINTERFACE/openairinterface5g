@@ -10,6 +10,11 @@ void on_off(void *d, char *item, int *a, int onoff);
 char *event_name_from_id(void *database, int id);
 int event_id_from_name(void *database, char *name);
 int number_of_ids(void *database);
+int database_get_ids(void *database, char ***ids);
+int database_get_groups(void *database, char ***groups);
+int database_pos_to_id(void *database, int pos);
+void database_get_generic_description(void *database, int id,
+    char **name, char **desc);
 
 /****************************************************************************/
 /* get format of an event                                                   */

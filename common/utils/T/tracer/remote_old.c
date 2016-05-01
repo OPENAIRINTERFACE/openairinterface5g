@@ -327,23 +327,6 @@ void get_message(int s)
   }
 }
 
-void new_thread(void *(*f)(void *), void *data)
-{
-  pthread_t t;
-  pthread_attr_t att;
-
-  if (pthread_attr_init(&att))
-    { fprintf(stderr, "pthread_attr_init err\n"); exit(1); }
-  if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED))
-    { fprintf(stderr, "pthread_attr_setdetachstate err\n"); exit(1); }
-  if (pthread_attr_setstacksize(&att, 10000000))
-    { fprintf(stderr, "pthread_attr_setstacksize err\n"); exit(1); }
-  if (pthread_create(&t, &att, f, data))
-    { fprintf(stderr, "pthread_create err\n"); exit(1); }
-  if (pthread_attr_destroy(&att))
-    { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
-}
-
 void usage(void)
 {
   printf(

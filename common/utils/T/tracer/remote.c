@@ -118,6 +118,7 @@ int main(int n, char **v)
   textlog *textlog;
   gui *g;
   int gui_mode = 0;
+  view *out;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -153,26 +154,30 @@ int main(int n, char **v)
 
   h = new_handler(database);
 
-  textlog = new_textlog(h, database,
-      "ENB_UL_CHANNEL_ESTIMATE",
-      "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
-
   g = gui_init();
   new_thread(gui_thread, g);
 
   if (gui_mode) {
-    view *tout;
     widget *w, *win;
 //    w = new_text_list(g, 600, 20, 0);
     w = new_text_list(g, 600, 20, new_color(g, "#ffabab"));
     win = new_toplevel_window(g, 600, 20*12, "textlog");
     widget_add_child(g, win, w, -1);
-    tout = new_textlist(1000, 10, g, w);
+    out = new_textlist(1000, 10, g, w);
     //tout = new_textlist(7, 4, g, w);
-    textlog_add_view(textlog, tout);
   } else {
-    view *sout = new_stdout();
-    textlog_add_view(textlog, sout);
+    out = new_stdout();
+  }
+
+  for (i = 0; i < number_of_events; i++) {
+    char *name, *desc;
+    database_get_generic_description(database, i, &name, &desc);
+    textlog = new_textlog(h, database, name, desc);
+//        "ENB_UL_CHANNEL_ESTIMATE",
+//        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
+    textlog_add_view(textlog, out);
+    free(name);
+    free(desc);
   }
 
   for (i = 0; i < on_off_n; i++)

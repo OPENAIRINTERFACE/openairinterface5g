@@ -6,7 +6,7 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 LIBS=-lX11 -lm
 
 PROG=tracer_remote
-OBJS=remote_old.o plot.o database.o gui.o
+OBJS=remote_old.o plot.o database.o gui.o utils.o
 
 $(PROG): gui/gui.a $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)

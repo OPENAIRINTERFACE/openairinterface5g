@@ -2,6 +2,7 @@
 #include "handler.h"
 #include "database.h"
 #include "view/view.h"
+#include "utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,55 +33,30 @@ struct textlog {
   view **v;
   int vsize;
   /* local output buffer */
-  int osize;
-  int omaxsize;
-  char *obuf;
+  OBUF o;
 };
-
-static void PUTC(struct textlog *l, char c)
-{
-  if (l->osize == l->omaxsize) {
-    l->omaxsize += 512;
-    l->obuf = realloc(l->obuf, l->omaxsize);
-    if (l->obuf == NULL) abort();
-  }
-  l->obuf[l->osize] = c;
-  l->osize++;
-}
-
-static void PUTS(struct textlog *l, char *s)
-{
-  while (*s) PUTC(l, *s++);
-}
-
-static void PUTI(struct textlog *l, int i)
-{
-  char s[64];
-  sprintf(s, "%d", i);
-  PUTS(l, s);
-}
 
 static void _event(void *p, event e)
 {
   struct textlog *l = p;
   int i;
 
-  l->osize = 0;
+  l->o.osize = 0;
 
   for (i = 0; i < l->fsize; i++)
   switch(l->f[i].type) {
-  case INSTRING: PUTS(l, l->f[i].s); break;
-  case INT:      PUTI(l, e.e[l->f[i].event_arg].i); break;
-  case STRING:   PUTS(l, e.e[l->f[i].event_arg].s); break;
+  case INSTRING: PUTS(&l->o, l->f[i].s); break;
+  case INT:      PUTI(&l->o, e.e[l->f[i].event_arg].i); break;
+  case STRING:   PUTS(&l->o, e.e[l->f[i].event_arg].s); break;
   case BUFFER:
-    PUTS(l, "{buffer size:");
-    PUTI(l, e.e[l->f[i].event_arg].bsize);
-    PUTS(l, "}");
+    PUTS(&l->o, "{buffer size:");
+    PUTI(&l->o, e.e[l->f[i].event_arg].bsize);
+    PUTS(&l->o, "}");
     break;
   }
-  PUTC(l, 0);
+  PUTC(&l->o, 0);
 
-  for (i = 0; i < l->vsize; i++) l->v[i]->append(l->v[i], l->obuf);
+  for (i = 0; i < l->vsize; i++) l->v[i]->append(l->v[i], l->o.obuf);
 }
 
 enum chunk_type { C_ERROR, C_STRING, C_ARG_NAME, C_EVENT_NAME };

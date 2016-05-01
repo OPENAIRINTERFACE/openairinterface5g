@@ -1,4 +1,5 @@
 #include "database.h"
+#include "utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -452,4 +453,49 @@ int number_of_ids(void *_d)
 {
   database *d = _d;
   return d->isize;
+}
+
+int database_get_ids(void *_d, char ***ids)
+{
+  database *d = _d;
+  int i;
+  *ids = malloc(d->isize * sizeof(char **));
+  for (i = 0; i < d->isize; i++) (*ids)[i] = d->i[i].name;
+  return d->isize;
+}
+
+int database_get_groups(void *_d, char ***groups)
+{
+  database *d = _d;
+  int i;
+  *groups = malloc(d->gsize * sizeof(char **));
+  for (i = 0; i < d->gsize; i++) (*groups)[i] = d->g[i].name;
+  return d->gsize;
+}
+
+int database_pos_to_id(void *_d, int pos)
+{
+  database *d = _d;
+  return d->i[pos].id;
+}
+
+void database_get_generic_description(void *_d, int id,
+    char **name, char **desc)
+{
+  database *d = _d;
+  OBUF o;
+  int i;
+  *name = strdup(d->i[id].name);
+  o.osize = o.omaxsize = 0;
+  o.obuf = NULL;
+  PUTS(&o, *name);
+  for (i = 0; i < d->i[id].asize; i++) {
+    PUTC(&o, ' ');
+    PUTS(&o, d->i[id].arg_name[i]);
+    PUTS(&o, " [");
+    PUTS(&o, d->i[id].arg_name[i]);
+    PUTS(&o, "]");
+  }
+  PUTC(&o, 0);
+  *desc = o.obuf;
 }

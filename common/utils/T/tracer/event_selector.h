@@ -3,6 +3,9 @@
 
 #include "gui/gui.h"
 
-void setup_event_selector(gui *g, void *database, int socket, int *is_on);
+typedef void event_selector;
+
+event_selector *setup_event_selector(gui *g, void *database, int socket,
+    int *is_on);
 
 #endif /* _EVENT_SELECTOR_H_ */

@@ -16,4 +16,24 @@ typedef struct list {
 list *list_remove_head(list *l);
 list *list_append(list *l, void *data);
 
+/****************************************************************************/
+/* socket                                                                   */
+/****************************************************************************/
+
+void socket_send(int socket, void *buffer, int size);
+
+/****************************************************************************/
+/* buffer                                                                   */
+/****************************************************************************/
+
+typedef struct {
+  int osize;
+  int omaxsize;
+  char *obuf;
+} OBUF;
+
+void PUTC(OBUF *o, char c);
+void PUTS(OBUF *o, char *s);
+void PUTI(OBUF *o, int i);
+
 #endif /* _UTILS_H_ */
