@@ -39,6 +39,24 @@ static void free_event(struct event *e)
   free(e);
 }
 
+static int events_equal(struct event *e1, struct event *e2)
+{
+  if (e1->type != e2->type) return 0;
+  switch (e1->type) {
+  case REPACK: {
+    struct repack_event *re1 = (struct repack_event *)e1;
+    struct repack_event *re2 = (struct repack_event *)e2;
+    return re1->id == re2->id;
+  }
+  case DIRTY: {
+    struct dirty_event *re1 = (struct dirty_event *)e1;
+    struct dirty_event *re2 = (struct dirty_event *)e2;
+    return re1->id == re2->id;
+  }}
+  /* unreachable */
+  abort();
+}
+
 /*****************************************************************/
 /*                         sending events                        */
 /*****************************************************************/
@@ -59,6 +77,28 @@ static event *new_event_dirty(int id)
   if (ret == NULL) OOM;
   ret->id = id;
   return ret;
+}
+
+static void compress_event_list(struct gui *g)
+{
+  struct event *last;
+  struct event_list *cur;
+  /* basic compression, to be refined */
+
+  /* pickup last event and remove every copy of it found before
+   * if it's DIRTY or REPACK
+   */
+  last = g->queued_events->last->item;
+  if (last->type == DIRTY || last->type == REPACK) {
+    cur = g->queued_events;
+    while (cur->item != last) {
+      if (cur->item != NULL && events_equal(cur->item, last)) {
+        free_event(cur->item);
+        cur->item = NULL;
+      }
+      cur = cur->next;
+    }
+  }
 }
 
 void send_event(gui *_gui, enum event_type type, ...)
@@ -93,6 +133,7 @@ void send_event(gui *_gui, enum event_type type, ...)
   e->type = type;
 
   event_list_append(g, e);
+  compress_event_list(g);
 
   if (do_write) {
     char c = 1;
@@ -158,8 +199,10 @@ void gui_events(gui *_gui)
     struct event_list *cur = g->queued_events;
     g->queued_events = cur->next;
     if (g->queued_events) g->queued_events->last = cur->last;
-    process_event(g, cur->item);
-    free_event(cur->item);
+    if (cur->item != NULL) {
+      process_event(g, cur->item);
+      free_event(cur->item);
+    }
     free(cur);
   }
   LOGD("gui_events DONE\n");
