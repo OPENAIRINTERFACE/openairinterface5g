@@ -102,7 +102,7 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   red = new_color(g, "#c93535");
   green = new_color(g, "#2f9e2a");
 
-  win = new_toplevel_window(g, 610, 800, "event selector");
+  win = new_toplevel_window(g, 470, 300, "event selector");
   main_container = new_container(g, VERTICAL);
   widget_add_child(g, win, main_container, -1);
 
@@ -124,8 +124,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   widget_add_child(g, left, new_label(g, "Events"), -1);
   widget_add_child(g, right, new_label(g, "Groups"), -1);
 
-  events = new_text_list(g, 300, 10, new_color(g, "#b3c1e1"));
-  groups = new_text_list(g, 300, 10, new_color(g, "#edd6cb"));
+  events = new_text_list(g, 235, 10, new_color(g, "#b3c1e1"));
+  groups = new_text_list(g, 235, 10, new_color(g, "#edd6cb"));
 
   widget_add_child(g, left, events, -1);
   widget_add_child(g, right, groups, -1);

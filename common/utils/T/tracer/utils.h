@@ -34,6 +34,7 @@ typedef struct {
 
 void PUTC(OBUF *o, char c);
 void PUTS(OBUF *o, char *s);
+void PUTS_CLEAN(OBUF *o, char *s);
 void PUTI(OBUF *o, int i);
 
 #endif /* _UTILS_H_ */

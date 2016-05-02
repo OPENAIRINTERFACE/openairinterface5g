@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 
 void new_thread(void *(*f)(void *), void *data)
 {
@@ -95,6 +96,17 @@ void PUTC(OBUF *o, char c)
 void PUTS(OBUF *o, char *s)
 {
   while (*s) PUTC(o, *s++);
+}
+
+static int clean(char c)
+{
+  if (!isprint(c)) c = ' ';
+  return c;
+}
+
+void PUTS_CLEAN(OBUF *o, char *s)
+{
+  while (*s) PUTC(o, clean(*s++));
 }
 
 void PUTI(OBUF *o, int i)

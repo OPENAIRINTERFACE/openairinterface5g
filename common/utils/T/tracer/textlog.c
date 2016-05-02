@@ -47,7 +47,7 @@ static void _event(void *p, event e)
   switch(l->f[i].type) {
   case INSTRING: PUTS(&l->o, l->f[i].s); break;
   case INT:      PUTI(&l->o, e.e[l->f[i].event_arg].i); break;
-  case STRING:   PUTS(&l->o, e.e[l->f[i].event_arg].s); break;
+  case STRING:   PUTS_CLEAN(&l->o, e.e[l->f[i].event_arg].s); break;
   case BUFFER:
     PUTS(&l->o, "{buffer size:");
     PUTI(&l->o, e.e[l->f[i].event_arg].bsize);
