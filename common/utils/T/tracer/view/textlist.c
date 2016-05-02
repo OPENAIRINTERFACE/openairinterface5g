@@ -17,11 +17,12 @@ struct textlist {
   list * volatile to_append;
 };
 
-static void _append(struct textlist *this, char *s)
+static void _append(struct textlist *this, char *s, int *deleted)
 {
   if (this->cursize == this->maxsize) {
     text_list_del_silent(this->g, this->w, 0);
     this->cursize--;
+    (*deleted)++;
   }
   text_list_add_silent(this->g, this->w, s, -1, FOREGROUND_COLOR);
   this->cursize++;
@@ -31,18 +32,32 @@ static void *textlist_thread(void *_this)
 {
   struct textlist *this = _this;
   int dirty;
+  int deleted;
+  int visible_lines, start_line, number_of_lines;
 
   while (1) {
     if (pthread_mutex_lock(&this->lock)) abort();
     dirty = this->to_append == NULL ? 0 : 1;
+    deleted = 0;
     while (this->to_append != NULL) {
       char *s = this->to_append->data;
       this->to_append = list_remove_head(this->to_append);
-      _append(this, s);
+      _append(this, s, &deleted);
       free(s);
     }
     if (pthread_mutex_unlock(&this->lock)) abort();
-    if (dirty) widget_dirty(this->g, this->w);
+    if (dirty) {
+      text_list_state(this->g, this->w, &visible_lines, &start_line,
+          &number_of_lines);
+      if (this->autoscroll)
+        start_line = number_of_lines - visible_lines;
+      else
+        start_line -= deleted;
+      if (start_line < 0) start_line = 0;
+      text_list_set_start_line(this->g, this->w, start_line);
+      /* this call is not necessary, but if things change in text_list... */
+      widget_dirty(this->g, this->w);
+    }
     sleepms(1000/this->refresh_rate);
   }
 
@@ -65,6 +80,45 @@ static void append(view *_this, char *s)
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
+static void scroll(void *private, gui *g,
+    char *notification, widget *w, void *notification_data)
+{
+  struct textlist *this = private;
+  int visible_lines;
+  int start_line;
+  int number_of_lines;
+  int new_line;
+  int inc;
+
+  text_list_state(g, w, &visible_lines, &start_line, &number_of_lines);
+  inc = 10;
+  if (inc > visible_lines - 2) inc = visible_lines - 2;
+  if (inc < 1) inc = 1;
+  if (!strcmp(notification, "scrollup")) inc = -inc;
+
+  new_line = start_line + inc;
+  if (new_line > number_of_lines - visible_lines)
+    new_line = number_of_lines - visible_lines;
+  if (new_line < 0) new_line = 0;
+
+  text_list_set_start_line(g, w, new_line);
+
+  if (new_line + visible_lines < number_of_lines)
+    this->autoscroll = 0;
+  else
+    this->autoscroll = 1;
+}
+
+static void click(void *private, gui *g,
+    char *notification, widget *w, void *notification_data)
+{
+  struct textlist *this = private;
+  int *d = notification_data;
+  int button = d[1];
+
+  if (button == 1) this->autoscroll = 1 - this->autoscroll;
+}
+
 view *new_textlist(int maxsize, float refresh_rate, gui *g, widget *w)
 {
   struct textlist *ret = calloc(1, sizeof(struct textlist));
@@ -81,6 +135,10 @@ view *new_textlist(int maxsize, float refresh_rate, gui *g, widget *w)
   ret->autoscroll = 1;
 
   if (pthread_mutex_init(&ret->lock, NULL)) abort();
+
+  register_notifier(g, "scrollup", w, scroll, ret);
+  register_notifier(g, "scrolldown", w, scroll, ret);
+  register_notifier(g, "click", w, click, ret);
 
   new_thread(textlist_thread, ret);
 
