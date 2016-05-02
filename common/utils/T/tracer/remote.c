@@ -59,7 +59,8 @@ void usage(void)
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
 "    -p <port>                 use given port (default %d)\n"
-"    -x                        GUI output\n",
+"    -x                        GUI output\n"
+"    -debug-gui                active GUI debug logs\n",
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -102,6 +103,7 @@ static void *gui_thread(void *_g)
 
 int main(int n, char **v)
 {
+  extern int volatile gui_logd;
   char *database_filename = NULL;
   void *database;
   int port = DEFAULT_REMOTE_PORT;
@@ -138,6 +140,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-OFF"))
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
     if (!strcmp(v[i], "-x")) { gui_mode = 1; continue; }
+    if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
     usage();
   }
 

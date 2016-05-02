@@ -189,7 +189,7 @@ void x_events(gui *_gui)
       }
       break;
 #endif
-    default: WARN("TODO: X event type %d\n", ev.type); break;
+    default: if (gui_logd) WARN("TODO: X event type %d\n", ev.type); break;
     }
   }
 
