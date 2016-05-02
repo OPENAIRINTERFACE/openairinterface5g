@@ -99,8 +99,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
 
   ret = calloc(1, sizeof(struct event_selector)); if (ret == NULL) abort();
 
-  red = new_color(g, "#944");
-  green = new_color(g, "#272");
+  red = new_color(g, "#c93535");
+  green = new_color(g, "#2f9e2a");
 
   win = new_toplevel_window(g, 610, 800, "event selector");
   main_container = new_container(g, VERTICAL);
@@ -124,8 +124,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   widget_add_child(g, left, new_label(g, "Events"), -1);
   widget_add_child(g, right, new_label(g, "Groups"), -1);
 
-  events = new_text_list(g, 300, 10, new_color(g, "#ccccff"));
-  groups = new_text_list(g, 300, 10, new_color(g, "#ccffee"));
+  events = new_text_list(g, 300, 10, new_color(g, "#b3c1e1"));
+  groups = new_text_list(g, 300, 10, new_color(g, "#edd6cb"));
 
   widget_add_child(g, left, events, -1);
   widget_add_child(g, right, groups, -1);
