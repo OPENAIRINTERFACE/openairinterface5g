@@ -10,7 +10,7 @@ static void paint(gui *_gui, widget *_this)
   struct gui *g = _gui;
   struct text_list_widget *this = _this;
   int i, j;
-  LOGD("PAINT text_list %p xywh %d %d %d %d\n", _this, this->common.x, this->common.y, this->common.width, this->common.height);
+  LOGD("PAINT text_list %p xywh %d %d %d %d starting line %d allocated nlines %d text_count %d\n", _this, this->common.x, this->common.y, this->common.width, this->common.height, this->starting_line, this->allocated_nlines, this->text_count);
   x_fill_rectangle(g->x, g->xwin, this->background_color,
       this->common.x, this->common.y,
       this->common.width, this->common.height);
@@ -95,8 +95,8 @@ widget *new_text_list(gui *_gui, int width, int nlines, int bgcol)
 /*                             public functions                          */
 /*************************************************************************/
 
-void text_list_add(gui *_gui, widget *_this, const char *text, int position,
-    int color)
+static void _text_list_add(gui *_gui, widget *_this, const char *text,
+    int position, int color, int silent)
 {
   struct gui *g = _gui;
   struct text_list_widget *this = _this;
@@ -120,12 +120,12 @@ void text_list_add(gui *_gui, widget *_this, const char *text, int position,
   this->text[position] = strdup(text); if (this->text[position] == NULL) OOM;
   this->color[position] = color;
 
-  send_event(g, DIRTY, this->common.id);
+  if (!silent) send_event(g, DIRTY, this->common.id);
 
   gunlock(g);
 }
 
-void text_list_del(gui *_gui, widget *_this, int position)
+static void _text_list_del(gui *_gui, widget *_this, int position, int silent)
 {
   struct gui *g = _gui;
   struct text_list_widget *this = _this;
@@ -151,10 +151,32 @@ void text_list_del(gui *_gui, widget *_this, int position)
   this->color = realloc(this->color, this->text_count * sizeof(int));
   if (this->color == NULL) OOM;
 
-  send_event(g, DIRTY, this->common.id);
+  if (!silent) send_event(g, DIRTY, this->common.id);
 
 done:
   gunlock(g);
+}
+
+void text_list_add(gui *gui, widget *this, const char *text, int position,
+    int color)
+{
+  _text_list_add(gui, this, text, position, color, 0);
+}
+
+void text_list_del(gui *gui, widget *this, int position)
+{
+  _text_list_del(gui, this, position, 0);
+}
+
+void text_list_add_silent(gui *gui, widget *this, const char *text,
+    int position, int color)
+{
+  _text_list_add(gui, this, text, position, color, 1);
+}
+
+void text_list_del_silent(gui *gui, widget *this, int position)
+{
+  _text_list_del(gui, this, position, 1);
 }
 
 void text_list_state(gui *_gui, widget *_this,
@@ -218,5 +240,14 @@ void text_list_set_color(gui *_gui, widget *_this, int line, int color)
     send_event(g, DIRTY, this->common.id);
   }
 
+  gunlock(g);
+}
+
+void text_list_dirty(gui *_gui, widget *_this)
+{
+  struct gui *g = _gui;
+  struct text_list_widget *this = _this;
+  glock(g);
+  send_event(g, DIRTY, this->common.id);
   gunlock(g);
 }

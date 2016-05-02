@@ -35,12 +35,16 @@ void xy_plot_set_points(gui *gui, widget *this,
 void text_list_add(gui *gui, widget *this, const char *text, int position,
     int color);
 void text_list_del(gui *gui, widget *this, int position);
+void text_list_add_silent(gui *gui, widget *this, const char *text,
+    int position, int color);
+void text_list_del_silent(gui *gui, widget *this, int position);
 void text_list_state(gui *_gui, widget *_this,
     int *visible_lines, int *start_line, int *number_of_lines);
 void text_list_set_start_line(gui *gui, widget *this, int line);
 void text_list_get_line(gui *gui, widget *this, int line,
     char **text, int *color);
 void text_list_set_color(gui *gui, widget *this, int line, int color);
+void text_list_dirty(gui *_gui, widget *_this);
 
 void gui_loop(gui *gui);
 

@@ -20,19 +20,21 @@ struct textlist {
 static void _append(struct textlist *this, char *s)
 {
   if (this->cursize == this->maxsize) {
-    text_list_del(this->g, this->w, 0);
+    text_list_del_silent(this->g, this->w, 0);
     this->cursize--;
   }
-  text_list_add(this->g, this->w, s, -1, FOREGROUND_COLOR);
+  text_list_add_silent(this->g, this->w, s, -1, FOREGROUND_COLOR);
   this->cursize++;
 }
 
 static void *textlist_thread(void *_this)
 {
   struct textlist *this = _this;
+  int dirty;
 
   while (1) {
     if (pthread_mutex_lock(&this->lock)) abort();
+    dirty = this->to_append == NULL ? 0 : 1;
     while (this->to_append != NULL) {
       char *s = this->to_append->data;
       this->to_append = list_remove_head(this->to_append);
@@ -40,6 +42,7 @@ static void *textlist_thread(void *_this)
       free(s);
     }
     if (pthread_mutex_unlock(&this->lock)) abort();
+    if (dirty) text_list_dirty(this->g, this->w);
     sleepms(1000/this->refresh_rate);
   }
 
