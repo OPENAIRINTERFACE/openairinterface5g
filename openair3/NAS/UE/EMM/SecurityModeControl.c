@@ -295,9 +295,7 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
 
       _emm_data.security->selected_algorithms.encryption = seea;
       _emm_data.security->selected_algorithms.integrity  = seia;
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
       nas_itti_kenb_refresh_req(_security_data.kenb.value);
-#endif
     }
     /*
      * NAS security mode command not accepted by the UE

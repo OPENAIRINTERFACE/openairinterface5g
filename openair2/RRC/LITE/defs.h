@@ -182,11 +182,7 @@ typedef enum HO_STATE_e {
 #define PAYLOAD_SIZE_MAX 1024
 #define RRC_BUF_SIZE 255
 #define UNDEF_SECURITY_MODE 0xff
-#if 1 // wilson 2016-05-01 let RRC security mode command to return OK instead of failed
 #define NO_SECURITY_MODE 0x20
-#else
-#define NO_SECURITY_MODE 0x33
-#endif
 
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants

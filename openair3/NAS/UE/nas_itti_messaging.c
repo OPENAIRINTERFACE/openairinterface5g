@@ -187,7 +187,6 @@ int nas_itti_protected_msg(const char *buffer, const nas_message_t *msg, const i
 
 extern unsigned char NB_eNB_INST;
 
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
 int nas_itti_kenb_refresh_req(const Byte_t kenb[32])
 {
   MessageDef *message_p;
@@ -220,7 +219,6 @@ int nas_itti_kenb_refresh_req(const Byte_t kenb[32])
 
   return itti_send_msg_to_task(TASK_RRC_UE, NB_eNB_INST + 0 /* TODO to be virtualized */, message_p);
 }
-#endif
 
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat)
 {

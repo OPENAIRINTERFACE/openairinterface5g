@@ -70,9 +70,7 @@ typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 
 #define RRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.rrc_configuration_req
 
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
 #define NAS_KENB_REFRESH_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_kenb_refresh_req
-#endif
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
 #define NAS_CONN_ESTABLI_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_establi_req
 #define NAS_UPLINK_DATA_REQ(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_req
@@ -186,9 +184,7 @@ typedef struct RrcConfigurationReq_s {
 } RrcConfigurationReq;
 
 // UE: NAS -> RRC messages
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
 typedef kenb_refresh_req_t      NasKenbRefreshReq;
-#endif
 typedef cell_info_req_t         NasCellSelectionReq;
 typedef nas_establish_req_t     NasConnEstabliReq;
 typedef ul_info_transfer_req_t  NasUlDataReq;

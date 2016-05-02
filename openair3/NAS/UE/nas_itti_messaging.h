@@ -55,9 +55,7 @@ int nas_itti_protected_msg(
 
 # if defined(NAS_BUILT_IN_UE)
 
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
 int nas_itti_kenb_refresh_req(const Byte_t kenb[32]);
-#endif
 
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat);
 

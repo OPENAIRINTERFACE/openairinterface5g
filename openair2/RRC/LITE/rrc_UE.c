@@ -1403,7 +1403,6 @@ rrc_ue_process_securityModeCommand(
   }
 
 
-#if 1 // wilson 2016-01-05 config PDCP security mode
 #if defined(ENABLE_SECURITY)
   uint8_t *kRRCenc = NULL;
   uint8_t *kUPenc = NULL;
@@ -1458,7 +1457,6 @@ rrc_ue_process_securityModeCommand(
   }
 
 #endif //#if defined(ENABLE_SECURITY)
-#endif //#if 1 //wilson
 
   if (securityModeCommand->criticalExtensions.present == SecurityModeCommand__criticalExtensions_PR_c1) {
     if (securityModeCommand->criticalExtensions.choice.c1.present == SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8) {
@@ -4131,7 +4129,6 @@ void *rrc_ue_task( void *args_p )
 
 # if defined(ENABLE_USE_MME)
 
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
     case NAS_KENB_REFRESH_REQ:
         memcpy((void*)UE_rrc_inst[ue_mod_id].kenb, (void*)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(UE_rrc_inst[ue_mod_id].kenb));
 
@@ -4155,7 +4152,6 @@ void *rrc_ue_task( void *args_p )
             UE_rrc_inst[ue_mod_id].kenb[28], UE_rrc_inst[ue_mod_id].kenb[29], UE_rrc_inst[ue_mod_id].kenb[30], UE_rrc_inst[ue_mod_id].kenb[31]);
 
       break;
-#endif
 
       /* NAS messages */
     case NAS_CELL_SELECTION_REQ:

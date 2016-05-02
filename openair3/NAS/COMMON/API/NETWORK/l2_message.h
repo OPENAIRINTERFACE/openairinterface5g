@@ -124,7 +124,6 @@ typedef struct kenb_refresh_req_s {
   Byte_t kenb[32];
 } kenb_refresh_req_t;
 
-#if 1 // wilson 2016-05-02 add new message to update kenb in RRC after NAS SMC complete
 /*
  * NAS->AS - Cell Information request
  * NAS request AS to search for a suitable cell belonging to the selected
@@ -134,7 +133,6 @@ typedef struct {
   plmn_t plmnID;  /* PLMN identifier         */
   Byte_t rat;   /* Bitmap - set of radio access technologies   */
 } cell_info_req_t;
-#endif
 
 /*
  * AS->NAS - Cell Information response
