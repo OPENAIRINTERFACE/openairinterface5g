@@ -49,6 +49,9 @@
 
 #include <cmath>
 
+/** @addtogroup _LMSSDR_PHY_RF_INTERFACE_
+ * @{
+ */
 
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
@@ -455,3 +458,4 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
   return 0;
 }
 }
+/*@}*/
