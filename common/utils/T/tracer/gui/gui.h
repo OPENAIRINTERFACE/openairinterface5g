@@ -16,6 +16,7 @@ gui *gui_init(void);
 
 /* position = -1 to put at the end */
 void widget_add_child(gui *gui, widget *parent, widget *child, int position);
+void widget_dirty(gui *gui, widget *this);
 
 widget *new_toplevel_window(gui *gui, int width, int height, char *title);
 widget *new_container(gui *gui, int vertical);
@@ -44,7 +45,6 @@ void text_list_set_start_line(gui *gui, widget *this, int line);
 void text_list_get_line(gui *gui, widget *this, int line,
     char **text, int *color);
 void text_list_set_color(gui *gui, widget *this, int line, int color);
-void text_list_dirty(gui *_gui, widget *_this);
 
 void gui_loop(gui *gui);
 

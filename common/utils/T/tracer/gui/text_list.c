@@ -242,12 +242,3 @@ void text_list_set_color(gui *_gui, widget *_this, int line, int color)
 
   gunlock(g);
 }
-
-void text_list_dirty(gui *_gui, widget *_this)
-{
-  struct gui *g = _gui;
-  struct text_list_widget *this = _this;
-  glock(g);
-  send_event(g, DIRTY, this->common.id);
-  gunlock(g);
-}

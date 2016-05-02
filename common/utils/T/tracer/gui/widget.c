@@ -180,6 +180,15 @@ void widget_add_child(gui *_gui, widget *parent, widget *child, int position)
   gunlock(_gui);
 }
 
+void widget_dirty(gui *_gui, widget *_this)
+{
+  struct gui *g = _gui;
+  struct widget *this = _this;
+  glock(g);
+  send_event(g, DIRTY, this->id);
+  gunlock(g);
+}
+
 static const char *names[] = {
   "TOPLEVEL_WINDOW", "CONTAINER", "TEXT_LIST", "XY_PLOT", "BUTTON", "LABEL"
 };

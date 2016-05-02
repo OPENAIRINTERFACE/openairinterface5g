@@ -42,7 +42,7 @@ static void *textlist_thread(void *_this)
       free(s);
     }
     if (pthread_mutex_unlock(&this->lock)) abort();
-    if (dirty) text_list_dirty(this->g, this->w);
+    if (dirty) widget_dirty(this->g, this->w);
     sleepms(1000/this->refresh_rate);
   }
 
