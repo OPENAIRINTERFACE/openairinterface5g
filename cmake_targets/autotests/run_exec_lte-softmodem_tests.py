@@ -1525,16 +1525,17 @@ for testcase in testcaseList:
         print "Creating xml file for overall results..."
         cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
         res=os.system(cmd)
-
+        os.system('sync')
         print "Now copying files to NFS Share"
         oai_localhost = openair('localdomain','localhost')
         oai_localhost.connect(user,pw)
-        tlocaldir = locallogdir + '/' + testcasename
-        tremotedir = NFSTestsResultsDir + '/log'
-        cmd =  ' mkdir -p ' + tremotedir + ' ; rm -fr ' + tremotedir + '/' + testcasename
+        cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
         res = oai_localhost.send_recv(cmd)
-        print "Copying files from GilabCI Runner Machine : " + host + " .tlocallogdir = " + tlocaldir + ", tremotedir = " + tremotedir
-        SSHSessionWrapper('localhost', user, None, pw , tremotedir , tlocaldir, "put_all")
+        print "Deleting NFSTestResults Dir..." + res
+
+        print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+        SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+        oai_localhost.disconnect()
 
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
@@ -1573,5 +1574,6 @@ print "Deleting NFSTestResults Dir..." + res
 
 print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+oai_localhost.disconnect()
 
 sys.exit()
