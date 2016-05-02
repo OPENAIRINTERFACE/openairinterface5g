@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+int volatile gui_logd;
+
 void glock(gui *_gui)
 {
   struct gui *g = _gui;

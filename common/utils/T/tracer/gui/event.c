@@ -63,7 +63,7 @@ static event *new_event_dirty(int id)
 
 void send_event(gui *_gui, enum event_type type, ...)
 {
-printf("send_event %d\n", type);
+  LOGD("send_event %d\n", type);
   struct gui *g = _gui;
   int do_write = 0;
   va_list ap;
@@ -140,7 +140,7 @@ static void dirty_event(struct gui *g, int id)
 
 static void process_event(struct gui *g, struct event *e)
 {
-printf("processing event type %d\n", e->type);
+  LOGD("processing event type %d\n", e->type);
   switch (e->type) {
   case REPACK: repack_event(g, ((struct repack_event *)e)->id); break;
   case DIRTY: dirty_event(g, ((struct dirty_event *)e)->id); break;
@@ -152,7 +152,7 @@ void gui_events(gui *_gui)
 {
   struct gui *g = _gui;
 
-printf("gui_events START: head %p\n", g->queued_events);
+  LOGD("gui_events START: head %p\n", g->queued_events);
 
   while (g->queued_events) {
     struct event_list *cur = g->queued_events;
@@ -162,5 +162,5 @@ printf("gui_events START: head %p\n", g->queued_events);
     free_event(cur->item);
     free(cur);
   }
-printf("gui_events DONE\n");
+  LOGD("gui_events DONE\n");
 }

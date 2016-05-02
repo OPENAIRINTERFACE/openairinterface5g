@@ -46,7 +46,7 @@ x_connection *x_open(void)
   if (ret == NULL) OOM;
 
   ret->d = XOpenDisplay(0);
-printf("XOpenDisplay display %p return x_connection %p\n", ret->d, ret);
+  LOGD("XOpenDisplay display %p return x_connection %p\n", ret->d, ret);
   if (ret->d == NULL) ERR("error calling XOpenDisplay: no X? you root?\n");
 
   x_new_color(ret, "white");    /* background color */
@@ -96,16 +96,16 @@ x_window *x_create_window(x_connection *_x, int width, int height,
 
 #if 0
   /* wait for window to be mapped */
-printf("wait for map\n");
+  LOGD("wait for map\n");
   while (1) {
     XEvent ev;
     //XWindowEvent(x->d, ret->w, StructureNotifyMask, &ev);
     XWindowEvent(x->d, ret->w, ExposureMask, &ev);
-printf("got ev %d\n", ev.type);
+    LOGD("got ev %d\n", ev.type);
     //if (ev.type == MapNotify) break;
     if (ev.type == Expose) break;
   }
-printf("XXX create connection %p window %p (win id %d pixmap %d) w h %d %d\n", x, ret, (int)ret->w, (int)ret->p, width, height);
+  LOGD("XXX create connection %p window %p (win id %d pixmap %d) w h %d %d\n", x, ret, (int)ret->w, (int)ret->p, width, height);
 #endif
 
   return ret;
@@ -133,7 +133,7 @@ void x_events(gui *_gui)
   struct x_connection *x = g->x;
   struct toplevel_window_widget *w;
 
-printf("x_events START\n");
+  LOGD("x_events START\n");
   /* preprocessing (to "compress" events) */
   cur = g->toplevel;
   while (cur) {
@@ -149,7 +149,7 @@ printf("x_events START\n");
   while (XPending(x->d)) {
     XEvent ev;
     XNextEvent(x->d, &ev);
-printf("XEV %d\n", ev.type);
+    LOGD("XEV %d\n", ev.type);
     switch (ev.type) {
     case MapNotify:
     case Expose:
@@ -166,7 +166,7 @@ printf("XEV %d\n", ev.type);
         xw->new_height = ev.xconfigure.height;
         if (xw->new_width < 10) xw->new_width = 10;
         if (xw->new_height < 10) xw->new_height = 10;
-printf("ConfigureNotify %d %d\n", ev.xconfigure.width, ev.xconfigure.height);
+        LOGD("ConfigureNotify %d %d\n", ev.xconfigure.width, ev.xconfigure.height);
       }
       break;
     case ButtonPress:
@@ -194,14 +194,14 @@ printf("ConfigureNotify %d %d\n", ev.xconfigure.width, ev.xconfigure.height);
   }
 
   /* postprocessing */
-printf("post processing\n");
+  LOGD("post processing\n");
   cur = g->toplevel;
   while (cur) {
     struct toplevel_window_widget *w =
         (struct toplevel_window_widget *)cur->item;
     struct x_window *xw = w->x;
     if (xw->resize) {
-printf("resize old %d %d new %d %d\n", xw->width, xw->height, xw->new_width, xw->new_height);
+      LOGD("resize old %d %d new %d %d\n", xw->width, xw->height, xw->new_width, xw->new_height);
       if (xw->width != xw->new_width || xw->height != xw->new_height) {
         w->common.allocate(g, w, 0, 0, xw->new_width, xw->new_height);
         xw->width = xw->new_width;
@@ -220,13 +220,13 @@ printf("resize old %d %d new %d %d\n", xw->width, xw->height, xw->new_width, xw-
     }
     if (xw->redraw) {
       struct x_connection *x = g->x;
-printf("XCopyArea w h %d %d\n", xw->width, xw->height);
+      LOGD("XCopyArea w h %d %d\n", xw->width, xw->height);
       XCopyArea(x->d, xw->p, xw->w, x->colors[1],
           0, 0, xw->width, xw->height, 0, 0);
     }
     cur = cur->next;
   }
-printf("x_events DONE\n");
+  LOGD("x_events DONE\n");
 }
 
 void x_flush(x_connection *_x)
@@ -248,7 +248,7 @@ void x_text_get_dimensions(x_connection *_c, const char *t,
   XQueryTextExtents(c->d, XGContextFromGC(c->colors[1]), t, strlen(t),
       &dir, &ascent, &descent, &overall);
 
-//printf("dir %d ascent %d descent %d lbearing %d rbearing %d width %d ascent %d descent %d\n", dir, ascent, descent, overall.lbearing, overall.rbearing, overall.width, overall.ascent, overall.descent);
+//LOGD("dir %d ascent %d descent %d lbearing %d rbearing %d width %d ascent %d descent %d\n", dir, ascent, descent, overall.lbearing, overall.rbearing, overall.width, overall.ascent, overall.descent);
 
   *width = overall.width;
   *height = ascent + descent;
@@ -308,7 +308,7 @@ void x_draw(x_connection *_c, x_window *_w)
 {
   struct x_connection *c = _c;
   struct x_window *w = _w;
-printf("x_draw XCopyArea w h %d %d display %p window %d pixmap %d\n", w->width, w->height, c->d, (int)w->w, (int)w->p);
+  LOGD("x_draw XCopyArea w h %d %d display %p window %d pixmap %d\n", w->width, w->height, c->d, (int)w->w, (int)w->p);
   XCopyArea(c->d, w->p, w->w, c->colors[1], 0, 0, w->width, w->height, 0, 0);
 }
 
@@ -333,7 +333,7 @@ void x_add_point(x_connection *_c, int x, int y)
 void x_plot_points(x_connection *_c, x_window *_w, int color)
 {
   struct x_connection *c = _c;
-fprintf(stderr, "x_plot_points %d points\n", c->pts_size);
+  LOGD("x_plot_points %d points\n", c->pts_size);
   struct x_window *w = _w;
   XDrawPoints(c->d, w->p, c->colors[color], c->pts, c->pts_size,
       CoordModeOrigin);

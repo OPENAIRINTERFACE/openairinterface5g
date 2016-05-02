@@ -24,7 +24,7 @@ static void paint(gui *_gui, widget *_this)
 
 # define FLIP(v) (-(v) + allocated_plot_height-1)
 
-printf("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this->common.width, this->common.height);
+  LOGD("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this->common.width, this->common.height);
 
 //x_draw_rectangle(g->x, g->xwin, 1, this->common.x, this->common.y, this->common.width, this->common.height);
 
@@ -52,14 +52,14 @@ printf("PAINT xy plot xywh %d %d %d %d\n", this->common.x, this->common.y, this-
   allocated_xmax = center + ((this->xmax - this->xmin) *
                              allocated_plot_width / wanted_plot_width) / 2;
   /* adjust tic if too tight */
-printf("pre x ticstep %g\n", ticstep);
+  LOGD("pre x ticstep %g\n", ticstep);
   while (1) {
     if (ticstep / (allocated_xmax - allocated_xmin)
                 * (allocated_plot_width - 1) > 40) break;
     ticstep *= 2;
   }
-printf("post x ticstep %g\n", ticstep);
-printf("xmin/max %g %g width wanted allocated %d %d alloc xmin/max %g %g ticstep %g\n", this->xmin, this->xmax, wanted_plot_width, allocated_plot_width, allocated_xmin, allocated_xmax, ticstep);
+  LOGD("post x ticstep %g\n", ticstep);
+  LOGD("xmin/max %g %g width wanted allocated %d %d alloc xmin/max %g %g ticstep %g\n", this->xmin, this->xmax, wanted_plot_width, allocated_plot_width, allocated_xmin, allocated_xmax, ticstep);
   kmin = ceil(allocated_xmin / ticstep);
   kmax = floor(allocated_xmax / ticstep);
   for (k = kmin; k <= kmax; k++) {
@@ -84,7 +84,7 @@ printf("xmin/max %g %g width wanted allocated %d %d alloc xmin/max %g %g ticstep
         this->common.y + this->common.height - this->label_height * 2 +
             this->label_baseline,
         v);
-printf("tic k %d val %g x %g\n", k, k * ticstep, x);
+    LOGD("tic k %d val %g x %g\n", k, k * ticstep, x);
   }
 
   /* vertical tics */
@@ -98,14 +98,14 @@ printf("tic k %d val %g x %g\n", k, k * ticstep, x);
   allocated_ymax = center + ((this->ymax - this->ymin) *
                              allocated_plot_height / wanted_plot_height) / 2;
   /* adjust tic if too tight */
-printf("pre y ticstep %g\n", ticstep);
+  LOGD("pre y ticstep %g\n", ticstep);
   while (1) {
     if (ticstep / (allocated_ymax - allocated_ymin)
                 * (allocated_plot_height - 1) > 20) break;
     ticstep *= 2;
   }
-printf("post y ticstep %g\n", ticstep);
-printf("ymin/max %g %g height wanted allocated %d %d alloc ymin/max %g %g ticstep %g\n", this->ymin, this->ymax, wanted_plot_height, allocated_plot_height, allocated_ymin, allocated_ymax, ticstep);
+  LOGD("post y ticstep %g\n", ticstep);
+  LOGD("ymin/max %g %g height wanted allocated %d %d alloc ymin/max %g %g ticstep %g\n", this->ymin, this->ymax, wanted_plot_height, allocated_plot_height, allocated_ymin, allocated_ymax, ticstep);
   kmin = ceil(allocated_ymin / ticstep);
   kmax = floor(allocated_ymax / ticstep);
   for (k = kmin; k <= kmax; k++) {
@@ -158,7 +158,7 @@ static void hints(gui *_gui, widget *_w, int *width, int *height)
   struct xy_plot_widget *w = _w;
   *width = w->wanted_width + w->vrule_width;
   *height = w->wanted_height + w->label_height * 2; /* TODO: refine */
-printf("HINTS xy plot wh %d %d (vrule_width %d) (wanted wh %d %d)\n", *width, *height, w->vrule_width, w->wanted_width, w->wanted_height);
+  LOGD("HINTS xy plot wh %d %d (vrule_width %d) (wanted wh %d %d)\n", *width, *height, w->vrule_width, w->wanted_width, w->wanted_height);
 }
 
 widget *new_xy_plot(gui *_gui, int width, int height, char *label,
@@ -176,7 +176,7 @@ widget *new_xy_plot(gui *_gui, int width, int height, char *label,
    * not in the "gui thread") */
   x_text_get_dimensions(g->x, label, &w->label_width, &w->label_height,
       &w->label_baseline);
-printf("XY PLOT label wh %d %d\n", w->label_width, w->label_height);
+  LOGD("XY PLOT label wh %d %d\n", w->label_width, w->label_height);
 
   w->wanted_width = width;
   w->wanted_height = height;

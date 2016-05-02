@@ -10,7 +10,7 @@
 
 static void repack(gui *g, widget *_this)
 {
-printf("REPACK toplevel_window\n");
+  LOGD("REPACK toplevel_window\n");
   struct toplevel_window_widget *this = _this;
   if (this->common.children == NULL) ERR("toplevel window has no child\n");
   if (this->common.children->next != NULL)
@@ -22,7 +22,7 @@ printf("REPACK toplevel_window\n");
 
 static void add_child(gui *_gui, widget *_this, widget *child, int position)
 {
-printf("ADD_CHILD toplevel_window\n");
+  LOGD("ADD_CHILD toplevel_window\n");
   struct widget *this = _this;
   if (this->children != NULL) {
     WARN("toplevel window already has a child\n");
@@ -35,7 +35,7 @@ printf("ADD_CHILD toplevel_window\n");
 static void allocate(
     gui *_gui, widget *_this, int x, int y, int width, int height)
 {
-printf("ALLOCATE toplevel_window\n");
+  LOGD("ALLOCATE toplevel_window\n");
   struct toplevel_window_widget *this = _this;
   this->common.width = width;
   this->common.height = height;
@@ -47,7 +47,7 @@ static void paint(gui *_gui, widget *_this)
 {
   struct gui *g = _gui;
   struct toplevel_window_widget *this = _this;
-printf("PAINT toplevel_window (%d %d)\n", this->common.width, this->common.height);
+  LOGD("PAINT toplevel_window (%d %d)\n", this->common.width, this->common.height);
   x_fill_rectangle(g->x, this->x, BACKGROUND_COLOR,
       0, 0, this->common.width, this->common.height);
   g->xwin = this->x;

@@ -9,7 +9,7 @@ static void paint(gui *_gui, widget *_w)
 {
   struct gui *g = _gui;
   struct label_widget *l = _w;
-printf("PAINT label '%s'\n", l->t);
+  LOGD("PAINT label '%s'\n", l->t);
   x_draw_string(g->x, g->xwin, l->color,
       l->common.x, l->common.y + l->baseline, l->t);
 }
@@ -17,7 +17,7 @@ printf("PAINT label '%s'\n", l->t);
 static void hints(gui *_gui, widget *_w, int *width, int *height)
 {
   struct label_widget *l = _w;
-printf("HINTS label '%s'\n", l->t);
+  LOGD("HINTS label '%s'\n", l->t);
   *width = l->width;
   *height = l->height;
 }

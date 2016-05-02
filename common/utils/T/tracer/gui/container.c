@@ -8,7 +8,7 @@
 
 static void repack(gui *g, widget *_this)
 {
-printf("REPACK container %p\n", _this);
+  LOGD("REPACK container %p\n", _this);
   struct container_widget *this = _this;
   this->hints_are_valid = 0;
   return this->common.parent->repack(g, this->common.parent);
@@ -16,7 +16,7 @@ printf("REPACK container %p\n", _this);
 
 static void add_child(gui *g, widget *_this, widget *child, int position)
 {
-printf("ADD_CHILD container\n");
+  LOGD("ADD_CHILD container\n");
   struct container_widget *this = _this;
   this->hints_are_valid = 0;
   widget_add_child_internal(g, this, child, position);
@@ -78,7 +78,7 @@ static void compute_horizontal_hints(struct gui *g,
 static void vertical_allocate(gui *_gui, widget *_this,
     int x, int y, int width, int height)
 {
-printf("ALLOCATE container vertical %p\n", _this);
+  LOGD("ALLOCATE container vertical %p\n", _this);
   int cy = 0;
   int cwidth, cheight;
   struct gui *g = _gui;
@@ -126,7 +126,7 @@ hints_ok:
 static void horizontal_allocate(gui *_gui, widget *_this,
     int x, int y, int width, int height)
 {
-printf("ALLOCATE container horizontal %p\n", _this);
+  LOGD("ALLOCATE container horizontal %p\n", _this);
   int cx = 0;
   int cwidth, cheight;
   struct gui *g = _gui;
@@ -173,7 +173,7 @@ hints_ok:
 
 static void vertical_hints(gui *_gui, widget *_w, int *width, int *height)
 {
-printf("HINTS container vertical %p\n", _w);
+  LOGD("HINTS container vertical %p\n", _w);
   struct gui *g = _gui;
   struct container_widget *this = _w;
 
@@ -191,7 +191,7 @@ printf("HINTS container vertical %p\n", _w);
 
 static void horizontal_hints(gui *_gui, widget *_w, int *width, int *height)
 {
-printf("HINTS container horizontal %p\n", _w);
+  LOGD("HINTS container horizontal %p\n", _w);
   struct gui *g = _gui;
   struct container_widget *this = _w;
 
@@ -210,7 +210,7 @@ printf("HINTS container horizontal %p\n", _w);
 static void horizontal_button(gui *_g, widget *_this, int x, int y,
     int button, int up)
 {
-printf("BUTTON container horizontal %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  LOGD("BUTTON container horizontal %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   struct gui *g = _g;
   struct container_widget *this = _this;
   struct widget_list *l;
@@ -228,7 +228,7 @@ printf("BUTTON container horizontal %p xy %d %d button %d up %d\n", _this, x, y,
 static void vertical_button(gui *_g, widget *_this, int x, int y,
     int button, int up)
 {
-printf("BUTTON container vertical %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  LOGD("BUTTON container vertical %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   struct gui *g = _g;
   struct container_widget *this = _this;
   struct widget_list *l;
@@ -245,7 +245,7 @@ printf("BUTTON container vertical %p xy %d %d button %d up %d\n", _this, x, y, b
 
 static void paint(gui *_gui, widget *_this)
 {
-printf("PAINT container\n");
+  LOGD("PAINT container\n");
   struct gui *g = _gui;
   struct widget *this = _this;
   struct widget_list *l;

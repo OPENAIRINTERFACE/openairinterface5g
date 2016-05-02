@@ -3,6 +3,9 @@
 
 /* defines the private API of the GUI */
 
+extern int volatile gui_logd;
+#define LOGD(...) do { if (gui_logd) printf(__VA_ARGS__); } while (0)
+
 /*************************************************************************/
 /*                            logging macros                             */
 /*************************************************************************/

@@ -10,7 +10,7 @@ static void paint(gui *_gui, widget *_this)
   struct gui *g = _gui;
   struct text_list_widget *this = _this;
   int i, j;
-printf("PAINT text_list %p xywh %d %d %d %d\n", _this, this->common.x, this->common.y, this->common.width, this->common.height);
+  LOGD("PAINT text_list %p xywh %d %d %d %d\n", _this, this->common.x, this->common.y, this->common.width, this->common.height);
   x_fill_rectangle(g->x, g->xwin, this->background_color,
       this->common.x, this->common.y,
       this->common.width, this->common.height);
@@ -29,7 +29,7 @@ static void hints(gui *_gui, widget *_w, int *width, int *height)
   struct text_list_widget *w = _w;
   *width = w->wanted_width;
   *height = w->wanted_nlines * w->line_height;
-printf("HINTS text_list wh %d %d\n", *width, *height);
+  LOGD("HINTS text_list wh %d %d\n", *width, *height);
 }
 
 static void allocate(
@@ -41,14 +41,14 @@ static void allocate(
   this->common.width = width;
   this->common.height = height;
   this->allocated_nlines = height / this->line_height;
-printf("ALLOCATE text_list %p xywh %d %d %d %d nlines %d\n", this, x, y, width, height, this->allocated_nlines);
+  LOGD("ALLOCATE text_list %p xywh %d %d %d %d nlines %d\n", this, x, y, width, height, this->allocated_nlines);
 }
 
 static void button(gui *_g, widget *_this, int x, int y, int button, int up)
 {
   struct gui *g = _g;
   struct text_list_widget *this = _this;
-printf("BUTTON test_list %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  LOGD("BUTTON test_list %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   /* scroll up */
   if (button == 4 && up == 0) {
     gui_notify(g, "scrollup", _this, NULL);
