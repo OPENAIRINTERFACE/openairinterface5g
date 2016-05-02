@@ -55,6 +55,10 @@
 #  include <immintrin.h>
 #endif
 
+#ifdef __arm__
+#  include <arm_neon.h>
+#endif
+
 /** @addtogroup _USRP_PHY_RF_INTERFACE_
  * @{
  */
@@ -313,6 +317,7 @@ int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, 
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
+  printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
   s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[0]);
   s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[0]);
 

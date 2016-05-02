@@ -67,7 +67,7 @@ mui_t mui=0;
 
 //------------------------------------------------------------------------------
 int8_t
-mac_rrc_lite_data_req(
+mac_rrc_data_req(
   const module_id_t Mod_idP,
   const int         CC_id,
   const frame_t     frameP,
@@ -98,7 +98,7 @@ mac_rrc_lite_data_req(
       // All even frames transmit SIB in SF 5
       if (eNB_rrc_inst[Mod_idP].carrier[CC_id].sizeof_SIB1 == 255) {
         LOG_E(RRC,"[eNB %d] MAC Request for SIB1 and SIB1 not initialized\n",Mod_idP);
-        mac_xface->macphy_exit("mac_rrc_lite_data_req:  MAC Request for SIB1 and SIB1 not initialized");
+        mac_xface->macphy_exit("mac_rrc_data_req:  MAC Request for SIB1 and SIB1 not initialized");
       }
 
       if ((frameP%2) == 0) {
@@ -337,7 +337,7 @@ mac_rrc_lite_data_req(
 
 //------------------------------------------------------------------------------
 int8_t
-mac_rrc_lite_data_ind(
+mac_rrc_data_ind(
   const module_id_t     module_idP,
   const int             CC_id,
   const frame_t         frameP,
@@ -509,14 +509,14 @@ mac_rrc_lite_data_ind(
 
 //-------------------------------------------------------------------------------------------//
 // this function is Not USED anymore
-void mac_lite_sync_ind(module_id_t Mod_idP,uint8_t Status)
+void mac_sync_ind(module_id_t Mod_idP,uint8_t Status)
 {
   //-------------------------------------------------------------------------------------------//
 }
 
 //------------------------------------------------------------------------------
 uint8_t
-rrc_lite_data_req(
+rrc_data_req(
   const protocol_ctxt_t*   const ctxt_pP,
   const rb_id_t                  rb_idP,
   const mui_t                    muiP,
@@ -586,7 +586,7 @@ rrc_lite_data_req(
 
 //------------------------------------------------------------------------------
 void
-rrc_lite_data_ind(
+rrc_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
   const rb_id_t                Srb_id,
   const sdu_size_t             sdu_sizeP,
@@ -650,7 +650,7 @@ rrc_lite_data_ind(
 }
 
 //-------------------------------------------------------------------------------------------//
-void rrc_lite_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
+void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
 #if defined(ENABLE_ITTI)
@@ -674,7 +674,7 @@ void rrc_lite_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_inde
 }
 
 //-------------------------------------------------------------------------------------------//
-void rrc_lite_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
+void rrc_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
   LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
@@ -701,7 +701,7 @@ void rrc_lite_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_
 
 //------------------------------------------------------------------------------
 int
-mac_eNB_get_rrc_lite_status(
+mac_eNB_get_rrc_status(
   const module_id_t Mod_idP,
   const rnti_t      rntiP
 )
@@ -719,10 +719,54 @@ mac_eNB_get_rrc_lite_status(
   }
 }
 
+void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP, 
+			    const int CC_idP, 
+			    const frame_t frameP,
+			    const sub_frame_t subframeP,
+			    const rnti_t rntiP) {
 
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  ue_context_p = rrc_eNB_get_ue_context(
+                   &eNB_rrc_inst[Mod_instP],
+                   rntiP);
+
+  if (ue_context_p != NULL) {
+    LOG_I(RRC,"Frame %d, Subframe %d: UE %x UL failure, activating timer\n",frameP,subframeP,rntiP);
+    ue_context_p->ue_context.ul_failure_timer=1;
+  }
+  else {
+    LOG_W(RRC,"Frame %d, Subframe %d: UE %x unknown \n",frameP,subframeP,rntiP);
+    rrc_mac_remove_ue(Mod_instP,rntiP);
+  }
+  
+}
+
+void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
+			    const int CC_idP, 
+			    const frame_t frameP,
+			    const sub_frame_t subframeP,
+			    const rnti_t rntiP) {
+
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  ue_context_p = rrc_eNB_get_ue_context(
+                   &eNB_rrc_inst[Mod_instP],
+                   rntiP);
+
+
+
+  if (ue_context_p != NULL) {
+    LOG_I(RRC,"Frame %d, Subframe %d: UE %x to UL in synch\n",rntiP);
+    ue_context_p->ue_context.ul_failure_timer=0;
+  }
+  else {
+    LOG_E(RRC,"Frame %d, Subframe %d: UE %x unknown \n",rntiP);
+  }
+
+  return;
+}
 //------------------------------------------------------------------------------
 int
-mac_UE_get_rrc_lite_status(
+mac_UE_get_rrc_status(
   const module_id_t Mod_idP,
   const uint8_t     indexP
 )
