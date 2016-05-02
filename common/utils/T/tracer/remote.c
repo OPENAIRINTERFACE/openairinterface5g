@@ -170,8 +170,8 @@ int main(int n, char **v)
   if (gui_mode) {
     widget *w, *win;
 //    w = new_text_list(g, 600, 20, 0);
-    w = new_text_list(g, 600, 20, new_color(g, "#ffabab"));
-    win = new_toplevel_window(g, 600, 20*12, "textlog");
+    w = new_text_list(g, 800, 50, BACKGROUND_COLOR);
+    win = new_toplevel_window(g, 800, 50*12, "textlog");
     widget_add_child(g, win, w, -1);
     out = new_textlist(1000, 10, g, w);
     //tout = new_textlist(7, 4, g, w);
