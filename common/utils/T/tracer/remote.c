@@ -60,7 +60,8 @@ void usage(void)
 "                                    by default, all is off\n"
 "    -p <port>                 use given port (default %d)\n"
 "    -x                        GUI output\n"
-"    -debug-gui                active GUI debug logs\n",
+"    -debug-gui                activate GUI debug logs\n"
+"    -no-gui                   disable GUI entirely\n",
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -121,6 +122,7 @@ int main(int n, char **v)
   gui *g;
   int gui_mode = 0;
   view *out;
+  int gui_active = 1;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -141,8 +143,11 @@ int main(int n, char **v)
       { on_off_name[on_off_n]=NULL; on_off_action[on_off_n++]=0; continue; }
     if (!strcmp(v[i], "-x")) { gui_mode = 1; continue; }
     if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
+    if (!strcmp(v[i], "-no-gui")) { gui_active = 0; continue; }
     usage();
   }
+
+  if (gui_active == 0) gui_mode = 0;
 
   if (database_filename == NULL) {
     printf("ERROR: provide a database file (-d)\n");
@@ -157,8 +162,10 @@ int main(int n, char **v)
 
   h = new_handler(database);
 
-  g = gui_init();
-  new_thread(gui_thread, g);
+  if (gui_active) {
+    g = gui_init();
+    new_thread(gui_thread, g);
+  }
 
   if (gui_mode) {
     widget *w, *win;
@@ -198,7 +205,8 @@ int main(int n, char **v)
     if (is_on[l])
       if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
 
-  setup_event_selector(g, database, s, is_on);
+  if (gui_active)
+    setup_event_selector(g, database, s, is_on);
 
   /* read messages */
   while (1) {
