@@ -45,7 +45,6 @@ static void *textlist_thread(void *_this)
       _append(this, s, &deleted);
       free(s);
     }
-    if (pthread_mutex_unlock(&this->lock)) abort();
     if (dirty) {
       text_list_state(this->g, this->w, &visible_lines, &start_line,
           &number_of_lines);
@@ -58,6 +57,7 @@ static void *textlist_thread(void *_this)
       /* this call is not necessary, but if things change in text_list... */
       widget_dirty(this->g, this->w);
     }
+    if (pthread_mutex_unlock(&this->lock)) abort();
     sleepms(1000/this->refresh_rate);
   }
 
@@ -90,6 +90,8 @@ static void scroll(void *private, gui *g,
   int new_line;
   int inc;
 
+  if (pthread_mutex_lock(&this->lock)) abort();
+
   text_list_state(g, w, &visible_lines, &start_line, &number_of_lines);
   inc = 10;
   if (inc > visible_lines - 2) inc = visible_lines - 2;
@@ -107,6 +109,8 @@ static void scroll(void *private, gui *g,
     this->autoscroll = 0;
   else
     this->autoscroll = 1;
+
+  if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
 static void click(void *private, gui *g,
@@ -116,7 +120,11 @@ static void click(void *private, gui *g,
   int *d = notification_data;
   int button = d[1];
 
+  if (pthread_mutex_lock(&this->lock)) abort();
+
   if (button == 1) this->autoscroll = 1 - this->autoscroll;
+
+  if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
 view *new_textlist(int maxsize, float refresh_rate, gui *g, widget *w)
