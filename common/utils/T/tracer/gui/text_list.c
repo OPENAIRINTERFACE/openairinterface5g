@@ -48,7 +48,7 @@ static void button(gui *_g, widget *_this, int x, int y, int button, int up)
 {
   struct gui *g = _g;
   struct text_list_widget *this = _this;
-  LOGD("BUTTON test_list %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+  LOGD("BUTTON text_list %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   /* scroll up */
   if (button == 4 && up == 0) {
     gui_notify(g, "scrollup", _this, NULL);
