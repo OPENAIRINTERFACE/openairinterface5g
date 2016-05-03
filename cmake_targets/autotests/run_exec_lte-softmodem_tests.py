@@ -321,13 +321,19 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   print "Killing old programs..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
+  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  result=oai.send_recv(cmd)
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)
   #print result
   result = oai.send_expect_false(cmd, 'Match found', False)
   print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
-  res = oai.send_recv(ExmimoRfStop, False)
+  cmd  = "( " + ExmimoRfStop + " ) >> $HOME/.oai_test_setup_cleanup.log.`hostname` ; sync "
+  res=oai.send_recv(cmd, False)
+  #res = oai.send_recv(ExmimoRfStop, False)
+  cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  res=oai.send_recv(cmd)
 
 # \brief Class thread to launch a generic command on remote machine
 # \param threadID number of thread (for book keeping)
@@ -1514,6 +1520,23 @@ for testcase in testcaseList:
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
         handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
+        
+        #The lines below are copied from below to trace the failure of some of the machines in test setup. These lines below need to be removed in long term
+        print "Creating xml file for overall results..."
+        cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+        res=os.system(cmd)
+        os.system('sync')
+        print "Now copying files to NFS Share"
+        oai_localhost = openair('localdomain','localhost')
+        oai_localhost.connect(user,pw)
+        cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+        res = oai_localhost.send_recv(cmd)
+        print "Deleting NFSTestResults Dir..." + res
+
+        print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+        SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+        oai_localhost.disconnect()
+
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
@@ -1551,5 +1574,6 @@ print "Deleting NFSTestResults Dir..." + res
 
 print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+oai_localhost.disconnect()
 
 sys.exit()

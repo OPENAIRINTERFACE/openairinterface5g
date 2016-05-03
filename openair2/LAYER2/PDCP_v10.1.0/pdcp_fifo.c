@@ -484,7 +484,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             ctxt.enb_flag      = ENB_FLAG_NO;
             ctxt.module_id     = pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-            rab_id    = pdcp_read_header_g.rb_id;
+            rab_id    = pdcp_read_header_g.rb_id  % maxDRB;
           }
 
           CHECK_CTXT_ARGS(&ctxt);

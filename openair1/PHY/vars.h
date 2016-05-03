@@ -77,7 +77,7 @@ unsigned char NB_RN_INST=0;
 unsigned char NB_INST=0;
 #endif
 
-unsigned int ULSCH_max_consecutive_errors = 10;
+unsigned int ULSCH_max_consecutive_errors = 20;
 
 int number_of_cards;
 

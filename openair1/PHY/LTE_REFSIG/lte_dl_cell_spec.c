@@ -41,7 +41,7 @@
 
 //Calibration
 int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
-                        mod_sym_t *output,
+                        int32_t *output,
                         short amp,
                         unsigned char Ns,
                         unsigned char l,//nb of sym per slot
@@ -50,7 +50,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 
   unsigned char nu,mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k,a;
-  mod_sym_t qpsk[4];
+  int32_t qpsk[4];
 
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
@@ -121,7 +121,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *phy_vars_eNB,
 
 
 int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
-                     mod_sym_t *output,
+                     int32_t *output,
                      short amp,
                      unsigned char Ns,
                      unsigned char l,
@@ -130,7 +130,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 
   unsigned char nu,mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k,a;
-  mod_sym_t qpsk[4];
+  int32_t qpsk[4];
 
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;
