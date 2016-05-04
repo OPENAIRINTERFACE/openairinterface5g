@@ -169,14 +169,14 @@ int main(int n, char **v)
 
   if (gui_mode) {
     widget *w, *win;
-//    w = new_text_list(g, 600, 20, 0);
-    w = new_text_list(g, 800, 50, BACKGROUND_COLOR);
+//    w = new_textlist(g, 600, 20, 0);
+    w = new_textlist(g, 800, 50, BACKGROUND_COLOR);
     win = new_toplevel_window(g, 800, 50*12, "textlog");
     widget_add_child(g, win, w, -1);
-    out = new_textlist(1000, 10, g, w);
-    //tout = new_textlist(7, 4, g, w);
+    out = new_view_textlist(1000, 10, g, w);
+    //tout = new_view_textlist(7, 4, g, w);
   } else {
-    out = new_stdout();
+    out = new_view_stdout();
   }
 
   for (i = 0; i < number_of_events; i++) {

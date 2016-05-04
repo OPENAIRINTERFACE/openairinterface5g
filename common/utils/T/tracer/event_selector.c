@@ -27,7 +27,7 @@ static void scroll(void *private, gui *g,
   int new_line;
   int inc;
 
-  text_list_state(g, w, &visible_lines, &start_line, &number_of_lines);
+  textlist_state(g, w, &visible_lines, &start_line, &number_of_lines);
   inc = 10;
   if (inc > visible_lines - 2) inc = visible_lines - 2;
   if (inc < 1) inc = 1;
@@ -38,7 +38,7 @@ static void scroll(void *private, gui *g,
     new_line = number_of_lines - visible_lines;
   if (new_line < 0) new_line = 0;
 
-  text_list_set_start_line(g, w, new_line);
+  textlist_set_start_line(g, w, new_line);
 }
 
 static void click(void *private, gui *g,
@@ -59,21 +59,21 @@ static void click(void *private, gui *g,
   if (button == 1) set_on = 1; else set_on = 0;
 
   if (w == this->events)
-    text_list_get_line(this->g, this->events, line, &text, &color);
+    textlist_get_line(this->g, this->events, line, &text, &color);
   else
-    text_list_get_line(this->g, this->groups, line, &text, &color);
+    textlist_get_line(this->g, this->groups, line, &text, &color);
 
   on_off(this->database, text, this->is_on, set_on);
 
   for (i = 0; i < this->nevents; i++)
-    text_list_set_color(this->g, this->events, i,
+    textlist_set_color(this->g, this->events, i,
         this->is_on[database_pos_to_id(this->database, i)] ?
             this->green : this->red);
 
   for (i = 0; i < this->ngroups; i++)
-    text_list_set_color(this->g, this->groups, i, FOREGROUND_COLOR);
+    textlist_set_color(this->g, this->groups, i, FOREGROUND_COLOR);
   if (w == this->groups)
-    text_list_set_color(this->g, this->groups, line,
+    textlist_set_color(this->g, this->groups, line,
         set_on ? this->green : this->red);
 
   t = 1;
@@ -124,8 +124,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   widget_add_child(g, left, new_label(g, "Events"), -1);
   widget_add_child(g, right, new_label(g, "Groups"), -1);
 
-  events = new_text_list(g, 235, 10, new_color(g, "#b3c1e1"));
-  groups = new_text_list(g, 235, 10, new_color(g, "#edd6cb"));
+  events = new_textlist(g, 235, 10, new_color(g, "#b3c1e1"));
+  groups = new_textlist(g, 235, 10, new_color(g, "#edd6cb"));
 
   widget_add_child(g, left, events, -1);
   widget_add_child(g, right, groups, -1);
@@ -134,7 +134,7 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
 
   n = database_get_ids(database, &ids);
   for (i = 0; i < n; i++) {
-    text_list_add(g, events, ids[i], -1,
+    textlist_add(g, events, ids[i], -1,
         is_on[database_pos_to_id(database, i)] ? green : red);
   }
   free(ids);
@@ -143,7 +143,7 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
 
   n = database_get_groups(database, &gps);
   for (i = 0; i < n; i++) {
-    text_list_add(g, groups, gps[i], -1, FOREGROUND_COLOR);
+    textlist_add(g, groups, gps[i], -1, FOREGROUND_COLOR);
   }
   free(gps);
 

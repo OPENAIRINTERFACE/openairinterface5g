@@ -21,7 +21,7 @@ static void append(view *_this, char *s)
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
-view *new_stdout(void)
+view *new_view_stdout(void)
 {
   struct stdout *ret = calloc(1, sizeof(struct stdout));
   if (ret == NULL) abort();

@@ -31,11 +31,11 @@ int main(void)
 #endif
 
   tlcol = new_color(g, "#ddf");
-  tl = new_text_list(g, 300, 10, tlcol);
+  tl = new_textlist(g, 300, 10, tlcol);
   widget_add_child(g, c1, tl, -1);
 
-  text_list_add(g, tl, "hello", -1);
-  text_list_add(g, tl, "world", -1);
+  textlist_add(g, tl, "hello", -1, FOREGROUND_COLOR);
+  textlist_add(g, tl, "world", -1, FOREGROUND_COLOR);
 
   w = new_toplevel_window(g, 500, 400, "test window");
   widget_add_child(g, w, c1, 0);

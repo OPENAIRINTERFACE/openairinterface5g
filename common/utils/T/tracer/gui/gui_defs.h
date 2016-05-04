@@ -76,7 +76,7 @@ struct container_widget {
   int nchildren;
 };
 
-struct text_list_widget {
+struct textlist_widget {
   struct widget common;
   char **text;
   int *color;

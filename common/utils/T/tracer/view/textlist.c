@@ -20,11 +20,11 @@ struct textlist {
 static void _append(struct textlist *this, char *s, int *deleted)
 {
   if (this->cursize == this->maxsize) {
-    text_list_del_silent(this->g, this->w, 0);
+    textlist_del_silent(this->g, this->w, 0);
     this->cursize--;
     (*deleted)++;
   }
-  text_list_add_silent(this->g, this->w, s, -1, FOREGROUND_COLOR);
+  textlist_add_silent(this->g, this->w, s, -1, FOREGROUND_COLOR);
   this->cursize++;
 }
 
@@ -46,15 +46,15 @@ static void *textlist_thread(void *_this)
       free(s);
     }
     if (dirty) {
-      text_list_state(this->g, this->w, &visible_lines, &start_line,
+      textlist_state(this->g, this->w, &visible_lines, &start_line,
           &number_of_lines);
       if (this->autoscroll)
         start_line = number_of_lines - visible_lines;
       else
         start_line -= deleted;
       if (start_line < 0) start_line = 0;
-      text_list_set_start_line(this->g, this->w, start_line);
-      /* this call is not necessary, but if things change in text_list... */
+      textlist_set_start_line(this->g, this->w, start_line);
+      /* this call is not necessary, but if things change in textlist... */
       widget_dirty(this->g, this->w);
     }
     if (pthread_mutex_unlock(&this->lock)) abort();
@@ -92,7 +92,7 @@ static void scroll(void *private, gui *g,
 
   if (pthread_mutex_lock(&this->lock)) abort();
 
-  text_list_state(g, w, &visible_lines, &start_line, &number_of_lines);
+  textlist_state(g, w, &visible_lines, &start_line, &number_of_lines);
   inc = 10;
   if (inc > visible_lines - 2) inc = visible_lines - 2;
   if (inc < 1) inc = 1;
@@ -103,7 +103,7 @@ static void scroll(void *private, gui *g,
     new_line = number_of_lines - visible_lines;
   if (new_line < 0) new_line = 0;
 
-  text_list_set_start_line(g, w, new_line);
+  textlist_set_start_line(g, w, new_line);
 
   if (new_line + visible_lines < number_of_lines)
     this->autoscroll = 0;
@@ -127,7 +127,7 @@ static void click(void *private, gui *g,
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
-view *new_textlist(int maxsize, float refresh_rate, gui *g, widget *w)
+view *new_view_textlist(int maxsize, float refresh_rate, gui *g, widget *w)
 {
   struct textlist *ret = calloc(1, sizeof(struct textlist));
   if (ret == NULL) abort();

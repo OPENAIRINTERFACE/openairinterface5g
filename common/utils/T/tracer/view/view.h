@@ -10,7 +10,7 @@ typedef struct view {
   void (*append)(struct view *this, ...);
 } view;
 
-view *new_stdout(void);
-view *new_textlist(int maxsize, float refresh_rate, gui *g, widget *w);
+view *new_view_stdout(void);
+view *new_view_textlist(int maxsize, float refresh_rate, gui *g, widget *w);
 
 #endif /* _VIEW_H_ */

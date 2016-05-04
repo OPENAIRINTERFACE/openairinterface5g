@@ -23,7 +23,7 @@ widget *new_container(gui *gui, int vertical);
 widget *new_label(gui *gui, const char *text);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
-widget *new_text_list(gui *_gui, int width, int nlines, int background_color);
+widget *new_textlist(gui *_gui, int width, int nlines, int background_color);
 
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
@@ -33,18 +33,18 @@ void xy_plot_set_range(gui *gui, widget *this,
 void xy_plot_set_points(gui *gui, widget *this,
     int npoints, float *x, float *y);
 
-void text_list_add(gui *gui, widget *this, const char *text, int position,
+void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);
-void text_list_del(gui *gui, widget *this, int position);
-void text_list_add_silent(gui *gui, widget *this, const char *text,
+void textlist_del(gui *gui, widget *this, int position);
+void textlist_add_silent(gui *gui, widget *this, const char *text,
     int position, int color);
-void text_list_del_silent(gui *gui, widget *this, int position);
-void text_list_state(gui *_gui, widget *_this,
+void textlist_del_silent(gui *gui, widget *this, int position);
+void textlist_state(gui *_gui, widget *_this,
     int *visible_lines, int *start_line, int *number_of_lines);
-void text_list_set_start_line(gui *gui, widget *this, int line);
-void text_list_get_line(gui *gui, widget *this, int line,
+void textlist_set_start_line(gui *gui, widget *this, int line);
+void textlist_get_line(gui *gui, widget *this, int line,
     char **text, int *color);
-void text_list_set_color(gui *gui, widget *this, int line, int color);
+void textlist_set_color(gui *gui, widget *this, int line, int color);
 
 void gui_loop(gui *gui);
 
@@ -55,7 +55,7 @@ int new_color(gui *gui, char *color);
 
 /* notifications */
 /* known notifications:
- * - text_list:
+ * - textlist:
  *      - scrollup   { void *: NULL }
  *      - scrolldown { void *: NULL }
  *      - click      { int [2]: line, button }
