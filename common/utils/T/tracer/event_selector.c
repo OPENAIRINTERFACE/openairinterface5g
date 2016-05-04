@@ -16,6 +16,11 @@ struct event_selector {
   int nevents;
   int ngroups;
   int socket;
+  int paused;
+  /* those three widgets used to pause/unpause reception of events */
+  widget *parent_widget;
+  widget *normal_widget;
+  widget *pause_widget;
 };
 
 static void scroll(void *private, gui *g,
@@ -54,6 +59,46 @@ static void click(void *private, gui *g,
   int i;
   char t;
 
+  /* notification_data depends on the kind of widget */
+  if (w == this->pause_widget) {
+    line = 0;
+    button = d[0];
+  } else {
+    line = d[0];
+    button = d[1];
+  }
+
+  /* middle-button toggles - redo with SPACE when keyboard is processed */
+  if (button == 2) {
+    if (this->paused == 0) {
+      widget_del_child(g, this->parent_widget, this->normal_widget);
+      widget_add_child(g, this->parent_widget, this->pause_widget, 0);
+      container_set_child_growable(g, this->parent_widget,
+          this->pause_widget, 1);
+      /* pause */
+      t = 1;
+      socket_send(this->socket, &t, 1);
+      socket_send(this->socket, &this->nevents, sizeof(int));
+      set_on = 0;
+      for (i = 0; i < this->nevents; i++)
+        socket_send(this->socket, &set_on, sizeof(int));
+    } else {
+      widget_del_child(g, this->parent_widget, this->pause_widget);
+      widget_add_child(g, this->parent_widget, this->normal_widget, 0);
+      container_set_child_growable(g, this->parent_widget,
+          this->normal_widget, 1);
+      /* un-pause */
+      t = 1;
+      socket_send(this->socket, &t, 1);
+      socket_send(this->socket, &this->nevents, sizeof(int));
+      socket_send(this->socket, this->is_on, this->nevents * sizeof(int));
+    }
+    this->paused = 1 - this->paused;
+    return;
+  }
+
+  if (w == this->pause_widget) return;
+
   if (button != 1 && button != 3) return;
 
   if (button == 1) set_on = 1; else set_on = 0;
@@ -87,10 +132,12 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
 {
   struct event_selector *ret;
   widget *win;
+  widget *win_container;
   widget *main_container;
   widget *container;
   widget *left, *right;
   widget *events, *groups;
+  widget *pause_container;
   char **ids;
   char **gps;
   int n;
@@ -103,8 +150,12 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   green = new_color(g, "#2f9e2a");
 
   win = new_toplevel_window(g, 470, 300, "event selector");
+  win_container = new_container(g, VERTICAL);
+  widget_add_child(g, win, win_container, -1);
+
   main_container = new_container(g, VERTICAL);
-  widget_add_child(g, win, main_container, -1);
+  widget_add_child(g, win_container, main_container, -1);
+  container_set_child_growable(g, win_container, main_container, 1);
 
   container = new_container(g, HORIZONTAL);
   widget_add_child(g, main_container, container, -1);
@@ -132,6 +183,12 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   container_set_child_growable(g, left, events, 1);
   container_set_child_growable(g, right, groups, 1);
 
+  pause_container = new_positioner(g);
+  widget_add_child(g, pause_container,
+      new_label(g,
+          "events' reception paused - click middle button to resume"), -1);
+  label_set_clickable(g, pause_container, 1);
+
   n = database_get_ids(database, &ids);
   for (i = 0; i < n; i++) {
     textlist_add(g, events, ids[i], -1,
@@ -158,6 +215,10 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   ret->database = database;
   ret->socket = socket;
 
+  ret->parent_widget = win_container;
+  ret->normal_widget = main_container;
+  ret->pause_widget = pause_container;
+
   register_notifier(g, "scrollup", events, scroll, ret);
   register_notifier(g, "scrolldown", events, scroll, ret);
   register_notifier(g, "click", events, click, ret);
@@ -165,6 +226,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   register_notifier(g, "scrollup", groups, scroll, ret);
   register_notifier(g, "scrolldown", groups, scroll, ret);
   register_notifier(g, "click", groups, click, ret);
+
+  register_notifier(g, "click", pause_container, click, ret);
 
   return ret;
 }
