@@ -26,6 +26,8 @@ widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
 widget *new_textlist(gui *_gui, int width, int nlines, int background_color);
 
+void label_set_clickable(gui *gui, widget *label, int clickable);
+
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
 
@@ -60,6 +62,8 @@ int new_color(gui *gui, char *color);
  *      - scrollup   { void *: NULL }
  *      - scrolldown { void *: NULL }
  *      - click      { int [2]: line, button }
+ * - label:
+ *      - click      { int: button } (if enabled)
  */
 
 /* same type as in gui_defs.h */

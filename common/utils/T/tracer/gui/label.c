@@ -44,3 +44,37 @@ widget *new_label(gui *_gui, const char *label)
 
   return w;
 }
+
+static void button(gui *gui, widget *_this, int x, int y, int button, int up)
+{
+  LOGD("BUTTON label %p xy %d %d button %d up %d\n", _this, x, y, button, up);
+
+  if (up != 0) return;
+
+  gui_notify(gui, "click", _this, &button);
+}
+
+/* we could use default_button, but it's in widget.c, so, well... */
+static void no_button(gui *gui, widget *_this, int x,int y,int button,int up)
+{
+  /* do nothing */
+}
+
+/*************************************************************************/
+/*                             public functions                          */
+/*************************************************************************/
+
+void label_set_clickable(gui *_g, widget *_this, int clickable)
+{
+  struct gui *g = _g;
+  struct label_widget *this = _this;
+
+  glock(g);
+
+  if (clickable)
+    this->common.button = button;
+  else
+    this->common.button = no_button;
+
+  gunlock(g);
+}
