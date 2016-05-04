@@ -459,7 +459,7 @@ int database_get_ids(void *_d, char ***ids)
 {
   database *d = _d;
   int i;
-  *ids = malloc(d->isize * sizeof(char **));
+  *ids = malloc(d->isize * sizeof(char **)); if (*ids == NULL) abort();
   for (i = 0; i < d->isize; i++) (*ids)[i] = d->i[i].name;
   return d->isize;
 }
@@ -468,7 +468,7 @@ int database_get_groups(void *_d, char ***groups)
 {
   database *d = _d;
   int i;
-  *groups = malloc(d->gsize * sizeof(char **));
+  *groups = malloc(d->gsize * sizeof(char **)); if (*groups == NULL) abort();
   for (i = 0; i < d->gsize; i++) (*groups)[i] = d->g[i].name;
   return d->gsize;
 }
