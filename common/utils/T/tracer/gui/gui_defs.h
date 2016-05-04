@@ -30,7 +30,7 @@ extern int volatile gui_logd;
 /*************************************************************************/
 
 enum widget_type {
-  TOPLEVEL_WINDOW, CONTAINER, TEXT_LIST, XY_PLOT, BUTTON, LABEL
+  TOPLEVEL_WINDOW, CONTAINER, POSITIONER, TEXT_LIST, XY_PLOT, BUTTON, LABEL
 };
 
 struct widget_list;
@@ -75,6 +75,10 @@ struct container_widget {
   int hint_height;         /* repack_was_called == 1          */
   int *growable;
   int nchildren;
+};
+
+struct positioner_widget {
+  struct widget common;
 };
 
 struct textlist_widget {

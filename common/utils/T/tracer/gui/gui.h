@@ -21,6 +21,7 @@ void widget_dirty(gui *gui, widget *this);
 
 widget *new_toplevel_window(gui *gui, int width, int height, char *title);
 widget *new_container(gui *gui, int vertical);
+widget *new_positioner(gui *gui);
 widget *new_label(gui *gui, const char *text);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
