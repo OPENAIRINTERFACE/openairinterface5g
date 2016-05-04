@@ -18,6 +18,7 @@ static void add_child(gui *g, widget *_this, widget *child, int position)
 {
   LOGD("ADD_CHILD container\n");
   struct container_widget *this = _this;
+
   this->hints_are_valid = 0;
   widget_add_child_internal(g, this, child, position);
 
@@ -33,6 +34,24 @@ static void add_child(gui *g, widget *_this, widget *child, int position)
   this->growable[position] = 0;
 
   this->nchildren++;
+}
+
+static void del_child(gui *g, widget *_this, widget *child)
+{
+  LOGD("DEL_CHILD container\n");
+  struct container_widget *this = _this;
+  int position = widget_get_child_position(g, _this, child);
+
+  this->hints_are_valid = 0;
+  widget_del_child_internal(g, this, child);
+
+  memmove(this->growable + position, this->growable + position+1,
+          (this->nchildren - position - 1) * sizeof(int));
+
+  this->growable = realloc(this->growable, (this->nchildren-1)*sizeof(int));
+  if (this->growable == NULL) abort();
+
+  this->nchildren--;
 }
 
 static void compute_vertical_hints(struct gui *g,
@@ -271,6 +290,7 @@ widget *new_container(gui *_gui, int vertical)
 
   w->common.paint     = paint;
   w->common.add_child = add_child;
+  w->common.del_child = del_child;
   w->common.repack    = repack;
 
   if (vertical) {

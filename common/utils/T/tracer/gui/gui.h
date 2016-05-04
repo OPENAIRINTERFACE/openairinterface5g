@@ -16,6 +16,7 @@ gui *gui_init(void);
 
 /* position = -1 to put at the end */
 void widget_add_child(gui *gui, widget *parent, widget *child, int position);
+void widget_del_child(gui *gui, widget *parent, widget *child);
 void widget_dirty(gui *gui, widget *this);
 
 widget *new_toplevel_window(gui *gui, int width, int height, char *title);

@@ -12,6 +12,7 @@ static void default_allocate(
     gui *gui, widget *_this, int x, int y, int width, int height);
 static void default_add_child(
     gui *_gui, widget *_this, widget *child, int position);
+static void default_del_child(gui *_gui, widget *_this, widget *child);
 static void default_hints(gui *g, widget *this, int *width, int *height);
 static void default_button(gui *gui, widget *_this, int x, int y, int button,
     int up);
@@ -47,6 +48,7 @@ widget *new_widget(struct gui *g, enum widget_type type, int size)
   ret->clear     = default_clear;
   ret->repack    = default_repack;
   ret->add_child = default_add_child;
+  ret->del_child = default_del_child;
   ret->allocate  = default_allocate;
   ret->hints     = default_hints;
   ret->button    = default_button;
@@ -121,6 +123,65 @@ repack:
   send_event(_gui, REPACK, p->id);
 }
 
+void widget_del_child_internal(gui *_gui, widget *parent, widget *child)
+{
+  struct widget *p = parent;
+  struct widget *c = child;
+  struct widget_list *prev, *cur;
+  int i;
+
+  c->parent = NULL;
+
+  prev = NULL;
+  cur = p->children;
+
+  while (cur != NULL && cur->item != c) {
+    prev = cur;
+    cur = cur->next;
+  }
+
+  if (cur == NULL) ERR("child not found\n");
+
+  if (prev == NULL) {
+    /* child is at head */
+    p->children = cur->next;
+    if (p->children != NULL) p->children->last = cur->last;
+    goto done;
+  }
+
+  if (cur->next == NULL) {
+    /* child is last (and prev is != NULL) */
+    prev->next = NULL;
+    p->children->last = prev;
+    goto done;
+  }
+
+  /* child is between two existing items */
+  prev->next = cur->next;
+
+done:
+  free(cur);
+  send_event(_gui, REPACK, p->id);
+}
+
+int widget_get_child_position(gui *_gui, widget *parent, widget *child)
+{
+  struct widget *p = parent;
+  struct widget *c = child;
+  struct widget_list *cur;
+  int i = 0;
+
+  cur = p->children;
+
+  while (cur != NULL && cur->item != c) {
+    cur = cur->next;
+    i++;
+  }
+
+  if (cur == NULL) return -1;
+  return i;
+}
+
 /*************************************************************************/
 /*                           default functions                           */
 /*************************************************************************/
@@ -140,10 +201,16 @@ static void default_repack(gui *gui, widget *_this)
 }
 
 static void default_add_child(
-    gui *_gui, widget *_this, widget *child, int position) 
+    gui *_gui, widget *_this, widget *child, int position)
 {
   struct widget *this = _this;
   WARN("cannot add child to widget %s\n", widget_name(this->type));
+}
+
+static void default_del_child( gui *_gui, widget *_this, widget *child)
+{
+  struct widget *this = _this;
+  WARN("cannot del child from widget %s\n", widget_name(this->type));
 }
 
 static void default_allocate(
@@ -177,6 +244,14 @@ void widget_add_child(gui *_gui, widget *parent, widget *child, int position)
   struct widget *this = parent;
   glock(_gui);
   this->add_child(_gui, parent, child, position);
+  gunlock(_gui);
+}
+
+void widget_del_child(gui *_gui, widget *parent, widget *child)
+{
+  struct widget *this = parent;
+  glock(_gui);
+  this->del_child(_gui, parent, child);
   gunlock(_gui);
 }
 

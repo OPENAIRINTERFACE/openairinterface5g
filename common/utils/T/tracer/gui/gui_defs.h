@@ -46,6 +46,7 @@ struct widget {
   struct widget *parent;
   void (*repack)(gui *g, widget *this);
   void (*add_child)(gui *g, widget *this, widget *child, int position);
+  void (*del_child)(gui *g, widget *this, widget *child);
   void (*allocate)(gui *g, widget *this, int x, int y, int width, int height);
   void (*hints)(gui *g, widget *this, int *width, int *height);
   void (*paint)(gui *g, widget *this);
@@ -197,6 +198,8 @@ struct gui {
 widget *new_widget(struct gui *g, enum widget_type type, int size);
 void widget_add_child_internal(
     gui *_gui, widget *parent, widget *child, int position);
+void widget_del_child_internal(gui *_gui, widget *parent, widget *child);
+int widget_get_child_position(gui *_gui, widget *parent, widget *child);
 
 const char *widget_name(enum widget_type type);
 
