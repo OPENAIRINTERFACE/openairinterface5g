@@ -49,7 +49,7 @@ static void del_child(gui *g, widget *_this, widget *child)
           (this->nchildren - position - 1) * sizeof(int));
 
   this->growable = realloc(this->growable, (this->nchildren-1)*sizeof(int));
-  if (this->growable == NULL) abort();
+  if (this->nchildren != 1 && this->growable == NULL) abort();
 
   this->nchildren--;
 }
