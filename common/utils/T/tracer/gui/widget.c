@@ -128,7 +128,6 @@ void widget_del_child_internal(gui *_gui, widget *parent, widget *child)
   struct widget *p = parent;
   struct widget *c = child;
   struct widget_list *prev, *cur;
-  int i;
 
   c->parent = NULL;
 
