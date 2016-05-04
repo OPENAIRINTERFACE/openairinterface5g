@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 
 typedef struct databuf {
   char *d;
@@ -20,6 +22,8 @@ typedef struct {
   pthread_mutex_t datalock;
   pthread_cond_t datacond;
   databuf * volatile head, *tail;
+  uint64_t memusage;
+  uint64_t last_warning_memusage;
 } forward_data;
 
 static void *data_sender(void *_f)
@@ -37,6 +41,7 @@ wait:
   buf = cur->d;
   size = cur->l;
   f->head = cur->next;
+  f->memusage -= size;
   if (f->head == NULL) f->tail = NULL;
   if (pthread_mutex_unlock(&f->datalock)) abort();
   free(cur);
@@ -122,6 +127,9 @@ void *forwarder(char *ip, int port)
   f->sc = -1;
   f->head = f->tail = NULL;
 
+  f->memusage = 0;
+  f->last_warning_memusage = 0;
+
   printf("connecting to remote tracer %s:%d\n", ip, port);
 
 again:
@@ -166,6 +174,19 @@ void forward(void *_forwarder, char *buf, int size)
   if (f->head == NULL) f->head = new;
   if (f->tail != NULL) f->tail->next = new;
   f->tail = new;
+
+  f->memusage += size+4;
+  /* warn every 100MB */
+  if (f->memusage > f->last_warning_memusage &&
+      f->memusage - f->last_warning_memusage > 100000000) {
+    f->last_warning_memusage += 100000000;
+    printf("WARNING: memory usage is over %"PRIu64"MB\n",
+           f->last_warning_memusage / 1000000);
+  } else
+  if (f->memusage < f->last_warning_memusage &&
+      f->last_warning_memusage - f->memusage > 100000000) {
+    f->last_warning_memusage = (f->memusage/100000000) * 100000000;
+  }
 
   if (pthread_cond_signal(&f->datacond)) abort();
   if (pthread_mutex_unlock(&f->datalock)) abort();
