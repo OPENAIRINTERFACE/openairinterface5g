@@ -171,13 +171,13 @@ set(CMAKE_CXX_FLAGS
 
 
 #########################
-set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${OPENAIR_TARGETS}/bin")
+set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-rpath -Wl,${CMAKE_CURRENT_BINARY_DIR}")
 #########################
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 add_definitions(-DCMAKER)
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3")
-set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O2") 
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS} -g -DMALLOC_CHECK_=3 -O3") 
 
 
 set(GIT_BRANCH        "UNKNOWN")
@@ -261,6 +261,7 @@ endif (${ENABLE_ITTI})
 add_boolean_option(RTAI False "Use RTAI")
 if (${RTAI})
   set(LOWLATENCY False)
+  set(CPU_AFFINITY False)
   add_definitions("-DENABLE_RTAI_CLOCK")
   add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
   include_directories ("/usr/realtime/include")
@@ -564,7 +565,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
 
   set(option_HW_lib "bladeRF -rdynamic -ldl")
- #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
@@ -577,7 +577,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
   set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
-  set(LOWLATENCY False)
   set(option_HW_lib "-lLMS_SDR -lLMS7002M -lSi5351C -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
@@ -607,6 +606,7 @@ endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
 Message("LOWLATENCY flag  is ${LOWLATENCY}")
+Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -620,6 +620,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
 add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
@@ -996,6 +997,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_8bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
@@ -1098,8 +1100,8 @@ set (ENB_APP_SRC
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
-  ${ENB_APP_SRC}
-  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+  ${ENB_APP_SRC})
+#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 # L3 Libs
 ##########################
@@ -2013,38 +2015,4 @@ endforeach(file)
 ADD_CUSTOM_TARGET(oarf
    DEPENDS ${OCT_FILES}
 )
- 
-#CMAKE INSTALL and CPACK
 
-#INSTALL(PROGRAMS lte-softmodem ${OPENAIR_DIR}/targets DESTINATION bin)
-#INSTALL(PROGRAMS oaisim ${OPENAIR_DIR}/targets DESTINATION bin)
-
-
-#SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAirInterface")
-#SET(CPACK_PACKAGE_VENDOR "Eurecom")
-#SET(CPACK_PACKAGE_DESCRIPTION_FILE "${OPENAIR_DIR}/README.txt")
-#SET(CPACK_RESOURCE_FILE_LICENSE "${OPENAIR_DIR}/COPYING")
-#SET(CPACK_PACKAGE_VERSION_MAJOR "1")
-#SET(CPACK_PACKAGE_VERSION_MINOR "1")
-#SET(CPACK_PACKAGE_VERSION_PATCH "1")
-
-#SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
-#SET(CPACK_STRIP_FILES "${OPENAIR_TARGETS}/bin")
-#SET(CPACK_SOURCE_STRIP_FILES "")
-
-##debian specific 
-#SET(CPACK_DEBIAN_PACKAGE_NAME "OAI") 
-#SET(CPACK_DEBIAN_PACKAGE_VERSION "${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
-##dpkg --print-architecture (do not use i686
-#SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-
-#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
-#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libpthread.so.0  libm.so.6 libconfig.so.9 librt.so.1 libcrypt.so.1 libcrypto.so.1.0.0  libnettle.so.4 libsctp.so.1 libc.so.6")
-#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "EURECOM-OSA")
-
-#SET(CPACK_PACKAGE_EXECUTABLES "lte-softmodem" "mme_gw.Rel10" "openair-hss")
-
-#SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "OpenAirInterface")
-#SET(CPACK_DEBIAN_PACKAGE_Section "Beta-Release")
-
-#INCLUDE(CPack)

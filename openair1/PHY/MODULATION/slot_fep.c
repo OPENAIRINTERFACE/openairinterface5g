@@ -27,7 +27,6 @@
 
  *******************************************************************************/
 #include "PHY/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 //#define DEBUG_FEP
 
@@ -56,7 +55,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
   unsigned int rx_offset;
 
   void (*dft)(int16_t *,int16_t *, int);
-  int tmp_dft_in[256];  // This is for misalignment issues for 6 and 15 PRBs
+  int tmp_dft_in[2048];  // This is for misalignment issues for 6 and 15 PRBs
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
@@ -115,8 +114,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
     memset(&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
     rx_offset = sample_offset + slot_offset + nb_prefix_samples0 + subframe_offset - SOFFSET;
-    // Align with 128 bit
-    rx_offset = rx_offset - rx_offset % 4;
+    // Align with 256 bit
+    //    rx_offset = rx_offset&0xfffffff8;
 
 #ifdef DEBUG_FEP
     //  if (phy_vars_ue->frame <100)
@@ -131,9 +130,9 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
                (short *)&ue_common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
 
-      if ((rx_offset&3)!=0) {  // if input to dft is not 128-bit aligned, issue for size 6 and 15 PRBs
+      if ((rx_offset&7)!=0) {  // if input to dft is not 256-bit aligned, issue for size 6,15 and 25 PRBs
         memcpy((void *)tmp_dft_in,
-               (void *)&ue_common_vars->rxdata[aa][(rx_offset-nb_prefix_samples0) % frame_length_samples],
+               (void *)&ue_common_vars->rxdata[aa][rx_offset % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));
         dft((int16_t *)tmp_dft_in,
             (int16_t *)&ue_common_vars->rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],1);
@@ -146,8 +145,8 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
       }
     } else {
-      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples) +
-                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
+      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +
+      //                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
 
 #ifdef DEBUG_FEP
       //  if (phy_vars_ue->frame <100)
@@ -162,7 +161,7 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
 
       start_meas(&phy_vars_ue->rx_dft_stats);
 
-      if ((rx_offset&3)!=0) {  // if input to dft is not 128-bit aligned, issue for size 6 and 15 PRBs
+      if ((rx_offset&7)!=0) {  // if input to dft is not 128-bit aligned, issue for size 6 and 15 PRBs
         memcpy((void *)tmp_dft_in,
                (void *)&ue_common_vars->rxdata[aa][(rx_offset) % frame_length_samples],
                frame_parms->ofdm_symbol_size*sizeof(int));

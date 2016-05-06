@@ -47,6 +47,7 @@ PRINT_STATS="False"
 VCD_TIMING="False"
 LOWLATENCY_FLAG_USER="False"
 FORCE_LOWLATENCY_FLAG_USER=""
+CPU_AFFINITY_FLAG_USER="True" #Only valid when lowlatecy flag is set to False
 REL="Rel10"
 HW="None"
 TP="None"
@@ -125,6 +126,8 @@ Options
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x). 
+--disable-cpu-affinity
+   Disables CPU Affinity between UHD/TX/RX Threads (Valid only when deadline scheduler is disabled). By defaulT, CPU Affinity is enabled when not using deadline scheduler. It is enabled only with >2 CPUs. For eNB, CPU_0-> Device library (UHD), CPU_1->TX Threads, CPU_2...CPU_MAX->Rx Threads. For UE, CPU_0->Device Library(UHD), CPU_1..CPU_MAX -> All the UE threads
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -263,6 +266,10 @@ function main() {
             FORCE_LOWLATENCY_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
+       --disable-cpu-affinity)
+            CPU_AFFINITY_FLAG_USER="False"
+            echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -309,7 +316,7 @@ function main() {
   #By default: EXMIMO: enable
   if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        LOWLATENCY_FLAG_USER="True"
+        LOWLATENCY_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
         LOWLATENCY_FLAG_USER="True"
      elif [ "$HW" = "OAI_USRP" ] ; then 
@@ -328,8 +335,13 @@ function main() {
      LOWLATENCY_FLAG_USER=$FORCE_LOWLATENCY_FLAG_USER
   fi
 
-  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
+  #Disable CPU Affinity for deadline scheduler
+  if [ "$LOWLATENCY_FLAG_USER" = "True" ] ; then 
+     CPU_AFFINITY_FLAG_USER="False"
+  fi
 
+  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
+  echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
   ############################################
   # setting and printing OAI envs, we should check here
@@ -421,6 +433,7 @@ function main() {
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
     echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
     echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+    echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -449,7 +462,7 @@ function main() {
     compilations \
       $lte_build_dir ue_ip \
       CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
-      
+
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
 #    cmake ..
@@ -472,6 +485,11 @@ function main() {
     # generate USIM data
     if [ -f $dbin/nvram ]; then
       install_nas_tools $dbin $dconf
+      echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
+      cp -Rvf $dbin/.ue_emm.nvram $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.ue.nvram $DIR/$lte_build_dir/build
+      cp -Rvf $dbin/.usim.nvram $DIR/$lte_build_dir/build
+
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -643,6 +661,7 @@ function main() {
      echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
      echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
      echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
      cmake ..

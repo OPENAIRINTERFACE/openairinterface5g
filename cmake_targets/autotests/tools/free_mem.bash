@@ -30,23 +30,7 @@
 # *******************************************************************************/
 # \author Navid Nikaein, Rohit Gupta
 
-#arg1 timeout to wait before running the script
-#arg2 interface
-#arg3 iperf arguments
+# To free unused memory else test setup runs out of memory
+sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches ' 
 
-args=($*)
-timeout=${args[0]}
-iface=${args[1]}
-iperf_args=(${args[@]:2})
 
-#array=${1:-1}
-echo "args =  ${args[@]}"
-echo "timeout = $timeout"
-echo "iface = $iface"
-echo "iperf_args = ${iperf_args[@]}"
-
-sleep $timeout
-
-while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5
-
-iperf ${iperf_args[@]}
