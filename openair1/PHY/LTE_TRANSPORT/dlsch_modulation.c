@@ -140,7 +140,7 @@ uint32_t FOUR[2]={0,4};
 uint32_t TWO[2]={0,2};
 
 int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
-					    mod_sym_t **txdataF,
+					    int **txdataF,
 					    uint32_t *jj,
 					    uint32_t *jj2,
 					    uint16_t re_offset,
@@ -213,7 +213,7 @@ int allocate_REs_in_RB_no_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int allocate_REs_in_RB_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
-					 mod_sym_t **txdataF,
+					 int **txdataF,
 					 uint32_t *jj,
 					 uint32_t *jj2,
 					 uint16_t re_offset,
@@ -295,7 +295,7 @@ int allocate_REs_in_RB_pilots_16QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
-					    mod_sym_t **txdataF,
+					    int **txdataF,
 					    uint32_t *jj,
 					    uint32_t *jj2,
 					    uint16_t re_offset,
@@ -377,7 +377,7 @@ int allocate_REs_in_RB_no_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int allocate_REs_in_RB_pilots_64QAM_siso(LTE_DL_FRAME_PARMS *frame_parms,
-					 mod_sym_t **txdataF,
+					 int **txdataF,
 					 uint32_t *jj,
 					 uint32_t *jj2,
 					 uint16_t re_offset,
@@ -1514,7 +1514,7 @@ int dlsch_modulation(int32_t **txdataF,
   int16_t qam16_table_a1[4],qam64_table_a1[8],qam16_table_b1[4],qam64_table_b1[8];
   int16_t *qam_table_s0=NULL,*qam_table_s1=NULL;
   int (*allocate_REs)(LTE_DL_FRAME_PARMS *,
-		      mod_sym_t **,
+		      int **,
 		      uint32_t*,
 		      uint32_t*,
 		      uint16_t,

@@ -1579,6 +1579,7 @@ add_executable(lte-softmodem
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
