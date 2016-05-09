@@ -55,7 +55,7 @@ static void *input_signal_plotter(void *_)
                                   iqbuf[2*i+1]*iqbuf[2*i+1]));
     }
 
-    xy_plot_set_points(eNB_data.g, eNB_data.input_signal,
+    xy_plot_set_points(eNB_data.g, eNB_data.input_signal, 0,
         length, x, y);
 
     if (pthread_mutex_unlock(&eNB_data.input_signal_lock)) abort();
@@ -70,6 +70,7 @@ void t_gui_start(void)
   widget *plot = new_xy_plot(g, 512, 100, "eNB 0 input signal", 20);
   widget_add_child(g, win, plot, -1);
   xy_plot_set_range(g, plot, 0, 76800, 30, 70);
+  xy_plot_new_plot(g, plot, FOREGROUND_COLOR);
 
   eNB_data.input_signal = plot;
   eNB_data.input_signal_length = 76800 * 4;

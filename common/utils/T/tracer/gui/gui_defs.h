@@ -95,11 +95,15 @@ struct textlist_widget {
   int background_color;
 };
 
-struct xy_plot_widget {
-  struct widget common;
+struct xy_plot_plot {
   float *x;
   float *y;
   int npoints;
+  int color;
+};
+
+struct xy_plot_widget {
+  struct widget common;
   char *label;
   int label_width;
   int label_height;
@@ -109,6 +113,8 @@ struct xy_plot_widget {
   float ymin, ymax;
   int wanted_width;
   int wanted_height;
+  struct xy_plot_plot *plots;
+  int nplots;
 };
 
 struct button_widget {

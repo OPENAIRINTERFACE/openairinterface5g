@@ -32,10 +32,11 @@ void label_set_clickable(gui *gui, widget *label, int clickable);
 void container_set_child_growable(gui *_gui, widget *_this,
     widget *child, int growable);
 
+int xy_plot_new_plot(gui *gui, widget *this, int color);
 void xy_plot_set_range(gui *gui, widget *this,
     float xmin, float xmax, float ymin, float ymax);
 void xy_plot_set_points(gui *gui, widget *this,
-    int npoints, float *x, float *y);
+    int plot, int npoints, float *x, float *y);
 
 void textlist_add(gui *gui, widget *this, const char *text, int position,
     int color);

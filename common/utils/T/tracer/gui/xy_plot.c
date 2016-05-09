@@ -21,6 +21,7 @@ static void paint(gui *_gui, widget *_this)
   float allocated_ymin, allocated_ymax;
   float center;
   int i;
+  int n;
 
 # define FLIP(v) (-(v) + allocated_plot_height-1)
 
@@ -134,23 +135,25 @@ static void paint(gui *_gui, widget *_this)
           + this->label_baseline,
       this->label);
 
-  /* points */
-  float ax, bx, ay, by;
-  ax = (allocated_plot_width-1) / (allocated_xmax - allocated_xmin);
-  bx = -ax * allocated_xmin;
-  ay = (allocated_plot_height-1) / (allocated_ymax - allocated_ymin);
-  by = -ay * allocated_ymin;
-  for (i = 0; i < this->npoints; i++) {
-    int x, y;
-    x = ax * this->x[i] + bx;
-    y = ay * this->y[i] + by;
-    if (x >= 0 && x < allocated_plot_width &&
-        y >= 0 && y < allocated_plot_height)
-      x_add_point(g->x,
-          this->common.x + this->vrule_width + x,
-          this->common.y + FLIP(y));
+  for (n = 0; n < this->nplots; n++) {
+    /* points */
+    float ax, bx, ay, by;
+    ax = (allocated_plot_width-1) / (allocated_xmax - allocated_xmin);
+    bx = -ax * allocated_xmin;
+    ay = (allocated_plot_height-1) / (allocated_ymax - allocated_ymin);
+    by = -ay * allocated_ymin;
+    for (i = 0; i < this->plots[n].npoints; i++) {
+      int x, y;
+      x = ax * this->plots[n].x[i] + bx;
+      y = ay * this->plots[n].y[i] + by;
+      if (x >= 0 && x < allocated_plot_width &&
+          y >= 0 && y < allocated_plot_height)
+        x_add_point(g->x,
+            this->common.x + this->vrule_width + x,
+            this->common.y + FLIP(y));
+    }
+    x_plot_points(g->x, g->xwin, this->plots[n].color);
   }
-  x_plot_points(g->x, g->xwin, FOREGROUND_COLOR);
 }
 
 static void hints(gui *_gui, widget *_w, int *width, int *height)
@@ -186,6 +189,8 @@ widget *new_xy_plot(gui *_gui, int width, int height, char *label,
   w->xmax = 1;
   w->ymin = -1;
   w->ymax = 1;
+  w->plots = NULL;
+  w->nplots = 0;
 
   w->common.paint = paint;
   w->common.hints = hints;
@@ -198,6 +203,31 @@ widget *new_xy_plot(gui *_gui, int width, int height, char *label,
 /*************************************************************************/
 /*                           public functions                            */
 /*************************************************************************/
+
+int xy_plot_new_plot(gui *_gui, widget *_this, int color)
+{
+  int ret;
+  struct gui *g = _gui;
+  struct xy_plot_widget *this = _this;
+
+  glock(g);
+
+  ret = this->nplots;
+
+  this->nplots++;
+  this->plots = realloc(this->plots,
+      this->nplots * sizeof(struct xy_plot_plot));
+  if (this->plots == NULL) abort();
+
+  this->plots[ret].x = NULL;
+  this->plots[ret].y = NULL;
+  this->plots[ret].npoints = 0;
+  this->plots[ret].color = color;
+
+  gunlock(g);
+
+  return ret;
+}
 
 void xy_plot_set_range(gui *_gui, widget *_this,
     float xmin, float xmax, float ymin, float ymax)
@@ -217,7 +247,7 @@ void xy_plot_set_range(gui *_gui, widget *_this,
   gunlock(g);
 }
 
-void xy_plot_set_points(gui *_gui, widget *_this,
+void xy_plot_set_points(gui *_gui, widget *_this, int plot,
     int npoints, float *x, float *y)
 {
   struct gui *g = _gui;
@@ -225,16 +255,16 @@ void xy_plot_set_points(gui *_gui, widget *_this,
 
   glock(g);
 
-  if (npoints != this->npoints) {
-    free(this->x);
-    free(this->y);
-    this->x = calloc(sizeof(float), npoints);
-    this->y = calloc(sizeof(float), npoints);
-    this->npoints = npoints;
+  if (npoints != this->plots[plot].npoints) {
+    free(this->plots[plot].x);
+    free(this->plots[plot].y);
+    this->plots[plot].x = calloc(sizeof(float), npoints);
+    this->plots[plot].y = calloc(sizeof(float), npoints);
+    this->plots[plot].npoints = npoints;
   }
 
-  memcpy(this->x, x, npoints * sizeof(float));
-  memcpy(this->y, y, npoints * sizeof(float));
+  memcpy(this->plots[plot].x, x, npoints * sizeof(float));
+  memcpy(this->plots[plot].y, y, npoints * sizeof(float));
 
   send_event(g, DIRTY, this->common.id);
 
