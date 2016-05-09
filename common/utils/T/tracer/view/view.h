@@ -8,6 +8,7 @@
 typedef struct view {
   void (*clear)(struct view *this);
   void (*append)(struct view *this, ...);
+  void (*set)(struct view *this, char *name, ...);
 } view;
 
 view *new_view_stdout(void);

@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-Wall -g -pthread -I..
 
-OBJS=textlog.o
+OBJS=textlog.o framelog.o
 
 logger.a: $(OBJS)
 	ar cr logger.a $(OBJS)
