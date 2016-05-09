@@ -13,5 +13,7 @@ typedef struct view {
 
 view *new_view_stdout(void);
 view *new_view_textlist(int maxsize, float refresh_rate, gui *g, widget *w);
+view *new_view_xy(int length, float refresh_rate, gui *g, widget *w,
+    int color);
 
 #endif /* _VIEW_H_ */
