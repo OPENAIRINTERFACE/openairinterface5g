@@ -29,7 +29,7 @@ static void _event(void *p, event e)
   frame = e.e[l->frame_arg].i;
   subframe = e.e[l->subframe_arg].i;
   switch (e.e[l->data_arg].type) {
-  case EVENT_INT: value = e.e[l->data_arg].i;
+  case EVENT_INT: value = e.e[l->data_arg].i; break;
   default: printf("%s:%d: unsupported type\n", __FILE__, __LINE__); abort();
   }
 
