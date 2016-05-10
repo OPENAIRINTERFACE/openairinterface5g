@@ -258,8 +258,8 @@ void xy_plot_set_points(gui *_gui, widget *_this, int plot,
   if (npoints != this->plots[plot].npoints) {
     free(this->plots[plot].x);
     free(this->plots[plot].y);
-    this->plots[plot].x = calloc(sizeof(float), npoints);
-    this->plots[plot].y = calloc(sizeof(float), npoints);
+    this->plots[plot].x = calloc(npoints, sizeof(float));
+    this->plots[plot].y = calloc(npoints, sizeof(float));
     this->plots[plot].npoints = npoints;
   }
 

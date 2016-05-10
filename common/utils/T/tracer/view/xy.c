@@ -74,8 +74,8 @@ static void set(view *_this, char *name, ...)
     free(this->x);
     free(this->y);
     this->length = va_arg(ap, int);
-    this->x = calloc(sizeof(float), this->length); if (this->x==NULL)abort();
-    this->y = calloc(sizeof(float), this->length); if (this->y==NULL)abort();
+    this->x = calloc(this->length, sizeof(float)); if (this->x==NULL)abort();
+    this->y = calloc(this->length, sizeof(float)); if (this->y==NULL)abort();
     this->insert_point = 0;
 
     va_end(ap);
@@ -104,8 +104,8 @@ view *new_view_xy(int length, float refresh_rate, gui *g, widget *w,
   ret->plot = xy_plot_new_plot(g, w, color);
 
   ret->length = length;
-  ret->x = calloc(sizeof(float), length); if (ret->x == NULL) abort();
-  ret->y = calloc(sizeof(float), length); if (ret->y == NULL) abort();
+  ret->x = calloc(length, sizeof(float)); if (ret->x == NULL) abort();
+  ret->y = calloc(length, sizeof(float)); if (ret->y == NULL) abort();
   ret->insert_point = 0;
 
   if (pthread_mutex_init(&ret->lock, NULL)) abort();

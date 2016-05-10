@@ -39,9 +39,9 @@ static void _event(void *p, event e)
     l->blength = nsamples * 10;
     free(l->x);
     free(l->buffer);
-    l->x = calloc(sizeof(float), l->blength);
+    l->x = calloc(l->blength, sizeof(float));
     if (l->x == NULL) abort();
-    l->buffer = calloc(sizeof(float), l->blength);
+    l->buffer = calloc(l->blength, sizeof(float));
     if (l->buffer == NULL) abort();
     /* update 'x' */
     for (i = 0; i < l->blength; i++)
