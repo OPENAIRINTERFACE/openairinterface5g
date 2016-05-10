@@ -259,15 +259,6 @@ if (${ENABLE_ITTI})
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
-if (${RTAI})
-  set(LOWLATENCY False)
-  set(CPU_AFFINITY False)
-  add_definitions("-DENABLE_RTAI_CLOCK")
-  add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
-  include_directories ("/usr/realtime/include")
-  include_directories ("/usr/realtime/include/asm")
-  set(RTAI_SOURCE sched_dlsch.c sched_rx_pdsch.c rt_wrapper.c vcd_signal_dumper.c log.c)
-endif (${RTAI})
 
 #############################
 # ASN.1 grammar C code generation & dependancies
@@ -1574,8 +1565,6 @@ add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
@@ -1611,8 +1600,6 @@ add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c

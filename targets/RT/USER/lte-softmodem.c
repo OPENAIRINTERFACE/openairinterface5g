@@ -113,12 +113,18 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "stats.h"
 #endif
 
+// In lte-enb.c
 int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+
 extern void init_eNB(void);
 extern void stop_eNB(void);
+extern void kill_eNB_proc(void);
 
+// In lte-ue.c
+int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
 void fill_ue_band_info(void);
+extern void init_UE(void);
+
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
@@ -130,9 +136,6 @@ unsigned char                   scope_enb_num_ue = 2;
 #endif //XFORMS
 
 
-pthread_t                       main_ue_thread;
-
-pthread_attr_t                  attr_UE_thread;
 
 
 
@@ -144,7 +147,6 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 
 
 
-struct sched_param              sched_param_UE_thread;
 
 
 #ifdef XFORMS
@@ -284,9 +286,8 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 double cpuf;
 
 char uecap_xer[1024],uecap_xer_in=0;
-extern void *UE_thread(void *arg);
-extern void init_UE_threads(void);
-extern void kill_eNB_proc(void);
+
+
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -1120,7 +1121,6 @@ int main( int argc, char **argv )
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-  int error_code;
 
 #if defined (XFORMS)
   int ret;
@@ -1752,43 +1752,11 @@ int main( int argc, char **argv )
   rt_sleep_ns(10*100000000ULL);
 
 
-  pthread_attr_init (&attr_UE_thread);
-  pthread_attr_setstacksize(&attr_UE_thread,8192);//5*PTHREAD_STACK_MIN);
 
-#ifndef LOWLATENCY
-  sched_param_UE_thread.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  pthread_attr_setschedparam(&attr_UE_thread,&sched_param_UE_thread);
-#endif
 
   // start the main thread
-  if (UE_flag == 1) {
-    printf("Intializing UE Threads ...\n");
-    init_UE_threads();
-    sleep(1);
-    error_code = pthread_create(&main_ue_thread, &attr_UE_thread, UE_thread, NULL);
-
-    if (error_code!= 0) {
-      LOG_D(HW,"[lte-softmodem.c] Could not allocate UE_thread, error %d\n",error_code);
-      return(error_code);
-    } else {
-      LOG_D( HW, "[lte-softmodem.c] Allocate UE_thread successful\n" );
-      pthread_setname_np( main_ue_thread, "main UE" );
-    }
-
-    printf("UE threads created\n");
-#ifdef USE_MME
-
-    while (start_UE == 0) {
-      sleep(1);
-    }
-
-#endif
-
-
-
-  } else {
-    init_eNB();
-  }
+  if (UE_flag == 1) init_UE();
+  else init_eNB();
 
   // Sleep to allow all threads to setup
   sleep(1);
