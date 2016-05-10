@@ -392,11 +392,7 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
 
 
 
-  DCI_pdu.nCCE = 0;
 
-  for (i=0; i<DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci; i++) {
-    DCI_pdu.nCCE += (1<<(DCI_pdu.dci_alloc[i].L));
-  }
   
   return(&DCI_pdu);
 }
@@ -710,6 +706,7 @@ int main(int argc, char **argv)
                  Nid_cell,
                  tdd_config,
                  N_RB_DL,
+		 0,
                  osf,
                  perfect_ce);
 
