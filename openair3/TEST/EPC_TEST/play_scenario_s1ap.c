@@ -666,7 +666,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
     packet = g_scenario->last_rx_packet->next;
   }
   // not_found threshold may sure depend on number of mme, may be not sure on number of UE
-  while ((NULL != packet) && (not_found < 7)) {
+  while ((NULL != packet) && (not_found < 9)) {
     S1AP_DEBUG("%s() Considering packet num %d original frame number %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number);
     if (packet->action == ET_PACKET_ACTION_S1C_RECEIVE) {
       comp_results = et_sctp_is_matching(&packet->sctp_hdr, &rx_packet->sctp_hdr, g_constraints);
@@ -692,7 +692,7 @@ int et_s1ap_process_rx_packet(et_event_s1ap_data_ind_t * const s1ap_data_ind)
                 return et_scenario_set_packet_received(packet);
               }
             } else if (strcmp(comp_results->name, "S1ap-TransportLayerAddress") == 0) {
-              S1AP_WARN("Some work needed there for %s, TODO in generic_scenario.xsl, add epc conf file in the process, anyway continuing...\n",comp_results->name);
+              S1AP_WARN("Some work needed there for %s, TODO in generic_scenario.xsl, add sgw conf file in the process, anyway continuing...\n",comp_results->name);
               packet->timestamp_packet.tv_sec = rx_packet->timestamp_packet.tv_sec;
               packet->timestamp_packet.tv_usec = rx_packet->timestamp_packet.tv_usec;
               return et_scenario_set_packet_received(packet);
