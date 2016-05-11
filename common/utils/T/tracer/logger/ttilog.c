@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 struct ttilog {
   char *event_name;
@@ -16,6 +17,7 @@ struct ttilog {
   /* list of views */
   view **v;
   int vsize;
+  int convert_to_dB;
 };
 
 static void _event(void *p, event e)
@@ -33,13 +35,15 @@ static void _event(void *p, event e)
   default: printf("%s:%d: unsupported type\n", __FILE__, __LINE__); abort();
   }
 
+  if (l->convert_to_dB) value = 10 * log10(value);
+
   for (i = 0; i < l->vsize; i++)
     l->v[i]->append(l->v[i], frame, subframe, value);
 }
 
 ttilog *new_ttilog(event_handler *h, void *database,
     char *event_name, char *frame_varname, char *subframe_varname,
-    char *data_varname)
+    char *data_varname, int convert_to_dB)
 {
   struct ttilog *ret;
   int event_id;
@@ -50,6 +54,7 @@ ttilog *new_ttilog(event_handler *h, void *database,
 
   ret->event_name = strdup(event_name); if (ret->event_name == NULL) abort();
   ret->database = database;
+  ret->convert_to_dB = convert_to_dB;
 
   event_id = event_id_from_name(database, event_name);
 

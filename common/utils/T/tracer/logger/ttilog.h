@@ -5,7 +5,7 @@ typedef void ttilog;
 
 ttilog *new_ttilog(void *event_handler, void *database,
     char *event_name, char *frame_varname, char *subframe_varname,
-    char *data_varname);
+    char *data_varname, int convert_to_dB);
 
 #include "view/view.h"
 
