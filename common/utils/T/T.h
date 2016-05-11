@@ -7,6 +7,10 @@
 
 #include "T_defs.h"
 
+#ifdef T_SEND_TIME
+#include <time.h>
+#endif
+
 /* T message IDs */
 #include "T_IDs.h"
 
@@ -187,6 +191,25 @@ extern T_cache_t *T_cache;
   } while (0)
 #endif
 
+#ifdef T_SEND_TIME
+
+#define T_HEADER(x) \
+  do { \
+    if (!__builtin_types_compatible_p(typeof(x), struct T_header *)) { \
+      printf("%s:%d:%s: " \
+             "bad use of T, pass a message ID as first parameter\n", \
+             __FILE__, __LINE__, __FUNCTION__); \
+      abort(); \
+    } \
+    struct timespec T_HEADER_time; \
+    if (clock_gettime(CLOCK_REALTIME, &T_HEADER_time)) abort(); \
+    memcpy(T_LOCAL_buf, &T_HEADER_time, sizeof(struct timespec)); \
+    T_LOCAL_size += sizeof(struct timespec); \
+    T_PUT_int(1, (int)(uintptr_t)(x)); \
+  } while (0)
+
+#else /* #ifdef T_SEND_TIME */
+
 #define T_HEADER(x) \
   do { \
     if (!__builtin_types_compatible_p(typeof(x), struct T_header *)) { \
@@ -197,6 +220,8 @@ extern T_cache_t *T_cache;
     } \
     T_PUT_int(1, (int)(uintptr_t)(x)); \
   } while (0)
+
+#endif /* #ifdef T_SEND_TIME */
 
 #define T1(t) \
   do { \

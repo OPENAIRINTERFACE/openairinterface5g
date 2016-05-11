@@ -1,6 +1,9 @@
 #ifndef _T_defs_H_
 #define _T_defs_H_
 
+/* comment (and recompile everything) to not send time in events */
+#define T_SEND_TIME
+
 /* maximum number of arguments for the T macro */
 #define T_MAX_ARGS 16
 

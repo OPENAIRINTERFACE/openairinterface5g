@@ -84,10 +84,15 @@ int fullread(int fd, void *_buf, int count)
 
 event get_event(int s, char *v, void *d)
 {
+  struct timespec t;
   int type;
   int32_t length;
 
   fullread(s, &length, 4);
+#ifdef T_SEND_TIME
+  fullread(s, &t, sizeof(struct timespec));
+  length -= sizeof(struct timespec);
+#endif
   fullread(s, &type, sizeof(int));
   length -= sizeof(int);
   fullread(s, v, length);
