@@ -94,7 +94,13 @@ void get_message(int s)
 
   int32_t size;
   int m;
+#ifdef T_SEND_TIME
+  struct timespec t;
+#endif
   if (GET(s, &size, 4) != 4) abort();
+#ifdef T_SEND_TIME
+  if (GET(s, &t, sizeof(struct timespec)) != sizeof(struct timespec)) abort();
+#endif
   if (GET(s, &m, sizeof(int)) != sizeof(int)) abort();
   switch (m) {
   case T_first: {
