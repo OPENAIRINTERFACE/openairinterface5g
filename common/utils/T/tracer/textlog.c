@@ -84,7 +84,9 @@ int fullread(int fd, void *_buf, int count)
 
 event get_event(int s, char *v, void *d)
 {
+#ifdef T_SEND_TIME
   struct timespec t;
+#endif
   int type;
   int32_t length;
 
