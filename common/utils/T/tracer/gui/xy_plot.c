@@ -272,3 +272,16 @@ void xy_plot_set_points(gui *_gui, widget *_this, int plot,
 
   gunlock(g);
 }
+
+void xy_plot_get_dimensions(gui *_gui, widget *_this, int *width, int *height)
+{
+  struct gui *g = _gui;
+  struct xy_plot_widget *this = _this;
+
+  glock(g);
+
+  *width = this->common.width - this->vrule_width;
+  *height = this->common.height - this->label_height * 2;
+
+  gunlock(g);
+}
