@@ -437,6 +437,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint16_t n2_pucch,
 		  uint8_t shortened_format,
 		  uint8_t *payload,
+		  int     frame,
 		  uint8_t subframe,
 		  uint8_t pucch1_thres)
 {
@@ -793,7 +794,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     phy_vars_eNB->pucch1_stats_thres[UE_id][(subframe<<10)+phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
     phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
 
-    T(T_PUCCH_1_ENERGY, T_INT(phy_vars_eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe),
+    T(T_PUCCH_1_ENERGY, T_INT(phy_vars_eNB->Mod_id), T_INT(UE_id), T_INT(frame), T_INT(subframe),
       T_INT(stat_max), T_INT(sigma2_dB+pucch1_thres));
 
     /*

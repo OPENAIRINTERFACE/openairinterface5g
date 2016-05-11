@@ -3180,6 +3180,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 				  0, // n2_pucch
 				  0, // shortened format, should be use_srs flag, later
 				  &SR_payload,
+				  frame,
 				  subframe,
 				  PUCCH1_THRES);
 
@@ -3241,6 +3242,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                0, //n2_pucch
                                0, // shortened format
                                pucch_payload0,
+                               frame,
                                subframe,
                                PUCCH1a_THRES);
 
@@ -3252,6 +3254,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 			       0, //n2_pucch
 			       0, // shortened format
 			       pucch_payload0,
+			       frame,
 			       subframe,
 			       PUCCH1a_THRES);
 	  }
@@ -3313,6 +3316,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 				    0, //n2_pucch
 				    0, // shortened format
 				    pucch_payload0,
+				    frame,
 				    subframe,
 				    PUCCH1a_THRES);
             else {
@@ -3344,6 +3348,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                    0, // n2_pucch
                                    0, // shortened format
                                    pucch_payload0,
+                                   frame,
                                    subframe,
                                    PUCCH1a_THRES);
               else {
@@ -3367,6 +3372,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
                                    0, //n2_pucch
                                    0, // shortened format
                                    pucch_payload1,
+                                   frame,
                                    subframe,
                                    PUCCH1a_THRES);
               else {
