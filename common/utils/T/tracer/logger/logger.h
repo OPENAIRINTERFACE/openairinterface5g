@@ -10,6 +10,7 @@ logger *new_textlog(void *event_handler, void *database,
 logger *new_ttilog(void *event_handler, void *database,
     char *event_name, char *frame_varname, char *subframe_varname,
     char *data_varname, int convert_to_dB);
+logger *new_timelog(void *event_handler, void *database, char *event_name);
 
 #include "view/view.h"
 
