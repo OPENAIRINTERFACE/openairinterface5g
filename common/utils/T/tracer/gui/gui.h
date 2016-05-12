@@ -26,6 +26,8 @@ widget *new_label(gui *gui, const char *text);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
 widget *new_textlist(gui *gui, int width, int nlines, int background_color);
+widget *new_timeline(gui *gui, int width, int number_of_sublines,
+    int subline_height);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
 
@@ -52,6 +54,12 @@ void textlist_get_line(gui *gui, widget *this, int line,
     char **text, int *color);
 void textlist_set_color(gui *gui, widget *this, int line, int color);
 
+void timeline_clear(gui *gui, widget *this);
+void timeline_add_points(gui *gui, widget *this, int subline, int color,
+    int *x, int len);
+void timeline_set_subline_background_color(gui *gui, widget *this,
+    int subline, int color);
+
 void gui_loop(gui *gui);
 
 void glock(gui *gui);
@@ -67,6 +75,8 @@ int new_color(gui *gui, char *color);
  *      - click      { int [2]: line, button }
  * - label:
  *      - click      { int: button } (if enabled)
+ * - timeline
+ *      - resize     { int: width }
  */
 
 /* same type as in gui_defs.h */
