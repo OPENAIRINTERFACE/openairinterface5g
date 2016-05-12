@@ -1,4 +1,5 @@
-#include "framelog.h"
+#include "logger.h"
+#include "logger_defs.h"
 #include "handler.h"
 #include "database.h"
 #include <stdlib.h>
@@ -7,14 +8,10 @@
 #include <math.h>
 
 struct framelog {
-  char *event_name;
+  struct logger common;
   void *database;
-  unsigned long handler_id;
   int subframe_arg;
   int buffer_arg;
-  /* list of views */
-  view **v;
-  int vsize;
   float *x;
   float *buffer;
   int blength;
@@ -47,8 +44,8 @@ static void _event(void *p, event e)
     for (i = 0; i < l->blength; i++)
       l->x[i] = i;
     /* update 'length' of views */
-    for (i = 0; i < l->vsize; i++)
-      l->v[i]->set(l->v[i], "length", l->blength);
+    for (i = 0; i < l->common.vsize; i++)
+      l->common.v[i]->set(l->common.v[i], "length", l->blength);
   }
 
   /* TODO: compute the LOGs in the plotter (too much useless computations) */
@@ -59,11 +56,11 @@ static void _event(void *p, event e)
   }
 
   if (subframe == 9)
-    for (i = 0; i < l->vsize; i++)
-      l->v[i]->append(l->v[i], l->x, l->buffer, l->blength);
+    for (i = 0; i < l->common.vsize; i++)
+      l->common.v[i]->append(l->common.v[i], l->x, l->buffer, l->blength);
 }
 
-framelog *new_framelog(event_handler *h, void *database,
+logger *new_framelog(event_handler *h, void *database,
     char *event_name, char *subframe_varname, char *buffer_varname)
 {
   struct framelog *ret;
@@ -73,12 +70,13 @@ framelog *new_framelog(event_handler *h, void *database,
 
   ret = calloc(1, sizeof(struct framelog)); if (ret == NULL) abort();
 
-  ret->event_name = strdup(event_name); if (ret->event_name == NULL) abort();
+  ret->common.event_name = strdup(event_name);
+  if (ret->common.event_name == NULL) abort();
   ret->database = database;
 
   event_id = event_id_from_name(database, event_name);
 
-  ret->handler_id = register_handler_function(h, event_id, _event, ret);
+  ret->common.handler_id = register_handler_function(h,event_id,_event,ret);
 
   f = get_format(database, event_id);
 
@@ -111,12 +109,4 @@ framelog *new_framelog(event_handler *h, void *database,
   }
 
   return ret;
-}
-
-void framelog_add_view(framelog *_l, view *v)
-{
-  struct framelog *l = _l;
-  l->vsize++;
-  l->v = realloc(l->v, l->vsize * sizeof(view *)); if (l->v == NULL) abort();
-  l->v[l->vsize-1] = v;
 }

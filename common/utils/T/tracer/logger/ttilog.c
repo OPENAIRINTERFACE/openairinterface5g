@@ -1,4 +1,5 @@
-#include "ttilog.h"
+#include "logger.h"
+#include "logger_defs.h"
 #include "event.h"
 #include "database.h"
 #include "handler.h"
@@ -8,15 +9,11 @@
 #include <math.h>
 
 struct ttilog {
-  char *event_name;
+  struct logger common;
   void *database;
-  unsigned long handler_id;
   int frame_arg;
   int subframe_arg;
   int data_arg;
-  /* list of views */
-  view **v;
-  int vsize;
   int convert_to_dB;
 };
 
@@ -37,11 +34,11 @@ static void _event(void *p, event e)
 
   if (l->convert_to_dB) value = 10 * log10(value);
 
-  for (i = 0; i < l->vsize; i++)
-    l->v[i]->append(l->v[i], frame, subframe, value);
+  for (i = 0; i < l->common.vsize; i++)
+    l->common.v[i]->append(l->common.v[i], frame, subframe, value);
 }
 
-ttilog *new_ttilog(event_handler *h, void *database,
+logger *new_ttilog(event_handler *h, void *database,
     char *event_name, char *frame_varname, char *subframe_varname,
     char *data_varname, int convert_to_dB)
 {
@@ -52,13 +49,14 @@ ttilog *new_ttilog(event_handler *h, void *database,
 
   ret = calloc(1, sizeof(struct ttilog)); if (ret == NULL) abort();
 
-  ret->event_name = strdup(event_name); if (ret->event_name == NULL) abort();
+  ret->common.event_name = strdup(event_name);
+  if (ret->common.event_name == NULL) abort();
   ret->database = database;
   ret->convert_to_dB = convert_to_dB;
 
   event_id = event_id_from_name(database, event_name);
 
-  ret->handler_id = register_handler_function(h, event_id, _event, ret);
+  ret->common.handler_id = register_handler_function(h,event_id,_event,ret);
 
   f = get_format(database, event_id);
 
@@ -105,12 +103,4 @@ ttilog *new_ttilog(event_handler *h, void *database,
   }
 
   return ret;
-}
-
-void ttilog_add_view(ttilog *_l, view *v)
-{
-  struct ttilog *l = _l;
-  l->vsize++;
-  l->v = realloc(l->v, l->vsize * sizeof(view *)); if (l->v == NULL) abort();
-  l->v[l->vsize-1] = v;
 }

@@ -7,7 +7,7 @@
 #include "database.h"
 #include "event.h"
 #include "handler.h"
-#include "logger/textlog.h"
+#include "logger/logger.h"
 #include "view/view.h"
 #include "gui/gui.h"
 #include "utils.h"
@@ -125,7 +125,7 @@ int main(int n, char **v)
   char t;
   int l;
   event_handler *h;
-  textlog *textlog;
+  logger *textlog;
   gui *g;
   int gui_mode = 0;
   view *out;
@@ -192,7 +192,7 @@ int main(int n, char **v)
     textlog = new_textlog(h, database, name, desc);
 //        "ENB_UL_CHANNEL_ESTIMATE",
 //        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
-    textlog_add_view(textlog, out);
+    logger_add_view(textlog, out);
     free(name);
     free(desc);
   }

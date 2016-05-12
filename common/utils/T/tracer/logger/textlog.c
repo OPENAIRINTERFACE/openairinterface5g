@@ -1,4 +1,5 @@
-#include "textlog.h"
+#include "logger.h"
+#include "logger_defs.h"
 #include "handler.h"
 #include "database.h"
 #include "view/view.h"
@@ -22,16 +23,12 @@ struct format_item {
 };
 
 struct textlog {
-  char *event_name;
+  struct logger common;
   char *format;
   void *database;
-  unsigned long handler_id;
   /* parsed format string */
   struct format_item *f;
   int fsize;
-  /* list of views */
-  view **v;
-  int vsize;
   /* local output buffer */
   OBUF o;
 };
@@ -56,7 +53,8 @@ static void _event(void *p, event e)
   }
   PUTC(&l->o, 0);
 
-  for (i = 0; i < l->vsize; i++) l->v[i]->append(l->v[i], l->o.obuf);
+  for (i = 0; i < l->common.vsize; i++)
+    l->common.v[i]->append(l->common.v[i], l->o.obuf);
 }
 
 enum chunk_type { C_ERROR, C_STRING, C_ARG_NAME, C_EVENT_NAME };
@@ -127,7 +125,7 @@ error:
   return (struct chunk){type:C_ERROR};
 }
 
-textlog *new_textlog(event_handler *h, void *database,
+logger *new_textlog(event_handler *h, void *database,
     char *event_name, char *format)
 {
   struct textlog *ret;
@@ -137,13 +135,14 @@ textlog *new_textlog(event_handler *h, void *database,
 
   ret = calloc(1, sizeof(struct textlog)); if (ret == NULL) abort();
 
-  ret->event_name = strdup(event_name); if (ret->event_name == NULL) abort();
+  ret->common.event_name = strdup(event_name);
+  if (ret->common.event_name == NULL) abort();
   ret->format = strdup(format); if (ret->format == NULL) abort();
   ret->database = database;
 
   event_id = event_id_from_name(database, event_name);
 
-  ret->handler_id = register_handler_function(h, event_id, _event, ret);
+  ret->common.handler_id = register_handler_function(h,event_id,_event,ret);
 
   f = get_format(database, event_id);
 
@@ -167,7 +166,7 @@ textlog *new_textlog(event_handler *h, void *database,
       break;
     case C_EVENT_NAME:
       ret->f[ret->fsize].type = INSTRING;
-      ret->f[ret->fsize].s = ret->event_name;
+      ret->f[ret->fsize].s = ret->common.event_name;
       break;
     }
     ret->fsize++;
@@ -178,12 +177,4 @@ textlog *new_textlog(event_handler *h, void *database,
 error:
   printf("%s:%d: bad format '%s'\n", __FILE__, __LINE__, format);
   abort();
-}
-
-void textlog_add_view(textlog *_l, view *v)
-{
-  struct textlog *l = _l;
-  l->vsize++;
-  l->v = realloc(l->v, l->vsize * sizeof(view *)); if (l->v == NULL) abort();
-  l->v[l->vsize-1] = v;
 }
