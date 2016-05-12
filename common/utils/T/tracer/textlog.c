@@ -99,7 +99,11 @@ event get_event(int s, char *v, void *d)
   length -= sizeof(int);
   fullread(s, v, length);
 
+#ifdef T_SEND_TIME
+  return new_event(t, type, length, v, d);
+#else
   return new_event(type, length, v, d);
+#endif
 }
 
 static void *gui_thread(void *_g)

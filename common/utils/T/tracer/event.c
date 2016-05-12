@@ -4,13 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef T_SEND_TIME
+event new_event(struct timespec sending_time, int type,
+    int length, char *buffer, void *database)
+#else
 event new_event(int type, int length, char *buffer, void *database)
+#endif
 {
   database_event_format f;
   event e;
   int i;
   int offset;
 
+#ifdef T_SEND_TIME
+  e.sending_time = sending_time;
+#endif
   e.type = type;
   e.buffer = buffer;
 

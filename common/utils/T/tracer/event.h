@@ -2,6 +2,9 @@
 #define _EVENT_H_
 
 #include "../T_defs.h"
+#ifdef T_SEND_TIME
+#include <time.h>
+#endif
 
 enum event_arg_type {
   EVENT_INT,
@@ -23,12 +26,20 @@ typedef struct {
 } event_arg;
 
 typedef struct {
+#ifdef T_SEND_TIME
+  struct timespec sending_time;
+#endif
   int type;
   char *buffer;
   event_arg e[T_MAX_ARGS];
   int ecount;
 } event;
 
+#ifdef T_SEND_TIME
+event new_event(struct timespec sending_time, int type,
+    int length, char *buffer, void *database);
+#else
 event new_event(int type, int length, char *buffer, void *database);
+#endif
 
 #endif /* _EVENT_H_ */
