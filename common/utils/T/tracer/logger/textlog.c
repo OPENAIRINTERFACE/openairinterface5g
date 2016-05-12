@@ -37,8 +37,20 @@ static void _event(void *p, event e)
 {
   struct textlog *l = p;
   int i;
+#ifdef T_SEND_TIME
+  struct tm *t;
+  char tt[64];
+#endif
 
   l->o.osize = 0;
+
+#ifdef T_SEND_TIME
+  t = localtime(&e.sending_time.tv_sec);
+  /* round tv_nsec to nearest millisecond */
+  sprintf(tt, "%2.2d:%2.2d:%2.2d.%3.3d: ", t->tm_hour, t->tm_min, t->tm_sec,
+      (int)((e.sending_time.tv_nsec/(1000000/2)+1)/2));
+  PUTS(&l->o, tt);
+#endif
 
   for (i = 0; i < l->fsize; i++)
   switch(l->f[i].type) {
