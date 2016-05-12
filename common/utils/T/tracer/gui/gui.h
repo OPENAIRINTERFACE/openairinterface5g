@@ -25,7 +25,7 @@ widget *new_positioner(gui *gui);
 widget *new_label(gui *gui, const char *text);
 widget *new_xy_plot(gui *gui, int width, int height, char *label,
     int vruler_width);
-widget *new_textlist(gui *_gui, int width, int nlines, int background_color);
+widget *new_textlist(gui *gui, int width, int nlines, int background_color);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
 
