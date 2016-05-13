@@ -17,5 +17,8 @@ view *new_view_xy(int length, float refresh_rate, gui *g, widget *w,
     int color);
 view *new_view_tti(float refresh_rate, gui *g, widget *w,
     int color);
+view *new_view_time(int number_of_seconds, float refresh_rate,
+    gui *g, widget *w);
+view *new_subview_time(view *time, int line, int color);
 
 #endif /* _VIEW_H_ */
