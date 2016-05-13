@@ -280,8 +280,13 @@ void xy_plot_get_dimensions(gui *_gui, widget *_this, int *width, int *height)
 
   glock(g);
 
-  *width = this->common.width - this->vrule_width;
-  *height = this->common.height - this->label_height * 2;
+  if (this->common.width == 0 || this->common.height == 0) {
+    *width = this->wanted_width;
+    *height = this->wanted_height;
+  } else {
+    *width = this->common.width - this->vrule_width;
+    *height = this->common.height - this->label_height * 2;
+  }
 
   gunlock(g);
 }
