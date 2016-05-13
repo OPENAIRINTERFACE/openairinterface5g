@@ -993,17 +993,19 @@ int allocate_CCEs(int module_idP,
 
   int *CCE_table = eNB_mac_inst[module_idP].CCE_table[CC_idP];
   DCI_PDU *DCI_pdu = &eNB_mac_inst[module_idP].common_channels[CC_idP].DCI_pdu;
-  int nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,DCI_pdu->num_pdcch_symbols,subframeP);
+  int nCCE_max = mac_xface->get_nCCE_max(module_idP,CC_idP,1,subframeP);
   int fCCE;
   int i,j;
   int allocation_is_feasible = 1;
   DCI_ALLOC_t *dci_alloc;
+  int nCCE=0;
 
   LOG_D(MAC,"Allocate CCEs subframe %d, test %d : (common %d,uspec %d)\n",subframeP,test_onlyP,DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+  DCI_pdu->num_pdcch_symbols=1;
 
   while (allocation_is_feasible == 1) {
     init_CCE_table(module_idP,CC_idP);
-    DCI_pdu->nCCE=0;
+    nCCE=0;
 
     for (i=0;i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci;i++) {
       dci_alloc = &DCI_pdu->dci_alloc[i];
@@ -1011,9 +1013,9 @@ int allocate_CCEs(int module_idP,
 	    i,DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci,
 	    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
 	    dci_alloc->rnti,1<<dci_alloc->L,
-	    DCI_pdu->nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
+	    nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
 
-      if (DCI_pdu->nCCE + (1<<dci_alloc->L) > nCCE_max) {
+      if (nCCE + (1<<dci_alloc->L) > nCCE_max) {
 	if (DCI_pdu->num_pdcch_symbols == 3)
 	  allocation_is_feasible = 0;
 	else {
@@ -1032,7 +1034,7 @@ int allocate_CCEs(int module_idP,
 
 	  LOG_D(MAC,"Allocating at nCCE %d\n",fCCE);
 	  if (test_onlyP == 0) {
-	    DCI_pdu->nCCE += (1<<dci_alloc->L);
+	    nCCE += (1<<dci_alloc->L);
 	    dci_alloc->firstCCE=fCCE;
 	    LOG_D(MAC,"Allocate CCEs subframe %d, test %d\n",subframeP,test_onlyP);
 	  }
@@ -1049,7 +1051,7 @@ int allocate_CCEs(int module_idP,
 		    DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci,
 		    DCI_pdu->dci_alloc[j].rnti,DCI_pdu->dci_alloc[j].format,
 		    1<<DCI_pdu->dci_alloc[j].L,
-		    DCI_pdu->nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
+		    nCCE,nCCE_max,DCI_pdu->num_pdcch_symbols);
 	    }
 	  }
 	  else {

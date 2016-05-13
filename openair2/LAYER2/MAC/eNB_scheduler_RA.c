@@ -251,6 +251,8 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
           }
 
 	  if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,2,RA_template->RA_rnti)) {
+	    LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for RA_RNTI %x\n",
+                  frameP,subframeP,RA_template->RA_rnti);
 	    add_common_dci(DCI_pdu,
 			   (void*)&RA_template->RA_alloc_pdu1[0],
 			   RA_template->RA_rnti,
