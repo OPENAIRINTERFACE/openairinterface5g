@@ -148,3 +148,15 @@ void timeline_set_subline_background_color(gui *_gui, widget *_this,
 
   gunlock(g);
 }
+
+void timeline_get_width(gui *_gui, widget *_this, int *width)
+{
+  struct gui *g = _gui;
+  struct timeline_widget *this = _this;
+
+  glock(g);
+
+  *width = this->common.width == 0 ? this->wanted_width : this->common.width;
+
+  gunlock(g);
+}
