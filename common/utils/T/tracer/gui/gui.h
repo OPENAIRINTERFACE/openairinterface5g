@@ -55,8 +55,11 @@ void textlist_get_line(gui *gui, widget *this, int line,
 void textlist_set_color(gui *gui, widget *this, int line, int color);
 
 void timeline_clear(gui *gui, widget *this);
+void timeline_clear_silent(gui *gui, widget *this);
 void timeline_add_points(gui *gui, widget *this, int subline, int color,
     int *x, int len);
+void timeline_add_points_silent(gui *gui, widget *this, int subline,
+    int color, int *x, int len);
 void timeline_set_subline_background_color(gui *gui, widget *this,
     int subline, int color);
 void timeline_get_width(gui *gui, widget *this, int *width);

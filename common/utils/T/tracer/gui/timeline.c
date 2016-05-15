@@ -97,7 +97,7 @@ widget *new_timeline(gui *_gui, int width, int number_of_sublines,
 /*                           public functions                            */
 /*************************************************************************/
 
-void timeline_clear(gui *_gui, widget *_this)
+static void _timeline_clear(gui *_gui, widget *_this, int silent)
 {
   struct gui *g = _gui;
   struct timeline_widget *this = _this;
@@ -110,13 +110,24 @@ void timeline_clear(gui *_gui, widget *_this)
     for (j = 0; j < this->s[i].width; j++)
       this->s[i].color[j] = -1;
 
-  send_event(g, DIRTY, this->common.id);
+  if (silent == 0)
+    send_event(g, DIRTY, this->common.id);
 
   gunlock(g);
 }
 
-void timeline_add_points(gui *_gui, widget *_this, int subline, int color,
-    int *x, int len)
+void timeline_clear(gui *_gui, widget *_this)
+{
+  _timeline_clear(_gui, _this, 0);
+}
+
+void timeline_clear_silent(gui *_gui, widget *_this)
+{
+  _timeline_clear(_gui, _this, 1);
+}
+
+static void _timeline_add_points(gui *_gui, widget *_this, int subline,
+    int color, int *x, int len, int silent)
 {
   struct gui *g = _gui;
   struct timeline_widget *this = _this;
@@ -129,9 +140,22 @@ void timeline_add_points(gui *_gui, widget *_this, int subline, int color,
     this->s[subline].color[x[i]] = color;
   }
 
-  send_event(g, DIRTY, this->common.id);
+  if (silent == 0)
+    send_event(g, DIRTY, this->common.id);
 
   gunlock(g);
+}
+
+void timeline_add_points(gui *_gui, widget *_this, int subline, int color,
+    int *x, int len)
+{
+  _timeline_add_points(_gui, _this, subline, color, x, len, 0);
+}
+
+void timeline_add_points_silent(gui *_gui, widget *_this, int subline,
+    int color, int *x, int len)
+{
+  _timeline_add_points(_gui, _this, subline, color, x, len, 1);
 }
 
 void timeline_set_subline_background_color(gui *_gui, widget *_this,
