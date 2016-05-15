@@ -569,16 +569,8 @@ schedule_ue_spec(
       eNB_UE_stats->DL_cqi[0], MIN_CQI_VALUE, MAX_CQI_VALUE);
       */
       eNB_UE_stats->dlsch_mcs1 = cqi_to_mcs[eNB_UE_stats->DL_cqi[0]];
-      eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;//cmin(eNB_UE_stats->dlsch_mcs1, openair_daq_vars.target_ue_dl_mcs);
 
-
-#ifdef EXMIMO
-
-      if (mac_xface->get_transmission_mode(module_idP,CC_id, rnti)==5) {
-        eNB_UE_stats->dlsch_mcs1 = cmin(eNB_UE_stats->dlsch_mcs1,16);
-      }
-
-#endif
 
       // store stats
       UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi= eNB_UE_stats->DL_cqi[0];

@@ -1622,7 +1622,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg,
     return(-1);
   }
 
-
+  /*
   if (frame_parms->frame_type == TDD) {
     if (frame_parms->N_RB_DL == 100)
       N_TA_offset = 624;
@@ -1631,7 +1631,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg,
     else if (frame_parms->N_RB_DL == 25)
       N_TA_offset = 624/4;
   }
-  
+  */
 
     // replace RX signal buffers with mmaped HW versions
   rxdata = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );

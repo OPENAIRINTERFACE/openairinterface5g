@@ -330,6 +330,15 @@ typedef struct PHY_VARS_eNB_s {
   MU_MIMO_mode mu_mimo_mode[NUMBER_OF_UE_MAX];
 
 
+  /// target_ue_dl_mcs : only for debug purposes
+  uint32_t target_ue_dl_mcs;
+  /// target_ue_ul_mcs : only for debug purposes
+  uint32_t target_ue_ul_mcs;
+  /// target_ue_dl_rballoc : only for debug purposes
+  uint32_t ue_dl_rb_alloc;
+  /// target ul PRBs : only for debug
+  uint32_t ue_ul_nb_rb;
+
   ///check for Total Transmissions
   uint32_t check_for_total_transmissions;
 
@@ -346,6 +355,8 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t total_dlsch_bitrate;
   uint32_t total_transmitted_bits;
   uint32_t total_system_throughput;
+
+  int              hw_timing_advance;
 
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
@@ -577,6 +588,7 @@ typedef struct {
   //  uint8_t               prach_timer;
   int              rx_offset; /// Timing offset
   int              timing_advance; ///timing advance signalled from eNB
+  int              hw_timing_advance;
   int              N_TA_offset; ///timing offset used in TDD
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue;
@@ -644,6 +656,8 @@ typedef struct {
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
+
+  uint32_t use_ia_receiver;
 
   time_stats_t ofdm_mod_stats;
   time_stats_t ulsch_encoding_stats;

@@ -500,7 +500,7 @@ l2l1_task (void *args_p)
 	sprintf (title, "LTE DL SCOPE eNB %d to UE %d CC_id %d", eNB_inst, UE_inst, CC_id);
 	fl_show_form (form_ue[CC_id][UE_inst]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
-	if (openair_daq_vars.use_ia_receiver == 1) {
+	if (PHY_vars_UE_g[UE_inst][CC_id]->use_ia_receiver == 1) {
 	  fl_set_button(form_ue[CC_id][UE_inst]->button_0,1);
 	  fl_set_object_label(form_ue[CC_id][UE_inst]->button_0, "IA Receiver ON");
 	  fl_set_object_color(form_ue[CC_id][UE_inst]->button_0, FL_GREEN, FL_GREEN);

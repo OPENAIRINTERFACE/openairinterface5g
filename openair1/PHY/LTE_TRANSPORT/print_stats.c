@@ -102,7 +102,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
     len += sprintf(&buffer[len], "[UE PROC] RX Gain %d dB\n",phy_vars_ue->rx_total_gain_dB);
 #endif
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
-    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz (%d), estimated carrier frequency %f Hz\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair_daq_vars.freq_offset,openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset);
+    len += sprintf(&buffer[len], "[UE_PROC] Frequency offset %d Hz, estimated carrier frequency %f Hz\n",phy_vars_ue->lte_ue_common_vars.freq_offset,openair0_cfg[0].rx_freq[0]-phy_vars_ue->lte_ue_common_vars.freq_offset);
 #endif
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[phy_vars_ue->UE_mode[0]],phy_vars_ue->UE_mode[0]);
     len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",phy_vars_ue->timing_advance);
@@ -529,7 +529,7 @@ int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t 
 #endif
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Bitrate %dkbps\n",(phy_vars_ue->bitrate[0]/1000));
       len += sprintf(&buffer[len], "[UE PROC] Total Received Bits %dkbits\n",(phy_vars_ue->total_received_bits[0]/1000));
-      len += sprintf(&buffer[len], "[UE PROC] IA receiver %d\n",openair_daq_vars.use_ia_receiver);
+      len += sprintf(&buffer[len], "[UE PROC] IA receiver %d\n",phy_vars_ue->use_ia_receiver);
 
     }
 

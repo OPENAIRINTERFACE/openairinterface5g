@@ -638,7 +638,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
   prach_start = ((subframe*phy_vars_ue->lte_frame_parms.samples_per_tti)<<1)-phy_vars_ue->N_TA_offset;
 #else
 #if defined(EXMIMO) || defined(OAI_USRP)
-  prach_start =  (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-openair_daq_vars.timing_advance-phy_vars_ue->N_TA_offset);
+  prach_start =  (phy_vars_ue->rx_offset+subframe*phy_vars_ue->lte_frame_parms.samples_per_tti-phy_vars_ue->hw_timing_advance-phy_vars_ue->N_TA_offset);
 
   if (prach_start<0)
     prach_start+=(phy_vars_ue->lte_frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);

@@ -726,7 +726,9 @@ typedef enum {format0,
               format2B,
               format2C,
               format2D,
-              format3
+              format3,
+	      format3A,
+	      format4
              } DCI_format_t;
 
 typedef enum {

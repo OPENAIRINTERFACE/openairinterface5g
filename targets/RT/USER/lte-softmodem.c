@@ -114,15 +114,14 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 // In lte-enb.c
-int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-
+extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
 extern void init_eNB(void);
 extern void stop_eNB(void);
 extern void kill_eNB_proc(void);
 
 // In lte-ue.c
-int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-void fill_ue_band_info(void);
+extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+extern void fill_ue_band_info(void);
 extern void init_UE(void);
 
 #ifdef XFORMS
@@ -1139,6 +1138,7 @@ int main( int argc, char **argv )
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   set_latency_target();
 
+  // det defaults
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
     /* Set some default values that may be overwritten while reading options */
@@ -1342,7 +1342,7 @@ int main( int argc, char **argv )
       else 
 	UE[CC_id]->mac_enabled = 1;
 
-      if (UE[CC_id]->mac_enabled == 0) {
+      if (UE[CC_id]->mac_enabled == 0) {  //set default UL parameters for testing mode
 	for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
 	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
 	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
@@ -1373,13 +1373,6 @@ int main( int argc, char **argv )
 
     }
 
-    openair_daq_vars.manual_timing_advance = 0;
-    openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
-    openair_daq_vars.auto_freq_correction = 0;
-    openair_daq_vars.use_ia_receiver = 0;
-
-
-
     //  printf("tx_max_power = %d -> amp %d\n",tx_max_power,get_tx_amp(tx_max_power,tx_max_power));
   } else {
     //this is eNB
@@ -1390,12 +1383,10 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
-      if (phy_test==1)
-	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
-      else 
-	PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
+      if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
+      else PHY_vars_eNB_g[0][CC_id]->mac_enabled = 1;
 
-      if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) {
+      if (PHY_vars_eNB_g[0][CC_id]->mac_enabled == 0) { //set default parameters for testing mode
 	for (i=0; i<NUMBER_OF_UE_MAX; i++) {
 	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
 	  PHY_vars_eNB_g[0][CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
@@ -1413,7 +1404,6 @@ int main( int argc, char **argv )
 
       PHY_vars_eNB_g[0][CC_id]->rx_total_gain_eNB_dB = (int)rx_gain[CC_id][0];
 
-      //already taken care of in lte-softmodem.c
       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
 
     }
@@ -1421,11 +1411,6 @@ int main( int argc, char **argv )
 
     NB_eNB_INST=1;
     NB_INST=1;
-
-    openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-    openair_daq_vars.target_ue_dl_mcs=target_dl_mcs;
-    openair_daq_vars.ue_ul_nb_rb=6;
-    openair_daq_vars.target_ue_ul_mcs=target_ul_mcs;
 
   }
 
@@ -1644,11 +1629,16 @@ int main( int argc, char **argv )
 
   // connect the TX/RX buffers
   if (UE_flag==1) {
+
+    for (CC_id=0;CC_id<MAX_NUM_CCs; CC_id++) {
+
+    
 #ifdef OAI_USRP
-    openair_daq_vars.timing_advance = timing_advance;
+      UE[CC_id]->hw_timing_advance = timing_advance;
 #else
-    openair_daq_vars.timing_advance = 160;
+      UE[CC_id]->hw_timing_advance = 160;
 #endif
+    }
     if (setup_ue_buffers(UE,&openair0_cfg[0],rf_map)!=0) {
       printf("Error setting up eNB buffer\n");
       exit(-1);
@@ -1673,7 +1663,8 @@ int main( int argc, char **argv )
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {
-    openair_daq_vars.timing_advance = 0;
+
+
 
     if (setup_eNB_buffers(PHY_vars_eNB_g[0],&openair0_cfg[0],rf_map)!=0) {
       printf("Error setting up eNB buffer\n");
@@ -1684,6 +1675,7 @@ int main( int argc, char **argv )
 
     // Set LSBs for antenna switch (ExpressMIMO)
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
       for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
         for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
           PHY_vars_eNB_g[0][CC_id]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
@@ -1730,13 +1722,16 @@ int main( int argc, char **argv )
       sprintf (title, "LTE DL SCOPE UE");
       fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
+      /*
       if (openair_daq_vars.use_ia_receiver) {
         fl_set_button(form_ue[UE_id]->button_0,1);
         fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
       } else {
         fl_set_button(form_ue[UE_id]->button_0,0);
         fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
-      }
+	}*/
+        fl_set_button(form_ue[UE_id]->button_0,0);
+        fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
     }
 
     ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
