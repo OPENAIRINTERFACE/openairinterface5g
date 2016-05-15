@@ -101,6 +101,7 @@ static void *time_thread(void *_this)
     if (pthread_mutex_lock(&this->lock)) abort();
 
     timeline_get_width(this->g, this->w, &width);
+    timeline_clear_silent(this->g, this->w);
 
     /* TODO: optimize/cleanup */
 
@@ -112,15 +113,6 @@ static void *time_thread(void *_this)
         struct timespec tick_start, tick_end;
         tick_start = time_add(tstart, nano_to_time(this->pixel_length * i));
         tick_end = time_add(tick_start, nano_to_time(this->pixel_length-1));
-        /* if tick is before start, do nothing */
-        if (time_cmp(tick_end,
-                (struct timespec){tv_sec:this->tstart_time,tv_nsec:0}) < 0)
-          continue;
-        /* if tick after end, do nothing */
-        if (time_cmp(tick_start,
-              time_add((struct timespec){tv_sec:this->tstart_time,tv_nsec:0},
-                       nano_to_time(this->pixel_length * width))) >= 0)
-          continue;
         /* look for a nano between tick_start and tick_end */
         /* TODO: optimize */
         for (t = 0; t < this->tsize; t++) {
@@ -145,9 +137,11 @@ static void *time_thread(void *_this)
         continue;
 gotit:
         /* TODO: only one call */
-        timeline_add_points(this->g, this->w, p->line, p->color, &i, 1);
+        timeline_add_points_silent(this->g, this->w, p->line, p->color, &i, 1);
       }
     }
+
+    widget_dirty(this->g, this->w);
 
     if (pthread_mutex_unlock(&this->lock)) abort();
     sleepms(1000 / this->refresh_rate);
@@ -212,7 +206,7 @@ static void append(view *_this, struct timespec t)
 
   /* tick out of current window? if yes, move window */
   /* if too far, free all */
-  if (end_time - t.tv_sec > time->tsize) {
+  if (t.tv_sec > end_time && t.tv_sec - end_time > time->tsize) {
     for (l = 0; l < time->tsize; l++)
       for (i = 0; i < time->subcount; i++) {
         free(time->t[l].p[i].nano);
