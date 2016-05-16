@@ -28,7 +28,7 @@
  *******************************************************************************/
 
 /*! \file rt_wrapper.h
-* \brief provides a wrapper for the timing function, runtime calculations for real-time opeartions depending on weather RTAI or LOWLATENCY kernels are used or not
+* \brief provides a wrapper for the timing function, runtime calculations for real-time opeartions depending on weather RTAI or DEADLINE_SCHEDULER kernels are used or not
 * \author F. Kaltenberger and Navid Nikaein
 * \date 2013
 * \version 0.1
@@ -241,7 +241,7 @@ double get_runtime_rx(int rx_subframe, uint16_t runtime_phy_rx[29][6], uint32_t 
    return runtime;	
 }
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
 int sched_setattr(pid_t pid, const struct sched_attr *attr, unsigned int flags)
 {
 
