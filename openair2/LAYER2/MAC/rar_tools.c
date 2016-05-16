@@ -39,8 +39,6 @@
 #include "defs.h"
 #include "proto.h"
 #include "extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/TOOLS/defs.h"
 #include "UTIL/LOG/log.h"
 #include "OCG.h"
@@ -117,7 +115,7 @@ unsigned short fill_rar(
   rar[2] |= ((mcs&0x8)>>3);  // mcs 10
   rar[3] = (((mcs&0x7)<<5)) | ((TPC&7)<<2) | ((ULdelay&1)<<1) | (cqireq&1);
 
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Generating RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ra_idx %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Generating RAR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ra_idx %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
         module_idP, CC_id,
         frameP,
         *(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
@@ -168,14 +166,14 @@ ue_process_rar(
   LOG_D(MAC,"[UE %d][RAPROC] rarh->RAPID %d\n",module_idP,rarh->RAPID);
 
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->R %d\n",module_idP,rar->R);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",module_idP,(((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
+  LOG_D(MAC,"[UE %d][RAPROC] rar->Timing_Advance_Command %d\n",module_idP,(((uint16_t)(rar[0]&0x7f))<<4) + (rar[1]>>4));
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->hopping_flag %d\n",module_idP,rar->hopping_flag);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->rb_alloc %d\n",module_idP,rar->rb_alloc);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->mcs %d\n",module_idP,rar->mcs);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->TPC %d\n",module_idP,rar->TPC);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->UL_delay %d\n",module_idP,rar->UL_delay);
   //  LOG_I(MAC,"[UE %d][RAPROC] rar->cqi_req %d\n",module_idP,rar->cqi_req);
-  LOG_I(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",module_idP,(uint16_t)rar[5]+(rar[4]<<8));
+  LOG_D(MAC,"[UE %d][RAPROC] rar->t_crnti %x\n",module_idP,(uint16_t)rar[5]+(rar[4]<<8));
 #endif
 
 

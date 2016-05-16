@@ -45,7 +45,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
@@ -309,7 +308,7 @@ int main(int argc, char **argv)
         break;
 
       default:
-        msg("Unsupported channel model!\n");
+        printf("Unsupported channel model!\n");
         exit(-1);
         break;
       }
@@ -333,7 +332,7 @@ int main(int argc, char **argv)
 
       if ((transmission_mode!=1) &&
           (transmission_mode!=2)) {
-        msg("Unsupported transmission mode %d\n",transmission_mode);
+        printf("Unsupported transmission mode %d\n",transmission_mode);
         exit(-1);
       }
 
@@ -383,10 +382,10 @@ int main(int argc, char **argv)
 
     case 'i':
       input_fdUL = fopen(optarg,"r");
-      msg("Reading in %s (%p)\n",optarg,input_fdUL);
+      printf("Reading in %s (%p)\n",optarg,input_fdUL);
 
       if (input_fdUL == (FILE*)NULL) {
-        msg("Unknown file %s\n",optarg);
+        printf("Unknown file %s\n",optarg);
         exit(-1);
       }
 
@@ -510,13 +509,8 @@ int main(int argc, char **argv)
   //  r_re0 = malloc(2*sizeof(double*));
   //  r_im0 = malloc(2*sizeof(double*));
 
-  nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == 0) ? 14 : 12;
+  nsymb = (PHY_vars_eNB->lte_frame_parms.Ncp == NORMAL) ? 14 : 12;
 
-  coded_bits_per_codeword = nb_rb * (12 * get_Qm(mcs)) * nsymb;
-
-  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
-
-  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm(mcs),coded_bits_per_codeword);
 
   sprintf(bler_fname,"ULbler_mcs%d_nrb%d_ChannelModel%d_nsim%d.csv",mcs,nb_rb,chMod,n_frames);
   bler_fd = fopen(bler_fname,"w");
@@ -641,8 +635,8 @@ int main(int argc, char **argv)
   UE2eNB->max_Doppler = maxDoppler;
 
   // NN: N_RB_UL has to be defined in ulsim
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,max_turbo_iterations,N_RB_DL,0);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,N_RB_DL,0);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
+  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(N_RB_DL,0);
 
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
@@ -766,9 +760,9 @@ int main(int argc, char **argv)
     PHY_vars_eNB->proc[sf].subframe_rx=sf;
   }
 
-  msg("Init UL hopping UE\n");
+  printf("Init UL hopping UE\n");
   init_ul_hopping(&PHY_vars_UE->lte_frame_parms);
-  msg("Init UL hopping eNB\n");
+  printf("Init UL hopping eNB\n");
   init_ul_hopping(&PHY_vars_eNB->lte_frame_parms);
 
   PHY_vars_eNB->proc[subframe].frame_rx = PHY_vars_UE->frame_tx;
@@ -808,6 +802,13 @@ int main(int argc, char **argv)
                                      CBA_RNTI,
                                      srs_flag);
 
+  coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
+
+  if (cqi_flag == 1) coded_bits_per_codeword-=PHY_vars_UE->ulsch_ue[0]->O;
+
+  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
+
+  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
 
   PHY_vars_UE->frame_tx = (PHY_vars_UE->frame_tx+1)&1023;
@@ -1062,7 +1063,7 @@ int main(int argc, char **argv)
             start_meas(&PHY_vars_UE->ofdm_mod_stats);
 
             for (aa=0; aa<1; aa++) {
-              if (frame_parms->Ncp == 1)
+              if (frame_parms->Ncp == EXTENDED)
                 PHY_ofdm_mod(&PHY_vars_UE->lte_ue_common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
                              &txdata[aa][PHY_vars_eNB->lte_frame_parms.samples_per_tti*subframe],         // output
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size,
@@ -1256,6 +1257,7 @@ int main(int argc, char **argv)
 	  */
 
           start_meas(&PHY_vars_eNB->ulsch_decoding_stats);
+
           ret= ulsch_decoding(PHY_vars_eNB,
                               0, // UE_id
                               subframe,
@@ -1292,7 +1294,7 @@ int main(int argc, char **argv)
           if (PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->o_ACK[0] != PHY_vars_UE->ulsch_ue[0]->o_ACK[0])
             ack_errors++;
 
-          //    msg("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
+          //    printf("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
 
 
           if (ret <= PHY_vars_eNB->ulsch_eNB[0]->max_turbo_iterations) {
@@ -1515,7 +1517,7 @@ int main(int argc, char **argv)
              rate*effective_rate,
              100*effective_rate,
              rate,
-             rate*get_Qm(mcs),
+             rate*get_Qm_ul(mcs),
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0])/
              (double)PHY_vars_eNB->ulsch_eNB[0]->harq_processes[harq_pid]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));

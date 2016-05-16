@@ -844,15 +844,15 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     LOG_F(RRC,"\n");
 #endif
     /* Transfer data to PDCP */
-    pdcp_rrc_data_req (
-      &ctxt,
-      DCCH,
-      *rrc_eNB_mui++,
-      SDU_CONFIRM_NO,
-      length,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
-
+    rrc_data_req (
+		  &ctxt,
+		  DCCH,
+		  *rrc_eNB_mui++,
+		  SDU_CONFIRM_NO,
+		  length,
+		  buffer,
+		  PDCP_TRANSMISSION_MODE_CONTROL);
+    
     return (0);
   }
 }

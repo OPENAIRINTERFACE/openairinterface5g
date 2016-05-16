@@ -379,6 +379,7 @@ void mch_extract_rbs(int **rxdataF,
         dl_ch_estimates_ext[aarx][(frame_parms->N_RB_DL*3)+j+symbol*(frame_parms->N_RB_DL*12)] = dl_ch_estimates[aarx][i+(frame_parms->N_RB_DL*6)+(symbol*frame_parms->ofdm_symbol_size)];
       }
     } else {
+
       memcpy((void*)&rxdataF_ext[aarx][symbol*(frame_parms->N_RB_DL*12)],
              (void*)&rxdataF[aarx][frame_parms->first_carrier_offset + (symbol*frame_parms->ofdm_symbol_size)],
              frame_parms->N_RB_DL*24);
@@ -388,6 +389,7 @@ void mch_extract_rbs(int **rxdataF,
       memcpy((void*)&dl_ch_estimates_ext[aarx][symbol*(frame_parms->N_RB_DL*12)],
              (void*)&dl_ch_estimates[aarx][(symbol*frame_parms->ofdm_symbol_size)],
              frame_parms->N_RB_DL*48);
+
     }
 
   }

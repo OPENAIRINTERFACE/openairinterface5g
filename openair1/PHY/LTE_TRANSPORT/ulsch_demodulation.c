@@ -40,8 +40,6 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "defs.h"
 #include "extern.h"
 //#define DEBUG_ULSCH

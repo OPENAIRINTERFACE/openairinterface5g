@@ -269,8 +269,10 @@ typedef struct {
   uint32_t G;
   /// Codebook index for this dlsch (0,1,2,3)
   uint8_t codebook_index;
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
+  /// Maximum number of HARQ processes (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Mdlharq;
+  /// Maximum number of HARQ rounds
+  uint8_t Mlimit;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
@@ -315,11 +317,9 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  mod_sym_t d[MAX_NUM_RE];
+  int32_t d[MAX_NUM_RE];
   /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
-  mod_sym_t z[MAX_NUM_RE];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Mdlharq;
+  int32_t z[MAX_NUM_RE];
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
   uint8_t q[MAX_CQI_PAYLOAD];
   /// coded and interleaved CQI bits
@@ -468,8 +468,8 @@ typedef struct {
 typedef struct {
   /// Pointers to 8 HARQ processes for the ULSCH
   LTE_UL_eNB_HARQ_t *harq_processes[8];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Mdlharq;
+  /// Maximum number of HARQ rounds
+  uint8_t Mlimit;
   /// Maximum number of iterations used in eNB turbo decoder
   uint8_t max_turbo_iterations;
   /// ACK/NAK Bundling flag
@@ -572,6 +572,10 @@ typedef struct {
   vrb_t vrb_type;
   /// downlink power offset field
   uint8_t dl_power_off;
+  /// trials per round statistics
+  uint32_t trials[8];
+  /// error statistics per round
+  uint32_t errors[8];
 } LTE_DL_UE_HARQ_t;
 
 typedef struct {
@@ -698,7 +702,7 @@ typedef struct {
   harq_status_t harq_ack[10];
   /// Pointers to up to 8 HARQ processes
   LTE_DL_UE_HARQ_t *harq_processes[8];
-  /// Maximum number of HARQ rounds (for definition see 36-212 V8.6 2009-03, p.17
+  /// Maximum number of HARQ processes(for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;

@@ -53,7 +53,7 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 {
 
   uint32_t RTC = (D>>5), ND, ND3;
-  uint32_t row,col,Kpi,index;
+  uint32_t row,col,Kpi;
   uint32_t index3,k,k2;
 #ifdef RM_DEBUG
   uint32_t nulled=0;
@@ -84,7 +84,6 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 #ifdef RM_DEBUG
     printf("Col %d\n",col);
 #endif
-    index = bitrev[col];
     index3 = bitrev_x3[col];//3*index;
 
     for (row=0; row<RTC; row++) {
@@ -108,10 +107,7 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 
 #endif
       index3+=96;
-      index+=32;
-      k++;
-      k2++;
-      k2++;
+      k++;k2+=2;
     }
   }
 
@@ -495,8 +491,14 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   char fname[512];
 #endif
 
-  Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
-  Ncb = cmin(Nir/C,3*(RTC<<5));
+  if (Mdlharq>0) {  // Downlink
+    Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
+    Ncb = cmin(Nir/C,3*(RTC<<5));
+  }
+  else {  // Uplink
+    Nir=0;
+    Ncb = 3*(RTC<<5); // Kw
+  }
 #ifdef RM_DEBUG_TX
 
   if (rvidx==0 && r==0) {
@@ -709,15 +711,20 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
   int nulled=0;
 #endif
 
-  if (Kmimo==0 || Mdlharq==0 || C==0 || Qm==0 || Nl==0) {
+  if (Kmimo==0 || C==0 || Qm==0 || Nl==0) {
     printf("lte_rate_matching.c: invalid parameters (Kmimo %d, Mdlharq %d, C %d, Qm %d, Nl %d\n",
         Kmimo,Mdlharq,C,Qm,Nl);
     return(-1);
   }
 
-  Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
-  Ncb = cmin(Nir/C,3*(RTC<<5));
-
+  if (Mdlharq>0) { // Downlink
+    Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
+    Ncb = cmin(Nir/C,3*(RTC<<5));
+  }
+  else {  // Uplink
+    Nir=0;
+    Ncb = 3*(RTC<<5);
+  }
 
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
