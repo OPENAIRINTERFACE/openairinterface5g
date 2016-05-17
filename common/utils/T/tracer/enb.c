@@ -163,6 +163,14 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
   subview = new_subview_time(timeview, 1, new_color(g, "#228"));
   logger_add_view(timelog, subview);
+  /* ACK */
+  timelog = new_timelog(h, database, "ENB_DLSCH_UE_ACK");
+  subview = new_subview_time(timeview, 2, new_color(g, "#282"));
+  logger_add_view(timelog, subview);
+  /* NACK */
+  timelog = new_timelog(h, database, "ENB_DLSCH_UE_NACK");
+  subview = new_subview_time(timeview, 3, new_color(g, "#f22"));
+  logger_add_view(timelog, subview);
 
   /* uplink UE DCIs */
   timelog = new_timelog(h, database, "ENB_UL_TICK");
@@ -231,6 +239,8 @@ int main(int n, char **v)
   on_off(database, "ENB_UL_TICK", is_on, 1);
   on_off(database, "ENB_DL_TICK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_DCI", is_on, 1);
+  on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
+  on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);

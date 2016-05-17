@@ -2051,6 +2051,8 @@ void process_HARQ_feedback(uint8_t UE_id,
                   dlsch->rnti,dl_harq_pid[m],M,m,mp,dlsch_harq_proc->round);
 #endif
 
+            T(T_ENB_DLSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti));
+
             if (dlsch_harq_proc->round == 0)
               ue_stats->dlsch_NAK_round0++;
 
@@ -2083,6 +2085,9 @@ void process_HARQ_feedback(uint8_t UE_id,
             LOG_D(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d, resetting process\n",phy_vars_eNB->Mod_id,
                   dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
 #endif
+
+            T(T_ENB_DLSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti));
+
             ue_stats->dlsch_ACK[dl_harq_pid[m]][dlsch_harq_proc->round]++;
 
             // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
