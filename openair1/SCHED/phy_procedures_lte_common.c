@@ -39,8 +39,6 @@
 */
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 

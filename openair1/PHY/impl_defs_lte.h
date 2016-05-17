@@ -43,7 +43,6 @@
 
 
 #include "types.h"
-#include "spec_defs_top.h"
 //#include "defs.h"
 
 #define LTE_NUMBER_OF_SUBFRAMES_PER_FRAME 10
@@ -605,7 +604,7 @@ typedef struct {
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: tx antenna [0..nb_antennas_tx[
   /// - third index: sample [0..]
-  mod_sym_t **txdataF[3];
+  int32_t **txdataF[3];
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: eNB id [0..2] (hard coded)
@@ -749,7 +748,7 @@ typedef struct {
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX[
-  mod_sym_t **txdataF;
+  int32_t **txdataF;
   /// \brief Holds the received data in time domain.
   /// Should point to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: rx antenna [0..nb_antennas_rx[

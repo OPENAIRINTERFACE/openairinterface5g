@@ -44,7 +44,7 @@
 //#define DEBUG_SSS
 
 
-int generate_sss(mod_sym_t **txdataF,
+int generate_sss(int32_t **txdataF,
                  int16_t amp,
                  LTE_DL_FRAME_PARMS *frame_parms,
                  uint16_t symbol,

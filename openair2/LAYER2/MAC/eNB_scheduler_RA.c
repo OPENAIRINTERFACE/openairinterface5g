@@ -251,6 +251,8 @@ void schedule_RA(module_id_t module_idP,frame_t frameP, sub_frame_t subframeP,un
           }
 
 	  if (!CCE_allocation_infeasible(module_idP,CC_id,1,subframeP,2,RA_template->RA_rnti)) {
+	    LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for RA_RNTI %x\n",
+                  frameP,subframeP,RA_template->RA_rnti);
 	    add_common_dci(DCI_pdu,
 			   (void*)&RA_template->RA_alloc_pdu1[0],
 			   RA_template->RA_rnti,
@@ -737,7 +739,10 @@ void initiate_ra_proc(module_id_t module_idP, int CC_id,frame_t frameP, uint16_t
   uint8_t i;
   RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[0];
 
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,preamble_index);
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Initiating RA procedure for preamble index %d\n",module_idP,CC_id,frameP,preamble_index);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC,1);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC,0);
 
   for (i=0; i<NB_RA_PROC_MAX; i++) {
     if (RA_template[i].RA_active==FALSE) {
@@ -765,7 +770,7 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, rnti_t rn
   RA_TEMPLATE *RA_template = (RA_TEMPLATE *)&eNB_mac_inst[module_idP].common_channels[CC_id].RA_template[0];
 
   MSC_LOG_EVENT(MSC_PHY_ENB, "RA Cancelling procedure ue %"PRIx16" ", rnti);
-  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Cancelling RA procedure for UE rnti %x\n",module_idP,CC_id,frameP,rnti);
+  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Cancelling RA procedure for UE rnti %x\n",module_idP,CC_id,frameP,rnti);
 
   for (i=0; i<NB_RA_PROC_MAX; i++) {
     if (rnti == RA_template[i].rnti) {

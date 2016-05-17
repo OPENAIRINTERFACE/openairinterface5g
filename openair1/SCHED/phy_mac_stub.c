@@ -40,8 +40,6 @@
 
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 #include "LAYER2/MAC/extern.h"
@@ -573,12 +571,13 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
       break;*/
   }
 
+  /*
   DCI_pdu->nCCE = 0;
 
   for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
     DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
   }
-
+  */
 }
 
 void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *phy_vars_eNB)
@@ -746,11 +745,11 @@ void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *phy_vars_eN
   default:
     break;
   }
-
+  /*
   DCI_pdu->nCCE = 0;
 
   for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
     DCI_pdu->nCCE += (1<<(DCI_pdu->dci_alloc[i].L));
   }
-
+  */
 }

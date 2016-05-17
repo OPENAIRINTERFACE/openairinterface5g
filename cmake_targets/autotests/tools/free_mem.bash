@@ -30,34 +30,7 @@
 # *******************************************************************************/
 # \author Navid Nikaein, Rohit Gupta
 
-#arg1 timeout to wait before running the script
-#arg2 interface
-#arg3 iperf arguments
+# To free unused memory else test setup runs out of memory
+sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches ' 
 
-args=($*)
-timeout=${args[0]}
-device_id=${args[1]}
-iperf_args=(${args[@]:2})
 
-#array=${1:-1}
-echo "args =  ${args[@]}"
-echo "timeout = $timeout"
-echo "device_id = $device_id"
-echo "iperf_args = ${iperf_args[@]}"
-
-sleep $timeout
-
-while true ; do
-  cmd=`sudo adb -s $device_id shell netcfg |grep 192.`
-  if [ -z "$cmd" ]; then
-     echo "Wating for UE to connect and get IP Address..."
-     sleep 1
-  else 
-     echo "UE is now connected. IP Address settings are... $cmd"
-     break
-  fi
-done
-
-echo "Starting iperf now..."
-
-sudo adb -s $device_id shell /data/local/tmp/iperf ${iperf_args[@]}

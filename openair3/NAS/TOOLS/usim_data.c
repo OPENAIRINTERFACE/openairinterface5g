@@ -61,7 +61,7 @@ Description Implements the utility used to generate data stored in the
 
 #define KSI     USIM_KSI_NOT_AVAILABLE
 #define KSI_ASME    USIM_KSI_NOT_AVAILABLE
-#define INT_ALGO    USIM_INT_EIA1
+#define INT_ALGO    USIM_INT_EIA2
 #define ENC_ALGO    USIM_ENC_EEA0
 #define SECURITY_ALGORITHMS (ENC_ALGO | INT_ALGO)
 
@@ -159,12 +159,13 @@ int main (int argc, const char* argv[])
     usim_data.imsi.u.num.digit15 = 0b1111;
 #endif
 #if (SELECTED_PLMN == SFR1)
-#warning "IMSI 208.10.00001234"
+
     /*
      * International Mobile Subscriber Identity
      * IMSI = MCC + MNC + MSIN = 208 (France) + 10 (SFR) + 00001234
      */
-    #warning "IMSI 208.10.00001234"
+#warning "IMSI 208.10.00001234"
+
     usim_data.imsi.length = 8;
     usim_data.imsi.u.num.parity = EVEN_PARITY;      // Parity: even
     usim_data.imsi.u.num.digit1 = 2;                // MCC digit 1
@@ -182,6 +183,31 @@ int main (int argc, const char* argv[])
     usim_data.imsi.u.num.digit13 = 3;
     usim_data.imsi.u.num.digit14 = 4;
     usim_data.imsi.u.num.digit15 = 0b1111;
+#endif
+#if (SELECTED_PLMN == OAI_LTEBOX)
+#warning "IMSI 208.93.00001111"
+    /*
+     * International Mobile Subscriber Identity
+     * IMSI = MCC + MNC + MSIN = 208 (France) + 10 (SFR) + 00001234
+     */
+    #warning "IMSI 208.93.0100001110"
+    usim_data.imsi.length = 8;
+    usim_data.imsi.u.num.parity = ODD_PARITY;      // Parity: even
+    usim_data.imsi.u.num.digit1 = 2;                // MCC digit 1
+    usim_data.imsi.u.num.digit2 = 0;                // MCC digit 2
+    usim_data.imsi.u.num.digit3 = 8;                // MCC digit 3
+    usim_data.imsi.u.num.digit4 = 9;                // MNC digit 1
+    usim_data.imsi.u.num.digit5 = 3;                // MNC digit 2
+    usim_data.imsi.u.num.digit6 = 0;     // MNC digit 3
+    usim_data.imsi.u.num.digit7 = 1;
+    usim_data.imsi.u.num.digit8 = 0;
+    usim_data.imsi.u.num.digit9 = 0;
+    usim_data.imsi.u.num.digit10 = 0;
+    usim_data.imsi.u.num.digit11 = 0;
+    usim_data.imsi.u.num.digit12 = 1;
+    usim_data.imsi.u.num.digit13 = 1;
+    usim_data.imsi.u.num.digit14 = 1;
+    usim_data.imsi.u.num.digit15 = 1;
 #endif
 #if (SELECTED_PLMN == TEST1)
 #warning "IMSI 001.01.000001234"
@@ -470,13 +496,14 @@ static void _display_usim_data(const usim_data_t* data)
   printf("\tparity\t= %s\n", data->imsi.u.num.parity == EVEN_PARITY ? "Even" : "Odd");
   digits = (data->imsi.length * 2) - 1 - (data->imsi.u.num.parity == EVEN_PARITY ? 1 : 0);
   printf("\tdigits\t= %d\n", digits);
+  
   printf("\tdigits\t= %u%u%u%u%u%x%u%u%u%u",
          data->imsi.u.num.digit1, // MCC digit 1
          data->imsi.u.num.digit2, // MCC digit 2
          data->imsi.u.num.digit3, // MCC digit 3
          data->imsi.u.num.digit4, // MNC digit 1
          data->imsi.u.num.digit5, // MNC digit 2
-         data->imsi.u.num.digit6, // MNC digit 3
+         data->imsi.u.num.digit6==0xf?0:data->imsi.u.num.digit6, // MNC digit 3
          data->imsi.u.num.digit7,
          data->imsi.u.num.digit8,
          data->imsi.u.num.digit9,

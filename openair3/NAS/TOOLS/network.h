@@ -58,21 +58,23 @@ Description Defines a list of PLMN network operators
 #define SFR1  1
 #define SFR2  2
 #define SFR3  3
-#define TM1   4
-#define FCT1  5
-#define VDF1  6
-#define VDF2  7
-#define VDF3  8
-#define VDF4  9
-#define VDF5  10
+#define OAI_LTEBOX 4
+#define TM1   5
+#define FCT1  6
+#define VDF1  7
+#define VDF2  8
+#define VDF3  9
+#define VDF4  10
+#define VDF5  11
 
 
-#define SELECTED_PLMN SFR1
+#define SELECTED_PLMN OAI_LTEBOX //SFR1
 
 #define TEST_PLMN {0,0,0x0f,1,1,0}  // 00101
 #define SFR_PLMN_1  {0,2,0x0f,8,0,1}  // 20810
 #define SFR_PLMN_2  {0,2,0x0f,8,1,1}  // 20811
 #define SFR_PLMN_3  {0,2,0x0f,8,3,1}  // 20813
+#define OAI_LTEBOX_PLMN  {0,2,0x0f,8,3,9}  //20893
 #define TM_PLMN_1   {1,3,0,0,8,2}       // 310280
 #define FCT_PLMN_1  {1,3,8,0,2,0}       // 310028
 #define VDF_PLMN_1  {2,2,0x0f,2,0,1}  // 22210
@@ -80,6 +82,7 @@ Description Defines a list of PLMN network operators
 #define VDF_PLMN_3  {1,2,0x0f,4,0x0f,6} // 2146
 #define VDF_PLMN_4  {6,2,0x0f,2,0x0f,2} // 2622
 #define VDF_PLMN_5  {6,2,0x0f,2,0x0f,4} // 2624
+
 
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
@@ -110,6 +113,7 @@ network_record_t network_records[] = {
   {20810, SFR_PLMN_1, "SFR France",      "SFR",       0x0001, 0xfffd},
   {20811, SFR_PLMN_2, "SFR France",      "SFR",       0x0001, 0xfffd},
   {20813, SFR_PLMN_3, "SFR France",      "SFR",       0x0001, 0xfffd},
+  {20893, OAI_LTEBOX_PLMN, "OAI LTEBOX",   "OAIALU",  0x0001, 0xfffd},
   {310280,TM_PLMN_1,  "T-Mobile USA",    "T-Mobile",  0x0001, 0xfffd},
   {310028,FCT_PLMN_1, "FICTITIOUS USA",  "FICTITIO",  0x0001, 0xfffd},
   {22210, VDF_PLMN_1, "Vodafone Italia", "VODAFONE",  0x0001, 0xfffd},

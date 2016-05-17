@@ -180,11 +180,16 @@ def start_ue () :
    thread_ppp.join()
 
 def stop_ue():
-   timeout=60
-   os.system('killall wvdial')
-   send_command('AT', 'OK' , timeout)
-   send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
-   #send_command('AT+CFUN=4' , 'OK' , timeout)
+  stringIdBandrich='Huawei Technologies Co., Ltd. E398 LTE/UMTS/GSM Modem/Networkcard'
+  status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
+  if (out == '') :
+     print "Huawei E398 Adapter not found. Exiting now..."
+     sys.exit()
+  timeout=60
+  os.system('killall wvdial')
+  send_command('AT', 'OK' , timeout)
+  send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
+  #send_command('AT+CFUN=4' , 'OK' , timeout)
 
 
 #reset the USB BUS of Bandrich UE
@@ -192,7 +197,7 @@ def reset_ue():
   stringIdBandrich='Huawei Technologies Co., Ltd. E398 LTE/UMTS/GSM Modem/Networkcard'
   status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
   if (out == '') :
-     print "Bandrich 4G LTE Adapter not found. Exiting now..."
+     print "Huawei E398 Adapter not found. Exiting now..."
      sys.exit()
   p=re.compile('Bus\s*(\w+)\s*Device\s*(\w+):\s*ID\s*(\w+):(\w+)')
   res=p.findall(out)
