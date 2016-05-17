@@ -6,6 +6,7 @@ local:
 remote:
 	make -f Makefile.remote
 	make -f Makefile.remote textlog
+	make -f Makefile.remote enb
 
 clean:
 	make -f Makefile.local clean
