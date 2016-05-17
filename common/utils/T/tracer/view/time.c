@@ -97,6 +97,7 @@ static void *time_thread(void *_this)
   struct timespec tstart;
   struct timespec tnext;
   struct plot *p;
+  int64_t pixel_length;
 
   while (1) {
     if (pthread_mutex_lock(&this->lock)) abort();
@@ -106,14 +107,17 @@ static void *time_thread(void *_this)
 
     /* TODO: optimize/cleanup */
 
+    /* use rounded pixel_length */
+    pixel_length = this->pixel_length;
+
     tnext = time_add(this->latest_time,(struct timespec){tv_sec:0,tv_nsec:1});
-    tstart = time_sub(tnext, nano_to_time(this->pixel_length * width));
+    tstart = time_sub(tnext, nano_to_time(pixel_length * width));
 
     for (l = 0; l < this->subcount; l++) {
       for (i = 0; i < width; i++) {
         struct timespec tick_start, tick_end;
-        tick_start = time_add(tstart, nano_to_time(this->pixel_length * i));
-        tick_end = time_add(tick_start, nano_to_time(this->pixel_length-1));
+        tick_start = time_add(tstart, nano_to_time(pixel_length * i));
+        tick_end = time_add(tick_start, nano_to_time(pixel_length-1));
         /* look for a nano between tick_start and tick_end */
         /* TODO: optimize */
         for (t = 0; t < this->tsize; t++) {
@@ -131,7 +135,7 @@ static void *time_thread(void *_this)
             struct timespec nano =
                 (struct timespec){tv_sec:current_second,tv_nsec:p->nano[n]};
             if (time_cmp(tick_start, nano) <= 0 &&
-                time_cmp(nano, tick_end) < 0)
+                time_cmp(nano, tick_end) <= 0)
               goto gotit;
           }
         }
@@ -157,17 +161,31 @@ static void scroll(void *private, gui *g,
   struct time *this = private;
   double mul = 1.2;
   double pixel_length;
+  int64_t old_px_len_rounded;
 
   if (pthread_mutex_lock(&this->lock)) abort();
 
+  old_px_len_rounded = this->pixel_length;
+
   if (!strcmp(notification, "scrollup")) mul = 1 / mul;
 
+again:
   pixel_length = this->pixel_length * mul;
   if (pixel_length < 1) pixel_length = 1;
   if (pixel_length > (double)3600 * 1000000000)
     pixel_length = (double)3600 * 1000000000;
 
   this->pixel_length = pixel_length;
+
+  /* due to rounding, we may need to zoom by more than 1.2 with
+   * very close lookup, otherwise the user zooming command won't
+   * be visible (say length is 2.7, zoom in, new length is 2.25,
+   * and rounding is 2, same value, no change, no feedback to user => bad)
+   * TODO: make all this cleaner
+   */
+  if (pixel_length != 1 && pixel_length != (double)3600 * 1000000000 &&
+      (int64_t)pixel_length == old_px_len_rounded)
+    goto again;
 
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
