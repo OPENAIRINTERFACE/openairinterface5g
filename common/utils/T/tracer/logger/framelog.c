@@ -15,6 +15,11 @@ struct framelog {
   float *x;
   float *buffer;
   int blength;
+  int skip_delay;       /* one frame over 'skip_delay' is truly processed
+                         * 0 to disable (process all data)
+                         */
+  int skip_current;     /* internal data for the skip mechanism */
+  int skip_on;          /* internal data for the skip mechanism */
 };
 
 static void _event(void *p, event e)
@@ -29,6 +34,18 @@ static void _event(void *p, event e)
   subframe = e.e[l->subframe_arg].i;
   buffer = e.e[l->buffer_arg].b;
   bsize = e.e[l->buffer_arg].bsize;
+
+  if (l->skip_delay != 0) {
+    if (subframe == 0) {
+      l->skip_current++;
+      if (l->skip_current >= l->skip_delay) {
+        l->skip_on = 0;
+        l->skip_current = 0;
+      } else
+        l->skip_on = 1;
+    }
+  }
+  if (l->skip_on) return;
 
   nsamples = bsize / (2*sizeof(int16_t));
 
@@ -109,4 +126,17 @@ logger *new_framelog(event_handler *h, void *database,
   }
 
   return ret;
+}
+
+/****************************************************************************/
+/*                             public functions                             */
+/****************************************************************************/
+
+void framelog_set_skip(logger *_this, int skip_delay)
+{
+  struct framelog *l = _this;
+  /* TODO: protect with a lock? */
+  l->skip_delay = skip_delay;
+  l->skip_current = 0;
+  l->skip_on = 0;
 }

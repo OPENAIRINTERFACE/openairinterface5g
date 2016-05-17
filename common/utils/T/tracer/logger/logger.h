@@ -12,6 +12,8 @@ logger *new_ttilog(void *event_handler, void *database,
     char *data_varname, int convert_to_dB);
 logger *new_timelog(void *event_handler, void *database, char *event_name);
 
+void framelog_set_skip(logger *_this, int skip_delay);
+
 #include "view/view.h"
 
 void logger_add_view(logger *l, view *v);
