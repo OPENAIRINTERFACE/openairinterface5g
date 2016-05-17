@@ -1,31 +1,31 @@
 #PHY logs
 ID = ENB_UL_TICK
     DESC = eNodeB uplink tick - one tick per ms at start of uplink processing
-    GROUP = ALL:PHY:GRAPHIC
+    GROUP = ALL:PHY:GRAPHIC:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe
 ID = ENB_DL_TICK
     DESC = eNodeB downlink tick - one tick per ms at start of downlink processing
-    GROUP = ALL:PHY:GRAPHIC
+    GROUP = ALL:PHY:GRAPHIC:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe
 ID = ENB_INPUT_SIGNAL
     DESC = eNodeB received signal in the time domain for a duration of 1ms
-    GROUP = ALL:PHY:GRAPHIC:HEAVY
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,antenna : buffer,rxdata
 ID = ENB_UL_CHANNEL_ESTIMATE
     DESC = eNodeB channel estimation in the time domain
-    GROUP = ALL:PHY:GRAPHIC:HEAVY
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,antenna : buffer,chest_t
 ID = PUSCH_IQ
     DESC = eNodeB PUSCH received IQ data
-    GROUP = ALL:PHY:GRAPHIC:HEAVY
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,nb_rb : buffer,pusch_comp
 ID = PUCCH_1AB_IQ
     DESC = eNodeB PUCCH received IQ data
-    GROUP = ALL:PHY:GRAPHIC:HEAVY
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,I : int,Q
 ID = PUCCH_1_ENERGY
     DESC = eNodeB PUCCH 1 energy and threshold
-    GROUP = ALL:PHY:GRAPHIC:HEAVY
+    GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,energy : int,threshold
 
 #legacy logs
