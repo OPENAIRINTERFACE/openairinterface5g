@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <string.h>
 
 /****************************************************************************/
 /*                              timeview                                    */
@@ -37,7 +38,7 @@ struct time {
   time_t tstart_time;          /* timestamp (in seconds) of starting in t */
   int subcount;                /* number of subviews */
   struct timespec latest_time; /* time of latest received tick */
-  int64_t pixel_length;        /* unit: nanosecond (maximum 1 hour/pixel) */
+  double pixel_length;        /* unit: nanosecond (maximum 1 hour/pixel) */
 };
 
 /* TODO: put that function somewhere else (utils.c) */
@@ -150,6 +151,27 @@ gotit:
   return 0;
 }
 
+static void scroll(void *private, gui *g,
+    char *notification, widget *w, void *notification_data)
+{
+  struct time *this = private;
+  double mul = 1.2;
+  double pixel_length;
+
+  if (pthread_mutex_lock(&this->lock)) abort();
+
+  if (!strcmp(notification, "scrollup")) mul = 1 / mul;
+
+  pixel_length = this->pixel_length * mul;
+  if (pixel_length < 1) pixel_length = 1;
+  if (pixel_length > (double)3600 * 1000000000)
+    pixel_length = (double)3600 * 1000000000;
+
+  this->pixel_length = pixel_length;
+
+  if (pthread_mutex_unlock(&this->lock)) abort();
+}
+
 view *new_view_time(int number_of_seconds, float refresh_rate,
     gui *g, widget *w)
 {
@@ -167,6 +189,9 @@ view *new_view_time(int number_of_seconds, float refresh_rate,
   ret->tstart_time = 0;
   ret->subcount = 0;
   ret->pixel_length = 10 * 1000000;   /* 10ms */
+
+  register_notifier(g, "scrollup", w, scroll, ret);
+  register_notifier(g, "scrolldown", w, scroll, ret);
 
   if (pthread_mutex_init(&ret->lock, NULL)) abort();
 
