@@ -1162,6 +1162,9 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       else
 	UE_id = i;
 
+      T(T_ENB_DLSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+        T_INT(DCI_pdu->dci_alloc[i].rnti), T_INT(DCI_pdu->dci_alloc[i].format));
+
       if (UE_id>=0) {
 	if ((frame%100)==0) {
 	  LOG_D(PHY,"Frame %3d, SF %d \n",frame,subframe); 

@@ -147,32 +147,27 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   /* downlink UE DCIs */
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
-  timeline_plot = new_timeline(g, 512, 4, 5);
+  timeline_plot = new_timeline(g, 512, 8, 5);
   widget_add_child(g, line, timeline_plot, -1);
   container_set_child_growable(g, line, timeline_plot, 1);
-  for (i = 0; i < 4; i++)
+  widget_add_child(g, line, new_label(g,"DL/UL TICK/DCI/ACK/NACK "), 0);
+  for (i = 0; i < 8; i++)
     timeline_set_subline_background_color(g, timeline_plot, i,
         new_color(g, i & 1 ? "#ddd" : "#eee"));
-  timelog = new_timelog(h, database, "ENB_DL_TICK");
   timeview = new_view_time(3600, 10, g, timeline_plot);
+  /* tick logging */
+  timelog = new_timelog(h, database, "ENB_DL_TICK");
   subview = new_subview_time(timeview, 0, FOREGROUND_COLOR);
   logger_add_view(timelog, subview);
-  widget_add_child(g, line, new_label(g,"DL TICK/DCI/ACK/NACK "), 0);
+  /* DCI logging */
+  timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
+  subview = new_subview_time(timeview, 1, new_color(g, "#228"));
+  logger_add_view(timelog, subview);
 
   /* uplink UE DCIs */
-  line = new_container(g, HORIZONTAL);
-  widget_add_child(g, top_container, line, -1);
-  timeline_plot = new_timeline(g, 512, 4, 5);
-  widget_add_child(g, line, timeline_plot, -1);
-  container_set_child_growable(g, line, timeline_plot, 1);
-  for (i = 0; i < 4; i++)
-    timeline_set_subline_background_color(g, timeline_plot, i,
-        new_color(g, i & 1 ? "#ddd" : "#eee"));
   timelog = new_timelog(h, database, "ENB_UL_TICK");
-  timeview = new_view_time(3600, 10, g, timeline_plot);
-  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR);
+  subview = new_subview_time(timeview, 4, FOREGROUND_COLOR);
   logger_add_view(timelog, subview);
-  widget_add_child(g, line, new_label(g,"UL TICK/DCI/ACK/NACK "), 0);
 }
 
 int main(int n, char **v)
@@ -235,6 +230,7 @@ int main(int n, char **v)
   on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
   on_off(database, "ENB_UL_TICK", is_on, 1);
   on_off(database, "ENB_DL_TICK", is_on, 1);
+  on_off(database, "ENB_DLSCH_UE_DCI", is_on, 1);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
