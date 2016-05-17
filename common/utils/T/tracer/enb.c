@@ -120,9 +120,9 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   logger *input_signal_log;
   view *input_signal_view;
   widget *timeline_plot;
-  logger *input_signal_timelog;
-  view *input_signal_timeview;
-  view *input_signal_subview;
+  logger *timelog;
+  view *timeview;
+  view *subview;
   int i;
 
   main_window = new_toplevel_window(g, 800, 600, "eNB tracer");
@@ -144,19 +144,35 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
       g, input_signal_plot, new_color(g, "#0c0c72"));
   logger_add_view(input_signal_log, input_signal_view);
 
+  /* downlink UE DCIs */
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
-  timeline_plot = new_timeline(g, 512, 16, 5);
+  timeline_plot = new_timeline(g, 512, 4, 5);
   widget_add_child(g, line, timeline_plot, -1);
   container_set_child_growable(g, line, timeline_plot, 1);
-  for (i = 0; i < 16; i++)
+  for (i = 0; i < 4; i++)
     timeline_set_subline_background_color(g, timeline_plot, i,
         new_color(g, i & 1 ? "#ddd" : "#eee"));
-  input_signal_timelog = new_timelog(h, database, "ENB_INPUT_SIGNAL");
-  input_signal_timeview = new_view_time(3600, 10, g, timeline_plot);
-  input_signal_subview = new_subview_time(input_signal_timeview,
-      0, FOREGROUND_COLOR);
-  logger_add_view(input_signal_timelog, input_signal_subview);
+  timelog = new_timelog(h, database, "ENB_DL_TICK");
+  timeview = new_view_time(3600, 10, g, timeline_plot);
+  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR);
+  logger_add_view(timelog, subview);
+  widget_add_child(g, line, new_label(g,"DL TICK/DCI/ACK/NACK "), 0);
+
+  /* uplink UE DCIs */
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  timeline_plot = new_timeline(g, 512, 4, 5);
+  widget_add_child(g, line, timeline_plot, -1);
+  container_set_child_growable(g, line, timeline_plot, 1);
+  for (i = 0; i < 4; i++)
+    timeline_set_subline_background_color(g, timeline_plot, i,
+        new_color(g, i & 1 ? "#ddd" : "#eee"));
+  timelog = new_timelog(h, database, "ENB_UL_TICK");
+  timeview = new_view_time(3600, 10, g, timeline_plot);
+  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR);
+  logger_add_view(timelog, subview);
+  widget_add_child(g, line, new_label(g,"UL TICK/DCI/ACK/NACK "), 0);
 }
 
 int main(int n, char **v)
@@ -215,6 +231,10 @@ int main(int n, char **v)
   new_thread(gui_thread, g);
 
   enb_main_gui(g, h, database);
+
+  on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
+  on_off(database, "ENB_UL_TICK", is_on, 1);
+  on_off(database, "ENB_DL_TICK", is_on, 1);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);

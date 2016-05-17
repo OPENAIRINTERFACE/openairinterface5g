@@ -651,6 +651,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
         phy_vars_eNB->Mod_id, frame, subframe);
 #endif
 
+  T(T_ENB_DL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
+
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     // If we've dropped the UE, go back to PRACH mode for this UE
     //#if !defined(EXMIMO_IOT)
@@ -2442,6 +2444,8 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",phy_vars_eNB->Mod_id,frame, subframe);
 #endif
+
+  T(T_ENB_UL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   T(T_ENB_INPUT_SIGNAL, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
     T_BUFFER(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],

@@ -1,4 +1,12 @@
 #PHY logs
+ID = ENB_UL_TICK
+    DESC = eNodeB uplink tick - one tick per ms at start of uplink processing
+    GROUP = ALL:PHY:GRAPHIC
+    FORMAT = int,eNB_ID : int,frame : int,subframe
+ID = ENB_DL_TICK
+    DESC = eNodeB downlink tick - one tick per ms at start of downlink processing
+    GROUP = ALL:PHY:GRAPHIC
+    FORMAT = int,eNB_ID : int,frame : int,subframe
 ID = ENB_INPUT_SIGNAL
     DESC = eNodeB received signal in the time domain for a duration of 1ms
     GROUP = ALL:PHY:GRAPHIC:HEAVY
