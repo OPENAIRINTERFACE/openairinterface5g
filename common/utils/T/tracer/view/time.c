@@ -28,6 +28,8 @@ struct time {
   int psize;
   double pixel_length;        /* unit: nanosecond (maximum 1 hour/pixel) */
   struct timespec latest_time;
+  struct timespec start_time;
+  int autoscroll;
 };
 
 /* TODO: put that function somewhere else (utils.c) */
@@ -119,8 +121,15 @@ static void *time_thread(void *_this)
     /* use rounded pixel_length */
     pixel_length = this->pixel_length;
 
-    tnext = time_add(this->latest_time,(struct timespec){tv_sec:0,tv_nsec:1});
-    tstart = time_sub(tnext, nano_to_time(pixel_length * width));
+    if (this->autoscroll) {
+      tnext = time_add(this->latest_time,
+          (struct timespec){tv_sec:0,tv_nsec:1});
+      tstart = time_sub(tnext, nano_to_time(pixel_length * width));
+      this->start_time = tstart;
+    } else {
+      tstart = this->start_time;
+      tnext = time_add(tstart, nano_to_time(pixel_length * width));
+    }
 
     for (l = 0; l < this->psize; l++) {
       for (i = 0; i < width; i++) {
@@ -148,9 +157,12 @@ static void scroll(void *private, gui *g,
     char *notification, widget *w, void *notification_data)
 {
   struct time *this = private;
+  int *d = notification_data;
+  int x = d[0];
   double mul = 1.2;
   double pixel_length;
   int64_t old_px_len_rounded;
+  struct timespec t;
 
   if (pthread_mutex_lock(&this->lock)) abort();
 
@@ -176,7 +188,21 @@ again:
       (int64_t)pixel_length == old_px_len_rounded)
     goto again;
 
+  t = time_add(this->start_time, nano_to_time(x * old_px_len_rounded));
+  this->start_time = time_sub(t, nano_to_time(x * (int64_t)pixel_length));
+
   if (pthread_mutex_unlock(&this->lock)) abort();
+}
+
+static void click(void *private, gui *g,
+    char *notification, widget *w, void *notification_data)
+{
+  struct time *this = private;
+  int *d = notification_data;
+  int button = *d;
+
+  if (button == 1) this->autoscroll = 0;
+  if (button == 3) this->autoscroll = 1;
 }
 
 view *new_view_time(int number_of_seconds, float refresh_rate,
@@ -192,11 +218,14 @@ view *new_view_time(int number_of_seconds, float refresh_rate,
   ret->p = NULL;
   ret->psize = 0;
 
+  ret->autoscroll = 1;
+
   /* default pixel length: 10ms */
   ret->pixel_length = 10 * 1000000;
 
   register_notifier(g, "scrollup", w, scroll, ret);
   register_notifier(g, "scrolldown", w, scroll, ret);
+  register_notifier(g, "click", w, click, ret);
 
   if (pthread_mutex_init(&ret->lock, NULL)) abort();
 
