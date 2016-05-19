@@ -74,6 +74,10 @@ static void button(gui *_g, widget *_this, int x, int y,
     d[2] = key_modifiers;
     gui_notify(g, "scrolldown", _this, d);
   }
+  /* button 1/2/3 */
+  if ((button == 1 || button == 2 || button == 3) && up == 0) {
+    gui_notify(g, "click", _this, &button);
+  }
 }
 
 /*************************************************************************/

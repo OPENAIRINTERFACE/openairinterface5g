@@ -88,6 +88,7 @@ int new_color(gui *gui, char *color);
  *      - resize     { int: width }
  *      - scrollup   { int [3]: x, y, key_modifiers }
  *      - scrolldown { int [3]: x, y, key_modifiers }
+ *      - click      { int: button }
  */
 
 /* same type as in gui_defs.h */
