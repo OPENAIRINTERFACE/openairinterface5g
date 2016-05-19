@@ -58,19 +58,20 @@ static void button(gui *_g, widget *_this, int x, int y,
     int key_modifiers, int button, int up)
 {
   struct gui *g = _g;
+  struct timeline_widget *w = _this;
   int d[3];
   LOGD("BUTTON timeline %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   /* scroll up */
   if (button == 4 && up == 0) {
-    d[0] = x;
-    d[1] = y;
+    d[0] = x - w->common.x;
+    d[1] = y - w->common.y;
     d[2] = key_modifiers;
     gui_notify(g, "scrollup", _this, d);
   }
   /* scroll down */
   if (button == 5 && up == 0) {
-    d[0] = x;
-    d[1] = y;
+    d[0] = x - w->common.x;
+    d[1] = y - w->common.y;
     d[2] = key_modifiers;
     gui_notify(g, "scrolldown", _this, d);
   }
