@@ -159,14 +159,33 @@ static void scroll(void *private, gui *g,
   struct time *this = private;
   int *d = notification_data;
   int x = d[0];
+  int key_modifiers = d[2];
   double mul = 1.2;
   double pixel_length;
   int64_t old_px_len_rounded;
   struct timespec t;
+  int scroll_px;
+  int width;
 
   if (pthread_mutex_lock(&this->lock)) abort();
 
   old_px_len_rounded = this->pixel_length;
+
+  /* scroll if control+wheel, zoom otherwise */
+
+  if (key_modifiers & KEY_CONTROL) {
+    timeline_get_width(this->g, this->w, &width);
+    if (width < 2) width = 2;
+    scroll_px = 100;
+    if (scroll_px > width - 1) scroll_px = width - 1;
+    if (!strcmp(notification, "scrolldown"))
+      this->start_time = time_add(this->start_time,
+          nano_to_time(scroll_px * old_px_len_rounded));
+    else
+      this->start_time = time_sub(this->start_time,
+          nano_to_time(scroll_px * old_px_len_rounded));
+    goto end;
+  }
 
   if (!strcmp(notification, "scrollup")) mul = 1 / mul;
 
@@ -191,6 +210,7 @@ again:
   t = time_add(this->start_time, nano_to_time(x * old_px_len_rounded));
   this->start_time = time_sub(t, nano_to_time(x * (int64_t)pixel_length));
 
+end:
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
 
