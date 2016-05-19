@@ -12,6 +12,11 @@ typedef void widget;
 #define BACKGROUND_COLOR 0
 #define FOREGROUND_COLOR 1
 
+/* key modifiers */
+#define KEY_SHIFT   (1<<0)
+#define KEY_CONTROL (1<<1)
+#define KEY_ALT     (1<<2)
+
 gui *gui_init(void);
 
 /* position = -1 to put at the end */

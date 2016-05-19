@@ -55,13 +55,14 @@ static void paint(gui *_gui, widget *_this)
   g->xwin = NULL;    /* TODO: remove? it's just in case */
 }
 
-static void button(gui *_g, widget *_this, int x, int y, int button, int up)
+static void button(gui *_g, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   struct gui *g = _g;
   struct toplevel_window_widget *this = _this;
   g->xwin = this->x;
   this->common.children->item->button(_g, this->common.children->item,
-      x, y, button, up);
+      x, y, key_modifiers, button, up);
   g->xwin = NULL;    /* TODO: remove? it's just in case */
 }
 

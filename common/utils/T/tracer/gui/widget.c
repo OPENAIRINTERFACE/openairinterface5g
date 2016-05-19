@@ -14,8 +14,8 @@ static void default_add_child(
     gui *_gui, widget *_this, widget *child, int position);
 static void default_del_child(gui *_gui, widget *_this, widget *child);
 static void default_hints(gui *g, widget *this, int *width, int *height);
-static void default_button(gui *gui, widget *_this, int x, int y, int button,
-    int up);
+static void default_button(gui *gui, widget *_this, int x, int y,
+    int key_modifiers, int button, int up);
 
 static void toplevel_list_append(struct gui *g, struct widget *e)
 {
@@ -228,8 +228,8 @@ static void default_hints(gui *g, widget *this, int *width, int *height)
   *height = 1;
 }
 
-static void default_button(gui *gui, widget *_this, int x, int y, int button,
-    int up)
+static void default_button(gui *gui, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   /* nothing */
 }

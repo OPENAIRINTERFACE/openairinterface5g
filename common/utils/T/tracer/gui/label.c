@@ -45,7 +45,8 @@ widget *new_label(gui *_gui, const char *label)
   return w;
 }
 
-static void button(gui *gui, widget *_this, int x, int y, int button, int up)
+static void button(gui *gui, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   LOGD("BUTTON label %p xy %d %d button %d up %d\n", _this, x, y, button, up);
 
@@ -55,7 +56,8 @@ static void button(gui *gui, widget *_this, int x, int y, int button, int up)
 }
 
 /* we could use default_button, but it's in widget.c, so, well... */
-static void no_button(gui *gui, widget *_this, int x,int y,int button,int up)
+static void no_button(gui *gui, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   /* do nothing */
 }

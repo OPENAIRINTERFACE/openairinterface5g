@@ -50,14 +50,15 @@ static void hints(gui *_gui, widget *_w, int *width, int *height)
   else { *width = *height = 1; }
 }
 
-static void button(gui *_g, widget *_this, int x, int y, int button, int up)
+static void button(gui *_g, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   LOGD("BUTTON positioner %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   struct gui *g = _g;
   struct positioner_widget *this = _this;
   struct widget_list *l = this->common.children;
   if (l != NULL)
-    l->item->button(g, l->item, x, y, button, up);
+    l->item->button(g, l->item, x, y, key_modifiers, button, up);
 }
 
 static void paint(gui *_gui, widget *_this)

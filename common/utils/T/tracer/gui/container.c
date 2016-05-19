@@ -227,7 +227,7 @@ static void horizontal_hints(gui *_gui, widget *_w, int *width, int *height)
 }
 
 static void horizontal_button(gui *_g, widget *_this, int x, int y,
-    int button, int up)
+    int key_modifiers, int button, int up)
 {
   LOGD("BUTTON container horizontal %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   struct gui *g = _g;
@@ -237,7 +237,7 @@ static void horizontal_button(gui *_g, widget *_this, int x, int y,
   l = this->common.children;
   while (l) {
     if (l->item->x <= x && x < l->item->x + l->item->width) {
-      l->item->button(g, l->item, x, y, button, up);
+      l->item->button(g, l->item, x, y, key_modifiers, button, up);
       break;
     }
     l = l->next;
@@ -245,7 +245,7 @@ static void horizontal_button(gui *_g, widget *_this, int x, int y,
 }
 
 static void vertical_button(gui *_g, widget *_this, int x, int y,
-    int button, int up)
+    int key_modifiers, int button, int up)
 {
   LOGD("BUTTON container vertical %p xy %d %d button %d up %d\n", _this, x, y, button, up);
   struct gui *g = _g;
@@ -255,7 +255,7 @@ static void vertical_button(gui *_g, widget *_this, int x, int y,
   l = this->common.children;
   while (l) {
     if (l->item->y <= y && y < l->item->y + l->item->height) {
-      l->item->button(g, l->item, x, y, button, up);
+      l->item->button(g, l->item, x, y, key_modifiers, button, up);
       break;
     }
     l = l->next;

@@ -44,7 +44,8 @@ static void allocate(
   LOGD("ALLOCATE textlist %p xywh %d %d %d %d nlines %d\n", this, x, y, width, height, this->allocated_nlines);
 }
 
-static void button(gui *_g, widget *_this, int x, int y, int button, int up)
+static void button(gui *_g, widget *_this, int x, int y,
+    int key_modifiers, int button, int up)
 {
   struct gui *g = _g;
   struct textlist_widget *this = _this;

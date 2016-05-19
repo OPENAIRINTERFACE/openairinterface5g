@@ -171,13 +171,21 @@ void x_events(gui *_gui)
       break;
     case ButtonPress:
       if ((w = find_x_window(g, ev.xbutton.window)) != NULL) {
-        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y,
+        int key_modifiers = 0;
+        if (ev.xbutton.state & ShiftMask)   key_modifiers |= KEY_SHIFT;
+        if (ev.xbutton.state & Mod1Mask)    key_modifiers |= KEY_ALT;
+        if (ev.xbutton.state & ControlMask) key_modifiers |= KEY_CONTROL;
+        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y, key_modifiers,
             ev.xbutton.button, 0);
       }
       break;
     case ButtonRelease:
       if ((w = find_x_window(g, ev.xbutton.window)) != NULL) {
-        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y,
+        int key_modifiers = 0;
+        if (ev.xbutton.state & ShiftMask)   key_modifiers |= KEY_SHIFT;
+        if (ev.xbutton.state & Mod1Mask)    key_modifiers |= KEY_ALT;
+        if (ev.xbutton.state & ControlMask) key_modifiers |= KEY_CONTROL;
+        w->common.button(g, w, ev.xbutton.x, ev.xbutton.y, key_modifiers,
             ev.xbutton.button, 1);
       }
       break;
