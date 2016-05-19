@@ -10,18 +10,12 @@
 /****************************************************************************/
 
 struct plot {
-  long *nano;
-  int nanosize;
-  int nanomaxsize;
+  struct timespec *tick;
+  int ticksize;
+  int tickmaxsize;
+  int tickstart;
   int line;
   int color;
-};
-
-struct tick {
-  struct plot *p;              /* one plot per subview,
-                                * so size is 'subcount'
-                                * (see in struct time below)
-                                */
 };
 
 struct time {
@@ -30,15 +24,10 @@ struct time {
   widget *w;
   float refresh_rate;
   pthread_mutex_t lock;
-  struct tick *t;              /* t is a circular list
-                                * a tick lasts one second
-                                */
-  int tsize;                   /* size of t */
-  int tstart;                  /* starting index in t */
-  time_t tstart_time;          /* timestamp (in seconds) of starting in t */
-  int subcount;                /* number of subviews */
-  struct timespec latest_time; /* time of latest received tick */
+  struct plot *p;
+  int psize;
   double pixel_length;        /* unit: nanosecond (maximum 1 hour/pixel) */
+  struct timespec latest_time;
 };
 
 /* TODO: put that function somewhere else (utils.c) */
@@ -87,13 +76,33 @@ static int time_cmp(struct timespec a, struct timespec b)
   return 0;
 }
 
+static int interval_empty(struct time *this, int sub,
+    struct timespec start, struct timespec end)
+{
+  int a, b, mid;
+  int i;
+
+  if (this->p[sub].ticksize == 0) return 1;
+
+  /* look for a tick larger than start and smaller than end */
+  a = 0;
+  b = this->p[sub].ticksize - 1;
+  while (b >= a) {
+    mid = (a+b) / 2;
+    i = (this->p[sub].tickstart + mid) % this->p[sub].ticksize;
+    if (time_cmp(this->p[sub].tick[i], start) < 0) a = mid + 1;
+    else if (time_cmp(this->p[sub].tick[i], end) > 0) b = mid - 1;
+    else return 0;
+  }
+  return 1;
+}
+
 static void *time_thread(void *_this)
 {
   struct time *this = _this;
   int width;
   int l;
   int i;
-  int t;
   struct timespec tstart;
   struct timespec tnext;
   struct plot *p;
@@ -105,7 +114,7 @@ static void *time_thread(void *_this)
     timeline_get_width(this->g, this->w, &width);
     timeline_clear_silent(this->g, this->w);
 
-    /* TODO: optimize/cleanup */
+    /* TODO: optimize? */
 
     /* use rounded pixel_length */
     pixel_length = this->pixel_length;
@@ -113,34 +122,14 @@ static void *time_thread(void *_this)
     tnext = time_add(this->latest_time,(struct timespec){tv_sec:0,tv_nsec:1});
     tstart = time_sub(tnext, nano_to_time(pixel_length * width));
 
-    for (l = 0; l < this->subcount; l++) {
+    for (l = 0; l < this->psize; l++) {
       for (i = 0; i < width; i++) {
         struct timespec tick_start, tick_end;
         tick_start = time_add(tstart, nano_to_time(pixel_length * i));
         tick_end = time_add(tick_start, nano_to_time(pixel_length-1));
-        /* look for a nano between tick_start and tick_end */
-        /* TODO: optimize */
-        for (t = 0; t < this->tsize; t++) {
-          int n;
-          time_t current_second = this->tstart_time + t;
-          time_t next_second = current_second + 1;
-          struct timespec current_time =
-              (struct timespec){tv_sec:current_second,tv_nsec:0};
-          struct timespec next_time =
-              (struct timespec){tv_sec:next_second,tv_nsec:0};
-          if (time_cmp(tick_end, current_time) < 0) continue;
-          if (time_cmp(tick_start, next_time) >= 0) continue;
-          p = &this->t[(this->tstart + t) % this->tsize].p[l];
-          for (n = 0; n < p->nanosize; n++) {
-            struct timespec nano =
-                (struct timespec){tv_sec:current_second,tv_nsec:p->nano[n]};
-            if (time_cmp(tick_start, nano) <= 0 &&
-                time_cmp(nano, tick_end) <= 0)
-              goto gotit;
-          }
-        }
-        continue;
-gotit:
+        if (interval_empty(this, l, tick_start, tick_end))
+          continue;
+        p = &this->p[l];
         /* TODO: only one call */
         timeline_add_points_silent(this->g, this->w, p->line, p->color, &i, 1);
       }
@@ -200,13 +189,11 @@ view *new_view_time(int number_of_seconds, float refresh_rate,
   ret->g = g;
   ret->w = w;
 
-  ret->t = calloc(number_of_seconds, sizeof(struct tick));
-  if (ret->t == NULL) abort();
-  ret->tsize = number_of_seconds;
-  ret->tstart = 0;
-  ret->tstart_time = 0;
-  ret->subcount = 0;
-  ret->pixel_length = 10 * 1000000;   /* 10ms */
+  ret->p = NULL;
+  ret->psize = 0;
+
+  /* default pixel length: 10ms */
+  ret->pixel_length = 10 * 1000000;
 
   register_notifier(g, "scrollup", w, scroll, ret);
   register_notifier(g, "scrolldown", w, scroll, ret);
@@ -234,74 +221,26 @@ static void append(view *_this, struct timespec t)
 {
   struct subtime *this = (struct subtime *)_this;
   struct time    *time = this->parent;
-  time_t         start_time, end_time;
-  int            i, l;
-  int            tpos;
-  struct plot    *p;
+  struct plot    *p = &time->p[this->subview];
 
   if (pthread_mutex_lock(&time->lock)) abort();
 
-  start_time = time->tstart_time;
-  end_time   = time->tstart_time + time->tsize - 1;
-
-  /* useless test? */
-  if (t.tv_sec < start_time) abort();
-
-  /* tick out of current window? if yes, move window */
-  /* if too far, free all */
-  if (t.tv_sec > end_time && t.tv_sec - end_time > time->tsize) {
-    for (l = 0; l < time->tsize; l++)
-      for (i = 0; i < time->subcount; i++) {
-        free(time->t[l].p[i].nano);
-        time->t[l].p[i].nano = NULL;
-        time->t[l].p[i].nanosize = 0;
-        time->t[l].p[i].nanomaxsize = 0;
-      }
-    time->tstart = 0;
-    time->tstart_time = t.tv_sec - (time->tsize-1);
-    start_time = time->tstart_time;
-    end_time   = time->tstart_time + time->tsize - 1;
-  }
-  while (t.tv_sec > end_time) {
-    for (i = 0; i < time->subcount; i++) {
-      free(time->t[time->tstart].p[i].nano);
-      time->t[time->tstart].p[i].nano = NULL;
-      time->t[time->tstart].p[i].nanosize = 0;
-      time->t[time->tstart].p[i].nanomaxsize = 0;
-    }
-    time->tstart = (time->tstart+1) % time->tsize;
-    time->tstart_time++;
-    start_time++;
-    end_time++;
+  if (p->ticksize < p->tickmaxsize) {
+    p->tick[p->ticksize] = t;
+    p->ticksize++;
+  } else {
+    p->tick[p->tickstart] = t;
+    p->tickstart = (p->tickstart + 1) % p->ticksize;
   }
 
-  tpos = (time->tstart + (t.tv_sec - time->tstart_time)) % time->tsize;
-  p = &time->t[tpos].p[this->subview];
-
-  /* can we get a new event with <= time than last in list? */
-  if (p->nanosize != 0 && t.tv_nsec <= p->nano[p->nanosize-1])
-    { printf("%s:%d: possible?\n", __FILE__, __LINE__);  abort(); }
-
-  if (p->nanosize == p->nanomaxsize) {
-    p->nanomaxsize += 4096;
-    p->nano = realloc(p->nano, p->nanomaxsize * sizeof(long));
-    if (p->nano == NULL) abort();
-  }
-
-  p->nano[p->nanosize] = t.tv_nsec;
-  p->nanosize++;
-
-  if (time->latest_time.tv_sec < t.tv_sec ||
-      (time->latest_time.tv_sec == t.tv_sec &&
-       time->latest_time.tv_nsec < t.tv_nsec))
+  if (time_cmp(time->latest_time, t) < 0)
     time->latest_time = t;
 
   if (pthread_mutex_unlock(&time->lock)) abort();
 }
 
-view *new_subview_time(view *_time, int line, int color)
+view *new_subview_time(view *_time, int line, int color, int size)
 {
-  int i;
   struct time *time = (struct time *)_time;
   struct subtime *ret = calloc(1, sizeof(struct subtime));
   if (ret == NULL) abort();
@@ -313,20 +252,20 @@ view *new_subview_time(view *_time, int line, int color)
   ret->parent = time;
   ret->line = line;
   ret->color = color;
-  ret->subview = time->subcount;
+  ret->subview = time->psize;
 
-  for (i = 0; i < time->tsize; i++) {
-    time->t[i].p = realloc(time->t[i].p,
-        (time->subcount + 1) * sizeof(struct plot));
-    if (time->t[i].p == NULL) abort();
-    time->t[i].p[time->subcount].nano = NULL;
-    time->t[i].p[time->subcount].nanosize = 0;
-    time->t[i].p[time->subcount].nanomaxsize = 0;
-    time->t[i].p[time->subcount].line = line;
-    time->t[i].p[time->subcount].color = color;
-  }
+  time->p = realloc(time->p,
+      (time->psize + 1) * sizeof(struct plot));
+  if (time->p == NULL) abort();
+  time->p[time->psize].tick = calloc(size, sizeof(struct timespec));
+  if (time->p[time->psize].tick == NULL) abort();
+  time->p[time->psize].ticksize = 0;
+  time->p[time->psize].tickmaxsize = size;
+  time->p[time->psize].tickstart = 0;
+  time->p[time->psize].line = line;
+  time->p[time->psize].color = color;
 
-  time->subcount++;
+  time->psize++;
 
   if (pthread_mutex_unlock(&time->lock)) abort();
 

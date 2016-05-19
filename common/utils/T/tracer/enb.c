@@ -157,24 +157,24 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   timeview = new_view_time(3600, 10, g, timeline_plot);
   /* tick logging */
   timelog = new_timelog(h, database, "ENB_DL_TICK");
-  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR);
+  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR, 3600*1000);
   logger_add_view(timelog, subview);
   /* DCI logging */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
-  subview = new_subview_time(timeview, 1, new_color(g, "#228"));
+  subview = new_subview_time(timeview, 1, new_color(g, "#228"), 3600*1000);
   logger_add_view(timelog, subview);
   /* ACK */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_ACK");
-  subview = new_subview_time(timeview, 2, new_color(g, "#282"));
+  subview = new_subview_time(timeview, 2, new_color(g, "#282"), 3600*1000);
   logger_add_view(timelog, subview);
   /* NACK */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_NACK");
-  subview = new_subview_time(timeview, 3, new_color(g, "#f22"));
+  subview = new_subview_time(timeview, 3, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
 
   /* uplink UE DCIs */
   timelog = new_timelog(h, database, "ENB_UL_TICK");
-  subview = new_subview_time(timeview, 4, FOREGROUND_COLOR);
+  subview = new_subview_time(timeview, 4, FOREGROUND_COLOR, 3600*1000);
   logger_add_view(timelog, subview);
 }
 
