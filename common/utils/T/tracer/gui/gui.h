@@ -86,8 +86,8 @@ int new_color(gui *gui, char *color);
  *      - click      { int: button } (if enabled)
  * - timeline
  *      - resize     { int: width }
- *      - scrollup   { void *: NULL }
- *      - scrolldown { void *: NULL }
+ *      - scrollup   { int [3]: x, y, key_modifiers }
+ *      - scrolldown { int [3]: x, y, key_modifiers }
  */
 
 /* same type as in gui_defs.h */
