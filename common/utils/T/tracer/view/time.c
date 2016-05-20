@@ -221,8 +221,8 @@ static void click(void *private, gui *g,
   int *d = notification_data;
   int button = *d;
 
-  if (button == 1) this->autoscroll = 0;
-  if (button == 3) this->autoscroll = 1;
+  if (button == 3) this->autoscroll = 0;
+  if (button == 1) this->autoscroll = 1;
 }
 
 view *new_view_time(int number_of_seconds, float refresh_rate,
