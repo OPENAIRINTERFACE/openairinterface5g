@@ -111,7 +111,7 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
-static void vcd_main_gui(gui *g, event_handler *h, void *database, int *is_on)
+static void vcd_main_gui(gui *g, event_handler *h, void *database)
 {
   int i, j;
   int n;
@@ -144,7 +144,6 @@ static void vcd_main_gui(gui *g, event_handler *h, void *database, int *is_on)
   i = 0;
   for (j = 0; j < n; j++) {
     if (strncmp(ids[j], "VCD_FUNCTION_", 13) != 0) continue;
-    on_off(database, ids[j], is_on, 1);
     timelog = new_timelog(h, database, ids[j]);
     subview = new_subview_time(timeview, i, FOREGROUND_COLOR, 3600*1000);
     logger_add_view(timelog, subview);
@@ -209,7 +208,9 @@ int main(int n, char **v)
   g = gui_init();
   new_thread(gui_thread, g);
 
-  vcd_main_gui(g, h, database, is_on);
+  vcd_main_gui(g, h, database);
+
+  on_off(database, "VCD_FUNCTION", is_on, 1);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
