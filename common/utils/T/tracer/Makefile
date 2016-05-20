@@ -4,9 +4,7 @@ local:
 	make -f Makefile.local
 
 remote:
-	make -f Makefile.remote
-	make -f Makefile.remote textlog
-	make -f Makefile.remote enb
+	make -f Makefile.remote tracer_remote textlog enb vcd
 
 clean:
 	make -f Makefile.local clean

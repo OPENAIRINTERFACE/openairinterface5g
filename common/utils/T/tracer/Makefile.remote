@@ -5,11 +5,8 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm
 
-PROG=tracer_remote
-OBJS=remote_old.o plot.o database.o gui.o utils.o
-
-$(PROG): gui/gui.a $(OBJS)
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) gui/gui.a $(LIBS)
+tracer_remote: remote_old.o plot.o database.o gui.o utils.o gui/gui.a
+	$(CC) $(CFLAGS) -o tracer_remote $^ $(LIBS)
 
 textlog: utils.o textlog.o database.o event.o handler.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a
@@ -18,6 +15,10 @@ textlog: utils.o textlog.o database.o event.o handler.o \
 enb: utils.o enb.o database.o event.o handler.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a
 	$(CC) $(CFLAGS) -o enb $^ $(LIBS)
+
+vcd: utils.o vcd.o database.o event.o handler.o \
+         event_selector.o view/view.a gui/gui.a logger/logger.a
+	$(CC) $(CFLAGS) -o vcd $^ $(LIBS)
 
 .PHONY: gui/gui.a view/view.a logger/logger.a
 
@@ -34,7 +35,7 @@ logger/logger.a:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o $(PROG) core textlog
+	rm -f *.o core tracer_remote textlog enb vcd
 	cd gui && make clean
 	cd view && make clean
 	cd logger && make clean
