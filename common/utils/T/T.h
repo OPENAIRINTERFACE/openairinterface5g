@@ -32,6 +32,14 @@
     T_LOCAL_size += sizeof(int); \
   } while (0)
 
+#define T_PUT_ulong(argnum, val) \
+  do { \
+    unsigned long T_PUT_var = (val); \
+    T_CHECK_SIZE(sizeof(unsigned long), argnum); \
+    memcpy(T_LOCAL_buf + T_LOCAL_size, &T_PUT_var, sizeof(unsigned long)); \
+    T_LOCAL_size += sizeof(unsigned long); \
+  } while (0)
+
 #define T_PUT_float(argnum, val) \
   do { \
     float T_PUT_var = (val); \
@@ -534,6 +542,38 @@ extern T_cache_t *T_cache;
 #define T28(...) T_CALL_ERROR
 #define T30(...) T_CALL_ERROR
 #define T32(...) T_CALL_ERROR
+
+/* special cases for VCD logs */
+
+#define T_VCD_VARIABLE(var, val) \
+  do { \
+    if (T_ACTIVE(((var) + VCD_FIRST_VARIABLE))) { \
+      if ((var) > VCD_NUM_VARIABLES) { \
+        printf("%s:%d:%s: VCD data out of synch for the T, contact" \
+               " the authors!\n", __FILE__, __LINE__, __FUNCTION__); \
+        abort(); \
+      } \
+      T_LOCAL_DATA \
+      T_HEADER(T_ID((var) + VCD_FIRST_VARIABLE)); \
+      T_PUT_ulong(1, (val)); \
+      T_SEND(); \
+    } \
+  } while (0)
+
+#define T_VCD_FUNCTION(fun, val) \
+  do { \
+    if (T_ACTIVE(((fun) + VCD_FIRST_FUNCTION))) { \
+      if ((fun) > VCD_NUM_FUNCTIONS) { \
+        printf("%s:%d:%s: VCD data out of synch for the T, contact" \
+               " the authors!\n", __FILE__, __LINE__, __FUNCTION__); \
+        abort(); \
+      } \
+      T_LOCAL_DATA \
+      T_HEADER(T_ID((fun) + VCD_FIRST_FUNCTION)); \
+      T_PUT_int(1, (val)); \
+      T_SEND(); \
+    } \
+  } while (0)
 
 #ifndef T_USE_SHARED_MEMORY
 

@@ -115,3 +115,10 @@ void PUTI(OBUF *o, int i)
   sprintf(s, "%d", i);
   PUTS(o, s);
 }
+
+void PUTUL(OBUF *o, unsigned long l)
+{
+  char s[128];
+  sprintf(s, "%ld", l);
+  PUTS(o, s);
+}

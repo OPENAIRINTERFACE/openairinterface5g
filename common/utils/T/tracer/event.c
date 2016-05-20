@@ -36,6 +36,10 @@ event new_event(int type, int length, char *buffer, void *database)
       e.e[i].type = EVENT_INT;
       e.e[i].i = *(int *)(&buffer[offset]);
       offset += 4;
+    } else if (!strcmp(f.type[i], "ulong")) {
+      e.e[i].type = EVENT_ULONG;
+      e.e[i].ul = *(unsigned long *)(&buffer[offset]);
+      offset += sizeof(unsigned long);
     } else if (!strcmp(f.type[i], "string")) {
       e.e[i].type = EVENT_STRING;
       e.e[i].s = &buffer[offset];

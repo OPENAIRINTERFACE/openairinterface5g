@@ -8,6 +8,7 @@
 
 enum event_arg_type {
   EVENT_INT,
+  EVENT_ULONG,
   EVENT_STRING,
   EVENT_BUFFER
 };
@@ -17,6 +18,7 @@ typedef struct {
   //int offset;
   union {
     int i;
+    unsigned long ul;
     char *s;
     struct {
       int bsize;
