@@ -25,28 +25,6 @@ struct _event_handler {
   unsigned long next_id;
 };
 
-#if 0
-#include <stdio.h>
-void handle_event(event_handler *h, event e)
-{
-  int i;
-  printf("event %s (%d)\n", event_name_from_id(h->database, e.type), e.type);
-  for (i = 0; i < e.ecount; i++) {
-    switch (e.e[i].type) {
-    case EVENT_INT:
-      printf("    %d: INT %d\n", i, *(int *)&e.buffer[e.e[i].offset]);
-      break;
-    case EVENT_STRING:
-      printf("    %d: STRING '%s'\n", i, &e.buffer[e.e[i].offset]);
-      break;
-    case EVENT_BUFFER:
-      printf("    %d: BUFFER size %d\n", i, *(int *)&e.buffer[e.e[i].offset]);
-      break;
-    }
-  }
-}
-#endif
-
 void handle_event(event_handler *_h, event e)
 {
   struct _event_handler *h = _h;
