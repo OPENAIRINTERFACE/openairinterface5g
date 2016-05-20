@@ -951,22 +951,23 @@ void init_openair1(void)
 
   number_of_cards = 1;
 
-  openair_daq_vars.rx_rf_mode = 1;
-  openair_daq_vars.tdd = 1;
-  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
+//  openair_daq_vars.rx_rf_mode = 1;
+//  openair_daq_vars.tdd = 1;
+//  openair_daq_vars.rx_gain_mode = DAQ_AGC_ON;
 
-  openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode[0];
+//  openair_daq_vars.dlsch_transmission_mode = oai_emulation.info.transmission_mode[0];
 //#warning "NN->FK: OAI EMU channel abstraction does not work for MCS higher than"
-  openair_daq_vars.target_ue_dl_mcs = cmin(target_dl_mcs,16);
-  openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
-  openair_daq_vars.ue_dl_rb_alloc=0x1fff;
-  openair_daq_vars.ue_ul_nb_rb=6;
-  openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
-  openair_daq_vars.use_ia_receiver = 0;
+//  openair_daq_vars.target_ue_dl_mcs = cmin(target_dl_mcs,16);
+//  openair_daq_vars.target_ue_ul_mcs = target_ul_mcs;
+//  openair_daq_vars.ue_dl_rb_alloc=0x1fff;
+//  openair_daq_vars.ue_ul_nb_rb=6;
+//  openair_daq_vars.dlsch_rate_adaptation = rate_adaptation_flag;
 
   //N_TA_offset
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
+      PHY_vars_UE_g[UE_id][CC_id]->use_ia_receiver = 0;
+
       if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.frame_type == TDD) {
         if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 100)
           PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624;

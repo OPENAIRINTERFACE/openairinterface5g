@@ -86,7 +86,7 @@ enum openair_SYNCH_STATUS {
 #define DAQ_AGC_OFF 0
 
 
-
+/*
 typedef struct {
   boolean_t  is_eNB;
   uint8_t    mode;
@@ -133,6 +133,7 @@ typedef struct {
   uint32_t   get_frame_done;
   uint32_t   use_ia_receiver;
 } OPENAIR_DAQ_VARS;
+*/
 
 #ifndef USER_MODE
 int32_t openair_sched_init(void);

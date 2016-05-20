@@ -115,7 +115,7 @@ extern int rx_sig_fifo;
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
 
-#ifdef USER_MODE
+
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid)
 {
@@ -286,7 +286,7 @@ void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe)
   write_output("dlsch_mag1.m","dlschmag1",phy_vars_ue->lte_ue_pdsch_vars_ra[0]->dl_ch_mag0,300*nsymb,1,1);
   write_output("dlsch_mag2.m","dlschmag2",phy_vars_ue->lte_ue_pdsch_vars_ra[0]->dl_ch_magb0,300*nsymb,1,1);
 }
-#endif
+
 
 void phy_reset_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
@@ -367,13 +367,11 @@ void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,uint16_t timing_advance
     timing_advance = timing_advance - (1<<11);
   */
 
-  if (openair_daq_vars.manual_timing_advance == 0) {
-    phy_vars_ue->timing_advance = timing_advance*4;
+  phy_vars_ue->timing_advance = timing_advance*4;
 
-  }
 
 #ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[UE %d] Frame %d, received (rar) timing_advance %d, HW timing advance %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame_rx, phy_vars_ue->timing_advance,openair_daq_vars.timing_advance);
+  LOG_I(PHY,"[UE %d] Frame %d, received (rar) timing_advance %d, HW timing advance %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame_rx, phy_vars_ue->timing_advance);
 #endif
 
 }
@@ -386,11 +384,8 @@ void process_timing_advance(uint8_t Mod_id,uint8_t CC_id,int16_t timing_advance)
   // timing advance has Q1.5 format
   timing_advance = timing_advance - 31;
 
-  if (openair_daq_vars.manual_timing_advance == 0) {
-    //if ( (frame % 100) == 0) {
-    //if ((timing_advance > 3) || (timing_advance < -3) )
-    PHY_vars_UE_g[Mod_id][CC_id]->timing_advance = PHY_vars_UE_g[Mod_id][CC_id]->timing_advance+timing_advance*4; //this is for 25RB only!!!
-  }
+  PHY_vars_UE_g[Mod_id][CC_id]->timing_advance = PHY_vars_UE_g[Mod_id][CC_id]->timing_advance+timing_advance*4; //this is for 25RB only!!!
+
 
   LOG_I(PHY,"[UE %d] Got timing advance %d from MAC, new value %d\n",Mod_id, timing_advance, PHY_vars_UE_g[Mod_id][CC_id]->timing_advance);
 
@@ -1223,7 +1218,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)//this is the EXPRESS MIMO case
         ulsch_start = (phy_vars_ue->rx_offset+subframe_tx*frame_parms->samples_per_tti-
-                       openair_daq_vars.timing_advance-
+                       phy_vars_ue->hw_timing_advance-
                        phy_vars_ue->timing_advance-
                        phy_vars_ue->N_TA_offset+5)%(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti);
 #else //this is the normal case
@@ -1234,7 +1229,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 		Mod_id,frame_tx,subframe_tx,
 		ulsch_start,
 		phy_vars_ue->rx_offset,
-		openair_daq_vars.timing_advance,
+		phy_vars_ue->hw_timing_advance,
 		phy_vars_ue->timing_advance,
 		phy_vars_ue->N_TA_offset);
  
@@ -1525,14 +1520,7 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
     // AGC
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
-#if defined EXMIMO
 
-    if ((openair_daq_vars.rx_gain_mode == DAQ_AGC_ON) &&
-        (mode != rx_calib_ue) && (mode != rx_calib_ue_med) && (mode != rx_calib_ue_byp) )
-      if  (phy_vars_ue->frame_rx%100==0)
-        gain_control_all(dB_fixed(phy_vars_ue->PHY_measurements.rssi),0);
-
-#else
 #ifndef OAI_USRP
 #ifndef OAI_BLADERF
 #ifndef OAI_LMSSDR
@@ -1540,7 +1528,7 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
 #endif
 #endif
 #endif
-#endif
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_IN);
     eNB_id = 0;
@@ -1553,29 +1541,6 @@ void lte_ue_measurement_procedures(uint16_t l, PHY_VARS_UE *phy_vars_ue,uint8_t 
                        16384);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_ADJUST_SYNCH, VCD_FUNCTION_OUT);
-
-    /* if (openair_daq_vars.auto_freq_correction == 1) {
-      if (frame_rx % 100 == 0) {
-    if ((phy_vars_ue->lte_ue_common_vars.freq_offset>100) && (openair_daq_vars.freq_offset < 1000)) {
-    openair_daq_vars.freq_offset+=100;
-    #if defined(EXMIMO) && defined(DRIVER2013)
-    for (aa = 0; aa<4; aa++) {
-      p_exmimo_config->rf.rf_freq_rx[aa] = downlink_frequency[aa]+=openair_daq_vars.freq_offset;
-      p_exmimo_config->rf.rf_freq_tx[aa] = downlink_frequency[aa]+=openair_daq_vars.freq_offset;
-    }
-    #endif
-    }
-    else if ((phy_vars_ue->lte_ue_common_vars.freq_offset<-100) && (openair_daq_vars.freq_offset > -1000)) {
-    openair_daq_vars.freq_offset-=100;
-    #if defined(EXMIMO) && defined(DRIVER2013)
-    for (aa = 0; aa<4; aa++) {
-      p_exmimo_config->rf.rf_freq_rx[aa] = downlink_frequency[aa]+=openair_daq_vars.freq_offset;
-      p_exmimo_config->rf.rf_freq_tx[aa] = downlink_frequency[aa]+=openair_daq_vars.freq_offset;
-    }
-    #endif
-    }
-      }
-    }*/
 
   }
 
@@ -1681,9 +1646,7 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_fla
   //   first_run = 1;
 
   if (abstraction_flag ==0 ) {
-    openair_daq_vars.mode = openair_NOT_SYNCHED;
     phy_vars_ue->UE_mode[eNB_id] = NOT_SYNCHED;
-    openair_daq_vars.sync_state=0;
   } else {
     phy_vars_ue->UE_mode[eNB_id] = PRACH;
     phy_vars_ue->prach_resources[eNB_id]=NULL;
@@ -1691,8 +1654,8 @@ void restart_phy(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_fla
 
   phy_vars_ue->frame_rx = -1;
   phy_vars_ue->frame_tx = -1;
-  openair_daq_vars.synch_wait_cnt=0;
-  openair_daq_vars.sched_cnt=-1;
+  //  phy_vars_ue->synch_wait_cnt=0;
+  //  phy_vars_ue->sched_cnt=-1;
 
   phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors_conseq=0;
   phy_vars_ue->lte_ue_pbch_vars[eNB_id]->pdu_errors=0;
@@ -2564,7 +2527,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
         if ((phy_vars_ue->transmission_mode[eNB_id] == 5) &&
             (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off==0) &&
-            (openair_daq_vars.use_ia_receiver ==1)) {
+            (phy_vars_ue->use_ia_receiver ==1)) {
           dual_stream_UE = 1;
           eNB_id_i = phy_vars_ue->n_connected_eNB;
           i_mod = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Qm;
@@ -2975,9 +2938,9 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
         if (ret == (1+phy_vars_ue->dlsch_ue_ra[eNB_id]->max_turbo_iterations)) {
           phy_vars_ue->dlsch_ra_errors[eNB_id]++;
           LOG_D(PHY,"[UE  %d] Frame %d, subframe %d, received RA in error\n",phy_vars_ue->Mod_id,frame_rx,subframe_prev);
-#ifdef USER_MODE
-          //dump_dlsch_ra(phy_vars_ue,eNB_id,subframe_prev);
-#endif
+
+	  //          dump_dlsch_ra(phy_vars_ue,eNB_id,subframe_prev); exit(-1);
+
           //    oai_exit=1;
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
           stop_meas(&phy_vars_ue->phy_proc_rx);
@@ -3107,7 +3070,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
             if ((phy_vars_ue->transmission_mode[eNB_id] == 5) &&
                 (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off==0) &&
-                (openair_daq_vars.use_ia_receiver ==1)) {
+                (phy_vars_ue->use_ia_receiver ==1)) {
               dual_stream_UE = 1;
               eNB_id_i = phy_vars_ue->n_connected_eNB;
               i_mod =  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Qm;
@@ -3176,7 +3139,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 
             if ((phy_vars_ue->transmission_mode[eNB_id] == 5) &&
                 (phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->dl_power_off==0) &&
-                (openair_daq_vars.use_ia_receiver ==1)) {
+                (phy_vars_ue->use_ia_receiver ==1)) {
               dual_stream_UE = 1;
               eNB_id_i = phy_vars_ue->n_connected_eNB;
               i_mod = phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->Qm;

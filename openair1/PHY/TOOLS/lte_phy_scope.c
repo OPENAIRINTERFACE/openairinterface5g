@@ -47,11 +47,11 @@ static void ia_receiver_on_off( FL_OBJECT *button, long arg)
 
   if (fl_get_button(button)) {
     fl_set_object_label(button, "IA Receiver ON");
-    openair_daq_vars.use_ia_receiver = 1;
+    //    PHY_vars_UE_g[0][0]->use_ia_receiver = 1;
     fl_set_object_color(button, FL_GREEN, FL_GREEN);
   } else {
     fl_set_object_label(button, "IA Receiver OFF");
-    openair_daq_vars.use_ia_receiver = 0;
+    //    PHY_vars_UE_g[0][0]->use_ia_receiver = 0;
     fl_set_object_color(button, FL_RED, FL_RED);
   }
 }

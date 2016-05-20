@@ -138,7 +138,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
     endif()
     if (CPUINFO MATCHES "sse4_1")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1 -mavx2")
     endif()
     if (CPUINFO MATCHES "ssse3")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
@@ -259,15 +259,6 @@ if (${ENABLE_ITTI})
 endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
-if (${RTAI})
-  set(LOWLATENCY False)
-  set(CPU_AFFINITY False)
-  add_definitions("-DENABLE_RTAI_CLOCK")
-  add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
-  include_directories ("/usr/realtime/include")
-  include_directories ("/usr/realtime/include/asm")
-  set(RTAI_SOURCE sched_dlsch.c sched_rx_pdsch.c rt_wrapper.c vcd_signal_dumper.c log.c)
-endif (${RTAI})
 
 #############################
 # ASN.1 grammar C code generation & dependancies
@@ -1574,11 +1565,10 @@ add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
+  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
@@ -1610,8 +1600,6 @@ add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
   ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/sched_dlsch.c
-  ${OPENAIR_TARGETS}/RT/USER/sched_rx_pdsch.c
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c

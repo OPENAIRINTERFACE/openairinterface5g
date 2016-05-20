@@ -178,7 +178,7 @@ void assign_rbs_required (module_id_t Mod_id,
       */
       eNB_UE_stats[CC_id]->dlsch_mcs1=cqi_to_mcs[eNB_UE_stats[CC_id]->DL_cqi[0]];
 
-      eNB_UE_stats[CC_id]->dlsch_mcs1 = cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
+      eNB_UE_stats[CC_id]->dlsch_mcs1 = eNB_UE_stats[CC_id]->dlsch_mcs1;//cmin(eNB_UE_stats[CC_id]->dlsch_mcs1,openair_daq_vars.target_ue_dl_mcs);
 
     }
 
