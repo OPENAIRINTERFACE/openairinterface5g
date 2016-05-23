@@ -33,6 +33,7 @@ widget *new_xy_plot(gui *gui, int width, int height, char *label,
 widget *new_textlist(gui *gui, int width, int nlines, int background_color);
 widget *new_timeline(gui *gui, int width, int number_of_sublines,
     int subline_height);
+widget *new_space(gui *gui, int width, int height);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
 

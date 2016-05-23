@@ -31,7 +31,7 @@ extern int volatile gui_logd;
 
 enum widget_type {
   TOPLEVEL_WINDOW, CONTAINER, POSITIONER, TEXT_LIST, XY_PLOT, BUTTON, LABEL,
-  TIMELINE
+  TIMELINE, SPACE
 };
 
 struct widget_list;
@@ -146,6 +146,12 @@ struct label_widget {
   int width;         /* as given by the graphic's backend */
   int height;        /* as given by the graphic's backend */
   int baseline;      /* as given by the graphic's backend */
+};
+
+struct space_widget {
+  struct widget common;
+  int wanted_width;
+  int wanted_height;
 };
 
 /*************************************************************************/

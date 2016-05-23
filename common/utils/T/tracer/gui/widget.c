@@ -265,12 +265,11 @@ void widget_dirty(gui *_gui, widget *_this)
 
 static const char *names[] = {
   "TOPLEVEL_WINDOW", "CONTAINER", "POSITIONER", "TEXT_LIST",
-  "XY_PLOT", "BUTTON", "LABEL", "TIMELINE"
+  "XY_PLOT", "BUTTON", "LABEL", "TIMELINE", "SPACE"
 };
 const char *widget_name(enum widget_type type)
 {
   switch (type) {
-  default: break;
   case TOPLEVEL_WINDOW:
   case CONTAINER:
   case POSITIONER:
@@ -279,6 +278,7 @@ const char *widget_name(enum widget_type type)
   case BUTTON:
   case LABEL:
   case TIMELINE:
+  case SPACE:
     return names[type];
   }
   return "UNKNOWN (error)";
