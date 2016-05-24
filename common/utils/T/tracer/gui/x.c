@@ -2,6 +2,7 @@
 #include "x_defs.h"
 #include "gui_defs.h"
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -107,6 +108,52 @@ x_window *x_create_window(x_connection *_x, int width, int height,
   }
   LOGD("XXX create connection %p window %p (win id %d pixmap %d) w h %d %d\n", x, ret, (int)ret->w, (int)ret->p, width, height);
 #endif
+
+  return ret;
+}
+
+x_image *x_create_image(x_connection *_x, unsigned char *data,
+    int width, int height)
+{
+  struct x_connection *x = _x;
+  struct x_image *ret;
+  XImage *ximage;
+  XVisualInfo *vs;
+  XVisualInfo template;
+  int nvs;
+  Visual *v;
+
+  ret = calloc(1, sizeof(struct x_image)); if (ret == NULL) OOM;
+
+  template.class = TrueColor;
+  template.depth = 24;
+  template.red_mask = 0xff0000;
+  template.green_mask = 0x00ff00;
+  template.blue_mask = 0x0000ff;
+  template.bits_per_rgb = 8;
+
+  vs = XGetVisualInfo(x->d, VisualDepthMask | VisualClassMask |
+      VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask |
+      VisualBitsPerRGBMask, &template, &nvs);
+  if (vs == NULL || nvs == 0) ERR("no good visual found\n");
+  v = vs[0].visual;
+  XFree(vs);
+
+  ximage = XCreateImage(x->d, v, 24, ZPixmap, 0,
+      (char*)data, width, height, 32, 0);
+  if (ximage == NULL) ERR("image creation failed\n");
+
+  ret->p = XCreatePixmap(x->d, DefaultRootWindow(x->d), width, height, 24);
+
+  XPutImage(x->d, ret->p, DefaultGC(x->d, DefaultScreen(x->d)),
+      ximage, 0, 0, 0, 0, width, height);
+
+  /* TODO: be sure it's fine to set data to NULL */
+  ximage->data = NULL;
+  XDestroyImage(ximage);
+
+  ret->width = width;
+  ret->height = height;
 
   return ret;
 }
@@ -310,6 +357,16 @@ void x_draw_clipped_string(x_connection *_c, x_window *_w, int color,
   XSetClipRectangles(c->d, c->colors[color], 0, 0, &clip, 1, Unsorted);
   x_draw_string(_c, _w, color, x, y, t);
   XSetClipMask(c->d, c->colors[color], None);
+}
+
+void x_draw_image(x_connection *_c, x_window *_w, x_image *_img, int x, int y)
+{
+  struct x_connection *c = _c;
+  struct x_window *w = _w;
+  struct x_image *img = _img;
+
+  XCopyArea(c->d, img->p, w->p, DefaultGC(c->d, DefaultScreen(c->d)),
+      0, 0, img->width, img->height, x, y);
 }
 
 void x_draw(x_connection *_c, x_window *_w)

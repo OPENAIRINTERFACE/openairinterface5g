@@ -31,7 +31,7 @@ extern int volatile gui_logd;
 
 enum widget_type {
   TOPLEVEL_WINDOW, CONTAINER, POSITIONER, TEXT_LIST, XY_PLOT, BUTTON, LABEL,
-  TIMELINE, SPACE
+  TIMELINE, SPACE, IMAGE
 };
 
 struct widget_list;
@@ -152,6 +152,13 @@ struct space_widget {
   struct widget common;
   int wanted_width;
   int wanted_height;
+};
+
+struct image_widget {
+  struct widget common;
+  int width;
+  int height;
+  void *x;             /* opaque X data (type x_image), used in x.c */
 };
 
 /*************************************************************************/

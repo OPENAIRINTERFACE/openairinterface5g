@@ -5,11 +5,15 @@
 
 typedef void x_connection;
 typedef void x_window;
+typedef void x_image;
 
 x_connection *x_open(void);
 
 x_window *x_create_window(x_connection *x, int width, int height,
     char *title);
+
+x_image *x_create_image(x_connection *x, unsigned char *data,
+    int width, int height);
 
 int x_connection_fd(x_connection *x);
 
@@ -41,6 +45,8 @@ void x_draw_string(x_connection *_c, x_window *_w, int color,
 void x_draw_clipped_string(x_connection *_c, x_window *_w, int color,
     int x, int y, const char *t,
     int clipx, int clipy, int clipwidth, int clipheight);
+
+void x_draw_image(x_connection *c, x_window *w, x_image *img, int x, int y);
 
 /* specials functions to plot many points
  * you call several times x_add_point() then x_plot_points()

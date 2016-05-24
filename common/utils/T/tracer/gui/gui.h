@@ -34,6 +34,7 @@ widget *new_textlist(gui *gui, int width, int nlines, int background_color);
 widget *new_timeline(gui *gui, int width, int number_of_sublines,
     int subline_height);
 widget *new_space(gui *gui, int width, int height);
+widget *new_image(gui *gui, unsigned char *data, int length);
 
 void label_set_clickable(gui *gui, widget *label, int clickable);
 

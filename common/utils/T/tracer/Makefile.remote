@@ -3,7 +3,7 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 #CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
-LIBS=-lX11 -lm
+LIBS=-lX11 -lm -lpng
 
 tracer_remote: remote_old.o plot.o database.o gui.o utils.o gui/gui.a
 	$(CC) $(CFLAGS) -o tracer_remote $^ $(LIBS)

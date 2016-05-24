@@ -23,4 +23,10 @@ struct x_window {
   int resize, new_width, new_height;
 };
 
+struct x_image {
+  Pixmap p;
+  int width;
+  int height;
+};
+
 #endif /* _X_DEFS_H_ */
