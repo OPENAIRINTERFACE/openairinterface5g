@@ -157,7 +157,7 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   widget_add_child(g, line, new_label(g,"DL/UL TICK/DCI/ACK/NACK "), 0);
   for (i = 0; i < 8; i++)
     timeline_set_subline_background_color(g, timeline_plot, i,
-        new_color(g, i & 1 ? "#ddd" : "#eee"));
+        new_color(g, i==0 || i==4 ? "#aaf" : i & 1 ? "#ddd" : "#eee"));
   timeview = new_view_time(3600, 10, g, timeline_plot);
   /* tick logging */
   timelog = new_timelog(h, database, "ENB_DL_TICK");
