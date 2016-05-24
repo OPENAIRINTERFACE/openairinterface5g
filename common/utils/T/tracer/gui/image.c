@@ -9,6 +9,7 @@ static void paint(gui *_gui, widget *_w)
 {
   struct gui *g = _gui;
   struct image_widget *w = _w;
+  LOGD("PAINT image %p\n", w);
   x_draw_image(g->x, g->xwin, w->x, w->common.x, w->common.y);
 }
 
