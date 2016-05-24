@@ -13,6 +13,7 @@
 #include "utils.h"
 #include "../T_defs.h"
 #include "event_selector.h"
+#include "openair_logo.h"
 
 #define DEFAULT_REMOTE_PORT 2021
 
@@ -116,6 +117,7 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   widget *main_window;
   widget *top_container;
   widget *line;
+  widget *logo;
   widget *input_signal_plot;
   logger *input_signal_log;
   view *input_signal_view;
@@ -131,6 +133,8 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
 
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
+  logo = new_image(g, openair_logo_png, openair_logo_png_len);
+  widget_add_child(g, line, logo, -1);
   input_signal_plot = new_xy_plot(g, 256, 55, "input signal", 20);
   widget_add_child(g, line, input_signal_plot, -1);
   xy_plot_set_range(g, input_signal_plot, 0, 7680*10, 20, 70);
