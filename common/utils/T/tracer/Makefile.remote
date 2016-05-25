@@ -5,9 +5,6 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm -lpng -lXft
 
-tracer_remote: remote_old.o plot.o database.o gui.o utils.o gui/gui.a
-	$(CC) $(CFLAGS) -o tracer_remote $^ $(LIBS)
-
 textlog: utils.o textlog.o database.o event.o handler.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a
 	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
