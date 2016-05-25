@@ -393,8 +393,8 @@ void generate_phich_emul(LTE_DL_FRAME_PARMS *frame_parms,
 
 }
 
-mod_sym_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
-mod_sym_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
+int32_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
+int32_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
 
 // This routine generates the PHICH
 
@@ -404,7 +404,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
                     uint8_t ngroup_PHICH,
                     uint8_t HI,
                     uint8_t subframe,
-                    mod_sym_t **y)
+                    int32_t **y)
 {
 
   int16_t d[24],*dp;
@@ -1425,7 +1425,7 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
   LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
   LTE_eNB_ULSCH_t **ulsch_eNB = phy_vars_eNB->ulsch_eNB;
-  mod_sym_t **txdataF = phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id];
+  int32_t **txdataF = phy_vars_eNB->lte_eNB_common_vars.txdataF[sect_id];
   uint8_t harq_pid;
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;
@@ -1466,7 +1466,6 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
         nseq_PHICH = ((ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb/Ngroup_PHICH) +
                       ulsch_eNB[UE_id]->harq_processes[harq_pid]->n_DMRS)%(2*NSF_PHICH);
-        //#ifdef DEBUG_PHICH
         LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generating PHICH, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d dci_alloc %d)\n",
               phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,
               subframe,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,
@@ -1474,7 +1473,6 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
               ulsch_eNB[UE_id]->harq_processes[harq_pid]->first_rb,
               ulsch_eNB[UE_id]->harq_processes[harq_pid]->dci_alloc);
 
-        //#endif
         if (ulsch_eNB[UE_id]->Msg3_active == 1) {
           LOG_D(PHY,"[eNB %d][PUSCH %d][RAPROC] Frame %d, subframe %d: Generating Msg3 PHICH for UE %d, ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d\n",
                 phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
@@ -1509,12 +1507,10 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
             LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d, subframe %d : PHICH NACK / (no format0 DCI) Setting subframe_scheduling_flag\n",
                   phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
-            //      ulsch_eNB[UE_id]->harq_processes[harq_pid]->Ndi = 0;
-            //      ulsch_eNB[UE_id]->harq_processes[harq_pid]->round++; //this is already done in phy_procedures
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->rvidx = rv_table[ulsch_eNB[UE_id]->harq_processes[harq_pid]->round&3];
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->O_RI                                  = 0;
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->Or2                                   = 0;
-            ulsch_eNB[UE_id]->harq_processes[harq_pid]->Or1                                   = 0;//sizeof_HLC_subband_cqi_nopmi_5MHz;
+            ulsch_eNB[UE_id]->harq_processes[harq_pid]->Or1                                   = 0;
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->uci_format                            = HLC_subband_cqi_nopmi;
 
           } else {

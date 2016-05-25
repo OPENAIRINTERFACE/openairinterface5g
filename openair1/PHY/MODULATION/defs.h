@@ -87,7 +87,7 @@ int slot_fep_ul(LTE_DL_FRAME_PARMS *frame_parms,
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms);
 
-void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
+void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
 void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe);
 

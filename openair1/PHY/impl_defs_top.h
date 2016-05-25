@@ -115,7 +115,6 @@
  */
 
 #include "types.h"
-#include "spec_defs_top.h"
 
 
 
@@ -130,11 +129,7 @@
 #define HALF_NUMBER_OF_USEFUL_CARRIERS (NUMBER_OF_USEFUL_CARRIERS>>1)
 #define HALF_NUMBER_OF_USEFUL_CARRIERS_BYTES (HALF_NUMBER_OF_USEFUL_CARRIERS>>2)
 #define FIRST_CARRIER_OFFSET (HALF_NUMBER_OF_USEFUL_CARRIERS+NUMBER_OF_ZERO_CARRIERS)
-#ifdef OPENAIR_LTE
 #define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT (NUMBER_OF_SYMBOLS_PER_FRAME/LTE_SLOTS_PER_FRAME)
-#else
-#define NUMBER_OF_OFDM_SYMBOLS_PER_SLOT 16
-#endif
 
 #ifdef EMOS
 #define EMOS_SCH_INDEX 1
@@ -263,69 +258,9 @@
 #define AMP_OVER_2 (AMP>>1)
 
 /// Threshold for PUCCH Format 1 detection
-#define PUCCH1_THRES 10
+#define PUCCH1_THRES 0
 /// Threshold for PUCCH Format 1a/1b detection
 #define PUCCH1a_THRES 4
-
-#ifndef OPENAIR_LTE
-///
-/// PHY-MAC Interface Defs
-///
-
-/// Maximum number of parallel streams per slot
-#define NB_STREAMS_MAX 4
-
-/// Maximum number of frequency groups per slot
-#define NB_GROUPS_MAX 16
-
-/// Maximum number of control bytes per slot
-#define NB_CNTL_BYTES_MAX 8
-
-/// Maximum number of data bytes per slot
-#define NB_DATA_BYTES_MAX 256
-
-#define MAX_NUM_TB 32
-#define MAX_TB_SIZE_BYTES 128
-
-/// Size of SACCH PDU in Bytes
-#define SACCH_SIZE_BYTES (sizeof(UL_SACCH_PDU)+4)
-/// Size of SACCH PDU in Bytes
-#define SACCH_SIZE_BITS  (SACCH_SIZE_BYTES<<3)
-
-#define MAX_SACH_SIZE_BYTES 1024
-
-
-#define SACH_ERROR 1
-#define SACCH_ERROR 2
-#define SACH_MISSING 3
-#define SACH_PARAM_INVALID 10
-
-#endif //OPENAIR_LTE
-
-/*
-enum STATUS_RX {STATUS_RX_OFF,
-    STATUS_RX_ON,
-    STATUS_RX_SYNCING,
-    STATUS_RX_CANNOT_SYNC,
-    STATUS_RX_DATA_PROBLEM,
-    STATUS_RX_LOST_SYNC,
-    STATUS_RX_ABORT,
-    STATUS_RX_TOO_LATE,
-    STATUS_RX_CLOCK_STOPPED};
-
-enum STATUS_TX {
-  STATUS_TX_OFF,
-  STATUS_TX_ON,
-  STATUS_TX_INPUT_CORRUPT,
-  STATUS_TX_ABORT,
-  STATUS_TX_TOO_LATE,
-  STATUS_TX_CLOCK_STOPPED};
-
-enum MODE {
-  SYNCHED,
-  SYNCHING,
-  NOT_SYNCHED};
-*/
 
 /// Data structure for transmission.
 typedef struct {
@@ -341,6 +276,14 @@ typedef struct {
   int *RX_DMA_BUFFER[2];
 } TX_RX_VARS;
 
+/*! \brief Extension Type */
+typedef enum {
+  CYCLIC_PREFIX,
+  CYCLIC_SUFFIX,
+  ZEROS,
+  NONE
+} Extension_t;
+	
 /// Measurement Variables
 
 #define NUMBER_OF_SUBBANDS_MAX 13
@@ -349,7 +292,7 @@ typedef struct {
 #define MAX_FRAME_NUMBER 0x400
 #if defined(CBMIMO1) || defined(EXMIMO) || defined(OAI_USRP)
 #define NUMBER_OF_eNB_MAX 1
-#define NUMBER_OF_UE_MAX 4
+#define NUMBER_OF_UE_MAX 16
 #define NUMBER_OF_CONNECTED_eNB_MAX 3
 #else
 #ifdef LARGE_SCALE

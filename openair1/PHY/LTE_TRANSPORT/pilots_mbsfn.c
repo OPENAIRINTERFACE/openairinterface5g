@@ -42,7 +42,7 @@
 
 
 int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
-                         mod_sym_t **txdataF,
+                         int32_t **txdataF,
                          int16_t amp,
                          uint16_t subframe)
 {

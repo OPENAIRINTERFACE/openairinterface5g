@@ -41,6 +41,9 @@
 #include "PHY/extern.h"
 #include "LAYER2/MAC/extern.h"
 
+#include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
+
 //uint8_t ncs_cell[20][7];
 //#define DEBUG_PUCCH_TX
 //#define DEBUG_PUCCH_RX
@@ -118,7 +121,7 @@ int16_t W3_im[3][6] = {{0    ,0     ,0     },
 
 char pucch_format_string[6][20] = {"format 1\0","format 1a\0","format 1b\0","format 2\0","format 2a\0","format 2b\0"};
 
-void generate_pucch(mod_sym_t **txdataF,
+void generate_pucch(int32_t **txdataF,
                     LTE_DL_FRAME_PARMS *frame_parms,
                     uint8_t ncs_cell[20][7],
                     PUCCH_FMT_t fmt,
@@ -142,7 +145,7 @@ void generate_pucch(mod_sym_t **txdataF,
   uint8_t m,l,refs;
   uint8_t n_cs,S,alpha_ind,rem;
   int16_t tmp_re,tmp_im,ref_re,ref_im,W_re=0,W_im=0;
-  mod_sym_t *txptr;
+  int32_t *txptr;
   uint32_t symbol_offset;
 
   uint8_t deltaPUCCH_Shift          = frame_parms->pucch_config_common.deltaPUCCH_Shift;
@@ -446,7 +449,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   LTE_eNB_COMMON *eNB_common_vars                = &phy_vars_eNB->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms                    = &phy_vars_eNB->lte_frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &phy_vars_eNB->pucch_config_dedicated[UE_id];
-  int8_t sigma2_dB                                   = phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dB[6];
+  int8_t sigma2_dB                                   = phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dB[0]-10;
   uint32_t *Po_PUCCH                                  = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH);
   int32_t *Po_PUCCH_dBm                              = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH_dBm);
   uint32_t *Po_PUCCH1_below                           = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below);
@@ -815,7 +818,10 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     }
     LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
     *Po_PUCCH_update = 1;
-
+    if (UE_id==0) {
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_ENERGY,dB_fixed(stat_max));
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_THRES,sigma2_dB+pucch1_thres);
+    }
   } else if ((fmt == pucch_format1a)||(fmt == pucch_format1b)) {
     stat_max = 0;
 #ifdef DEBUG_PUCCH_RX

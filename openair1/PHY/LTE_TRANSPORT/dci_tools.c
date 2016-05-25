@@ -40,8 +40,6 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/defs.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #ifdef DEBUG_DCI_TOOLS
 #include "PHY/vars.h"
 #endif
@@ -253,8 +251,8 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
         */
       //      printf("rb_alloc[1]=%x,rb_alloc[0]=%x\n",rb_alloc2[1],rb_alloc2[0]);
     } else {
-      LOG_E(PHY,"resource type 1 not supported for  N_RB_DL=100\n");
-      mac_xface->macphy_exit("resource type 1 not supported for  N_RB_DL=100\n");
+      LOG_E(PHY,"resource type 1 not supported for  N_RB_DL=50\n");
+      //      mac_xface->macphy_exit("resource type 1 not supported for  N_RB_DL=100\n");
       /*
       subset = rb_alloc&1;
       shift  = (rb_alloc>>1)&1;
@@ -284,7 +282,7 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
       }
     } else {
       LOG_E(PHY,"resource type 1 not supported for  N_RB_DL=100\n");
-      mac_xface->macphy_exit("resource type 1 not supported for  N_RB_DL=100\n");
+      //      mac_xface->macphy_exit("resource type 1 not supported for  N_RB_DL=100\n");
       /*
       subset = rb_alloc&1;
       shift  = (rb_alloc>>1)&1;
@@ -734,11 +732,11 @@ void generate_RIV_tables()
       if (nVRB<32)
         alloc0 |= (1<<nVRB);
       else if (nVRB<64)
-        alloc1 |= (1<<(nVRB-33));
+        alloc1 |= (1<<(nVRB-32));
       else if (nVRB<96)
-        alloc2 |= (1<<(nVRB-65));
+        alloc2 |= (1<<(nVRB-64));
       else
-        alloc3 |= (1<<(nVRB-97));
+        alloc3 |= (1<<(nVRB-96));
 
       // Distributed Gap1, even slot
       nVRB_even_dist = get_prb(100,0,nVRB,0);
@@ -770,9 +768,9 @@ void generate_RIV_tables()
       else if (nVRB_odd_dist<64)
         allocdist1_0_odd |= (1<<(nVRB_odd_dist-32));
       else if (nVRB_odd_dist<96)
-	allocdist2_0_odd |= (1<<(nVRB_odd_dist-65));
+	allocdist2_0_odd |= (1<<(nVRB_odd_dist-64));
       else
-	allocdist3_0_odd |= (1<<(nVRB_odd_dist-97));
+	allocdist3_0_odd |= (1<<(nVRB_odd_dist-96));
 
 
       // Distributed Gap2, even slot
@@ -4467,7 +4465,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
 
     if (TPC!=1)
-      LOG_I(PHY,"format1 TPC %d, dlsch0_harq->delta_PUCCH %d\n",TPC,dlsch0_harq->delta_PUCCH);
+      LOG_D(PHY,"format1 TPC %d, dlsch0_harq->delta_PUCCH %d\n",TPC,dlsch0_harq->delta_PUCCH);
 
     dlsch0_harq->rvidx     = rv;
 
@@ -4476,7 +4474,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->dl_power_off = 1; //no power offset
 
-    LOG_D(PHY,"UE (%x/%d): Subframe %d Format2 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
+    LOG_D(PHY,"UE (%x/%d): Subframe %d Format1 DCI: ndi %d, old_ndi %d (first tx %d) harq_status %d\n",dlsch[0]->rnti,harq_pid,subframe,ndi,dlsch0_harq->DCINdi,
           dlsch0_harq->first_tx,dlsch0_harq->status);
 
     //    printf("Format2 DCI (UE, hard pid %d): ndi %d, old_ndi %d (first tx %d)\n",harq_pid,ndi,dlsch0_harq->DCINdi,
@@ -7129,10 +7127,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
     harq_pid = subframe2harq_pid(frame_parms,
                                  pdcch_alloc2ul_frame(frame_parms,
-                                     phy_vars_eNB->proc[sched_subframe].frame_tx,
-                                     subframe),
+						      phy_vars_eNB->proc[sched_subframe].frame_tx,
+						      subframe),
                                  pdcch_alloc2ul_subframe(frame_parms,subframe));
-
+    
     //    printf("eNB: sched_subframe %d, subframe %d, frame_tx %d\n",sched_subframe,subframe,phy_vars_eNB->proc[sched_subframe].frame_tx);
 
     switch (frame_parms->N_RB_DL) {
@@ -7600,9 +7598,9 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
         break;
       }
     } else {
-      ulsch->harq_processes[harq_pid]->O_RI = 0;//1;
+      ulsch->harq_processes[harq_pid]->O_RI = 0;
       ulsch->harq_processes[harq_pid]->Or2                                   = 0;
-      ulsch->harq_processes[harq_pid]->Or1                                   = 0;//sizeof_HLC_subband_cqi_nopmi_5MHz;
+      ulsch->harq_processes[harq_pid]->Or1                                   = 0;
       ulsch->harq_processes[harq_pid]->uci_format                            = HLC_subband_cqi_nopmi;
     }
 

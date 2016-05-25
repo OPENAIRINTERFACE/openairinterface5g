@@ -51,14 +51,6 @@
 
 #include "SCHED/defs.h"
 
-#include "MAC_INTERFACE/extern.h"
-
-#ifdef CBMIMO1
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#endif // CBMIMO1
-
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
