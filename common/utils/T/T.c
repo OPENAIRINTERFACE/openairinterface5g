@@ -1,4 +1,5 @@
 #include "T.h"
+#include "T_messages.txt.h"
 #include <string.h>
 #include <netinet/ip.h>
 #include <arpa/inet.h>
@@ -125,6 +126,8 @@ void T_connect_to_tracer(char *addr, int port)
 #ifdef T_USE_SHARED_MEMORY
   int T_shm_fd;
 #endif
+  unsigned char *buf;
+  int len;
 
   if (strcmp(addr, "127.0.0.1") != 0) {
     printf("error: local tracer must be on same host\n");
@@ -169,4 +172,29 @@ again:
   new_thread(T_send_thread, NULL);
 #endif
   new_thread(T_receive_thread, NULL);
+
+  /* trace T_message.txt
+   * Send several messages -1 with content followed by message -2.
+   * We can't use the T macro directly, events -1 and -2 are special.
+   */
+  buf = T_messages_txt;
+  len = T_messages_txt_len;
+  while (len) {
+    int send_size = len;
+    if (send_size > T_PAYLOAD_MAXSIZE - sizeof(int))
+      send_size = T_PAYLOAD_MAXSIZE - sizeof(int);
+    do {
+      T_LOCAL_DATA
+      T_HEADER(T_ID(-1));
+      T_PUT_buffer(1, ((T_buffer){addr:(buf), length:(len)}));
+      T_SEND();
+    } while (0);
+    buf += send_size;
+    len -= send_size;
+  }
+  do {
+    T_LOCAL_DATA
+    T_HEADER(T_ID(-2));
+    T_SEND();
+  } while (0);
 }

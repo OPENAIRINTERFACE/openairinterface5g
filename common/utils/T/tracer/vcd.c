@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include "database.h"
 #include "event.h"
@@ -13,38 +11,9 @@
 #include "utils.h"
 #include "../T_defs.h"
 #include "event_selector.h"
+#include "config.h"
 
 #define DEFAULT_REMOTE_PORT 2021
-
-int get_connection(char *addr, int port)
-{
-  struct sockaddr_in a;
-  socklen_t alen;
-  int s, t;
-
-  printf("waiting for connection on %s:%d\n", addr, port);
-
-  s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s == -1) { perror("socket"); exit(1); }
-  t = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &t, sizeof(int)))
-    { perror("setsockopt"); exit(1); }
-
-  a.sin_family = AF_INET;
-  a.sin_port = htons(port);
-  a.sin_addr.s_addr = inet_addr(addr);
-
-  if (bind(s, (struct sockaddr *)&a, sizeof(a))) { perror("bind"); exit(1); }
-  if (listen(s, 5)) { perror("bind"); exit(1); }
-  alen = sizeof(a);
-  t = accept(s, (struct sockaddr *)&a, &alen);
-  if (t == -1) { perror("accept"); exit(1); }
-  close(s);
-
-  printf("connected\n");
-
-  return t;
-}
 
 void usage(void)
 {
@@ -63,45 +32,6 @@ void usage(void)
   DEFAULT_REMOTE_PORT
   );
   exit(1);
-}
-
-int fullread(int fd, void *_buf, int count)
-{
-  char *buf = _buf;
-  int ret = 0;
-  int l;
-  while (count) {
-    l = read(fd, buf, count);
-    if (l <= 0) { printf("read socket problem\n"); abort(); }
-    count -= l;
-    buf += l;
-    ret += l;
-  }
-  return ret;
-}
-
-event get_event(int s, char *v, void *d)
-{
-#ifdef T_SEND_TIME
-  struct timespec t;
-#endif
-  int type;
-  int32_t length;
-
-  fullread(s, &length, 4);
-#ifdef T_SEND_TIME
-  fullread(s, &t, sizeof(struct timespec));
-  length -= sizeof(struct timespec);
-#endif
-  fullread(s, &type, sizeof(int));
-  length -= sizeof(int);
-  fullread(s, v, length);
-
-#ifdef T_SEND_TIME
-  return new_event(t, type, length, v, d);
-#else
-  return new_event(type, length, v, d);
-#endif
 }
 
 static void *gui_thread(void *_g)
@@ -198,6 +128,8 @@ int main(int n, char **v)
   }
 
   database = parse_database(database_filename);
+
+  store_config_file(database_filename);
 
   number_of_events = number_of_ids(database);
   is_on = calloc(number_of_events, sizeof(int));

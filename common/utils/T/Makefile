@@ -24,11 +24,16 @@ $(PROG): $(OBJS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+T.o: T_messages.txt.h
+
+T_messages.txt.h: T_messages.txt
+	xxd -i T_messages.txt > T_messages.txt.h
+
 T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h
 
 main.o: T.h T_IDs.h T_defs.h
 
 clean:
-	rm -f *.o $(PROG) $(GENIDS) core T_IDs.h
+	rm -f *.o $(PROG) $(GENIDS) core T_IDs.h T_messages.txt.h
 	cd tracer && make clean

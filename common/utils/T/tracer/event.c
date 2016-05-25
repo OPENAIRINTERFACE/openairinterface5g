@@ -1,8 +1,47 @@
 #include "event.h"
 #include "database.h"
+#include "utils.h"
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+event get_event(int socket, char *event_buffer, void *database)
+{
+#ifdef T_SEND_TIME
+  struct timespec t;
+#endif
+  int type;
+  int32_t length;
+
+  /* Events type -1 and -2 are special: the tracee sends its version
+   * of T_messages.txt using those events.
+   * We have to check that the local version of T_messages.txt is identical
+   * to the one the tracee uses. We don't report those events to the
+   * application.
+   */
+
+again:
+  fullread(socket, &length, 4);
+#ifdef T_SEND_TIME
+  fullread(socket, &t, sizeof(struct timespec));
+  length -= sizeof(struct timespec);
+#endif
+  fullread(socket, &type, sizeof(int));
+  length -= sizeof(int);
+  fullread(socket, event_buffer, length);
+
+  if (type == -1) append_received_config_chunk(event_buffer, length);
+  if (type == -2) verify_config();
+
+  if (type == -1 || type == -2) goto again;
+
+#ifdef T_SEND_TIME
+  return new_event(t, type, length, event_buffer, database);
+#else
+  return new_event(type, length, event_buffer, database);
+#endif
+}
 
 #ifdef T_SEND_TIME
 event new_event(struct timespec sending_time, int type,

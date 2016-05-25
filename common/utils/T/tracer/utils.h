@@ -21,6 +21,8 @@ list *list_append(list *l, void *data);
 /****************************************************************************/
 
 void socket_send(int socket, void *buffer, int size);
+int get_connection(char *addr, int port);
+int fullread(int fd, void *_buf, int count);
 
 /****************************************************************************/
 /* buffer                                                                   */

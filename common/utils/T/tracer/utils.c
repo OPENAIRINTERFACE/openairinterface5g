@@ -5,6 +5,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void new_thread(void *(*f)(void *), void *data)
 {
@@ -76,6 +78,51 @@ void socket_send(int socket, void *buffer, int size)
     size -= ret;
     x += ret;
   }
+}
+
+int get_connection(char *addr, int port)
+{
+  struct sockaddr_in a;
+  socklen_t alen;
+  int s, t;
+
+  printf("waiting for connection on %s:%d\n", addr, port);
+
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s == -1) { perror("socket"); exit(1); }
+  t = 1;
+  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &t, sizeof(int)))
+    { perror("setsockopt"); exit(1); }
+
+  a.sin_family = AF_INET;
+  a.sin_port = htons(port);
+  a.sin_addr.s_addr = inet_addr(addr);
+
+  if (bind(s, (struct sockaddr *)&a, sizeof(a))) { perror("bind"); exit(1); }
+  if (listen(s, 5)) { perror("bind"); exit(1); }
+  alen = sizeof(a);
+  t = accept(s, (struct sockaddr *)&a, &alen);
+  if (t == -1) { perror("accept"); exit(1); }
+  close(s);
+
+  printf("connected\n");
+
+  return t;
+}
+
+int fullread(int fd, void *_buf, int count)
+{
+  char *buf = _buf;
+  int ret = 0;
+  int l;
+  while (count) {
+    l = read(fd, buf, count);
+    if (l <= 0) { printf("read socket problem\n"); abort(); }
+    count -= l;
+    buf += l;
+    ret += l;
+  }
+  return ret;
 }
 
 /****************************************************************************/

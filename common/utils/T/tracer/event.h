@@ -37,6 +37,8 @@ typedef struct {
   int ecount;
 } event;
 
+event get_event(int s, char *v, void *d);
+
 #ifdef T_SEND_TIME
 event new_event(struct timespec sending_time, int type,
     int length, char *buffer, void *database);

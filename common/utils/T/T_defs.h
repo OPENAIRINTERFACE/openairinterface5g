@@ -13,6 +13,13 @@
 /* size of the local cache for messages (must be pow(2,something)) */
 #define T_CACHE_SIZE (8192 * 2)
 
+/* maximum number of bytes a message can contain */
+#ifdef T_SEND_TIME
+#  define T_PAYLOAD_MAXSIZE (T_BUFFER_MAX-sizeof(int)-sizeof(struct timespec))
+#else
+#  define T_PAYLOAD_MAXSIZE (T_BUFFER_MAX-sizeof(int))
+#endif
+
 typedef struct {
   volatile int busy;
   char buffer[T_BUFFER_MAX];
