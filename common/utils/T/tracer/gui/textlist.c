@@ -16,7 +16,7 @@ static void paint(gui *_gui, widget *_this)
       this->common.width, this->common.height);
   for (i = 0, j = this->starting_line;
        i < this->allocated_nlines && j < this->text_count; i++, j++)
-    x_draw_clipped_string(g->x, g->xwin, this->color[j],
+    x_draw_clipped_string(g->x, g->xwin, DEFAULT_FONT, this->color[j],
         this->common.x,
         this->common.y + i * this->line_height + this->baseline,
         this->text[j],
@@ -79,7 +79,8 @@ widget *new_textlist(gui *_gui, int width, int nlines, int bgcol)
   w = new_widget(g, TEXT_LIST, sizeof(struct textlist_widget));
 
   w->wanted_nlines = nlines;
-  x_text_get_dimensions(g->x, ".", &dummy, &w->line_height, &w->baseline);
+  x_text_get_dimensions(g->x, DEFAULT_FONT, ".",
+      &dummy, &w->line_height, &w->baseline);
   w->background_color = bgcol;
   w->wanted_width = width;
 

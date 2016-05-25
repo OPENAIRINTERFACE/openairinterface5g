@@ -10,7 +10,7 @@ static void paint(gui *_gui, widget *_w)
   struct gui *g = _gui;
   struct label_widget *l = _w;
   LOGD("PAINT label '%s'\n", l->t);
-  x_draw_string(g->x, g->xwin, l->color,
+  x_draw_string(g->x, g->xwin, DEFAULT_FONT, l->color,
       l->common.x, l->common.y + l->baseline, l->t);
 }
 
@@ -35,7 +35,8 @@ widget *new_label(gui *_gui, const char *label)
   if (w->t == NULL) OOM;
   w->color = FOREGROUND_COLOR;
 
-  x_text_get_dimensions(g->x, label, &w->width, &w->height, &w->baseline);
+  x_text_get_dimensions(g->x, DEFAULT_FONT, label,
+      &w->width, &w->height, &w->baseline);
 
   w->common.paint = paint;
   w->common.hints = hints;

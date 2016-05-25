@@ -12,6 +12,8 @@ typedef void widget;
 #define BACKGROUND_COLOR 0
 #define FOREGROUND_COLOR 1
 
+#define DEFAULT_FONT 0
+
 /* key modifiers */
 #define KEY_SHIFT   (1<<0)
 #define KEY_CONTROL (1<<1)

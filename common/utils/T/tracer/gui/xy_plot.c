@@ -79,8 +79,8 @@ static void paint(gui *_gui, widget *_this)
         this->common.x + this->vrule_width + x,
         this->common.y + this->common.height - this->label_height * 2 - 5);
     sprintf(v, "%g", k * ticstep);
-    x_text_get_dimensions(g->x, v, &vwidth, &dummy, &dummy);
-    x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
+    x_text_get_dimensions(g->x, DEFAULT_FONT, v, &vwidth, &dummy, &dummy);
+    x_draw_string(g->x, g->xwin, DEFAULT_FONT, FOREGROUND_COLOR,
         this->common.x + this->vrule_width + x - vwidth/2,
         this->common.y + this->common.height - this->label_height * 2 +
             this->label_baseline,
@@ -116,20 +116,20 @@ static void paint(gui *_gui, widget *_this)
               (allocated_ymax - allocated_ymin) *
               (allocated_plot_height - 1);
     sprintf(v, "%g", k * ticstep);
-    x_text_get_dimensions(g->x, v, &vwidth, &dummy, &dummy);
+    x_text_get_dimensions(g->x, DEFAULT_FONT, v, &vwidth, &dummy, &dummy);
     x_draw_line(g->x, g->xwin, FOREGROUND_COLOR,
         this->common.x + this->vrule_width,
         this->common.y + FLIP(y),
         this->common.x + this->vrule_width + 5,
         this->common.y + FLIP(y));
-    x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
+    x_draw_string(g->x, g->xwin, DEFAULT_FONT, FOREGROUND_COLOR,
         this->common.x + this->vrule_width - vwidth - 2,
         this->common.y + FLIP(y) - this->label_height/2+this->label_baseline,
         v);
   }
 
   /* label at bottom, in the middle */
-  x_draw_string(g->x, g->xwin, FOREGROUND_COLOR,
+  x_draw_string(g->x, g->xwin, DEFAULT_FONT, FOREGROUND_COLOR,
       this->common.x + (this->common.width - this->label_width) / 2,
       this->common.y + this->common.height - this->label_height
           + this->label_baseline,
@@ -177,8 +177,8 @@ widget *new_xy_plot(gui *_gui, int width, int height, char *label,
   w->label = strdup(label); if (w->label == NULL) OOM;
   /* TODO: be sure calling X there is valid wrt "global model" (we are
    * not in the "gui thread") */
-  x_text_get_dimensions(g->x, label, &w->label_width, &w->label_height,
-      &w->label_baseline);
+  x_text_get_dimensions(g->x, DEFAULT_FONT, label,
+      &w->label_width, &w->label_height, &w->label_baseline);
   LOGD("XY PLOT label wh %d %d\n", w->label_width, w->label_height);
 
   w->wanted_width = width;

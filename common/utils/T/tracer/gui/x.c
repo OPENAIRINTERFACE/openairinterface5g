@@ -33,10 +33,32 @@ int x_new_color(x_connection *_x, char *color)
 {
   struct x_connection *x = _x;
   x->ncolors++;
+
   x->colors = realloc(x->colors, x->ncolors * sizeof(GC));
   if (x->colors == NULL) OOM;
   x->colors[x->ncolors-1] = create_gc(x->d, color);
+
+  x->xft_colors = realloc(x->xft_colors, x->ncolors * sizeof(XftColor));
+  if (x->xft_colors == NULL) OOM;
+  if (XftColorAllocName(x->d, DefaultVisual(x->d, DefaultScreen(x->d)),
+      DefaultColormap(x->d, DefaultScreen(x->d)),
+      color, &x->xft_colors[x->ncolors-1]) == False)
+    ERR("could not allocate color '%s'\n", color);
+
   return x->ncolors - 1;
+}
+
+int x_new_font(x_connection *_x, char *font)
+{
+  struct x_connection *x = _x;
+  /* TODO: allocate fonts only once */
+  x->nfonts++;
+  x->fonts = realloc(x->fonts, x->nfonts * sizeof(XftFont *));
+  if (x->fonts == NULL) OOM;
+  x->fonts[x->nfonts-1] = XftFontOpenName(x->d, DefaultScreen(x->d), font);
+  if (x->fonts[x->nfonts-1] == NULL)
+    ERR("failed allocating font '%s'\n", font);
+  return x->nfonts - 1;
 }
 
 x_connection *x_open(void)
@@ -52,6 +74,8 @@ x_connection *x_open(void)
 
   x_new_color(ret, "white");    /* background color */
   x_new_color(ret, "black");    /* foreground color */
+
+  x_new_font(ret, "sans-8");
 
   return ret;
 }
@@ -77,6 +101,11 @@ x_window *x_create_window(x_connection *_x, int width, int height,
       DefaultDepth(x->d, DefaultScreen(x->d)));
   XFillRectangle(x->d, ret->p, x->colors[BACKGROUND_COLOR],
       0, 0, width, height);
+
+  ret->xft = XftDrawCreate(x->d, ret->p,
+      DefaultVisual(x->d, DefaultScreen(x->d)),
+      DefaultColormap(x->d, DefaultScreen(x->d)));
+  if (ret->xft == NULL) ERR("XftDrawCreate failed\n");
 
   /* enable backing store */
   {
@@ -261,11 +290,17 @@ void x_events(gui *_gui)
         w->common.allocate(g, w, 0, 0, xw->new_width, xw->new_height);
         xw->width = xw->new_width;
         xw->height = xw->new_height;
+        XftDrawDestroy(xw->xft);
         XFreePixmap(x->d, xw->p);
         xw->p = XCreatePixmap(x->d, xw->w, xw->width, xw->height,
             DefaultDepth(x->d, DefaultScreen(x->d)));
         XFillRectangle(x->d, xw->p, x->colors[BACKGROUND_COLOR],
             0, 0, xw->width, xw->height);
+        xw->xft = XftDrawCreate(x->d, xw->p,
+            DefaultVisual(x->d, DefaultScreen(x->d)),
+            DefaultColormap(x->d, DefaultScreen(x->d)));
+        if (xw->xft == NULL) ERR("XftDrawCreate failed\n");
+
         //xw->repaint = 1;
       }
     }
@@ -290,24 +325,17 @@ void x_flush(x_connection *_x)
   XFlush(x->d);
 }
 
-void x_text_get_dimensions(x_connection *_c, const char *t,
+void x_text_get_dimensions(x_connection *_c, int font, const char *t,
     int *width, int *height, int *baseline)
 {
   struct x_connection *c = _c;
-  int dir;
-  int ascent;
-  int descent;
-  XCharStruct overall;
+  XGlyphInfo ext;
 
-  /* TODO: don't use XQueryTextExtents (X roundtrip) */
-  XQueryTextExtents(c->d, XGContextFromGC(c->colors[1]), t, strlen(t),
-      &dir, &ascent, &descent, &overall);
+  XftTextExtents8(c->d, c->fonts[font], (FcChar8 *)t, strlen(t), &ext);
 
-//LOGD("dir %d ascent %d descent %d lbearing %d rbearing %d width %d ascent %d descent %d\n", dir, ascent, descent, overall.lbearing, overall.rbearing, overall.width, overall.ascent, overall.descent);
-
-  *width = overall.width;
-  *height = ascent + descent;
-  *baseline = ascent;
+  *width = ext.width;
+  *height = c->fonts[font]->height;
+  *baseline = c->fonts[font]->ascent;
 }
 
 /***********************************************************************/
@@ -338,25 +366,26 @@ void x_fill_rectangle(x_connection *_c, x_window *_w, int color,
   XFillRectangle(c->d, w->p, c->colors[color], x, y, width, height);
 }
 
-void x_draw_string(x_connection *_c, x_window *_w, int color,
+void x_draw_string(x_connection *_c, x_window *_w, int font, int color,
     int x, int y, const char *t)
 {
   struct x_connection *c = _c;
   struct x_window *w = _w;
   int tlen = strlen(t);
-  XDrawString(c->d, w->p, c->colors[color], x, y, t, tlen);
+  XftDrawString8(w->xft, &c->xft_colors[color], c->fonts[font],
+      x, y, (const unsigned char *)t, tlen);
 }
 
-void x_draw_clipped_string(x_connection *_c, x_window *_w, int color,
-    int x, int y, const char *t,
+void x_draw_clipped_string(x_connection *_c, x_window *_w, int font,
+    int color, int x, int y, const char *t,
     int clipx, int clipy, int clipwidth, int clipheight)
 {
-  struct x_connection *c = _c;
+  struct x_window *w = _w;
 
   XRectangle clip = { clipx, clipy, clipwidth, clipheight };
-  XSetClipRectangles(c->d, c->colors[color], 0, 0, &clip, 1, Unsorted);
-  x_draw_string(_c, _w, color, x, y, t);
-  XSetClipMask(c->d, c->colors[color], None);
+  if (XftDrawSetClipRectangles(w->xft, 0, 0, &clip, 1) == False) abort();
+  x_draw_string(_c, _w, font, color, x, y, t);
+  if (XftDrawSetClip(w->xft, NULL) == False) abort();
 }
 
 void x_draw_image(x_connection *_c, x_window *_w, x_image *_img, int x, int y)
