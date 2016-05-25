@@ -249,7 +249,7 @@ int emm_proc_attach(emm_proc_attach_type_t type)
   esm_sap.data.pdn_connect.is_defined = TRUE;
   esm_sap.data.pdn_connect.cid = 1;
   /* TODO: PDN type should be set according to the IP capability of the UE */
-  esm_sap.data.pdn_connect.pdn_type = NET_PDN_TYPE_IPV4V6;
+  esm_sap.data.pdn_connect.pdn_type = NET_PDN_TYPE_IPV4;
   esm_sap.data.pdn_connect.apn = NULL;
   esm_sap.data.pdn_connect.is_emergency = _emm_data.is_emergency;
   rc = esm_sap_send(&esm_sap);

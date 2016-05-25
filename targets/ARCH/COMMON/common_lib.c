@@ -99,6 +99,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   void *lib_handle;
   oai_device_initfunc_t dp ;
   oai_transport_initfunc_t tp ;
+  int ret=0;
 
   if (flag == BBU_LOCAL_RADIO_HEAD) {
       lib_handle = dlopen(OAI_RF_LIBNAME, RTLD_LAZY);
@@ -111,9 +112,9 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
       dp = dlsym(lib_handle,"device_init");
       
       if (dp != NULL ) {
-	if (dp(device,openair0_cfg)!=0) {
-	  fprintf(stderr,"Error initializing device\n");
-	  return -1;
+	ret = dp(device,openair0_cfg);
+	if (ret<0) {
+	  fprintf(stderr, "%s %d:oai device intialization failed %s\n", __FILE__, __LINE__, dlerror());
 	}
       } else {
 	fprintf(stderr, "%s %d:oai device intializing function not found %s\n", __FILE__, __LINE__, dlerror());
@@ -137,14 +138,14 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
       }
     } 
     
-  return 0; 	       
+  return ret; 	       
 }
 
 
 
 int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg) {
   
-  int rc;
+  int rc=0;
   //ToDo: EXMIMO harmonization is not complete. That is the reason for this ifdef
   #ifdef EXMIMO
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg);

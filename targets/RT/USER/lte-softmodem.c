@@ -50,8 +50,9 @@
 #include <signal.h>
 #include <execinfo.h>
 #include <getopt.h>
-
+#include <sys/sysinfo.h>
 #include "rt_wrapper.h"
+
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "assertions.h"
@@ -77,8 +78,6 @@ struct gps_fix_t dummy_gps_data;
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
-//#include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 
@@ -88,13 +87,11 @@ struct gps_fix_t dummy_gps_data;
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/vars.h"
 #include "LAYER2/MAC/proto.h"
 #include "RRC/LITE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#endif
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
@@ -164,7 +161,7 @@ FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 1;
+unsigned char                   scope_enb_num_ue = 2;
 #endif //XFORMS
 
 #ifdef RTAI
@@ -319,7 +316,7 @@ static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 
 int multi_thread=1;
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
-uint32_t target_ul_mcs = 10;
+uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
@@ -517,7 +514,7 @@ void reset_stats(FL_OBJECT *button, long arg)
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mdlharq; j++) {
+      for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mlimit; j++) {
         phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].dlsch_ACK[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].dlsch_trials[k][j]=0;
@@ -527,7 +524,7 @@ void reset_stats(FL_OBJECT *button, long arg)
       phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[k]=0;
       phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
 
-      for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mdlharq; j++) {
+      for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mlimit; j++) {
         phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
         phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[k][j]=0;
@@ -550,6 +547,7 @@ static void *scope_thread(void *arg)
   int len = 0;
   struct sched_param sched_param;
   int UE_id, CC_id;
+  int ue_cnt=0;
 
   sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
   sched_setscheduler(0, SCHED_FIFO,&sched_param);
@@ -593,11 +591,15 @@ static void *scope_thread(void *arg)
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
 
-      for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
+      ue_cnt=0;
+      for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	  phy_scope_eNB(form_enb[CC_id][UE_id],
-			PHY_vars_eNB_g[0][CC_id],
-			UE_id);
+	  if ((PHY_vars_eNB_g[0][CC_id]->dlsch_eNB[UE_id][0]->rnti>0) && (ue_cnt<scope_enb_num_ue)) {
+	    phy_scope_eNB(form_enb[CC_id][ue_cnt],
+			  PHY_vars_eNB_g[0][CC_id],
+			  UE_id);
+	    ue_cnt++;
+	  }
 	}
       }
 
@@ -937,7 +939,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 {
 
   unsigned int aa,slot_offset, slot_offset_F;
-  int dummy_tx_b[7680*4] __attribute__((aligned(16)));
+  int dummy_tx_b[7680*4] __attribute__((aligned(32)));
   int i, tx_offset;
   int slot_sizeF = (phy_vars_eNB->lte_frame_parms.ofdm_symbol_size)*
                    ((phy_vars_eNB->lte_frame_parms.Ncp==1) ? 6 : 7);
@@ -1088,13 +1090,9 @@ static void* eNB_thread_tx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = (uint64_t) (get_runtime_tx(proc->subframe, runtime_phy_tx, target_dl_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx) *  1000000); 
-  uint64_t deadline = 1   *  1000000; // each tx thread will finish within 1ms
+  uint64_t runtime  = 850000 ;  
+  uint64_t deadline = 1   *  1000000 ; // each tx thread will finish within 1ms
   uint64_t period   = 1   * 10000000; // each tx thread has a period of 10ms from the starting point
-  if (runtime > 1000000 ){
-    LOG_W(HW,"estimated runtime %d is larger than 1ms, adjusting\n",runtime);
-    runtime = (0.97 * 100) * 10000; 
-  }
 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
@@ -1113,7 +1111,74 @@ static void* eNB_thread_tx( void* param )
 
   LOG_I( HW, "[SCHED] eNB TX deadline thread %d(TID %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
 #else
-  LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %d\n", proc->subframe, sched_getcpu(),gettid() );
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  /* CPU 1 is reserved for all TX threads */
+  /* Enable CPU Affinity only if number of CPUs >2 */
+  CPU_ZERO(&cpuset);
+
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() > 2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
+        CPU_SET(j, &cpuset);
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
+  }
+  #endif
+
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity,0,sizeof(cpu_affinity));
+  for (j = 0; j < CPU_SETSIZE; j++)
+     if (CPU_ISSET(j, &cpuset))
+     {  
+        char temp[1024];
+        sprintf (temp, " CPU_%d", j);
+        strcat(cpu_affinity, temp);
+     }
+
+  memset(&sparam, 0 , sizeof (sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+  policy = SCHED_FIFO ; 
+  
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam : ");
+     exit_fun("Error getting thread priority");
+
+   }
+
+ LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n", proc->subframe, sched_getcpu(),gettid(),
+                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                   (policy == SCHED_RR)    ? "SCHED_RR" :
+                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                   "???",
+                   sparam.sched_priority, cpu_affinity );
+
+
 #endif
 
 #endif
@@ -1200,7 +1265,7 @@ static void* eNB_thread_tx( void* param )
     /*
     short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->lte_eNB_common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti];
     int i;
-    for (i=0;i<7680*2;i+=8) {
+    for (i=0;i<PHY_vars_eNB_g[0][proc->CC_id]->lte_frame_parms.samples_per_tti*2;i+=8) {
       txdata[i] = 2047;
       txdata[i+1] = 0;
       txdata[i+2] = 0;
@@ -1308,15 +1373,10 @@ static void* eNB_thread_rx( void* param )
 #ifdef LOWLATENCY
   struct sched_attr attr;
   unsigned int flags = 0;
-  uint64_t runtime  = get_runtime_rx(proc->subframe, runtime_phy_rx, target_ul_mcs,frame_parms[0]->N_RB_DL,cpuf,PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx)  *  1000000; 
+  uint64_t runtime  = 870000 ;
   uint64_t deadline = 1   *  1000000;
   uint64_t period   = 1   * 10000000; // each rx thread has a period of 10ms from the starting point
-  if (runtime  > 2300000 ) {
-    LOG_W(HW,"estimated rx runtime %d is larger than expected, adjusting\n",runtime);
-    runtime   = 2300000;
-    deadline  = runtime + 100000;
-  }
-
+ 
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
   attr.sched_nice = 0;
@@ -1334,7 +1394,79 @@ static void* eNB_thread_rx( void* param )
 
   LOG_I( HW, "[SCHED] eNB RX deadline thread %d(TID %ld) started on CPU %d\n", proc->subframe, gettid(), sched_getcpu() );
 #else
-  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %d\n", proc->subframe, sched_getcpu(),gettid() );
+    int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD */
+  /* CPU 1 is reserved for all TX threads */
+  /* CPU 2..MAX_CPUS is reserved for all RX threads */
+  /* Set CPU Affinity only if number of CPUs >2 */
+  CPU_ZERO(&cpuset);
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
+       CPU_SET(j, &cpuset);
+  
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");  
+      exit_fun (" Error setting processor affinity :");
+    }
+  }
+  #endif
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+     perror ("pthread_getaffinity_np");
+     exit_fun (" Error getting processor affinity :");
+  }
+  memset(cpu_affinity,0, sizeof(cpu_affinity));
+
+  for (j = 0; j < CPU_SETSIZE; j++)
+     if (CPU_ISSET(j, &cpuset))
+     {  
+        char temp[1024];
+        sprintf (temp, " CPU_%d", j);
+        strcat(cpu_affinity, temp);
+     }
+
+
+  memset(&sparam, 0 , sizeof (sparam)); 
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+
+  policy = SCHED_FIFO ; 
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+
+  memset(&sparam, 0 , sizeof (sparam));
+
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam");
+     exit_fun("Error getting thread priority");
+   }
+
+
+LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", proc->subframe, sched_getcpu(),gettid(),
+       (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+       (policy == SCHED_RR)    ? "SCHED_RR" :
+       (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+        "???",
+        sparam.sched_priority, cpu_affinity);
+
+
 #endif
 #endif // RTAI
 
@@ -1661,12 +1793,6 @@ static void* eNB_thread( void* arg )
   attr.sched_deadline = (0.9 * 100) * 10000;
   attr.sched_period   = 1 * 1000000;
 
-
-  /* pin the eNB main thread to CPU0*/
-  /* if (pthread_setaffinity_np(pthread_self(), sizeof(mask),&mask) <0) {
-     perror("[MAIN_ENB_THREAD] pthread_setaffinity_np failed\n");
-     }*/
-
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] main eNB thread: sched_setattr failed\n");
     exit_fun("Nothing to add");
@@ -1674,6 +1800,75 @@ static void* eNB_thread( void* arg )
     LOG_I(HW,"[SCHED][eNB] eNB main deadline thread %ld started on CPU %d\n",
           gettid(),sched_getcpu());
   }
+
+#else
+
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+
+  /* Set affinity mask to include CPUs 1 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  CPU_ZERO(&cpuset);
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() >2)
+  {
+    for (j = 1; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
+  }
+  #endif
+
+  /* Check the actual affinity mask assigned to the thread */
+
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (j = 0; j < CPU_SETSIZE; j++)
+  if (CPU_ISSET(j, &cpuset))
+  {  
+     char temp[1024];
+     sprintf(temp, " CPU_%d ", j);    
+     strcat(cpu_affinity, temp);
+  }
+
+  memset(&sparam, 0 , sizeof (sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  policy = SCHED_FIFO ; 
+  
+  s = pthread_setschedparam(pthread_self(), policy, &sparam);
+  if (s != 0)
+     {
+     perror("pthread_setschedparam : ");
+     exit_fun("Error setting thread priority");
+     }
+  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+  if (s != 0)
+   {
+     perror("pthread_getschedparam : ");
+     exit_fun("Error getting thread priority");
+
+   }
+
+
+  LOG_I( HW, "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld , sched_policy = %s, priority = %d, CPU Affinity = %s \n", (int)sched_getcpu(), gettid(),
+                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                   (policy == SCHED_RR)    ? "SCHED_RR" :
+                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                   "???",
+                   (int) sparam.sched_priority, cpu_affinity);
+
 
 #endif
 #endif
@@ -1684,9 +1879,7 @@ static void* eNB_thread( void* arg )
     goto eNB_thread_cleanup;
 
 #ifdef RTAI
-  printf( "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
-#else
-  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld\n", sched_getcpu(), gettid());
+  LOG_I( HW, "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
 #endif
 
 #ifdef HARD_RT
@@ -3111,6 +3304,49 @@ int main( int argc, char **argv )
 
 #endif
   }
+
+#ifndef LOWLATENCY
+
+  /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
+  
+  cpu_set_t cpuset;
+  int s;
+  char cpu_affinity[1024];
+  CPU_ZERO(&cpuset);
+  #ifdef CPU_AFFINITY
+  if (get_nprocs() > 2)
+  {
+    CPU_SET(0, &cpuset);
+    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+    if (s != 0)
+    {
+      perror( "pthread_setaffinity_np");
+      exit_fun("Error setting processor affinity");
+    }
+    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+  }
+  #endif
+
+  /* Check the actual affinity mask assigned to the thread */
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  for (int j = 0; j < CPU_SETSIZE; j++)
+  {
+    if (CPU_ISSET(j, &cpuset))
+    {  
+      char temp[1024];
+      sprintf(temp, " CPU_%d ", j);    
+      strcat(cpu_affinity, temp);
+    }
+  }
+  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
+#endif
+
   /* device host type is set*/
   openair0.host_type = BBU_HOST;
   /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
@@ -3292,17 +3528,6 @@ int main( int argc, char **argv )
 
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-
-  /*  this is moved to the eNB main thread */ 
-
-//#if defined(ENABLE_ITTI)
-  // Wait for eNB application initialization to be complete (eNB registration to MME)
-  //  if (UE_flag==0) {
-  // printf("Waiting for eNB application to be ready\n");
-    //wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-  // }
-  //#endif
-
 
   // this starts the DMA transfers
 #ifdef EXMIMO

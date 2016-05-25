@@ -34,10 +34,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
-#ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
-#endif
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -70,9 +66,6 @@ int main(int argc, char **argv)
   uint8_t snr1set=0;
   uint8_t ue_speed1set=0;
   //mod_sym_t **txdataF;
-#ifdef IFFT_FPGA
-  int **txdataF2;
-#endif
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim=0.0;
@@ -329,6 +322,7 @@ int main(int argc, char **argv)
 		 Nid_cell,
 		 3,
 		 N_RB_DL,
+		 0,
 		 osf,
 		 0);
 
@@ -553,14 +547,6 @@ int main(int argc, char **argv)
     //  printf("(%f,%f)\n",SNR,(double)prach_errors/(double)n_frames);
   } //SNR loop
 
-#ifdef IFFT_FPGA
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  free(txdata[0]);
-  free(txdata[1]);
-  free(txdata);
-#endif
 
   for (i=0; i<2; i++) {
     free(s_re[i]);
