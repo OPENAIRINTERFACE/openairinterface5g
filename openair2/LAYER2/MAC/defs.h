@@ -251,7 +251,7 @@ typedef struct {
 typedef struct {
   uint8_t Num_ue_spec_dci ;
   uint8_t Num_common_dci  ;
-  uint32_t nCCE;
+  //  uint32_t nCCE;
   uint32_t num_pdcch_symbols;
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
 } DCI_PDU;
