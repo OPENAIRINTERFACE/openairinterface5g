@@ -484,17 +484,18 @@ void database_get_generic_description(void *_d, int id,
     char **name, char **desc)
 {
   database *d = _d;
+  int pos = d->id_to_pos[id];
   OBUF o;
   int i;
-  *name = strdup(d->i[id].name);
+  *name = strdup(d->i[pos].name); if (*name == NULL) abort();
   o.osize = o.omaxsize = 0;
   o.obuf = NULL;
   PUTS(&o, *name);
-  for (i = 0; i < d->i[id].asize; i++) {
+  for (i = 0; i < d->i[pos].asize; i++) {
     PUTC(&o, ' ');
-    PUTS(&o, d->i[id].arg_name[i]);
+    PUTS(&o, d->i[pos].arg_name[i]);
     PUTS(&o, " [");
-    PUTS(&o, d->i[id].arg_name[i]);
+    PUTS(&o, d->i[pos].arg_name[i]);
     PUTS(&o, "]");
   }
   PUTC(&o, 0);
