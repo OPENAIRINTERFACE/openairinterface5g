@@ -849,6 +849,9 @@ rrc_eNB_process_RRCConnectionSetupComplete(
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing RRCConnectionSetupComplete from UE\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
+  T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #if defined(ENABLE_USE_MME)
 
   if (EPC_MODE_ENABLED == 1) {

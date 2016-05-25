@@ -14,6 +14,10 @@
 #include "openair_logo.h"
 #include "config.h"
 
+typedef struct {
+  view *rrcview;
+} enb_gui;
+
 #define DEFAULT_REMOTE_PORT 2021
 
 void usage(void)
@@ -42,11 +46,11 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
-static void enb_main_gui(gui *g, event_handler *h, void *database)
+static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
 {
   widget *main_window;
   widget *top_container;
-  widget *line;
+  widget *line, *col;
   widget *logo;
   widget *input_signal_plot;
   logger *input_signal_log;
@@ -55,6 +59,8 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   logger *timelog;
   view *timeview;
   view *subview;
+  widget *text;
+  view *textview;
   int i;
 
   main_window = new_toplevel_window(g, 800, 600, "eNB tracer");
@@ -79,12 +85,13 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   logger_add_view(input_signal_log, input_signal_view);
 
   /* downlink UE DCIs */
+  widget_add_child(g, top_container,
+      new_label(g,"DL/UL TICK/DCI/ACK/NACK "), -1);
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   timeline_plot = new_timeline(g, 512, 8, 5);
   widget_add_child(g, line, timeline_plot, -1);
   container_set_child_growable(g, line, timeline_plot, 1);
-  widget_add_child(g, line, new_label(g,"DL/UL TICK/DCI/ACK/NACK "), 0);
   for (i = 0; i < 8; i++)
     timeline_set_subline_background_color(g, timeline_plot, i,
         new_color(g, i==0 || i==4 ? "#aaf" : i & 1 ? "#ddd" : "#eee"));
@@ -110,6 +117,78 @@ static void enb_main_gui(gui *g, event_handler *h, void *database)
   timelog = new_timelog(h, database, "ENB_UL_TICK");
   subview = new_subview_time(timeview, 4, FOREGROUND_COLOR, 3600*1000);
   logger_add_view(timelog, subview);
+
+  /* phy/mac/rlc/pdcp/rrc textlog */
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  container_set_child_growable(g, top_container, line, 1);
+
+  /* phy */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  container_set_child_growable(g, line, col, 1);
+  widget_add_child(g, col, new_label(g, "PHY"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#afa"));
+  widget_add_child(g, col, text, -1);
+  container_set_child_growable(g, col, text, 1);
+  textview = new_view_textlist(10000, 10, g, text);
+
+  /* mac */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  container_set_child_growable(g, line, col, 1);
+  widget_add_child(g, col, new_label(g, "MAC"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#adf"));
+  widget_add_child(g, col, text, -1);
+  container_set_child_growable(g, col, text, 1);
+  textview = new_view_textlist(10000, 10, g, text);
+
+  /* rlc */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  container_set_child_growable(g, line, col, 1);
+  widget_add_child(g, col, new_label(g, "RLC"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#aff"));
+  widget_add_child(g, col, text, -1);
+  container_set_child_growable(g, col, text, 1);
+  textview = new_view_textlist(10000, 10, g, text);
+
+  /* pdcp */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  container_set_child_growable(g, line, col, 1);
+  widget_add_child(g, col, new_label(g, "PDCP"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#ed9"));
+  widget_add_child(g, col, text, -1);
+  container_set_child_growable(g, col, text, 1);
+  textview = new_view_textlist(10000, 10, g, text);
+
+  /* rrc */
+  col = new_container(g, VERTICAL);
+  widget_add_child(g, line, col, -1);
+  container_set_child_growable(g, line, col, 1);
+  widget_add_child(g, col, new_label(g, "RRC"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#fdb"));
+  widget_add_child(g, col, text, -1);
+  container_set_child_growable(g, col, text, 1);
+  textview = new_view_textlist(10000, 10, g, text);
+  e->rrcview = textview;
+}
+
+void view_add_log(view *v, char *log, event_handler *h, void *database,
+    int *is_on)
+{
+  logger *textlog;
+  char *name, *desc;
+
+  database_get_generic_description(database,
+      event_id_from_name(database, log), &name, &desc);
+  textlog = new_textlog(h, database, name, desc);
+  logger_add_view(textlog, v);
+  free(name);
+  free(desc);
+
+  on_off(database, log, is_on, 1);
 }
 
 int main(int n, char **v)
@@ -129,6 +208,7 @@ int main(int n, char **v)
   int l;
   event_handler *h;
   gui *g;
+  enb_gui eg;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -169,7 +249,7 @@ int main(int n, char **v)
   g = gui_init();
   new_thread(gui_thread, g);
 
-  enb_main_gui(g, h, database);
+  enb_main_gui(&eg, g, h, database);
 
   on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
   on_off(database, "ENB_UL_TICK", is_on, 1);
@@ -177,6 +257,9 @@ int main(int n, char **v)
   on_off(database, "ENB_DLSCH_UE_DCI", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
+
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE", h, database,
+      is_on);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);

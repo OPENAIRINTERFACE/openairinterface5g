@@ -40,6 +40,12 @@ ID = PUCCH_1_ENERGY
     GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,energy : int,threshold
 
+#RRC logs
+ID = ENB_RRC_CONNECTION_SETUP_COMPLETE
+    DESC = RRC connection setup complete
+    GROUP = ALL:RRC:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe : int,rnti
+
 #legacy logs
 ID = LEGACY_MAC_INFO
     DESC = MAC legacy logs - info level
