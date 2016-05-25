@@ -16,6 +16,7 @@
 
 typedef struct {
   view *rrcview;
+  view *legacy;
 } enb_gui;
 
 #define DEFAULT_REMOTE_PORT 2021
@@ -173,6 +174,13 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
   e->rrcview = textview;
+
+  /* legacy logs (LOG_I, LOG_D, ...) */
+  widget_add_child(g, top_container, new_label(g, "LEGACY"), -1);
+  text = new_textlist(g, 100, 10, new_color(g, "#eeb"));
+  widget_add_child(g, top_container, text, -1);
+  container_set_child_growable(g, top_container, text, 1);
+  e->legacy = new_view_textlist(10000, 10, g, text);
 }
 
 void view_add_log(view *v, char *log, event_handler *h, void *database,
@@ -250,6 +258,17 @@ int main(int n, char **v)
   new_thread(gui_thread, g);
 
   enb_main_gui(&eg, g, h, database);
+
+  for (i = 0; i < number_of_events; i++) {
+    logger *textlog;
+    char *name, *desc;
+    database_get_generic_description(database, i, &name, &desc);
+    if (strncmp(name, "LEGACY_", 7) != 0) continue;
+    textlog = new_textlog(h, database, name, desc);
+    logger_add_view(textlog, eg.legacy);
+    free(name);
+    free(desc);
+  }
 
   on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
   on_off(database, "ENB_UL_TICK", is_on, 1);
