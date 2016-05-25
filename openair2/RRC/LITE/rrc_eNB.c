@@ -882,6 +882,9 @@ rrc_eNB_generate_SecurityModeCommand(
   uint8_t                             buffer[100];
   uint8_t                             size;
 
+  T(T_ENB_RRC_SECURITY_MODE_COMMAND, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   size = do_SecurityModeCommand(
            ctxt_pP,
            buffer,
@@ -946,6 +949,9 @@ rrc_eNB_generate_UECapabilityEnquiry(
   uint8_t                             buffer[100];
   uint8_t                             size;
 
+  T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -998,6 +1004,9 @@ rrc_eNB_generate_RRCConnectionReject(
   int                                 cnt;
 #endif
 
+  T(T_ENB_RRC_CONNECTION_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReject(ctxt_pP->module_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
@@ -1041,6 +1050,9 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
   int                                 cnt;
 #endif
 
+  T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
@@ -1082,6 +1094,9 @@ rrc_eNB_generate_RRCConnectionRelease(
 
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size;
+
+  T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
@@ -1189,6 +1204,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   cba_RNTI->buf = cba_RNTI_buf;
   cba_RNTI->size = 2;
   cba_RNTI->bits_unused = 0;
+
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   // associate UEs to the CBa groups as a function of their UE id
   if (rrc_inst->num_active_cba_groups) {
@@ -1829,6 +1847,9 @@ rrc_eNB_process_MeasurementReport(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   LOG_I(RRC, "[eNB %d] Frame %d: Process Measurement Report From UE %x (Measurement Id %d)\n",
         ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId);
@@ -1897,6 +1918,9 @@ rrc_eNB_generate_HandoverPreparationInformation(
      struct PhysicalConfigDedicated  **physicalConfigDedicated = &eNB_rrc_inst[enb_mod_idP].physicalConfigDedicated[ue_mod_idP];
      RadioResourceConfigDedicated_t *radioResourceConfigDedicated = CALLOC(1,sizeof(RadioResourceConfigDedicated_t));
    */
+
+  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   handoverInfo->as_config.antennaInfoCommon.antennaPortsCount = 0;    //Not used 0- but check value
   handoverInfo->as_config.sourceDl_CarrierFreq = 36090;   //Verify!
@@ -1988,6 +2012,9 @@ rrc_eNB_process_handoverPreparationInformation(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   LOG_I(RRC,
         "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending RRCConnectionReconfiguration to UE %d \n",
@@ -2063,6 +2090,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size;
@@ -3015,6 +3045,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   DRB_ToAddModList_t*                 DRB_configList = ue_context_pP->ue_context.DRB_configList;
   SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
 
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #if defined(ENABLE_SECURITY)
 
   /* Derive the keys from kenb */
@@ -3274,6 +3307,9 @@ rrc_eNB_generate_RRCConnectionSetup(
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
   int                                 cnt;
+
+  T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   SRB_configList = &ue_context_pP->ue_context.SRB_configList;
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
@@ -3547,6 +3583,9 @@ rrc_eNB_decode_ccch(
   int                                 i, rval;
   struct rrc_eNB_ue_context_s*                  ue_context_p = NULL;
   uint64_t                                      random_value = 0;
+
+  T(T_ENB_RRC_UL_CCCH_DATA_IN, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
@@ -3882,6 +3921,9 @@ rrc_eNB_decode_dcch(
   UE_EUTRA_Capability_t              *UE_EUTRA_Capability = NULL;
   int i;
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
+
+  T(T_ENB_RRC_UL_DCCH_DATA_IN, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   if ((Srb_id != 1) && (Srb_id != 2)) {
     LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%d, should not have ...\n",

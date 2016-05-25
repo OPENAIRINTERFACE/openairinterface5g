@@ -258,8 +258,32 @@ int main(int n, char **v)
   on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
 
-  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE", h, database,
-      is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_SECURITY_MODE_COMMAND",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UE_CAPABILITY_ENQUIRY",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_REJECT",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_RELEASE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_RECONFIGURATION",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_MEASUREMENT_REPORT",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_HANDOVER_PREPARATION_INFORMATION",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UL_CCCH_DATA_IN",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UL_DCCH_DATA_IN",
+      h, database, is_on);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
