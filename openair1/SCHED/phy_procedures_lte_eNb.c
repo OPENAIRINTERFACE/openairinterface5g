@@ -562,6 +562,7 @@ void phy_eNB_lte_check_measurement_thresholds(instance_t instanceP, ral_threshol
 
 
 unsigned int taus(void);
+DCI_PDU DCI_pdu_tmp;
 
 void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,
                            relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn)
@@ -573,7 +574,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   uint8_t harq_pid;
   DCI_PDU *DCI_pdu;
   uint8_t *DLSCH_pdu=NULL;
-  DCI_PDU DCI_pdu_tmp;
+  //DCI_PDU DCI_pdu_tmp;
   uint8_t DLSCH_pdu_tmp[768*8];
   int8_t UE_id;
   uint8_t num_pdcch_symbols=0;
