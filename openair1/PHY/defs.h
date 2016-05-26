@@ -45,6 +45,8 @@
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
+#include "common_lib.h"
+
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX
@@ -151,9 +153,14 @@ enum transmission_access_mode {
   CANCELED_ACCESS,
   UNKNOWN_ACCESS,
   SCHEDULED_ACCESS,
-  CBA_ACCESS
-};
+  CBA_ACCESS};
 
+typedef enum  {
+  eNodeB_3GPP=0,  // classical eNodeB function
+  NGFI_RRU_IF4,   // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
+  NGFI_RCC_IF4    // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
+} eNB_func_t;
+  
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
   int32_t amp[3][10];
@@ -175,8 +182,12 @@ typedef struct ral_threshold_phy_s {
 typedef struct {
   /// Component Carrier index
   uint8_t              CC_id;
-  /// subframe index
-  int subframe;
+  /// thread index
+  int thread_index;
+  /// timestamp received from HW
+  openair0_timestamp timestamp_rx;
+  /// timestamp transmitted to HW
+  openair0_timestamp timestamp_tx;
   /// subframe to act upon for transmission
   int subframe_tx;
   /// subframe to act upon for reception
@@ -189,25 +200,39 @@ typedef struct {
   /// \internal This variable is protected by \ref mutex_tx.
   int instance_cnt_tx;
   /// \brief Instance count for rx processing thread.
-  /// \internal This variable is protected by \ref mutex_rx.
-  int instance_cnt_rx;
+  /// \internal This variable is protected by \ref mutex_prach.
+  int instance_cnt_prach;
   /// pthread structure for tx processing thread
   pthread_t pthread_tx;
   /// pthread structure for rx processing thread
   pthread_t pthread_rx;
+  /// pthread attributes for tx processing thread
+  pthread_attr_t attr_tx;
+  /// pthread attributes for rx processing thread
+  pthread_attr_t attr_rx;
+  /// pthread attributes for prach processing thread
+  pthread_attr_t attr_prach;
+  /// scheduling parameters for tx thread
+  struct sched_param sched_param_tx;
+  /// scheduling parameters for rx thread
+  struct sched_param sched_param_rx;
+  /// scheduling parameters for prach thread
+  struct sched_param sched_param_prach;
   /// condition variable for tx processing thread
+  pthread_t pthread_prach;
+  /// condition variable for prach processing thread
   pthread_cond_t cond_tx;
-  /// condition variable for rx processing thread
-  pthread_cond_t cond_rx;
+  /// condition variable for rx processing thread;
+  pthread_cond_t cond_prach;
   /// mutex for tx processing thread
   pthread_mutex_t mutex_tx;
   /// mutex for tx processing thread
-  pthread_mutex_t mutex_rx;
+  pthread_mutex_t mutex_prach;
 } eNB_proc_t;
 
 //! \brief Number of eNB TX and RX threads.
 //! This number must be equal to the number of LTE subframes (10). Each thread is responsible for a single subframe.
-#define NUM_ENB_THREADS 10
+#define NUM_ENB_THREADS 1
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {
@@ -215,25 +240,25 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   eNB_proc_t           proc[NUM_ENB_THREADS];
+  eNB_func_t           node_function;
   uint8_t              local_flag;
-  uint32_t             rx_total_gain_eNB_dB;
-  LTE_DL_FRAME_PARMS   lte_frame_parms;
-  PHY_MEASUREMENTS_eNB PHY_measurements_eNB[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables
-  LTE_eNB_COMMON       lte_eNB_common_vars;
-  LTE_eNB_SRS          lte_eNB_srs_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PBCH         lte_eNB_pbch;
+  uint32_t             rx_total_gain_dB;
+  LTE_DL_FRAME_PARMS   frame_parms;
+  PHY_MEASUREMENTS_eNB measurements[NUMBER_OF_eNB_SECTORS_MAX]; /// Measurement variables
+  LTE_eNB_COMMON       common_vars;
+  LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PBCH         pbch;
   /// \brief ?.
   /// - first index: UE [0..NUMBER_OF_UE_MAX[ (hard coded)
   /// - second index: UE [0..NUMBER_OF_UE_MAX[
-  LTE_eNB_PUSCH       *lte_eNB_pusch_vars[NUMBER_OF_UE_MAX];
-  LTE_eNB_PRACH        lte_eNB_prach_vars;
-  LTE_eNB_DLSCH_t     *dlsch_eNB[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
-  // old: LTE_eNB_DLSCH_t  **dlsch_eNB[2];   // Nusers times two spatial streams
-  LTE_eNB_ULSCH_t     *ulsch_eNB[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
-  LTE_eNB_DLSCH_t     *dlsch_eNB_SI,*dlsch_eNB_ra;
-  LTE_eNB_DLSCH_t     *dlsch_eNB_MCH;
-  LTE_eNB_UE_stats     eNB_UE_stats[NUMBER_OF_UE_MAX];
-  LTE_eNB_UE_stats    *eNB_UE_stats_ptr[NUMBER_OF_UE_MAX];
+  LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
+  LTE_eNB_PRACH        prach_vars;
+  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
+  LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
+  LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra;
+  LTE_eNB_DLSCH_t     *dlsch_MCH;
+  LTE_eNB_UE_stats     UE_stats[NUMBER_OF_UE_MAX];
+  LTE_eNB_UE_stats    *UE_stats_ptr[NUMBER_OF_UE_MAX];
 
   /// cell-specific reference symbols
   uint32_t         lte_gold_table[20][2][14];
@@ -497,26 +522,24 @@ typedef struct {
   /// \brief indicator that Handover procedure has been triggered
   uint8_t ho_triggered;
   /// \brief Measurement variables.
-  PHY_MEASUREMENTS PHY_measurements;
-  LTE_DL_FRAME_PARMS  lte_frame_parms;
+  PHY_MEASUREMENTS measurements;
+  LTE_DL_FRAME_PARMS  frame_parms;
   /// \brief Frame parame before ho used to recover if ho fails.
-  LTE_DL_FRAME_PARMS  lte_frame_parms_before_ho;
-  LTE_UE_COMMON    lte_ue_common_vars;
+  LTE_DL_FRAME_PARMS  frame_parms_before_ho;
+  LTE_UE_COMMON    common_vars;
 
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH_FLP *lte_ue_pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
-  LTE_UE_PDSCH     *lte_ue_pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PBCH      *lte_ue_pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PDCCH     *lte_ue_pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_PRACH     *lte_ue_prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue[NUMBER_OF_CONNECTED_eNB_MAX][2];
-  LTE_UE_ULSCH_t   *ulsch_ue[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX][2];
-  LTE_UE_DLSCH_t   *ulsch_ue_col[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ue_ra[NUMBER_OF_CONNECTED_eNB_MAX];
-  LTE_UE_DLSCH_t   *dlsch_ue_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDSCH     *pdsch_vars[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH_FLP *pdsch_vars_flp[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars_SI[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars_ra[NUMBER_OF_CONNECTED_eNB_MAX+1];
+  LTE_UE_PDSCH     *pdsch_vars_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PDCCH     *pdcch_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch[NUMBER_OF_CONNECTED_eNB_MAX][2];
+  LTE_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_eNB_MAX],*dlsch_ra[NUMBER_OF_CONNECTED_eNB_MAX];
+  LTE_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_eNB_MAX];
   // This is for SIC in the UE, to store the reencoded data
   LTE_eNB_DLSCH_t  *dlsch_eNB[NUMBER_OF_CONNECTED_eNB_MAX];
 
@@ -544,11 +567,9 @@ typedef struct {
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  unsigned char ulsch_ue_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint32_t  ulsch_ue_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char ulsch_ue_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
-  //  unsigned char Msg3_timer[NUMBER_OF_CONNECTED_eNB_MAX];
-  //unsigned char *Msg3_ptr[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
+  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
+  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
   PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
   int turbo_iterations, turbo_cntl_iterations;
   /// \brief ?.

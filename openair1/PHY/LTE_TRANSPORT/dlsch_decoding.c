@@ -188,7 +188,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
   uint16_t i;
 #endif
-#ifdef __AVX2__
+  //#ifdef __AVX2__
+#if 0
   int Kr_last,skipped_last=0;
   uint8_t (*tc_2cw)(int16_t *y,
 		    int16_t *y2,
@@ -249,7 +250,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   }
 
   if (llr8_flag == 0) {
-#ifdef __AVX2__
+    //#ifdef __AVX2__
+#if 0
     tc_2cw = phy_threegpplte_turbo_decoder16avx2;
 #endif
     tc = phy_threegpplte_turbo_decoder16;

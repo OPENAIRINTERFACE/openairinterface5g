@@ -36,7 +36,7 @@ extern int card;
 #endif
 
 void
-phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB_id)
+phy_adjust_gain (PHY_VARS_UE *ue, uint32_t rx_power_fil_dB, uint8_t eNB_id)
 {
 
 #ifdef EXMIMO
@@ -46,72 +46,72 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB
 
   LOG_D(PHY,"Gain control: rssi %d (%d,%d)\n",
          rx_power_fil_dB,
-         phy_vars_ue->PHY_measurements.rssi,
-         phy_vars_ue->PHY_measurements.rx_power_avg_dB[eNB_id]
+         ue->measurements.rssi,
+         ue->measurements.rx_power_avg_dB[eNB_id]
         );
 
   // Gain control with hysterisis
-  // Adjust gain in phy_vars_ue->rx_vars[0].rx_total_gain_dB
+  // Adjust gain in ue->rx_vars[0].rx_total_gain_dB
 
-  if (rx_power_fil_dB < TARGET_RX_POWER - 5) //&& (phy_vars_ue->rx_total_gain_dB < MAX_RF_GAIN) )
-    phy_vars_ue->rx_total_gain_dB+=5;
-  else if (rx_power_fil_dB > TARGET_RX_POWER + 5) //&& (phy_vars_ue->rx_total_gain_dB > MIN_RF_GAIN) )
-    phy_vars_ue->rx_total_gain_dB-=5;
+  if (rx_power_fil_dB < TARGET_RX_POWER - 5) //&& (ue->rx_total_gain_dB < MAX_RF_GAIN) )
+    ue->rx_total_gain_dB+=5;
+  else if (rx_power_fil_dB > TARGET_RX_POWER + 5) //&& (ue->rx_total_gain_dB > MIN_RF_GAIN) )
+    ue->rx_total_gain_dB-=5;
 
-  if (phy_vars_ue->rx_total_gain_dB>MAX_RF_GAIN) {
+  if (ue->rx_total_gain_dB>MAX_RF_GAIN) {
     /*
     if ((openair_daq_vars.rx_rf_mode==0) && (openair_daq_vars.mode == openair_NOT_SYNCHED)) {
       openair_daq_vars.rx_rf_mode=1;
-      phy_vars_ue->rx_total_gain_dB = max(MIN_RF_GAIN,MAX_RF_GAIN-25);
+      ue->rx_total_gain_dB = max(MIN_RF_GAIN,MAX_RF_GAIN-25);
     }
     else {
     */
-    phy_vars_ue->rx_total_gain_dB = MAX_RF_GAIN;
-  } else if (phy_vars_ue->rx_total_gain_dB<MIN_RF_GAIN) {
+    ue->rx_total_gain_dB = MAX_RF_GAIN;
+  } else if (ue->rx_total_gain_dB<MIN_RF_GAIN) {
     /*
     if ((openair_daq_vars.rx_rf_mode==1) && (openair_daq_vars.mode == openair_NOT_SYNCHED)) {
       openair_daq_vars.rx_rf_mode=0;
-      phy_vars_ue->rx_total_gain_dB = min(MAX_RF_GAIN,MIN_RF_GAIN+25);
+      ue->rx_total_gain_dB = min(MAX_RF_GAIN,MIN_RF_GAIN+25);
     }
     else {
     */
-    phy_vars_ue->rx_total_gain_dB = MIN_RF_GAIN;
+    ue->rx_total_gain_dB = MIN_RF_GAIN;
   }
 
-  LOG_D(PHY,"Gain control: rx_total_gain_dB = %d (max %d,rxpf %d)\n",phy_vars_ue->rx_total_gain_dB,MAX_RF_GAIN,rx_power_fil_dB);
+  LOG_D(PHY,"Gain control: rx_total_gain_dB = %d (max %d,rxpf %d)\n",ue->rx_total_gain_dB,MAX_RF_GAIN,rx_power_fil_dB);
 
 #ifdef EXMIMO
 
-  if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
-    phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0];
+  if (ue->rx_total_gain_dB>ue->rx_gain_max[0]) {
+    ue->rx_total_gain_dB = ue->rx_gain_max[0];
 
-    for (i=0; i<phy_vars_ue->lte_frame_parms.nb_antennas_rx; i++) {
+    for (i=0; i<ue->frame_parms.nb_antennas_rx; i++) {
       p_exmimo_config->rf.rx_gain[i][0] = 30;
     }
 
-  } else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_max[0]-30)) {
+  } else if (ue->rx_total_gain_dB<(ue->rx_gain_max[0]-30)) {
     // for the moment we stay in max gain mode
-    phy_vars_ue->rx_total_gain_dB = phy_vars_ue->rx_gain_max[0] - 30;
+    ue->rx_total_gain_dB = ue->rx_gain_max[0] - 30;
 
-    for (i=0; i<phy_vars_ue->lte_frame_parms.nb_antennas_rx; i++) {
+    for (i=0; i<ue->frame_parms.nb_antennas_rx; i++) {
       p_exmimo_config->rf.rx_gain[i][0] = 0;
     }
 
     /*
-      phy_vars_ue->rx_gain_mode[0] = byp;
-      phy_vars_ue->rx_gain_mode[1] = byp;
+      ue->rx_gain_mode[0] = byp;
+      ue->rx_gain_mode[1] = byp;
       exmimo_pci_interface->rf.rf_mode0 = 22991; //bypass
       exmimo_pci_interface->rf.rf_mode1 = 22991; //bypass
 
-      if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
+      if (ue->rx_total_gain_dB<(ue->rx_gain_byp[0]-50)) {
       exmimo_pci_interface->rf.rx_gain00 = 0;
       exmimo_pci_interface->rf.rx_gain10 = 0;
       }
     */
   } else {
 
-    for (i=0; i<phy_vars_ue->lte_frame_parms.nb_antennas_rx; i++) {
-      p_exmimo_config->rf.rx_gain[i][0] =  30 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
+    for (i=0; i<ue->frame_parms.nb_antennas_rx; i++) {
+      p_exmimo_config->rf.rx_gain[i][0] =  30 - ue->rx_gain_max[0] + ue->rx_total_gain_dB;
     }
   }
 
@@ -119,28 +119,28 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB
     break;
   case med_gain:
   case byp_gain:
-      if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_byp[0]) {
-          phy_vars_ue->rx_gain_mode[0]   = max_gain;
-          phy_vars_ue->rx_gain_mode[1]   = max_gain;
+      if (ue->rx_total_gain_dB>ue->rx_gain_byp[0]) {
+          ue->rx_gain_mode[0]   = max_gain;
+          ue->rx_gain_mode[1]   = max_gain;
           exmimo_pci_interface->rf.rf_mode0 = 55759; //max gain
           exmimo_pci_interface->rf.rf_mode1 = 55759; //max gain
 
-          if (phy_vars_ue->rx_total_gain_dB>phy_vars_ue->rx_gain_max[0]) {
+          if (ue->rx_total_gain_dB>ue->rx_gain_max[0]) {
               exmimo_pci_interface->rf.rx_gain00 = 50;
               exmimo_pci_interface->rf.rx_gain10 = 50;
           }
           else {
-              exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_max[0] + phy_vars_ue->rx_total_gain_dB;
-              exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_max[1] + phy_vars_ue->rx_total_gain_dB;
+              exmimo_pci_interface->rf.rx_gain00 = 50 - ue->rx_gain_max[0] + ue->rx_total_gain_dB;
+              exmimo_pci_interface->rf.rx_gain10 = 50 - ue->rx_gain_max[1] + ue->rx_total_gain_dB;
           }
       }
-      else if (phy_vars_ue->rx_total_gain_dB<(phy_vars_ue->rx_gain_byp[0]-50)) {
+      else if (ue->rx_total_gain_dB<(ue->rx_gain_byp[0]-50)) {
           exmimo_pci_interface->rf.rx_gain00 = 0;
           exmimo_pci_interface->rf.rx_gain10 = 0;
       }
       else {
-          exmimo_pci_interface->rf.rx_gain00 = 50 - phy_vars_ue->rx_gain_byp[0] + phy_vars_ue->rx_total_gain_dB;
-          exmimo_pci_interface->rf.rx_gain10 = 50 - phy_vars_ue->rx_gain_byp[1] + phy_vars_ue->rx_total_gain_dB;
+          exmimo_pci_interface->rf.rx_gain00 = 50 - ue->rx_gain_byp[0] + ue->rx_total_gain_dB;
+          exmimo_pci_interface->rf.rx_gain10 = 50 - ue->rx_gain_byp[1] + ue->rx_total_gain_dB;
       }
       break;
   default:
@@ -152,9 +152,9 @@ phy_adjust_gain (PHY_VARS_UE *phy_vars_ue, uint32_t rx_power_fil_dB, uint8_t eNB
 #endif
 
 #ifdef DEBUG_PHY
-  /*  if ((phy_vars_ue->frame%100==0) || (phy_vars_ue->frame < 10))
+  /*  if ((ue->frame%100==0) || (ue->frame < 10))
   msg("[PHY][ADJUST_GAIN] frame %d,  rx_power = %d, rx_power_fil = %d, rx_power_fil_dB = %d, coef=%d, ncoef=%d, rx_total_gain_dB = %d (%d,%d,%d)\n",
-    phy_vars_ue->frame,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,phy_vars_ue->rx_total_gain_dB,
+    ue->frame,rx_power,rx_power_fil,rx_power_fil_dB,coef,ncoef,ue->rx_total_gain_dB,
   TARGET_RX_POWER,MAX_RF_GAIN,MIN_RF_GAIN);
   */
 #endif //DEBUG_PHY

@@ -129,15 +129,15 @@ int compareints (const void * a, const void * b)
 }
 
 
-int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
+int32_t generate_srs_tx(PHY_VARS_UE *ue,
                         uint8_t eNB_id,
                         int16_t amp,
                         uint32_t subframe)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
-  SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&phy_vars_ue->soundingrs_ul_config_dedicated[eNB_id];
-  int32_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[0];
+  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
+  SOUNDINGRS_UL_CONFIG_DEDICATED *soundingrs_ul_config_dedicated=&ue->soundingrs_ul_config_dedicated[eNB_id];
+  int32_t *txdataF = ue->common_vars.txdataF[0];
   uint16_t msrsb=0,Nb=0,nb,b,msrs0=0,k,Msc_RS,Msc_RS_idx,carrier_pos,symbol_offset;
   uint16_t *Msc_idx_ptr;
   int32_t k0;

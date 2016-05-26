@@ -42,7 +42,7 @@ short conjugate75[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
 short conjugate75_2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 short negate[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1};
 
-void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
+void apply_7_5_kHz(PHY_VARS_UE *ue,int32_t*txdata,uint8_t slot)
 {
 
 
@@ -58,7 +58,7 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
   uint32_t slot_offset;
   //   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
 
   switch (frame_parms->N_RB_UL) {
 
@@ -91,10 +91,8 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
     break;
   }
 
-  slot_offset = (uint32_t)slot * phy_vars_ue->lte_frame_parms.samples_per_tti/2;
-  //  if ((slot&1)==1)
-  //    slot_offset += (len/4);
-  len = phy_vars_ue->lte_frame_parms.samples_per_tti/2;
+  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2;
+  len = frame_parms->samples_per_tti/2;
 
 #if defined(__x86_64__) || defined(__i386__)
   txptr128 = (__m128i *)&txdata[slot_offset];
@@ -149,12 +147,12 @@ void apply_7_5_kHz(PHY_VARS_UE *phy_vars_ue,int32_t*txdata,uint8_t slot)
 }
 
 
-void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
+void remove_7_5_kHz(PHY_VARS_eNB *eNB,uint8_t slot)
 {
 
 
-  int32_t **rxdata=phy_vars_eNB->lte_eNB_common_vars.rxdata[0];
-  int32_t **rxdata_7_5kHz=phy_vars_eNB->lte_eNB_common_vars.rxdata_7_5kHz[0];
+  int32_t **rxdata=eNB->common_vars.rxdata[0];
+  int32_t **rxdata_7_5kHz=eNB->common_vars.rxdata_7_5kHz[0];
   uint16_t len;
   uint32_t *kHz7_5ptr;
 #if defined(__x86_64__) || defined(__i386__)
@@ -168,9 +166,9 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&phy_vars_eNB->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
 
-  switch (phy_vars_eNB->lte_frame_parms.N_RB_UL) {
+  switch (frame_parms->N_RB_UL) {
 
   case 6:
     kHz7_5ptr = (frame_parms->Ncp==0) ? (uint32_t*)s6n_kHz_7_5 : (uint32_t*)s6e_kHz_7_5;
@@ -202,12 +200,12 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
   }
 
 
-  slot_offset = (uint32_t)slot * phy_vars_eNB->lte_frame_parms.samples_per_tti/2-phy_vars_eNB->N_TA_offset;
-  slot_offset2 = (uint32_t)(slot&1) * phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  slot_offset = (uint32_t)slot * frame_parms->samples_per_tti/2-eNB->N_TA_offset;
+  slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
-  len = phy_vars_eNB->lte_frame_parms.samples_per_tti/2;
+  len = frame_parms->samples_per_tti/2;
 
-  for (aa=0; aa<phy_vars_eNB->lte_frame_parms.nb_antennas_rx; aa++) {
+  for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 
 #if defined(__x86_64__) || defined(__i386__)
     rxptr128        = (__m128i *)&rxdata[aa][slot_offset];
@@ -270,3 +268,4 @@ void remove_7_5_kHz(PHY_VARS_eNB *phy_vars_eNB,uint8_t slot)
     }
   }
 }
+

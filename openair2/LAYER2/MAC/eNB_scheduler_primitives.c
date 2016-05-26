@@ -731,7 +731,7 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
   uint32_t rballoc_dci=0;
   unsigned char nb_rb_alloc=0;
 
-  for (i=0; i<(mac_xface->lte_frame_parms->N_RB_DL-2); i+=2) {
+  for (i=0; i<(mac_xface->frame_parms->N_RB_DL-2); i+=2) {
     if (((*rballoc>>i)&3)==0) {
       *rballoc |= (3<<i);
       rballoc_dci |= (1<<((12-i)>>1));
@@ -743,10 +743,10 @@ uint32_t allocate_prbs(int UE_id,unsigned char nb_rb, uint32_t *rballoc)
     }
   }
 
-  if ((mac_xface->lte_frame_parms->N_RB_DL&1)==1) {
-    if ((*rballoc>>(mac_xface->lte_frame_parms->N_RB_DL-1)&1)==0) {
-      *rballoc |= (1<<(mac_xface->lte_frame_parms->N_RB_DL-1));
-      rballoc_dci |= 1;//(1<<(mac_xface->lte_frame_parms->N_RB_DL>>1));
+  if ((mac_xface->frame_parms->N_RB_DL&1)==1) {
+    if ((*rballoc>>(mac_xface->frame_parms->N_RB_DL-1)&1)==0) {
+      *rballoc |= (1<<(mac_xface->frame_parms->N_RB_DL-1));
+      rballoc_dci |= 1;//(1<<(mac_xface->frame_parms->N_RB_DL>>1));
     }
   }
 
@@ -793,20 +793,20 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
   //uint8_t number_of_subbands=13;
 
   LOG_T(MAC,"*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBG %d)\n",
-        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->lte_frame_parms->N_RBG);
+        rballoc[3],rballoc[2],rballoc[1],rballoc[0],nb_rb,mac_xface->frame_parms->N_RBG);
 
-  while((nb_rb >0) && (check < mac_xface->lte_frame_parms->N_RBG)) {
+  while((nb_rb >0) && (check < mac_xface->frame_parms->N_RBG)) {
     //printf("rballoc[%d] %d\n",check,rballoc[check]);
     if(rballoc[check] == 1) {
-      rballoc_dci |= (1<<((mac_xface->lte_frame_parms->N_RBG-1)-check));
+      rballoc_dci |= (1<<((mac_xface->frame_parms->N_RBG-1)-check));
 
-      switch (mac_xface->lte_frame_parms->N_RB_DL) {
+      switch (mac_xface->frame_parms->N_RB_DL) {
       case 6:
         nb_rb--;
         break;
 
       case 25:
-        if ((check == mac_xface->lte_frame_parms->N_RBG-1)) {
+        if ((check == mac_xface->frame_parms->N_RBG-1)) {
           nb_rb--;
         } else {
           nb_rb-=2;
@@ -815,7 +815,7 @@ uint32_t allocate_prbs_sub(int nb_rb, uint8_t *rballoc)
         break;
 
       case 50:
-        if ((check == mac_xface->lte_frame_parms->N_RBG-1)) {
+        if ((check == mac_xface->frame_parms->N_RBG-1)) {
           nb_rb-=2;
         } else {
           nb_rb-=3;
@@ -846,7 +846,7 @@ int get_nb_subband(void)
 
   int nb_sb=0;
 
-  switch (mac_xface->lte_frame_parms->N_RB_DL) {
+  switch (mac_xface->frame_parms->N_RB_DL) {
   case 6:
     nb_sb=0;
     break;

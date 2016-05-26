@@ -41,13 +41,13 @@
 #include "PHY/defs.h"
 
 
-int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
+int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,
                          int32_t **txdataF,
                          int16_t amp,
                          uint16_t subframe)
 {
 
-  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   uint32_t subframe_offset,Nsymb,samples_per_symbol;
 
 
@@ -66,7 +66,7 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
   //Generate Pilots
 
   //antenna 4 symbol 2 Slot 0
-  lte_dl_mbsfn(phy_vars_eNB,
+  lte_dl_mbsfn(eNB,
                &txdataF[0][subframe_offset+(2*samples_per_symbol)],
                amp,
                subframe,
@@ -75,14 +75,14 @@ int generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
 
 
   //antenna 4 symbol 0 slot 1
-  lte_dl_mbsfn(phy_vars_eNB,
+  lte_dl_mbsfn(eNB,
                &txdataF[0][subframe_offset+(6*samples_per_symbol)],
                amp,
                subframe,
                1);
 
   //antenna 4 symbol 4 slot 1
-  lte_dl_mbsfn(phy_vars_eNB,
+  lte_dl_mbsfn(eNB,
                &txdataF[0][subframe_offset+(10*samples_per_symbol)],
                amp,
                subframe,

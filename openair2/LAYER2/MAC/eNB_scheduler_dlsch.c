@@ -1527,7 +1527,7 @@ fill_DLSCH_dci(
 
 
         /// Synchronizing rballoc with rballoc_sub
-        for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RBG; i++) {
+        for(i=0; i<PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RBG; i++) {
           rballoc_sub[i] = UE_list->UE_template[CC_id][UE_id].rballoc_subband[harq_pid][i];
         }
 
@@ -1539,8 +1539,8 @@ fill_DLSCH_dci(
         case 2:
           LOG_D(MAC,"[eNB %d] CC_id %d Adding UE %d spec DCI for %d PRBS \n",module_idP, CC_id, UE_id, nb_rb);
 
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+          if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+            switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI1_1_5MHz_TDD_t*)DLSCH_dci)->rah = 0;
@@ -1579,7 +1579,7 @@ fill_DLSCH_dci(
 
 
           } else {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+            switch(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI1_1_5MHz_FDD_t*)DLSCH_dci)->rah = 0;
@@ -1632,8 +1632,8 @@ fill_DLSCH_dci(
           LOG_D(MAC,"[eNB %d] CC_id %d Adding Format 2A UE %d spec DCI for %d PRBS (rb alloc: %x) \n",
                 module_idP, CC_id, UE_id, nb_rb);
 
-          if (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.frame_type == TDD) {
-            switch (PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+          if (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.frame_type == TDD) {
+            switch (PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI2A_1_5MHz_2A_TDD_t*)DLSCH_dci)->rah = 0;
@@ -1672,7 +1672,7 @@ fill_DLSCH_dci(
 
 
           } else {
-            switch(PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL) {
+            switch(PHY_vars_eNB_g[module_idP][CC_id]->frame_parms.N_RB_DL) {
             case 6:
               ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rballoc = allocate_prbs_sub(nb_rb,rballoc_sub);
               ((DCI2A_1_5MHz_2A_FDD_t*)DLSCH_dci)->rah = 0;
@@ -1834,7 +1834,7 @@ update_ul_dci(
   int                  i;
   DCI0_5MHz_TDD_1_6_t *ULSCH_dci = NULL;;
 
-  if (mac_xface->lte_frame_parms->frame_type == TDD) {
+  if (mac_xface->frame_parms->frame_type == TDD) {
     for (i=0; i<DCI_pdu->Num_common_dci+DCI_pdu->Num_ue_spec_dci; i++) {
       ULSCH_dci = (DCI0_5MHz_TDD_1_6_t *)DCI_pdu->dci_alloc[i].dci_pdu;
 

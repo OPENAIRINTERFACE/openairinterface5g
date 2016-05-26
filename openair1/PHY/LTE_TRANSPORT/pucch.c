@@ -400,7 +400,7 @@ void generate_pucch(int32_t **txdataF,
 
 }
 
-void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
+void generate_pucch_emul(PHY_VARS_UE *ue,
                          PUCCH_FMT_t format,
                          uint8_t ncs1,
                          uint8_t *pucch_payload,
@@ -408,32 +408,32 @@ void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
                          uint8_t subframe)
 {
 
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pucch_flag    = format;
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pucch_Ncs1    = ncs1;
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_flag    = format;
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_Ncs1    = ncs1;
 
 
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.sr            = sr;
-  // the value of phy_vars_ue->pucch_sel[subframe] is set by get_n1_pucch
-  UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pucch_sel      = phy_vars_ue->pucch_sel[subframe];
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.sr            = sr;
+  // the value of ue->pucch_sel[subframe] is set by get_n1_pucch
+  UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_sel      = ue->pucch_sel[subframe];
 
-  // LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d \n", subframe, UE_transport_info[phy_vars_ue->Mod_id].cntl.pucch_sel, sr);
+  // LOG_I(PHY,"subframe %d emu tx pucch_sel is %d sr is %d \n", subframe, UE_transport_info[ue->Mod_id].cntl.pucch_sel, sr);
 
   if (format == pucch_format1a) {
 
-    phy_vars_ue->pucch_payload[0] = pucch_payload[0];
-    UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pucch_payload = pucch_payload[0];
+    ue->pucch_payload[0] = pucch_payload[0];
+    UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_payload = pucch_payload[0];
   } else if (format == pucch_format1b) {
-    phy_vars_ue->pucch_payload[0] = pucch_payload[0] + (pucch_payload[1]<<1);
-    UE_transport_info[phy_vars_ue->Mod_id][phy_vars_ue->CC_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
+    ue->pucch_payload[0] = pucch_payload[0] + (pucch_payload[1]<<1);
+    UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
   } else if (format == pucch_format1) {
-    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",phy_vars_ue->Mod_id,phy_vars_ue->frame_tx,subframe,sr);
+    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",ue->Mod_id,ue->frame_tx,subframe,sr);
   }
 
-  phy_vars_ue->sr[subframe] = sr;
+  ue->sr[subframe] = sr;
 
 }
 
-uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
+uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 		  PUCCH_FMT_t fmt,
 		  uint8_t UE_id,
 		  uint16_t n1_pucch,
@@ -446,15 +446,15 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 
 
   static int first_call=1;
-  LTE_eNB_COMMON *eNB_common_vars                = &phy_vars_eNB->lte_eNB_common_vars;
-  LTE_DL_FRAME_PARMS *frame_parms                    = &phy_vars_eNB->lte_frame_parms;
-  //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &phy_vars_eNB->pucch_config_dedicated[UE_id];
-  int8_t sigma2_dB                                   = phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dB[0]-10;
-  uint32_t *Po_PUCCH                                  = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH);
-  int32_t *Po_PUCCH_dBm                              = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH_dBm);
-  uint32_t *Po_PUCCH1_below                           = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_below);
-  uint32_t *Po_PUCCH1_above                           = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH1_above);
-  int32_t *Po_PUCCH_update                           = &(phy_vars_eNB->eNB_UE_stats[UE_id].Po_PUCCH_update);
+  LTE_eNB_COMMON *common_vars                = &eNB->common_vars;
+  LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
+  //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
+  int8_t sigma2_dB                                   = eNB->measurements[0].n0_subband_power_tot_dB[0]-10;
+  uint32_t *Po_PUCCH                                  = &(eNB->UE_stats[UE_id].Po_PUCCH);
+  int32_t *Po_PUCCH_dBm                              = &(eNB->UE_stats[UE_id].Po_PUCCH_dBm);
+  uint32_t *Po_PUCCH1_below                           = &(eNB->UE_stats[UE_id].Po_PUCCH1_below);
+  uint32_t *Po_PUCCH1_above                           = &(eNB->UE_stats[UE_id].Po_PUCCH1_above);
+  int32_t *Po_PUCCH_update                           = &(eNB->UE_stats[UE_id].Po_PUCCH_update);
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
   int16_t *zptr;
@@ -486,8 +486,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
   if (first_call == 1) {
     for (i=0;i<10;i++) {
       for (j=0;j<NUMBER_OF_UE_MAX;j++) {
-	phy_vars_eNB->pucch1_stats_cnt[j][i]=0;
-	phy_vars_eNB->pucch1ab_stats_cnt[j][i]=0;
+	eNB->pucch1_stats_cnt[j][i]=0;
+	eNB->pucch1ab_stats_cnt[j][i]=0;
       }
     }
     first_call=0;
@@ -585,7 +585,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     //loop over symbols in slot
     for (l=0; l<N_UL_symb; l++) {
       // Compute n_cs (36.211 p. 18)
-      n_cs = phy_vars_eNB->ncs_cell[ns][l];
+      n_cs = eNB->ncs_cell[ns][l];
 
       if (frame_parms->Ncp==0) { // normal CP
         n_cs = ((uint16_t)n_cs + (nprime*deltaPUCCH_Shift + (n_oc%deltaPUCCH_Shift))%Nprime)%12;
@@ -700,7 +700,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
         re_offset -= (frame_parms->ofdm_symbol_size);
 
       symbol_offset = (unsigned int)frame_parms->ofdm_symbol_size*l;
-      rxptr = (int16_t *)&eNB_common_vars->rxdataF[0][aa][symbol_offset];
+      rxptr = (int16_t *)&common_vars->rxdataF[0][aa][symbol_offset];
 
       for (i=0; i<12; i++,j+=2,re_offset++) {
         rxcomp[aa][j]   = (int16_t)((rxptr[re_offset<<1]*(int32_t)zptr[j])>>15)   - ((rxptr[1+(re_offset<<1)]*(int32_t)zptr[1+j])>>15);
@@ -789,17 +789,17 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 #endif
 
 #ifdef DEBUG_PUCCH_RX
-    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
+    LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
 #endif
 
-    phy_vars_eNB->pucch1_stats[UE_id][(subframe<<10)+phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;
-    phy_vars_eNB->pucch1_stats_thres[UE_id][(subframe<<10)+phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
-    phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
+    eNB->pucch1_stats[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = stat_max;
+    eNB->pucch1_stats_thres[UE_id][(subframe<<10)+eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
+    eNB->pucch1_stats_cnt[UE_id][subframe] = (eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
 
     /*
-    if (phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe] == 0) {
+    if (eNB->pucch1_stats_cnt[UE_id][subframe] == 0) {
       write_output("pucch_debug.m","pucch_energy",
-		   &phy_vars_eNB->pucch1_stats[UE_id][(subframe<<10)],
+		   &eNB->pucch1_stats[UE_id][(subframe<<10)],
 		   1024,1,2);
       AssertFatal(0,"Exiting for PUCCH 1 debug\n");
 
@@ -810,13 +810,13 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     if (sigma2_dB<(dB_fixed(stat_max)-pucch1_thres))  {
       *payload = 1;
       *Po_PUCCH1_above = ((*Po_PUCCH1_above<<9) + (stat_max<<9)+1024)>>10;
-      //LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_power_tot_dBm,pucch1_thres,phase_max);
+      //LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->PHY_measurements_eNB[0].n0_power_tot_dBm,pucch1_thres,phase_max);
     }
     else {
       *payload = 0;
       *Po_PUCCH1_below = ((*Po_PUCCH1_below<<9) + (stat_max<<9)+1024)>>10;
     }
-    LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,phy_vars_eNB->PHY_measurements_eNB[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
+    LOG_D(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (I0 %d dBm, thres %d), Po_PUCCH1_below/above : %d / %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements[0].n0_subband_power_tot_dBm[6],pucch1_thres,dB_fixed(*Po_PUCCH1_below),dB_fixed(*Po_PUCCH1_above));
     *Po_PUCCH_update = 1;
     if (UE_id==0) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SR_ENERGY,dB_fixed(stat_max));
@@ -910,7 +910,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     stat_im=0;
     LOG_D(PHY,"PUCCH1A : Po_PUCCH before %d dB (%d)\n",dB_fixed(*Po_PUCCH),*Po_PUCCH);
     *Po_PUCCH = ((*Po_PUCCH>>1) + ((stat_max)>>1));
-    *Po_PUCCH_dBm = dB_fixed(*Po_PUCCH/frame_parms->N_RB_UL) - phy_vars_eNB->rx_total_gain_eNB_dB;
+    *Po_PUCCH_dBm = dB_fixed(*Po_PUCCH/frame_parms->N_RB_UL) - eNB->rx_total_gain_dB;
     *Po_PUCCH_update = 1;
  
     LOG_D(PHY,"PUCCH1A : stat_max %d (%d,%d,%d) => Po_PUCCH %d\n",
@@ -1030,12 +1030,12 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 
 #ifdef DEBUG_PUCCH_RX
       LOG_I(PHY,"PUCCH 1a/b: subframe %d : stat %d,%d (pos %d)\n",subframe,stat_re,stat_im,
-	    (subframe<<10) + (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]));
+	    (subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe]));
 #endif
 
-	phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
-	phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
-	phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
+	eNB->pucch1ab_stats[UE_id][(subframe<<11) + 2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_re);
+	eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
+	eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
 
 	  
@@ -1045,9 +1045,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
         *(1+payload) = (stat_im<0) ? 1 : 0;
     } else { // insufficient energy on PUCCH so NAK
       *payload = 0;
-      ((int16_t*)&phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<10) + (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
-      ((int16_t*)&phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<10) + (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
-      phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
+      ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
+      ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[1] = (int16_t)(stat_im);
+      eNB->pucch1ab_stats_cnt[UE_id][subframe] = (eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       *payload = (stat_re<0) ? 1 : 0;
 
@@ -1063,22 +1063,22 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 
-int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
+int32_t rx_pucch_emul(PHY_VARS_eNB *eNB,
                       uint8_t UE_index,
                       PUCCH_FMT_t fmt,
                       uint8_t n1_pucch_sel,
                       uint8_t *payload,
-                      uint8_t sched_subframe)
+                      uint8_t thread_id)
 {
   uint8_t UE_id;
   uint16_t rnti;
-  int subframe = phy_vars_eNB->proc[sched_subframe].subframe_rx;
-  uint8_t CC_id = phy_vars_eNB->CC_id;
+  int subframe = eNB->proc[thread_id].subframe_rx;
+  uint8_t CC_id = eNB->CC_id;
 
-  rnti = phy_vars_eNB->ulsch_eNB[UE_index]->rnti;
+  rnti = eNB->ulsch[UE_index]->rnti;
 
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti)
       break;
   }
 
@@ -1095,7 +1095,7 @@ int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
     payload[0] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[0];
     payload[1] = PHY_vars_UE_g[UE_id][CC_id]->pucch_payload[1];
   } else
-    LOG_E(PHY,"[eNB] Frame %d: Can't handle formats 2/2a/2b\n",phy_vars_eNB->proc[sched_subframe].frame_rx);
+    LOG_E(PHY,"[eNB] Frame %d: Can't handle formats 2/2a/2b\n",eNB->proc[thread_id].frame_rx);
 
   if (PHY_vars_UE_g[UE_id][CC_id]->pucch_sel[subframe] == n1_pucch_sel)
     return(99);

@@ -194,7 +194,7 @@ init_SI(
     eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sizeof_SIB1 = do_SIB1(
           ctxt_pP->module_id,
           CC_id,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           (uint8_t*)eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SIB1,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].siblock1,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib1
@@ -224,7 +224,7 @@ init_SI(
     eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sizeof_SIB23 = do_SIB23(
           ctxt_pP->module_id,
           CC_id,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].SIB23,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].systemInformation,
           &eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].sib2,
@@ -390,7 +390,7 @@ init_MCCH(
       mac_xface->macphy_exit("[RRC][init_MCCH] not enough memory\n");
     } else {
       eNB_rrc_inst[enb_mod_idP].carrier[CC_id].sizeof_MCCH_MESSAGE[sync_area] = do_MBSFNAreaConfig(enb_mod_idP,
-          mac_xface->lte_frame_parms,
+          mac_xface->frame_parms,
           sync_area,
           (uint8_t *)eNB_rrc_inst[enb_mod_idP].carrier[CC_id].MCCH_MESSAGE[sync_area],
           &eNB_rrc_inst[enb_mod_idP].carrier[CC_id].mcch,
@@ -571,7 +571,7 @@ rrc_eNB_ue_context_stmsi_exist(
 	  m_tmsiP, mme_codeP, ue_context_p, 
 	  ue_context_p->ue_context.rnti);
     if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-      printf("S-TMSI %x, MME %x\n",
+      printf("=> S-TMSI %x, MME %x\n",
 	    ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
 	    ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code);
       if (ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi == m_tmsiP)
@@ -2322,11 +2322,11 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   physicalConfigDedicated2->schedulingRequestConfig->present = SchedulingRequestConfig_PR_setup;
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_PUCCH_ResourceIndex = ue_context_pP->local_uid;
 
-  if (mac_xface->lte_frame_parms->frame_type == 0) {  // FDD
+  if (mac_xface->frame_parms->frame_type == 0) {  // FDD
     physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 5 + (ue_context_pP->local_uid %
         10);   // Isr = 5 (every 10 subframes, offset=2+UE_id mod3)
   } else {
-    switch (mac_xface->lte_frame_parms->tdd_config) {
+    switch (mac_xface->frame_parms->tdd_config) {
     case 1:
       physicalConfigDedicated2->schedulingRequestConfig->choice.setup.sr_ConfigIndex = 7 + (ue_context_pP->local_uid & 1) + ((
             ue_context_pP->local_uid & 3) >> 1) * 5;    // Isr = 5 (every 10 subframes, offset=2 for UE0, 3 for UE1, 7 for UE2, 8 for UE3 , 2 for UE4 etc..)
@@ -3299,9 +3299,9 @@ rrc_eNB_generate_RRCConnectionSetup(
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload,
-                          (mac_xface->lte_frame_parms->nb_antennas_tx==2)?2:1,
+                          (mac_xface->frame_parms->nb_antennas_tx==2)?2:1,
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                          mac_xface->lte_frame_parms,
+                          mac_xface->frame_parms,
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
 
@@ -3742,7 +3742,7 @@ rrc_eNB_decode_ccch(
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
 
 		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
-	      LOG_I(RRC," S-TMSI exists, ue_context_p %p\n",ue_context_p);
+	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti);
 	      stmsi_received=1;
 	      ue_context_p->ue_context.rnti = ctxt_pP->rnti;
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");

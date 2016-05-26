@@ -115,7 +115,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-extern void init_eNB(void);
+extern void init_eNB(eNB_func_t);
 extern void stop_eNB(void);
 extern void kill_eNB_proc(void);
 
@@ -427,27 +427,27 @@ void reset_stats(FL_OBJECT *button, long arg)
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_eNB->dlsch_eNB[i][0]->Mlimit; j++) {
-        phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK[k][j]=0;
-        phy_vars_eNB->eNB_UE_stats[i].dlsch_ACK[k][j]=0;
-        phy_vars_eNB->eNB_UE_stats[i].dlsch_trials[k][j]=0;
+      for (j=0; j<phy_vars_eNB->dlsch[i][0]->Mlimit; j++) {
+        phy_vars_eNB->UE_stats[i].dlsch_NAK[k][j]=0;
+        phy_vars_eNB->UE_stats[i].dlsch_ACK[k][j]=0;
+        phy_vars_eNB->UE_stats[i].dlsch_trials[k][j]=0;
       }
 
-      phy_vars_eNB->eNB_UE_stats[i].dlsch_l2_errors[k]=0;
-      phy_vars_eNB->eNB_UE_stats[i].ulsch_errors[k]=0;
-      phy_vars_eNB->eNB_UE_stats[i].ulsch_consecutive_errors=0;
+      phy_vars_eNB->UE_stats[i].dlsch_l2_errors[k]=0;
+      phy_vars_eNB->UE_stats[i].ulsch_errors[k]=0;
+      phy_vars_eNB->UE_stats[i].ulsch_consecutive_errors=0;
 
-      for (j=0; j<phy_vars_eNB->ulsch_eNB[i]->Mlimit; j++) {
-        phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts[k][j]=0;
-        phy_vars_eNB->eNB_UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
-        phy_vars_eNB->eNB_UE_stats[i].ulsch_round_errors[k][j]=0;
-        phy_vars_eNB->eNB_UE_stats[i].ulsch_round_fer[k][j]=0;
+      for (j=0; j<phy_vars_eNB->ulsch[i]->Mlimit; j++) {
+        phy_vars_eNB->UE_stats[i].ulsch_decoding_attempts[k][j]=0;
+        phy_vars_eNB->UE_stats[i].ulsch_decoding_attempts_last[k][j]=0;
+        phy_vars_eNB->UE_stats[i].ulsch_round_errors[k][j]=0;
+        phy_vars_eNB->UE_stats[i].ulsch_round_fer[k][j]=0;
       }
     }
 
-    phy_vars_eNB->eNB_UE_stats[i].dlsch_sliding_cnt=0;
-    phy_vars_eNB->eNB_UE_stats[i].dlsch_NAK_round0=0;
-    phy_vars_eNB->eNB_UE_stats[i].dlsch_mcs_offset=0;
+    phy_vars_eNB->UE_stats[i].dlsch_sliding_cnt=0;
+    phy_vars_eNB->UE_stats[i].dlsch_NAK_round0=0;
+    phy_vars_eNB->UE_stats[i].dlsch_mcs_offset=0;
   }
 }
 
@@ -507,7 +507,7 @@ static void *scope_thread(void *arg)
       ue_cnt=0;
       for(UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	  if ((PHY_vars_eNB_g[0][CC_id]->dlsch_eNB[UE_id][0]->rnti>0) && (ue_cnt<scope_enb_num_ue)) {
+	  if ((PHY_vars_eNB_g[0][CC_id]->dlsch[UE_id][0]->rnti>0) && (ue_cnt<scope_enb_num_ue)) {
 	    phy_scope_eNB(form_enb[CC_id][ue_cnt],
 			  PHY_vars_eNB_g[0][CC_id],
 			  UE_id);
@@ -1120,6 +1120,7 @@ int main( int argc, char **argv )
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
+  eNB_func_t node_function=eNodeB_3GPP;
 
 #if defined (XFORMS)
   int ret;
@@ -1358,14 +1359,14 @@ int main( int argc, char **argv )
       UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
       UE[CC_id]->mode    = mode;
 
-      compute_prach_seq(&UE[CC_id]->lte_frame_parms.prach_config_common,
-                        UE[CC_id]->lte_frame_parms.frame_type,
+      compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
+                        UE[CC_id]->frame_parms.frame_type,
                         UE[CC_id]->X_u);
 
       if (UE[CC_id]->mac_enabled == 1) 
-	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1234;
+	UE[CC_id]->pdcch_vars[0]->crnti = 0x1234;
       else
-	UE[CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235;
+	UE[CC_id]->pdcch_vars[0]->crnti = 0x1235;
 
       UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0];
       UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -1398,11 +1399,11 @@ int main( int argc, char **argv )
 	}
       }
 
-      compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.prach_config_common,
-                        PHY_vars_eNB_g[0][CC_id]->lte_frame_parms.frame_type,
+      compute_prach_seq(&PHY_vars_eNB_g[0][CC_id]->frame_parms.prach_config_common,
+                        PHY_vars_eNB_g[0][CC_id]->frame_parms.frame_type,
                         PHY_vars_eNB_g[0][CC_id]->X_u);
 
-      PHY_vars_eNB_g[0][CC_id]->rx_total_gain_eNB_dB = (int)rx_gain[CC_id][0];
+      PHY_vars_eNB_g[0][CC_id]->rx_total_gain_dB = (int)rx_gain[CC_id][0];
 
       PHY_vars_eNB_g[0][CC_id]->N_TA_offset = 0;
 
@@ -1466,8 +1467,8 @@ int main( int argc, char **argv )
     }
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_tx),
-           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_rx));
+           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
+           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
     openair0_cfg[card].Mod_id = 0;
 #ifdef ETHERNET
 
@@ -1484,8 +1485,8 @@ int main( int argc, char **argv )
     // since the USRP only supports one CC (for the moment), we initialize all the cards with first CC.
     // in the case of EXMIMO2, these values are overwirtten in the function setup_eNB/UE_buffer
 
-    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_tx));
-    openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->lte_frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->lte_frame_parms.nb_antennas_rx));
+    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
+    openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
 
     for (i=0; i<4; i++) {
 
@@ -1500,7 +1501,7 @@ int main( int argc, char **argv )
       openair0_cfg[card].autocal[i] = 1;
       openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
       if (UE_flag == 0) {
-	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_eNB_dB;
+	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_dB;
       }
       else {
 	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;
@@ -1650,12 +1651,12 @@ int main( int argc, char **argv )
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
         for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
-          UE[CC_id]->lte_ue_common_vars.txdata[aa][i] = 0x00010001;
+          UE[CC_id]->common_vars.txdata[aa][i] = 0x00010001;
     }
 
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
-      if (fread(UE[0]->lte_ue_common_vars.rxdata[0],
+      if (fread(UE[0]->common_vars.rxdata[0],
 	        sizeof(int32_t),
 	        frame_parms[0]->samples_per_tti*10,
 	        input_fd) != frame_parms[0]->samples_per_tti*10)
@@ -1678,7 +1679,7 @@ int main( int argc, char **argv )
       PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
       for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
         for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
-          PHY_vars_eNB_g[0][CC_id]->lte_eNB_common_vars.txdata[0][aa][i] = 0x00010001;
+          PHY_vars_eNB_g[0][CC_id]->common_vars.txdata[0][aa][i] = 0x00010001;
     }
   }
 
@@ -1751,7 +1752,7 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE();
-  else init_eNB();
+  else init_eNB(node_function);
 
   // Sleep to allow all threads to setup
   sleep(1);
