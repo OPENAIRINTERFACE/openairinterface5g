@@ -211,6 +211,7 @@ def reset_ue():
   os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 30" )
+  stop_ue()
 
 i=1
 gw='192.172.0.1'
