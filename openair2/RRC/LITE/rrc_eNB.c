@@ -1205,9 +1205,6 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   cba_RNTI->size = 2;
   cba_RNTI->bits_unused = 0;
 
-  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-
   // associate UEs to the CBa groups as a function of their UE id
   if (rrc_inst->num_active_cba_groups) {
     cba_RNTI->buf[0] = rrc_inst->cba_rnti[ue_mod_idP % rrc_inst->num_active_cba_groups] & 0xff;
@@ -1224,6 +1221,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   }
 
 #endif
+
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   // Configure SRB2
   /// SRB2
   SRB2_config = CALLOC(1, sizeof(*SRB2_config));
