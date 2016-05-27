@@ -37,6 +37,11 @@
 # include "vcd_signal_dumper.h"
 #endif
 
+#if T_TRACER
+#include <string.h>
+#include "T.h"
+#endif
+
 /*------------------------------------------------------------------------------*/
 const static int mp_debug = 0;
 
