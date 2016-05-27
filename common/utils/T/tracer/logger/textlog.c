@@ -47,8 +47,8 @@ static void _event(void *p, event e)
 #ifdef T_SEND_TIME
   t = localtime(&e.sending_time.tv_sec);
   /* round tv_nsec to nearest millisecond */
-  sprintf(tt, "%2.2d:%2.2d:%2.2d.%3.3d: ", t->tm_hour, t->tm_min, t->tm_sec,
-      (int)((e.sending_time.tv_nsec/(1000000/2)+1)/2));
+  sprintf(tt, "%2.2d:%2.2d:%2.2d.%9.9ld: ", t->tm_hour, t->tm_min, t->tm_sec,
+      e.sending_time.tv_nsec);
   PUTS(&l->o, tt);
 #endif
 
