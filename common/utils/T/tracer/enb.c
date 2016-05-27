@@ -95,11 +95,11 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   container_set_child_growable(g, line, timeline_plot, 1);
   for (i = 0; i < 8; i++)
     timeline_set_subline_background_color(g, timeline_plot, i,
-        new_color(g, i==0 || i==4 ? "#aaf" : i & 1 ? "#ddd" : "#eee"));
+        new_color(g, i==0 || i==4 ? "#aaf" : "#eee"));
   timeview = new_view_time(3600, 10, g, timeline_plot);
   /* tick logging */
   timelog = new_timelog(h, database, "ENB_DL_TICK");
-  subview = new_subview_time(timeview, 0, FOREGROUND_COLOR, 3600*1000);
+  subview = new_subview_time(timeview, 0, new_color(g, "#77c"), 3600*1000);
   logger_add_view(timelog, subview);
   /* DCI logging */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
@@ -116,7 +116,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
 
   /* uplink UE DCIs */
   timelog = new_timelog(h, database, "ENB_UL_TICK");
-  subview = new_subview_time(timeview, 4, FOREGROUND_COLOR, 3600*1000);
+  subview = new_subview_time(timeview, 4, new_color(g, "#77c"), 3600*1000);
   logger_add_view(timelog, subview);
 
   /* phy/mac/rlc/pdcp/rrc textlog */
