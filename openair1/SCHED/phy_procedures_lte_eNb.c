@@ -2492,8 +2492,6 @@ void cba_procedures(const unsigned char thread_id,PHY_VARS_eNB *eNB,int UE_id,in
 void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eNB,const uint8_t abstraction_flag) {
 
   eNB_proc_t *proc = &eNB->proc[thread_id];
-  const int subframe = proc->subframe_rx;
-  const int frame = proc->frame_rx;
   int i,l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   void *rxp[fp->nb_antennas_rx]; 
@@ -2504,15 +2502,18 @@ void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_COMMON_RX,1);
   start_meas(&eNB->phy_proc_rx);
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,frame, subframe);
+  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,proc->frame_rx, proc->subframe_rx);
 #endif
 
   if (abstraction_flag==0) { // grab signal in chunks of 500 us (1 slot)
     
-    for (i=0; i<fp->nb_antennas_rx; i++)
+
       if ((eNB->node_function == NGFI_RRU_IF4) || 
 	  (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF and front-end processing
-        rxp[i] = (void*)&eNB->common_vars.rxdata[i][subframe*fp->samples_per_tti];
+	for (i=0; i<fp->nb_antennas_rx; i++)
+	  rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][proc->subframe*fp->samples_per_tti];
+
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 	rxs = openair0.trx_read_func(&openair0,
 				     &proc->timestamp_rx,
 				     rxp,
@@ -2520,7 +2521,10 @@ void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
 				     fp->nb_antennas_rx);
 	proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
 	proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-	
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
+
 	if (frame > 20){ 
 	  if (rxs != fp->samples_per_tti>>1)
 	    exit_fun( "problem receiving samples" );
@@ -2541,6 +2545,17 @@ void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
 	  //send_IF4(eNB,subframe<<1);
 	}
 
+	for (i=0; i<fp->nb_antennas_rx; i++)
+	  rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][(fp->samples_per_tti>>1)+(subframe*fp->samples_per_tti)];
+
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
+	rxs = openair0.trx_read_func(&openair0,
+				     &proc->timestamp_rx,
+				     rxp,
+				     fp->samples_per_tti>>1,
+				     fp->nb_antennas_rx);
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
 	remove_7_5_kHz(eNB,(subframe<<1)+1);
 	for (l=0; l<fp->symbols_per_tti/2; l++)
 	  slot_fep_ul(fp,
@@ -2568,7 +2583,7 @@ void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
  
   
     // check if we have to detect PRACH first
-    if (is_prach_subframe(fp,frame,subframe)>0) {
+    if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) {
       // wake up thread for PRACH RX
       if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
 	LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", thread_id, proc->instance_cnt_prach );
@@ -2613,7 +2628,7 @@ void phy_procedures_eNB_common_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
     // and proc->subframe_tx = proc->subframe_rx+3
     proc->timestamp_tx = proc->timestamp_rx + (fp->samples_per_tti<<1) + (fp->samples_per_tti>>1);
     proc->frame_tx    = (proc->subframe_rx > 6) ? (proc->frame_rx+1) : proc->frame_rx;
-    proc->subframe_rx = (proc->subframe_rx + 3)%10;
+    proc->subframe_tx = (proc->subframe_rx + 3)%10;
 
     pthread_mutex_unlock( &proc->mutex_tx );
 
@@ -2849,7 +2864,6 @@ void phy_procedures_eNB_uespec_RX(const unsigned char thread_id,PHY_VARS_eNB *eN
             eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[0],
             eNB->ulsch[i]->harq_processes[harq_pid]->o_ACK[1],
             ret);
-
 
       //compute the expected ULSCH RX power (for the stats)
       eNB->ulsch[(uint32_t)i]->harq_processes[harq_pid]->delta_TF =

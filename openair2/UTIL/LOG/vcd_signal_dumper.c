@@ -77,6 +77,8 @@ struct vcd_module_s {
 const char* eurecomVariablesNames[] = {
   "frame_number_TX_eNB",
   "frame_number_RX_eNB",
+  "subframe_number_TX_eNB",
+  "subframe_number_RX_eNB",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
   "frame_number_TX_UE",
@@ -226,6 +228,8 @@ const char* eurecomFunctionsNames[] = {
   "lte_ue_pbch_procedures",
   "phy_procedures_eNb_tx",
   "phy_procedures_eNb_rx",
+  "phy_procedures_eNb_rx_common",
+  "phy_procedures_eNb_rx_uespec",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_eNB_lte",

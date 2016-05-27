@@ -276,6 +276,7 @@ static void* eNB_thread_tx( void* param )
   eNB_proc_t *proc = (eNB_proc_t*)param;
   FILE  *tx_time_file = NULL;
   char tx_time_name[101];
+  void *txp[PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx]; 
 
   if (opp_enabled == 1) {
     snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf_%d", "eNB", proc->thread_index);
@@ -408,7 +409,6 @@ static void* eNB_thread_tx( void* param )
     }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0+(2*proc->thread_index), 1 );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX_ENB, proc->frame_tx );
     start_meas( &softmodem_stats_tx_sf[proc->thread_index] );
   
     if (oai_exit) break;
@@ -436,6 +436,9 @@ static void* eNB_thread_tx( void* param )
         exit_fun("nothing to add");
       }
 
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX_ENB, proc->frame_tx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX_ENB, proc->subframe_tx );
       if (oai_exit)
         break;
       if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RRU_IF4) { 
@@ -459,7 +462,9 @@ static void* eNB_thread_tx( void* param )
     }
 
     if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RCC_IF4) {
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
       do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
     /*
       short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti];
       int i;
@@ -471,9 +476,30 @@ static void* eNB_thread_tx( void* param )
       txdata[i+4] = -2047;
       txdata[i+5] = 0;
       txdata[i+6] = 0;
-      txdata[i+7] = -2047;
-      }
+      txdata[i+7] = -2047;      }
     */
+
+
+      // Transmit TX buffer based on timestamp from RX
+    
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+      // prepare tx buffer pointers
+      int i;
+      for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
+	txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
+      // if symb_written < spp ==> error 
+      if (proc->frame_tx > 50) {
+	openair0.trx_write_func(&openair0,
+				(proc->timestamp_tx+openair0_cfg[0].tx_sample_advance),
+				txp,
+				PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
+				PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
+				1);
+      }
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+
     }
 
     if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
@@ -683,23 +709,25 @@ static void* eNB_thread_rx( void* param )
  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
  while (!oai_exit) {
    
-   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
    
-   
-   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 1 );
-
-   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
    start_meas( &softmodem_stats_rx_sf[proc->thread_index] );
    
    if (oai_exit) break;
    
    if ((((fp->frame_type == TDD )&&(subframe_select(fp,proc->subframe_rx)==SF_UL)) ||
 	(fp->frame_type == FDD))) {
+     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
      // this spawns the prach and TX threads inside and updates the frame and subframe counters
      phy_procedures_eNB_common_RX(proc->thread_index, eNB, 0);
-     if (eNB->node_function != NGFI_RRU_IF4)
+     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
+     if (eNB->node_function != NGFI_RRU_IF4) {
+       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
        // this is the ue-specific processing for the subframe and can be multi-threaded later
        phy_procedures_eNB_uespec_RX(proc->thread_index, eNB, 0, no_relay );
+       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
+     }
    }
    
    if ((subframe_select(fp,proc->subframe_rx) == SF_S)) {
@@ -714,8 +742,11 @@ static void* eNB_thread_rx( void* param )
      }
    }
 #endif // LOWLATENCY  
-    print_meas_now(&softmodem_stats_rx_sf[proc->thread_index],"eNB_RX_SF",proc->thread_index, rx_time_file);
-  }
+   print_meas_now(&softmodem_stats_rx_sf[proc->thread_index],"eNB_RX_SF",proc->thread_index, rx_time_file);
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
+   
+
+ }
 
   //stop_meas( &softmodem_stats_rx_sf[proc->thread_index] );
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
@@ -747,7 +778,7 @@ static void* eNB_thread_prach( void* param )
 
   MSC_START_USE();
 
-  AssertFatal(proc->thread_index!=0,"Invalid thread index %d for PRACH thread\n",proc->thread_index);
+  AssertFatal(proc->thread_index==0,"Invalid thread index %d for PRACH thread\n",proc->thread_index);
     
 #ifdef LOWLATENCY
   struct sched_attr attr;
