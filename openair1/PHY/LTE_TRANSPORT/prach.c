@@ -1056,7 +1056,6 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 //__m128i mmtmpX0,mmtmpX1,mmtmpX2,mmtmpX3;
 
 void rx_prach(PHY_VARS_eNB *eNB,
-	      uint8_t subframe,
 	      uint16_t *preamble_energy_list, 
 	      uint16_t *preamble_delay_list, 
 	      uint16_t Nf, 
@@ -1065,7 +1064,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   int i;
   lte_frame_type_t frame_type = eNB->frame_parms.frame_type;
-
+  int subframe                = eNB->proc.subframe_rx;
   uint16_t rootSequenceIndex  = eNB->frame_parms.prach_config_common.rootSequenceIndex;
   uint8_t prach_ConfigIndex   = eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t Ncs_config          = eNB->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;

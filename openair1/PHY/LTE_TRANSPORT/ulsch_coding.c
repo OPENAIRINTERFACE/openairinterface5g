@@ -70,35 +70,35 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
 
   if (ulsch) {
 #ifdef DEBUG_ULSCH_FREE
-    msg("Freeing ulsch %p\n",ulsch);
+    printf("Freeing ulsch %p\n",ulsch);
 #endif
 
     for (i=0; i<8; i++) {
 #ifdef DEBUG_ULSCH_FREE
-      msg("Freeing ulsch process %d\n",i);
+      printf("Freeing ulsch process %d\n",i);
 #endif
 
       if (ulsch->harq_processes[i]) {
 #ifdef DEBUG_ULSCH_FREE
-        msg("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
+        printf("Freeing ulsch process %d (%p)\n",i,ulsch->harq_processes[i]);
 #endif
 
         if (ulsch->harq_processes[i]->b) {
           free16(ulsch->harq_processes[i]->b,MAX_ULSCH_PAYLOAD_BYTES);
           ulsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_ULSCH_FREE
-          msg("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
+          printf("Freeing ulsch process %d b (%p)\n",i,ulsch->harq_processes[i]->b);
 #endif
         }
 
 #ifdef DEBUG_ULSCH_FREE
-        msg("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
+        printf("Freeing ulsch process %d c (%p)\n",i,ulsch->harq_processes[i]->c);
 #endif
 
         for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++) {
 
 #ifdef DEBUG_ULSCH_FREE
-          msg("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
+          printf("Freeing ulsch process %d c[%d] (%p)\n",i,r,ulsch->harq_processes[i]->c[r]);
 #endif
 
           if (ulsch->harq_processes[i]->c[r]) {
@@ -302,7 +302,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     ulsch->harq_processes[harq_pid]->control_only = 0;
 
 #ifdef DEBUG_ULSCH_CODING
-    msg("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, round %d, RV %d\n",
+    printf("[PHY][UE] ULSCH coding : A %d, Qm %d, mcs %d, harq_pid %d, round %d, RV %d\n",
         ulsch->harq_processes[harq_pid]->TBS,
         Q_m,
         ulsch->harq_processes[harq_pid]->mcs,
@@ -311,16 +311,16 @@ uint32_t ulsch_encoding(uint8_t *a,
         ulsch->harq_processes[harq_pid]->rvidx);
 
     for (i=0; i<ulsch->harq_processes[harq_pid]->O_ACK; i++)
-      msg("ulsch_coding: o_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
+      printf("ulsch_coding: o_ACK[%d] %d\n",i,ulsch->o_ACK[i]);
 
     for (i=0; i<ulsch->O_RI; i++)
-      msg("ulsch_coding: o_RI[%d] %d\n",i,ulsch->o_RI[i]);
+      printf("ulsch_coding: o_RI[%d] %d\n",i,ulsch->o_RI[i]);
 
-    msg("ulsch_coding: O=%d\n",ulsch->O);
+    printf("ulsch_coding: O=%d\n",ulsch->O);
 
     for (i=0; i<1+((8+ulsch->O)/8); i++) {
       //    ulsch->o[i] = i;
-      msg("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
+      printf("ulsch_coding: O[%d] %d\n",i,ulsch->o[i]);
     }
 
     if ((tmode != 4))
@@ -380,20 +380,20 @@ uint32_t ulsch_encoding(uint8_t *a,
 
 
 #ifdef DEBUG_ULSCH_CODING
-        msg("Generating Code Segment %d (%d bits)\n",r,Kr);
+        printf("Generating Code Segment %d (%d bits)\n",r,Kr);
         // generate codewords
 
-        msg("bits_per_codeword (Kr)= %d\n",Kr);
-        msg("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-        msg("Ncp %d\n",frame_parms->Ncp);
-        msg("Qm %d\n",Q_m);
+        printf("bits_per_codeword (Kr)= %d\n",Kr);
+        printf("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+        printf("Ncp %d\n",frame_parms->Ncp);
+        printf("Qm %d\n",Q_m);
 #endif
 
         //  offset=0;
 
 
 #ifdef DEBUG_ULSCH_CODING
-        msg("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
+        printf("Encoding ... iind %d f1 %d, f2 %d\n",iind,f1f2mat_old[iind*2],f1f2mat_old[(iind*2)+1]);
 #endif
         start_meas(te_stats);
         threegpplte_turbo_encoder(ulsch->harq_processes[harq_pid]->c[r],
@@ -526,7 +526,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
     for (r=0; r<ulsch->harq_processes[harq_pid]->C; r++) {
 #ifdef DEBUG_ULSCH_CODING
-      msg("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+      printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
           r,
           G,
           Kr*3,
@@ -633,7 +633,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   //  Do ACK coding, Section 5.2.2.6 36.213 (p.23-24 in v8.6)
   wACK_idx = (ulsch->bundling==0) ? 4 : ((Nbundled-1)&3);
 #ifdef DEBUG_ULSCH_CODING
-  msg("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
+  printf("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
       ulsch->bundling,Nbundled,wACK_idx);
 #endif
 
@@ -865,7 +865,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     for (q=0; q<Q_m; q++) {
       y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[(q+(Q_m*i))%len_ACK];
 #ifdef DEBUG_ULSCH_CODING
-      msg("ulsch_coding.c: ACK %d => y[%d]=%d (i %d, r*Cmux %d, columnset %d)\n",q+(Q_m*i),
+      printf("ulsch_coding.c: ACK %d => y[%d]=%d (i %d, r*Cmux %d, columnset %d)\n",q+(Q_m*i),
           q+(Q_m*((r*Cmux) + columnset[j])),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],
           i,r*Cmux,columnset[j]);
 #endif
@@ -965,7 +965,7 @@ int ulsch_encoding_emul(uint8_t *ulsch_buffer,
     //    print_CQI(ulsch->o,ulsch->uci_format,eNB_id);
 
     // save PUSCH pmi for later (transmission modes 4,5,6)
-    //    msg("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
+    //    printf("ulsch: saving pmi for DL %x\n",pmi2hex_2Ar1(((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi));
     // if (ulsch->uci_format != HLC_subband_cqi_mcs_CBA)
     dlsch[0]->harq_processes[harq_pid]->pmi_alloc = ((wideband_cqi_rank1_2A_5MHz *)ulsch->o)->pmi;
   }
@@ -986,20 +986,20 @@ int ulsch_encoding_emul(uint8_t *ulsch_buffer,
   UE_transport_info[ue->Mod_id][ue->CC_id].eNB_id[0]  = eNB_id;
   UE_transport_info[ue->Mod_id][ue->CC_id].harq_pid[0] = harq_pid;
   UE_transport_info[ue->Mod_id][ue->CC_id].tbs[0]     = ue->ulsch[eNB_id]->harq_processes[harq_pid]->TBS>>3 ;
-  // msg("\nue->Mod_id%d\n",ue->Mod_id);
+  // printf("\nue->Mod_id%d\n",ue->Mod_id);
 
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_flag = 1;
   //UE_transport_info[ue->Mod_id].cntl.pusch_uci = *(uint32_t *)ulsch->o;
   memcpy(UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_uci,
          ulsch->o,
          MAX_CQI_BYTES);
-  // msg("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
+  // printf("[UE]cqi is %d \n", ((HLC_subband_cqi_rank1_2A_5MHz *)ulsch->o)->cqi1);
 
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.length_uci = ulsch->O;
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.uci_format = ulsch->uci_format;
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ri = (ulsch->o_RI[0]&1)+((ulsch->o_RI[1]&1)<<1);
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pusch_ack =   (ulsch->o_ACK[0]&1) + ((ulsch->o_ACK[1]&1)<<1);
-  //msg("ack is %d %d %d\n",UE_transport_info[ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
+  //printf("ack is %d %d %d\n",UE_transport_info[ue->Mod_id].cntl.pusch_ack, (ulsch->o_ACK[1]&1)<<1, ulsch->o_ACK[0]&1);
   return(0);
 
 }

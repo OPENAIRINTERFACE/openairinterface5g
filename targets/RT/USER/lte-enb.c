@@ -139,8 +139,8 @@ extern int sync_var;
 
 time_stats_t softmodem_stats_mt; // main thread
 time_stats_t softmodem_stats_hw; //  hw acquisition
-time_stats_t softmodem_stats_tx_sf[10]; // total tx time
-time_stats_t softmodem_stats_rx_sf[10]; // total rx time
+time_stats_t softmodem_stats_tx_sf; // total tx time
+time_stats_t softmodem_stats_rx_sf; // total rx time
 int32_t **rxdata;
 int32_t **txdata;
 
@@ -154,7 +154,7 @@ static struct {
   pthread_mutex_t  mutex_phy_proc_tx;
   pthread_cond_t   cond_phy_proc_tx;
   volatile uint8_t phy_proc_CC_id;
-} sync_phy_proc[NUM_ENB_THREADS];
+} sync_phy_proc;
 
 
 void exit_fun(const char* s);
@@ -271,7 +271,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
  */
 static void* eNB_thread_tx( void* param )
 {
-  static int eNB_thread_tx_status[NUM_ENB_THREADS];
+  static int eNB_thread_tx_status;
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   FILE  *tx_time_file = NULL;
@@ -279,11 +279,11 @@ static void* eNB_thread_tx( void* param )
   void *txp[PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx]; 
 
   if (opp_enabled == 1) {
-    snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf_%d", "eNB", proc->thread_index);
+    snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf", "eNB");
     tx_time_file = fopen(tx_time_name,"w");
   }
   // set default return value
-  eNB_thread_tx_status[proc->thread_index] = 0;
+  eNB_thread_tx_status = 0;
 
   MSC_START_USE();
 
@@ -306,10 +306,10 @@ static void* eNB_thread_tx( void* param )
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    return &eNB_thread_tx_status[proc->thread_index];
+    return &eNB_thread_tx_status;
   }
 
-  LOG_I( HW, "[SCHED] eNB TX deadline thread %d(TID %ld) started on CPU %d\n", proc->thread_index, gettid(), sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB TX deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
 
 #else //LOW_LATENCY
   int policy, s, j;
@@ -372,7 +372,7 @@ static void* eNB_thread_tx( void* param )
 
    }
 
- LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n", proc->thread_index, sched_getcpu(),gettid(),
+ LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n",sched_getcpu(),gettid(),
                    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
                    (policy == SCHED_RR)    ? "SCHED_RR" :
                    (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -388,10 +388,10 @@ static void* eNB_thread_tx( void* param )
 
   while (!oai_exit) {
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0+(2*proc->thread_index), 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0, 0 );
 
     if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
-      LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc %d\n", proc->thread_index );
+      LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX\n");
       exit_fun("nothing to add");
       break;
     }
@@ -403,13 +403,13 @@ static void* eNB_thread_tx( void* param )
     }
 
     if (pthread_mutex_unlock(&proc->mutex_tx) != 0) {
-      LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for eNB TX proc %d\n",proc->thread_index);
+      LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for eNB TX\n");
       exit_fun("nothing to add");
       break;
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0+(2*proc->thread_index), 1 );
-    start_meas( &softmodem_stats_tx_sf[proc->thread_index] );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0, 1 );
+    start_meas( &softmodem_stats_tx_sf );
   
     if (oai_exit) break;
 
@@ -420,19 +420,19 @@ static void* eNB_thread_tx( void* param )
       /* run PHY TX procedures the one after the other for all CCs to avoid race conditions
        * (may be relaxed in the future for performance reasons)
        */
-      if (pthread_mutex_lock(&sync_phy_proc[proc->thread_index].mutex_phy_proc_tx) != 0) {
-        LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX proc %d\n", proc->thread_index);
+      if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
+        LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX\n");
         exit_fun("nothing to add");
         break;
       }
       /* wait for our turn or oai_exit */
-      while (sync_phy_proc[proc->thread_index].phy_proc_CC_id != proc->CC_id && !oai_exit) {
-        pthread_cond_wait(&sync_phy_proc[proc->thread_index].cond_phy_proc_tx,
-                          &sync_phy_proc[proc->thread_index].mutex_phy_proc_tx);
+      while (sync_phy_proc.phy_proc_CC_id != proc->CC_id && !oai_exit) {
+        pthread_cond_wait(&sync_phy_proc.cond_phy_proc_tx,
+                          &sync_phy_proc.mutex_phy_proc_tx);
       }
 
-      if (pthread_mutex_unlock(&sync_phy_proc[proc->thread_index].mutex_phy_proc_tx) != 0) {
-        LOG_E(PHY, "[SCHED][eNB] error unlocking PHY proc mutex for eNB TX proc %d\n", proc->thread_index);
+      if (pthread_mutex_unlock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
+        LOG_E(PHY, "[SCHED][eNB] error unlocking PHY proc mutex for eNB TX\n");
         exit_fun("nothing to add");
       }
 
@@ -442,19 +442,19 @@ static void* eNB_thread_tx( void* param )
       if (oai_exit)
         break;
       if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RRU_IF4) { 
-	phy_procedures_eNB_TX( proc->thread_index, PHY_vars_eNB_g[0][proc->CC_id], 0, no_relay, NULL );
+	phy_procedures_eNB_TX(PHY_vars_eNB_g[0][proc->CC_id], 0, no_relay, NULL );
 	
 	/* we're done, let the next one proceed */
-	if (pthread_mutex_lock(&sync_phy_proc[proc->thread_index].mutex_phy_proc_tx) != 0) {
-	  LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX proc %d\n", proc->thread_index);
+	if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
+	  LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX proc\n");
 	  exit_fun("nothing to add");
 	  break;
 	}
-	sync_phy_proc[proc->thread_index].phy_proc_CC_id++;
-	sync_phy_proc[proc->thread_index].phy_proc_CC_id %= MAX_NUM_CCs;
-	pthread_cond_broadcast(&sync_phy_proc[proc->thread_index].cond_phy_proc_tx);
-	if (pthread_mutex_unlock(&sync_phy_proc[proc->thread_index].mutex_phy_proc_tx) != 0) {
-	  LOG_E(PHY, "[SCHED][eNB] error unlocking PHY proc mutex for eNB TX proc %d\n", proc->thread_index);
+	sync_phy_proc.phy_proc_CC_id++;
+	sync_phy_proc.phy_proc_CC_id %= MAX_NUM_CCs;
+	pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
+	if (pthread_mutex_unlock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
+	  LOG_E(PHY, "[SCHED][eNB] error unlocking PHY proc mutex for eNB TX proc\n");
 	  exit_fun("nothing to add");
 	  break;
 	}
@@ -503,7 +503,7 @@ static void* eNB_thread_tx( void* param )
     }
 
     if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
-      LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc %d\n", proc->thread_index );
+      LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc\n");
       exit_fun("nothing to add");
       break;
     }
@@ -511,55 +511,55 @@ static void* eNB_thread_tx( void* param )
     proc->instance_cnt_tx--;
 
     if (pthread_mutex_unlock(&proc->mutex_tx) != 0) {
-      LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB TX proc %d\n", proc->thread_index );
+      LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB TX proc\n");
       exit_fun("nothing to add");
       break;
     }
 
-    stop_meas( &softmodem_stats_tx_sf[proc->thread_index] );
+    stop_meas( &softmodem_stats_tx_sf );
 #ifdef LOWLATENCY
     if (opp_enabled){
-      if(softmodem_stats_tx_sf[proc->thread_index].diff_now/(cpuf) > attr.sched_runtime){
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_tx_sf[proc->thread_index].diff_now/cpuf - attr.sched_runtime)/1000000.0);
+      if(softmodem_stats_tx_sf.diff_now/(cpuf) > attr.sched_runtime){
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_tx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
       }
     }
 #endif 
-    print_meas_now(&softmodem_stats_tx_sf[proc->thread_index],"eNB_TX_SF",proc->thread_index, tx_time_file);
+    print_meas_now(&softmodem_stats_tx_sf,"eNB_TX_SF",tx_time_file);
 
   }
 
 
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0+(2*proc->thread_index), 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_TX0, 0 );
 
 #ifdef DEBUG_THREADS
-  printf( "Exiting eNB thread TX %d\n", proc->thread_index );
+  printf( "Exiting eNB thread TX\n");
 #endif
 
-  eNB_thread_tx_status[proc->thread_index] = 0;
-  return &eNB_thread_tx_status[proc->thread_index];
+  eNB_thread_tx_status = 0;
+  return &eNB_thread_tx_status;
 }
 
 #if defined(ENABLE_ITTI)
 static void wait_system_ready (char *message, volatile int *start_flag)
-{
+
   /* Wait for eNB application initialization to be complete (eNB registration to MME) */
-  {
-    static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",
-                                " ....", "  ...", "   ..", "    .", "     "
-                               };
-    int i = 0;
-
-    while ((!oai_exit) && (*start_flag == 0)) {
-      LOG_N(EMU, message, indicator[i]);
-      fflush(stdout);
-      i = (i + 1) % (sizeof(indicator) / sizeof(indicator[0]));
-      usleep(200000);
-    }
-
-    LOG_D(EMU,"\n");
+{
+  static char *indicator[] = {".    ", "..   ", "...  ", ".... ", ".....",
+			      " ....", "  ...", "   ..", "    .", "     "
+  };
+  int i = 0;
+  
+  while ((!oai_exit) && (*start_flag == 0)) {
+    LOG_N(EMU, message, indicator[i]);
+    fflush(stdout);
+    i = (i + 1) % (sizeof(indicator) / sizeof(indicator[0]));
+    usleep(200000);
   }
+  
+  LOG_D(EMU,"\n");
 }
+
 #endif
 
 /*!
@@ -570,7 +570,7 @@ static void wait_system_ready (char *message, volatile int *start_flag)
  */
 static void* eNB_thread_rx( void* param )
 {
-  static int eNB_thread_rx_status[NUM_ENB_THREADS];
+  static int eNB_thread_rx_status;
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
@@ -581,11 +581,11 @@ static void* eNB_thread_rx( void* param )
   //int i;
 
   if (opp_enabled == 1){
-    snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf_%d", "eNB", proc->thread_index);
+    snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf", "eNB");
     rx_time_file = fopen(rx_time_name,"w");
   }
   // set default return value
-  eNB_thread_rx_status[proc->thread_index] = 0;
+  eNB_thread_rx_status = 0;
 
   MSC_START_USE();
 
@@ -608,10 +608,10 @@ static void* eNB_thread_rx( void* param )
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB RX sched_setattr failed\n");
-    return &eNB_thread_rx_status[proc->thread_index];
+    return &eNB_thread_rx_status;
   }
 
-  LOG_I( HW, "[SCHED] eNB RX deadline thread %d(TID %ld) started on CPU %d\n", proc->thread_index, gettid(), sched_getcpu() );
+  LOG_I( HW, "[SCHED] eNB RX deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
 #else // LOW_LATENCY
   int policy, s, j;
   struct sched_param sparam;
@@ -678,7 +678,7 @@ static void* eNB_thread_rx( void* param )
    }
 
 
-  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", proc->thread_index, sched_getcpu(),gettid(),
+  LOG_I( HW, "[SCHED][eNB] RX thread started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
 	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
 	 (policy == SCHED_RR)    ? "SCHED_RR" :
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -692,7 +692,7 @@ static void* eNB_thread_rx( void* param )
 
 
  // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe of TX and RX threads
- printf( "waiting for sync (eNB_thread_rx %d)\n",proc->thread_index);
+ printf( "waiting for sync (eNB_thread_rx)\n");
  pthread_mutex_lock( &sync_mutex );
 
  while (sync_var<0)
@@ -710,9 +710,9 @@ static void* eNB_thread_rx( void* param )
  while (!oai_exit) {
    
    
-   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
-   start_meas( &softmodem_stats_rx_sf[proc->thread_index] );
+   start_meas( &softmodem_stats_rx_sf );
    
    if (oai_exit) break;
    
@@ -720,44 +720,44 @@ static void* eNB_thread_rx( void* param )
 	(fp->frame_type == FDD))) {
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
      // this spawns the prach and TX threads inside and updates the frame and subframe counters
-     phy_procedures_eNB_common_RX(proc->thread_index, eNB, 0);
+     phy_procedures_eNB_common_RX(eNB, 0);
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
      if (eNB->node_function != NGFI_RRU_IF4) {
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
        // this is the ue-specific processing for the subframe and can be multi-threaded later
-       phy_procedures_eNB_uespec_RX(proc->thread_index, eNB, 0, no_relay );
+       phy_procedures_eNB_uespec_RX(eNB, 0, no_relay );
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
      }
    }
    
    if ((subframe_select(fp,proc->subframe_rx) == SF_S)) {
-     phy_procedures_eNB_S_RX(proc->thread_index, PHY_vars_eNB_g[0][proc->CC_id], 0, no_relay );
+     phy_procedures_eNB_S_RX(eNB, 0, no_relay );
    }
    
-   stop_meas( &softmodem_stats_rx_sf[proc->thread_index] );
+   stop_meas( &softmodem_stats_rx_sf );
 #ifdef LOWLATENCY
    if (opp_enabled){
-     if(softmodem_stats_rx_sf[proc->thread_index].diff_now/(cpuf) > attr.sched_runtime){
-       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RX_ENB, (softmodem_stats_rx_sf[proc->thread_index].diff_now/cpuf - attr.sched_runtime)/1000000.0);
+     if(softmodem_stats_rx_sf.diff_now/(cpuf) > attr.sched_runtime){
+       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RX_ENB, (softmodem_stats_rx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
      }
    }
 #endif // LOWLATENCY  
-   print_meas_now(&softmodem_stats_rx_sf[proc->thread_index],"eNB_RX_SF",proc->thread_index, rx_time_file);
-   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
+   print_meas_now(&softmodem_stats_rx_sf,"eNB_RX_SF", rx_time_file);
+   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
    
 
  }
 
   //stop_meas( &softmodem_stats_rx_sf[proc->thread_index] );
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0+(2*proc->thread_index), 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
 
 
 #ifdef DEBUG_THREADS
-  printf( "Exiting eNB thread RX %d\n", proc->thread_index );
+  printf( "Exiting eNB thread RX\n");
 #endif
 
-  eNB_thread_rx_status[proc->thread_index] = 0;
-  return &eNB_thread_rx_status[proc->thread_index];
+  eNB_thread_rx_status = 0;
+  return &eNB_thread_rx_status;
 }
 
 
@@ -778,7 +778,6 @@ static void* eNB_thread_prach( void* param )
 
   MSC_START_USE();
 
-  AssertFatal(proc->thread_index==0,"Invalid thread index %d for PRACH thread\n",proc->thread_index);
     
 #ifdef LOWLATENCY
   struct sched_attr attr;
@@ -869,7 +868,7 @@ static void* eNB_thread_prach( void* param )
    }
 
 
-  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", proc->thread_index, sched_getcpu(),gettid(),
+  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
 	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
 	 (policy == SCHED_RR)    ? "SCHED_RR" :
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -888,7 +887,7 @@ static void* eNB_thread_prach( void* param )
    if (oai_exit) break;
         
    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-     LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH proc %d\n", proc->thread_index );
+     LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH\n");
      exit_fun( "error locking mutex" );
      break;
    }
@@ -900,17 +899,17 @@ static void* eNB_thread_prach( void* param )
    }
 
    if (pthread_mutex_unlock(&proc->mutex_prach) != 0) {
-     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB PRACH proc %d\n", proc->thread_index );
+     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB PRACH\n");
      exit_fun( "error unlocking mutex" );
      break;
    }
    
    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,1);
-   prach_procedures(eNB,proc->thread_index,0);
+   prach_procedures(eNB,0);
    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
     
    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-     LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH proc %d\n", proc->thread_index );
+     LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH proc %d\n");
      exit_fun( "error locking mutex" );
      break;
    }
@@ -918,7 +917,7 @@ static void* eNB_thread_prach( void* param )
    proc->instance_cnt_prach--;
    
    if (pthread_mutex_unlock(&proc->mutex_prach) != 0) {
-     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB RX proc %d\n", proc->thread_index );
+     LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for eNB RX proc %d\n");
      exit_fun( "error unlocking mutex" );
      break;
    }
@@ -945,66 +944,63 @@ void init_eNB_proc(void)
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[0][CC_id];
 
-    for (i=0; i<NUM_ENB_THREADS; i++) {
-      proc = &eNB->proc[i];
-      // set the stack size
-     
+    
+    proc = &eNB->proc;
 
 #ifndef LOWLATENCY 
-      /*  
-       pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
-       if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
+    /*  
+	pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
+	if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_TX] setting thread stack size failed\n");
-      
-      pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
-      if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
+	
+	pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
+	if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
         perror("[ENB_PROC_RX] setting thread stack size failed\n");
-      */
-      // set the kernel scheduling policy and priority
-      proc->sched_param_tx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc->attr_tx, &proc->sched_param_tx);
-      pthread_attr_setschedpolicy (&proc->attr_tx, SCHED_FIFO);
-
-      proc->sched_param_rx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc->attr_rx, &proc->sched_param_rx);
-      pthread_attr_setschedpolicy (&proc->attr_rx, SCHED_FIFO);
-
-      proc->sched_param_prach.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc->attr_prach, &proc->sched_param_prach);
-      pthread_attr_setschedpolicy (&proc->attr_prach, SCHED_FIFO);
-
-      printf("Setting OS scheduler to SCHED_FIFO for eNB [cc%d][thread%d] \n",CC_id, i);
+    */
+    // set the kernel scheduling policy and priority
+    proc->sched_param_tx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc->attr_tx, &proc->sched_param_tx);
+    pthread_attr_setschedpolicy (&proc->attr_tx, SCHED_FIFO);
+    
+    proc->sched_param_rx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc->attr_rx, &proc->sched_param_rx);
+    pthread_attr_setschedpolicy (&proc->attr_rx, SCHED_FIFO);
+    
+    proc->sched_param_prach.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc->attr_prach, &proc->sched_param_prach);
+    pthread_attr_setschedpolicy (&proc->attr_prach, SCHED_FIFO);
+    
+    printf("Setting OS scheduler to SCHED_FIFO for eNB [cc%d][thread%d] \n",CC_id, i);
 #endif
-      proc->instance_cnt_tx = -1;
-      proc->instance_cnt_prach = -1;
-      proc->CC_id = CC_id;
-      pthread_mutex_init( &proc->mutex_tx, NULL);
-      pthread_cond_init( &proc->cond_tx, NULL);
-      pthread_cond_init( &proc->cond_prach, NULL);
+    proc->instance_cnt_tx = -1;
+    proc->instance_cnt_prach = -1;
+    proc->CC_id = CC_id;
+    pthread_mutex_init( &proc->mutex_tx, NULL);
+    pthread_cond_init( &proc->cond_tx, NULL);
+    pthread_cond_init( &proc->cond_prach, NULL);
 #ifndef LOWLATENCY
-      pthread_create( &proc->pthread_tx, &proc->attr_tx, eNB_thread_tx, &eNB->proc[i] );
-      pthread_create( &proc->pthread_rx, &proc->attr_rx, eNB_thread_rx, &eNB->proc[i] );
-      pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc[i] );
+    pthread_create( &proc->pthread_tx, &proc->attr_tx, eNB_thread_tx, &eNB->proc );
+    pthread_create( &proc->pthread_rx, &proc->attr_rx, eNB_thread_rx, &eNB->proc );
+    pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
 #else 
-      pthread_create( &proc->pthread_tx, NULL, eNB_thread_tx, &eNB->proc[i] );
-      pthread_create( &proc->pthread_rx, NULL, eNB_thread_rx, &eNB->proc[i] );
-      pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc[i] );
+    pthread_create( &proc->pthread_tx, NULL, eNB_thread_tx, &eNB->proc );
+    pthread_create( &proc->pthread_rx, NULL, eNB_thread_rx, &eNB->proc );
+    pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
 #endif
-      char name[16];
-      snprintf( name, sizeof(name), "TX %d", i );
-      pthread_setname_np( proc->pthread_tx, name );
-      snprintf( name, sizeof(name), "RX %d", i );
-      pthread_setname_np( proc->pthread_rx, name );
-    }
+    char name[16];
+    snprintf( name, sizeof(name), "TX %d", i );
+    pthread_setname_np( proc->pthread_tx, name );
+    snprintf( name, sizeof(name), "RX %d", i );
+    pthread_setname_np( proc->pthread_rx, name );
   }
-
+  
+  
   /* setup PHY proc TX sync mechanism */
-  for (i=0; i<NUM_ENB_THREADS; i++) {
-    pthread_mutex_init(&sync_phy_proc[i].mutex_phy_proc_tx, NULL);
-    pthread_cond_init(&sync_phy_proc[i].cond_phy_proc_tx, NULL);
-    sync_phy_proc[i].phy_proc_CC_id = 0;
-  }
+  pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
+  pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
+  sync_phy_proc.phy_proc_CC_id = 0;
 }
+
 
 /*!
  * \brief Terminate eNB TX and RX threads.
@@ -1016,68 +1012,68 @@ void kill_eNB_proc(void)
   eNB_proc_t *proc;
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB=PHY_vars_eNB_g[0][CC_id];
-    for (int i=0; i<NUM_ENB_THREADS; i++) {
-      proc = &eNB->proc[i];
-      
+    
+    proc = &eNB->proc;
+    
 #ifdef DEBUG_THREADS
-      printf( "Killing TX CC_id %d thread %d\n", CC_id, i );
+    printf( "Killing TX CC_id %d thread %d\n", CC_id, i );
 #endif
-
-      proc->instance_cnt_tx = 0; // FIXME data race!
-      pthread_cond_signal( &proc->cond_tx );
-      pthread_cond_broadcast(&sync_phy_proc[i].cond_phy_proc_tx);
-
+    
+    proc->instance_cnt_tx = 0; // FIXME data race!
+    pthread_cond_signal( &proc->cond_tx );
+    pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
+    
 #ifdef DEBUG_THREADS
-      printf( "Joining eNB TX CC_id %d thread %d...\n", CC_id, i );
+    printf( "Joining eNB TX CC_id %d thread %d...\n", CC_id, i );
 #endif
-      int result = pthread_join( proc->pthread_tx, (void**)&status );
-
+    int result = pthread_join( proc->pthread_tx, (void**)&status );
+    
 #ifdef DEBUG_THREADS
-
-      if (result != 0) {
-        printf( "Error joining thread.\n" );
+    
+    if (result != 0) {
+      printf( "Error joining thread.\n" );
+    } else {
+      if (status) {
+	printf( "status %d\n", *status );
       } else {
-        if (status) {
-          printf( "status %d\n", *status );
-        } else {
-          printf( "The thread was killed. No status available.\n" );
-        }
+	printf( "The thread was killed. No status available.\n" );
       }
-
+    }
+    
 #else
-      UNUSED(result)
+    UNUSED(result)
 #endif
-
+      
 #ifdef DEBUG_THREADS
       printf( "Killing RX CC_id %d thread %d\n", CC_id, i );
 #endif
-
+    
 #ifdef DEBUG_THREADS
-      printf( "Joining eNB RX CC_id %d thread %d...\n", CC_id, i );
+    printf( "Joining eNB RX CC_id %d thread %d...\n", CC_id, i );
 #endif
-      result = pthread_join( proc->pthread_rx, (void**)&status );
-
+    result = pthread_join( proc->pthread_rx, (void**)&status );
+    
 #ifdef DEBUG_THREADS
-
-      if (result != 0) {
-        printf( "Error joining thread.\n" );
+    
+    if (result != 0) {
+      printf( "Error joining thread.\n" );
+    } else {
+      if (status) {
+	printf( "status %d\n", *status );
       } else {
-        if (status) {
-          printf( "status %d\n", *status );
-        } else {
-          printf( "The thread was killed. No status available.\n" );
-        }
+	printf( "The thread was killed. No status available.\n" );
       }
-
-#else
-      UNUSED(result)
-#endif
-
-      pthread_mutex_destroy( &proc->mutex_tx );
-      pthread_cond_destroy( &proc->cond_tx );
     }
+    
+#else
+    UNUSED(result);
+#endif
+            
+    pthread_mutex_destroy( &proc->mutex_tx );
+    pthread_cond_destroy( &proc->cond_tx );
   }
 }
+
 
 /* this function maps the phy_vars_eNB tx and rx buffers to the available rf chains.
    Each rf chain is is addressed by the card number and the chain on the card. The
@@ -1197,381 +1193,14 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 
 
 
-/*!
- * \brief This is the main eNB thread.
- * \param arg unused
- * \returns a pointer to an int. The storage is not on the heap and must not be freed.
- */
-/*
-static void* eNB_thread( void* arg )
-{
-  UNUSED(arg);
-  static int eNB_thread_status;
-
-  unsigned char slot;
-  // the USRP implementation operates on subframes, not slots
-  // one subframe consists of one even and one odd slot
-
-  slot = 1;
-  int spp;
-  int tx_launched = 0;
-  int card=0;
-
-  void *rxp[2]; // FIXME hard coded array size; indexed by frame_parms.nb_antennas_rx
-  void *txp[2]; // FIXME hard coded array size; indexed by frame_parms.nb_antennas_tx
-
-  int hw_subframe = 0; // 0..NUM_ENB_THREADS-1 => 0..9
-  
-  unsigned int rx_pos = 0;
-  unsigned int tx_pos = 0;
-
-  int CC_id=0;	
-  struct timespec trx_time0, trx_time1, trx_time2;
-
-  //avoid gcc warnings
-  (void)trx_time0;
-  (void)trx_time1;
-  (void)trx_time2;
-
-#ifdef LOWLATENCY
-  struct sched_attr attr;
-  unsigned int flags = 0;
-
-  attr.size = sizeof(attr);
-  attr.sched_flags = 0;
-  attr.sched_nice = 0;
-  attr.sched_priority = 0;
-
-  //This creates a .2 ms  reservation
-  attr.sched_policy = SCHED_DEADLINE;
-  attr.sched_runtime  = (0.3 * 100) * 10000;
-  attr.sched_deadline = (0.9 * 100) * 10000;
-  attr.sched_period   = 1 * 1000000;
-
-  if (sched_setattr(0, &attr, flags) < 0 ) {
-    perror("[SCHED] main eNB thread: sched_setattr failed\n");
-    exit_fun("Nothing to add");
-  } else {
-    LOG_I(HW,"[SCHED][eNB] eNB main deadline thread %ld started on CPU %d\n",
-          gettid(),sched_getcpu());
-  }
-
-#else
-
-  int policy, s, j;
-  struct sched_param sparam;
-  char cpu_affinity[1024];
-  cpu_set_t cpuset;
-
-  //Set affinity mask to include CPUs 1 to MAX_CPUS
-  //CPU 0 is reserved for UHD threads
-  CPU_ZERO(&cpuset);
-#ifdef CPU_AFFINITY
-  if (get_nprocs() >2)
-  {
-    for (j = 1; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
-    {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
-    }
-  }
-#endif // CPU_AFFINITY
-
-  //Check the actual affinity mask assigned to the thread
-
-  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-  if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
-  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
-  for (j = 0; j < CPU_SETSIZE; j++)
-  if (CPU_ISSET(j, &cpuset))
-  {  
-     char temp[1024];
-     sprintf(temp, " CPU_%d ", j);    
-     strcat(cpu_affinity, temp);
-  }
-
-  memset(&sparam, 0 , sizeof (sparam));
-  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
-  policy = SCHED_FIFO ; 
-  
-  s = pthread_setschedparam(pthread_self(), policy, &sparam);
-  if (s != 0)
-     {
-     perror("pthread_setschedparam : ");
-     exit_fun("Error setting thread priority");
-     }
-  s = pthread_getschedparam(pthread_self(), &policy, &sparam);
-  if (s != 0)
-   {
-     perror("pthread_getschedparam : ");
-     exit_fun("Error getting thread priority");
-
-   }
-
-
-  LOG_I( HW, "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld , sched_policy = %s, priority = %d, CPU Affinity = %s \n", (int)sched_getcpu(), gettid(),
-                   (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
-                   (policy == SCHED_RR)    ? "SCHED_RR" :
-                   (policy == SCHED_OTHER) ? "SCHED_OTHER" :
-                   "???",
-                   (int) sparam.sched_priority, cpu_affinity);
-
-
-#endif //LOWLATENCY
-
-
-  // stop early, if an exit is requested
-  // FIXME really neccessary?
-  if (oai_exit)
-    goto eNB_thread_cleanup;
-
-  printf("eNB_thread: mlockall in ...\n");
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-  printf("eNB_thread: mlockall out ...\n");
-
-  timing_info.time_min = 100000000ULL;
-  timing_info.time_max = 0;
-  timing_info.time_avg = 0;
-  timing_info.n_samples = 0;
-
-  printf( "waiting for sync (eNB_thread)\n" );
-  pthread_mutex_lock( &sync_mutex );
-
-  while (sync_var<0)
-    pthread_cond_wait( &sync_cond, &sync_mutex );
-
-  pthread_mutex_unlock(&sync_mutex);
-
-  printf( "got sync (eNB_thread)\n" );
-
-  int frame = 0;
-
-
-  spp        = openair0_cfg[0].samples_per_packet;
-  tx_pos     = openair0_cfg[0].tx_scheduling_advance;
-
-#if defined(ENABLE_ITTI)
-  wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
-#endif 
-
-  while (!oai_exit) {
-    start_meas( &softmodem_stats_mt );
-
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_SUBFRAME, hw_subframe );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_HW_FRAME, frame );
-    tx_launched = 0;
-
-    while (rx_pos < ((1+hw_subframe)*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti)) {
-
-      unsigned int rxs;
-#ifndef USRP_DEBUG
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TXCNT, tx_pos );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RXCNT, rx_pos );
-
-      clock_gettime( CLOCK_MONOTONIC, &trx_time0 );
-
-      start_meas( &softmodem_stats_hw );
-
-      openair0_timestamp timestamp;
-      int i=0;
-      // prepare rx buffer pointers
-      for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx; i++)
-        rxp[i] = (void*)&rxdata[i][rx_pos];
-	// check if nsymb_read == spp
-	// map antenna port i to the cc_id. Now use the 1:1 mapping
-	rxs = openair0.trx_read_func(&openair0,
-				     &timestamp,
-				     rxp,
-				     spp,
-				     PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx);
-      
-      stop_meas( &softmodem_stats_hw );
-      if (frame > 50) { 
-	  clock_gettime( CLOCK_MONOTONIC, &trx_time1 );
-      }
-
-      if (frame > 20){ 
-	if (rxs != spp)
-	  exit_fun( "problem receiving samples" );
-      }
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-
-      // Transmit TX buffer based on timestamp from RX
-    
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-      // prepare tx buffer pointers
-      for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
-	txp[i] = (void*)&txdata[i][tx_pos];
-      // if symb_written < spp ==> error 
-      if (frame > 50) {
-	openair0.trx_write_func(&openair0,
-				(timestamp+(openair0_cfg[card].tx_scheduling_advance)-openair0_cfg[card].tx_sample_advance),
-				txp,
-				spp,
-				PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
-				1);
-      }
-      
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, timestamp&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (timestamp+(openair0_cfg[card].tx_scheduling_advance)-openair0_cfg[card].tx_sample_advance)&0xffffffff );
-
-      stop_meas( &softmodem_stats_mt );
-      if (frame > 50) { 
-	  clock_gettime( CLOCK_MONOTONIC, &trx_time2 );
-	  //update_difftimes(trx_time1, trx_time2);
-      }
-
-
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE,0);
-#else
-      // USRP_DEBUG is active
-      rt_sleep_ns(1000000);
-#endif
-
-      if ( (frame>50) && (tx_launched == 0) &&
-	   ((openair0_cfg[card].txlaunch_wait == 0) ||
-	    ((openair0_cfg[card].txlaunch_wait == 1) &&
-	     (rx_pos >= (((2*hw_subframe)+openair0_cfg[card].txlaunch_wait_slotcount)*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti>>1))))) { 
-	
-        tx_launched = 1;
-
-        for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-          if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].mutex_tx) != 0) {
-            LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n", hw_subframe, PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].instance_cnt_tx );
-            exit_fun( "error locking mutex_tx" );
-            break;
-          }
-
-          int cnt_tx = ++PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].instance_cnt_tx;
-
-          pthread_mutex_unlock( &PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].mutex_tx );
-
-          if (cnt_tx == 0) {
-            // the thread was presumably waiting where it should and can now be woken up
-            if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].cond_tx) != 0) {
-              LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TX thread %d\n", hw_subframe );
-              exit_fun( "ERROR pthread_cond_signal" );
-              break;
-            }
-          } else {
-            LOG_W( PHY,"[eNB] Frame %d, eNB TX thread %d busy!! (rx_cnt %u, cnt_tx %i)\n", PHY_vars_eNB_g[0][CC_id]->proc[hw_subframe].frame_tx, hw_subframe, rx_pos, cnt_tx );
-            exit_fun( "TX thread busy" );
-            break;
-          }
-        }
-      }
-
-      rx_pos += spp;
-      tx_pos += spp;
-
-      if (tx_pos >= openair0_cfg[card].samples_per_frame)
-        tx_pos -= openair0_cfg[card].samples_per_frame;
-    }
-
-    if (rx_pos >= openair0_cfg[card].samples_per_frame)
-      rx_pos -= openair0_cfg[card].samples_per_frame;
-
-
-
-    if (oai_exit) break;
-
-    timing_info.time_last = timing_info.time_now;
-    timing_info.time_now = rt_get_time_ns();
-
-    if (timing_info.n_samples>0) {
-      RTIME time_diff = timing_info.time_now - timing_info.time_last;
-
-      if (time_diff < timing_info.time_min)
-        timing_info.time_min = time_diff;
-
-      if (time_diff > timing_info.time_max)
-        timing_info.time_max = time_diff;
-
-      timing_info.time_avg += time_diff;
-    }
-
-    timing_info.n_samples++;
-
-    if ((slot&1) == 1) {
-      // odd slot
-      int sf = hw_subframe;
-      if (frame>50) {
-	for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	  if (pthread_mutex_lock(&PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx) != 0) {
-	    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RX thread %d (IC %d)\n", sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx );
-	    exit_fun( "error locking mutex_rx" );
-	    break;
-	  }
-	 
-	  int cnt_rx = ++PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx;
-	  
-	  pthread_mutex_unlock( &PHY_vars_eNB_g[0][CC_id]->proc[sf].mutex_rx );
-	  
-	  if (cnt_rx == 0) {
-	    // the thread was presumably waiting where it should and can now be woken up
-	    if (pthread_cond_signal(&PHY_vars_eNB_g[0][CC_id]->proc[sf].cond_rx) != 0) {
-	      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RX thread %d\n", sf );
-	      exit_fun( "ERROR pthread_cond_signal" );
-	      break;
-	    }
-	  } else {
-	    LOG_W( PHY, "[eNB] Frame %d, eNB RX thread %d busy!! instance_cnt %d CC_id %d\n", PHY_vars_eNB_g[0][CC_id]->proc[sf].frame_rx, sf, PHY_vars_eNB_g[0][CC_id]->proc[sf].instance_cnt_rx, CC_id );
-	    exit_fun( "RX thread busy" );
-	    break;
-	  }
-	}
-      }
-    }
-
-    hw_subframe++;
-    slot += 2;
-
-    if (hw_subframe == NUM_ENB_THREADS) {
-      // the radio frame is complete, start over
-      hw_subframe = 0;
-      frame++;
-      slot = 1;
-    }
-
-#if defined(ENABLE_ITTI)
-    itti_update_lte_time( frame, slot );
-#endif
-  }
-
-eNB_thread_cleanup:
-#ifdef DEBUG_THREADS
-  printf( "eNB_thread: finished, ran %d times.\n", frame );
-#endif
-
-#ifdef DEBUG_THREADS
-  printf( "Exiting eNB_thread ..." );
-#endif
-
-  eNB_thread_status = 0;
-
-  // print_difftimes();
-
-  return &eNB_thread_status;
-}
-*/
-
 void reset_opp_meas(void) {
   int sfn;
   reset_meas(&softmodem_stats_mt);
   reset_meas(&softmodem_stats_hw);
   
   for (sfn=0; sfn < 10; sfn++) {
-    reset_meas(&softmodem_stats_tx_sf[sfn]);
-    reset_meas(&softmodem_stats_rx_sf[sfn]);
+    reset_meas(&softmodem_stats_tx_sf);
+    reset_meas(&softmodem_stats_rx_sf);
   }
 }
 
@@ -1582,8 +1211,8 @@ void print_opp_meas(void) {
   print_meas(&softmodem_stats_hw, "HW Acquisation", NULL, NULL);
   
   for (sfn=0; sfn < 10; sfn++) {
-    print_meas(&softmodem_stats_tx_sf[sfn],"[eNB][total_phy_proc_tx]",NULL, NULL);
-    print_meas(&softmodem_stats_rx_sf[sfn],"[eNB][total_phy_proc_rx]",NULL,NULL);
+    print_meas(&softmodem_stats_tx_sf,"[eNB][total_phy_proc_tx]",NULL, NULL);
+    print_meas(&softmodem_stats_rx_sf,"[eNB][total_phy_proc_rx]",NULL,NULL);
   }
 }
 

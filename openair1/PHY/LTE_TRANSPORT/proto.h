@@ -228,12 +228,11 @@ int mch_modulation(int32_t **txdataF,
 
 /** \brief Top-level generation function for eNB TX of MBSFN
     @param phy_vars_eNB Pointer to eNB variables
-    @param subframe Subframe for PMCH
     @param a Pointer to transport block
     @param abstraction_flag
 
 */
-void generate_mch(PHY_VARS_eNB *phy_vars_eNB,int subframe,uint8_t *a,int abstraction_flag);
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,uint8_t *a,int abstraction_flag);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_eNB Pointer to eNB variables
@@ -301,8 +300,7 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
 
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              int32_t **txdataF,
-                             int16_t amp,
-                             uint16_t subframe);
+                             int16_t amp);
 
 int32_t generate_pss(int32_t **txdataF,
                      int16_t amp,
@@ -1409,27 +1407,26 @@ int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
     uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id);
-int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
+				       void *dci_pdu,
                                        rnti_t rnti,
-                                       uint8_t subframe,
-                                       DCI_format_t dci_format,
+				       DCI_format_t dci_format,
                                        uint8_t UE_id,
-                                       PHY_VARS_eNB *PHY_vars_eNB,
-                                       uint16_t si_rnti,
+				       uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
                                        uint16_t cba_rnti,
                                        uint8_t use_srs);
 
-#ifdef USER_MODE
-void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,uint8_t subframe, uint8_t UE_id);
+
+void dump_ulsch(PHY_VARS_eNB *phy_vars_eNb,uint8_t UE_id);
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
 void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
 
 void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round);
-#endif
+
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
@@ -1477,14 +1474,12 @@ void generate_RIV_tables(void);
 int initial_sync(PHY_VARS_UE *phy_vars_ue, runmode_t mode);
 
 void rx_ulsch(PHY_VARS_eNB *phy_vars_eNB,
-              uint32_t subframe,
               uint8_t eNB_id,  // this is the effective sector id
               uint8_t UE_id,
               LTE_eNB_ULSCH_t **ulsch,
               uint8_t cooperation_flag);
 
 void rx_ulsch_emul(PHY_VARS_eNB *phy_vars_eNB,
-                   uint8_t subframe,
                    uint8_t sect_id,
                    uint8_t UE_index);
 
@@ -1532,18 +1527,15 @@ int32_t ulsch_encoding_emul(uint8_t *ulsch_buffer,
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t UE_id,
-                             uint8_t subframe,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-                             uint8_t subframe,
                              uint8_t UE_index,
                              uint16_t *crnti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
-                        uint8_t subframe,
                         int16_t amp,
                         uint8_t sect_id,
                         uint8_t abstraction_flag);
@@ -1671,11 +1663,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint8_t pucch1_thres);
 
 int32_t rx_pucch_emul(PHY_VARS_eNB *phy_vars_eNB,
-		       uint8_t UE_index,
-		       PUCCH_FMT_t fmt,
-		       uint8_t n1_pucch_sel,
-		       uint8_t *payload,
-		       uint8_t subframe);
+		      uint8_t UE_index,
+		      PUCCH_FMT_t fmt,
+		      uint8_t n1_pucch_sel,
+		      uint8_t *payload);
+
 
 
 /*!
@@ -1702,7 +1694,6 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
 /*!
   \brief Process PRACH waveform
   @param phy_vars_eNB Pointer to eNB top-level descriptor
-  @param subframe subframe index to operate on
   @param preamble_energy_list List of energies for each candidate preamble
   @param preamble_delay_list List of delays for each candidate preamble
   @param Nf System frame number
@@ -1710,7 +1701,7 @@ int32_t generate_prach(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,
   @returns 0 on success
 
 */
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex);
 
 /*!
   \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index

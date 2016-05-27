@@ -43,13 +43,13 @@
 
 int generate_mbsfn_pilot(PHY_VARS_eNB *eNB,
                          int32_t **txdataF,
-                         int16_t amp,
-                         uint16_t subframe)
+                         int16_t amp)
+
 {
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   uint32_t subframe_offset,Nsymb,samples_per_symbol;
-
+  int subframe = eNB->proc.subframe_tx;
 
 
   if (subframe<0 || subframe>= 10) {

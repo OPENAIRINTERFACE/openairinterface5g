@@ -195,7 +195,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id,uint8_t thread_id)
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
 {
   static int first_run=1;
   static int max_pos_fil2=0;
@@ -236,7 +236,7 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id,uint8_t thread_
     max_pos_fil2 = ((max_pos_fil2 * coef) + (max_pos * ncoef)) >> 15;
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc[thread_id].frame_rx,max_pos,max_pos_fil2,sync_pos);
+  LOG_D(PHY,"frame %d: max_pos = %d, max_pos_fil = %d, sync_pos=%d\n",eNB->proc.frame_rx,max_pos,max_pos_fil2,sync_pos);
 #endif //DEBUG_PHY
 
   return(max_pos_fil2-sync_pos);

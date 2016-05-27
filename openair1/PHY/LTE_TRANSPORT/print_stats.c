@@ -583,7 +583,7 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
   for (eNB_id=0; eNB_id<number_of_cards_l; eNB_id++) {
     len += sprintf(&buffer[len],"eNB %d/%d Frame %d: RX Gain %d dB, I0 %d dBm (%d,%d) dB \n",
                    eNB_id,number_of_cards_l,
-                   eNB->proc[0].frame_tx,
+                   eNB->proc.frame_tx,
                    eNB->rx_total_gain_dB,
                    eNB->measurements[eNB_id].n0_power_tot_dBm,
                    eNB->measurements[eNB_id].n0_power_dB[0],
@@ -621,9 +621,9 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 
     
 	
-	len += sprintf(&buffer[len],"Total DLSCH %d kbits / %d frames ",(eNB->total_transmitted_bits/1000),eNB->proc[0].frame_tx+1);
+	len += sprintf(&buffer[len],"Total DLSCH %d kbits / %d frames ",(eNB->total_transmitted_bits/1000),eNB->proc.frame_tx+1);
 	len += sprintf(&buffer[len],"Total DLSCH throughput %d kbps ",(eNB->total_dlsch_bitrate/1000));
-	len += sprintf(&buffer[len],"Total DLSCH trans %d / %d frames\n",success,eNB->proc[0].frame_tx+1);
+	len += sprintf(&buffer[len],"Total DLSCH trans %d / %d frames\n",success,eNB->proc.frame_tx+1);
 	//len += sprintf(&buffer[len],"[eNB PROC] FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->FULL_MUMIMO_transmissions,eNB->check_for_total_transmissions);
 	//len += sprintf(&buffer[len],"[eNB PROC] MU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->check_for_MUMIMO_transmissions,eNB->check_for_total_transmissions);
 	//len += sprintf(&buffer[len],"[eNB PROC] SU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->check_for_SUMIMO_transmissions,eNB->check_for_total_transmissions);

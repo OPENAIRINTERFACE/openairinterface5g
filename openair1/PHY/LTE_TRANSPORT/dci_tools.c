@@ -2,7 +2,7 @@
     OpenAirInterface
     Copyright(c) 1999 - 2014 Eurecom
 
-    OpenAirInterface is free software: you can redistribute it and/or modify
+    OpenAirInterface is free software: you can redistrirbute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
@@ -7077,12 +7077,11 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 }
 
-int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
+int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
+				       void *dci_pdu,
                                        uint16_t rnti,
-                                       uint8_t thread_id,
                                        DCI_format_t dci_format,
                                        uint8_t UE_id,
-                                       PHY_VARS_eNB *eNB,
                                        uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
@@ -7096,7 +7095,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
   ANFBmode_t AckNackFBMode = eNB->pucch_config_dedicated[UE_id].tdd_AckNackFeedbackMode;
   LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  int subframe = eNB->proc[thread_id].subframe_tx;
+  int subframe = eNB->proc.subframe_tx;
 
   uint32_t cqi_req = 0;
   uint32_t dai = 0;
@@ -7117,11 +7116,10 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
     harq_pid = subframe2harq_pid(frame_parms,
                                  pdcch_alloc2ul_frame(frame_parms,
-						      eNB->proc[thread_id].frame_tx,
+						      eNB->proc.frame_tx,
 						      subframe),
                                  pdcch_alloc2ul_subframe(frame_parms,subframe));
     
-    //    printf("eNB: thread_id %d, subframe %d, frame_tx %d\n",thread_id,subframe,eNB->proc[thread_id].frame_tx);
 
     switch (frame_parms->N_RB_DL) {
     case 6:
@@ -7639,7 +7637,7 @@ int generate_eNB_ulsch_params_from_dci(void *dci_pdu,
 
 
     LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d, subframe %d : Programming PUSCH with n_DMRS2 %d (cshift %d)\n",
-          eNB->Mod_id,harq_pid,eNB->proc[thread_id].frame_tx,subframe,ulsch->harq_processes[harq_pid]->n_DMRS2,cshift);
+          eNB->Mod_id,harq_pid,eNB->proc.frame_tx,subframe,ulsch->harq_processes[harq_pid]->n_DMRS2,cshift);
 
 
 

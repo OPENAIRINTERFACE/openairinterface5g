@@ -69,7 +69,7 @@ static inline void start_meas(time_stats_t *ts) __attribute__((always_inline));
 static inline void stop_meas(time_stats_t *ts) __attribute__((always_inline));
 
 
-void print_meas_now(time_stats_t *ts, const char* name, int subframe, FILE* file_name);
+void print_meas_now(time_stats_t *ts, const char* name, FILE* file_name);
 void print_meas(time_stats_t *ts, const char* name, time_stats_t * total_exec_time, time_stats_t * sf_exec_time);
 double get_time_meas_us(time_stats_t *ts);
 double get_cpu_freq_GHz(void);

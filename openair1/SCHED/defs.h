@@ -161,8 +161,6 @@ void cleanup_dlsch_threads(void);
 void phy_procedures_eNB_lte(uint8_t subframe,PHY_VARS_eNB **phy_vars_eNB,uint8_t abstraction_flag, relaying_type_t r_type, PHY_VARS_RN *phy_vars_rn);
 
 /*! \brief Top-level entry routine for UE procedures.  Called every slot by process scheduler. In even slots, it performs RX functions from previous subframe (if required).  On odd slots, it generate TX waveform for the following subframe.
-  @param last_slot Index of last slot (0-19)
-  @param next_slot Index of next_slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id ID of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
@@ -215,61 +213,60 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 void phy_procedures_UE_S_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for UE RX procedures in TDD S-subframes.
-  @param thread_index Thread index in proc vector
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_UE_S_RX(uint8_t thread_index,PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_flag, relaying_type_t r_type);
+void phy_procedures_UE_S_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_flag, relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB TX procedures in normal subframes.
-  @param thread_index Index of thread in proc vector
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
   @param phy_vars_rn pointer to the RN variables
 */
-void phy_procedures_eNB_TX(uint8_t thread_index,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
-  @param thread_index Thread index in proc vector
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_uespec_RX(uint8_t thread_index,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
-  @param thread_index Index of thread in proc vector
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 
 /*! \brief Scheduling for eNB RX common procedures in normal subframes.
-  @param thread_index Thread index in proc vector
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_common_RX(uint8_t thread_index,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag);
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
-  @param thread_index Index of thread in proc vector
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 
-void phy_procedures_eNB_S_TX(uint8_t next_slot,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB RX procedures in TDD S-subframes.
-  @param last_slot Index of next slot (0-19)
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_S_RX(uint8_t last_slot,PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+
+/*! \brief Scheduling for eNB PRACH RX procedures 
+  @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param abstraction_flag Indicator of PHY abstraction
+*/
+void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag);
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor
@@ -277,12 +274,6 @@ void phy_procedures_eNB_S_RX(uint8_t last_slot,PHY_VARS_eNB *phy_vars_eNB,uint8_
   @returns Subframe type (DL,UL,S)
 */
 
-/*! \brief Scheduling for eNB PRACH RX procedures 
-  @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param thread_id Index of thread in proc vector
-  @param abstraction_flag Indicator of PHY abstraction
-*/
-void prach_procedures(PHY_VARS_eNB *eNB,uint8_t thread_id,uint8_t abstraction_flag);
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -400,10 +391,9 @@ uint8_t is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
 /*! \brief Indicates the SR TXOp in current subframe for eNB and particular UE index.  Implements Table 10.1-5 from 36.213.
   @param phy_vars_eNB Pointer to eNB variables
   @param UE_id ID of UE which may be issuing the SR
-  @param subframe index of last subframe
   @returns 1 if TXOp is active.
 */
-uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id,uint8_t subframe);
+uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id);
 
 /*! \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
   @param frame_parms Pointer to DL frame parameters
@@ -443,14 +433,14 @@ subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch
 TDD, this routine computes the complex procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
 @param phy_vars_ue Pointer to UE variables
 @param eNB_id Index of eNB
-@param thread_id Index of thread where procedures are executed
+@param subframe subframe on which to act
 @param b Pointer to PUCCH payload (b[0],b[1])
 @param SR 1 means there's a positive SR in parallel to ACK/NAK
 @returns n1_pucch
 */
 uint16_t get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
                       uint8_t eNB_id,
-                      uint8_t thread_id,
+		      uint8_t subframe,
                       uint8_t *b,
                       uint8_t SR);
 
@@ -468,7 +458,6 @@ TDD, this routine computes the procedure described in Section 10.1 of 36.213 (th
 */
 void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
                       uint8_t UE_id,
-                      uint8_t subframe,
                       int16_t *n1_pucch0,
                       int16_t *n1_pucch1,
                       int16_t *n1_pucch2,
@@ -477,7 +466,6 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 
 /*! \brief This function retrieves the harq_pid of the corresponding DLSCH process and updates the error statistics of the DLSCH based on the received ACK info from UE along with the round index.  It also performs the fine-grain rate-adaptation based on the error statistics derived from the ACK/NAK process.
   @param UE_id Local UE index on which to act
-  @param subframe Index of subframe
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param pusch_flag Indication that feedback came from PUSCH
   @param pucch_payload Resulting payload from pucch
@@ -485,7 +473,6 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
   @param SR_payload Indication of SR presence (TDD specific)
 */
 void process_HARQ_feedback(uint8_t UE_id,
-                           uint8_t subframe,
                            PHY_VARS_eNB *phy_vars_eNB,
                            uint8_t pusch_flag,
                            uint8_t *pucch_payload,
@@ -547,8 +534,6 @@ int16_t get_target_pusch_rx_power(module_id_t module_idP, uint8_t CC_id);
 int16_t get_target_pucch_rx_power(module_id_t module_idP, uint8_t CC_id);
 
 int get_ue_active_harq_pid(uint8_t Mod_id,uint8_t CC_id,uint16_t rnti,int frame, uint8_t subframe,uint8_t *harq_pid,uint8_t *round,uint8_t ul_flag);
-
-void ulsch_decoding_procedures(unsigned char last_slot, unsigned int i, PHY_VARS_eNB *phy_vars_eNB, unsigned char abstraction_flag);
 
 void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
 void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);

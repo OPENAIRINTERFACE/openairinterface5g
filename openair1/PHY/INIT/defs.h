@@ -31,7 +31,7 @@
 
 #include "PHY/defs.h"
 
-#ifdef OPENAIR_LTE
+
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
@@ -41,18 +41,6 @@
 #ifdef Rel10
 #include "SCellToAddMod-r10.h"
 #endif
-#else
-
-/**
-\fn int phy_init(unsigned char nb_antennas_tx)
-\brief Allocate and Initialize the PHY variables after receiving static configuration
-@param nb_antennas_tx Number of TX antennas
-*/
-int phy_init(unsigned char nb_antennas_tx);
-#endif
-
-#ifdef OPENAIR_LTE
-
 /** @addtogroup _PHY_STRUCTURES_
  * @{
  */
@@ -325,17 +313,28 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     int CC_id);
 
 #endif
-#endif
+
 
 
 /*! !\fn void phy_cleanup(void)
 \brief Cleanup the PHY variables*/
 void phy_cleanup(void);
 
-#ifdef OPENAIR_LTE
+
 int init_frame_parms(LTE_DL_FRAME_PARMS *frame_parms,uint8_t osf);
 void dump_frame_parms(LTE_DL_FRAME_PARMS *frame_parms);
-#endif
+
+void lte_param_init(unsigned char N_tx, 
+		    unsigned char N_rx,
+		    unsigned char transmission_mode,
+		    uint8_t extended_prefix_flag,
+		    frame_t frame_type, 
+		    uint16_t Nid_cell,
+		    uint8_t tdd_config,
+		    uint8_t N_RB_DL,
+		    uint8_t threequarter_fs,
+                    uint8_t osf,
+		    uint32_t perfect_ce);
 
 /** @} */
 #endif

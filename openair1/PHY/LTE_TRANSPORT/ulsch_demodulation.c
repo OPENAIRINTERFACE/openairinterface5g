@@ -1577,7 +1577,6 @@ int32_t avgU[2];
 int32_t avgU_0[2],avgU_1[2]; // For the Distributed Alamouti Scheme
 
 void rx_ulsch(PHY_VARS_eNB *eNB,
-              uint32_t thread_id,
               uint8_t eNB_id,  // this is the effective sector id
               uint8_t UE_id,
               LTE_eNB_ULSCH_t **ulsch,
@@ -1603,9 +1602,9 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   uint8_t Qm;
   uint16_t rx_power_correction;
   int16_t *llrp;
-  int subframe = eNB->proc[thread_id].subframe_rx;
+  int subframe = eNB->proc.subframe_rx;
 
-  harq_pid = subframe2harq_pid(frame_parms,eNB->proc[thread_id].frame_rx,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,eNB->proc.frame_rx,subframe);
   Qm = get_Qm_ul(ulsch[UE_id]->harq_processes[harq_pid]->mcs);
 #ifdef DEBUG_ULSCH
   msg("rx_ulsch: eNB_id %d, harq_pid %d, nb_rb %d first_rb %d, cooperation %d\n",eNB_id,harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
@@ -1640,7 +1639,6 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
     lte_ul_channel_estimation(eNB,
                               eNB_id,
                               UE_id,
-                              thread_id,
                               l%(frame_parms->symbols_per_tti/2),
                               l/(frame_parms->symbols_per_tti/2),
                               cooperation_flag);
@@ -1887,25 +1885,24 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 }
 
 void rx_ulsch_emul(PHY_VARS_eNB *eNB,
-                   uint8_t subframe,
                    uint8_t sect_id,
                    uint8_t UE_index)
 {
-  msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",eNB->Mod_id,subframe,sect_id,UE_index);
+  msg("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, sect_id %d, UE_index %d\n",eNB->Mod_id,eNB->proc.subframe_rx,sect_id,UE_index);
   eNB->pusch_vars[UE_index]->ulsch_power[0] = 31622; //=45dB;
   eNB->pusch_vars[UE_index]->ulsch_power[1] = 31622; //=45dB;
 
 }
 
 
-void dump_ulsch(PHY_VARS_eNB *eNB,uint8_t thread_id, uint8_t UE_id)
+void dump_ulsch(PHY_VARS_eNB *eNB,uint8_t UE_id)
 {
 
   uint32_t nsymb = (eNB->frame_parms.Ncp == 0) ? 14 : 12;
   uint8_t harq_pid;
-  int subframe = eNB->proc[thread_id].subframe_rx;
+  int subframe = eNB->proc.subframe_rx;
 
-  harq_pid = subframe2harq_pid(&eNB->frame_parms,eNB->proc[thread_id].frame_rx,subframe);
+  harq_pid = subframe2harq_pid(&eNB->frame_parms,eNB->proc.frame_rx,subframe);
 
   printf("Dumping ULSCH in subframe %d with harq_pid %d, for NB_rb %d, mcs %d, Qm %d, N_symb %d\n", subframe,harq_pid,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,get_Qm_ul(eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs),

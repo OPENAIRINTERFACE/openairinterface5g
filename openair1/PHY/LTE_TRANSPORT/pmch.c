@@ -286,11 +286,11 @@ void fill_UE_dlsch_MCH(PHY_VARS_UE *ue,int mcs,int ndi,int rvidx,int eNB_id)
   }
 }
 
-void generate_mch(PHY_VARS_eNB *eNB,int thread_id,uint8_t *a,int abstraction_flag)
+void generate_mch(PHY_VARS_eNB *eNB,uint8_t *a,int abstraction_flag)
 {
 
   int G;
-  int subframe = eNB->proc[thread_id].subframe_tx;
+  int subframe = eNB->proc.subframe_tx;
 
   if (abstraction_flag != 0) {
     if (eNB_transport_info_TB_index[eNB->Mod_id][eNB->CC_id]!=0)
@@ -312,18 +312,18 @@ void generate_mch(PHY_VARS_eNB *eNB,int thread_id,uint8_t *a,int abstraction_fla
               eNB->frame_parms.N_RB_DL,
               eNB->dlsch_MCH->harq_processes[0]->rb_alloc,
               get_Qm(eNB->dlsch_MCH->harq_processes[0]->mcs),1,
-              2,eNB->proc[thread_id].frame_tx,subframe);
+              2,eNB->proc.frame_tx,subframe);
 
     generate_mbsfn_pilot(eNB,
                          eNB->common_vars.txdataF[0],
-                         AMP,
-                         subframe);
+                         AMP);
+
 
     if (dlsch_encoding(a,
                        &eNB->frame_parms,
                        1,
                        eNB->dlsch_MCH,
-                       eNB->proc[thread_id].frame_tx,
+                       eNB->proc.frame_tx,
                        subframe,
                        &eNB->dlsch_rate_matching_stats,
                        &eNB->dlsch_turbo_encoding_stats,

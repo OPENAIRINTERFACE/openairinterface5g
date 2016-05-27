@@ -9,8 +9,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
-extern PHY_VARS_eNB *PHY_vars_eNB;
-extern PHY_VARS_UE *PHY_vars_UE;
+extern PHY_VARS_eNB *eNB;
+extern PHY_VARS_UE *UE;
 
 void lte_param_init(unsigned char N_tx, 
 		    unsigned char N_rx,
@@ -30,8 +30,8 @@ void lte_param_init(unsigned char N_tx,
 
 
   printf("Start lte_param_init\n");
-  PHY_vars_eNB = malloc(sizeof(PHY_VARS_eNB));
-  PHY_vars_UE = malloc(sizeof(PHY_VARS_UE));
+  eNB = malloc(sizeof(PHY_VARS_eNB));
+  UE = malloc(sizeof(PHY_VARS_UE));
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -39,7 +39,7 @@ void lte_param_init(unsigned char N_tx,
   randominit(0);
   set_taus_seed(0);
 
-  frame_parms = &(PHY_vars_eNB->frame_parms);
+  frame_parms = &(eNB->frame_parms);
 
   frame_parms->N_RB_DL            = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
   frame_parms->N_RB_UL            = N_RB_DL;
@@ -66,40 +66,40 @@ void lte_param_init(unsigned char N_tx,
 
   //  phy_init_top(frame_parms); //allocation
 
-  PHY_vars_UE->is_secondary_ue = 0;
-  PHY_vars_UE->frame_parms = *frame_parms;
-  PHY_vars_eNB->frame_parms = *frame_parms;
+  UE->is_secondary_ue = 0;
+  UE->frame_parms = *frame_parms;
+  eNB->frame_parms = *frame_parms;
 
   phy_init_lte_top(frame_parms);
   dump_frame_parms(frame_parms);
 
-  PHY_vars_UE->measurements.n_adj_cells=0;
-  PHY_vars_UE->measurements.adj_cell_id[0] = Nid_cell+1;
-  PHY_vars_UE->measurements.adj_cell_id[1] = Nid_cell+2;
+  UE->measurements.n_adj_cells=0;
+  UE->measurements.adj_cell_id[0] = Nid_cell+1;
+  UE->measurements.adj_cell_id[1] = Nid_cell+2;
 
   for (i=0; i<3; i++)
-    lte_gold(frame_parms,PHY_vars_UE->lte_gold_table[i],Nid_cell+i);
+    lte_gold(frame_parms,UE->lte_gold_table[i],Nid_cell+i);
 
-  phy_init_lte_ue(PHY_vars_UE,1,0);
-  phy_init_lte_eNB(PHY_vars_eNB,0,0,0);
+  phy_init_lte_ue(UE,1,0);
+  phy_init_lte_eNB(eNB,0,0,0);
 
-  generate_pcfich_reg_mapping(&PHY_vars_UE->frame_parms);
-  generate_phich_reg_mapping(&PHY_vars_UE->frame_parms);
+  generate_pcfich_reg_mapping(&UE->frame_parms);
+  generate_phich_reg_mapping(&UE->frame_parms);
 
   // DL power control init
   if (transmission_mode == 1) {
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->frame_parms).pdsch_config_common).p_b = 0;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->frame_parms).pdsch_config_common).p_b = 0;
+    eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    ((eNB->frame_parms).pdsch_config_common).p_b = 0;
+    UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    ((UE->frame_parms).pdsch_config_common).p_b = 0;
   } else { // rho_a = rhob
-    PHY_vars_eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_eNB->frame_parms).pdsch_config_common).p_b = 1;
-    PHY_vars_UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
-    ((PHY_vars_UE->frame_parms).pdsch_config_common).p_b = 1;
+    eNB->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    ((eNB->frame_parms).pdsch_config_common).p_b = 1;
+    UE->pdsch_config_dedicated->p_a  = dB0; // 4 = 0dB
+    ((UE->frame_parms).pdsch_config_common).p_b = 1;
   }
 
-  PHY_vars_UE->perfect_ce = perfect_ce;
+  UE->perfect_ce = perfect_ce;
 
   printf("Done lte_param_init\n");
 
