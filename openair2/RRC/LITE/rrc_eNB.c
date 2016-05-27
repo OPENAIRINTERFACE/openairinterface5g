@@ -3658,6 +3658,9 @@ rrc_eNB_decode_ccch(
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest:
+      T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Reestablishement Request\n");
 
@@ -3700,6 +3703,9 @@ rrc_eNB_decode_ccch(
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
+      T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Request\n");
 
@@ -4073,6 +4079,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
+      T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Reestablishment Complete\n");
 
@@ -4147,6 +4156,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
+      T(T_ENB_RRC_SECURITY_MODE_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
 
@@ -4189,6 +4201,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_securityModeFailure:
+      T(T_ENB_RRC_SECURITY_MODE_FAILURE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Failure\n");
 
@@ -4226,6 +4241,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
+      T(T_ENB_RRC_UE_CAPABILITY_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UECapablility Information \n");
 
@@ -4288,9 +4306,15 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
+      T(T_ENB_RRC_UL_HANDOVER_PREPARATION_TRANSFER, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+      T(T_ENB_RRC_UL_INFORMATION_TRANSFER, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UL Information Transfer \n");
 
@@ -4324,27 +4348,48 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
+      T(T_ENB_RRC_COUNTER_CHECK_RESPONSE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
 #ifdef Rel10
 
     case UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
+      T(T_ENB_RRC_UE_INFORMATION_RESPONSE_R9, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_proximityIndication_r9:
+      T(T_ENB_RRC_PROXIMITY_INDICATION_R9, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
+      T(T_ENB_RRC_RECONFIGURATION_COMPLETE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
+      T(T_ENB_RRC_MBMS_COUNTING_RESPONSE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
+      T(T_ENB_RRC_INTER_FREQ_RSTD_MEASUREMENT_INDICATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 #endif
 
     default:
+      T(T_ENB_RRC_UNKNOW_MESSAGE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Unknown message %s:%u\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             __FILE__, __LINE__);
