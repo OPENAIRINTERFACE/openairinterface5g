@@ -303,6 +303,36 @@ int main(int n, char **v)
       h, database, is_on);
   view_add_log(eg.rrcview, "ENB_RRC_UL_DCCH_DATA_IN",
       h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_SECURITY_MODE_COMPLETE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_SECURITY_MODE_FAILURE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UE_CAPABILITY_INFORMATION",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_REQUEST",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_REESTABLISHMENT_COMPLETE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UL_HANDOVER_PREPARATION_TRANSFER",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UL_INFORMATION_TRANSFER",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_COUNTER_CHECK_RESPONSE",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UE_INFORMATION_RESPONSE_R9",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_PROXIMITY_INDICATION_R9",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_RECONFIGURATION_COMPLETE_R10",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_MBMS_COUNTING_RESPONSE_R10",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_INTER_FREQ_RSTD_MEASUREMENT_INDICATION",
+      h, database, is_on);
+  view_add_log(eg.rrcview, "ENB_RRC_UNKNOW_MESSAGE",
+      h, database, is_on);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
