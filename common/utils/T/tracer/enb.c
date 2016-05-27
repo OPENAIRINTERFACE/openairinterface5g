@@ -277,6 +277,10 @@ int main(int n, char **v)
   on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
 
+  on_off(database, "LEGACY_RRC_INFO", is_on, 1);
+  on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
+  on_off(database, "LEGACY_RRC_WARNING", is_on, 1);
+
   view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE",
       h, database, is_on);
   view_add_log(eg.rrcview, "ENB_RRC_SECURITY_MODE_COMMAND",
