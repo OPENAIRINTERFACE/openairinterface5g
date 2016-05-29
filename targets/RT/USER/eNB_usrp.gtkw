@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Fri May 27 01:34:58 2016
+[*] Sun May 29 20:10:01 2016
 [*]
 [dumpfile] "/tmp/openair_dump_eNB.vcd"
-[dumpfile_mtime] "Fri May 27 01:33:50 2016"
-[dumpfile_size] 12743642
+[dumpfile_mtime] "Sun May 29 20:07:25 2016"
+[dumpfile_size] 16398004
 [savefile] "/home/papillon/openairinterface5g/targets/RT/USER/eNB_usrp.gtkw"
-[timestart] 10801070000
-[size] 1535 845
-[pos] -1 -1
-*-21.793451 10817350000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 10806270000
+[size] 1535 724
+[pos] 309 0
+*-18.793451 10806918339 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 284
 [signals_width] 254
 [sst_expanded] 1
@@ -28,10 +28,12 @@ variables.subframe_number_RX_eNB[63:0]
 functions.eNB_thread_rx0
 functions.eNB_thread_tx0
 functions.phy_procedures_eNb_tx
-@29
 functions.phy_enb_sfgen
+@29
+functions.phy_eNB_slot_fep
 @28
 functions.phy_procedures_eNb_rx
+functions.phy_enb_prach_rx
 @24
 variables.dci_info[63:0]
 variables.ue0_BO[63:0]
@@ -46,8 +48,6 @@ functions.macxface_SR_indication
 @420
 variables.ue0_SR_ENERGY[63:0]
 variables.ue0_SR_THRES[63:0]
-@24
-variables.dci_info[63:0]
 @28
 functions.phy_enb_ulsch_decoding0
 @24

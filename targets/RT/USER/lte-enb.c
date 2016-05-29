@@ -372,7 +372,7 @@ static void* eNB_thread_tx( void* param )
 
    }
 
- LOG_I( HW, "[SCHED][eNB] TX thread %d started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n",sched_getcpu(),gettid(),
+ LOG_I( HW, "[SCHED][eNB] TX thread started on CPU %d TID %ld, sched_policy = %s , priority = %d, CPU Affinity=%s \n",sched_getcpu(),gettid(),
                    (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
                    (policy == SCHED_RR)    ? "SCHED_RR" :
                    (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -868,7 +868,7 @@ static void* eNB_thread_prach( void* param )
    }
 
 
-  LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
+  LOG_I( HW, "[SCHED][eNB] RX thread started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
 	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
 	 (policy == SCHED_RR)    ? "SCHED_RR" :
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -975,6 +975,9 @@ void init_eNB_proc(void)
     proc->instance_cnt_tx = -1;
     proc->instance_cnt_prach = -1;
     proc->CC_id = CC_id;
+
+    proc->first_rx=1;
+
     pthread_mutex_init( &proc->mutex_tx, NULL);
     pthread_cond_init( &proc->cond_tx, NULL);
     pthread_cond_init( &proc->cond_prach, NULL);

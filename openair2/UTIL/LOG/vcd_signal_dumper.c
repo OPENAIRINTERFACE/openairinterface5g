@@ -230,6 +230,7 @@ const char* eurecomFunctionsNames[] = {
   "phy_procedures_eNb_rx",
   "phy_procedures_eNb_rx_common",
   "phy_procedures_eNb_rx_uespec",
+  "phy_eNB_slot_fep",
   "phy_procedures_ue_tx",
   "phy_procedures_ue_rx",
   "phy_procedures_eNB_lte",

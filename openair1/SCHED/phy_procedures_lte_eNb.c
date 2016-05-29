@@ -2487,6 +2487,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
 
+
   if (subframe==9) { 
     subframe=0;
     frame++;
@@ -2515,7 +2516,10 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 				     fp->nb_antennas_rx);
 	proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
 	proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-	AssertFatal(proc->subframe_rx == subframe, "Received Timestamp doesn't correspond to the time we think it is");
+	if (proc->first_rx == 0)
+	  AssertFatal(proc->subframe_rx == subframe, "Received Timestamp doesn't correspond to the time we think it is");
+	else
+	  proc->first_rx = 0;
 
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, frame );
@@ -2526,7 +2530,42 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 	    exit_fun( "problem receiving samples" );
 	}
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-    
+
+	// wake up TX thread
+	// lock the TX mutex and make sure the thread is ready
+	if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
+	  LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n", proc->instance_cnt_tx );
+	  exit_fun( "error locking mutex_tx" );
+	  return;
+	}
+	
+	int cnt_tx = ++proc->instance_cnt_tx;
+	// We have just received and processed the common part of the first slot of a subframe, say n. 
+	// TX_rx is the last received timestamp (start of 1st slot), TX_tx is the desired 
+	// transmitted timestamp of the next TX slot (first).
+	// The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
+	// we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
+	// and proc->subframe_tx = proc->subframe_rx+3
+	proc->timestamp_tx = proc->timestamp_rx + (3*fp->samples_per_tti);
+	proc->frame_tx     = (subframe > 6) ? (frame+1) : frame;
+	proc->subframe_tx  = (subframe + 3)%10;
+	
+	pthread_mutex_unlock( &proc->mutex_tx );
+	
+	if (cnt_tx == 0){
+	  // the thread was presumably waiting where it should and can now be woken up
+	  if (pthread_cond_signal(&proc->cond_tx) != 0) {
+	    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TX thread\n");
+	    exit_fun( "ERROR pthread_cond_signal" );
+	    return;
+	  }
+	} else {
+	  LOG_W( PHY,"[eNB] Frame %d, eNB TX thread busy!! (cnt_tx %i)\n", frame, cnt_tx );
+	  exit_fun( "TX thread busy" );
+	  return;
+	}    
+	// now do common RX processing for first slot in subframe
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
 	remove_7_5_kHz(eNB,subframe<<1);
 	for (l=0; l<fp->symbols_per_tti/2; l++)
 	  slot_fep_ul(fp,
@@ -2540,6 +2579,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 	if (eNB->node_function == NGFI_RRU_IF4) {
 	  //send_IF4(eNB,subframe<<1);
 	}
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
 	for (i=0; i<fp->nb_antennas_rx; i++)
 	  rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][(fp->samples_per_tti>>1)+(subframe*fp->samples_per_tti)];
@@ -2552,6 +2592,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 				     fp->nb_antennas_rx);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
 	remove_7_5_kHz(eNB,(subframe<<1)+1);
 	for (l=0; l<fp->symbols_per_tti/2; l++)
 	  slot_fep_ul(fp,
@@ -2561,6 +2602,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 		      0,
 		      0
 		      );
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 	if (eNB->node_function == NGFI_RRU_IF4) {
 	  //send_IF4(eNB,(subframe<<1)+1);
 	}
@@ -2610,39 +2652,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
     }
     
-    // wake up TX thread
-    // lock the TX mutex and make sure the thread is ready
-    if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n", proc->instance_cnt_tx );
-      exit_fun( "error locking mutex_tx" );
-      return;
-    }
-    
-    int cnt_tx = ++proc->instance_cnt_tx;
-    // We have just received and processed the common part of an entire subframe, say n. 
-    // TX_rx is the last received timestamp (start of 2nd slot), TX_tx is the desired 
-    // transmitted timestamp of the next TX slot (first).
-    // The last (TS_rx mod samples_per_frame) was (n+.5)*samples_per_tti, 
-    // we want to generate subframe (n+3), so TS_tx = TX_rx+2.5*samples_per_tti,
-    // and proc->subframe_tx = proc->subframe_rx+3
-    proc->timestamp_tx = proc->timestamp_rx + (fp->samples_per_tti<<1) + (fp->samples_per_tti>>1);
-    proc->frame_tx     = (subframe > 6) ? (frame+1) : frame;
-    proc->subframe_tx  = (subframe + 3)%10;
 
-    pthread_mutex_unlock( &proc->mutex_tx );
-
-    if (cnt_tx == 0){
-      // the thread was presumably waiting where it should and can now be woken up
-      if (pthread_cond_signal(&proc->cond_tx) != 0) {
-	LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TX thread\n");
-	exit_fun( "ERROR pthread_cond_signal" );
-	return;
-      }
-    } else {
-      LOG_W( PHY,"[eNB] Frame %d, eNB TX thread busy!! (cnt_tx %i)\n", frame, cnt_tx );
-      exit_fun( "TX thread busy" );
-      return;
-    }
     
   }
 

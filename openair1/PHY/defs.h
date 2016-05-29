@@ -210,6 +210,8 @@ typedef struct {
   pthread_t pthread_tx;
   /// pthread structure for rx processing thread
   pthread_t pthread_rx;
+  /// flag to indicate first RX acquisition
+  int first_rx;
   /// pthread attributes for tx processing thread
   pthread_attr_t attr_tx;
   /// pthread attributes for rx processing thread
