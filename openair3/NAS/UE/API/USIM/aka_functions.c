@@ -306,6 +306,11 @@ void ComputeOPc( u8 op_c_pP[16] )
 
   for (i=0; i<16; i++)
     op_c_pP[i] ^= OP[i];
+  LOG_TRACE(DEBUG,
+            "USIM-API  - OPc[0..15]=%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
+            op_c_pP[0],op_c_pP[1],op_c_pP[2], op_c_pP[3], op_c_pP[4], op_c_pP[5], op_c_pP[6], op_c_pP[7],
+            op_c_pP[8],op_c_pP[9],op_c_pP[10],op_c_pP[11],op_c_pP[12],op_c_pP[13],op_c_pP[14],op_c_pP[15]);
+
 
   return;
 } /* end of function ComputeOPc */

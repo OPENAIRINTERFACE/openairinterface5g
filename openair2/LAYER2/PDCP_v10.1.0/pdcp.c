@@ -1093,7 +1093,7 @@ rrc_pdcp_config_asn1_req (
       srb_id = srb2add_list_pP->list.array[cnt]->srb_Identity;
       srb_toaddmod_p = srb2add_list_pP->list.array[cnt];
       rlc_type = RLC_MODE_AM;
-      lc_id = srb_id + 2;
+      lc_id = srb_id;// + 2;
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, srb_id, SRB_FLAG_YES);
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -1429,13 +1429,14 @@ pdcp_config_req_asn1 (
     pdcp_pP->first_missing_pdu                = -1;
     pdcp_pP->rx_hfn_offset                    = 0;
 
-    LOG_I(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (rb id %d) "
+    LOG_N(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
             "configured with SN size %d bits and RLC %s\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,
+	  (srb_flagP == SRB_FLAG_YES) ? "SRB" : "DRB",
           rb_idP,
           pdcp_pP->seq_num_size,
-            (rlc_modeP == RLC_MODE_AM ) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
+	  (rlc_modeP == RLC_MODE_AM ) ? "AM" : (rlc_modeP == RLC_MODE_TM) ? "TM" : "UM");
     /* Setup security */
     if (security_modeP != 0xff) {
       pdcp_config_set_security(
@@ -1477,7 +1478,7 @@ pdcp_config_req_asn1 (
       pdcp_pP->seq_num_size=5;
     }
 
-    LOG_I(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
+    LOG_N(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
             "RB id %d reconfigured with SN size %d and RLC %s \n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,

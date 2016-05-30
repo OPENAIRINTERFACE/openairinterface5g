@@ -187,6 +187,9 @@ typedef enum HO_STATE_e {
 #define CBA_OFFSET        0xfff4
 // #define NUM_MAX_CBA_GROUP 4 // in the platform_constants
 
+/* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
+#define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
+
 typedef struct UE_RRC_INFO_s {
   UE_STATE_t State;
   uint8_t SIB1systemInfoValueTag;
@@ -283,7 +286,7 @@ typedef struct SRB_INFO_TABLE_ENTRY_s {
   SRB_INFO Srb_info;
   uint8_t Active;
   uint8_t Status;
-  uint32_t Next_check_frame;
+  uint32_t Next_check_frame; 
 } SRB_INFO_TABLE_ENTRY;
 
 typedef struct MEAS_REPORT_LIST_s {
@@ -303,8 +306,9 @@ typedef struct eNB_RRC_UE_s {
   SCellToAddMod_r10_t                sCell_config[2];
 #endif
   SRB_ToAddModList_t*                SRB_configList;
+  SRB_ToAddModList_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   DRB_ToAddModList_t*                DRB_configList;
-  DRB_ToAddModList_t*                DRB_configList2[8];
+  DRB_ToAddModList_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
   struct PhysicalConfigDedicated*    physicalConfigDedicated;
   struct SPS_Config*                 sps_Config;
@@ -412,10 +416,10 @@ typedef struct {
 #endif
   SRB_INFO                          SI;
   SRB_INFO                          Srb0;
-} rcc_eNB_carrier_data_t;
+} rrc_eNB_carrier_data_t;
 
 typedef struct eNB_RRC_INST_s {
-  rcc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
+  rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
   uint8_t                           HO_flag;

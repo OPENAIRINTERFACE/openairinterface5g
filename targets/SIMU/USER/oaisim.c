@@ -605,6 +605,16 @@ l2l1_task (void *args_p)
   }
 
 #endif
+  module_id_t enb_id;
+  module_id_t UE_id;
+  for (enb_id = 0; enb_id < NB_eNB_INST; enb_id++)
+    mac_xface->mrbch_phy_sync_failure (enb_id, 0, enb_id);
+  
+  if (abstraction_flag == 1) {
+    for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
+      mac_xface->dl_phy_sync_success (UE_id, 0, 0,1);   //UE_id%NB_eNB_INST);
+  }
+  
   start_meas (&oaisim_stats);
 
   for (frame = 0;

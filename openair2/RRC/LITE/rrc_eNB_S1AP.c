@@ -759,12 +759,15 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
   uint32_t eNB_ue_s1ap_id;
   uint32_t length;
   uint8_t *buffer;
-
+  uint8_t srb_id; 
+  
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
+  srb_id = ue_context_p->ue_context.Srb2.Srb_info.Srb_id;
+  
   LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d\n",
         instance,
         msg_name,
@@ -845,10 +848,13 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
 
     LOG_F(RRC,"\n");
 #endif
+    /* 
+     * switch UL or DL NAS message without RRC piggybacked to SRB2 if active. 
+     */
     /* Transfer data to PDCP */
     rrc_data_req (
 		  &ctxt,
-		  DCCH,
+		  srb_id,
 		  *rrc_eNB_mui++,
 		  SDU_CONFIRM_NO,
 		  length,
