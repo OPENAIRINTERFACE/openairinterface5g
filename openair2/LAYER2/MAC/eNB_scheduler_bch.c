@@ -85,9 +85,9 @@ schedule_SI(
   int CC_id;
   eNB_MAC_INST *eNB = &eNB_mac_inst[module_idP];
   uint8_t *vrb_map;
-  int first_rb;
+  int first_rb = -1;
   int rballoc[MAX_NUM_CCs];
-  int sizeof1A_bytes,sizeof1A_bits;
+  int sizeof1A_bytes,sizeof1A_bits = -1;
   DCI_PDU *DCI_pdu;
 
   start_meas(&eNB->schedule_si);

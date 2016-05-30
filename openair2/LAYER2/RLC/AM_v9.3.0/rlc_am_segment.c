@@ -516,7 +516,7 @@ void rlc_am_segment_10 (
 
     pdu_tb_req_p->data_ptr        = (unsigned char*)pdu_p;
     pdu_tb_req_p->tb_size         = data_pdu_size - pdu_remaining_size;
-#warning "why 3000: changed to RLC_SDU_MAX_SIZE "
+//#warning "why 3000: changed to RLC_SDU_MAX_SIZE "
     assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
     rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt_p->payload_size);
 

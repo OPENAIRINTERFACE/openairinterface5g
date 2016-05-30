@@ -211,11 +211,11 @@ PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (eMBMS_active_state == multicast_relay) {
     for (i=0; i < 10 ; i++) { // num SF in a frame
-      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS_MBSFN,NSOFT,frame_parms->N_RB_DL, 0);
+      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL, 0);
       LOG_D(PHY,"eNB %d : MCH[%d] %p\n",RN_id,i,PHY_vars_RN->dlsch_rn_MCH[i]);
     }
   } else {
-    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,NSOFT,frame_parms->N_RB_DL, 0);
+    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, 0);
     LOG_D(PHY,"eNB %d : MCH[0] %p\n",RN_id,PHY_vars_RN->dlsch_rn_MCH[0]);
   }
 

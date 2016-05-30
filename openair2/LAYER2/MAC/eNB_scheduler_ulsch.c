@@ -229,6 +229,12 @@ void rx_sdu(
 
     switch (rx_lcids[i]) {
     case CCCH :
+      if (rx_lengths[i] > CCCH_PAYLOAD_SIZE_MAX) {
+        LOG_E(MAC, "[eNB %d/%d] frame %d received CCCH of size %d (too big, maximum allowed is %d), dropping packet\n",
+              enb_mod_idP, CC_idP, frameP, rx_lengths[i], CCCH_PAYLOAD_SIZE_MAX);
+        break;
+      }
+
       LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, Received CCCH:  %x.%x.%x.%x.%x.%x, Terminating RA procedure for UE rnti %x\n",
             enb_mod_idP,CC_idP,frameP,
             payload_ptr[0],payload_ptr[1],payload_ptr[2],payload_ptr[3],payload_ptr[4], payload_ptr[5], rntiP);
@@ -302,26 +308,23 @@ void rx_sdu(
 #endif
 
       if (UE_id != -1) {
-        //  This check is just to make sure we didn't get a bogus SDU length, to be removed ...
-        if (rx_lengths[i]<CCCH_PAYLOAD_SIZE_MAX) {
-          LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d \n",
-                enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
+        LOG_D(MAC,"[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d \n",
+              enb_mod_idP,CC_idP,frameP, rx_lengths[i], UE_id, rx_lcids[i]);
 
-          mac_rlc_data_ind(
-			   enb_mod_idP,
-			   rntiP,
-			   enb_mod_idP,
-			   frameP,
-			   ENB_FLAG_YES,
-			   MBMS_FLAG_NO,
-			   rx_lcids[i],
-			   (char *)payload_ptr,
-			   rx_lengths[i],
-			   1,
-			   NULL);//(unsigned int*)crc_status);
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
-          UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
-        }
+        mac_rlc_data_ind(
+			 enb_mod_idP,
+			 rntiP,
+			 enb_mod_idP,
+			 frameP,
+			 ENB_FLAG_YES,
+			 MBMS_FLAG_NO,
+			 rx_lcids[i],
+			 (char *)payload_ptr,
+			 rx_lengths[i],
+			 1,
+			 NULL);//(unsigned int*)crc_status);
+        UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]]+=1;
+        UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]]+=rx_lengths[i];
       } /* UE_id != -1 */
 
       //      }

@@ -54,11 +54,11 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
 {
 
   int i;
-  uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
+  //uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
   uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
 
   uint32_t rballoc = 0x7FFF;
-  uint32_t rballoc2 = 0x000F;
+  //uint32_t rballoc2 = 0x000F;
   int subframe = phy_vars_eNB->proc[sched_subframe].subframe_tx;
 
   LTE_eNB_DLSCH_t *DLSCH_ptr = phy_vars_eNB->dlsch_eNB[0][0];
@@ -585,7 +585,7 @@ void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *phy_vars_eN
 {
 
   int i;
-  uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
+  //uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
   uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
 
   //uint32_t rballoc = 0x00F0;

@@ -20,7 +20,7 @@ test_compile() {
     compile_prog=$2
     exec_prog=$3
     build_dir=$tdir/$1/build
-    log_file=$tdir/log/test.$1.txt
+    log_file=$tdir/log/test.$1.$2.$5.txt
     target=$5
     echo "Compiling test case $test_name. Log file = $log_file"
     rm -fr $build_dir
@@ -34,10 +34,10 @@ test_compile() {
     if [ -s $exec_prog ] ; then
         cp $exec_prog $tdir/bin/`basename $exec_prog`.$target.$test_name
         echo_success "$test_name $exec_prog $target compiled"
-        xUnit_success "compilation" $test_name "PASS" 1
+        xUnit_success "compilation" $test_name "PASS" 1 "$results_file"
     else
         echo_error "$test_name $exec_prog $target compilation failed"
-        xUnit_fail "compilation" $test_name "FAIL" 1
+        xUnit_fail "compilation" $test_name "FAIL" 1 "$results_file"
     fi
 }
 

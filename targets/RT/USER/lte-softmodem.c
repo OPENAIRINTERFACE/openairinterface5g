@@ -394,7 +394,7 @@ struct timespec clock_difftime(struct timespec start, struct timespec end)
     return temp;
 }
 
-void print_difftimes()
+void print_difftimes(void)
 {
 #ifdef DEBUG
     printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
@@ -1055,7 +1055,7 @@ static void* eNB_thread_tx( void* param )
   static int eNB_thread_tx_status[NUM_ENB_THREADS];
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
-  FILE  *tx_time_file;
+  FILE  *tx_time_file = NULL;
   char tx_time_name[101];
 
   if (opp_enabled == 1) {
@@ -1274,9 +1274,9 @@ static void* eNB_thread_rx( void* param )
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
 
-  FILE  *rx_time_file;
+  FILE  *rx_time_file = NULL;
   char rx_time_name[101];
-  int i;
+  //int i;
 
   if (opp_enabled == 1){
     snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf_%d", "eNB", proc->subframe);
@@ -1638,6 +1638,11 @@ static void* eNB_thread( void* arg )
   int CC_id=0;	
   struct timespec trx_time0, trx_time1, trx_time2;
 
+  /* avoid gcc warnings */
+  (void)trx_time0;
+  (void)trx_time1;
+  (void)trx_time2;
+
 #ifdef RTAI
   RT_TASK* task = rt_task_init_schmod(nam2num("eNBmain"), 0, 0, 0, SCHED_FIFO, 0xF);
 #else
@@ -1681,7 +1686,7 @@ static void* eNB_thread( void* arg )
 #ifdef RTAI
   printf( "[SCHED][eNB] Started eNB main thread (id %p)\n", task );
 #else
-  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %d\n", sched_getcpu(), gettid());
+  printf( "[SCHED][eNB] Started eNB main thread on CPU %d TID %ld\n", sched_getcpu(), gettid());
 #endif
 
 #ifdef HARD_RT
@@ -3225,10 +3230,11 @@ int main( int argc, char **argv )
 
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
-      fread(UE[0]->lte_ue_common_vars.rxdata[0],
-	    sizeof(int32_t),
-	    frame_parms[0]->samples_per_tti*10,
-	    input_fd);
+      if (fread(UE[0]->lte_ue_common_vars.rxdata[0],
+	        sizeof(int32_t),
+	        frame_parms[0]->samples_per_tti*10,
+	        input_fd) != frame_parms[0]->samples_per_tti*10)
+        printf("error reading from file\n");
     }
     //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
   } else {

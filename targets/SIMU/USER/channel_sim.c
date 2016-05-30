@@ -97,7 +97,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
   double rx_pwr;
   int32_t rx_pwr2;
   uint32_t i,aa;
-  uint32_t slot_offset,slot_offset_meas;
+  uint32_t slot_offset,slot_offset_meas = 0;
 
   double min_path_loss=-200;
   uint8_t hold_channel=0;
@@ -105,7 +105,7 @@ void do_DL_sig(double **r_re0,double **r_im0,
   uint8_t nb_antennas_rx = eNB2UE[0][0][CC_id]->nb_rx; // number of rx antennas at UE
   uint8_t nb_antennas_tx = eNB2UE[0][0][CC_id]->nb_tx; // number of tx antennas at eNB
 
-  LTE_DL_FRAME_PARMS *fp;
+  //LTE_DL_FRAME_PARMS *fp;
   //  int subframe_sched = ((next_slot>>1) == 0) ? 9 : ((next_slot>>1)-1);
 
 

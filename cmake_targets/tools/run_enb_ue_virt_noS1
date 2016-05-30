@@ -71,6 +71,7 @@ function help()
   echo_error "                                          and PDCP-LTE. Then capture for all the interfaces with the following filters: s1ap or lte_rrc or mac-lte or rlc-lte"
   echo_error "                                          or pdcp-lte. Note the L2 pdus are transmitted to the local interface."
   echo_error "  -x, --xforms                            Run XFORMS scope windows."
+  echo_error "  -n, --num-frames                        Set number of frames for simulation"
 }
 
 
@@ -165,6 +166,11 @@ function main()
         exe_arguments="$exe_arguments -P wireshark"
         shift 1;
         ;;
+      -n | --num-frames)
+	echo "setting the number of frames in simulation to $2"
+	exe_arguments="$exe_arguments -n $2"
+        shift 2;
+	;; 
       *)   
         echo "Unknown option $1"
         help
