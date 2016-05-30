@@ -321,7 +321,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   print "Killing old programs..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
-  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   result=oai.send_recv(cmd)
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)

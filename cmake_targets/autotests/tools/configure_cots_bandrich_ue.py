@@ -200,10 +200,12 @@ def reset_ue():
   ProductId=res[0][3]
   usb_dir= find_usb_path(VendorId, ProductId)
   print "Bandrich 4G LTE Adapter found in..." + usb_dir
+  print "Sleeping now for 45 seconds...please wait..."
   cmd = "sudo sh -c \"echo 0 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 30" )
+  stop_ue()
 
 i=1
 gw='192.172.0.1'
