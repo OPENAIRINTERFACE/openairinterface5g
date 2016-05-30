@@ -330,7 +330,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
   cmd  = "( " + ExmimoRfStop + " ) >> $HOME/.oai_test_setup_cleanup.log.`hostname` ; sync "
-  res=oai.send_recv(cmd, False)
+  res=oai.send_recv(cmd, False, timeout=600)
   #res = oai.send_recv(ExmimoRfStop, False)
   cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   res=oai.send_recv(cmd)
