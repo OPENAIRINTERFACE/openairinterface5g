@@ -685,7 +685,7 @@ void get_simulation_options(int argc, char *argv[])
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
       if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
-          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6)) {
+          && (oai_emulation.info.transmission_mode[0] != 5) && (oai_emulation.info.transmission_mode[0] != 6) && (oai_emulation.info.transmission_mode[0] !=7)) {
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
