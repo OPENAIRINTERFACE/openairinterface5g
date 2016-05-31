@@ -127,25 +127,11 @@ extern T_cache_t *T_cache;
 
 #define T_ACTIVE(x) T_active[(intptr_t)x]
 
-#ifdef T_USE_SHARED_MEMORY
-
 #define T_SEND() \
   T_cache[T_LOCAL_slot].length = T_LOCAL_size; \
   __sync_synchronize(); \
   T_cache[T_LOCAL_slot].busy = 1; \
   T_send(T_LOCAL_buf, T_LOCAL_size)
-
-#else /* T_USE_SHARED_MEMORY */
-
-/* when not using shared memory, wait for send to finish */
-#define T_SEND() \
-  T_cache[T_LOCAL_slot].length = T_LOCAL_size; \
-  __sync_synchronize(); \
-  T_cache[T_LOCAL_slot].busy = 1; \
-  T_send(T_LOCAL_buf, T_LOCAL_size); \
-  while (T_cache[T_LOCAL_slot].busy) usleep(1*1000)
-
-#endif /* T_USE_SHARED_MEMORY */
 
 #define T_CHECK_SIZE(len, argnum) \
   if (T_LOCAL_size + (len) > T_BUFFER_MAX) { \
@@ -575,25 +561,7 @@ extern T_cache_t *T_cache;
     } \
   } while (0)
 
-#ifndef T_USE_SHARED_MEMORY
-
-#include <stdio.h>
-
-static inline void T_send(char *buf, int size)
-{
-  int i;
-return;
-  printf("sending %d bytes", size);
-  for (i = 0; i < size; i++)
-    printf("%s%2.2x", i?" ":"\n", (unsigned char)buf[i]);
-  printf("\n");
-}
-
-#else /* T_USE_SHARED_MEMORY */
-
 #define T_send(...) /**/
-
-#endif /* T_USE_SHARED_MEMORY */
 
 extern int *T_active;
 

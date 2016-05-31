@@ -62,42 +62,6 @@ printf("got mess %d\n", t);
   }
 }
 
-#ifndef T_USE_SHARED_MEMORY
-
-static void *T_send_thread(void *_)
-{
-  while (1) {
-    usleep(5000);
-    __sync_synchronize();
-    while (T_cache[T_busylist_head].busy) {
-      char *b;
-      int l;
-      /* TODO: be sure about those memory barriers - in doubt one is
-       * put here too
-       */
-      __sync_synchronize();
-      b = T_cache[T_busylist_head].buffer;
-      l = T_cache[T_busylist_head].length;
-      while (l) {
-        int done = write(T_socket, b, l);
-        if (done <= 0) {
-          printf("%s:%d:%s: error sending to socket\n",
-                 __FILE__, __LINE__, __FUNCTION__);
-          abort();
-        }
-        b += done;
-        l -= done;
-      }
-      T_cache[T_busylist_head].busy = 0;
-      T_busylist_head++;
-      T_busylist_head &= T_CACHE_SIZE - 1;
-    }
-  }
-  return NULL;
-}
-
-#endif /* T_USE_SHARED_MEMORY */
-
 static void *T_receive_thread(void *_)
 {
   while (1) get_message(T_socket);
@@ -123,9 +87,7 @@ void T_connect_to_tracer(char *addr, int port)
 {
   struct sockaddr_in a;
   int s;
-#ifdef T_USE_SHARED_MEMORY
   int T_shm_fd;
-#endif
   unsigned char *buf;
   int len;
 
@@ -156,7 +118,6 @@ again:
 
   T_socket = s;
 
-#ifdef T_USE_SHARED_MEMORY
   /* setup shared memory */
   T_shm_fd = shm_open(T_SHM_FILENAME, O_RDWR /*| O_SYNC*/, 0666);
   shm_unlink(T_SHM_FILENAME);
@@ -166,11 +127,7 @@ again:
   if (T_cache == NULL)
     { perror(T_SHM_FILENAME); abort(); }
   close(T_shm_fd);
-#endif
 
-#ifndef T_USE_SHARED_MEMORY
-  new_thread(T_send_thread, NULL);
-#endif
   new_thread(T_receive_thread, NULL);
 
   /* trace T_message.txt

@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread -DT_TRACER -DT_USE_SHARED_MEMORY -I.
+CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 PROG=tracee
 OBJS=tracee.o ../T.o

@@ -1487,7 +1487,6 @@ set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODU
 #add the T tracer
 add_boolean_option(T_TRACER True "Activate the T tracer" )
 include_directories("${OPENAIR_DIR}/common/utils/T")
-add_boolean_option(T_USE_SHARED_MEMORY True "Use shared memory to communicate with the T tracer" )
 set(T_SOURCE
     ${OPENAIR_DIR}/common/utils/T/T.c)
 set (T_LIB "-lrt")
