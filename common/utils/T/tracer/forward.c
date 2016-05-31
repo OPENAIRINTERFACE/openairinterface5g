@@ -1,4 +1,4 @@
-#include "defs.h"
+#include "forward.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <netinet/ip.h>
@@ -8,6 +8,10 @@
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
+
+/* from local.c */
+int get_connection(char *addr, int port);
+void new_thread(void *(*f)(void *), void *data);
 
 typedef struct databuf {
   char *d;
@@ -101,8 +105,6 @@ void forward_start_client(void *_f, int s)
   f->sc = s;
   new_thread(forward_s_to_sc, f);
 }
-
-int get_connection(char *addr, int port);
 
 void *forwarder(int port)
 {

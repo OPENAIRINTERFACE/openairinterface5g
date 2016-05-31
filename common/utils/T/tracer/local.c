@@ -11,7 +11,7 @@
 
 #define DEFAULT_PORT 2021
 
-#include "defs.h"
+#include "forward.h"
 
 #include "../T_defs.h"
 
