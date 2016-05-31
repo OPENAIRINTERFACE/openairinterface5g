@@ -1835,7 +1835,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in;  $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -1919,7 +1919,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2003,7 +2003,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2087,7 +2087,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2171,7 +2171,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2255,7 +2255,7 @@
     <EPC_main_exec_args> -i -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2340,7 +2340,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2424,7 +2424,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2508,7 +2508,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2592,7 +2592,7 @@
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2676,7 +2676,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2760,7 +2760,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2832,7 +2832,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2904,7 +2904,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -2976,7 +2976,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script  5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script  5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3048,7 +3048,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -3119,7 +3119,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -3190,7 +3190,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -3273,7 +3273,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db    </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3356,7 +3356,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3437,7 +3437,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3518,7 +3518,7 @@
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3599,7 +3599,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3680,7 +3680,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3751,7 +3751,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3824,7 +3824,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3896,7 +3896,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -3968,7 +3968,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4039,7 +4039,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4110,7 +4110,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4193,7 +4193,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4276,7 +4276,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4357,7 +4357,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec    </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4438,7 +4438,7 @@
     <EPC_main_exec_args>  -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db  </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4519,7 +4519,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4600,7 +4600,7 @@
     <EPC_main_exec_args> -r </EPC_main_exec_args>
     <HSS_main_exec>sleep 10; $OPENAIRCN_DIR/SCRIPTS/run_hss  --export-db $OPENAIRCN_TESTDIR/hss_export.db   </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     ; cp $OPENAIRCN_DIR/BUILD/EPC/epc.conf.in $OPENAIRCN_TESTDIR/epc.conf.in</EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true></EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4676,7 +4676,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4752,7 +4752,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4827,7 +4827,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -4902,7 +4902,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -4976,7 +4976,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5051,7 +5051,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5125,7 +5125,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5201,7 +5201,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5276,7 +5276,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5351,7 +5351,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5425,7 +5425,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5500,7 +5500,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5586,7 +5586,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5672,7 +5672,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5757,7 +5757,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -5842,7 +5842,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -5926,7 +5926,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -6011,7 +6011,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -6085,7 +6085,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -6160,7 +6160,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -6234,7 +6234,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 5 lo -s -i 1 -u -f m  </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_true>throughput_test min=1.0Mbits/sec max=1.0Mbits/sec average=1.0Mbits/sec   </EPC_search_expr_true>
     <EPC_search_expr_false></EPC_search_expr_false>
@@ -6309,7 +6309,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo  -u -c  192.172.0.2 -b 10Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -6383,7 +6383,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
@@ -6457,7 +6457,7 @@
     <EPC_main_exec_args></EPC_main_exec_args>
     <HSS_main_exec>/opt/hss_sim0609/starthss >> /dev/null ; sleep 3000 </HSS_main_exec>
     <HSS_main_exec_args></HSS_main_exec_args>
-    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s    -B 192.172.0.1</EPC_traffic_exec>
+    <EPC_traffic_exec>$OPENAIRCN_DIR/TEST/autotests/tools/iperf_script 60 lo -u -c  192.172.0.2 -b 15Mbits/s     </EPC_traffic_exec>
     <EPC_traffic_exec_args></EPC_traffic_exec_args>
     <EPC_search_expr_false></EPC_search_expr_false>
     <EPC_terminate_missing_procs>False</EPC_terminate_missing_procs>
