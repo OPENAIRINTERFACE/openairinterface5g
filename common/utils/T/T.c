@@ -24,8 +24,7 @@ static int T_socket;
 volatile int _T_freelist_head;
 volatile int *T_freelist_head = &_T_freelist_head;
 int T_busylist_head;
-T_cache_t _T_cache[T_CACHE_SIZE];
-T_cache_t *T_cache = _T_cache;
+T_cache_t *T_cache;
 
 static void get_message(int s)
 {
