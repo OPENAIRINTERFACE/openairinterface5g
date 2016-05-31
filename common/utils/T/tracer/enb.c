@@ -19,6 +19,7 @@ typedef struct {
   view *legacy;
 } enb_gui;
 
+#define DEFAULT_REMOTE_IP "127.0.0.1"
 #define DEFAULT_REMOTE_PORT 2021
 
 void usage(void)
@@ -33,8 +34,10 @@ void usage(void)
 "                              note: you may pass several -on/-off/-ON/-OFF,\n"
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
-"    -p <port>                 use given port (default %d)\n"
+"    -ip <host>                connect to given IP address (default %s)\n"
+"    -p <port>                 connect to given port (default %d)\n"
 "    -debug-gui                activate GUI debug logs\n",
+  DEFAULT_REMOTE_IP,
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -204,6 +207,7 @@ int main(int n, char **v)
   extern int volatile gui_logd;
   char *database_filename = NULL;
   void *database;
+  char *ip = DEFAULT_REMOTE_IP;
   int port = DEFAULT_REMOTE_PORT;
   char **on_off_name;
   int *on_off_action;
@@ -225,6 +229,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-d"))
       { if (i > n-2) usage(); database_filename = v[++i]; continue; }
+    if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-on")) { if (i > n-2) usage();
@@ -341,7 +346,7 @@ int main(int n, char **v)
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
-  s = get_connection("0.0.0.0", port);
+  s = connect_to(ip, port);
 
   /* send the first message - activate selected traces */
   t = 0;

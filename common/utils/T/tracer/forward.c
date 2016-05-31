@@ -102,10 +102,11 @@ void forward_start_client(void *_f, int s)
   new_thread(forward_s_to_sc, f);
 }
 
-void *forwarder(char *ip, int port)
+int get_connection(char *addr, int port);
+
+void *forwarder(int port)
 {
   forward_data *f;
-  struct sockaddr_in a;
 
   f = malloc(sizeof(*f)); if (f == NULL) abort();
 
@@ -119,23 +120,9 @@ void *forwarder(char *ip, int port)
   f->memusage = 0;
   f->last_warning_memusage = 0;
 
-  printf("connecting to remote tracer %s:%d\n", ip, port);
+  printf("waiting for remote tracer on port %d\n", port);
 
-again:
-  f->s = socket(AF_INET, SOCK_STREAM, 0);
-  if (f->s == -1) { perror("socket"); exit(1); }
-
-  a.sin_family = AF_INET;
-  a.sin_port = htons(port);
-  a.sin_addr.s_addr = inet_addr(ip);
-
-  if (connect(f->s, (struct sockaddr *)&a, sizeof(a)) == -1) {
-    perror("connect");
-    close(f->s);
-    printf("trying again in 1s\n");
-    sleep(1);
-    goto again;
-  }
+  f->s = get_connection("127.0.0.1", port);
 
   printf("connected\n");
 

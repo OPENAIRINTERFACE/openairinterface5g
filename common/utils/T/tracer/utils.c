@@ -125,6 +125,32 @@ int fullread(int fd, void *_buf, int count)
   return ret;
 }
 
+int connect_to(char *addr, int port)
+{
+  int s;
+  struct sockaddr_in a;
+
+  printf("connecting to %s:%d\n", addr, port);
+
+again:
+  s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s == -1) { perror("socket"); exit(1); }
+
+  a.sin_family = AF_INET;
+  a.sin_port = htons(port);
+  a.sin_addr.s_addr = inet_addr(addr);
+
+  if (connect(s, (struct sockaddr *)&a, sizeof(a)) == -1) {
+    perror("connect");
+    close(s);
+    printf("trying again in 1s\n");
+    sleep(1);
+    goto again;
+  }
+
+  return s;
+}
+
 /****************************************************************************/
 /* buffer                                                                   */
 /****************************************************************************/

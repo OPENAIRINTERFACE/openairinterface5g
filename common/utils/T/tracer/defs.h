@@ -16,7 +16,7 @@ void iq_plot_set_sized(void *_plot, short *data, int len, int pp);
 void iq_plot_add_iq_point_loop(void *_plot, short i, short q, int pp);
 void iq_plot_add_energy_point_loop(void *_plot, int e, int pp);
 
-void *forwarder(char *ip, int port);
+void *forwarder(int port);
 void forward(void *forwarder, char *buf, int size);
 void forward_start_client(void *forwarder, int socket);
 
