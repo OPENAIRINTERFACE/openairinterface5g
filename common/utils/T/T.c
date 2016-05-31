@@ -59,6 +59,7 @@ printf("got mess %d\n", t);
       l--;
     }
     break;
+  case 2: break; /* do nothing, this message is to wait for local tracer */
   }
 }
 

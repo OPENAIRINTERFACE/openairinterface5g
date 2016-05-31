@@ -98,7 +98,9 @@ void usage(void)
 "tracer - local side\n"
 "options:\n"
 "    -r <IP address> <port>    forwards packets to remote IP:port\n"
-"                              (default %s:%d)\n",
+"                              (default %s:%d)\n"
+"    -nowait                   don't wait for remote tracer,\n"
+"                              start tracee immediately\n",
     DEFAULT_REMOTE_IP, DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -111,20 +113,27 @@ int main(int n, char **v)
   char *remote_ip = DEFAULT_REMOTE_IP;
   int remote_port = DEFAULT_REMOTE_PORT;
   int port = 2020;
+  int dont_wait = 0;
   void *f;
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
     if (!strcmp(v[i], "-r")) { if (i > n-3) usage();
       remote_ip = v[++i]; remote_port = atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-nowait")) { dont_wait = 1; continue; }
     printf("ERROR: unknown option %s\n", v[i]);
     usage();
   }
 
-  f = forwarder(remote_ip, remote_port);
   init_shm();
   s = get_connection("127.0.0.1", port);
 
+  if (dont_wait) {
+    char t = 2;
+    if (write(s, &t, 1) != 1) abort();
+  }
+
+  f = forwarder(remote_ip, remote_port);
   forward_start_client(f, s);
 
   /* read messages */
