@@ -43,10 +43,10 @@ iperf3_args=(${args[@]:2})
 echo "args =  ${args[@]}"
 echo "timeout = $timeout"
 echo "iface = $iface"
-echo "iperf_args = ${iperf_args[@]}"
+echo "iperf3_args = ${iperf3_args[@]}"
 
 sleep $timeout
 
 while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5
 
-iperf3 ${iperf_args[@]}
+iperf3 ${iperf3_args[@]}
