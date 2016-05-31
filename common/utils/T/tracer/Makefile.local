@@ -6,7 +6,7 @@ CFLAGS=-Wall -g -pthread -DT_TRACER
 LIBS += -lrt
 
 PROG=tracer_local
-OBJS=local.o forward.o
+OBJS=local.o
 
 $(PROG): $(OBJS)
 	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
