@@ -144,7 +144,7 @@ again:
       T_LOCAL_DATA
       T_HEADER(T_ID(-1));
       T_PUT_buffer(1, ((T_buffer){addr:(buf), length:(len)}));
-      T_SEND();
+      T_COMMIT();
     } while (0);
     buf += send_size;
     len -= send_size;
@@ -152,6 +152,6 @@ again:
   do {
     T_LOCAL_DATA
     T_HEADER(T_ID(-2));
-    T_SEND();
+    T_COMMIT();
   } while (0);
 }

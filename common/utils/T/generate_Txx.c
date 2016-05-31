@@ -11,7 +11,7 @@ void print(int n)
   printf("      T_LOCAL_DATA \\\n");
   printf("      T_HEADER(t); \\\n");
   for(i=0; i<(n-1)/2; i++) printf("      T_PUT_##t%d(%d, x%d); \\\n", i, i+2, i);
-  printf("      T_SEND(); \\\n");
+  printf("      T_COMMIT(); \\\n");
   printf("    } \\\n");
   printf("  } while (0)\n");
   printf("\n");

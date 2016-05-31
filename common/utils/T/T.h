@@ -127,11 +127,10 @@ extern T_cache_t *T_cache;
 
 #define T_ACTIVE(x) T_active[(intptr_t)x]
 
-#define T_SEND() \
+#define T_COMMIT() \
   T_cache[T_LOCAL_slot].length = T_LOCAL_size; \
   __sync_synchronize(); \
   T_cache[T_LOCAL_slot].busy = 1; \
-  T_send(T_LOCAL_buf, T_LOCAL_size)
 
 #define T_CHECK_SIZE(len, argnum) \
   if (T_LOCAL_size + (len) > T_BUFFER_MAX) { \
@@ -222,7 +221,7 @@ extern T_cache_t *T_cache;
     if (T_ACTIVE(t)) { \
       T_LOCAL_DATA \
       T_HEADER(t); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -232,7 +231,7 @@ extern T_cache_t *T_cache;
       T_LOCAL_DATA \
       T_HEADER(t); \
       T_PUT_##t0(2, x0); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -243,7 +242,7 @@ extern T_cache_t *T_cache;
       T_HEADER(t); \
       T_PUT_##t0(2, x0); \
       T_PUT_##t1(3, x1); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -255,7 +254,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t0(2, x0); \
       T_PUT_##t1(3, x1); \
       T_PUT_##t2(4, x2); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -268,7 +267,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t1(3, x1); \
       T_PUT_##t2(4, x2); \
       T_PUT_##t3(5, x3); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -282,7 +281,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t2(4, x2); \
       T_PUT_##t3(5, x3); \
       T_PUT_##t4(6, x4); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -297,7 +296,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t3(5, x3); \
       T_PUT_##t4(6, x4); \
       T_PUT_##t5(7, x5); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -313,7 +312,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t4(6, x4); \
       T_PUT_##t5(7, x5); \
       T_PUT_##t6(8, x6); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -330,7 +329,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t5(7, x5); \
       T_PUT_##t6(8, x6); \
       T_PUT_##t7(9, x7); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -348,7 +347,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t6(8, x6); \
       T_PUT_##t7(9, x7); \
       T_PUT_##t8(10, x8); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -367,7 +366,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t7(9, x7); \
       T_PUT_##t8(10, x8); \
       T_PUT_##t9(11, x9); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -387,7 +386,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t8(10, x8); \
       T_PUT_##t9(11, x9); \
       T_PUT_##t10(12, x10); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -408,7 +407,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t9(11, x9); \
       T_PUT_##t10(12, x10); \
       T_PUT_##t11(13, x11); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -430,7 +429,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t10(12, x10); \
       T_PUT_##t11(13, x11); \
       T_PUT_##t12(14, x12); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -453,7 +452,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t11(13, x11); \
       T_PUT_##t12(14, x12); \
       T_PUT_##t13(15, x13); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -477,7 +476,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t12(14, x12); \
       T_PUT_##t13(15, x13); \
       T_PUT_##t14(16, x14); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -502,7 +501,7 @@ extern T_cache_t *T_cache;
       T_PUT_##t13(15, x13); \
       T_PUT_##t14(16, x14); \
       T_PUT_##t15(17, x15); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -542,7 +541,7 @@ extern T_cache_t *T_cache;
       T_LOCAL_DATA \
       T_HEADER(T_ID((var) + VCD_FIRST_VARIABLE)); \
       T_PUT_ulong(1, (val)); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
 
@@ -557,11 +556,9 @@ extern T_cache_t *T_cache;
       T_LOCAL_DATA \
       T_HEADER(T_ID((fun) + VCD_FIRST_FUNCTION)); \
       T_PUT_int(1, (val)); \
-      T_SEND(); \
+      T_COMMIT(); \
     } \
   } while (0)
-
-#define T_send(...) /**/
 
 extern int *T_active;
 
