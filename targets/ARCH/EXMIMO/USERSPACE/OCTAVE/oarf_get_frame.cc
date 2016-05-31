@@ -178,7 +178,7 @@ DEFUN_DLD (oarf_get_frame, args, nargout,"Get frame")
     printf("Info : Only resampling_factor of channel 0 is taken into account for copying received frame for all the other chains\n");
 
     
-    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, numant*openair0_num_detected_cards);
+    ComplexMatrix dx (FRAME_LENGTH_COMPLEX_SAMPLES*4, MAX_ANTENNAS*openair0_num_detected_cards);
     /*
     // set the tx buffer to 0x00010001 to put switch in rx mode
     for (aa=0; aa<numant; aa++) 
