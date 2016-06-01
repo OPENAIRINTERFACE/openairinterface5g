@@ -11,6 +11,7 @@
 #include <inttypes.h>
 
 #include "T_defs.h"
+#include "T_IDs.h"
 
 static T_cache_t *T_cache;
 static int T_busylist_head;
@@ -23,7 +24,8 @@ typedef struct databuf {
 
 typedef struct {
   int socket_local;
-  int socket_remote;
+  volatile int socket_remote;
+  int remote_port;
   pthread_mutex_t lock;
   pthread_cond_t cond;
   databuf * volatile head, *tail;
@@ -109,9 +111,15 @@ wait:
 
 process:
   b = buf;
+  if (f->socket_remote != -1)
   while (size) {
     int l = write(f->socket_remote, b, size);
-    if (l <= 0) { printf("forward error\n"); exit(1); }
+    if (l <= 0) {
+      printf("forward error\n");
+      close(f->socket_remote);
+      f->socket_remote = -1;
+      break;
+    }
     size -= l;
     b += l;
   }
@@ -124,23 +132,49 @@ process:
 static void *forward_remote_messages(void *_f)
 {
   forward_data *f = _f;
-  int from = f->socket_remote;
-  int to = f->socket_local;
+  int from;
+  int to;
   int l, len;
   char *b;
   char buf[1024];
+
+again:
+
+  /* Note: if the remote socket dies while a transfer is running
+   *       then the state of the tracer will be totally messed up.
+   * If that ever happens, things are messed up anyway, so no big
+   * deal... (TODO: to be refined at some point, maybe)
+   */
   while (1) {
+    from = f->socket_remote;
+    to = f->socket_local;
     len = read(from, buf, 1024);
     if (len <= 0) break;
     b = buf;
 
     while (len) {
       l = write(to, b, len);
-      if (l <= 0) break;
+      if (l <= 0) abort();
       len -= l;
       b += l;
     }
   }
+
+  /* socket died, let's stop all traces and wait for another tracer */
+  buf[0] = 1;
+  if (write(to, buf, 1) != 1) abort();
+  len = T_NUMBER_OF_IDS;
+  if (write(to, &len, sizeof(int)) != sizeof(int)) abort();
+  l = 0;
+  while (len) {
+    if (write(to, &l, sizeof(int)) != sizeof(int)) abort();
+    len--;
+  };
+
+  close(f->socket_remote);
+  f->socket_remote = get_connection("127.0.0.1", f->remote_port);
+  goto again;
+
   return NULL;
 }
 
@@ -161,6 +195,7 @@ static void *forwarder(int port, int s)
 
   printf("waiting for remote tracer on port %d\n", port);
 
+  f->remote_port = port;
   f->socket_remote = get_connection("127.0.0.1", port);
 
   new_thread(data_sender, f);
