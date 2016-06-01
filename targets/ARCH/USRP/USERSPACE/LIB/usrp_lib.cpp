@@ -174,6 +174,8 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 {
   usrp_state_t *s = (usrp_state_t*)device->priv;
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
+
+
   if(flags)
     s->tx_md.has_time_spec = true;
   else

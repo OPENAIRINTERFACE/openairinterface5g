@@ -167,10 +167,11 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 
   unsigned int aa,slot_offset, slot_offset_F;
   int dummy_tx_b[7680*4] __attribute__((aligned(32)));
-  int i, tx_offset;
+  int i,j, tx_offset;
   int slot_sizeF = (phy_vars_eNB->frame_parms.ofdm_symbol_size)*
                    ((phy_vars_eNB->frame_parms.Ncp==1) ? 6 : 7);
-  int len;
+  int len,len2;
+  int16_t *txdata;
 
   slot_offset_F = (subframe<<1)*slot_sizeF;
 
@@ -220,27 +221,52 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB)
 	dummy_tx_b[i+2] = 0xff00;
 	dummy_tx_b[i+3] = 0xff000000;
 	}*/
-      for (i=0; i<len; i++) {
-        tx_offset = (int)slot_offset+time_offset[aa]+i;
+      
+      if (slot_offset+time_offset[aa]<0) {
+	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti)+tx_offset];
+        len2 = -(slot_offset+time_offset[aa]);
+	len2 = (len2>len) ? len : len2;
+	for (i=0; i<(len2<<1); i++) {
+	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
+	}
+	if (len2<len) {
+	  txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][0];
+	  for (j=0; i<(len<<1); i++,j++) {
+	    txdata[j++] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
+	  }
+	}
+      }
+      else if ((slot_offset+time_offset[aa]+len)>(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti)) {
 
-	
-        if (tx_offset<0)
-          tx_offset += LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+	tx_offset = (int)slot_offset+time_offset[aa];
+	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset];
+	len2 = -tx_offset+LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+	for (i=0; i<(len2<<1); i++) {
+	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
+	}
+	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][0];
+	for (j=0; i<(len<<1); i++,j++) {
+	  txdata[j++] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
+	}
+      }
+      else {
+	tx_offset = (int)slot_offset+time_offset[aa];
+	txdata = (int16_t*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset];
 
-        if (tx_offset>=(LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti))
-          tx_offset -= LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*phy_vars_eNB->frame_parms.samples_per_tti;
+	for (i=0; i<(len<<1); i++) {
+	  txdata[i] = ((int16_t*)dummy_tx_b)[i]<<openair0_cfg[0].iq_txshift;
+	}
+      }
+      
 
-	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[0] = ((short*)dummy_tx_b)[2*i]<<openair0_cfg[0].iq_txshift;
-	
-	((short*)&phy_vars_eNB->common_vars.txdata[0][aa][tx_offset])[1] = ((short*)dummy_tx_b)[2*i+1]<<openair0_cfg[0].iq_txshift;
-     }
      // if S-subframe switch to RX in second subframe
+      /*
      if (subframe_select(&phy_vars_eNB->frame_parms,subframe) == SF_S) {
        for (i=0; i<len; i++) {
 	 phy_vars_eNB->common_vars.txdata[0][aa][tx_offset++] = 0x00010001;
        }
      }
-
+      */
      if ((((phy_vars_eNB->frame_parms.tdd_config==0) ||
 	  (phy_vars_eNB->frame_parms.tdd_config==1) ||
 	  (phy_vars_eNB->frame_parms.tdd_config==2) ||
@@ -420,12 +446,13 @@ static void* eNB_thread_tx( void* param )
       /* run PHY TX procedures the one after the other for all CCs to avoid race conditions
        * (may be relaxed in the future for performance reasons)
        */
+      
       if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
         LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX\n");
         exit_fun("nothing to add");
         break;
       }
-      /* wait for our turn or oai_exit */
+      // wait for our turn or oai_exit
       while (sync_phy_proc.phy_proc_CC_id != proc->CC_id && !oai_exit) {
         pthread_cond_wait(&sync_phy_proc.cond_phy_proc_tx,
                           &sync_phy_proc.mutex_phy_proc_tx);
@@ -436,6 +463,7 @@ static void* eNB_thread_tx( void* param )
         exit_fun("nothing to add");
       }
 
+      
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX_ENB, proc->frame_tx );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX_ENB, proc->subframe_tx );
@@ -488,14 +516,15 @@ static void* eNB_thread_tx( void* param )
       for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
 	txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
       // if symb_written < spp ==> error 
-      if (proc->frame_tx > 50) {
-	openair0.trx_write_func(&openair0,
-				(proc->timestamp_tx+openair0_cfg[0].tx_sample_advance),
-				txp,
-				PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
-				PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
-				1);
-      }
+      openair0.trx_write_func(&openair0,
+			      (proc->timestamp_tx+openair0_cfg[0].tx_sample_advance),
+			      txp,
+			      PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
+			      PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
+			      1);
+      
+
+	
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
@@ -658,7 +687,7 @@ static void* eNB_thread_rx( void* param )
 
 
   memset(&sparam, 0 , sizeof (sparam)); 
-  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
 
   policy = SCHED_FIFO ; 
   s = pthread_setschedparam(pthread_self(), policy, &sparam);
@@ -719,8 +748,10 @@ static void* eNB_thread_rx( void* param )
    if ((((fp->frame_type == TDD )&&(subframe_select(fp,proc->subframe_rx)==SF_UL)) ||
 	(fp->frame_type == FDD))) {
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
-     // this spawns the prach and TX threads inside and updates the frame and subframe counters
+     // this spawns the prach inside and updates the frame and subframe counters
      phy_procedures_eNB_common_RX(eNB, 0);
+
+     
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
      if (eNB->node_function != NGFI_RRU_IF4) {
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
@@ -729,10 +760,39 @@ static void* eNB_thread_rx( void* param )
        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
      }
    }
-   
-   if ((subframe_select(fp,proc->subframe_rx) == SF_S)) {
-     phy_procedures_eNB_S_RX(eNB, 0, no_relay );
+
+   // wake up TX for subframe n+4
+   // lock the TX mutex and make sure the thread is ready
+   if (pthread_mutex_lock(&proc->mutex_tx) != 0) {
+     LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n", proc->instance_cnt_tx );
+     exit_fun( "error locking mutex_tx" );
+     break;
    }
+   int cnt_tx = ++proc->instance_cnt_tx;
+   // We have just received and processed the common part of a subframe, say n. 
+   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
+   // transmitted timestamp of the next TX slot (first).
+   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
+   // we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
+   // and proc->subframe_tx = proc->subframe_rx+3
+   proc->timestamp_tx = proc->timestamp_rx + (4*fp->samples_per_tti);
+   proc->frame_tx     = (proc->frame_rx > 5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+   proc->subframe_tx  = (proc->subframe_rx + 4)%10;
+   
+   pthread_mutex_unlock( &proc->mutex_tx );
+   
+   if (cnt_tx == 0){
+     // the thread was presumably waiting where it should and can now be woken up
+     if (pthread_cond_signal(&proc->cond_tx) != 0) {
+       LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TX thread\n");
+       exit_fun( "ERROR pthread_cond_signal" );
+       break;
+     }
+   } else {
+     LOG_W( PHY,"[eNB] Frame %d, eNB TX thread busy!! (cnt_tx %i)\n", proc->frame_tx, cnt_tx );
+     exit_fun( "TX thread busy" );
+     break;
+   }       
    
    stop_meas( &softmodem_stats_rx_sf );
 #ifdef LOWLATENCY
@@ -747,17 +807,17 @@ static void* eNB_thread_rx( void* param )
    
 
  }
-
-  //stop_meas( &softmodem_stats_rx_sf[proc->thread_index] );
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
-
-
+ 
+ //stop_meas( &softmodem_stats_rx_sf[proc->thread_index] );
+ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX0, 0 );
+ 
+ 
 #ifdef DEBUG_THREADS
-  printf( "Exiting eNB thread RX\n");
+ printf( "Exiting eNB thread RX\n");
 #endif
-
-  eNB_thread_rx_status = 0;
-  return &eNB_thread_rx_status;
+ 
+ eNB_thread_rx_status = 0;
+ return &eNB_thread_rx_status;
 }
 
 
@@ -848,7 +908,7 @@ static void* eNB_thread_prach( void* param )
 
 
   memset(&sparam, 0 , sizeof (sparam)); 
-  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-1;
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-2;
 
   policy = SCHED_FIFO ; 
   s = pthread_setschedparam(pthread_self(), policy, &sparam);
@@ -868,7 +928,7 @@ static void* eNB_thread_prach( void* param )
    }
 
 
-  LOG_I( HW, "[SCHED][eNB] RX thread started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
+  LOG_I( HW, "[SCHED][eNB] PRACH thread started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
 	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
 	 (policy == SCHED_RR)    ? "SCHED_RR" :
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
@@ -962,7 +1022,7 @@ void init_eNB_proc(void)
     pthread_attr_setschedparam  (&proc->attr_tx, &proc->sched_param_tx);
     pthread_attr_setschedpolicy (&proc->attr_tx, SCHED_FIFO);
     
-    proc->sched_param_rx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    proc->sched_param_rx.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
     pthread_attr_setschedparam  (&proc->attr_rx, &proc->sched_param_rx);
     pthread_attr_setschedpolicy (&proc->attr_rx, SCHED_FIFO);
     
