@@ -131,35 +131,69 @@ process:
 
 static void *forward_remote_messages(void *_f)
 {
+#define PUT(x) do { \
+    if (bufsize == bufmaxsize) { \
+      bufmaxsize += 4096; \
+      buf = realloc(buf, bufmaxsize); \
+      if (buf == NULL) abort(); \
+    } \
+    buf[bufsize] = x; \
+    bufsize++; \
+  } while (0)
+#define PUT_BUF(x, l) do { \
+    char *zz = (char *)(x); \
+    int len = l; \
+    while (len) { PUT(*zz); zz++; len--; } \
+  } while (0)
+
   forward_data *f = _f;
   int from;
   int to;
   int l, len;
   char *b;
-  char buf[1024];
+  char *buf = NULL;
+  int bufsize = 0;
+  int bufmaxsize = 0;
+  char t;
 
 again:
 
-  /* Note: if the remote socket dies while a transfer is running
-   *       then the state of the tracer will be totally messed up.
-   * If that ever happens, things are messed up anyway, so no big
-   * deal... (TODO: to be refined at some point, maybe)
-   */
   while (1) {
     from = f->socket_remote;
     to = f->socket_local;
-    len = read(from, buf, 1024);
-    if (len <= 0) break;
-    b = buf;
 
-    while (len) {
-      l = write(to, b, len);
+    bufsize = 0;
+
+    /* let's read and process messages */
+    len = read(from, &t, 1); if (len <= 0) goto dead;
+    PUT(t);
+
+    switch (t) {
+    case 0:
+    case 1:
+      /* message 0 and 1: get a length and then 'length' numbers */
+      if (read(from, &len, sizeof(int)) != sizeof(int)) goto dead;
+      PUT_BUF(&len, 4);
+      while (len) {
+        if (read(from, &l, sizeof(int)) != sizeof(int)) goto dead;
+        PUT_BUF(&l, 4);
+        len--;
+      }
+      break;
+
+    case 2: break;
+    }
+
+    b = buf;
+    while (bufsize) {
+      l = write(to, b, bufsize);
       if (l <= 0) abort();
-      len -= l;
+      bufsize -= l;
       b += l;
     }
   }
 
+dead:
   /* socket died, let's stop all traces and wait for another tracer */
   buf[0] = 1;
   if (write(to, buf, 1) != 1) abort();
