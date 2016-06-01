@@ -490,8 +490,13 @@ void help (void) {
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n"RESET);    
-
+  printf("  -x Set the transmission mode, valid options: 1 \n");
+#if T_TRACER
+  printf("  --T_port [port]    use given port\n");
+  printf("  --T_nowait         don't wait for tracer, start immediately\n");
+#endif
+  printf(RESET);
+  fflush(stdout);
 }
 void exit_fun(const char* s)
 {
@@ -2123,7 +2128,12 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
-    LONG_OPTION_PHYTEST
+    LONG_OPTION_PHYTEST,
+
+#if T_TRACER
+    LONG_OPTION_T_PORT,
+    LONG_OPTION_T_NOWAIT,
+#endif
   };
 
   static const struct option long_options[] = {
@@ -2142,6 +2152,12 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+
+#if T_TRACER
+    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
+    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+#endif
+
     {NULL, 0, NULL, 0}
   };
 
@@ -2229,6 +2245,21 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
       
+#if T_TRACER
+    case LONG_OPTION_T_PORT: {
+      extern int T_port;
+      if (optarg == NULL) abort();  /* should not happen */
+      T_port = atoi(optarg);
+      break;
+    }
+
+    case LONG_OPTION_T_NOWAIT: {
+      extern int T_wait;
+      T_wait = 0;
+      break;
+    }
+#endif
+
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -2589,6 +2620,11 @@ static void get_options (int argc, char **argv)
   }
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+#endif
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -2618,13 +2654,6 @@ int main( int argc, char **argv )
 #endif
 
   PHY_VARS_UE *UE[MAX_NUM_CCs];
-
-#if T_TRACER
-  char *T_ip = "127.0.0.1";
-  int T_port = 2020;
-  printf("connecting to T tracer IP %s port %d\n", T_ip, T_port);
-  T_connect_to_tracer(T_ip, T_port);
-#endif
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -2665,6 +2694,10 @@ int main( int argc, char **argv )
   else
     openair0_cfg[0].configFilename = rf_config_file;
   
+#if T_TRACER
+  T_init(T_port, T_wait);
+#endif
+
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
 
