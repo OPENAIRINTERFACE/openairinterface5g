@@ -1488,7 +1488,8 @@ set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODU
 add_boolean_option(T_TRACER True "Activate the T tracer" )
 include_directories("${OPENAIR_DIR}/common/utils/T")
 set(T_SOURCE
-    ${OPENAIR_DIR}/common/utils/T/T.c)
+    ${OPENAIR_DIR}/common/utils/T/T.c
+    ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
 set (T_LIB "-lrt")
 
 # Hack on a test of asn1c version (already dirty)

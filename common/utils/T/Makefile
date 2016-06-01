@@ -1,28 +1,16 @@
 CC=gcc
-CFLAGS=-Wall -g -pthread -DT_TRACER
-
-LIBS += -lrt
-
-PROG=t
-OBJS=main.o T.o
+CFLAGS=-Wall -g
 
 GENIDS=genids
 GENIDS_OBJS=genids.o
 
-ALL=$(PROG) $(GENIDS)
-
-all : $(ALL)
+all : $(GENIDS) T_messages.txt.h T_IDs.h
 
 $(GENIDS): $(GENIDS_OBJS)
 	$(CC) $(CFLAGS) -o $(GENIDS) $(GENIDS_OBJS)
 
-$(PROG): $(OBJS)
-	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) $(LIBS)
-
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-T.o: T_messages.txt.h
 
 T_messages.txt.h: T_messages.txt
 	xxd -i T_messages.txt > T_messages.txt.h
@@ -30,8 +18,6 @@ T_messages.txt.h: T_messages.txt
 T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h
 
-main.o: T.h T_IDs.h T_defs.h
-
 clean:
-	rm -f *.o $(PROG) $(GENIDS) core T_IDs.h T_messages.txt.h
+	rm -f *.o $(GENIDS) core T_IDs.h T_messages.txt.h
 	cd tracer && make clean

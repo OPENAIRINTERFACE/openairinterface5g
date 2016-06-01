@@ -10,9 +10,7 @@
 #include <pthread.h>
 #include <inttypes.h>
 
-#define DEFAULT_PORT 2021
-
-#include "../T_defs.h"
+#include "T_defs.h"
 
 static T_cache_t *T_cache;
 static int T_busylist_head;
@@ -165,8 +163,6 @@ static void *forwarder(int port, int s)
 
   f->socket_remote = get_connection("127.0.0.1", port);
 
-  printf("connected\n");
-
   new_thread(data_sender, f);
   new_thread(forward_remote_messages, f);
 
@@ -239,38 +235,16 @@ static void init_shm(void)
   for (i = 0; i < T_CACHE_SIZE; i++) T_cache[i].busy = 0;
 }
 
-static void usage(void)
-{
-  printf(
-"tracer - local side\n"
-"options:\n"
-"    -p <port>    wait for remote tracer on port <port> (default %d)\n"
-"    -nowait      don't wait for remote tracer, start tracee immediately\n",
-    DEFAULT_PORT
-  );
-  exit(1);
-}
-
-int main(int n, char **v)
+void T_local_tracer_main(int remote_port, int wait_for_tracer,
+    int local_socket)
 {
   int s;
-  int i;
-  int port = DEFAULT_PORT;
-  int local_port = 2020;
-  int dont_wait = 0;
+  int port = remote_port;
+  int dont_wait = wait_for_tracer ? 0 : 1;
   void *f;
 
-  for (i = 1; i < n; i++) {
-    if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
-    if (!strcmp(v[i], "-p")) { if (i > n-2) usage();
-      port = atoi(v[++i]); continue; }
-    if (!strcmp(v[i], "-nowait")) { dont_wait = 1; continue; }
-    printf("ERROR: unknown option %s\n", v[i]);
-    usage();
-  }
-
   init_shm();
-  s = get_connection("127.0.0.1", local_port);
+  s = local_socket;
 
   if (dont_wait) {
     char t = 2;
@@ -289,5 +263,4 @@ int main(int n, char **v)
     T_busylist_head++;
     T_busylist_head &= T_CACHE_SIZE - 1;
   }
-  return 0;
 }

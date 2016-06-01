@@ -1,8 +1,6 @@
 #include "T.h"
 #include "T_messages.txt.h"
 #include <string.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
@@ -10,6 +8,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/socket.h>
 
 /* array used to activate/disactivate a log */
 static int T_IDs[T_NUMBER_OF_IDS];
@@ -23,7 +22,6 @@ static int T_socket;
  */
 volatile int _T_freelist_head;
 volatile int *T_freelist_head = &_T_freelist_head;
-int T_busylist_head;
 T_cache_t *T_cache;
 
 static void get_message(int s)
@@ -83,36 +81,31 @@ static void new_thread(void *(*f)(void *), void *data)
     { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
 }
 
-void T_connect_to_tracer(char *addr, int port)
+/* defined in local_tracer.c */
+void T_local_tracer_main(int remote_port, int wait_for_tracer,
+    int local_socket);
+
+void T_init(int remote_port, int wait_for_tracer)
 {
-  struct sockaddr_in a;
+  int socket_pair[2];
   int s;
   int T_shm_fd;
   unsigned char *buf;
   int len;
+  int f;
 
-  if (strcmp(addr, "127.0.0.1") != 0) {
-    printf("error: local tracer must be on same host\n");
-    abort();
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair))
+    { perror("socketpair"); abort(); }
+
+  f = fork(); if (f == -1) abort();
+  if (f == 0) {
+    close(socket_pair[1]);
+    T_local_tracer_main(remote_port, wait_for_tracer, socket_pair[0]);
+    exit(0);
   }
+  close(socket_pair[0]);
 
-  printf("connecting to local tracer on port %d\n", port);
-again:
-  s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s == -1) { perror("socket"); exit(1); }
-
-  a.sin_family = AF_INET;
-  a.sin_port = htons(port);
-  a.sin_addr.s_addr = inet_addr("127.0.0.1");
-
-  if (connect(s, (struct sockaddr *)&a, sizeof(a)) == -1) {
-    perror("connect");
-    close(s);
-    printf("trying again in 1s\n");
-    sleep(1);
-    goto again;
-  }
-
+  s = socket_pair[1];
   /* wait for first message - initial list of active T events */
   get_message(s);
 

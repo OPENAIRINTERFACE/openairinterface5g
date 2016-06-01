@@ -250,6 +250,10 @@ help (void)
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-Z Reserved\n");
+#if T_TRACER
+  printf ("--T_port [port]    use given port\n");
+  printf ("--T_nowait         don't wait for tracer, start immediately\n");
+#endif
 }
 
 pthread_t log_thread;
@@ -1252,6 +1256,11 @@ l2l1_task (void *args_p)
   return NULL;
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+#endif
+
 /*------------------------------------------------------------------------------*/
 int
 main (int argc, char **argv)
@@ -1269,13 +1278,6 @@ main (int argc, char **argv)
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
 
-#if T_TRACER
-  char *T_ip = "127.0.0.1";
-  int T_port = 2020;
-  printf("connecting to T tracer IP %s port %d\n", T_ip, T_port);
-  T_connect_to_tracer(T_ip, T_port);
-#endif
-
   //default parameters
   oai_emulation.info.n_frames = 0xffff; //1024;          //10;
   oai_emulation.info.n_frames_flag = 0; //fixme
@@ -1291,6 +1293,10 @@ main (int argc, char **argv)
 
   // get command-line options
   get_simulation_options (argc, argv); //Command-line options
+
+#if T_TRACER
+  T_init(T_port, T_wait);
+#endif
 
   // Initialize VCD LOG module
   VCD_SIGNAL_DUMPER_INIT (oai_emulation.info.vcd_file);
