@@ -57,6 +57,7 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
+T_TRACER="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -125,6 +126,8 @@ Options
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x). 
+--T-tracer
+   Enables the T tracer.
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -262,6 +265,10 @@ function main() {
        --enable-deadline)
             FORCE_LOWLATENCY_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
+            shift 1;;
+       --T-tracer)
+            T_TRACER="True"
+            echo_info "Enabling the T tracer"
             shift 1;;
         -h | --help)
             print_help
@@ -421,6 +428,7 @@ function main() {
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
     echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
     echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+    echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -549,6 +557,7 @@ function main() {
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( T_TRACER $T_TRACER )"          >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
     mkdir -p $DIR/$oaisim_build_dir/build
@@ -614,6 +623,7 @@ function main() {
     echo "set(XFORMS $XFORMS )" >>  $cmake_file
     echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
     #mkdir -p $DIR/oaisim_mme_build_oai/build
@@ -643,6 +653,7 @@ function main() {
      echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
      echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
      echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
      cmake ..
