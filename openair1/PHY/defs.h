@@ -178,6 +178,34 @@ typedef struct ral_threshold_phy_s {
 } ral_threshold_phy_t;
 #endif
 
+/// Context data structure for RX/TX portion of subframe processing
+typedef struct {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// timestamp transmitted to HW
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for transmission
+  int subframe_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception
+  int frame_rx;
+  /// \brief Instance count for RXn-TXnp4 processing thread.
+  /// \internal This variable is protected by \ref mutex_rxtx.
+  int instance_cnt_rxtx;
+  /// pthread structure for RXn-TXnp4 processing thread
+  pthread_t pthread_rxtx;
+  /// pthread attributes for RXn-TXnp4 processing thread
+  pthread_attr_t attr_rxtx;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_rxtx;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_rxtx;
+  /// scheduling parameters for RXn-TXnp4 thread
+  struct sched_param sched_param_rxtx;
+} eNB_rxtx_proc_t;
 /// Context data structure for eNB subframe processing
 typedef struct {
   /// Component Carrier index
@@ -186,54 +214,37 @@ typedef struct {
   int thread_index;
   /// timestamp received from HW
   openair0_timestamp timestamp_rx;
-  /// timestamp transmitted to HW
-  openair0_timestamp timestamp_tx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
   /// subframe to act upon for reception
   int subframe_rx;
   /// subframe to act upon for PRACH
   int subframe_prach;
-  /// frame to act upon for transmission
-  int frame_tx;
   /// frame to act upon for reception
   int frame_rx;
   /// frame to act upon for PRACH
   int frame_prach;
-  /// \brief Instance count for tx processing thread.
-  /// \internal This variable is protected by \ref mutex_tx.
-  int instance_cnt_tx;
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-  /// pthread structure for tx processing thread
-  pthread_t pthread_tx;
   /// pthread structure for rx processing thread
   pthread_t pthread_rx;
   /// flag to indicate first RX acquisition
   int first_rx;
-  /// pthread attributes for tx processing thread
-  pthread_attr_t attr_tx;
   /// pthread attributes for rx processing thread
   pthread_attr_t attr_rx;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-  /// scheduling parameters for tx thread
-  struct sched_param sched_param_tx;
   /// scheduling parameters for rx thread
   struct sched_param sched_param_rx;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-  /// condition variable for tx processing thread
-  pthread_t pthread_prach;
   /// condition variable for prach processing thread
-  pthread_cond_t cond_tx;
+  pthread_t pthread_prach;
   /// condition variable for rx processing thread;
   pthread_cond_t cond_prach;
   /// mutex for tx processing thread
-  pthread_mutex_t mutex_tx;
-  /// mutex for tx processing thread
   pthread_mutex_t mutex_prach;
+  /// set of scheduling variables RXn-TXnp4 threads
+  eNB_rxtx_proc_t proc_rxtx[2];
 } eNB_proc_t;
 
 //! \brief Number of eNB TX and RX threads.

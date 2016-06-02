@@ -226,17 +226,19 @@ void phy_procedures_UE_S_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abst
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
   @param phy_vars_rn pointer to the RN variables
 */
-void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param proc Pointer to RXn-TXnp4 proc information
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param proc Pointer to RXn-TXnp4 proc information
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
@@ -260,10 +262,11 @@ void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB PRACH RX procedures 
   @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param proc Pointer to RXn-TXnp4 proc information
   @param abstraction_flag Indicator of PHY abstraction
 */
 void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag);
@@ -393,10 +396,11 @@ uint8_t is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
   @param UE_id ID of UE which may be issuing the SR
   @returns 1 if TXOp is active.
 */
-uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,uint8_t UE_id);
+uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id);
 
 /*! \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
   @param frame_parms Pointer to DL frame parameters
+  @param proc Pointer to RXn-TXnp4 proc information
   @param n subframe of PDCCH
   @returns UL subframe corresponding to pdcch order
 */
@@ -447,7 +451,8 @@ uint16_t get_n1_pucch(PHY_VARS_UE *phy_vars_ue,
 /*! \brief This function retrives the resource (n1_pucch) corresponding to a PDSCH transmission in
 subframe n-4 which is acknowledged in subframe n (for FDD) according to n1_pucch = Ncce + N1_pucch.  For
 TDD, this routine computes the procedure described in Section 10.1 of 36.213 (through tables 10.1-1,10.1-2)
-@param phy_vars_eNB Pointer to UE variables
+@param phy_vars_eNB Pointer to eNB variables
+@param proc Pointer to RXn-TXnp4 proc information
 @param eNB_id Index of eNB
 @param subframe Index of subframe
 @param b Pointer to PUCCH payload (b[0],b[1])
@@ -457,6 +462,7 @@ TDD, this routine computes the procedure described in Section 10.1 of 36.213 (th
 @param n1_pucch3 Pointer to n1_pucch3
 */
 void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
+		      eNB_rxtx_proc_t *proc,
                       uint8_t UE_id,
                       int16_t *n1_pucch0,
                       int16_t *n1_pucch1,
@@ -467,6 +473,7 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 /*! \brief This function retrieves the harq_pid of the corresponding DLSCH process and updates the error statistics of the DLSCH based on the received ACK info from UE along with the round index.  It also performs the fine-grain rate-adaptation based on the error statistics derived from the ACK/NAK process.
   @param UE_id Local UE index on which to act
   @param phy_vars_eNB Pointer to eNB variables on which to act
+  @param proc Pointer to RXn-TXnp4 proc information
   @param pusch_flag Indication that feedback came from PUSCH
   @param pucch_payload Resulting payload from pucch
   @param pucch_sel Selection of n1_pucch0 or n1_pucch1 (TDD specific)
@@ -474,6 +481,7 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 */
 void process_HARQ_feedback(uint8_t UE_id,
                            PHY_VARS_eNB *phy_vars_eNB,
+			   eNB_rxtx_proc_t *proc,
                            uint8_t pusch_flag,
                            uint8_t *pucch_payload,
                            uint8_t pucch_sel,

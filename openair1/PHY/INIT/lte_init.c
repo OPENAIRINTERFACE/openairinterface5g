@@ -121,7 +121,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
   //int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
   int i;
 
-  LOG_D(PHY,"[eNB%d] CCid %d Frame %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id,PHY_vars_eNB_g[Mod_id][CC_id]->proc.frame_tx);
+  LOG_D(PHY,"[eNB%d] CCid %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id);
 
   frame_parms->prach_config_common.rootSequenceIndex                           =radioResourceConfigCommon->prach_Config.rootSequenceIndex;
   LOG_D(PHY,"prach_config_common.rootSequenceIndex = %d\n",frame_parms->prach_config_common.rootSequenceIndex );
@@ -388,7 +388,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
   LTE_DL_FRAME_PARMS *frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->frame_parms;
 
 
-  LOG_I(PHY,"[eNB%d] Frame %d: Applying MBSFN_Area_id %d for index %d\n",Mod_id,PHY_vars_eNB_g[Mod_id][CC_id]->proc.frame_tx,mbsfn_AreaId_r9,mbsfn_Area_idx);
+  LOG_I(PHY,"[eNB%d] Applying MBSFN_Area_id %d for index %d\n",Mod_id,mbsfn_AreaId_r9,mbsfn_Area_idx);
 
   if (mbsfn_Area_idx == 0) {
     frame_parms->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
@@ -409,7 +409,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
     physicalConfigDedicated = eNB->physicalConfigDedicated[UE_id];
 
     if (physicalConfigDedicated != NULL) {
-      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id, eNB->proc.frame_tx,physicalConfigDedicated,UE_id);
+      LOG_I(PHY,"[eNB %d] Frame %d: Sent physicalConfigDedicated=%p for UE %d\n",eNB->Mod_id,physicalConfigDedicated,UE_id);
       LOG_D(PHY,"------------------------------------------------------------------------\n");
 
       if (physicalConfigDedicated->pdsch_ConfigDedicated) {
@@ -644,7 +644,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   int8_t UE_id = find_ue(rnti,eNB);
 
   if (UE_id == -1) {
-    LOG_E( PHY, "[eNB %"PRIu8"] Frame %d: find_ue() returns -1\n", Mod_id, eNB->proc.frame_tx );
+    LOG_E( PHY, "[eNB %"PRIu8"] Frame %d: find_ue() returns -1\n", Mod_id);
     return;
   }
 
@@ -653,7 +653,7 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
     eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
     LOG_I(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
   } else {
-    LOG_E(PHY,"[eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, eNB->proc.frame_tx,UE_id);
+    LOG_E(PHY,"[eNB %d] Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, UE_id);
     return;
   }
 
