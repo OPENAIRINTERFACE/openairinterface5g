@@ -776,7 +776,7 @@ static void* eNB_thread_rx( void* param )
    // we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
    // and proc->subframe_tx = proc->subframe_rx+3
    proc->timestamp_tx = proc->timestamp_rx + (4*fp->samples_per_tti);
-   proc->frame_tx     = (proc->frame_rx > 5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+   proc->frame_tx     = (proc->subframe_rx > 5) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
    proc->subframe_tx  = (proc->subframe_rx + 4)%10;
    
    pthread_mutex_unlock( &proc->mutex_tx );
