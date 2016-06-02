@@ -260,7 +260,7 @@ endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
 if (${RTAI})
-  set(LOWLATENCY False)
+  set(DEADLINE_SCHEDULER False)
   set(CPU_AFFINITY False)
   add_definitions("-DENABLE_RTAI_CLOCK")
   add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
@@ -605,7 +605,7 @@ endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
-Message("LOWLATENCY flag  is ${LOWLATENCY}")
+Message("DEADLINE_SCHEDULER flag  is ${DEADLINE_SCHEDULER}")
 Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
@@ -619,7 +619,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
-add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
