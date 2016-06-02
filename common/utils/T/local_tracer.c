@@ -183,6 +183,10 @@ again:
       break;
 
     case 2: break;
+    default:
+      printf("%s:%d:%s: unhandled message type %d\n",
+          __FILE__, __LINE__, __FUNCTION__, t);
+      abort();
     }
 
     b = buf;
