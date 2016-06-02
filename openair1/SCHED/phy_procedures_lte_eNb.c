@@ -60,6 +60,8 @@
 #include "assertions.h"
 #include "msc.h"
 
+#include "T.h"
+
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
 #   if ENABLE_RAL

@@ -31,6 +31,7 @@
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
 
+#include "T.h"
 
 // For Channel Estimation in Distributed Alamouti Scheme
 //static int16_t temp_out_ifft[2048*4] __attribute__((aligned(16)));

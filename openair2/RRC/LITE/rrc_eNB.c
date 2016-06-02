@@ -63,6 +63,8 @@
 #include "platform_types.h"
 #include "msc.h"
 
+#include "T.h"
+
 //#ifdef Rel10
 #include "MeasResults.h"
 //#endif

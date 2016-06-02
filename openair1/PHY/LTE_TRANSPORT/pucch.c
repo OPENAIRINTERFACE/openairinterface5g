@@ -41,6 +41,8 @@
 #include "PHY/extern.h"
 #include "LAYER2/MAC/extern.h"
 
+#include "T.h"
+
 //uint8_t ncs_cell[20][7];
 //#define DEBUG_PUCCH_TX
 //#define DEBUG_PUCCH_RX
