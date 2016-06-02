@@ -845,9 +845,9 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const in
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   eNB_proc_t *proc = &eNB->proc;
   int frame = proc->frame_tx;
-  int subframe = proc->frame_rx;
+  int subframe = proc->subframe_tx;
 
-  LOG_D(PHY,
+  LOG_I(PHY,
 	"[eNB %"PRIu8"][PUSCH %"PRIu8"] Frame %d subframe %d UL Frame %"PRIu32", UL Subframe %"PRIu8", Generated ULSCH (format0) DCI (rnti %"PRIx16", dci %"PRIx8"), aggregation %d\n",
 	eNB->Mod_id,
 	subframe2harq_pid(fp,

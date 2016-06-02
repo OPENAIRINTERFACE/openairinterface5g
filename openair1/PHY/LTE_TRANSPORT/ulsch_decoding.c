@@ -288,11 +288,13 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
 
   if (harq_pid==255) {
     LOG_E(PHY, "FATAL ERROR: illegal harq_pid, returning\n");
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
     return -1;
   }
 
   if (ulsch_harq->Nsymb_pusch == 0) {
       LOG_E(PHY, "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0); 
       return 1+ulsch->max_turbo_iterations;
   }
   if (llr8_flag == 0)
