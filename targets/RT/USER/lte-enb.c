@@ -517,7 +517,7 @@ static void* eNB_thread_tx( void* param )
 	txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
       // if symb_written < spp ==> error 
       openair0.trx_write_func(&openair0,
-			      (proc->timestamp_tx+openair0_cfg[0].tx_sample_advance),
+			      (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
 			      txp,
 			      PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
 			      PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
