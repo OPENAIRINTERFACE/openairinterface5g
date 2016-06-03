@@ -218,7 +218,7 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
@@ -259,7 +259,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   int16_t cseq[6*14*1200];
   int off;
   int status[20];
-  int subframe = eNB->proc.subframe_rx;
+  int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
   uint8_t (*tc)(int16_t *y,
@@ -278,7 +278,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
                 time_stats_t *,
                 time_stats_t *);
 
-  harq_pid = subframe2harq_pid(frame_parms,eNB->proc.frame_rx,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
 
@@ -1501,18 +1501,18 @@ int ulsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint8_t mcs,uint16_t nrb
 
 #endif
 
-uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB,
+uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc,
                              uint8_t UE_index,
                              uint16_t *crnti)
 {
 
   uint8_t UE_id;
   uint16_t rnti;
-  int subframe = eNB->proc.subframe_rx;
+  int subframe = proc->subframe_rx;
   uint8_t harq_pid;
   uint8_t CC_id = eNB->CC_id;
 
-  harq_pid = subframe2harq_pid(&eNB->frame_parms,eNB->proc.frame_rx,subframe);
+  harq_pid = subframe2harq_pid(&eNB->frame_parms,proc->frame_rx,subframe);
 
   rnti = eNB->ulsch[UE_index]->rnti;
 #ifdef DEBUG_PHY

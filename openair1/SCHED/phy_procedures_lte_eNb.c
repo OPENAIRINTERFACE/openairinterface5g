@@ -101,10 +101,9 @@ extern uint8_t smbv_frame_cnt;
 extern int rx_sig_fifo;
 #endif
 
-uint8_t is_SR_subframe(PHY_VARS_eNB *eNB,uint8_t UE_id)
+uint8_t is_SR_subframe(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id)
 {
 
-  eNB_proc_t *proc = &eNB->proc;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
 
@@ -339,10 +338,9 @@ void phy_procedures_emos_eNB_TX(unsigned char subframe, PHY_VARS_eNB *eNB)
 
 
 
-void phy_procedures_eNB_S_RX(PHY_VARS_eNB *eNB,uint8_t abstraction_flag,relaying_type_t r_type)
+void phy_procedures_eNB_S_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type)
 {
   UNUSED(r_type);
-  eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_rx;
 
 #ifdef DEBUG_PHY_PROC
@@ -435,14 +433,13 @@ int QPSK2[4]= {AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),(
 
 unsigned int taus(void);
 
-void pmch_procedures(PHY_VARS_eNB *eNB,PHY_VARS_RN *rn, int abstraction_flag,relaying_type_t r_type) {
+void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn, int abstraction_flag,relaying_type_t r_type) {
 
 #ifdef Rel10
   MCH_PDU *mch_pduP;
   MCH_PDU  mch_pdu;
   //  uint8_t sync_area=255;
 #endif
-  eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_tx;
 
   if (abstraction_flag==0) {
@@ -508,7 +505,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,PHY_VARS_RN *rn, int abstraction_flag,rel
   if (mch_pduP) {
     fill_eNB_dlsch_MCH(eNB,mch_pduP->mcs,1,0, abstraction_flag);
     // Generate PMCH
-    generate_mch(eNB,(uint8_t*)mch_pduP->payload,abstraction_flag);
+    generate_mch(eNB,proc,(uint8_t*)mch_pduP->payload,abstraction_flag);
   } else {
     LOG_D(PHY,"[eNB/RN] Frame %d subframe %d: MCH not generated \n",proc->frame_tx,subframe);
   }
@@ -516,12 +513,11 @@ void pmch_procedures(PHY_VARS_eNB *eNB,PHY_VARS_RN *rn, int abstraction_flag,rel
 #endif
 }
 
-void common_signal_procedures (PHY_VARS_eNB *eNB,int abstraction_flag) {
+void common_signal_procedures (PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int abstraction_flag) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int **txdataF = eNB->common_vars.txdataF[0];
   uint8_t *pbch_pdu=&eNB->pbch_pdu[0];
-  eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_tx;
   int frame = proc->frame_tx;
 
@@ -703,10 +699,9 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int abstraction_flag) {
 
 }
 
-void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const int UE_id) {
+void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,const int UE_id) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  eNB_proc_t *proc = &eNB->proc;
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
 
@@ -839,11 +834,10 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const in
   
 }
 
-void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const int UE_id) {
+void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,const int UE_id) {
 
   int harq_pid;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  eNB_proc_t *proc = &eNB->proc;
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
 
@@ -862,6 +856,7 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const in
 	1<<dci_alloc->L);
   
   generate_eNB_ulsch_params_from_dci(eNB,
+				     proc,
 				     &dci_alloc->dci_pdu[0],
 				     dci_alloc->rnti,
 				     format0,
@@ -904,9 +899,8 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,DCI_ALLOC_t *dci_alloc,const in
   
 }
 
-void pdsch_procedures(PHY_VARS_eNB *eNB,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols,int abstraction_flag) {
+void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols,int abstraction_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   int harq_pid = dlsch->current_harq_pid;
@@ -1112,12 +1106,12 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t 
 }
 
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
+			   eNB_rxtx_proc_t *proc,
 			   uint8_t abstraction_flag,
                            relaying_type_t r_type,
 			   PHY_VARS_RN *rn)
 {
   UNUSED(rn);
-  eNB_proc_t *proc = &eNB->proc;
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
   //  uint16_t input_buffer_length;
@@ -1177,11 +1171,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   if (is_pmch_subframe(frame,subframe,fp)) {
-    pmch_procedures(eNB,rn,abstraction_flag,r_type);
+    pmch_procedures(eNB,proc,rn,abstraction_flag,r_type);
   }
   else {
     // this is not a pmch subframe, so generate PSS/SSS/PBCH
-    common_signal_procedures(eNB,abstraction_flag);
+    common_signal_procedures(eNB,proc,abstraction_flag);
   }
 
 #if defined(SMBV) 
@@ -1207,7 +1201,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #ifdef EMOS_CHANNEL
     fill_dci_emos(DCI_pdu,eNB);
 #else
-    fill_dci(DCI_pdu,eNB);
+    fill_dci(DCI_pdu,eNB,proc);
 #endif
   }
 
@@ -1265,7 +1259,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     }
     else UE_id=0;
     
-    generate_eNB_dlsch_params(eNB,dci_alloc,UE_id);
+    generate_eNB_dlsch_params(eNB,proc,dci_alloc,UE_id);
 
   }
 
@@ -1287,7 +1281,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 	LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Unknown UE_id for rnti %"PRIx16"\n",eNB->Mod_id,frame,dci_alloc->rnti);
 	mac_xface->macphy_exit("FATAL\n"); 
       }
-      generate_eNB_ulsch_params(eNB,dci_alloc,UE_id);
+      generate_eNB_ulsch_params(eNB,proc,dci_alloc,UE_id);
     }
   }
 
@@ -1335,7 +1329,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   if (eNB->dlsch_SI->active == 1) {
 
-    pdsch_procedures(eNB,eNB->dlsch_SI,(LTE_eNB_DLSCH_t*)NULL,(LTE_eNB_UE_stats*)NULL,0,num_pdcch_symbols,abstraction_flag);
+    pdsch_procedures(eNB,proc,eNB->dlsch_SI,(LTE_eNB_DLSCH_t*)NULL,(LTE_eNB_UE_stats*)NULL,0,num_pdcch_symbols,abstraction_flag);
 
 #if defined(SMBV) 
 
@@ -1368,7 +1362,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 	  eNB->ulsch[(uint32_t)UE_id]->Msg3_frame,
 	  eNB->ulsch[(uint32_t)UE_id]->Msg3_subframe);
     
-    pdsch_procedures(eNB,eNB->dlsch_ra,(LTE_eNB_DLSCH_t*)NULL,(LTE_eNB_UE_stats*)NULL,1,num_pdcch_symbols,abstraction_flag);
+    pdsch_procedures(eNB,proc,eNB->dlsch_ra,(LTE_eNB_DLSCH_t*)NULL,(LTE_eNB_UE_stats*)NULL,1,num_pdcch_symbols,abstraction_flag);
     
     
     eNB->dlsch_ra->active = 0;
@@ -1381,7 +1375,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         (eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
         (eNB->dlsch[(uint8_t)UE_id][0]->active == 1)) {
 
-      pdsch_procedures(eNB,eNB->dlsch[(uint8_t)UE_id][0],eNB->dlsch[(uint8_t)UE_id][1],&eNB->UE_stats[(uint32_t)UE_id],0,num_pdcch_symbols,abstraction_flag);
+      pdsch_procedures(eNB,proc,eNB->dlsch[(uint8_t)UE_id][0],eNB->dlsch[(uint8_t)UE_id][1],&eNB->UE_stats[(uint32_t)UE_id],0,num_pdcch_symbols,abstraction_flag);
 
 
     }
@@ -1402,6 +1396,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   if (is_phich_subframe(fp,subframe))
   {
     generate_phich_top(eNB,
+		       proc,
                        AMP,
                        0,
                        abstraction_flag);
@@ -1437,10 +1432,9 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 }
 
-void process_Msg3(PHY_VARS_eNB *eNB,uint8_t UE_id, uint8_t harq_pid)
+void process_Msg3(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id, uint8_t harq_pid)
 {
   // this prepares the demodulation of the first PUSCH of a new user, containing Msg3
-  eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
 
@@ -1475,13 +1469,13 @@ void process_Msg3(PHY_VARS_eNB *eNB,uint8_t UE_id, uint8_t harq_pid)
 
 void process_HARQ_feedback(uint8_t UE_id,
                            PHY_VARS_eNB *eNB,
+			   eNB_rxtx_proc_t *proc,
                            uint8_t pusch_flag,
                            uint8_t *pucch_payload,
                            uint8_t pucch_sel,
                            uint8_t SR_payload)
 {
 
-  eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t dl_harq_pid[8],dlsch_ACK[8],dl_subframe;
   LTE_eNB_DLSCH_t *dlsch             =  eNB->dlsch[(uint32_t)UE_id][0];
@@ -1745,6 +1739,7 @@ void process_HARQ_feedback(uint8_t UE_id,
 }
 
 void get_n1_pucch_eNB(PHY_VARS_eNB *eNB,
+		      eNB_rxtx_proc_t *proc,
                       uint8_t UE_id,
                       int16_t *n1_pucch0,
                       int16_t *n1_pucch1,
@@ -1752,7 +1747,6 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *eNB,
                       int16_t *n1_pucch3)
 {
 
-  eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *frame_parms=&eNB->frame_parms;
   uint8_t nCCE0,nCCE1;
   int sf;
@@ -1892,9 +1886,8 @@ void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag)
   uint16_t preamble_max,preamble_energy_max;
   uint16_t i;
   int8_t UE_id;
-  eNB_proc_t *proc = &eNB->proc;
-  int subframe = proc->subframe_rx;
-  int frame = proc->frame_rx;
+  int subframe = eNB->proc.subframe_prach;
+  int frame = eNB->proc.frame_prach;
   uint8_t CC_id = eNB->CC_id;
 
   memset(&preamble_energy_list[0],0,64*sizeof(uint16_t));
@@ -2002,7 +1995,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag)
   }
 }
 
-void pucch_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstraction_flag) {
+void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_pid,const uint8_t abstraction_flag) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,*pucch_payload=NULL,pucch_payload0[2]= {0,0},pucch_payload1[2]= {0,0};
@@ -2012,7 +2005,6 @@ void pucch_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abs
   int32_t metric0=0,metric1=0,metric0_SR=0;
   ANFBmode_t bundling_flag;
   PUCCH_FMT_t format;
-  eNB_proc_t *proc = &eNB->proc;
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
 
@@ -2021,159 +2013,160 @@ void pucch_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abs
       (eNB->ulsch[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag==0)) { 
 
       // check SR availability
-      do_SR = is_SR_subframe(eNB,UE_id);
-      //      do_SR = 0;
-
+    do_SR = is_SR_subframe(eNB,proc,UE_id);
+    //      do_SR = 0;
+    
       // Now ACK/NAK
       // First check subframe_tx flag for earlier subframes
-      get_n1_pucch_eNB(eNB,
-                       UE_id,
-                       &n1_pucch0,
-                       &n1_pucch1,
-                       &n1_pucch2,
-                       &n1_pucch3);
+    get_n1_pucch_eNB(eNB,
+		     proc,
+		     UE_id,
+		     &n1_pucch0,
+		     &n1_pucch1,
+		     &n1_pucch2,
+		     &n1_pucch3);
+    
+    LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
+	  eNB->Mod_id,eNB->dlsch[UE_id][0]->rnti,
+	  frame,subframe,
+	  n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,do_SR);
+    
+    if ((n1_pucch0==-1) && (n1_pucch1==-1) && (do_SR==0)) {  // no TX PDSCH that have to be checked and no SR for this UE_id
+    } else {
+      // otherwise we have some PUCCH detection to do
+      
+      // Null out PUCCH PRBs for noise measurement
+      switch(fp->N_RB_UL) {
+      case 6:
+	eNB->rb_mask_ul[0] |= (0x1 | (1<<5)); //position 5
+	break;
+      case 15:
+	eNB->rb_mask_ul[0] |= (0x1 | (1<<14)); // position 14
+	break;
+      case 25:
+	eNB->rb_mask_ul[0] |= (0x1 | (1<<24)); // position 24
+	break;
+      case 50:
+	eNB->rb_mask_ul[0] |= 0x1;
+	eNB->rb_mask_ul[1] |= (1<<17); // position 49 (49-32)
+	break;
+      case 75:
+	eNB->rb_mask_ul[0] |= 0x1;
+	eNB->rb_mask_ul[2] |= (1<<10); // position 74 (74-64)
+	break;
+      case 100:
+	eNB->rb_mask_ul[0] |= 0x1;
+	eNB->rb_mask_ul[3] |= (1<<3); // position 99 (99-96)
+	break;
+      default:
+	LOG_E(PHY,"Unknown number for N_RB_UL %d\n",fp->N_RB_UL);
+	break;
+      }
+      
+      if (do_SR == 1) {
+	eNB->UE_stats[UE_id].sr_total++;
 
-      LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d, subframe %d Checking for PUCCH (%d,%d,%d,%d) SR %d\n",
-            eNB->Mod_id,eNB->dlsch[UE_id][0]->rnti,
-            frame,subframe,
-            n1_pucch0,n1_pucch1,n1_pucch2,n1_pucch3,do_SR);
-
-      if ((n1_pucch0==-1) && (n1_pucch1==-1) && (do_SR==0)) {  // no TX PDSCH that have to be checked and no SR for this UE_id
-      } else {
-        // otherwise we have some PUCCH detection to do
-
-	// Null out PUCCH PRBs for noise measurement
-	switch(fp->N_RB_UL) {
-	case 6:
-	  eNB->rb_mask_ul[0] |= (0x1 | (1<<5)); //position 5
-	  break;
-	case 15:
-	  eNB->rb_mask_ul[0] |= (0x1 | (1<<14)); // position 14
-	  break;
-	case 25:
-	  eNB->rb_mask_ul[0] |= (0x1 | (1<<24)); // position 24
-	  break;
-	case 50:
-	  eNB->rb_mask_ul[0] |= 0x1;
-	  eNB->rb_mask_ul[1] |= (1<<17); // position 49 (49-32)
-	  break;
-	case 75:
-	  eNB->rb_mask_ul[0] |= 0x1;
-	  eNB->rb_mask_ul[2] |= (1<<10); // position 74 (74-64)
-	  break;
-	case 100:
-	  eNB->rb_mask_ul[0] |= 0x1;
-	  eNB->rb_mask_ul[3] |= (1<<3); // position 99 (99-96)
-	  break;
-	default:
-	  LOG_E(PHY,"Unknown number for N_RB_UL %d\n",fp->N_RB_UL);
-	  break;
+	if (abstraction_flag == 0)
+	  metric0_SR = rx_pucch(eNB,
+				pucch_format1,
+				UE_id,
+				eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
+				0, // n2_pucch
+				0, // shortened format, should be use_srs flag, later
+				&SR_payload,
+				subframe,
+				PUCCH1_THRES);
+	
+#ifdef PHY_ABSTRACTION
+	else {
+	  metric0_SR = rx_pucch_emul(eNB,
+				     UE_id,
+				     pucch_format1,
+				     0,
+				     &SR_payload);
+	  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR (UE SR %d/%d)\n",eNB->Mod_id,
+		eNB->ulsch[UE_id]->rnti,frame,subframe,SR_payload,eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex);
 	}
-
-        if (do_SR == 1) {
-          eNB->UE_stats[UE_id].sr_total++;
-
-          if (abstraction_flag == 0)
-            metric0_SR = rx_pucch(eNB,
-				  pucch_format1,
-				  UE_id,
-				  eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
-				  0, // n2_pucch
-				  0, // shortened format, should be use_srs flag, later
-				  &SR_payload,
-				  subframe,
-				  PUCCH1_THRES);
-
-#ifdef PHY_ABSTRACTION
-          else {
-            metric0_SR = rx_pucch_emul(eNB,
-				       UE_id,
-				       pucch_format1,
-				       0,
-				       &SR_payload);
-            LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR (UE SR %d/%d)\n",eNB->Mod_id,
-                  eNB->ulsch[UE_id]->rnti,frame,subframe,SR_payload,eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex);
-          }
-
+	
 #endif
-
-          if (SR_payload == 1) {
-            LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",eNB->Mod_id,
-                  eNB->ulsch[UE_id]->rnti,frame,subframe);
-            eNB->UE_stats[UE_id].sr_received++;
-
-            if (eNB->first_sr[UE_id] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
-              /* is this test necessary? */
-              if (eNB->dlsch[UE_id][0]->harq_processes[0]->status != SCH_IDLE)
-                put_harq_pid_in_freelist(eNB->dlsch[UE_id][0], 0);
-              eNB->first_sr[UE_id] = 0;
-              eNB->dlsch[UE_id][0]->harq_processes[0]->round=0;
-              eNB->dlsch[UE_id][0]->harq_processes[0]->status=SCH_IDLE;
-              LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d First SR\n",
-                    eNB->Mod_id,
-                    eNB->ulsch[UE_id]->rnti,frame,subframe);
-            }
-
-	    if (eNB->mac_enabled==1) {
-	      mac_xface->SR_indication(eNB->Mod_id,
-				       eNB->CC_id,
-				       frame,
-				       eNB->dlsch[UE_id][0]->rnti,subframe);
-	    }
-          }
-        }// do_SR==1
-
-        if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
-        } else if (fp->frame_type==FDD) { // FDD
-          // if SR was detected, use the n1_pucch from SR, else use n1_pucch0
-	  //          n1_pucch0 = (SR_payload==1) ? eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex:n1_pucch0;
-
-	  LOG_D(PHY,"Demodulating PUCCH for ACK/NAK: n1_pucch0 %d (%d), SR_payload %d\n",n1_pucch0,eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,SR_payload);
-
-          if (abstraction_flag == 0) {
-
-
-
-            metric0 = rx_pucch(eNB,
-                               pucch_format1a,
-                               UE_id,
-                               (uint16_t)n1_pucch0,
-                               0, //n2_pucch
-                               0, // shortened format
-                               pucch_payload0,
-                               subframe,
-                               PUCCH1a_THRES);
-
-            if (metric0 < metric0_SR)
-	      metric0=rx_pucch(eNB,
-			       pucch_format1a,
-			       UE_id,
-			       eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
-			       0, //n2_pucch
-			       0, // shortened format
-			       pucch_payload0,
-			       subframe,
-			       PUCCH1a_THRES);
+	
+	if (SR_payload == 1) {
+	  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",eNB->Mod_id,
+		eNB->ulsch[UE_id]->rnti,frame,subframe);
+	  eNB->UE_stats[UE_id].sr_received++;
+	  
+	  if (eNB->first_sr[UE_id] == 1) { // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
+	    /* is this test necessary? */
+	    if (eNB->dlsch[UE_id][0]->harq_processes[0]->status != SCH_IDLE)
+	      put_harq_pid_in_freelist(eNB->dlsch[UE_id][0], 0);
+	    eNB->first_sr[UE_id] = 0;
+	    eNB->dlsch[UE_id][0]->harq_processes[0]->round=0;
+	    eNB->dlsch[UE_id][0]->harq_processes[0]->status=SCH_IDLE;
+	    LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d First SR\n",
+		  eNB->Mod_id,
+		  eNB->ulsch[UE_id]->rnti,frame,subframe);
 	  }
-          else {
+	  
+	  if (eNB->mac_enabled==1) {
+	    mac_xface->SR_indication(eNB->Mod_id,
+				     eNB->CC_id,
+				     frame,
+				     eNB->dlsch[UE_id][0]->rnti,subframe);
+	  }
+	}
+      }// do_SR==1
+      
+      if ((n1_pucch0==-1) && (n1_pucch1==-1)) { // just check for SR
+      } else if (fp->frame_type==FDD) { // FDD
+	// if SR was detected, use the n1_pucch from SR, else use n1_pucch0
+	//          n1_pucch0 = (SR_payload==1) ? eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex:n1_pucch0;
+	
+	LOG_D(PHY,"Demodulating PUCCH for ACK/NAK: n1_pucch0 %d (%d), SR_payload %d\n",n1_pucch0,eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,SR_payload);
+	
+	if (abstraction_flag == 0) {
+	  
+	  
+	  
+	  metric0 = rx_pucch(eNB,
+			     pucch_format1a,
+			     UE_id,
+			     (uint16_t)n1_pucch0,
+			     0, //n2_pucch
+			     0, // shortened format
+			     pucch_payload0,
+			     subframe,
+			     PUCCH1a_THRES);
+	  
+	  if (metric0 < metric0_SR)
+	    metric0=rx_pucch(eNB,
+			     pucch_format1a,
+			     UE_id,
+			     eNB->scheduling_request_config[UE_id].sr_PUCCH_ResourceIndex,
+			     0, //n2_pucch
+			     0, // shortened format
+			     pucch_payload0,
+			     subframe,
+			     PUCCH1a_THRES);
+	}
+	else {
 #ifdef PHY_ABSTRACTION
-            metric0 = rx_pucch_emul(eNB,UE_id,
-                                    pucch_format1a,
-                                    0,
-                                    pucch_payload0,
-                                    subframe);
+	  metric0 = rx_pucch_emul(eNB,UE_id,
+				  pucch_format1a,
+				  0,
+				  pucch_payload0,
+				  subframe);
 #endif
-          }
-
+	}
+	
 #ifdef DEBUG_PHY_PROC
-          LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
-                eNB->Mod_id,
-                eNB->dlsch[UE_id][0]->rnti,
-                frame,subframe,
-                pucch_payload0[0],metric0);
+	LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+	      eNB->Mod_id,
+	      eNB->dlsch[UE_id][0]->rnti,
+	      frame,subframe,
+	      pucch_payload0[0],metric0);
 #endif
-
-          process_HARQ_feedback(UE_id,eNB,
+	
+	process_HARQ_feedback(UE_id,eNB,proc,
                                 0,// pusch_flag
                                 pucch_payload0,
                                 2,
@@ -2304,7 +2297,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abs
                 frame,subframe,
                 metric0,metric1,pucch_sel,pucch_payload[0],pucch_payload[1]);
 #endif
-          process_HARQ_feedback(UE_id,eNB,
+          process_HARQ_feedback(UE_id,eNB,proc,
                                 0,// pusch_flag
                                 pucch_payload,
                                 pucch_sel,
@@ -2315,9 +2308,8 @@ void pucch_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abs
     }
 }
 
-void cba_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstraction_flag) {
+void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_pid,const uint8_t abstraction_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
   uint8_t access_mode;
   int num_active_cba_groups;
   const int subframe = proc->subframe_rx;
@@ -2342,7 +2334,7 @@ void cba_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstr
 #endif
     
     if (abstraction_flag==0) {
-      rx_ulsch(eNB,
+      rx_ulsch(eNB,proc,
 	       eNB->UE_stats[UE_id].sector,  // this is the effective sector id
 	       UE_id,
 	       eNB->ulsch,
@@ -2351,7 +2343,7 @@ void cba_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstr
     
 #ifdef PHY_ABSTRACTION
     else {
-      rx_ulsch_emul(eNB,
+      rx_ulsch_emul(eNB,proc,
 		    subframe,
 		    eNB->UE_stats[UE_id].sector,  // this is the effective sector id
 		    UE_id);
@@ -2360,7 +2352,7 @@ void cba_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstr
 #endif
     
     if (abstraction_flag == 0) {
-      ret = ulsch_decoding(eNB,
+      ret = ulsch_decoding(eNB,proc,
 			   UE_id,
 			   0, // control_only_flag
 			   eNB->ulsch[UE_id]->harq_processes[harq_pid]->V_UL_DAI,
@@ -2479,11 +2471,11 @@ void cba_procedures(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,const uint8_t abstr
 
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
   int i,l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   void *rxp[fp->nb_antennas_rx]; 
   unsigned int rxs;
+  eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
 
@@ -2620,11 +2612,10 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   }
 }
 
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_flag,const relaying_type_t r_type)
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const uint8_t abstraction_flag,const relaying_type_t r_type)
 {
   //RX processing for ue-specific resources (i
   UNUSED(r_type);
-  eNB_proc_t *proc = &eNB->proc;
   uint32_t l, ret=0,i,j,k;
   uint32_t harq_pid, harq_idx, round;
   uint8_t nPRS;
@@ -2686,7 +2677,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   // Do PUCCH processing first
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    pucch_procedures(eNB,i,harq_pid,abstraction_flag);
+    pucch_procedures(eNB,proc,i,harq_pid,abstraction_flag);
   }
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -2694,7 +2685,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     // check for Msg3
     if (eNB->mac_enabled==1) {
       if (eNB->UE_stats[i].mode == RA_RESPONSE) {
-	process_Msg3(eNB,i,harq_pid);
+	process_Msg3(eNB,proc,i,harq_pid);
       }
     }
 
@@ -2775,7 +2766,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       start_meas(&eNB->ulsch_demodulation_stats);
 
       if (abstraction_flag==0) {
-        rx_ulsch(eNB,
+        rx_ulsch(eNB,proc,
                  eNB->UE_stats[i].sector,  // this is the effective sector id
                  i,
                  eNB->ulsch,
@@ -2784,7 +2775,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
 #ifdef PHY_ABSTRACTION
       else {
-        rx_ulsch_emul(eNB,
+        rx_ulsch_emul(eNB,proc,
                       subframe,
                       eNB->UE_stats[i].sector,  // this is the effective sector id
                       i);
@@ -2797,7 +2788,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       start_meas(&eNB->ulsch_decoding_stats);
 
       if (abstraction_flag == 0) {
-        ret = ulsch_decoding(eNB,
+        ret = ulsch_decoding(eNB,proc,
                              i,
                              0, // control_only_flag
                              eNB->ulsch[i]->harq_processes[harq_pid]->V_UL_DAI,
@@ -2806,7 +2797,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
 #ifdef PHY_ABSTRACTION
       else {
-        ret = ulsch_decoding_emul(eNB,
+        ret = ulsch_decoding_emul(eNB,proc,
                                   i,
                                   &rnti);
       }
@@ -3123,7 +3114,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
             i);
 #endif
       process_HARQ_feedback(i,
-                            eNB,
+                            eNB,proc,
                             1, // pusch_flag
                             0,
                             0,
@@ -3186,7 +3177,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     }
 
     // CBA (non-LTE)
-    cba_procedures(eNB,i,harq_pid,abstraction_flag);
+    cba_procedures(eNB,proc,i,harq_pid,abstraction_flag);
   } // loop i=0 ... NUMBER_OF_UE_MAX-1
 
   if (abstraction_flag == 0) {
