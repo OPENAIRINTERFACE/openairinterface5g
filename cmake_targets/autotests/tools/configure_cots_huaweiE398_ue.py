@@ -143,6 +143,7 @@ def send_command (cmd, response, timeout):
         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
         error = error + traceback.format_exc()
         print error
+        time.sleep(1)
         
 
 def start_ue () :
@@ -226,6 +227,7 @@ while i <  len(sys.argv):
         print 'Using Serial port : ' + serial_port  
         stop_ue()
     elif arg == '--reset-ue' :
+        find_open_port()
         reset_ue()
     elif arg == '-gw' :
         gw = sys.argv[i+1]

@@ -221,6 +221,7 @@ while i <  len(sys.argv):
         print 'Using Serial port : ' + serial_port  
         stop_ue()
     elif arg == '--reset-ue' :
+        find_open_port()
         reset_ue()
     elif arg == '-gw' :
         gw = sys.argv[i+1]
