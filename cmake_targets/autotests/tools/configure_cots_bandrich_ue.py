@@ -141,6 +141,7 @@ def send_command (cmd, response, timeout):
         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
         error = error + traceback.format_exc()
         print error
+        time.sleep(1)
         
 
 def start_ue () :

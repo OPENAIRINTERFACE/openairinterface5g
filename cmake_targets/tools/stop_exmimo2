@@ -8,8 +8,12 @@ if [ "$OPENAIR_DIR" == "" ]; then
 fi
 sudo -E bash -c 'echo 3 > /proc/sys/vm/drop_caches'
 
-#load the module
-sudo -E $OPENAIR_DIR/cmake_targets/tools/init_exmimo2
+exmimo_mod=`lsmod |grep openair_rf`
+#load the module only if absent to avoid kernel crashes
+if [ -z "$exmimo_mod" ]
+then
+  sudo -E $OPENAIR_DIR/cmake_targets/tools/init_exmimo2
+fi
 
 #now we stop the card from transmitting anything
 cd $OPENAIR_DIR/targets/bin
