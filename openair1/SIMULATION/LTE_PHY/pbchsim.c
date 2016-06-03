@@ -38,7 +38,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -58,11 +57,11 @@ PHY_VARS_UE *PHY_vars_UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
-mod_sym_t *dummybuf[4];
-mod_sym_t dummy0[2048*14];
-mod_sym_t dummy1[2048*14];
-mod_sym_t dummy2[2048*14];
-mod_sym_t dummy3[2048*14];
+int32_t *dummybuf[4];
+int32_t dummy0[2048*14];
+int32_t dummy1[2048*14];
+int32_t dummy2[2048*14];
+int32_t dummy3[2048*14];
 
 
 int main(int argc, char **argv)
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
   int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
   uint8_t snr1set=0;
-  //mod_sym_t **txdataF;
   int **txdata,**txdata1,**txdata2;
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
   double iqim = 0.0;
@@ -604,7 +602,7 @@ int main(int argc, char **argv)
       dummybuf[2] = dummy2;
       dummybuf[3] = dummy3;
       generate_pbch(&PHY_vars_eNB->lte_eNB_pbch,
-                    (mod_sym_t**)dummybuf,
+                    (int32_t**)dummybuf,
                     AMP,
                     &PHY_vars_eNB->lte_frame_parms,
                     pbch_pdu,

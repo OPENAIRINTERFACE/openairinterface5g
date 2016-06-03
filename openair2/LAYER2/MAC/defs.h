@@ -251,7 +251,7 @@ typedef struct {
 typedef struct {
   uint8_t Num_ue_spec_dci ;
   uint8_t Num_common_dci  ;
-  uint32_t nCCE;
+  //  uint32_t nCCE;
   uint32_t num_pdcch_symbols;
   DCI_ALLOC_t dci_alloc[NUM_DCI_MAX] ;
 } DCI_PDU;
@@ -654,8 +654,11 @@ typedef struct {
 
   // Logical channel info for link with RLC
 
-  /// UE BSR info for each logical channel group id
+  /// Last received UE BSR info for each logical channel group id
   uint8_t bsr_info[MAX_NUM_LCGID];
+
+  /// LCGID mapping
+  long lcgidmap[11];
 
   /// phr information
   int8_t phr_info;
@@ -737,7 +740,15 @@ typedef struct {
   uint16_t      pre_nb_available_rbs[MAX_NUM_CCs];
   unsigned char rballoc_sub_UE[MAX_NUM_CCs][N_RBG_MAX];
   uint16_t      ta_timer;
-  int16_t      ta_update;
+  int16_t       ta_update;
+  int32_t       context_active_timer;
+  int32_t       cqi_req_timer;
+  int32_t       ul_inactivity_timer;
+  int32_t       ul_failure_timer;
+  int32_t       ul_scheduled;
+  int32_t       ra_pdcch_order_sent;
+  int32_t       ul_out_of_sync;
+  int32_t       phr_received;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {

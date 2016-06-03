@@ -45,7 +45,7 @@
 #include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "RRC/LITE/proto.h"
 #include "pdcp_primitives.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -636,10 +636,10 @@ pdcp_data_ind(
         PROTOCOL_PDCP_CTXT_FMT" DATA-IND len %u",
         PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
         sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len);
-      pdcp_rrc_data_ind(ctxt_pP,
-                        rb_id,
-                        sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
-                        (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
+      rrc_data_ind(ctxt_pP,
+		   rb_id,
+		   sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
+		   (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
       free_mem_block(sdu_buffer_pP);
 
       // free_mem_block(new_sdu);

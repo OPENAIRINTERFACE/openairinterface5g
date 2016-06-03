@@ -55,6 +55,7 @@ const uint32_t BSR_TABLE[BSR_TABLE_SIZE]= {0,10,12,14,17,19,22,26,31,36,42,49,57
 
 //uint32_t EBSR_Level[63]={0,10,13,16,19,23,29,35,43,53,65,80,98,120,147,181};
 
+MAC_xface *mac_xface;
 
 uint32_t RRC_CONNECTION_FLAG;
 

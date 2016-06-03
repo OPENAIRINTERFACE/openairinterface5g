@@ -51,8 +51,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
-#include "MAC_INTERFACE/extern.h"
-
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 RTIME time0,time1;

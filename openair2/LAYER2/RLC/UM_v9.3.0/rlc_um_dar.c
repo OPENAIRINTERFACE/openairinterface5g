@@ -37,7 +37,6 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "list.h"
-#include "MAC_INTERFACE/extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 

@@ -73,7 +73,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
     msg("Freeing ulsch %p\n",ulsch);
 #endif
 
-    for (i=0; i<ulsch->Mdlharq; i++) {
+    for (i=0; i<8; i++) {
 #ifdef DEBUG_ULSCH_FREE
       msg("Freeing ulsch process %d\n",i);
 #endif
@@ -118,7 +118,7 @@ void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch)
 
 }
 
-LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, uint8_t abstraction_flag)
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag)
 {
 
   LTE_UE_ULSCH_t *ulsch;
@@ -147,9 +147,8 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, uint8_
 
   if (ulsch) {
     memset(ulsch,0,sizeof(LTE_UE_ULSCH_t));
-    ulsch->Mdlharq = Mdlharq;
 
-    for (i=0; i<Mdlharq; i++) {
+    for (i=0; i<8; i++) {
 
       ulsch->harq_processes[i] = (LTE_UL_UE_HARQ_t *)malloc16(sizeof(LTE_UL_UE_HARQ_t));
 
@@ -187,7 +186,7 @@ LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char Mdlharq,unsigned char N_RB_UL, uint8_
     }
 
     if ((abstraction_flag == 0) && (exit_flag==0)) {
-      for (i=0; i<Mdlharq; i++)
+      for (i=0; i<8; i++)
         for (j=0; j<96; j++)
           for (r=0; r<MAX_NUM_ULSCH_SEGMENTS; r++)
             ulsch->harq_processes[i]->d[r][j] = LTE_NULL;
@@ -541,7 +540,7 @@ uint32_t ulsch_encoding(uint8_t *a,
                                           ulsch->e+r_offset,
                                           ulsch->harq_processes[harq_pid]->C, // C
                                           NSOFT,                    // Nsoft,
-                                          ulsch->Mdlharq,
+                                          0,  // this means UL
                                           1,
                                           ulsch->harq_processes[harq_pid]->rvidx,
                                           get_Qm_ul(ulsch->harq_processes[harq_pid]->mcs),

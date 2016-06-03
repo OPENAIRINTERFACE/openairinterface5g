@@ -405,7 +405,7 @@ void remove_harq_pid_from_freelist(LTE_eNB_DLSCH_t *DLSCH_ptr, int harq_pid);
 
 int8_t find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 int32_t add_ue(int16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
-int32_t remove_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag);
+int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rnti);
 
 void process_timing_advance(module_id_t Mod_id,uint8_t CC_id,int16_t timing_advance);
 void process_timing_advance_rar(PHY_VARS_UE *phy_vars_ue,uint16_t timing_advance);
