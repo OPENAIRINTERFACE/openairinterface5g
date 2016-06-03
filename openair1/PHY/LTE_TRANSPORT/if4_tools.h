@@ -56,7 +56,7 @@ struct IF4_frame_status {
   uint32_t rsvd:2;    
 };
 
-/// IF4 Antenna Gain
+/// IF4 Antenna Gain (16 bits)
 struct IF4_gain {
   /// Reserved 
   uint32_t rsvd:10;
@@ -150,6 +150,8 @@ struct IF4_prach_packet {
   /// Frame Check Sequence
   uint32_t fcs;
 };
+
+// Needs to be checked
 
 IF4_dl_packet gen_IF4_dl_packet();
 
