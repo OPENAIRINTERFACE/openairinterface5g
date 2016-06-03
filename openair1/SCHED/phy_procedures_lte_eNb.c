@@ -1954,7 +1954,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag)
       eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
 
       eNB->UE_stats[(uint32_t)UE_id].sector = 0;
-      LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
+      LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
             eNB->Mod_id,
             eNB->CC_id,
             frame,
@@ -2647,30 +2647,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
 
 
-  if (abstraction_flag == 0) {
-    start_meas(&eNB->ofdm_demod_stats);
-
-    for (l=0; l<fp->symbols_per_tti/2; l++) {
-
-      slot_fep_ul(fp,
-                  &eNB->common_vars,
-                  l,
-                  subframe<<1,
-                  0,
-                  0
-                 );
-      slot_fep_ul(fp,
-                  &eNB->common_vars,
-                  l,
-                  (subframe<<1)+1,
-                  0,
-                  0
-                 );
-    }
-
-    stop_meas(&eNB->ofdm_demod_stats);
-  }
-
   // Check for active processes in current subframe
   harq_pid = subframe2harq_pid(fp,
                                frame,subframe);
@@ -2705,18 +2681,14 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         (eNB->ulsch[i]->harq_processes[harq_pid]->subframe_scheduling_flag==1)) {
       // UE is has ULSCH scheduling
       round = eNB->ulsch[i]->harq_processes[harq_pid]->round;
-
+ 
       for (int rb=0;
            rb<=eNB->ulsch[i]->harq_processes[harq_pid]->nb_rb;
 	   rb++) {
 	int rb2 = rb+eNB->ulsch[i]->harq_processes[harq_pid]->first_rb;
 	eNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
       }
-#ifdef DEBUG_PHY_PROC
-      LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d Scheduling PUSCH/ULSCH Reception for rnti %x (UE_id %d)\n",
-            eNB->Mod_id,harq_pid,
-            frame,subframe,eNB->ulsch[i]->rnti,i);
-#endif
+
 
       if (eNB->ulsch[i]->Msg3_flag == 1) {
         LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for Msg3 in Sector %d\n",
@@ -2726,6 +2698,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
               eNB->UE_stats[i].sector);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_MSG3,1);
       } else {
+
         LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for UE %d Mode %s\n",
               eNB->Mod_id,
               frame,
