@@ -254,7 +254,7 @@ void *rrh_eNB_thread(void *arg) {
     pthread_mutex_init(&sync_trx_mutex,NULL);
 
     /* create eNB module's TX/RX threads */    
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
     error_code_eNB_rx = pthread_create(&eNB_rx_thread, NULL, rrh_eNB_rx_thread, (void *)dev);
     error_code_eNB_tx = pthread_create(&eNB_tx_thread, NULL, rrh_eNB_tx_thread, (void *)dev);
     LOG_I(RRH,"[eNB][SCHED] deadline scheduling applied to eNB TX/RX threads\n");	
@@ -302,7 +302,7 @@ void *rrh_eNB_thread(void *arg) {
       timerspec.it_interval.tv_nsec = rt_period%1000000000;
       
       
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
       error_code_timer = pthread_create(&main_timer_proc_thread, NULL, timer_proc, (void *)&timerspec);
       LOG_I(RRH,"[eNB][SCHED] deadline scheduling applied to timer thread \n");
 #else 
@@ -368,7 +368,7 @@ void *rrh_eNB_rx_thread(void *arg) {
   measurements = dev->measurements;
   next_rx_pos = spp_eth;
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -560,7 +560,7 @@ void *rrh_eNB_tx_thread(void *arg) {
   unsigned int subframe=0,frame=0;
   unsigned int pck_tx=0;
   
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   
