@@ -206,7 +206,7 @@ dead:
   };
 
   close(f->socket_remote);
-  f->socket_remote = get_connection("127.0.0.1", f->remote_port);
+  f->socket_remote = get_connection("0.0.0.0", f->remote_port);
   goto again;
 
   return NULL;
@@ -230,7 +230,7 @@ static void *forwarder(int port, int s)
   printf("waiting for remote tracer on port %d\n", port);
 
   f->remote_port = port;
-  f->socket_remote = get_connection("127.0.0.1", port);
+  f->socket_remote = get_connection("0.0.0.0", port);
 
   new_thread(data_sender, f);
   new_thread(forward_remote_messages, f);
