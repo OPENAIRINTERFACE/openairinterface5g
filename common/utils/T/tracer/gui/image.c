@@ -3,6 +3,7 @@
 #include "x.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <png.h>
 
 static void paint(gui *_gui, widget *_w)
