@@ -7,6 +7,8 @@
 
 struct event_selector {
   int *is_on;
+  int *is_on_paused;    /* when pausing, is_on is set to all 0, this one
+                         * is used to copy back data when un-pausing */
   int red;
   int green;
   gui *g;
@@ -15,12 +17,13 @@ struct event_selector {
   void *database;
   int nevents;
   int ngroups;
-  int socket;
   int paused;
   /* those three widgets used to pause/unpause reception of events */
   widget *parent_widget;
   widget *normal_widget;
   widget *pause_widget;
+  void (*change_callback)(void *change_callback_data);
+  void *change_callback_data;
 };
 
 static void scroll(void *private, gui *g,
@@ -57,7 +60,6 @@ static void click(void *private, gui *g,
   char *text;
   int color;
   int i;
-  char t;
 
   /* notification_data depends on the kind of widget */
   if (w == this->pause_widget) {
@@ -76,22 +78,17 @@ static void click(void *private, gui *g,
       container_set_child_growable(g, this->parent_widget,
           this->pause_widget, 1);
       /* pause */
-      t = 1;
-      socket_send(this->socket, &t, 1);
-      socket_send(this->socket, &this->nevents, sizeof(int));
-      set_on = 0;
-      for (i = 0; i < this->nevents; i++)
-        socket_send(this->socket, &set_on, sizeof(int));
+      memcpy(this->is_on_paused, this->is_on, this->nevents * sizeof(int));
+      memset(this->is_on, 0, this->nevents * sizeof(int));
+      this->change_callback(this->change_callback_data);
     } else {
       widget_del_child(g, this->parent_widget, this->pause_widget);
       widget_add_child(g, this->parent_widget, this->normal_widget, 0);
       container_set_child_growable(g, this->parent_widget,
           this->normal_widget, 1);
       /* un-pause */
-      t = 1;
-      socket_send(this->socket, &t, 1);
-      socket_send(this->socket, &this->nevents, sizeof(int));
-      socket_send(this->socket, this->is_on, this->nevents * sizeof(int));
+      memcpy(this->is_on, this->is_on_paused, this->nevents * sizeof(int));
+      this->change_callback(this->change_callback_data);
     }
     this->paused = 1 - this->paused;
     return;
@@ -121,14 +118,11 @@ static void click(void *private, gui *g,
     textlist_set_color(this->g, this->groups, line,
         set_on ? this->green : this->red);
 
-  t = 1;
-  socket_send(this->socket, &t, 1);
-  socket_send(this->socket, &this->nevents, sizeof(int));
-  socket_send(this->socket, this->is_on, this->nevents * sizeof(int));
+  this->change_callback(this->change_callback_data);
 }
 
-event_selector *setup_event_selector(gui *g, void *database, int socket,
-    int *is_on)
+event_selector *setup_event_selector(gui *g, void *database, int *is_on,
+    void (*change_callback)(void *), void *change_callback_data)
 {
   struct event_selector *ret;
   widget *win;
@@ -198,6 +192,9 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
 
   ret->nevents = n;
 
+  ret->is_on_paused = calloc(n, sizeof(int));
+  if (ret->is_on_paused == NULL) abort();
+
   n = database_get_groups(database, &gps);
   for (i = 0; i < n; i++) {
     textlist_add(g, groups, gps[i], -1, FOREGROUND_COLOR);
@@ -213,7 +210,8 @@ event_selector *setup_event_selector(gui *g, void *database, int socket,
   ret->events = events;
   ret->groups = groups;
   ret->database = database;
-  ret->socket = socket;
+  ret->change_callback = change_callback;
+  ret->change_callback_data = change_callback_data;
 
   ret->parent_widget = win_container;
   ret->normal_widget = main_container;

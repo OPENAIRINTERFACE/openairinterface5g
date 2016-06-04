@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <pthread.h>
 #include "database.h"
 #include "event.h"
 #include "handler.h"
@@ -19,8 +19,33 @@ typedef struct {
   view *legacy;
 } enb_gui;
 
+typedef struct {
+  int socket;
+  int *is_on;
+  int nevents;
+  pthread_mutex_t lock;
+} enb_data;
+
 #define DEFAULT_REMOTE_IP "127.0.0.1"
 #define DEFAULT_REMOTE_PORT 2021
+
+void is_on_changed(void *_d)
+{
+  enb_data *d = _d;
+  char t;
+
+  if (pthread_mutex_lock(&d->lock)) abort();
+
+  if (d->socket == -1) goto no_connection;
+
+  t = 1;
+  socket_send(d->socket, &t, 1);
+  socket_send(d->socket, &d->nevents, sizeof(int));
+  socket_send(d->socket, d->is_on, d->nevents * sizeof(int));
+
+no_connection:
+  if (pthread_mutex_unlock(&d->lock)) abort();
+}
 
 void usage(void)
 {
@@ -214,13 +239,11 @@ int main(int n, char **v)
   int on_off_n = 0;
   int *is_on;
   int number_of_events;
-  int s;
   int i;
-  char t;
-  int l;
   event_handler *h;
   gui *g;
   enb_gui eg;
+  enb_data enb_data;
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -346,25 +369,22 @@ int main(int n, char **v)
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
 
-  s = connect_to(ip, port);
+  enb_data.socket = -1;
+  enb_data.is_on = is_on;
+  enb_data.nevents = number_of_events;
+  if (pthread_mutex_init(&enb_data.lock, NULL)) abort();
+  setup_event_selector(g, database, is_on, is_on_changed, &enb_data);
+
+  enb_data.socket = connect_to(ip, port);
 
   /* send the first message - activate selected traces */
-  t = 0;
-  if (write(s, &t, 1) != 1) abort();
-  l = 0;
-  for (i = 0; i < number_of_events; i++) if (is_on[i]) l++;
-  if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
-  for (l = 0; l < number_of_events; l++)
-    if (is_on[l])
-      if (write(s, &l, sizeof(int)) != sizeof(int)) abort();
-
-  setup_event_selector(g, database, s, is_on);
+  is_on_changed(&enb_data);
 
   /* read messages */
   while (1) {
     char v[T_BUFFER_MAX];
     event e;
-    e = get_event(s, v, database);
+    e = get_event(enb_data.socket, v, database);
     handle_event(h, e);
   }
 
