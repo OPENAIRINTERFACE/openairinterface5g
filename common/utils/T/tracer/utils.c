@@ -68,16 +68,17 @@ list *list_append(list *l, void *data)
 /* socket                                                                   */
 /****************************************************************************/
 
-void socket_send(int socket, void *buffer, int size)
+int socket_send(int socket, void *buffer, int size)
 {
   char *x = buffer;
   int ret;
   while (size) {
     ret = write(socket, x, size);
-    if (ret <= 0) abort();
+    if (ret <= 0) return -1;
     size -= ret;
     x += ret;
   }
+  return 0;
 }
 
 int get_connection(char *addr, int port)

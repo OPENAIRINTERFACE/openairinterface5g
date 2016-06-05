@@ -30,9 +30,10 @@ void is_on_changed(void *_d)
   if (d->socket == -1) goto no_connection;
 
   t = 1;
-  socket_send(d->socket, &t, 1);
-  socket_send(d->socket, &d->nevents, sizeof(int));
-  socket_send(d->socket, d->is_on, d->nevents * sizeof(int));
+  if (socket_send(d->socket, &t, 1) == -1 ||
+      socket_send(d->socket, &d->nevents, sizeof(int)) == -1 ||
+      socket_send(d->socket, d->is_on, d->nevents * sizeof(int)) == -1)
+    abort();
 
 no_connection:
   if (pthread_mutex_unlock(&d->lock)) abort();
