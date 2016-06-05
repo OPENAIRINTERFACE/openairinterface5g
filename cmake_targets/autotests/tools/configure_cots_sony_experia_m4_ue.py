@@ -43,7 +43,8 @@ def kill_processes(name):
      cmd = 'sudo adb -s ' + device_id +' shell "ps |grep ' + name + '"' 
      status, out = commands.getstatusoutput(cmd)
      if status != 0:
-       print "Error execting command to kill process " + name
+       print "Error executing command to kill process " + name
+       print "Error =" + out
        sys.exit(1)
      print "Out = " + out
      if out=='':
