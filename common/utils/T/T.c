@@ -10,6 +10,11 @@
 #include <fcntl.h>
 #include <sys/socket.h>
 
+#define QUIT(x) do { \
+  printf("T tracer: QUIT: %s\n", x); \
+  exit(1); \
+} while (0)
+
 /* array used to activate/disactivate a log */
 static int T_IDs[T_NUMBER_OF_IDS];
 int *T_active = T_IDs;
@@ -31,15 +36,15 @@ static void get_message(int s)
   int id;
   int is_on;
 
-  if (read(s, &t, 1) != 1) abort();
+  if (read(s, &t, 1) != 1) QUIT("get_message fails");
 printf("got mess %d\n", t);
   switch (t) {
   case 0:
     /* toggle all those IDs */
     /* optimze? (too much syscalls) */
-    if (read(s, &l, sizeof(int)) != sizeof(int)) abort();
+    if (read(s, &l, sizeof(int)) != sizeof(int)) QUIT("get_message fails");
     while (l) {
-      if (read(s, &id, sizeof(int)) != sizeof(int)) abort();
+      if (read(s, &id, sizeof(int)) != sizeof(int)) QUIT("get_message fails");
       T_IDs[id] = 1 - T_IDs[id];
       l--;
     }
@@ -47,10 +52,11 @@ printf("got mess %d\n", t);
   case 1:
     /* set IDs as given */
     /* optimize? */
-    if (read(s, &l, sizeof(int)) != sizeof(int)) abort();
+    if (read(s, &l, sizeof(int)) != sizeof(int)) QUIT("get_message fails");
     id = 0;
     while (l) {
-      if (read(s, &is_on, sizeof(int)) != sizeof(int)) abort();
+      if (read(s, &is_on, sizeof(int)) != sizeof(int))
+        QUIT("get_message fails");
       T_IDs[id] = is_on;
       id++;
       l--;
