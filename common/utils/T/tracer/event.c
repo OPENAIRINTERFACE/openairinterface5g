@@ -22,14 +22,14 @@ event get_event(int socket, char *event_buffer, void *database)
    */
 
 again:
-  fullread(socket, &length, 4);
+  if (fullread(socket, &length, 4) == -1) goto read_error;
 #ifdef T_SEND_TIME
-  fullread(socket, &t, sizeof(struct timespec));
+  if (fullread(socket, &t, sizeof(struct timespec)) == -1) goto read_error;
   length -= sizeof(struct timespec);
 #endif
-  fullread(socket, &type, sizeof(int));
+  if (fullread(socket, &type, sizeof(int)) == -1) goto read_error;
   length -= sizeof(int);
-  fullread(socket, event_buffer, length);
+  if (fullread(socket, event_buffer, length) == -1) goto read_error;
 
   if (type == -1) append_received_config_chunk(event_buffer, length);
   if (type == -2) verify_config();
@@ -41,6 +41,9 @@ again:
 #else
   return new_event(type, length, event_buffer, database);
 #endif
+
+read_error:
+  return (event){type: -1};
 }
 
 #ifdef T_SEND_TIME

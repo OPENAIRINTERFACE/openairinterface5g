@@ -118,7 +118,7 @@ int fullread(int fd, void *_buf, int count)
   int l;
   while (count) {
     l = read(fd, buf, count);
-    if (l <= 0) { printf("read socket problem\n"); abort(); }
+    if (l <= 0) return -1;
     count -= l;
     buf += l;
     ret += l;

@@ -386,6 +386,7 @@ int main(int n, char **v)
     char v[T_BUFFER_MAX];
     event e;
     e = get_event(enb_data.socket, v, database);
+    if (e.type == -1) abort();
     handle_event(h, e);
   }
 

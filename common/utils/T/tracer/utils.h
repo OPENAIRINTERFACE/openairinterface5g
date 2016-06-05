@@ -23,6 +23,7 @@ list *list_append(list *l, void *data);
 /* socket_send: return 0 if okay, -1 on error */
 int socket_send(int socket, void *buffer, int size);
 int get_connection(char *addr, int port);
+/* fullread: return length read if okay (that is: 'count'), -1 on error */
 int fullread(int fd, void *_buf, int count);
 int connect_to(char *addr, int port);
 
