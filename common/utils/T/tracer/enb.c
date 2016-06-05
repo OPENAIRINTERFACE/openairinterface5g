@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
 #include "database.h"
@@ -43,9 +44,15 @@ void is_on_changed(void *_d)
   if (socket_send(d->socket, &t, 1) == -1 ||
       socket_send(d->socket, &d->nevents, sizeof(int)) == -1 ||
       socket_send(d->socket, d->is_on, d->nevents * sizeof(int)) == -1)
-    abort();
+    goto connection_dies;
 
 no_connection:
+  if (pthread_mutex_unlock(&d->lock)) abort();
+  return;
+
+connection_dies:
+  close(d->socket);
+  d->socket = -1;
   if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
@@ -380,6 +387,8 @@ int main(int n, char **v)
   if (pthread_mutex_init(&enb_data.lock, NULL)) abort();
   setup_event_selector(g, database, is_on, is_on_changed, &enb_data);
 
+restart:
+  clear_remote_config();
   enb_data.socket = connect_to(ip, port);
 
   /* send the first message - activate selected traces */
@@ -390,7 +399,7 @@ int main(int n, char **v)
     char v[T_BUFFER_MAX];
     event e;
     e = get_event(enb_data.socket, v, database);
-    if (e.type == -1) abort();
+    if (e.type == -1) goto restart;
     handle_event(h, e);
   }
 

@@ -17,6 +17,13 @@ static char *PUT(char *to, int tosize, char c)
   return to;
 }
 
+void  clear_remote_config(void)
+{
+  free(remote);
+  remote = NULL;
+  remote_size = 0;
+}
+
 void append_received_config_chunk(char *buf, int length)
 {
   int buflen = *(int *)buf;
