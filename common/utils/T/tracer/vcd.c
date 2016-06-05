@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <signal.h>
 #include "database.h"
 #include "event.h"
 #include "handler.h"
@@ -128,6 +129,9 @@ int main(int n, char **v)
   event_handler *h;
   gui *g;
   vcd_data vcd_data;
+
+  /* write on a socket fails if the other end is closed and we get SIGPIPE */
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();

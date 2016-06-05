@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <inttypes.h>
+#include <signal.h>
 
 #include "T_defs.h"
 #include "T_IDs.h"
@@ -195,6 +196,7 @@ again:
 
 dead:
   /* socket died, let's stop all traces and wait for another tracer */
+  /* TODO: be careful with those write, they might write less than wanted */
   buf[0] = 1;
   if (write(to, buf, 1) != 1) abort();
   len = T_NUMBER_OF_IDS;
@@ -311,6 +313,9 @@ void T_local_tracer_main(int remote_port, int wait_for_tracer,
   int port = remote_port;
   int dont_wait = wait_for_tracer ? 0 : 1;
   void *f;
+
+  /* write on a socket fails if the other end is closed and we get SIGPIPE */
+  if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
 
   init_shm();
   s = local_socket;
