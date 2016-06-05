@@ -29,10 +29,7 @@
 
 # *******************************************************************************/
 
-# \file test01.py
-# \brief test 01 for OAI
-# \author Navid Nikaein
-# \date 2013 - 2015
+# \author Rohit Gupta
 # \version 0.1
 # @ingroup _test
 
@@ -1529,9 +1526,8 @@ for testcase in testcaseList:
         print "Now copying files to NFS Share"
         oai_localhost = openair('localdomain','localhost')
         oai_localhost.connect(user,pw)
-        cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+        cmd = ' mkdir -p ' + NFSTestsResultsDir
         res = oai_localhost.send_recv(cmd)
-        print "Deleting NFSTestResults Dir..." + res
 
         print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
         SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
@@ -1568,12 +1564,15 @@ res=os.system(cmd)
 print "Now copying files to NFS Share"
 oai_localhost = openair('localdomain','localhost')
 oai_localhost.connect(user,pw)
-cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+cmd = 'mkdir -p ' + NFSTestsResultsDir
 res = oai_localhost.send_recv(cmd)
-print "Deleting NFSTestResults Dir..." + res
 
 print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+
+cmd = "cat " + NFSTestsResultsDir + "/log/*/*.xml > " + NFSTestsResultsDir + "/log/results_autotests.xml"
+res = oai_localhost.send_recv(cmd)
+ 
 oai_localhost.disconnect()
 
 sys.exit()
