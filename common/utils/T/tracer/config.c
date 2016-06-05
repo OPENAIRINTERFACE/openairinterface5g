@@ -33,7 +33,7 @@ void append_received_config_chunk(char *buf, int length)
   }
 }
 
-void store_config_file(char *filename)
+void load_config_file(char *filename)
 {
   int c;
   FILE *f = fopen(filename, "r");

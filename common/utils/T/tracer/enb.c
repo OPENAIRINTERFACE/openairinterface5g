@@ -279,7 +279,7 @@ int main(int n, char **v)
 
   database = parse_database(database_filename);
 
-  store_config_file(database_filename);
+  load_config_file(database_filename);
 
   number_of_events = number_of_ids(database);
   is_on = calloc(number_of_events, sizeof(int));
