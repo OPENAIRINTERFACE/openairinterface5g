@@ -91,6 +91,23 @@ static void new_thread(void *(*f)(void *), void *data)
 void T_local_tracer_main(int remote_port, int wait_for_tracer,
     int local_socket);
 
+/* We monitor the tracee and the local tracer processes.
+ * When one dies we forcefully kill the other.
+ */
+#include <sys/types.h>
+#include <sys/wait.h>
+static void monitor_and_kill(int child1, int child2)
+{
+  int child;
+  int status;
+
+  child = wait(&status);
+  if (child == -1) perror("wait");
+  kill(child1, SIGKILL);
+  kill(child2, SIGKILL);
+  exit(0);
+}
+
 void T_init(int remote_port, int wait_for_tracer)
 {
   int socket_pair[2];
@@ -98,18 +115,26 @@ void T_init(int remote_port, int wait_for_tracer)
   int T_shm_fd;
   unsigned char *buf;
   int len;
-  int f;
+  int child1, child2;
 
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair))
     { perror("socketpair"); abort(); }
 
-  f = fork(); if (f == -1) abort();
-  if (f == 0) {
+  /* child1 runs the local tracer and child2 runs the tracee */
+
+  child1 = fork(); if (child1 == -1) abort();
+  if (child1 == 0) {
     close(socket_pair[1]);
     T_local_tracer_main(remote_port, wait_for_tracer, socket_pair[0]);
     exit(0);
   }
   close(socket_pair[0]);
+
+  child2 = fork(); if (child2 == -1) abort();
+  if (child2 != 0) {
+    close(socket_pair[1]);
+    monitor_and_kill(child1, child2);
+  }
 
   s = socket_pair[1];
   /* wait for first message - initial list of active T events */
