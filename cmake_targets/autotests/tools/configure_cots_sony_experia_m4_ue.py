@@ -63,6 +63,7 @@ def start_ue () :
    #print 'Enter your commands below.\r\nInsert "exit" to leave the application.'
    print 'Killing old iperf/ping sessions'
    kill_processes('iperf')
+   kill_processes('iperf3')
    kill_processes('ping')
    print "Turning off airplane mode"
    os.system('sudo -E adb devices')
