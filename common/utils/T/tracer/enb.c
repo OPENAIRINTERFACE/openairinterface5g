@@ -17,6 +17,7 @@
 #include "config.h"
 
 typedef struct {
+  view *phyview;
   view *rrcview;
   view *legacy;
 } enb_gui;
@@ -122,7 +123,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
       g, input_signal_plot, new_color(g, "#0c0c72"));
   logger_add_view(input_signal_log, input_signal_view);
 
-  /* downlink UE DCIs */
+  /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
       new_label(g,"DL/UL TICK/DCI/ACK/NACK "), -1);
   line = new_container(g, HORIZONTAL);
@@ -134,26 +135,42 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     timeline_set_subline_background_color(g, timeline_plot, i,
         new_color(g, i==0 || i==4 ? "#aaf" : "#eee"));
   timeview = new_view_time(3600, 10, g, timeline_plot);
-  /* tick logging */
+  /* DL tick logging */
   timelog = new_timelog(h, database, "ENB_DL_TICK");
   subview = new_subview_time(timeview, 0, new_color(g, "#77c"), 3600*1000);
   logger_add_view(timelog, subview);
-  /* DCI logging */
+  /* DL DCI logging */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_DCI");
   subview = new_subview_time(timeview, 1, new_color(g, "#228"), 3600*1000);
   logger_add_view(timelog, subview);
-  /* ACK */
+  /* DL ACK */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_ACK");
   subview = new_subview_time(timeview, 2, new_color(g, "#282"), 3600*1000);
   logger_add_view(timelog, subview);
-  /* NACK */
+  /* DL NACK */
   timelog = new_timelog(h, database, "ENB_DLSCH_UE_NACK");
   subview = new_subview_time(timeview, 3, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
 
-  /* uplink UE DCIs */
+  /* UL tick logging */
   timelog = new_timelog(h, database, "ENB_UL_TICK");
   subview = new_subview_time(timeview, 4, new_color(g, "#77c"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* UL DCI logging */
+  timelog = new_timelog(h, database, "ENB_ULSCH_UE_DCI");
+  subview = new_subview_time(timeview, 5, new_color(g, "#228"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* UL retransmission without DCI logging */
+  timelog = new_timelog(h, database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION");
+  subview = new_subview_time(timeview, 5, new_color(g, "#f22"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* UL ACK */
+  timelog = new_timelog(h, database, "ENB_ULSCH_UE_ACK");
+  subview = new_subview_time(timeview, 6, new_color(g, "#282"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* UL NACK */
+  timelog = new_timelog(h, database, "ENB_ULSCH_UE_NACK");
+  subview = new_subview_time(timeview, 7, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
 
   /* phy/mac/rlc/pdcp/rrc textlog */
@@ -170,6 +187,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, col, text, -1);
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
+  e->phyview = textview;
 
   /* mac */
   col = new_container(g, VERTICAL);
@@ -311,15 +329,28 @@ int main(int n, char **v)
   }
 
   on_off(database, "ENB_INPUT_SIGNAL", is_on, 1);
-  on_off(database, "ENB_UL_TICK", is_on, 1);
   on_off(database, "ENB_DL_TICK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_DCI", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_DLSCH_UE_NACK", is_on, 1);
+  on_off(database, "ENB_UL_TICK", is_on, 1);
+  on_off(database, "ENB_ULSCH_UE_DCI", is_on, 1);
+  on_off(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", is_on, 1);
+  on_off(database, "ENB_ULSCH_UE_ACK", is_on, 1);
+  on_off(database, "ENB_ULSCH_UE_NACK", is_on, 1);
 
   on_off(database, "LEGACY_RRC_INFO", is_on, 1);
   on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
   on_off(database, "LEGACY_RRC_WARNING", is_on, 1);
+
+  view_add_log(eg.phyview, "ENB_DLSCH_UE_DCI", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_DLSCH_UE_ACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_DLSCH_UE_NACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_ULSCH_UE_DCI", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+      h, database, is_on);
+  view_add_log(eg.phyview, "ENB_ULSCH_UE_ACK", h, database, is_on);
+  view_add_log(eg.phyview, "ENB_ULSCH_UE_NACK", h, database, is_on);
 
   view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE",
       h, database, is_on);
