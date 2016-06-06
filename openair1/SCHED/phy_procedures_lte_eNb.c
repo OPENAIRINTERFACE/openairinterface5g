@@ -1250,6 +1250,9 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       else
 	UE_id = i;
 
+      T(T_ENB_ULSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+        T_INT(DCI_pdu->dci_alloc[i].rnti));
+
       if (UE_id<0) {
         LOG_E(PHY,"[eNB %"PRIu8"] Frame %d: Unknown UE_id for rnti %"PRIx16"\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,DCI_pdu->dci_alloc[i].rnti);
         mac_exit_wrapper("Invalid UE id (< 0) detected");
@@ -2795,6 +2798,7 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
       }
 
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
+        T(T_ENB_ULSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti));
 
         /*
         if (phy_vars_eNB->ulsch_eNB[i]->harq_processes[harq_pid]->round>0) {
@@ -2919,6 +2923,8 @@ void phy_procedures_eNB_RX(const unsigned char sched_subframe,PHY_VARS_eNB *phy_
         }
       }  // ulsch in error
       else {
+        T(T_ENB_ULSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti));
+
         if (phy_vars_eNB->ulsch_eNB[i]->Msg3_flag == 1) {
 	  LOG_I(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d ULSCH received, setting round to 0, PHICH ACK\n",
 		phy_vars_eNB->Mod_id,harq_pid,
