@@ -142,7 +142,8 @@ static int s1ap_eNB_decode_initiating_message(s1ap_message *message,
     //s1ap_xer_print_s1ap_e_rabsetuprequest(s1ap_xer__print2sp, message_string, message);
     S1AP_INFO("TODO  E_RABRelease nitiating message\n");
     free(message_string);
-    
+    break;
+
   default:
     S1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
                (int)initiating_p->procedureCode);

@@ -770,7 +770,8 @@ int s1ap_eNB_handle_initial_context_request(uint32_t               assoc_id,
         malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
 
       memcpy(S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.buffer,
-             item_p->nAS_PDU->buf, item_p->nAS_PDU->size);
+             item_p->nAS_PDU->buf, item_p->nAS_PDU->size); 
+      S1AP_DEBUG("Received NAS message with the E_RAB setup procedure\n");
     } else {
       S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.length = 0;
       S1AP_INITIAL_CONTEXT_SETUP_REQ(message_p).e_rab_param[i].nas_pdu.buffer = NULL;
@@ -950,7 +951,8 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t               assoc_id,
       S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU.size);
 
       memcpy(S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer,
-             item_p->nAS_PDU.buf, item_p->nAS_PDU.size);
+             item_p->nAS_PDU.buf, item_p->nAS_PDU.size); 
+      // S1AP_INFO("received a NAS PDU with size %d (%02x.%02x)\n",S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.length, item_p->nAS_PDU.buf[0], item_p->nAS_PDU.buf[1]);
     } else {
       S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.length = 0;
       S1AP_E_RAB_SETUP_REQ(message_p).e_rab_setup_params[i].nas_pdu.buffer = NULL;

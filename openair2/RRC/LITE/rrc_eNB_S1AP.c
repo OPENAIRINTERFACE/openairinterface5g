@@ -28,7 +28,7 @@
 *******************************************************************************/
 /*! \file rrc_eNB_S1AP.c
  * \brief rrc S1AP procedures for eNB
- * \author Laurent Winckel, Sebastien ROUX, Navid Nikaein and Lionel GAUTHIER
+ * \author Navid Nikaein, Laurent Winckel, Sebastien ROUX, and Lionel GAUTHIER
  * \date 2013-2016
  * \version 1.0
  * \company Eurecom
