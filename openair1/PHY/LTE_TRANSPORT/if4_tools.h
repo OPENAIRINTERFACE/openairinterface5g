@@ -38,8 +38,6 @@
 * \warning
 */
 
-#include <stdint.h>
-
 /// IF4 Frame Status (32 bits)
 struct IF4_frame_status {
   /// Antenna Numbers
@@ -59,9 +57,9 @@ struct IF4_frame_status {
 /// IF4 Antenna Gain (16 bits)
 struct IF4_gain {
   /// Reserved 
-  uint32_t rsvd:10;
+  uint16_t rsvd:10;
   /// FFT Exponent Output
-  uint32_t exponent:6;  
+  uint16_t exponent:6;  
 };  
 
 /// IF4 LTE PRACH Configuration (32 bits)
@@ -77,7 +75,7 @@ struct IF4_lte_prach_conf {
   /// FFT Exponent Output
   uint32_t exponent:6;  
 };
-  
+
 struct IF4_dl_packet {
   /// Destination Address
   
@@ -90,12 +88,13 @@ struct IF4_dl_packet {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  IF4_frame_status frame_status;
+  struct IF4_frame_status frame_status;
   /// Data Blocks
   
   /// Frame Check Sequence
   uint32_t fcs; 
 };
+
 
 struct IF4_ul_packet {
   /// Destination Address
@@ -109,23 +108,23 @@ struct IF4_ul_packet {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  IF4_frame_status frame_status;
+  struct IF4_frame_status frame_status;
   /// Gain 0
-  IF4_gain gain0;
+  struct IF4_gain gain0;
   /// Gain 1
-  IF4_gain gain1;
+  struct IF4_gain gain1;
   /// Gain 2
-  IF4_gain gain2;
+  struct IF4_gain gain2;
   /// Gain 3
-  IF4_gain gain3;
+  struct IF4_gain gain3;
   /// Gain 4
-  IF4_gain gain4;
+  struct IF4_gain gain4;
   /// Gain 5
-  IF4_gain gain5;
+  struct IF4_gain gain5;
   /// Gain 6
-  IF4_gain gain6;
+  struct IF4_gain gain6;
   /// Gain 7
-  IF4_gain gain7;
+  struct IF4_gain gain7;
   /// Data Blocks
   
   /// Frame Check Sequence
@@ -144,7 +143,7 @@ struct IF4_prach_packet {
   /// Reserved
   uint32_t rsvd;
   /// LTE Prach Configuration
-  IF4_lte_prach_conf prach_conf;
+  struct IF4_lte_prach_conf prach_conf;
   /// Prach Data Block (one antenna)
   
   /// Frame Check Sequence
@@ -153,12 +152,12 @@ struct IF4_prach_packet {
 
 // Needs to be checked
 
-IF4_dl_packet gen_IF4_dl_packet();
+struct IF4_dl_packet gen_IF4_dl_packet();
 
-IF4_ul_packet gen_IF4_ul_packet();
+struct IF4_ul_packet gen_IF4_ul_packet();
 
-IF4_prach_packet gen_IF4_prach_packet();
+struct IF4_prach_packet gen_IF4_prach_packet();
 
-void send_IF4(PHY_VARS_eNB *eNB, int subframe);
+void send_IF4( /* ADD INFO */ );
 
-void recv_IF4(PHY_VARS_eNB *eNB, int subframe);
+void recv_IF4( /* ADD INFO */ );
