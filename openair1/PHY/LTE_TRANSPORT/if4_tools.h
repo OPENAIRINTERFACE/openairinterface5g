@@ -54,6 +54,9 @@ struct IF4_frame_status {
   uint32_t rsvd:2;    
 };
 
+typedef struct IF4_frame_status IF4_frame_status_t;
+#define sizeof_IF4_frame_status_t 4 
+
 /// IF4 Antenna Gain (16 bits)
 struct IF4_gain {
   /// Reserved 
@@ -61,6 +64,9 @@ struct IF4_gain {
   /// FFT Exponent Output
   uint16_t exponent:6;  
 };  
+
+typedef struct IF4_gain IF4_gain_t;
+#define sizeof_IF_gain_t 2
 
 /// IF4 LTE PRACH Configuration (32 bits)
 struct IF4_lte_prach_conf {
@@ -76,6 +82,9 @@ struct IF4_lte_prach_conf {
   uint32_t exponent:6;  
 };
 
+typedef struct IF4_lte_prach_conf IF4_lte_prach_conf_t;
+#define sizeof_IF4_lte_prach_conf_t 4
+
 struct IF4_dl_packet {
   /// Destination Address
   
@@ -88,13 +97,15 @@ struct IF4_dl_packet {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  struct IF4_frame_status frame_status;
+  IF4_frame_status_t frame_status;
   /// Data Blocks
-  
+  uint16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs; 
 };
 
+typedef struct IF4_dl_packet IF4_dl_packet_t;
+#define sizeof_IF4_dl_packet_t 18 
 
 struct IF4_ul_packet {
   /// Destination Address
@@ -108,28 +119,31 @@ struct IF4_ul_packet {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  struct IF4_frame_status frame_status;
+  IF4_frame_status_t frame_status;
   /// Gain 0
-  struct IF4_gain gain0;
+  IF4_gain_t gain0;
   /// Gain 1
-  struct IF4_gain gain1;
+  IF4_gain_t gain1;
   /// Gain 2
-  struct IF4_gain gain2;
+  IF4_gain_t gain2;
   /// Gain 3
-  struct IF4_gain gain3;
+  IF4_gain_t gain3;
   /// Gain 4
-  struct IF4_gain gain4;
+  IF4_gain_t gain4;
   /// Gain 5
-  struct IF4_gain gain5;
+  IF4_gain_t gain5;
   /// Gain 6
-  struct IF4_gain gain6;
+  IF4_gain_t gain6;
   /// Gain 7
-  struct IF4_gain gain7;
+  IF4_gain_t gain7;
   /// Data Blocks
-  
+  uint16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };
+
+typedef struct IF4_ul_packet IF4_ul_packet_t;
+#define sizeof_IF4_ul_packet_t 34 
 
 struct IF4_prach_packet {
   /// Destination Address 
@@ -143,21 +157,22 @@ struct IF4_prach_packet {
   /// Reserved
   uint32_t rsvd;
   /// LTE Prach Configuration
-  struct IF4_lte_prach_conf prach_conf;
+  IF4_lte_prach_conf_t prach_conf;
   /// Prach Data Block (one antenna)
-  
+  uint16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };
 
-// Needs to be checked
+typedef struct IF4_prach_packet IF4_prach_packet_t;
+#define sizeof_IF4_prach_packet_t 18
 
-struct IF4_dl_packet gen_IF4_dl_packet();
+void gen_IF4_dl_packet(IF4_dl_packet_t*, eNB_rxtx_proc_t*);
 
-struct IF4_ul_packet gen_IF4_ul_packet();
+void gen_IF4_ul_packet(IF4_ul_packet_t*, eNB_rxtx_proc_t*);
 
-struct IF4_prach_packet gen_IF4_prach_packet();
+void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
 
-void send_IF4( /* ADD INFO */ );
+void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
 
-void recv_IF4( /* ADD INFO */ );
+void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
