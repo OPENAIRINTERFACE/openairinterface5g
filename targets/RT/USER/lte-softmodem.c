@@ -176,7 +176,7 @@ pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_dlsch_threads;
 pthread_attr_t                  attr_UE_thread;
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
 struct sched_param              sched_param_dlsch;
 #endif
 #endif
@@ -192,7 +192,7 @@ struct sched_param              sched_param_UE_thread;
 
 pthread_attr_t                  attr_eNB_proc_tx[MAX_NUM_CCs][NUM_ENB_THREADS];
 pthread_attr_t                  attr_eNB_proc_rx[MAX_NUM_CCs][NUM_ENB_THREADS];
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
 struct sched_param              sched_param_eNB_proc_tx[MAX_NUM_CCs][NUM_ENB_THREADS];
 struct sched_param              sched_param_eNB_proc_rx[MAX_NUM_CCs][NUM_ENB_THREADS];
 #endif
@@ -1087,7 +1087,7 @@ static void* eNB_thread_tx( void* param )
   }
 
 #else
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 850000 ;  
@@ -1295,7 +1295,7 @@ static void* eNB_thread_tx( void* param )
     if (proc->frame_tx==1024)
       proc->frame_tx=0;
     stop_meas( &softmodem_stats_tx_sf[proc->subframe] );
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
       if(softmodem_stats_tx_sf[proc->subframe].diff_now/(cpuf) > attr.sched_runtime){
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_tx_sf[proc->subframe].diff_now/cpuf - attr.sched_runtime)/1000000.0);
@@ -1370,7 +1370,7 @@ static void* eNB_thread_rx( void* param )
   }
 
 #else
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 870000 ;
@@ -1534,7 +1534,7 @@ LOG_I( HW, "[SCHED][eNB] RX thread %d started on CPU %d TID %ld, sched_policy = 
       proc->frame_rx=0;
 
     stop_meas( &softmodem_stats_rx_sf[proc->subframe] );
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
       if(softmodem_stats_rx_sf[proc->subframe].diff_now/(cpuf) > attr.sched_runtime){
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RX_ENB, (softmodem_stats_rx_sf[proc->subframe].diff_now/cpuf - attr.sched_runtime)/1000000.0);
@@ -1576,7 +1576,7 @@ void init_eNB_proc(void)
       // set the stack size
      
 
-#ifndef LOWLATENCY 
+#ifndef DEADLINE_SCHEDULER 
       /*  
        pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
        if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
@@ -1603,7 +1603,7 @@ void init_eNB_proc(void)
       pthread_mutex_init( &PHY_vars_eNB_g[0][CC_id]->proc[i].mutex_rx, NULL);
       pthread_cond_init( &PHY_vars_eNB_g[0][CC_id]->proc[i].cond_tx, NULL);
       pthread_cond_init( &PHY_vars_eNB_g[0][CC_id]->proc[i].cond_rx, NULL);
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
       pthread_create( &PHY_vars_eNB_g[0][CC_id]->proc[i].pthread_tx, &attr_eNB_proc_tx[CC_id][i], eNB_thread_tx, &PHY_vars_eNB_g[0][CC_id]->proc[i] );
       pthread_create( &PHY_vars_eNB_g[0][CC_id]->proc[i].pthread_rx, &attr_eNB_proc_rx[CC_id][i], eNB_thread_rx, &PHY_vars_eNB_g[0][CC_id]->proc[i] );
 #else 
@@ -1778,7 +1778,7 @@ static void* eNB_thread( void* arg )
 #ifdef RTAI
   RT_TASK* task = rt_task_init_schmod(nam2num("eNBmain"), 0, 0, 0, SCHED_FIFO, 0xF);
 #else
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -3305,7 +3305,7 @@ int main( int argc, char **argv )
 #endif
   }
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
 
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   
@@ -3608,7 +3608,7 @@ int main( int argc, char **argv )
   pthread_attr_init (&attr_UE_thread);
   pthread_attr_setstacksize(&attr_UE_thread,8192);//5*PTHREAD_STACK_MIN);
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
   sched_param_UE_thread.sched_priority = sched_get_priority_max(SCHED_FIFO);
   pthread_attr_setschedparam(&attr_UE_thread,&sched_param_UE_thread);
   sched_param_dlsch.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
