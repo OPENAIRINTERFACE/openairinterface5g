@@ -38,40 +38,44 @@
 * \warning
 */
 
+#ifndef USER_MODE
+#include "if4_tools.h"
+#include <stdint.h>
+#else
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
+#endif
 
 // Define how data blocks are stored and transferred
 
-
-void send_IF4(PHY_VARS_eNB *eNB, int subframe){
-	eNB_proc_t *proc = &eNB->proc;
+//void send_IF4(PHY_VARS_eNB *eNB, int subframe){
+	//eNB_proc_t *proc = &eNB->proc;
 	//int frame=proc->frame_tx;
 	//int subframe=proc->subframe_tx;
 
-	LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
+	//LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
-	uint32_t i,j;
-	float *data_block = malloc(length*sizeof(long));
+	//uint32_t i,j;
+	//float *data_block = malloc(length*sizeof(long));
 
   // Generate IF4 packet (for now DL) with frame status information
-  dl_packet = gen_IF4_dl_packet( /* ADD INFO and data_block pointer */ );
+  //dl_packet = gen_IF4_dl_packet( /* ADD INFO and data_block pointer */ );
 	
-	for(i=0; i<fp->symbols_per_tti; i++) {
+	//for(i=0; i<fp->symbols_per_tti; i++) {
     
     // Do compression of the two parts and generate data blocks
     
-    symbol = eNB->common_vars.txdataF[0][0 /*antenna number*/][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)]
-    data_block[j] = Atan(symbol[fp->ofmd_symbol_size - NrOfNonZeroValues + j -1])<<16 + Atan(symbol[fp->ofmd_symbol_size - NrOfNonZeroValues + j]);
-    data_block[j+NrOfNonZeroValues] = Atan(subframe[i][j+1])<<16 + Atan(subframe[i][j+2]);
+    //symbol = eNB->common_vars.txdataF[0][0 /*antenna number*/][subframe*fp->ofdm_symbol_size*(fp->symbols_per_tti)]
+    //data_block[j] = Atan(symbol[fp->ofmd_symbol_size - NrOfNonZeroValues + j -1])<<16 + Atan(symbol[fp->ofmd_symbol_size - NrOfNonZeroValues + j]);
+    //data_block[j+NrOfNonZeroValues] = Atan(subframe[i][j+1])<<16 + Atan(subframe[i][j+2]);
     
     // Set data blocks and update subframe no./other information to generated packet
     
     
     // Write the packet(s) to the fronthaul
     
-  }
+  //}
   		    
-}
+//}
 
 void recv_IF4( /* ADD INFO and data_block pointer */ ) {
 
@@ -83,83 +87,83 @@ void recv_IF4( /* ADD INFO and data_block pointer */ ) {
   
 }
 
-IF4_dl_packet gen_IF4_dl_packet( /* ADD INFO and data_block pointer */ ) {  
-  IF4_dl_packet dl_packet;
+struct IF4_dl_packet gen_IF4_dl_packet( /* ADD INFO and data_block pointer */ ) {  
+  struct IF4_dl_packet dl_packet;
   
   // Set destination and source address
   
   // Set Type and Sub-Type
-  dl_packet.type = ; //08_0A ? 
+  dl_packet.type = 0x080A; 
   dl_packet.sub_type = 0x0020;
 
   // Leave reserved as it is 
   //dl_packet.rsvd = ;
   
   // Set frame status
-  dl_packet.frame_status.ant_num = ;
-  dl_packet.frame_status.ant_start = ;
-  dl_packet.frame_status.rf_num = ;
-  dl_packet.frame_status.sf_num = ;
-  dl_packet.frame_status.sym_num = ;
+  dl_packet.frame_status.ant_num = 0;
+  dl_packet.frame_status.ant_start = 0;
+  dl_packet.frame_status.rf_num = 0;
+  dl_packet.frame_status.sf_num = 0;
+  dl_packet.frame_status.sym_num = 0;
   //dl_packet.frame_status.rsvd = ;
     
   // Set data blocks if sent
-  if (data_block != NULL) {
-    
-  } else {
-    
-  }
+  //if (data_block != NULL) {
+  //  
+  //} else {
+  //  
+  //}
   
   // Set frame check sequence
-  dl_packet.fcs = ;
+  dl_packet.fcs = 0;
   
   return dl_packet;
 }
 
-IF4_ul_packet gen_IF4_ul_packet( /* ADD INFO and data_block pointer */ ) {
-  IF4_ul_packet ul_packet;
+struct IF4_ul_packet gen_IF4_ul_packet( /* ADD INFO and data_block pointer */ ) {
+  struct IF4_ul_packet ul_packet;
 
   // Set destination and source address
   
   // Set Type and Sub-Type
-  ul_packet.type = ; //08_0A ? 
+  ul_packet.type = 0x080A; 
   ul_packet.sub_type = 0x0019;
 
   // Leave reserved as it is 
   //ul_packet.rsvd = ;
   
   // Set frame status
-  ul_packet.frame_status.ant_num = ;
-  ul_packet.frame_status.ant_start = ;
-  ul_packet.frame_status.rf_num = ;
-  ul_packet.frame_status.sf_num = ;
-  ul_packet.frame_status.sym_num = ;
+  ul_packet.frame_status.ant_num = 0;
+  ul_packet.frame_status.ant_start = 0;
+  ul_packet.frame_status.rf_num = 0;
+  ul_packet.frame_status.sf_num = 0;
+  ul_packet.frame_status.sym_num = 0;
   //ul_packet.frame_status.rsvd = ;
     
   // Set antenna specific gain
-  ul_packet.gain0.exponent = ;
+  ul_packet.gain0.exponent = 0;
   //ul_packet.gain0.rsvd = ;
   
   // Set data blocks if sent
-  if (data_block != NULL) {
-    
-  } else {
-    
-  }
+  //if (data_block != NULL) {
+  //  
+  //} else {
+  //  
+  //}
   
   // Set frame check sequence
-  ul_packet.fcs = ;
+  ul_packet.fcs = 0;
   
   return ul_packet;
 }
 
-IF4_prach_packet gen_IF4_prach_packet( /* ADD INFO and data_block pointer */ ) {
-  IF4_prach_packet prach_packet;
+struct IF4_prach_packet gen_IF4_prach_packet( /* ADD INFO and data_block pointer */ ) {
+  struct IF4_prach_packet prach_packet;
 
   // Set destination and source address
   
   // Set Type and Sub-Type
-  prach_packet.type = ; //08_0A ? 
+  prach_packet.type = 0x080A; 
   prach_packet.sub_type = 0x0021;
 
   // Leave reserved as it is 
@@ -167,20 +171,27 @@ IF4_prach_packet gen_IF4_prach_packet( /* ADD INFO and data_block pointer */ ) {
   
   // Set LTE Prach configuration
   //prach_packet.prach_conf.rsvd = ;
-  prach_packet.prach_conf.ant = ;
-  prach_packet.prach_conf.rf_num = ;
-  prach_packet.prach_conf.sf_num = ;
-  prach_packet.prach_conf.exponent = ;  
+  prach_packet.prach_conf.ant = 0;
+  prach_packet.prach_conf.rf_num = 0;
+  prach_packet.prach_conf.sf_num = 0;
+  prach_packet.prach_conf.exponent = 0;  
       
   // Set data blocks if sent
-  if (data_block != NULL) {
-    
-  } else {
-    
-  }
+  //if (data_block != NULL) {
+  //  
+  //} else {
+  //  
+  //}
   
   // Set frame check sequence
-  prach_packet.fcs = ;
+  prach_packet.fcs = 0;
   
   return prach_packet;
 } 
+
+int main(){
+  
+  uint32_t i=0;
+  
+  return 0;
+}
