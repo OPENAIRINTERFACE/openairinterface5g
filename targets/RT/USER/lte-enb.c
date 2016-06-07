@@ -741,7 +741,8 @@ static void* eNB_thread_rx_common( void* param )
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
-
+  if (openair0.trx_start_func(&openair0) != 0 ) 
+    LOG_E(HW,"Could not start the device\n");
  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
  while (!oai_exit) {
    

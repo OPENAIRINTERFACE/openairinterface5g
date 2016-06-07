@@ -3742,12 +3742,13 @@ rrc_eNB_decode_ccch(
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
 
 		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
-	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti);
+	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
 	      stmsi_received=1;
 	      ue_context_p->ue_context.rnti = ctxt_pP->rnti;
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
 	      //              ue_context_p = NULL;
             } else {
+	      LOG_I(RRC," S-TMSI doesn't exist, setting Initialue_identity_s_TMSI.m_tmsi to %x => %x\n",ue_context_p,m_tmsi);
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
 	      ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
 	      ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;

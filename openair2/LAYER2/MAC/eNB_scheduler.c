@@ -119,8 +119,10 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   while (i>=0) {
     rnti = UE_RNTI(module_idP, i);
     CC_id = UE_PCCID(module_idP, i);
-    LOG_D(MAC,"UE %d: rnti %x (%p)\n", i, rnti,
-          mac_xface->get_eNB_UE_stats(module_idP, CC_id, rnti));
+    if ((frameP==0)&&(subframeP==0))
+      LOG_I(MAC,"UE  rnti %x : %s\n", rnti, 
+	    UE_list->UE_sched_ctrl[i].ul_out_of_sync==0 ? "in synch" : "out of sync");
+
     next_i= UE_list->next[i];
 
     PHY_vars_eNB_g[module_idP][CC_id]->pusch_stats_bsr[i][(frameP*10)+subframeP]=-63;
@@ -317,7 +319,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   //if (subframeP%5 == 0)
   //#ifdef EXMIMO
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, 0,module_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP,module_idP);
   pdcp_run(&ctxt);
   //#endif
 

@@ -1762,7 +1762,7 @@ int main( int argc, char **argv )
 
 
 #ifndef USRP_DEBUG
-  if (mode!=loop_through_memory)
+  if ((UE_flag==1) && (mode!=loop_through_memory))
     if (openair0.trx_start_func(&openair0) != 0 ) 
       LOG_E(HW,"Could not start the device\n");
 

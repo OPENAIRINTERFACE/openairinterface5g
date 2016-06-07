@@ -159,12 +159,11 @@ int32_t add_ue(int16_t rnti, PHY_VARS_eNB *eNB)
 {
   uint8_t i;
 
-#ifdef DEBUG_PHY_PROC
-  LOG_I(PHY,"[eNB %d/%d] Adding UE with rnti %x\n",
+
+  LOG_D(PHY,"[eNB %d/%d] Adding UE with rnti %x\n",
         eNB->Mod_id,
         eNB->CC_id,
         (uint16_t)rnti);
-#endif
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     if ((eNB->dlsch[i]==NULL) || (eNB->ulsch[i]==NULL)) {
@@ -209,9 +208,9 @@ int mac_phy_remove_ue(module_id_t Mod_idP,rnti_t rntiP) {
       } else {
 	if (eNB->UE_stats[i].crnti==rntiP) {
 	  MSC_LOG_EVENT(MSC_PHY_ENB, "0 Removed ue %"PRIx16" ", rntiP);
-#ifdef DEBUG_PHY_PROC
-	  LOG_I(PHY,"eNB %d removing UE %d with rnti %x\n",eNB->Mod_id,i,rnti);
-#endif
+
+	  LOG_D(PHY,"eNB %d removing UE %d with rnti %x\n",eNB->Mod_id,i,rntiP);
+
 	  //LOG_D(PHY,("[PHY] UE_id %d\n",i);
 	  clean_eNb_dlsch(eNB->dlsch[i][0]);
 	  clean_eNb_ulsch(eNB->ulsch[i]);
@@ -841,7 +840,7 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   int frame = proc->frame_tx;
   int subframe = proc->subframe_tx;
 
-  LOG_I(PHY,
+  LOG_D(PHY,
 	"[eNB %"PRIu8"][PUSCH %"PRIu8"] Frame %d subframe %d UL Frame %"PRIu32", UL Subframe %"PRIu8", Generated ULSCH (format0) DCI (rnti %"PRIx16", dci %"PRIx8"), aggregation %d\n",
 	eNB->Mod_id,
 	subframe2harq_pid(fp,
@@ -1137,7 +1136,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     // If we've dropped the UE, go back to PRACH mode for this UE
-
+    if ((frame==0)&&(subframe==0)) {
+      if (eNB->UE_stats[i].crnti > 0) {
+	LOG_I(PHY,"UE %d : rnti %x\n",i,eNB->UE_stats[i].crnti);
+      }
+    }
     if (eNB->UE_stats[i].ulsch_consecutive_errors == ULSCH_max_consecutive_errors) {
       LOG_W(PHY,"[eNB %d, CC %d] frame %d, subframe %d, UE %d: ULSCH consecutive error count reached %u, triggering UL Failure\n",
             eNB->Mod_id,eNB->CC_id,frame,subframe, i, eNB->UE_stats[i].ulsch_consecutive_errors);
@@ -1947,7 +1950,7 @@ void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag)
       eNB->UE_stats[(uint32_t)UE_id].UE_timing_offset = preamble_delay_list[preamble_max]&0x1FFF; //limit to 13 (=11+2) bits
 
       eNB->UE_stats[(uint32_t)UE_id].sector = 0;
-      LOG_I(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
+      LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure (UE_id %d) with preamble %d, energy %d.%d dB, delay %d\n",
             eNB->Mod_id,
             eNB->CC_id,
             frame,
@@ -2616,7 +2619,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 {
   //RX processing for ue-specific resources (i
   UNUSED(r_type);
-  uint32_t l, ret=0,i,j,k;
+  uint32_t ret=0,i,j,k;
   uint32_t harq_pid, harq_idx, round;
   uint8_t nPRS;
   int sync_pos;
