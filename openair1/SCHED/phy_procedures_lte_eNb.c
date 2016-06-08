@@ -1412,7 +1412,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
 
 #if !(defined(EXMIMO) || defined(OAI_USRP) || defined (CPRIGW))
-
+  
   if (abstraction_flag==0)
   {
     start_meas(&eNB->ofdm_mod_stats);
@@ -1429,10 +1429,27 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
+  // Clean up split point *** RRU only function to recv and do_OFDM_mod ***  
+  if (eNB->node_function == eNodeB_3GPP) {
+    // Add above to IF4 split
+    // do_OFDM_mod
+    
+  }else if (eNB->node_function == NGFI_RCC_IF4) {
+	  //send_IF4(eNB,subframe<<1);
+	  //send_IF4(eNB,(subframe<<1)+1);
+    
+  }else if (eNB->node_function == NGFI_RRU_IF4) { // => acquisition from RCC (IF4)
+  	// get frame/subframe information from IF4 interface
+
+	  //recv_IF4(eNB,subframe<<1);
+	  //recv_IF4(eNB,1+(subframe<<1));
+    
+    //do_OFDM_mod   
+  }
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
   stop_meas(&eNB->phy_proc_tx);
-
-
+  
 }
 
 void process_Msg3(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id, uint8_t harq_pid)
