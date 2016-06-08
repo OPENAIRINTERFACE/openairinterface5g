@@ -7,7 +7,7 @@
 
 struct filter {
   union {
-    struct { struct filter *a, *b; } eq;
+    struct { struct filter *a, *b; } op2;
     int v;
     struct { int event_type; int arg_index; } evarg;
   } v;
@@ -19,10 +19,16 @@ struct filter {
 /*                     evaluation functions                                 */
 /****************************************************************************/
 
+int eval_and(struct filter *f, event e)
+{
+  if (f->v.op2.a->eval(f->v.op2.a, e) == 0) return 0;
+  return f->v.op2.b->eval(f->v.op2.b, e);
+}
+
 int eval_eq(struct filter *f, event e)
 {
-  int a = f->v.eq.a->eval(f->v.eq.a, e);
-  int b = f->v.eq.b->eval(f->v.eq.b, e);
+  int a = f->v.op2.a->eval(f->v.op2.a, e);
+  int b = f->v.op2.b->eval(f->v.op2.b, e);
   return a == b;
 }
 
@@ -49,13 +55,23 @@ int eval_evarg(struct filter *f, event e)
 /*                     filter construction functions                        */
 /****************************************************************************/
 
+filter *filter_and(filter *a, filter *b)
+{
+  struct filter *ret = calloc(1, sizeof(struct filter));
+  if (ret == NULL) abort();
+  ret->eval = eval_and;
+  ret->v.op2.a = a;
+  ret->v.op2.b = b;
+  return ret;
+}
+
 filter *filter_eq(filter *a, filter *b)
 {
   struct filter *ret = calloc(1, sizeof(struct filter));
   if (ret == NULL) abort();
   ret->eval = eval_eq;
-  ret->v.eq.a = a;
-  ret->v.eq.b = b;
+  ret->v.op2.a = a;
+  ret->v.op2.b = b;
   return ret;
 }
 
