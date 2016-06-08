@@ -1045,7 +1045,7 @@ void init_eNB_proc(void)
     proc->instance_cnt_prach = -1;
     proc->CC_id = CC_id;
 
-    proc->first_rx=1;
+    proc->first_rx=4;
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);

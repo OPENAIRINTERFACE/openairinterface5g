@@ -2512,12 +2512,14 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 				     fp->nb_antennas_rx);
 	proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
 	proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+	/*	printf("Frame %d, subframe %d : TS %lu => %d,%d (rxs %d)\n",
+		frame,subframe,proc->timestamp_rx,proc->frame_rx,proc->subframe_rx,rxs);*/
 	if (proc->first_rx == 0) {
 	  AssertFatal(proc->subframe_rx == subframe, "Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)",proc->subframe_rx,subframe);
 	  AssertFatal(proc->frame_rx == frame, "Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)",proc->frame_rx,frame);
 	}
 	else
-	  proc->first_rx = 0;
+	  proc->first_rx--;// = 0;
 
 	//	printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
 
