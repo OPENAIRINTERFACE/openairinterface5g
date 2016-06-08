@@ -9,6 +9,8 @@ struct logger {
   /* list of views */
   view **v;
   int vsize;
+  /* filter - NULL if no filter set */
+  void *filter;
 };
 
 #endif /* _LOGGER_DEFS_H_ */

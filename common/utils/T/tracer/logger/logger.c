@@ -9,3 +9,9 @@ void logger_add_view(logger *_l, view *v)
   l->v = realloc(l->v, l->vsize * sizeof(view *)); if (l->v == NULL) abort();
   l->v[l->vsize-1] = v;
 }
+
+void logger_set_filter(logger *_l, void *filter)
+{
+  struct logger *l = _l;
+  l->filter = filter;
+}

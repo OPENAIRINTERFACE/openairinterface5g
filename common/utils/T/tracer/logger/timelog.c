@@ -3,6 +3,7 @@
 #include "event.h"
 #include "database.h"
 #include "handler.h"
+#include "filter/filter.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,6 +15,9 @@ static void _event(void *p, event e)
 {
   struct timelog *l = p;
   int i;
+
+  if (l->common.filter != NULL && filter_eval(l->common.filter, e) == 0)
+    return;
 
   for (i = 0; i < l->common.vsize; i++)
     l->common.v[i]->append(l->common.v[i], e.sending_time);

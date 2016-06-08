@@ -4,6 +4,7 @@
 #include "database.h"
 #include "view/view.h"
 #include "utils.h"
+#include "filter/filter.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -41,6 +42,9 @@ static void _event(void *p, event e)
   struct tm *t;
   char tt[64];
 #endif
+
+  if (l->common.filter != NULL && filter_eval(l->common.filter, e) == 0)
+    return;
 
   l->o.osize = 0;
 

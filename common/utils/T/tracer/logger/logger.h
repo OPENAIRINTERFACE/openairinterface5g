@@ -19,5 +19,6 @@ void framelog_set_skip(logger *_this, int skip_delay);
 #include "view/view.h"
 
 void logger_add_view(logger *l, view *v);
+void logger_set_filter(logger *l, void *filter);
 
 #endif /* _LOGGER_H_ */

@@ -2,6 +2,7 @@
 #include "logger_defs.h"
 #include "handler.h"
 #include "database.h"
+#include "filter/filter.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -30,6 +31,9 @@ static void _event(void *p, event e)
   void *buffer;
   int bsize;
   int nsamples;
+
+  if (l->common.filter != NULL && filter_eval(l->common.filter, e) == 0)
+    return;
 
   subframe = e.e[l->subframe_arg].i;
   buffer = e.e[l->buffer_arg].b;

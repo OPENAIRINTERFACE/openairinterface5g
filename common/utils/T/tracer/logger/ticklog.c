@@ -3,6 +3,7 @@
 #include "event.h"
 #include "database.h"
 #include "handler.h"
+#include "filter/filter.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,9 @@ static void _event(void *p, event e)
   int i;
   int frame;
   int subframe;
+
+  if (l->common.filter != NULL && filter_eval(l->common.filter, e) == 0)
+    return;
 
   frame = e.e[l->frame_arg].i;
   subframe = e.e[l->subframe_arg].i;
