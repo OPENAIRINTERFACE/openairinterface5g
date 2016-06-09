@@ -1,3 +1,9 @@
+#general logs
+ID = ENB_MASTER_TICK
+    DESC = eNodeB master tick - one tick per ms, to be used as "reference clock", mostly for ticktime view
+    GROUP = ALL:GENERAL:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe
+
 #PHY logs
 ID = ENB_UL_TICK
     DESC = eNodeB uplink tick - one tick per ms at start of uplink processing

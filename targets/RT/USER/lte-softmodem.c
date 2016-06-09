@@ -51,9 +51,7 @@
 #include <execinfo.h>
 #include <getopt.h>
 
-#if T_TRACER
 #include "T.h"
-#endif
 
 #include "rt_wrapper.h"
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -1988,6 +1986,8 @@ static void* eNB_thread( void* arg )
 #else
       int sf = hw_subframe;
 #endif
+      /* TODO: is it the right place for master tick? */
+      T(T_ENB_MASTER_TICK, T_INT(0), T_INT(frame % 1024), T_INT(sf));
       if (frame>50) {
 	for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 #ifdef EXMIMO

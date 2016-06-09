@@ -114,9 +114,7 @@ char smbv_ip[16];
 # include "create_tasks.h"
 #endif
 
-#if T_TRACER
 #include "T.h"
-#endif
 
 /*
  DCI0_5MHz_TDD0_t          UL_alloc_pdu;
@@ -748,7 +746,8 @@ l2l1_task (void *args_p)
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-            if ((slot & 1) == 0)
+            if ((slot & 1) == 0) {
+              T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
               LOG_D(EMU,
                     "PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
                     eNB_inst,
@@ -759,6 +758,7 @@ l2l1_task (void *args_p)
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
+            }
 
 #ifdef OPENAIR2
                         //Application: traffic gen
