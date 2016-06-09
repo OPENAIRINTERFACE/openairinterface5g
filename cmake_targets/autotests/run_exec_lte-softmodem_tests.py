@@ -29,10 +29,7 @@
 
 # *******************************************************************************/
 
-# \file test01.py
-# \brief test 01 for OAI
-# \author Navid Nikaein
-# \date 2013 - 2015
+# \author Rohit Gupta
 # \version 0.1
 # @ingroup _test
 
@@ -316,12 +313,12 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
-  cmd = 'killall -q -r ' + programList
+  cmd = 'killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
-  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   result=oai.send_recv(cmd)
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)
@@ -330,7 +327,7 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
   cmd  = "( " + ExmimoRfStop + " ) >> $HOME/.oai_test_setup_cleanup.log.`hostname` ; sync "
-  res=oai.send_recv(cmd, False)
+  res=oai.send_recv(cmd, False, timeout=600)
   #res = oai.send_recv(ExmimoRfStop, False)
   cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   res=oai.send_recv(cmd)
@@ -1529,9 +1526,8 @@ for testcase in testcaseList:
         print "Now copying files to NFS Share"
         oai_localhost = openair('localdomain','localhost')
         oai_localhost.connect(user,pw)
-        cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+        cmd = ' mkdir -p ' + NFSTestsResultsDir
         res = oai_localhost.send_recv(cmd)
-        print "Deleting NFSTestResults Dir..." + res
 
         print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
         SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
@@ -1568,12 +1564,15 @@ res=os.system(cmd)
 print "Now copying files to NFS Share"
 oai_localhost = openair('localdomain','localhost')
 oai_localhost.connect(user,pw)
-cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+cmd = 'mkdir -p ' + NFSTestsResultsDir
 res = oai_localhost.send_recv(cmd)
-print "Deleting NFSTestResults Dir..." + res
 
 print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+
+cmd = "cat " + NFSTestsResultsDir + "/log/*/*.xml > " + NFSTestsResultsDir + "/log/results_autotests.xml"
+res = oai_localhost.send_recv(cmd)
+ 
 oai_localhost.disconnect()
 
 sys.exit()

@@ -387,7 +387,7 @@ void *timer_proc(void *arg) {
   struct itimerspec   *old_value;
 
   
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   
