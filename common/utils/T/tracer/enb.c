@@ -86,6 +86,17 @@ static void *gui_thread(void *_g)
   return NULL;
 }
 
+static filter *ticktime_filter(void *database, char *event, int i)
+{
+  /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+  return
+    filter_and(
+      filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
+      filter_and(
+        filter_eq(filter_evarg(database, event, "UE_id"), filter_int(0)),
+        filter_eq(filter_evarg(database, event, "eNB_ID"), filter_int(0))));
+}
+
 static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
 {
   widget *main_window;
@@ -205,17 +216,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_DLSCH_UE_DCI", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_DCI", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_DCI", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_DLSCH_UE_DCI", i));
   }
   /* DL ACK */
   for (i = 0; i < 8; i++) {
@@ -226,17 +227,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_DLSCH_UE_ACK", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_ACK", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_ACK", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_DLSCH_UE_ACK", i));
   }
   /* DL NACK */
   for (i = 0; i < 8; i++) {
@@ -247,17 +238,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_DLSCH_UE_NACK", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_NACK", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_DLSCH_UE_NACK", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_DLSCH_UE_NACK", i));
   }
   /* UL harq pids */
   for (i = 0; i < 8; i++) {
@@ -269,17 +250,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_ULSCH_UE_DCI", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_DCI", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_DCI", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_ULSCH_UE_DCI", i));
     /* retransmission */
     timelog = new_ticklog(h, database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
         "frame", "subframe");
@@ -288,20 +259,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
-                "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
-                  "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
-                  "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", i));
   }
   /* UL ACK */
   for (i = 0; i < 8; i++) {
@@ -312,17 +270,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_ULSCH_UE_ACK", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_ACK", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_ACK", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_ULSCH_UE_ACK", i));
   }
   /* UL NACK */
   for (i = 0; i < 8; i++) {
@@ -333,17 +281,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     logger_add_view(timelog, subview);
     /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
-        filter_and(
-          filter_eq(
-            filter_evarg(database, "ENB_ULSCH_UE_NACK", "harq_pid"),
-            filter_int(i)),
-          filter_and(
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_NACK", "UE_id"),
-              filter_int(0)),
-            filter_eq(
-              filter_evarg(database, "ENB_ULSCH_UE_NACK", "eNB_ID"),
-              filter_int(0)))));
+        ticktime_filter(database, "ENB_ULSCH_UE_NACK", i));
   }
 
   /* phy/mac/rlc/pdcp/rrc textlog */
