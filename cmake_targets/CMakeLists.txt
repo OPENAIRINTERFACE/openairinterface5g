@@ -1518,7 +1518,7 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
   include_directories(${LIBBOOST_INCLUDE_DIR})
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-pkg_search_module(OPENPGM openpgm-5.1)
+pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
 if(NOT ${OPENPGM_FOUND})
   message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
 else()
