@@ -199,6 +199,10 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
 
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  container_set_child_growable(g, top_container, line, 1);
+
   /* rlc */
   col = new_container(g, VERTICAL);
   widget_add_child(g, line, col, -1);
@@ -218,6 +222,10 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, col, text, -1);
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
+
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  container_set_child_growable(g, top_container, line, 1);
 
   /* rrc */
   col = new_container(g, VERTICAL);
