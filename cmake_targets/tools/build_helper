@@ -109,6 +109,7 @@ clean_all_files() {
 
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
+  echo_info "Log file for compilation written in: $dlog/$2.$REL.txt"
   {
     rm -f $3
     if [ "$VERBOSE_COMPILE" == "1" ]; then
