@@ -88,7 +88,7 @@ static void *gui_thread(void *_g)
 
 static filter *ticktime_filter(void *database, char *event, int i)
 {
-  /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+  /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0" */
   return
     filter_and(
       filter_eq(filter_evarg(database, event, "harq_pid"), filter_int(i)),
@@ -214,7 +214,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_DLSCH_UE_DCI", i));
   }
@@ -225,7 +224,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_DLSCH_UE_ACK", i));
   }
@@ -236,7 +234,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_DLSCH_UE_NACK", i));
   }
@@ -248,7 +245,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#55f"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_ULSCH_UE_DCI", i));
     /* retransmission */
@@ -257,7 +253,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#99f"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", i));
   }
@@ -268,7 +263,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#282"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_ULSCH_UE_ACK", i));
   }
@@ -279,7 +273,6 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
     subview = new_subview_ticktime(timeview, i+9+1,
         new_color(g,"#f22"), 3600*1000);
     logger_add_view(timelog, subview);
-    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
     logger_set_filter(timelog,
         ticktime_filter(database, "ENB_ULSCH_UE_NACK", i));
   }
