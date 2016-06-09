@@ -147,7 +147,8 @@ static void *ticktime_thread(void *_this)
           continue;
         p = &this->p[l];
         /* TODO: only one call */
-        timeline_add_points_silent(this->g, this->w, p->line, p->color, &i, 1);
+        int x[3] = {i==0?i:i-1, i, i==width-1?i:i+1};
+        timeline_add_points_silent(this->g, this->w, p->line, p->color, x, 3);
       }
     }
 
