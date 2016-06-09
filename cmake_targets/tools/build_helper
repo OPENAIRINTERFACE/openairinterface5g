@@ -303,6 +303,7 @@ check_install_oai_software() {
 	libblas3gf \
 	libblas-dev \
 	libconfig8-dev \
+	libffi-dev \
 	libforms-bin \
 	libforms-dev \
 	libgcrypt11-dev \
@@ -314,6 +315,7 @@ check_install_oai_software() {
 	liboctave-dev \
 	libpgm-5.1 \
 	libpgm-dev \
+	libpython2.7-dev \
 	libsctp1  \
 	libsctp-dev  \
 	libssl-dev  \
@@ -333,6 +335,7 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
+	wget \
 	wvdial \
         python-numpy \
         sshpass \
