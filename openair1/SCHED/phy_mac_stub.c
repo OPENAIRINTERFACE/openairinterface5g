@@ -51,7 +51,6 @@
 void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB)
 {
 
-  int i;
   //uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
   uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
 
@@ -598,7 +597,6 @@ void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_e
 void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *phy_vars_eNB)
 {
 
-  int i;
   //uint8_t cooperation_flag = phy_vars_eNB->cooperation_flag;
   uint8_t transmission_mode = phy_vars_eNB->transmission_mode[0];
 
