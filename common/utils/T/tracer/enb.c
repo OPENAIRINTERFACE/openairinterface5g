@@ -10,6 +10,7 @@
 #include "logger/logger.h"
 #include "view/view.h"
 #include "gui/gui.h"
+#include "filter/filter.h"
 #include "utils.h"
 #include "../T_defs.h"
 #include "event_selector.h"
@@ -172,6 +173,178 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   timelog = new_timelog(h, database, "ENB_ULSCH_UE_NACK");
   subview = new_subview_time(timeview, 7, new_color(g, "#f22"), 3600*1000);
   logger_add_view(timelog, subview);
+
+  /* harq processes' ticktime view */
+  widget_add_child(g, top_container,
+      new_label(g,"DL/UL HARQ (x8) "), -1);
+  line = new_container(g, HORIZONTAL);
+  widget_add_child(g, top_container, line, -1);
+  timeline_plot = new_timeline(g, 512, 2*8+2, 3);
+  widget_add_child(g, line, timeline_plot, -1);
+  container_set_child_growable(g, line, timeline_plot, 1);
+  for (i = 0; i < 2*8+2; i++)
+    timeline_set_subline_background_color(g, timeline_plot, i,
+        new_color(g, i==0 || i==9 ? "#ddd" : (i%9)&1 ? "#e6e6e6" : "#eee"));
+  timeview = new_view_ticktime(10, g, timeline_plot);
+  ticktime_set_tick(timeview,
+      new_ticklog(h, database, "ENB_MASTER_TICK", "frame", "subframe"));
+  /* tick */
+  timelog = new_ticklog(h, database, "ENB_MASTER_TICK", "frame", "subframe");
+  /* tick on DL view */
+  subview = new_subview_ticktime(timeview, 0, new_color(g,"#bbb"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* tick on UL view */
+  subview = new_subview_ticktime(timeview, 9, new_color(g,"#bbb"), 3600*1000);
+  logger_add_view(timelog, subview);
+  /* DL harq pids */
+  for (i = 0; i < 8; i++) {
+    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_DCI",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+1,
+        new_color(g,"#55f"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_DLSCH_UE_DCI", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_DCI", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_DCI", "eNB_ID"),
+              filter_int(0)))));
+  }
+  /* DL ACK */
+  for (i = 0; i < 8; i++) {
+    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_ACK",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+1,
+        new_color(g,"#282"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_DLSCH_UE_ACK", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_ACK", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_ACK", "eNB_ID"),
+              filter_int(0)))));
+  }
+  /* DL NACK */
+  for (i = 0; i < 8; i++) {
+    timelog = new_ticklog(h, database, "ENB_DLSCH_UE_NACK",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+1,
+        new_color(g,"#f22"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_DLSCH_UE_NACK", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_NACK", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_DLSCH_UE_NACK", "eNB_ID"),
+              filter_int(0)))));
+  }
+  /* UL harq pids */
+  for (i = 0; i < 8; i++) {
+    /* first transmission */
+    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_DCI",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+9+1,
+        new_color(g,"#55f"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_ULSCH_UE_DCI", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_DCI", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_DCI", "eNB_ID"),
+              filter_int(0)))));
+    /* retransmission */
+    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+9+1,
+        new_color(g,"#99f"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+                "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+                  "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION",
+                  "eNB_ID"),
+              filter_int(0)))));
+  }
+  /* UL ACK */
+  for (i = 0; i < 8; i++) {
+    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_ACK",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+9+1,
+        new_color(g,"#282"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_ULSCH_UE_ACK", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_ACK", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_ACK", "eNB_ID"),
+              filter_int(0)))));
+  }
+  /* UL NACK */
+  for (i = 0; i < 8; i++) {
+    timelog = new_ticklog(h, database, "ENB_ULSCH_UE_NACK",
+        "frame", "subframe");
+    subview = new_subview_ticktime(timeview, i+9+1,
+        new_color(g,"#f22"), 3600*1000);
+    logger_add_view(timelog, subview);
+    /* filter is "harq_pid == i && UE_id == 0 && eNB_id == 0 */
+    logger_set_filter(timelog,
+        filter_and(
+          filter_eq(
+            filter_evarg(database, "ENB_ULSCH_UE_NACK", "harq_pid"),
+            filter_int(i)),
+          filter_and(
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_NACK", "UE_id"),
+              filter_int(0)),
+            filter_eq(
+              filter_evarg(database, "ENB_ULSCH_UE_NACK", "eNB_ID"),
+              filter_int(0)))));
+  }
 
   /* phy/mac/rlc/pdcp/rrc textlog */
   line = new_container(g, HORIZONTAL);
@@ -346,6 +519,7 @@ int main(int n, char **v)
   on_off(database, "ENB_ULSCH_UE_NO_DCI_RETRANSMISSION", is_on, 1);
   on_off(database, "ENB_ULSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_ULSCH_UE_NACK", is_on, 1);
+  on_off(database, "ENB_MASTER_TICK", is_on, 1);
 
   on_off(database, "LEGACY_RRC_INFO", is_on, 1);
   on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
