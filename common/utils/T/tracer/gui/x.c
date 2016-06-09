@@ -331,7 +331,7 @@ void x_text_get_dimensions(x_connection *_c, int font, const char *t,
   struct x_connection *c = _c;
   XGlyphInfo ext;
 
-  XftTextExtents8(c->d, c->fonts[font], (FcChar8 *)t, strlen(t), &ext);
+  XftTextExtentsUtf8(c->d, c->fonts[font], (FcChar8 *)t, strlen(t), &ext);
 
   *width = ext.width;
   *height = c->fonts[font]->height;
@@ -372,7 +372,7 @@ void x_draw_string(x_connection *_c, x_window *_w, int font, int color,
   struct x_connection *c = _c;
   struct x_window *w = _w;
   int tlen = strlen(t);
-  XftDrawString8(w->xft, &c->xft_colors[color], c->fonts[font],
+  XftDrawStringUtf8(w->xft, &c->xft_colors[color], c->fonts[font],
       x, y, (const unsigned char *)t, tlen);
 }
 
