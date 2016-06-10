@@ -359,6 +359,11 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
 #endif
 
+#if T_TRACER
+  if (ctxt_pP->enb_flag)
+    T(T_ENB_RLC_DL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
+#endif
+
   if (MBMS_flagP) {
     AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
   } else {
@@ -570,6 +575,12 @@ void rlc_data_ind     (
 
   rlc_util_print_hex_octets(RLC, (unsigned char*)sdu_pP->data, sdu_sizeP);
 #endif
+
+#if T_TRACER
+  if (ctxt_pP->enb_flag)
+    T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
+#endif
+
 
   pdcp_data_ind (
     ctxt_pP,
