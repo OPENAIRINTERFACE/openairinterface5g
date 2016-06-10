@@ -1929,6 +1929,11 @@ foreach( d ${DirDefs} )
     list(APPEND itti_compiler_options "-I${d}")
 endforeach()
 
+# castxml doesn't work with c11 (gcc 5 default)
+# force castxml and clang compilation with gnu89 standard
+# we can't use cXX standard as pthread_rwlock_t is gnu standard
+list(APPEND itti_compiler_options "-std=gnu89")
+
 set (ITTI_H ${ITTI_DIR}/intertask_interface_types.h)
 add_custom_command (
   OUTPUT ${OPENAIR_BIN_DIR}/messages.xml
