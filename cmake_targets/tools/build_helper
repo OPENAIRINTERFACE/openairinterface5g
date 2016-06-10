@@ -262,6 +262,8 @@ check_install_oai_software() {
         exit 1
     fi
     $SUDO apt-get update
+    $SUDO apt install -y software-properties-common
+    # Now, we can add new repository here if needed
     $SUDO apt-get install -y \
 	autoconf  \
 	automake  \
