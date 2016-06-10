@@ -1044,7 +1044,6 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
       /* frame not available here - set to -1 for the moment */
-printf("sending %d %d\n", stat_re, stat_im);
       T(T_PUCCH_1AB_IQ, T_INT(phy_vars_eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
 
 	  
