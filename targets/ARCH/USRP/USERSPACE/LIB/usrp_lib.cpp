@@ -55,6 +55,10 @@
 #  include <immintrin.h>
 #endif
 
+#ifdef __arm__
+#  include <arm_neon.h>
+#endif
+
 /** @addtogroup _USRP_PHY_RF_INTERFACE_
  * @{
  */
@@ -313,6 +317,7 @@ int trx_usrp_set_freq(openair0_device* device, openair0_config_t *openair0_cfg, 
 
   usrp_state_t *s = (usrp_state_t*)device->priv;
 
+  printf("Setting USRP TX Freq %f, RX Freq %f\n",openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0]);
   s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[0]);
   s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[0]);
 
@@ -597,10 +602,10 @@ extern "C" {
       openair0_cfg[0].rx_gain_calib_table = calib_table_b210_38;
       bw_gain_adjust=1;
     }
+
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
       s->usrp->set_master_clock_rate(30.72e6);
-            // from usrp_time_offset
       openair0_cfg[0].samples_per_packet    = 4096;
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
@@ -608,7 +613,7 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 23040000:
-      s->usrp->set_master_clock_rate(46.08e6);
+      s->usrp->set_master_clock_rate(23.04e6); //to be checked
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 20e6;
@@ -616,27 +621,27 @@ extern "C" {
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
-      s->usrp->set_master_clock_rate(30.72e6);
+      s->usrp->set_master_clock_rate(30.72e06);
       openair0_cfg[0].samples_per_packet    = 2048;
-      openair0_cfg[0].tx_sample_advance     = 113;
-      openair0_cfg[0].tx_bw                 = 10e6;
-      openair0_cfg[0].rx_bw                 = 10e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
+      openair0_cfg[0].tx_sample_advance     = 103; 
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
+      openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
       s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].samples_per_packet    = 1024;
-      openair0_cfg[0].tx_sample_advance     = 70;//103;
-      openair0_cfg[0].tx_bw                 = 5e6;
-      openair0_cfg[0].rx_bw                 = 5e6;
+      openair0_cfg[0].tx_sample_advance     = 80;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
       openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
-      s->usrp->set_master_clock_rate(30.72e6);
+      s->usrp->set_master_clock_rate(7.68e6);
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 40;
-      openair0_cfg[0].tx_bw                 = 1.25e6;
-      openair0_cfg[0].rx_bw                 = 1.25e6;
+      openair0_cfg[0].tx_bw                 = 20e6;
+      openair0_cfg[0].rx_bw                 = 20e6;
       openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
@@ -655,8 +660,8 @@ extern "C" {
   for(i=0;i<s->usrp->get_rx_num_channels();i++) {
     if (i<openair0_cfg[0].rx_num_channels) {
       s->usrp->set_rx_rate(openair0_cfg[0].sample_rate,i);
-      s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
-      printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
+      //s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
+      //printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
       s->usrp->set_rx_freq(openair0_cfg[0].rx_freq[i],i);
       set_rx_gain_offset(&openair0_cfg[0],i,bw_gain_adjust);
 
@@ -676,8 +681,8 @@ extern "C" {
   for(i=0;i<s->usrp->get_tx_num_channels();i++) {
     if (i<openair0_cfg[0].tx_num_channels) {
       s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
-      s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
-      printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
+      //s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
+      //printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
       s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
       s->usrp->set_tx_gain(openair0_cfg[0].tx_gain[i],i);
     }
@@ -686,6 +691,8 @@ extern "C" {
 
   // display USRP settings
   std::cout << boost::format("Actual master clock: %fMHz...") % (s->usrp->get_master_clock_rate()/1e6) << std::endl;
+  
+  sleep(1);
 
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
@@ -703,6 +710,20 @@ extern "C" {
   s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
   std::cout << boost::format("tx_max_num_samps %u") % (s->tx_stream->get_max_num_samps()) << std::endl;
 
+
+ /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
+  for(i=0;i<s->usrp->get_tx_num_channels();i++) {
+    if (i<openair0_cfg[0].tx_num_channels) {
+      s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i);
+      printf("Setting tx freq/gain on channel %lu/%lu: BW %f (readback %f)\n",i,s->usrp->get_tx_num_channels(),openair0_cfg[0].tx_bw/1e6,s->usrp->get_tx_bandwidth(i)/1e6);
+    }
+  }
+  for(i=0;i<s->usrp->get_rx_num_channels();i++) {
+    if (i<openair0_cfg[0].rx_num_channels) {
+      s->usrp->set_rx_bandwidth(openair0_cfg[0].rx_bw,i);
+      printf("Setting rx freq/gain on channel %lu/%lu : BW %f (readback %f)\n",i,s->usrp->get_rx_num_channels(),openair0_cfg[0].rx_bw/1e6,s->usrp->get_rx_bandwidth(i)/1e6);
+    }
+  }
 
   s->usrp->set_time_now(uhd::time_spec_t(0.0));
  

@@ -45,6 +45,7 @@ void lte_param_init(unsigned char N_tx,
   lte_frame_parms->N_RB_UL            = N_RB_DL;
   lte_frame_parms->threequarter_fs    = threequarter_fs;
   lte_frame_parms->Ncp                = extended_prefix_flag;
+  lte_frame_parms->Ncp_UL             = extended_prefix_flag;
   lte_frame_parms->Nid_cell           = Nid_cell;
   lte_frame_parms->nushift            = Nid_cell%6;
   lte_frame_parms->nb_antennas_tx     = N_tx;

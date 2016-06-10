@@ -1,4 +1,34 @@
 #!/usr/bin/python 
+#******************************************************************************
+
+#    OpenAirInterface 
+#    Copyright(c) 1999 - 2014 Eurecom
+
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#   You should have received a copy of the GNU General Public License
+#   along with OpenAirInterface.The full GNU General Public License is 
+#   included in this distribution in the file called "COPYING". If not, 
+#   see <http://www.gnu.org/licenses/>.
+
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+  
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+
+# *******************************************************************************/
+# \author Navid Nikaein, Rohit Gupta
 
 import time
 import serial
@@ -28,16 +58,23 @@ from lib_autotest import *
 def find_open_port():
    global serial_port, ser
    max_ports=100
-   if os.path.exists(serial_port) == True:
-     return serial_port
-   for port in range(0,100):
-      serial_port = '/dev/ttyUSB'+str(port)
-      if os.path.exists(serial_port) == True:
-         print 'New Serial Port : ' + serial_port
-         break
+   serial_port=''
+   while True:
+     if os.path.exists(serial_port) == True:
+       return serial_port
+     for port in range(2,100):
+        serial_port_tmp = '/dev/ttyUSB'+str(port)
+        if os.path.exists(serial_port_tmp) == True:
+           print 'New Serial Port : ' + serial_port_tmp
+           serial_port = serial_port_tmp
+           break
+     if serial_port == '':
+        print" Not able to detect valid serial ports. Resetting the modem now..."
+        reset_ue()
+     else :
+        ser = serial.Serial(port=serial_port)
+        return
 
-   ser = serial.Serial(port=serial_port)
-   return
 
 
     
@@ -106,6 +143,7 @@ def send_command (cmd, response, timeout):
         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
         error = error + traceback.format_exc()
         print error
+        time.sleep(1)
         
 
 def start_ue () :
@@ -143,11 +181,16 @@ def start_ue () :
    thread_ppp.join()
 
 def stop_ue():
-   timeout=60
-   os.system('killall wvdial')
-   send_command('AT', 'OK' , timeout)
-   send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
-   #send_command('AT+CFUN=4' , 'OK' , timeout)
+  stringIdBandrich='Huawei Technologies Co., Ltd. E398 LTE/UMTS/GSM Modem/Networkcard'
+  status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
+  if (out == '') :
+     print "Huawei E398 Adapter not found. Exiting now..."
+     sys.exit()
+  timeout=60
+  os.system('killall wvdial')
+  send_command('AT', 'OK' , timeout)
+  send_command('AT+CGATT=0' , 'OK|ERROR' , timeout)
+  #send_command('AT+CFUN=4' , 'OK' , timeout)
 
 
 #reset the USB BUS of Bandrich UE
@@ -155,7 +198,7 @@ def reset_ue():
   stringIdBandrich='Huawei Technologies Co., Ltd. E398 LTE/UMTS/GSM Modem/Networkcard'
   status, out = commands.getstatusoutput('lsusb | grep -i \'' + stringIdBandrich + '\'')
   if (out == '') :
-     print "Bandrich 4G LTE Adapter not found. Exiting now..."
+     print "Huawei E398 Adapter not found. Exiting now..."
      sys.exit()
   p=re.compile('Bus\s*(\w+)\s*Device\s*(\w+):\s*ID\s*(\w+):(\w+)')
   res=p.findall(out)
@@ -169,6 +212,7 @@ def reset_ue():
   os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 30" )
+  stop_ue()
 
 i=1
 gw='192.172.0.1'
@@ -183,6 +227,7 @@ while i <  len(sys.argv):
         print 'Using Serial port : ' + serial_port  
         stop_ue()
     elif arg == '--reset-ue' :
+        find_open_port()
         reset_ue()
     elif arg == '-gw' :
         gw = sys.argv[i+1]

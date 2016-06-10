@@ -29,10 +29,7 @@
 
 # *******************************************************************************/
 
-# \file test01.py
-# \brief test 01 for OAI
-# \author Navid Nikaein
-# \date 2013 - 2015
+# \author Rohit Gupta
 # \version 0.1
 # @ingroup _test
 
@@ -216,7 +213,7 @@ def sftp_module (username, password, hostname, ports, paramList,logfile):
 # \brief bash script stub put at the end of scripts to terminate it 
 # \param timeout_cmd terminate script after timeout_cmd seconds
 # \param terminate_missing_procs if True terminate all the processes launched by script if one of them terminates prematurely (due to error)
-def finalize_deploy_script (timeout_cmd, terminate_missing_procs='True'):
+def finalize_deploy_script (timeout_cmd, terminate_missing_procs='False'):
   cmd = 'declare -i timeout_cmd='+str(timeout_cmd) + '\n'
   if terminate_missing_procs == 'True':
     cmd = cmd +  """
@@ -316,18 +313,24 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
 def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
-  cmd = 'killall -q -r ' + programList
+  cmd = 'killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
+  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  result=oai.send_recv(cmd)
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)
   #print result
   result = oai.send_expect_false(cmd, 'Match found', False)
   print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
-  res = oai.send_recv(ExmimoRfStop, False)
+  cmd  = "( " + ExmimoRfStop + " ) >> $HOME/.oai_test_setup_cleanup.log.`hostname` ; sync "
+  res=oai.send_recv(cmd, False, timeout=600)
+  #res = oai.send_recv(ExmimoRfStop, False)
+  cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  res=oai.send_recv(cmd)
 
 # \brief Class thread to launch a generic command on remote machine
 # \param threadID number of thread (for book keeping)
@@ -1105,6 +1108,7 @@ pw =''
 i = 0
 dlsim=0
 localshell=0
+GitOAI5GRepo=''
 GitOAI5GRepoBranch=''
 GitOAI5GHeadVersion=''
 user=''
@@ -1141,6 +1145,9 @@ while i < len (sys.argv):
         i = i +1   
     elif arg == '-c':
         cleanUpRemoteMachines=True
+    elif arg == '-5GRepo':
+        GitOAI5GRepo = sys.argv[i+1]
+        i = i +1
     elif arg == '-5GRepoBranch':
         GitOAI5GRepoBranch = sys.argv[i+1]
         i = i +1
@@ -1190,6 +1197,7 @@ while i < len (sys.argv):
         print "-r:  Remove the log directory in autotests"
         print "-g:  Run test cases in a group"
         print "-c:  Run cleanup scripts on remote machines and exit"
+        print "-5GRepo:  Repository for OAI 5G to use to run tests (overrides GitOAI5GRepo in test_case_list.xml)"
         print "-5GRepoBranch:  Branch for OAI 5G Repository to run tests (overrides the branch in test_case_list.xml)"
         print "-5GRepoHeadVersion:  Head commit on which to run tests (overrides the branch in test_case_list.xml)"
         print "-u:  use the user name passed as argument"
@@ -1278,7 +1286,9 @@ if MachineList =='':
    MachineList = xmlRoot.findtext('MachineList',default='')
 NFSResultsShare = xmlRoot.findtext('NFSResultsShare',default='')
 GitOpenaircnRepo = xmlRoot.findtext('GitOpenair-cnRepo',default='')
-GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
+
+if GitOAI5GRepo == '':
+   GitOAI5GRepo = xmlRoot.findtext('GitOAI5GRepo',default='')
 
 if GitOAI5GRepoBranch == '':
    GitOAI5GRepoBranch = xmlRoot.findtext('GitOAI5GRepoBranch',default='')
@@ -1394,15 +1404,15 @@ for oai in oai_list:
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
       cmd = cmd + 'git config --global http.sslVerify false \n' 
-      cmd = cmd + 'git clone --depth 1 '+ GitOAI5GRepo  + ' -b ' + GitOAI5GRepoBranch +' \n'
-      cmd = cmd + 'git clone '+ GitOpenaircnRepo + ' -b ' +GitOpenaircnRepoBranch +  ' \n'
+      cmd = cmd + 'git clone  '+ GitOAI5GRepo  +' \n'
+      cmd = cmd + 'git clone '+ GitOpenaircnRepo + ' \n'
       cmd = cmd +  'cd ' + logdirOAI5GRepo  + '\n'
       cmd = cmd + 'git checkout ' + GitOAI5GRepoBranch   + '\n'                      
       #cmd = cmd + 'git checkout ' + GitOAI5GHeadVersion   + '\n'
       cmd = cmd + 'git_head=`git ls-remote |grep \'' + GitOAI5GRepoBranch + '\'` \n'
       cmd = cmd + 'git_head=($git_head) \n'
       cmd = cmd + 'git_head=${git_head[0]} \n'
-      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\"'
+      cmd = cmd + 'echo \"GitOAI5GHeadVersion_remote = $git_head\" \n'
       cmd = cmd + 'echo \"GitOAI5GHeadVersion_local = ' + GitOAI5GHeadVersion + '\" \n'
       if flag_skip_git_head_check==True:
          cmd = cmd + 'echo \"skipping GitHead check...\" \n '
@@ -1507,6 +1517,22 @@ for testcase in testcaseList:
         threadListGlobal = wait_testcaseclass_generic_threads(threadListGlobal, Timeout_execution)
         #cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
         handle_testcaseclass_softmodem (testcase, CleanUpOldProgs, logdirOAI5GRepo, logdirOpenaircnRepo, MachineList, user, pw, CleanUpAluLteBox, ExmimoRfStop, nruns_lte_softmodem, Timeout_cmd )
+        
+        #The lines below are copied from below to trace the failure of some of the machines in test setup. These lines below need to be removed in long term
+        print "Creating xml file for overall results..."
+        cmd = "cat $OPENAIR_DIR/cmake_targets/autotests/log/*/*.xml > $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml "
+        res=os.system(cmd)
+        os.system('sync')
+        print "Now copying files to NFS Share"
+        oai_localhost = openair('localdomain','localhost')
+        oai_localhost.connect(user,pw)
+        cmd = ' mkdir -p ' + NFSTestsResultsDir
+        res = oai_localhost.send_recv(cmd)
+
+        print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
+        SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+        oai_localhost.disconnect()
+
       elif (testcaseclass == 'compilation'): 
         threadListGlobal = handle_testcaseclass_generic (testcasename, threadListGlobal, CleanUpOldProgs, logdirOAI5GRepo, MachineListGeneric, user, pw, CleanUpAluLteBox,Timeout_execution, ExmimoRfStop)
       elif (testcaseclass == 'execution'): 
@@ -1538,11 +1564,15 @@ res=os.system(cmd)
 print "Now copying files to NFS Share"
 oai_localhost = openair('localdomain','localhost')
 oai_localhost.connect(user,pw)
-cmd = ' rm -fr ' + NFSTestsResultsDir + ' ; mkdir -p ' + NFSTestsResultsDir
+cmd = 'mkdir -p ' + NFSTestsResultsDir
 res = oai_localhost.send_recv(cmd)
-print "Deleting NFSTestResults Dir..." + res
 
 print "Copying files from GilabCI Runner Machine : " + host + " .locallogdir = " + locallogdir + ", NFSTestsResultsDir = " + NFSTestsResultsDir
 SSHSessionWrapper('localhost', user, None, pw , NFSTestsResultsDir , locallogdir, "put_all")
+
+cmd = "cat " + NFSTestsResultsDir + "/log/*/*.xml > " + NFSTestsResultsDir + "/log/results_autotests.xml"
+res = oai_localhost.send_recv(cmd)
+ 
+oai_localhost.disconnect()
 
 sys.exit()

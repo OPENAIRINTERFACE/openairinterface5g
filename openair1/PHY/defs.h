@@ -65,10 +65,12 @@
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
-#ifdef __AVX2__
-#define malloc16(x) memalign(32,x)
-#else
-#define malloc16(x) memalign(16,x)
+#ifndef malloc16
+#  ifdef __AVX2__
+#    define malloc16(x) memalign(32,x)
+#  else
+#    define malloc16(x) memalign(16,x)
+#  endif
 #endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
@@ -120,7 +122,6 @@ static inline void* malloc16_clear( size_t size )
 #define UNUSED(x) (void)x;
 
 
-#include "spec_defs_top.h"
 #include "impl_defs_top.h"
 #include "impl_defs_lte.h"
 
@@ -393,7 +394,11 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pucch1_stats_thres[NUMBER_OF_UE_MAX][10*1024];
   int32_t pucch1ab_stats_cnt[NUMBER_OF_UE_MAX][10];
   int32_t pucch1ab_stats[NUMBER_OF_UE_MAX][2*10*1024];
-
+  int32_t pusch_stats_rb[NUMBER_OF_UE_MAX][10240];
+  int32_t pusch_stats_round[NUMBER_OF_UE_MAX][10240];
+  int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
+  int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
+  int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
 #if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];

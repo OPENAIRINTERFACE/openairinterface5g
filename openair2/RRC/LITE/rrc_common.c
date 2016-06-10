@@ -48,6 +48,7 @@
 #include "asn1_msg.h"
 #include "pdcp.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
+#include "rrc_eNB_UE_context.h"
 
 #ifdef LOCALIZATION
 #include <sys/time.h>
@@ -132,7 +133,7 @@ rrc_init_global_param(
    return -1;
    }
    */
-  rrc_rlc_register_rrc (rlcrrc_data_ind, NULL); //register with rlc
+  rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
 
   DCCH_LCHAN_DESC.transport_block_size = 4;
   DCCH_LCHAN_DESC.max_transport_blocks = 16;
@@ -252,6 +253,9 @@ openair_rrc_top_init(
   module_id_t         module_id;
   OAI_UECapability_t *UECap     = NULL;
   int                 CC_id;
+
+  /* for no gcc warnings */
+  (void)CC_id;
 
   LOG_D(RRC, "[OPENAIR][INIT] Init function start: NB_UE_INST=%d, NB_eNB_INST=%d\n", NB_UE_INST, NB_eNB_INST);
 
@@ -411,12 +415,13 @@ rrc_rx_tx(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t        UE_id;
+  //uint8_t        UE_id;
   int32_t        current_timestamp_ms, ref_timestamp_ms;
   struct timeval ts;
+  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
+
 #ifdef LOCALIZATION
   double                         estimated_distance;
-  struct rrc_eNB_ue_context_s*   ue_context_p = NULL;
   protocol_ctxt_t                ctxt;
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
@@ -517,7 +522,32 @@ rrc_rx_tx(
   } else { // eNB
     check_handovers(ctxt_pP);
     // counetr, and get the value and aggregate
-#ifdef LOCALIZATION
+
+    // check for UL failure
+    RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head)) {
+      if (ue_context_p->ue_context.ul_failure_timer>0) {
+	ue_context_p->ue_context.ul_failure_timer++;
+	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+	  // remove UE after 20 seconds after MAC has indicated UL failure
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  ue_to_be_removed = ue_context_p;
+	  break;
+	}
+      }
+      if (ue_context_p->ue_context.ue_release_timer>0) {
+	ue_context_p->ue_context.ue_release_timer++;
+	if (ue_context_p->ue_context.ue_release_timer >= 100) {
+	  // remove UE after 10 frames after RRCConnectionRelease is triggered
+	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
+	  ue_to_be_removed = ue_context_p;
+	  break;
+	}
+      }
+    }
+    if (ue_to_be_removed)
+      rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
+
+#ifdef RRC_LOCALIZATION
 
     /* for the localization, only primary CC_id might be relevant*/
     gettimeofday(&ts, NULL);
@@ -547,6 +577,9 @@ rrc_rx_tx(
     }
 
 #endif
+    (void)ts; /* remove gcc warning "unused variable" */
+    (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
+    (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);

@@ -38,7 +38,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -58,11 +57,11 @@ PHY_VARS_UE *PHY_vars_UE;
 
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
-mod_sym_t *dummybuf[4];
-mod_sym_t dummy0[2048*14];
-mod_sym_t dummy1[2048*14];
-mod_sym_t dummy2[2048*14];
-mod_sym_t dummy3[2048*14];
+int32_t *dummybuf[4];
+int32_t dummy0[2048*14];
+int32_t dummy1[2048*14];
+int32_t dummy2[2048*14];
+int32_t dummy3[2048*14];
 
 
 int main(int argc, char **argv)
@@ -73,16 +72,15 @@ int main(int argc, char **argv)
   int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
   uint8_t snr1set=0;
-  //mod_sym_t **txdataF;
   int **txdata,**txdata1,**txdata2;
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
   double iqim = 0.0;
   unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
-  FILE *output_fd;
+  FILE *output_fd = NULL;
   uint8_t write_output_file=0;
-  int result;
+  //int result;
   int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
@@ -91,8 +89,8 @@ int main(int argc, char **argv)
   uint16_t Nid_cell=0;
 
   int n_frames=1;
-  channel_desc_t *eNB2UE,*eNB2UE1,*eNB2UE2;
-  uint32_t nsymb,tx_lev,tx_lev1,tx_lev2;
+  channel_desc_t *eNB2UE,*eNB2UE1 = NULL,*eNB2UE2 = NULL;
+  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -104,12 +102,12 @@ int main(int argc, char **argv)
   char input_val_str[50],input_val_str2[50];
   //  double input_val1,input_val2;
   //  uint16_t amask=0;
-  uint8_t frame_mod4,num_pdcch_symbols;
+  uint8_t frame_mod4,num_pdcch_symbols = 0;
   uint16_t NB_RB=25;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  DCI_ALLOC_t dci_alloc[8];
+  //DCI_ALLOC_t dci_alloc[8];
   uint8_t abstraction_flag=0;//,calibration_flag=0;
   double pbch_sinr;
   int pbch_tx_ant;
@@ -604,7 +602,7 @@ int main(int argc, char **argv)
       dummybuf[2] = dummy2;
       dummybuf[3] = dummy3;
       generate_pbch(&PHY_vars_eNB->lte_eNB_pbch,
-                    (mod_sym_t**)dummybuf,
+                    (int32_t**)dummybuf,
                     AMP,
                     &PHY_vars_eNB->lte_frame_parms,
                     pbch_pdu,
@@ -782,7 +780,10 @@ int main(int argc, char **argv)
     i=0;
 
     while (!feof(input_fd)) {
-      fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+      if (fscanf(input_fd,"%s %s",input_val_str,input_val_str2) != 2) { //&input_val1,&input_val2);
+        printf("%s:%d:%s: error with fscanf, exiting\n", __FILE__, __LINE__, __FUNCTION__);
+        exit(1);
+      }
 
       if ((i%4)==0) {
         ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));

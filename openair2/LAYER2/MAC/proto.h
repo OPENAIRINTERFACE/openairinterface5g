@@ -269,6 +269,15 @@ void rx_sdu(const module_id_t module_idP, const int CC_id,const frame_t frameP, 
 */
 void SR_indication(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti, sub_frame_t subframe);
 
+/* \brief Function to indicate a UL failure was detected by eNB PHY.
+@param Mod_id Instance ID of eNB
+@param CC_id Component carrier
+@param frameP Frame index
+@param rnti RNTI of UE transmitting the SR
+@param subframe Index of subframe where SR was received
+*/
+void UL_failure_indication(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
+
 uint8_t *get_dlsch_sdu(module_id_t module_idP,int CC_id,frame_t frameP,rnti_t rnti,uint8_t TBindex);
 
 /* \brief Function to retrieve MCH transport block and MCS used for MCH in this MBSFN subframe.  Returns null if no MCH is to be transmitted
@@ -490,7 +499,7 @@ uint8_t *parse_ulsch_header(uint8_t *mac_header,
 int l2_init(LTE_DL_FRAME_PARMS *frame_parms,int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti,int harq_pid);
-int mac_remove_ue(module_id_t Mod_id, int UE_id,int frameP, sub_frame_t subframeP);
+int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
 
 int maxround(module_id_t Mod_id,uint16_t rnti,int frame,sub_frame_t subframe,uint8_t ul_flag);
@@ -777,6 +786,7 @@ rrc_get_estimated_ue_distance(
   const int         CC_idP,
   const uint8_t     loc_typeP);
 
+void fill_dci(DCI_PDU *DCI_pdu, uint8_t sched_subframe, PHY_VARS_eNB *phy_vars_eNB);
 
 #endif
 /** @}*/

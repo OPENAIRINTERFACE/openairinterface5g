@@ -1000,6 +1000,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 
 #if defined(__x86_64__) || defined(__i386__)
 
+  // note: this makes valgrind freak
   __m128i avg=_mm_set1_epi32(0);
 
   for (i=0; i<(3*(n>>4))+1; i++) {
@@ -1503,6 +1504,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
 
           tmp2=_mm_and_si128(tmp,mask);
           tmp2=_mm_cmpeq_epi16(tmp2,mask);
+	  //	  printf("decoded_bytes %p\n",decoded_bytes);
           decoded_bytes[n_128*0+i]=(uint8_t) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
           int j;
 

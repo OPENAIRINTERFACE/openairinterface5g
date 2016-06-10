@@ -28,7 +28,7 @@
  *******************************************************************************/
 
 /*! \file rt_wrapper.h
-* \brief provides a wrapper for the timing function, runtime calculations for real-time opeartions depending on weather RTAI or LOWLATENCY kernels are used or not
+* \brief provides a wrapper for the timing function, runtime calculations for real-time opeartions depending on weather RTAI or DEADLINE_SCHEDULER kernels are used or not
 * \author F. Kaltenberger and Navid Nikaein
 * \date 2013
 * \version 0.1
@@ -37,6 +37,10 @@
 * \note
 * \warning
 */
+
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "rt_wrapper.h"
 static int latency_target_fd = -1;
@@ -154,6 +158,7 @@ int fill_modeled_runtime_table(uint16_t runtime_phy_rx[29][6],
       runtime_phy_tx[i][j] = cell_processing_dl[j] + platform_processing_dl + user_processing_dl_err[j] + user_processing_dl_a[j]*i+  user_processing_dl_b[j];
     }
   }
+  return 0;
 }
  
 // int runtime_upper_layers[6]; // values for different RBs
@@ -236,7 +241,7 @@ double get_runtime_rx(int rx_subframe, uint16_t runtime_phy_rx[29][6], uint32_t 
    return runtime;	
 }
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
 int sched_setattr(pid_t pid, const struct sched_attr *attr, unsigned int flags)
 {
 

@@ -666,7 +666,7 @@ MCH_PDU *get_mch_sdu(module_id_t module_idP, int CC_id, frame_t frameP, sub_fram
 {
   //  eNB_mac_inst[module_idP].MCH_pdu.mcs=0;
   //LOG_D(MAC," MCH_pdu.mcs is %d\n", eNB_mac_inst[module_idP].MCH_pdu.mcs);
-#warning "MCH pdu should take the CC_id index"
+//#warning "MCH pdu should take the CC_id index"
   return(&eNB_mac_inst[module_idP].common_channels[CC_id].MCH_pdu);
 }
 

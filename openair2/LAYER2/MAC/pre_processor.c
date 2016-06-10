@@ -47,6 +47,7 @@
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log.h"
+#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -319,6 +320,8 @@ void sort_UEs (module_id_t Mod_idP,
       rnti1 = UE_RNTI(Mod_idP,UE_id1);
       if(rnti1 == NOT_A_RNTI)
 	continue;
+      if (UE_list->UE_sched_ctrl[UE_id1].ul_out_of_sync == 1)
+	continue;
       pCC_id1 = UE_PCCID(Mod_idP,UE_id1);
       cqi1    = maxcqi(Mod_idP,UE_id1); //
       round1  = maxround(Mod_idP,rnti1,frameP,subframeP,0);
@@ -327,6 +330,8 @@ void sort_UEs (module_id_t Mod_idP,
       rnti2 = UE_RNTI(Mod_idP,UE_id2);
       if(rnti2 == NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+	continue;
       cqi2    = maxcqi(Mod_idP,UE_id2);
       round2  = maxround(Mod_idP,rnti2,frameP,subframeP,0);  //mac_xface->get_ue_active_harq_pid(Mod_id,rnti2,subframe,&harq_pid2,&round2,0);
       pCC_id2 = UE_PCCID(Mod_idP,UE_id2);
@@ -453,7 +458,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 
     if(rnti == NOT_A_RNTI)
       continue;
-
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
     UE_id = i;
 
     // if there is no available harq_process, skip the UE
@@ -563,6 +569,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
           // LOG_D(MAC,"UE %d rnti 0x\n", UE_id, rnti );
           if(rnti == NOT_A_RNTI)
             continue;
+	  if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 1)
+	    continue;
 
           transmission_mode = mac_xface->get_transmission_mode(Mod_id,CC_id,rnti);
 	  //          mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti,frameP,subframeP,&harq_pid,&round,0);
@@ -607,6 +615,8 @@ void dlsch_scheduler_pre_processor (module_id_t   Mod_id,
 		  round2    = ue_sched_ctl2->round[CC_id];
                   if(rnti2 == NOT_A_RNTI)
                     continue;
+		  if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+		    continue;
 
                   eNB_UE_stats2 = mac_xface->get_eNB_UE_stats(Mod_id,CC_id,rnti2);
                   //mac_xface->get_ue_active_harq_pid(Mod_id,CC_id,rnti2,frameP,subframeP,&harq_pid2,&round2,0);
@@ -748,10 +758,10 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   UE_list_t *UE_list=&eNB_mac_inst[module_idP].UE_list;
   UE_sched_ctrl *ue_sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(module_idP,UE_id);
-  uint8_t *vrb_map = &eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
+  uint8_t *vrb_map = eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map;
   int RBGsize = PHY_vars_eNB_g[module_idP][CC_id]->lte_frame_parms.N_RB_DL/N_RBG;
 #ifdef SF05_LIMIT
-  int subframe05_limit=0;
+  //int subframe05_limit=0;
   int sf05_upper=-1,sf05_lower=-1;
 #endif
   LTE_eNB_UE_stats *eNB_UE_stats = mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti);
@@ -797,6 +807,9 @@ void dlsch_scheduler_pre_processor_reset (int module_idP,
   else {
     ue_sched_ctl->ta_timer--;
     ue_sched_ctl->ta_update =0; // don't trigger a timing advance command
+  }
+  if (UE_id==0) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_TIMING_ADVANCE,ue_sched_ctl->ta_update);
   }
   nb_rbs_required[CC_id][UE_id]=0;
   ue_sched_ctl->pre_nb_available_rbs[CC_id] = 0;
@@ -928,9 +941,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   UE_TEMPLATE        *UE_template = 0;
   LTE_DL_FRAME_PARMS   *frame_parms = 0;
 
-  // LOG_I(MAC,"store ulsch buffers\n");
-  // convert BSR to bytes for comparison with tbs
-  store_ulsch_buffer(module_idP,frameP, subframeP);
 
   //LOG_I(MAC,"assign max mcs min rb\n");
   // maximize MCS and then allocate required RB according to the buffer occupancy with the limit of max available UL RB
@@ -963,6 +973,9 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
     rnti = UE_RNTI(module_idP,i);
 
     if (rnti==NOT_A_RNTI)
+      continue;
+
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
       continue;
 
     UE_id = i;
@@ -1013,6 +1026,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
     if (rnti==NOT_A_RNTI)
       continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
 
     UE_id = i;
 
@@ -1041,6 +1056,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       if (rnti==NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+	continue;
 
       UE_id = i;
 
@@ -1082,49 +1099,6 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 }
 
 
-void store_ulsch_buffer(module_id_t module_idP, int frameP, sub_frame_t subframeP)
-{
-
-  int                 UE_id,pCC_id,lcgid;
-  UE_list_t           *UE_list = &eNB_mac_inst[module_idP].UE_list;
-  UE_TEMPLATE         *UE_template;
-
-  for (UE_id=UE_list->head_ul; UE_id>=0; UE_id=UE_list->next_ul[UE_id]) {
-
-
-    UE_template = &UE_list->UE_template[UE_PCCID(module_idP,UE_id)][UE_id];
-    //LOG_I(MAC,"[UE %d next %d] SR is %d\n",UE_id, UE_list->next_ul[UE_id], UE_template->ul_SR);
-
-    UE_template->ul_total_buffer=0;
-
-    for (lcgid=0; lcgid<MAX_NUM_LCGID; lcgid++) {
-      UE_template->ul_buffer_info[lcgid]=BSR_TABLE[UE_template->bsr_info[lcgid]];
-      UE_template->ul_total_buffer+= UE_template->ul_buffer_info[lcgid]; // apply traffic aggregtaion if packets are small
-      //   UE_template->ul_buffer_creation_time_max=cmax(UE_template->ul_buffer_creation_time_max, frame_cycle*1024 + frameP-UE_template->ul_buffer_creation_time[lcgid]));
-    }
-
-    if ( UE_template->ul_total_buffer >0)
-      LOG_D(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: LCGID0 %d, LCGID1 %d, LCGID2 %d LCGID3 %d, BO %d\n",
-            module_idP, frameP,subframeP, UE_id, UE_PCCID(module_idP,UE_id),
-            UE_template->ul_buffer_info[LCGID0],
-            UE_template->ul_buffer_info[LCGID1],
-            UE_template->ul_buffer_info[LCGID2],
-            UE_template->ul_buffer_info[LCGID3],
-            UE_template->ul_total_buffer);
-    else if (UE_is_to_be_scheduled(module_idP,UE_PCCID(module_idP,UE_id),UE_id) > 0 ) {
-      if (UE_template->ul_total_buffer == 0 ) {
-        UE_template->ul_total_buffer = BSR_TABLE[11];
-      }
-
-      LOG_D(MAC,"[eNB %d] Frame %d subframe %d UE %d CC id %d: SR active, set BO to %d \n",
-            module_idP, frameP,subframeP, UE_id, UE_PCCID(module_idP,UE_id),
-            UE_template->ul_total_buffer);
-    }
-  }
-}
-
-
-
 void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subframeP, uint16_t *first_rb)
 {
 
@@ -1132,7 +1106,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   uint16_t           n,UE_id;
   uint8_t            CC_id;
   rnti_t             rnti           = -1;
-  int                mcs=cmin(16,openair_daq_vars.target_ue_ul_mcs);
+  int                mcs;
   int                rb_table_index=0,tbs,tx_power;
   eNB_MAC_INST       *eNB = &eNB_mac_inst[module_idP];
   UE_list_t          *UE_list = &eNB->UE_list;
@@ -1140,12 +1114,20 @@ void assign_max_mcs_min_rb(module_id_t module_idP,int frameP, sub_frame_t subfra
   UE_TEMPLATE       *UE_template;
   LTE_DL_FRAME_PARMS   *frame_parms;
 
+
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
 
     rnti = UE_RNTI(module_idP,i);
 
     if (rnti==NOT_A_RNTI)
       continue;
+    if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+      continue;
+
+    if (UE_list->UE_sched_ctrl[i].phr_received == 1)
+      mcs = 20; // if we've received the power headroom information the UE, we can go to maximum mcs
+    else
+      mcs = 10; // otherwise, limit to QPSK PUSCH
 
     UE_id = i;
 
@@ -1231,7 +1213,7 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
   int               UE_id1,UE_id2;
   int               pCCid1,pCCid2;
   int               round1,round2;
-  int               i=0,ii=0,j=0;
+  int               i=0,ii=0;
   rnti_t            rnti1,rnti2;
 
   UE_list_t *UE_list = &eNB_mac_inst[module_idP].UE_list;
@@ -1246,7 +1228,9 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       rnti1 = UE_RNTI(module_idP,UE_id1);
       
       if(rnti1 == NOT_A_RNTI)
-      continue;
+	continue;
+      if (UE_list->UE_sched_ctrl[i].ul_out_of_sync == 1)
+	continue;
 
       pCCid1 = UE_PCCID(module_idP,UE_id1);
       round1  = maxround(module_idP,rnti1,frameP,subframeP,1);
@@ -1256,6 +1240,8 @@ void sort_ue_ul (module_id_t module_idP,int frameP, sub_frame_t subframeP)
       
       if(rnti2 == NOT_A_RNTI)
         continue;
+      if (UE_list->UE_sched_ctrl[UE_id2].ul_out_of_sync == 1)
+	continue;
 
       pCCid2 = UE_PCCID(module_idP,UE_id2);
       round2  = maxround(module_idP,rnti2,frameP,subframeP,1);

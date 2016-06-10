@@ -57,7 +57,7 @@ rlc_am_init(
 
     pthread_mutex_init(&rlc_pP->lock_input_sdus, NULL);
     rlc_pP->input_sdus               = calloc(1, RLC_AM_SDU_CONTROL_BUFFER_SIZE*sizeof(rlc_am_tx_sdu_management_t));
-#warning "cast the rlc retrans buffer to uint32"
+//#warning "cast the rlc retrans buffer to uint32"
     //        rlc_pP->pdu_retrans_buffer       = calloc(1, (uint16_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(rlc_am_tx_data_pdu_management_t)));
     rlc_pP->pdu_retrans_buffer       = calloc(1, (uint32_t)((unsigned int)RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE*(unsigned int)sizeof(
                                          rlc_am_tx_data_pdu_management_t)));
@@ -114,7 +114,7 @@ rlc_am_reestablish(
   LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[AM REESTABLISH] RE-INIT STATE VARIABLES, BUFFERS, LISTS\n",
         PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
 
-#warning TODO when possible reassemble RLC SDUs from any byte segments of AMD PDUs with SN inf VR(MR)
+//#warning TODO when possible reassemble RLC SDUs from any byte segments of AMD PDUs with SN inf VR(MR)
   list2_free(&rlc_pP->receiver_buffer);
 
   list_free(&rlc_pP->pdus_to_mac_layer);

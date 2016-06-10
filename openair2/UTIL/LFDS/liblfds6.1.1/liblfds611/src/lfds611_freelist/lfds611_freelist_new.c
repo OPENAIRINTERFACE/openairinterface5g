@@ -48,7 +48,7 @@ int lfds611_freelist_new( struct lfds611_freelist_state **fs, lfds611_atom_t num
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_freelist_use( struct lfds611_freelist_state *fs )
 {
@@ -59,7 +59,7 @@ void lfds611_freelist_use( struct lfds611_freelist_state *fs )
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 

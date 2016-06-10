@@ -572,7 +572,7 @@ void lte_ue_measurements(PHY_VARS_UE *phy_vars_ue,
         // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
 
 #if defined(__x86_64__) || defined(__i386__)
-       __m128i pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI2,mmtmpPMI3;
+       __m128i pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1 /* ,mmtmpPMI2,mmtmpPMI3 */ ;
 
         dl_ch0_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][aarx][4];
         dl_ch1_128    = (__m128i *)&phy_vars_ue->lte_ue_common_vars.dl_ch_estimates[eNB_id][2+aarx][4];

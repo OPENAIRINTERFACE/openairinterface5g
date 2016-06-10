@@ -91,7 +91,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
                  )
 {
 
-  static short temp[2048*4] __attribute__((aligned(16)));
+  static short temp[2048*4] __attribute__((aligned(32)));
   unsigned short i,j;
   short k;
 
@@ -143,9 +143,18 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
     printf("[PHY] symbol %d/%d offset %d (%p,%p -> %p)\n",i,nb_symbols,i*fftsize+(i*nb_prefix_samples),input,&input[i*fftsize],&output[(i*fftsize) + ((i)*nb_prefix_samples)]);
 #endif
 
+#ifndef __AVX2__
+    // handle 128-bit alignment for 128-bit SIMD (SSE4,NEON,AltiVEC)
     idft((int16_t *)&input[i*fftsize],
          (fftsize==128) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
          1);
+#else
+    // on AVX2 need 256-bit alignment
+    idft((int16_t *)&input[i*fftsize],
+         (fftsize<=512) ? (int16_t *)temp : (int16_t *)&output[(i*fftsize) + ((1+i)*nb_prefix_samples)],
+         1);
+
+#endif
 
     // Copy to frame buffer with Cyclic Extension
     // Note:  will have to adjust for synchronization offset!
@@ -158,7 +167,12 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
       //      msg("Doing cyclic prefix method\n");
 
-      if (fftsize==128) {
+#ifndef __AVX2__
+      if (fftsize==128) 
+#else
+      if (fftsize<=512) 
+#endif
+      {
         for (j=0; j<fftsize ; j++) {
           output_ptr[j] = temp_ptr[j];
         }
@@ -223,7 +237,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 }
 
 
-void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   int aa, slot_offset, slot_offset_F;

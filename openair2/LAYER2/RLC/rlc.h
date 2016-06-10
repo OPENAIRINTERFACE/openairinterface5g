@@ -60,6 +60,8 @@
 #    include "DRB-ToAddModList.h"
 #    include "SRB-ToAddMod.h"
 #    include "SRB-ToAddModList.h"
+#    include "DRB-ToReleaseList.h"
+
 #ifdef Rel10
 #include "PMCH-InfoList-r9.h"
 #endif

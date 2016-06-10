@@ -86,6 +86,7 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
 			  create_tunnel_resp_pP->num_tunnels,
 			  ue_context_p->ue_context.enb_gtp_ebi[0],
 			  ue_context_p->ue_context.enb_gtp_teid[0]);
+        (void)rnti; /* avoid gcc warning "set but not used" */
     return 0;
   } else {
     return -1;

@@ -26,17 +26,6 @@
   Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
 
  *******************************************************************************/
-/*
-#ifdef CBMIMO1
-#include "ARCH/COMMON/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/from_grlib_softconfig.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/defs.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_pci.h"
-//#include "pci_commands.h"
-#endif //CBMIMO1
-*/
 #ifdef EXMIMO
 #include "openair0_lib.h"
 #endif
@@ -128,8 +117,8 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 {
 
   LTE_DL_FRAME_PARMS *lte_frame_parms = &PHY_vars_eNB_g[Mod_id][CC_id]->lte_frame_parms;
-  LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
-  int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
+  //LTE_eNB_UE_stats *eNB_UE_stats      = PHY_vars_eNB_g[Mod_id][CC_id]->eNB_UE_stats;
+  //int32_t rx_total_gain_eNB_dB        = PHY_vars_eNB_g[Mod_id][CC_id]->rx_total_gain_eNB_dB;
   int i;
 
   LOG_D(PHY,"[eNB%d] CCid %d Frame %d: Applying radioResourceConfigCommon\n",Mod_id,CC_id,PHY_vars_eNB_g[Mod_id][CC_id]->proc[8].frame_tx);
@@ -683,11 +672,11 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     int CC_id)
 {
 
-  PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
+  //PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[Mod_id][CC_id];
   uint8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
   //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
-  PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
+  //PhysCellId_t physCellId_r10 = sCellToAddMod_r10->cellIdentification_r10->physCellId_r10;
   ARFCN_ValueEUTRA_t dl_CarrierFreq_r10 = sCellToAddMod_r10->cellIdentification_r10->dl_CarrierFreq_r10;
   uint32_t carrier_freq_local;
 
@@ -733,7 +722,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
   }
 
   if (physicalConfigDedicatedSCell_r10) {
-#warning " phy_vars_eNB->physicalConfigDedicatedSCell_r10 does not exist in phy_vars_eNB"
+//#warning " phy_vars_eNB->physicalConfigDedicatedSCell_r10 does not exist in phy_vars_eNB"
     //  phy_vars_eNB->physicalConfigDedicatedSCell_r10[UE_id] = physicalConfigDedicatedSCell_r10;
     LOG_I(PHY,"[eNB %d] Frame %d: Configured phyConfigDedicatedSCell with CC_id %d for UE %d\n",Mod_id,/*phy_vars_eNB->frame*/0,CC_id,UE_id);
   } else {
@@ -888,12 +877,16 @@ void phy_init_lte_top(LTE_DL_FRAME_PARMS *lte_frame_parms)
   ccodelte_init();
   ccodelte_init_inv();
 
+  treillis_table_init();
+
   phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
 
   init_td8();
   init_td16();
-
+#ifdef __AVX2__
+  init_td16avx2();
+#endif
 
   lte_sync_time_init(lte_frame_parms);
 
@@ -1049,7 +1042,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
     // init TX buffers
 
     ue_common_vars->txdata  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-    ue_common_vars->txdataF = (mod_sym_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(mod_sym_t*) );
+    ue_common_vars->txdataF = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
 
     for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifdef USER_MODE
@@ -1057,7 +1050,7 @@ int phy_init_lte_ue(PHY_VARS_UE *phy_vars_ue,
 #else //USER_MODE
       ue_common_vars->txdata[i]  = TX_DMA_BUFFER[0][i];
 #endif //USER_MODE
-      ue_common_vars->txdataF[i] = (mod_sym_t *)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t) );
+      ue_common_vars->txdataF[i] = (int32_t *)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
     }
 
     // init RX buffers
@@ -1270,21 +1263,21 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 
       // TX vars
       eNB_common_vars->txdata[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-      eNB_common_vars->txdataF[eNB_id] = (mod_sym_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(mod_sym_t*) );
+      eNB_common_vars->txdataF[eNB_id] = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
 
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 #ifdef USER_MODE
         eNB_common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
-        eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t) );
+        eNB_common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
 #else // USER_MODE
         eNB_common_vars->txdata[eNB_id][i]  = TX_DMA_BUFFER[eNB_id][i];
-        eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t *)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t) );
+        eNB_common_vars->txdataF[eNB_id][i] = (int32_t *)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
 #endif //USER_MODE
 #ifdef DEBUG_PHY
         msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdata[%d][%d] = %p\n",eNB_id,i,eNB_common_vars->txdata[eNB_id][i]);
         msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
             eNB_id,i,eNB_common_vars->txdataF[eNB_id][i],
-            FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+            FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 #endif
       }
 

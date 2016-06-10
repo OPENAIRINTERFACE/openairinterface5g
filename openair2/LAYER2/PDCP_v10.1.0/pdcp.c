@@ -45,7 +45,7 @@
 #include "pdcp_sequence_manager.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/extern.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "RRC/LITE/proto.h"
 #include "pdcp_primitives.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -646,10 +646,10 @@ pdcp_data_ind(
         PROTOCOL_PDCP_CTXT_FMT" DATA-IND len %u",
         PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p),
         sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len);
-      pdcp_rrc_data_ind(ctxt_pP,
-                        rb_id,
-                        sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
-                        (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
+      rrc_data_ind(ctxt_pP,
+		   rb_id,
+		   sdu_buffer_sizeP - pdcp_header_len - pdcp_tailer_len,
+		   (uint8_t*)&sdu_buffer_pP->data[pdcp_header_len]);
       free_mem_block(sdu_buffer_pP);
 
       // free_mem_block(new_sdu);
@@ -702,7 +702,7 @@ pdcp_data_ind(
 #if defined(USER_MODE) && defined(OAI_EMU)
 
   if (oai_emulation.info.otg_enabled == 1) {
-    unsigned int dst_instance;
+    //unsigned int dst_instance;
     int    ctime;
 
     if ((pdcp_p->rlc_mode == RLC_MODE_AM)&&(MBMS_flagP==0) ) {
@@ -1041,6 +1041,8 @@ pdcp_remove_UE(
     h_rc = hashtable_remove(pdcp_coll_p, key);
 
   }
+
+  (void)h_rc; /* remove gcc warning "set but not used" */
 
   return 1;
 }
@@ -1496,7 +1498,7 @@ pdcp_config_req_asn1 (
 
   case CONFIG_ACTION_REMOVE:
     DevAssert(pdcp_pP != NULL);
-#warning "TODO pdcp_module_id_to_rnti"
+//#warning "TODO pdcp_module_id_to_rnti"
     //pdcp_module_id_to_rnti[ctxt_pP.module_id ][dst_id] = NOT_A_RNTI;
     LOG_D(PDCP, PROTOCOL_PDCP_CTXT_FMT" CONFIG_ACTION_REMOVE LCID %d RBID %d configured\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),

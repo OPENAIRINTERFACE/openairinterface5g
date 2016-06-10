@@ -354,6 +354,36 @@ static void _gen_emm_data(emm_nvdata_t* data)
      data->rplmn.MNCdigit2 = 0;
      data->rplmn.MNCdigit3 = 0xf;
 #endif
+#if (SELECTED_PLMN == OAI_LTEBOX)
+  /*
+   * International Mobile Subscriber Identity
+   * IMSI = MCC + MNC + MSIN = 208 (France) + 93 (OAI) + 00001110
+   */
+     data->imsi.length = 8;
+     data->imsi.u.num.parity = ODD_PARITY;  // Type of identity = IMSI, even
+     data->imsi.u.num.digit1 = 2;  // MCC digit 1
+     data->imsi.u.num.digit2 = 0;  // MCC digit 2
+     data->imsi.u.num.digit3 = 8;  // MCC digit 3
+     data->imsi.u.num.digit4 = 9;  // MNC digit 1
+     data->imsi.u.num.digit5 = 3;  // MNC digit 2
+     data->imsi.u.num.digit6 = 0;  // MNC digit 3
+     data->imsi.u.num.digit7 = 1;
+     data->imsi.u.num.digit8 = 0;
+     data->imsi.u.num.digit9 = 0;
+     data->imsi.u.num.digit10 = 0;
+     data->imsi.u.num.digit11 = 0;
+     data->imsi.u.num.digit12 = 1;
+     data->imsi.u.num.digit13 = 1;
+     data->imsi.u.num.digit14 = 1;
+     data->imsi.u.num.digit15 = 1;
+
+     data->rplmn.MCCdigit1 = 2;
+     data->rplmn.MCCdigit2 = 0;
+     data->rplmn.MCCdigit3 = 8;
+     data->rplmn.MNCdigit1 = 9;
+     data->rplmn.MNCdigit2 = 3;
+     data->rplmn.MNCdigit3 = 0xf;
+#endif
 #if (SELECTED_PLMN == TEST1)
   /*
    * International Mobile Subscriber Identity
@@ -481,7 +511,7 @@ static void _display_emm_data(const emm_nvdata_t* data)
              data->imsi.u.num.digit13,
              data->imsi.u.num.digit14);
     } else {
-      printf("%u%u%u.%u%u%u.%u%u%u%u%u%u%u%u\n",
+      printf("%u%u%u.%u%u%u.%u%u%u%u%u%u%u%u%u\n",
              data->imsi.u.num.digit1,
              data->imsi.u.num.digit2,
              data->imsi.u.num.digit3,

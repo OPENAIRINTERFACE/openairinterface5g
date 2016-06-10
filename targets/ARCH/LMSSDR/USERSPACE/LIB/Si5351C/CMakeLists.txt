@@ -2,7 +2,7 @@ set(si5351_src_files
 	Si5351C.cpp
 )
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -fPIC"
 )
 
 

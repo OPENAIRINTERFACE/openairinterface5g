@@ -54,14 +54,14 @@ int Wbar_NCP[8][4] = {{1,1,1,1},{1,-1,1,-1},{1,1,1,1},{1,-1,1,-1},{1,1,-1,-1},{-
 
 int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    uint8_t UE_id,
-                   mod_sym_t *output,
+                   int32_t *output,
                    short amp,
                    uint8_t Ns,
                    uint8_t p,
                    int SS_flag )
 {
 
-  mod_sym_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
+  int32_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
   int16_t a;
   int w,lprime,ind,l,ind_dword,ind_qpsk_symb,nPRB;
   //  LTE_eNB_DLSCH_t *dlsch = phy_vars_eNB->dlsch_eNB[UE_id][0];

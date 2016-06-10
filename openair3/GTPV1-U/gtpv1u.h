@@ -54,7 +54,7 @@
 # define GTPU_ERROR(x, args...)   fprintf(stderr, "[GTPU][E]"x, ##args)
 #endif
 
-#warning "TO BE REFINED"
+//#warning "TO BE REFINED"
 # define GTPU_HEADER_OVERHEAD_MAX 64
 
 uint32_t gtpv1u_new_teid(void);

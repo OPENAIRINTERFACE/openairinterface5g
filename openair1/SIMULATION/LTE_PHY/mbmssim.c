@@ -38,7 +38,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -128,11 +127,10 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa,aarx,k;
+  int i,l,l2,aa,aarx,k;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
-  //mod_sym_t **txdataF;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim = 0.0;
@@ -337,7 +335,11 @@ int main(int argc, char **argv)
   else
     sprintf(fname,"embms_awgn_%d_%d.m",mcs,N_RB_DL);
 
-  fd = fopen(fname,"w");
+  if (!(fd = fopen(fname,"w"))) {
+    printf("Cannot open %s, check permissions\n",fname);
+    exit(-1);
+  }
+	
 
   if (awgn_flag==0)
     fprintf(fd,"SNR_%d_%d=[];errs_mch_%d_%d=[];mch_trials_%d_%d=[];\n",
@@ -452,7 +454,7 @@ int main(int argc, char **argv)
       //if (trials%100==0)
       //eNB2UE[0]->first_run = 1;
       eNB2UE->first_run = 1;
-      memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+      memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 
       generate_mch(PHY_vars_eNB,sched_subframe,input_buffer,0);
 
@@ -538,11 +540,25 @@ int main(int argc, char **argv)
 	    }
 	  }
 	}
-	
-	rx_pmch(PHY_vars_UE,
-                0,
-                subframe%10,
-                l);
+
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==6)
+          for (l2=2;l2<7;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
+	if (l==11)
+          for (l2=7;l2<12;l2++)
+	    rx_pmch(PHY_vars_UE,
+		    0,
+		    subframe%10,
+		    l2);
       }
 
       PHY_vars_UE->dlsch_ue_MCH[0]->harq_processes[0]->G = get_G(&PHY_vars_UE->lte_frame_parms,
@@ -583,10 +599,10 @@ int main(int argc, char **argv)
               mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
               mcs,N_RB_DL,mcs,N_RB_DL,trials);
     else
-      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %d]; errs_mch_awgn_%d =[errs_mch_awgn_%f  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
-              mcs,N_RB_DL,mcs,N_RB_DL,SNR,
-              mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
-              mcs,N_RB_DL,mcs,N_RB_DL,trials);
+      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
+              N_RB_DL,N_RB_DL,SNR,
+              N_RB_DL,N_RB_DL,errs[0],
+              N_RB_DL,N_RB_DL,trials);
 
     fflush(fd);
 

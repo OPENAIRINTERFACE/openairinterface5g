@@ -90,8 +90,8 @@ void ue_mac_reset(module_id_t module_idP,uint8_t eNB_index)
 
 int
 rrc_mac_config_req(
-  module_id_t                      Mod_id,
-  int                              CC_id,
+  module_id_t                      Mod_idP,
+  int                              CC_idP,
   eNB_flag_t                       eNB_flagP,
   rnti_t                           rntiP,
   uint8_t                          eNB_index,
@@ -129,28 +129,31 @@ rrc_mac_config_req(
   int i;
 
   int UE_id = -1;
+  eNB_MAC_INST *eNB = &eNB_mac_inst[Mod_idP];
+  UE_list_t *UE_list= &eNB->UE_list;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_IN);
 
   if (eNB_flagP==0) {
-    LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_id,eNB_index);
+    LOG_I(MAC,"[CONFIG][UE %d] Configuring MAC/PHY from eNB %d\n",Mod_idP,eNB_index);
 
     if (tdd_Config != NULL) {
-      UE_mac_inst[Mod_id].tdd_Config = tdd_Config;
+      UE_mac_inst[Mod_idP].tdd_Config = tdd_Config;
     }
   } else {
-    UE_id = find_UE_id(Mod_id, rntiP);
+    UE_id = find_UE_id(Mod_idP, rntiP);
     if (physicalConfigDedicated == NULL) {
-      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY\n", Mod_id, CC_id);
+      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY\n", Mod_idP, CC_idP);
     } else {
-      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY for UE %d (%x)\n", Mod_id, CC_id, UE_id, UE_RNTI(Mod_id, UE_id));
+      LOG_I(MAC,"[CONFIG][eNB %d/%d] Configuring MAC/PHY for UE %d (%x)\n", Mod_idP, CC_idP, UE_id, UE_RNTI(Mod_idP, UE_id));
     }
   }
 
   if (tdd_Config && SIwindowsize && SIperiod) {
     if (eNB_flagP == ENB_FLAG_YES) {
-      mac_xface->phy_config_sib1_eNB(Mod_id, CC_id, tdd_Config, *SIwindowsize, *SIperiod);
+      mac_xface->phy_config_sib1_eNB(Mod_idP, CC_idP, tdd_Config, *SIwindowsize, *SIperiod);
     } else {
-      mac_xface->phy_config_sib1_ue(Mod_id,0,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
+      mac_xface->phy_config_sib1_ue(Mod_idP,0,eNB_index,tdd_Config,*SIwindowsize,*SIperiod);
     }
   }
 
@@ -165,106 +168,112 @@ rrc_mac_config_req(
       LOG_I(MAC,"[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
       LOG_I(MAC,"[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
       LOG_I(MAC,"[CONFIG]pusch_config_common.cyclicShift  = %ld\n",radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
-      mac_xface->phy_config_sib2_eNB(Mod_id, CC_id, radioResourceConfigCommon, ul_CarrierFreq, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
+      mac_xface->phy_config_sib2_eNB(Mod_idP, CC_idP, radioResourceConfigCommon, ul_CarrierFreq, ul_Bandwidth, additionalSpectrumEmission, mbsfn_SubframeConfigList);
     } else {
-      UE_mac_inst[Mod_id].radioResourceConfigCommon = radioResourceConfigCommon;
-      mac_xface->phy_config_sib2_ue(Mod_id,0,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
+      UE_mac_inst[Mod_idP].radioResourceConfigCommon = radioResourceConfigCommon;
+      mac_xface->phy_config_sib2_ue(Mod_idP,0,eNB_index,radioResourceConfigCommon,ul_CarrierFreq,ul_Bandwidth,additionalSpectrumEmission,mbsfn_SubframeConfigList);
     }
   }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig!= NULL) {
     if (eNB_flagP==0) {
-      LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB%d\n",Mod_id,eNB_index);
-      UE_mac_inst[Mod_id].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
-      UE_mac_inst[Mod_id].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
+      LOG_I(MAC,"[CONFIG][UE %d] Applying RRC logicalChannelConfig from eNB%d\n",Mod_idP,eNB_index);
+      UE_mac_inst[Mod_idP].logicalChannelConfig[logicalChannelIdentity]=logicalChannelConfig;
+      UE_mac_inst[Mod_idP].scheduling_info.Bj[logicalChannelIdentity]=0; // initilize the bucket for this lcid
 
       if (logicalChannelConfig->ul_SpecificParameters) {
-        UE_mac_inst[Mod_id].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
+        UE_mac_inst[Mod_idP].scheduling_info.bucket_size[logicalChannelIdentity]=logicalChannelConfig->ul_SpecificParameters->prioritisedBitRate *
             logicalChannelConfig->ul_SpecificParameters->bucketSizeDuration; // set the max bucket size
-        UE_mac_inst[Mod_id].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
-        LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_id,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
+        UE_mac_inst[Mod_idP].scheduling_info.LCGID[logicalChannelIdentity]=*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+        LOG_D(MAC,"[CONFIG][UE %d] LCID %d is attached to the LCGID %d\n",Mod_idP,logicalChannelIdentity,*logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup);
       } else {
-        LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_id,logicalChannelIdentity);
+        LOG_E(MAC,"[CONFIG][UE %d] LCID %d NULL ul_SpecificParameters\n",Mod_idP,logicalChannelIdentity);
         mac_xface->macphy_exit("NULL ul_SpecificParameters");
       }
+    }
+    else {
+      if (logicalChannelConfig)
+	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+      else
+	UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity] = 0;
     }
   }
 
   if (mac_MainConfig != NULL) {
     if (eNB_flagP==0) {
-      LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_id,eNB_index);
-      UE_mac_inst[Mod_id].macConfig=mac_MainConfig;
-      UE_mac_inst[Mod_id].measGapConfig=measGapConfig;
+      LOG_I(MAC,"[CONFIG][UE%d] Applying RRC macMainConfig from eNB%d\n",Mod_idP,eNB_index);
+      UE_mac_inst[Mod_idP].macConfig=mac_MainConfig;
+      UE_mac_inst[Mod_idP].measGapConfig=measGapConfig;
 
       if (mac_MainConfig->ul_SCH_Config) {
 
         if (mac_MainConfig->ul_SCH_Config->periodicBSR_Timer) {
-          UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (uint16_t) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
+          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) *mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
         } else {
-          UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer = (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
+          UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer = (uint16_t) MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity;
         }
 
         if (mac_MainConfig->ul_SCH_Config->maxHARQ_Tx) {
-          UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (uint16_t) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
+          UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx     = (uint16_t) *mac_MainConfig->ul_SCH_Config->maxHARQ_Tx;
         } else {
-          UE_mac_inst[Mod_id].scheduling_info.maxHARQ_Tx     = (uint16_t) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+          UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx     = (uint16_t) MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
         }
 
         if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
-          UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
+          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t) mac_MainConfig->ul_SCH_Config->retxBSR_Timer;
         } else {
-          UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer     = (uint16_t)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+          UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer     = (uint16_t)MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
       }
       }
 
 #ifdef Rel10
 
       if (mac_MainConfig->ext1 && mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
-        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
+        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) *mac_MainConfig->ext1->sr_ProhibitTimer_r9;
       } else {
-        UE_mac_inst[Mod_id].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
+        UE_mac_inst[Mod_idP].scheduling_info.sr_ProhibitTimer  = (uint16_t) 0;
       }
 
 #endif
-      UE_mac_inst[Mod_id].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_id].scheduling_info.periodicBSR_Timer);
-      UE_mac_inst[Mod_id].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_id].scheduling_info.retxBSR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_SF  = get_sf_periodicBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.retxBSR_SF     = get_sf_retxBSRTimer(UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer);
 
-      UE_mac_inst[Mod_id].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
-      UE_mac_inst[Mod_id].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
+      UE_mac_inst[Mod_idP].scheduling_info.drx_config     = mac_MainConfig->drx_Config;
+      UE_mac_inst[Mod_idP].scheduling_info.phr_config     = mac_MainConfig->phr_Config;
 
       if (mac_MainConfig->phr_Config) {
-        UE_mac_inst[Mod_id].PHR_state = mac_MainConfig->phr_Config->present;
-        UE_mac_inst[Mod_id].PHR_reconfigured = 1;
-        UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer = mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer;
-        UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer = mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer;
-        UE_mac_inst[Mod_id].scheduling_info.PathlossChange = mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange;
+        UE_mac_inst[Mod_idP].PHR_state = mac_MainConfig->phr_Config->present;
+        UE_mac_inst[Mod_idP].PHR_reconfigured = 1;
+        UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer = mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer;
+        UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer = mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer;
+        UE_mac_inst[Mod_idP].scheduling_info.PathlossChange = mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange;
       } else {
-        UE_mac_inst[Mod_id].PHR_reconfigured = 0;
-        UE_mac_inst[Mod_id].PHR_state = MAC_MainConfig__phr_Config_PR_setup;
-        UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
-        UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
-        UE_mac_inst[Mod_id].scheduling_info.PathlossChange = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+        UE_mac_inst[Mod_idP].PHR_reconfigured = 0;
+        UE_mac_inst[Mod_idP].PHR_state = MAC_MainConfig__phr_Config_PR_setup;
+        UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer = MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+        UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer = MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+        UE_mac_inst[Mod_idP].scheduling_info.PathlossChange = MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
       }
 
-      UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.periodicPHR_Timer);
-      UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_Timer);
-      UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_id].scheduling_info.PathlossChange);
+      UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF =  get_sf_perioidicPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_SF =  get_sf_prohibitPHR_Timer(UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer);
+      UE_mac_inst[Mod_idP].scheduling_info.PathlossChange_db =  get_db_dl_PathlossChange(UE_mac_inst[Mod_idP].scheduling_info.PathlossChange);
       LOG_D(MAC,"[UE %d] config PHR (%d): periodic %d (SF) prohibit %d (SF)  pathlosschange %d (db) \n",
-            Mod_id,
+            Mod_idP,
             (mac_MainConfig->phr_Config)?mac_MainConfig->phr_Config->present:-1,
-            UE_mac_inst[Mod_id].scheduling_info.periodicPHR_SF,
-            UE_mac_inst[Mod_id].scheduling_info.prohibitPHR_SF,
-            UE_mac_inst[Mod_id].scheduling_info.PathlossChange_db);
+            UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF,
+            UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_SF,
+            UE_mac_inst[Mod_idP].scheduling_info.PathlossChange_db);
     }
   }
 
   if (physicalConfigDedicated != NULL) {
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_eNB(Mod_id, CC_id, UE_RNTI(Mod_id, UE_id), physicalConfigDedicated);
+      mac_xface->phy_config_dedicated_eNB(Mod_idP, CC_idP, UE_RNTI(Mod_idP, UE_id), physicalConfigDedicated);
     } else {
-      mac_xface->phy_config_dedicated_ue(Mod_id,0,eNB_index,physicalConfigDedicated);
-      UE_mac_inst[Mod_id].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
+      mac_xface->phy_config_dedicated_ue(Mod_idP,0,eNB_index,physicalConfigDedicated);
+      UE_mac_inst[Mod_idP].physicalConfigDedicated=physicalConfigDedicated; // for SR proc
     }
   }
 
@@ -273,11 +282,12 @@ rrc_mac_config_req(
   if (sCellToAddMod_r10 != NULL) {
 
     if (eNB_flagP==1) {
-      mac_xface->phy_config_dedicated_scell_eNB(Mod_id,UE_RNTI(Mod_id,UE_id),sCellToAddMod_r10,1);
+      mac_xface->phy_config_dedicated_scell_eNB(Mod_idP,UE_RNTI(Mod_idP,UE_id),sCellToAddMod_r10,1);
     } else {
-#warning "phy_config_dedicated_scell_ue is empty"
-      mac_xface->phy_config_dedicated_scell_ue(Mod_id,eNB_index,sCellToAddMod_r10,1);
-      UE_mac_inst[Mod_id].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
+
+	//#warning "phy_config_dedicated_scell_ue is empty"
+      mac_xface->phy_config_dedicated_scell_ue(Mod_idP,eNB_index,sCellToAddMod_r10,1);
+      UE_mac_inst[Mod_idP].physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10; // using SCell index 0
     }
   }
 
@@ -286,22 +296,22 @@ rrc_mac_config_req(
   if (eNB_flagP == 0) {
     if (measObj!= NULL) {
       if (measObj[0]!= NULL) {
-        UE_mac_inst[Mod_id].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
-        LOG_I(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_id].n_adj_cells);
+        UE_mac_inst[Mod_idP].n_adj_cells = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.count;
+        LOG_I(MAC,"Number of adjacent cells %d\n",UE_mac_inst[Mod_idP].n_adj_cells);
 
-        for (i=0; i<UE_mac_inst[Mod_id].n_adj_cells; i++) {
-          UE_mac_inst[Mod_id].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
-          LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_id].adj_cell_id[i]);
+        for (i=0; i<UE_mac_inst[Mod_idP].n_adj_cells; i++) {
+          UE_mac_inst[Mod_idP].adj_cell_id[i] = measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList->list.array[i]->physCellId;
+          LOG_I(MAC,"Cell %d : Nid_cell %d\n",i,UE_mac_inst[Mod_idP].adj_cell_id[i]);
         }
 
-        mac_xface->phy_config_meas_ue(Mod_id,0,eNB_index,UE_mac_inst[Mod_id].n_adj_cells,UE_mac_inst[Mod_id].adj_cell_id);
+        mac_xface->phy_config_meas_ue(Mod_idP,0,eNB_index,UE_mac_inst[Mod_idP].n_adj_cells,UE_mac_inst[Mod_idP].adj_cell_id);
       }
 
       /*
       if (quantityConfig != NULL) {
       if (quantityConfig[0] != NULL) {
-      UE_mac_inst[Mod_id].quantityConfig = quantityConfig[0];
-      LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_id].crnti);
+      UE_mac_inst[Mod_idP].quantityConfig = quantityConfig[0];
+      LOG_I(MAC,"UE %d configured filterCoeff.",UE_mac_inst[Mod_idP].crnti);
       mac_xface->phy_config_meas_ue
       }
       }
@@ -312,51 +322,51 @@ rrc_mac_config_req(
   if (eNB_flagP==0) {
     if(mobilityControlInfo != NULL) {
 
-      LOG_D(MAC,"[UE%d] MAC Reset procedure triggered by RRC eNB %d \n",Mod_id,eNB_index);
-      ue_mac_reset(Mod_id,eNB_index);
+      LOG_D(MAC,"[UE%d] MAC Reset procedure triggered by RRC eNB %d \n",Mod_idP,eNB_index);
+      ue_mac_reset(Mod_idP,eNB_index);
 
       if(mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->rach_ConfigCommon,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->rach_ConfigCommon,
                (void *)mobilityControlInfo->radioResourceConfigCommon.rach_ConfigCommon,
                sizeof(RACH_ConfigCommon_t));
       }
 
-      memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.prach_ConfigInfo,
+      memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->prach_Config.prach_ConfigInfo,
              (void *)mobilityControlInfo->radioResourceConfigCommon.prach_Config.prach_ConfigInfo,
              sizeof(PRACH_ConfigInfo_t));
-      UE_mac_inst[Mod_id].radioResourceConfigCommon->prach_Config.rootSequenceIndex = mobilityControlInfo->radioResourceConfigCommon.prach_Config.rootSequenceIndex;
+      UE_mac_inst[Mod_idP].radioResourceConfigCommon->prach_Config.rootSequenceIndex = mobilityControlInfo->radioResourceConfigCommon.prach_Config.rootSequenceIndex;
 
       if(mobilityControlInfo->radioResourceConfigCommon.pdsch_ConfigCommon) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pdsch_ConfigCommon,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->pdsch_ConfigCommon,
                (void *)mobilityControlInfo->radioResourceConfigCommon.pdsch_ConfigCommon,
                sizeof(PDSCH_ConfigCommon_t));
       }
 
       // not a pointer: mobilityControlInfo->radioResourceConfigCommon.pusch_ConfigCommon
-      memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pusch_ConfigCommon,
+      memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->pusch_ConfigCommon,
              (void *)&mobilityControlInfo->radioResourceConfigCommon.pusch_ConfigCommon,
              sizeof(PUSCH_ConfigCommon_t));
 
       if(mobilityControlInfo->radioResourceConfigCommon.phich_Config) {
-        /* memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->phich_Config,
+        /* memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->phich_Config,
         (void *)mobilityControlInfo->radioResourceConfigCommon.phich_Config,
         sizeof(PHICH_Config_t)); */
       }
 
       if(mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->pucch_ConfigCommon,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->pucch_ConfigCommon,
                (void *)mobilityControlInfo->radioResourceConfigCommon.pucch_ConfigCommon,
                sizeof(PUCCH_ConfigCommon_t));
       }
 
       if(mobilityControlInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->soundingRS_UL_ConfigCommon,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->soundingRS_UL_ConfigCommon,
                (void *)mobilityControlInfo->radioResourceConfigCommon.soundingRS_UL_ConfigCommon,
                sizeof(SoundingRS_UL_ConfigCommon_t));
       }
 
       if(mobilityControlInfo->radioResourceConfigCommon.uplinkPowerControlCommon) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->uplinkPowerControlCommon,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->uplinkPowerControlCommon,
                (void *)mobilityControlInfo->radioResourceConfigCommon.uplinkPowerControlCommon,
                sizeof(UplinkPowerControlCommon_t));
       }
@@ -367,54 +377,54 @@ rrc_mac_config_req(
       }
 
       if(mobilityControlInfo->radioResourceConfigCommon.tdd_Config) {
-        UE_mac_inst[Mod_id].tdd_Config = mobilityControlInfo->radioResourceConfigCommon.tdd_Config;
+        UE_mac_inst[Mod_idP].tdd_Config = mobilityControlInfo->radioResourceConfigCommon.tdd_Config;
       }
 
       if(mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength) {
-        memcpy((void *)&UE_mac_inst[Mod_id].radioResourceConfigCommon->ul_CyclicPrefixLength,
+        memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->ul_CyclicPrefixLength,
                (void *)mobilityControlInfo->radioResourceConfigCommon.ul_CyclicPrefixLength,
                sizeof(UL_CyclicPrefixLength_t));
       }
 
       // store the previous rnti in case of failure, and set thenew rnti
-      UE_mac_inst[Mod_id].crnti_before_ho = UE_mac_inst[Mod_id].crnti;
-      UE_mac_inst[Mod_id].crnti = ((mobilityControlInfo->newUE_Identity.buf[0])|(mobilityControlInfo->newUE_Identity.buf[1]<<8));
-      LOG_I(MAC,"[UE %d] Received new identity %x from %d\n", Mod_id, UE_mac_inst[Mod_id].crnti, eNB_index);
-      UE_mac_inst[Mod_id].rach_ConfigDedicated = malloc(sizeof(*mobilityControlInfo->rach_ConfigDedicated));
+      UE_mac_inst[Mod_idP].crnti_before_ho = UE_mac_inst[Mod_idP].crnti;
+      UE_mac_inst[Mod_idP].crnti = ((mobilityControlInfo->newUE_Identity.buf[0])|(mobilityControlInfo->newUE_Identity.buf[1]<<8));
+      LOG_I(MAC,"[UE %d] Received new identity %x from %d\n", Mod_idP, UE_mac_inst[Mod_idP].crnti, eNB_index);
+      UE_mac_inst[Mod_idP].rach_ConfigDedicated = malloc(sizeof(*mobilityControlInfo->rach_ConfigDedicated));
 
       if (mobilityControlInfo->rach_ConfigDedicated) {
-        memcpy((void*)UE_mac_inst[Mod_id].rach_ConfigDedicated,
+        memcpy((void*)UE_mac_inst[Mod_idP].rach_ConfigDedicated,
                (void*)mobilityControlInfo->rach_ConfigDedicated,
                sizeof(*mobilityControlInfo->rach_ConfigDedicated));
       }
 
-      mac_xface->phy_config_afterHO_ue(Mod_id,0,eNB_index,mobilityControlInfo,0);
+      mac_xface->phy_config_afterHO_ue(Mod_idP,0,eNB_index,mobilityControlInfo,0);
     }
   }
 
   if (mbsfn_SubframeConfigList != NULL) {
     if (eNB_flagP == 1) {
-      LOG_I(MAC,"[eNB %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n", Mod_id, mbsfn_SubframeConfigList->list.count);
-      eNB_mac_inst[Mod_id].common_channels[0].num_sf_allocation_pattern= mbsfn_SubframeConfigList->list.count;
+      LOG_I(MAC,"[eNB %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n", Mod_idP, mbsfn_SubframeConfigList->list.count);
+      eNB_mac_inst[Mod_idP].common_channels[0].num_sf_allocation_pattern= mbsfn_SubframeConfigList->list.count;
 
       for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
-        eNB_mac_inst[Mod_id].common_channels[0].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
-        LOG_I(MAC, "[eNB %d][CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", Mod_id, i,
-              eNB_mac_inst[Mod_id].common_channels[0].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
+        eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
+        LOG_I(MAC, "[eNB %d][CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", Mod_idP, i,
+              eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
       }
 
 #ifdef Rel10
-      eNB_mac_inst[Mod_id].common_channels[0].MBMS_flag = MBMS_Flag;
+      eNB_mac_inst[Mod_idP].common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
     } else { // UE
-      LOG_I(MAC,"[UE %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n", Mod_id, mbsfn_SubframeConfigList->list.count);
-      UE_mac_inst[Mod_id].num_sf_allocation_pattern= mbsfn_SubframeConfigList->list.count;
+      LOG_I(MAC,"[UE %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n", Mod_idP, mbsfn_SubframeConfigList->list.count);
+      UE_mac_inst[Mod_idP].num_sf_allocation_pattern= mbsfn_SubframeConfigList->list.count;
 
       for (i=0; i<mbsfn_SubframeConfigList->list.count; i++) {
-        LOG_I(MAC, "[UE %d] Configuring MBSFN_SubframeConfig %d from received SIB2 \n", Mod_id, i);
-        UE_mac_inst[Mod_id].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
-        //  LOG_I("[UE %d] MBSFN_SubframeConfig[%d] pattern is  %ld\n", Mod_id,
-        //    UE_mac_inst[Mod_id].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
+        LOG_I(MAC, "[UE %d] Configuring MBSFN_SubframeConfig %d from received SIB2 \n", Mod_idP, i);
+        UE_mac_inst[Mod_idP].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
+        //  LOG_I("[UE %d] MBSFN_SubframeConfig[%d] pattern is  %ld\n", Mod_idP,
+        //    UE_mac_inst[Mod_idP].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
       }
     }
   }
@@ -424,24 +434,24 @@ rrc_mac_config_req(
   if (mbsfn_AreaInfoList != NULL) {
     if (eNB_flagP == 1) {
       // One eNB could be part of multiple mbsfn syc area, this could change over time so reset each time
-      LOG_I(MAC,"[eNB %d][CONFIG] Received %d MBSFN Area Info\n", Mod_id, mbsfn_AreaInfoList->list.count);
-      eNB_mac_inst[Mod_id].common_channels[0].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
+      LOG_I(MAC,"[eNB %d][CONFIG] Received %d MBSFN Area Info\n", Mod_idP, mbsfn_AreaInfoList->list.count);
+      eNB_mac_inst[Mod_idP].common_channels[0].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
 
       for (i =0; i< mbsfn_AreaInfoList->list.count; i++) {
-        eNB_mac_inst[Mod_id].common_channels[0].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
-        LOG_I(MAC,"[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", Mod_id,i,
-              eNB_mac_inst[Mod_id].common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-        mac_xface->phy_config_sib13_eNB(Mod_id,0,i,eNB_mac_inst[Mod_id].common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+        eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
+        LOG_I(MAC,"[eNB %d][CONFIG] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n", Mod_idP,i,
+              eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+        mac_xface->phy_config_sib13_eNB(Mod_idP,0,i,eNB_mac_inst[Mod_idP].common_channels[0].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
       }
     } else { // UE
-      LOG_I(MAC,"[UE %d][CONFIG] Received %d MBSFN Area Info\n", Mod_id, mbsfn_AreaInfoList->list.count);
-      UE_mac_inst[Mod_id].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
+      LOG_I(MAC,"[UE %d][CONFIG] Received %d MBSFN Area Info\n", Mod_idP, mbsfn_AreaInfoList->list.count);
+      UE_mac_inst[Mod_idP].num_active_mbsfn_area = mbsfn_AreaInfoList->list.count;
 
       for (i =0; i< mbsfn_AreaInfoList->list.count; i++) {
-        UE_mac_inst[Mod_id].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
-        LOG_I(MAC,"[UE %d] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",Mod_id, i,
-              UE_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
-        mac_xface->phy_config_sib13_ue(Mod_id,0,eNB_index,i,UE_mac_inst[Mod_id].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
+        UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i] = mbsfn_AreaInfoList->list.array[i];
+        LOG_I(MAC,"[UE %d] MBSFN_AreaInfo[%d]: MCCH Repetition Period = %ld\n",Mod_idP, i,
+              UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+        mac_xface->phy_config_sib13_ue(Mod_idP,0,eNB_index,i,UE_mac_inst[Mod_idP].mbsfn_AreaInfo[i]->mbsfn_AreaId_r9);
       }
     }
   }
@@ -456,29 +466,29 @@ rrc_mac_config_req(
       LOG_I(MAC, "[CONFIG] Number of PMCH in this MBSFN Area %d\n", pmch_InfoList->list.count);
 
       for (i =0; i< pmch_InfoList->list.count; i++) {
-        eNB_mac_inst[Mod_id].common_channels[0].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
+        eNB_mac_inst[Mod_idP].common_channels[0].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
 
         LOG_I(MAC, "[CONFIG] PMCH[%d]: This PMCH stop (sf_AllocEnd_r9) at subframe  %ldth\n", i,
-              eNB_mac_inst[Mod_id].common_channels[0].pmch_Config[i]->sf_AllocEnd_r9);
+              eNB_mac_inst[Mod_idP].common_channels[0].pmch_Config[i]->sf_AllocEnd_r9);
         LOG_I(MAC, "[CONFIG] PMCH[%d]: mch_Scheduling_Period = %ld\n", i,
-              eNB_mac_inst[Mod_id].common_channels[0].pmch_Config[i]->mch_SchedulingPeriod_r9);
+              eNB_mac_inst[Mod_idP].common_channels[0].pmch_Config[i]->mch_SchedulingPeriod_r9);
         LOG_I(MAC, "[CONFIG] PMCH[%d]: dataMCS = %ld\n", i,
-              eNB_mac_inst[Mod_id].common_channels[0].pmch_Config[i]->dataMCS_r9);
+              eNB_mac_inst[Mod_idP].common_channels[0].pmch_Config[i]->dataMCS_r9);
 
         // MBMS session info list in each MCH
-        eNB_mac_inst[Mod_id].common_channels[0].mbms_SessionList[i] = &pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
-        LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n",i, eNB_mac_inst[Mod_id].common_channels[0].mbms_SessionList[i]->list.count);
+        eNB_mac_inst[Mod_idP].common_channels[0].mbms_SessionList[i] = &pmch_InfoList->list.array[i]->mbms_SessionInfoList_r9;
+        LOG_I(MAC, "PMCH[%d] Number of session (MTCH) is: %d\n",i, eNB_mac_inst[Mod_idP].common_channels[0].mbms_SessionList[i]->list.count);
       }
     } else { // UE
-      LOG_I(MAC, "[UE %d] Configuring PMCH_config from MCCH MESSAGE \n",Mod_id);
+      LOG_I(MAC, "[UE %d] Configuring PMCH_config from MCCH MESSAGE \n",Mod_idP);
 
       for (i =0; i< pmch_InfoList->list.count; i++) {
-        UE_mac_inst[Mod_id].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
-        LOG_I(MAC, "[UE %d] PMCH[%d]: MCH_Scheduling_Period = %ld\n", Mod_id, i,
-              UE_mac_inst[Mod_id].pmch_Config[i]->mch_SchedulingPeriod_r9);
+        UE_mac_inst[Mod_idP].pmch_Config[i] = &pmch_InfoList->list.array[i]->pmch_Config_r9;
+        LOG_I(MAC, "[UE %d] PMCH[%d]: MCH_Scheduling_Period = %ld\n", Mod_idP, i,
+              UE_mac_inst[Mod_idP].pmch_Config[i]->mch_SchedulingPeriod_r9);
       }
 
-      UE_mac_inst[Mod_id].mcch_status = 1;
+      UE_mac_inst[Mod_idP].mcch_status = 1;
     }
   }
 
@@ -487,28 +497,28 @@ rrc_mac_config_req(
 
   if (eNB_flagP == 0) {
     if (cba_rnti) {
-      UE_mac_inst[Mod_id].cba_rnti[num_active_cba_groups-1] = cba_rnti;
+      UE_mac_inst[Mod_idP].cba_rnti[num_active_cba_groups-1] = cba_rnti;
       LOG_D(MAC,"[UE %d] configure CBA group %d RNTI %x for eNB %d (total active cba group %d)\n",
-            Mod_id,Mod_id%num_active_cba_groups, cba_rnti,eNB_index,num_active_cba_groups);
-      mac_xface->phy_config_cba_rnti(Mod_id,CC_id,eNB_flagP,eNB_index,cba_rnti,num_active_cba_groups-1, num_active_cba_groups);
+            Mod_idP,Mod_idP%num_active_cba_groups, cba_rnti,eNB_index,num_active_cba_groups);
+      mac_xface->phy_config_cba_rnti(Mod_idP,CC_idP,eNB_flagP,eNB_index,cba_rnti,num_active_cba_groups-1, num_active_cba_groups);
     }
   } else {
     if (cba_rnti) {
       LOG_D(MAC,"[eNB %d] configure CBA RNTI for UE  %d (total active cba groups %d)\n",
-            Mod_id, UE_id, num_active_cba_groups);
-      eNB_mac_inst[Mod_id].common_channels[CC_id].num_active_cba_groups=num_active_cba_groups;
+            Mod_idP, UE_id, num_active_cba_groups);
+      eNB_mac_inst[Mod_idP].common_channels[CC_idP].num_active_cba_groups=num_active_cba_groups;
 
       for (i=0; i < num_active_cba_groups; i ++) {
-        if (eNB_mac_inst[Mod_id].common_channels[CC_id].cba_rnti[i] != cba_rnti + i) {
-          eNB_mac_inst[Mod_id].common_channels[CC_id].cba_rnti[i] = cba_rnti + i;
+        if (eNB_mac_inst[Mod_idP].common_channels[CC_idP].cba_rnti[i] != cba_rnti + i) {
+          eNB_mac_inst[Mod_idP].common_channels[CC_idP].cba_rnti[i] = cba_rnti + i;
         }
 
         //only configure UE ids up to num_active_cba_groups
         //we use them as candidates for the transmission of dci format0)
         if (UE_id%num_active_cba_groups == i) {
-          mac_xface->phy_config_cba_rnti(Mod_id,CC_id,eNB_flagP,UE_id,cba_rnti + i,i,num_active_cba_groups );
+          mac_xface->phy_config_cba_rnti(Mod_idP,CC_idP,eNB_flagP,UE_id,cba_rnti + i,i,num_active_cba_groups );
           LOG_D(MAC,"[eNB %d] configure CBA groups %d with RNTI %x for UE  %d (total active cba groups %d)\n",
-                Mod_id, i, eNB_mac_inst[Mod_id].common_channels[CC_id].cba_rnti[i],UE_id, num_active_cba_groups);
+                Mod_idP, i, eNB_mac_inst[Mod_idP].common_channels[CC_idP].cba_rnti[i],UE_id, num_active_cba_groups);
         }
       }
     }
@@ -558,7 +568,7 @@ rrc_get_estimated_ue_distance(
     return  eNB_UE_stats->distance.power_based;
   }
 
-  //    LOG_D(LOCALIZE, "DEBUG ME, dist = %d\n", &eNB_mac_inst[ctxt_pP->module_id].UE_list.UE_template[CC_id][UE_id].distance.power_based);
+  //    LOG_D(LOCALIZE, "DEBUG ME, dist = %d\n", &eNB_mac_inst[ctxt_pP->module_id].UE_list.UE_template[CC_idP][UE_id].distance.power_based);
 
 }
 

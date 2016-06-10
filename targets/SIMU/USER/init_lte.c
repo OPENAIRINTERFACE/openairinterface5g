@@ -38,14 +38,11 @@
 #include "init_lte.h"
 
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
 #include "LAYER2/MAC/extern.h"
 #include "UTIL/LOG/log_if.h"
 #include "PHY_INTERFACE/extern.h"
-#endif
 
 
 
@@ -76,7 +73,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (j=0; j<2; j++) {
-      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL,abstraction_flag);
+      PHY_vars_eNB->dlsch_eNB[i][j] = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL,abstraction_flag);
 
       if (!PHY_vars_eNB->dlsch_eNB[i][j]) {
         LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
@@ -87,7 +84,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
       }
     }
 
-    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS, frame_parms->N_RB_UL, abstraction_flag);
+    PHY_vars_eNB->ulsch_eNB[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,frame_parms->N_RB_UL, abstraction_flag);
 
     if (!PHY_vars_eNB->ulsch_eNB[1+i]) {
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
@@ -121,18 +118,18 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
   }
 
   // ULSCH for RA
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(NUMBER_OF_HARQ_PID_MAX,MAX_TURBO_ITERATIONS, frame_parms->N_RB_UL, abstraction_flag);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, frame_parms->N_RB_UL, abstraction_flag);
 
   if (!PHY_vars_eNB->ulsch_eNB[0]) {
     LOG_E(PHY,"Can't get eNB ulsch structures\n");
     exit(-1);
   }
 
-  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_SI  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : SI %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_SI);
-  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,1,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
+  PHY_vars_eNB->dlsch_eNB_ra  = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, abstraction_flag);
   LOG_D(PHY,"eNB %d : RA %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_ra);
-  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,frame_parms->N_RB_DL, 0);
+  PHY_vars_eNB->dlsch_eNB_MCH = new_eNB_dlsch(1,8,NSOFT,frame_parms->N_RB_DL, 0);
   LOG_D(PHY,"eNB %d : MCH %p\n",eNB_id,PHY_vars_eNB->dlsch_eNB_MCH);
 
 
@@ -180,7 +177,7 @@ PHY_VARS_UE* init_lte_UE(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 
-    PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(NUMBER_OF_HARQ_PID_MAX,frame_parms->N_RB_UL, abstraction_flag);
+    PHY_vars_UE->ulsch_ue[i]  = new_ue_ulsch(frame_parms->N_RB_UL, abstraction_flag);
 
     if (!PHY_vars_UE->ulsch_ue[i]) {
       LOG_E(PHY,"Can't get ue ulsch structures\n");
@@ -211,11 +208,11 @@ PHY_VARS_RN* init_lte_RN(LTE_DL_FRAME_PARMS *frame_parms,
 
   if (eMBMS_active_state == multicast_relay) {
     for (i=0; i < 10 ; i++) { // num SF in a frame
-      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS_MBSFN,NSOFT,frame_parms->N_RB_DL, 0);
+      PHY_vars_RN->dlsch_rn_MCH[i] = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,frame_parms->N_RB_DL, 0);
       LOG_D(PHY,"eNB %d : MCH[%d] %p\n",RN_id,i,PHY_vars_RN->dlsch_rn_MCH[i]);
     }
   } else {
-    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,MAX_TURBO_ITERATIONS,NSOFT,frame_parms->N_RB_DL, 0);
+    PHY_vars_RN->dlsch_rn_MCH[0] = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,frame_parms->N_RB_DL, 0);
     LOG_D(PHY,"eNB %d : MCH[0] %p\n",RN_id,PHY_vars_RN->dlsch_rn_MCH[0]);
   }
 
@@ -250,6 +247,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     (frame_parms[CC_id])->phich_config_common.phich_resource = oneSixth;
     (frame_parms[CC_id])->phich_config_common.phich_duration = normal;
     (frame_parms[CC_id])->Ncp                = extended_prefix_flag;
+    (frame_parms[CC_id])->Ncp_UL             = extended_prefix_flag; 
     (frame_parms[CC_id])->Nid_cell           = Nid_cell;
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
     (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;

@@ -81,8 +81,10 @@ function help()
   echo_error " "
   echo_error "Options:"
   echo_error "Mandatory arguments to long options are mandatory for short options too."
+  echo_error "  -a, --abstraction                       enable phy abstraction mode"
   echo_error "  -c, -C, --config-file  eNB_config_file  eNB config file, (see $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF)"
   echo_error "                                          Default eNB config file if not set is $1"
+  echo_error "  -l, --log-level                         set the global log level (8:trace, 7:debug, 6:info, 4:warn, 3:error). Note that the log configuration is eNB config file is ignored for oaisim."
   echo_error "  -g, --gdb                               Run with GDB."
   echo_error "  -h, --help                              Print this help."
   echo_error "  -K, --itti-dump-file   filename         ITTI dump file containing all ITTI events occuring during EPC runtime.(can omit file name if last argument)"
@@ -114,8 +116,14 @@ function main()
   until [ -z "$1" ]
     do
     case "$1" in
+      -a | --abstraction )
+	    abstraction_flag=1
+	    echo "enabling abstraction mode"
+	    exe_arguments="$exe_arguments -a"
+            shift;
+	    ;;      
       -c | -C | --config-file)
-        CONFIG_FILE_ENB=$2
+            CONFIG_FILE_ENB=$2
         # may be relative path 
         if [ -f $(dirname $(readlink -f $0))/$CONFIG_FILE ]; then
           CONFIG_FILE_ENB=$(dirname $(readlink -f $0))/$CONFIG_FILE
@@ -131,6 +139,11 @@ function main()
         fi
         shift 2;
         ;;
+      -l | --log-level)
+	echo "setting the log level to $2"
+	exe_arguments="$exe_arguments -l $2"
+        shift 2;
+ 	;;       
       -g | --gdb)
         run_gdb=1
         echo "setting GDB flag to: $GDB"
@@ -241,7 +254,8 @@ function main()
   if [ $? -ne 0 ]; then
     bash -c echo "200 lte " >> /etc/iproute2/rt_tables
   fi
-  ip rule add fwmark 1 table lte
+  ip rule add fwmark 1 table lte 
+  ifconfig oip1 up
   ip route add default dev oip1 table lte
 
   exe_arguments="$exe_arguments -s15 -AAWGN -y1 -b1 -u1 -Q0"

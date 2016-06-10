@@ -5,7 +5,7 @@
     OpenAirInterface is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    (at your option) any lat_er version.
 
 
     OpenAirInterface is distributed in the hope that it will be useful,
@@ -53,15 +53,15 @@
 #include "PHY/sse_intrin.h"
 
 #define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
+#define print_shorts256(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7],(x)[8],(x)[9],(x)[10],(x)[11],(x)[12],(x)[13],(x)[14],(x)[15])
+
 #define print_ints(s,x) printf("%s %d %d %d %d\n",s,(x)[0],(x)[1],(x)[2],(x)[3])
 
-#ifdef AVX2
-static int16_t conjugatedft2[16] __attribute__((aligned(32))) = {1,1,1,1,1,1,1,1,-1,1,-1,1,-1,1,-1,1,-1,1};
-#endif
 
-static int16_t conjugatedft[8] __attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
+static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1};
 
-static short reflip[8]  __attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
+
+static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
 
 #if defined(__x86_64__) || defined(__i386__)
 static inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
@@ -103,8 +103,43 @@ static inline void cmacc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
   *im32 = _mm_add_epi32(*im32,cmac_tmp_im32);
 }
 
+#ifdef __AVX2__
+static inline void cmac_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32) __attribute__((always_inline));
+static inline void cmac_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
+{
+
+  __m256i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
+  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,19,18,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  cmac_tmp       = _mm256_sign_epi16(b,*(__m256i*)reflip);
+  cmac_tmp_re32  = _mm256_madd_epi16(a,cmac_tmp);
+
+  cmac_tmp       = _mm256_shuffle_epi8(b,imshuffle);
+  cmac_tmp_im32  = _mm256_madd_epi16(cmac_tmp,a);
+
+  *re32 = _mm256_add_epi32(*re32,cmac_tmp_re32);
+  *im32 = _mm256_add_epi32(*im32,cmac_tmp_im32);
+}
+
+static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32) __attribute__((always_inline));
+static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
+{
+
+  __m256i cmac_tmp,cmac_tmp_re32,cmac_tmp_im32;
+  __m256i imshuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,19,18,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  cmac_tmp_re32   = _mm256_madd_epi16(a,b);
 
 
+  cmac_tmp        = _mm256_sign_epi16(b,*(__m256i*)reflip);
+  cmac_tmp        = _mm256_shuffle_epi8(b,imshuffle);
+  cmac_tmp_im32   = _mm256_madd_epi16(cmac_tmp,a);
+
+  *re32 = _mm256_add_epi32(*re32,cmac_tmp_re32);
+  *im32 = _mm256_add_epi32(*im32,cmac_tmp_im32);
+}
+
+#endif
 
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
 
@@ -122,6 +157,24 @@ static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
 
 }
 
+#ifdef __AVX2__
+static inline void cmult_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32) __attribute__((always_inline));
+
+static inline void cmult_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
+{
+
+  register __m256i mmtmpb;
+  __m256i const perm_mask = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  mmtmpb    = _mm256_sign_epi16(b,*(__m256i*)reflip);
+  *re32     = _mm256_madd_epi16(a,mmtmpb);
+  mmtmpb    = _mm256_shuffle_epi8(b,perm_mask);
+  *im32     = _mm256_madd_epi16(a,mmtmpb);
+
+}
+
+#endif
+
 static inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
 
 static inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
@@ -136,6 +189,23 @@ static inline void cmultc(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
 
 }
 
+#ifdef __AVX2__
+static inline void cmultc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32) __attribute__((always_inline));
+
+static inline void cmultc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
+{
+
+  register __m256i mmtmpb;
+  __m256i const perm_mask = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  *re32     = _mm256_madd_epi16(a,b);
+  mmtmpb    = _mm256_sign_epi16(b,*(__m256i*)reflip);
+  mmtmpb    = _mm256_shuffle_epi8(mmtmpb,perm_mask);
+  *im32     = _mm256_madd_epi16(a,mmtmpb);
+
+}
+
+#endif
 
 static inline __m128i cpack(__m128i xre,__m128i xim) __attribute__((always_inline));
 
@@ -150,6 +220,21 @@ static inline __m128i cpack(__m128i xre,__m128i xim)
 
 }
 
+#ifdef __AVX2__
+static inline __m256i cpack_256(__m256i xre,__m256i xim) __attribute__((always_inline));
+
+static inline __m256i cpack_256(__m256i xre,__m256i xim)
+{
+
+  register __m256i cpack_tmp1,cpack_tmp2;
+
+  cpack_tmp1 = _mm256_unpacklo_epi32(xre,xim);
+  cpack_tmp2 = _mm256_unpackhi_epi32(xre,xim);
+  return(_mm256_packs_epi32(_mm256_srai_epi32(cpack_tmp1,15),_mm256_srai_epi32(cpack_tmp2,15)));
+
+}
+
+#endif
 
 static inline void packed_cmult(__m128i a,__m128i b, __m128i *c) __attribute__((always_inline));
 
@@ -162,6 +247,18 @@ static inline void packed_cmult(__m128i a,__m128i b, __m128i *c)
 
 }
 
+#ifdef __AVX2__
+static inline void packed_cmult_256(__m256i a,__m256i b, __m256i *c) __attribute__((always_inline));
+
+static inline void packed_cmult_256(__m256i a,__m256i b, __m256i *c)
+{
+
+  __m256i cre,cim;
+  cmult_256(a,b,&cre,&cim);
+  *c = cpack_256(cre,cim);
+
+}
+#endif
 
 static inline void packed_cmultc(__m128i a,__m128i b, __m128i *c) __attribute__((always_inline));
 
@@ -174,6 +271,20 @@ static inline void packed_cmultc(__m128i a,__m128i b, __m128i *c)
   *c = cpack(cre,cim);
 
 }
+
+#ifdef __AVX2__
+static inline void packed_cmultc_256(__m256i a,__m256i b, __m256i *c) __attribute__((always_inline));
+
+static inline void packed_cmultc_256(__m256i a,__m256i b, __m256i *c)
+{
+
+  __m256i cre,cim;
+
+  cmultc_256(a,b,&cre,&cim);
+  *c = cpack_256(cre,cim);
+
+}
+#endif
 
 static inline __m128i packed_cmult2(__m128i a,__m128i b,__m128i b2) __attribute__((always_inline));
 
@@ -189,6 +300,23 @@ static inline __m128i packed_cmult2(__m128i a,__m128i b,__m128i b2)
   return(cpack(cre,cim));
 
 }
+
+#ifdef __AVX2__
+static inline __m256i packed_cmult2_256(__m256i a,__m256i b,__m256i b2) __attribute__((always_inline));
+
+static inline __m256i packed_cmult2_256(__m256i a,__m256i b,__m256i b2)
+{
+
+
+  register __m256i cre,cim;
+
+  cre       = _mm256_madd_epi16(a,b);
+  cim       = _mm256_madd_epi16(a,b2);
+
+  return(cpack_256(cre,cim));
+
+}
+#endif
 
 #elif defined (__arm__)
 static inline void cmac(int16x8_t a,int16x8_t b, int32x4_t *re32, int32x4_t *im32) __attribute__((always_inline));
@@ -346,15 +474,15 @@ static inline int16x8_t packed_cmult2(int16x8_t a,int16x8_t b,  int16x8_t b2)
 
 #endif
 
-static int16_t W0s[8]__attribute__((aligned(16))) = {32767,0,32767,0,32767,0,32767,0};
+static int16_t W0s[16]__attribute__((aligned(32))) = {32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0};
 
-static int16_t W13s[8]__attribute__((aligned(16))) = {-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378};
-static int16_t W23s[8]__attribute__((aligned(16))) = {-16384,28378,-16384,28378,-16384,28378,-16384,28378};
+static int16_t W13s[16]__attribute__((aligned(32))) = {-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378,-16384,-28378};
+static int16_t W23s[16]__attribute__((aligned(32))) = {-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378,-16384,28378};
 
-static int16_t W15s[8]__attribute__((aligned(16))) = {10126,-31163,10126,-31163,10126,-31163,10126,-31163};
-static int16_t W25s[8]__attribute__((aligned(16))) = {-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260};
-static int16_t W35s[8]__attribute__((aligned(16))) = {-26510,19260,-26510,19260,-26510,19260,-26510,19260};
-static int16_t W45s[8]__attribute__((aligned(16))) = {10126,31163,10126,31163,10126,31163,10126,31163};
+static int16_t W15s[16]__attribute__((aligned(32))) = {10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163,10126,-31163};
+static int16_t W25s[16]__attribute__((aligned(32))) = {-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260,-26509,-19260};
+static int16_t W35s[16]__attribute__((aligned(32))) = {-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260,-26510,19260};
+static int16_t W45s[16]__attribute__((aligned(32))) = {10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163,10126,31163};
 
 #if defined(__x86_64__) || defined(__i386__)
 __m128i *W0 = (__m128i *)W0s;
@@ -364,6 +492,17 @@ __m128i *W15 = (__m128i *)W15s;
 __m128i *W25 = (__m128i *)W25s;
 __m128i *W35 = (__m128i *)W35s;
 __m128i *W45 = (__m128i *)W45s;
+
+#ifdef __AVX2__
+__m256i *W0_256 =  (__m256i *)W0s;
+__m256i *W13_256 = (__m256i *)W13s;
+__m256i *W23_256 = (__m256i *)W23s;
+__m256i *W15_256 = (__m256i *)W15s;
+__m256i *W25_256 = (__m256i *)W25s;
+__m256i *W35_256 = (__m256i *)W35s;
+__m256i *W45_256 = (__m256i *)W45s;
+#endif
+
 #elif defined(__arm__)
 int16x8_t *W0  = (int16x8_t *)W0s;
 int16x8_t *W13 = (int16x8_t *)W13s;
@@ -376,7 +515,7 @@ int16x8_t *W45 = (int16x8_t *)W45s;
 static int16_t dft_norm_table[16] = {9459,  //12
                                      6689,//24
                                      5461,//36
-                                     4729,//48
+                                     4729,//482
                                      4230,//60
                                      23170,//72
                                      3344,//96
@@ -418,6 +557,36 @@ static inline void bfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m12
   bfly2_tmp2 = _mm_unpackhi_epi32(dy1r,dy1i);
   *y1 = _mm_packs_epi32(bfly2_tmp1,bfly2_tmp2);
 }
+
+#ifdef __AVX2__
+
+static inline void bfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)__attribute__((always_inline));
+
+static inline void bfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)
+{
+
+  __m256i x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
+  __m256i bfly2_tmp1,bfly2_tmp2;
+
+  cmult_256(*(x0),*(W0_256),&x0r_2,&x0i_2);
+  cmult_256(*(x1),*(tw),&x1r_2,&x1i_2);
+
+  dy0r = _mm256_srai_epi32(_mm256_add_epi32(x0r_2,x1r_2),15);
+  dy1r = _mm256_srai_epi32(_mm256_sub_epi32(x0r_2,x1r_2),15);
+  dy0i = _mm256_srai_epi32(_mm256_add_epi32(x0i_2,x1i_2),15);
+  //  printf("y0i %d\n",((int16_t *)y0i)[0]);
+  dy1i = _mm256_srai_epi32(_mm256_sub_epi32(x0i_2,x1i_2),15);
+
+  bfly2_tmp1 = _mm256_unpacklo_epi32(dy0r,dy0i);
+  bfly2_tmp2 = _mm256_unpackhi_epi32(dy0r,dy0i);
+  *y0 = _mm256_packs_epi32(bfly2_tmp1,bfly2_tmp2);
+
+  bfly2_tmp1 = _mm256_unpacklo_epi32(dy1r,dy1i);
+  bfly2_tmp2 = _mm256_unpackhi_epi32(dy1r,dy1i);
+  *y1 = _mm256_packs_epi32(bfly2_tmp1,bfly2_tmp2);
+}
+
+#endif
 
 #elif defined(__arm__)
 
@@ -466,21 +635,56 @@ static inline void bfly2_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x
 
 }
 #endif
-
+ 
 #if defined(__x86_64__) || defined(__i386__)
+
+
+
 static inline void bfly2_16(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1, __m128i *tw, __m128i *twb)__attribute__((always_inline));
 
 static inline void bfly2_16(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1, __m128i *tw, __m128i *twb)
 {
 
-  register __m128i x1t;
+  //  register __m128i x1t;
+  __m128i x1t;
 
   x1t = packed_cmult2(*(x1),*(tw),*(twb));
-
+  /*
+  print_shorts("x0",(int16_t*)x0);
+  print_shorts("x1",(int16_t*)x1);
+  print_shorts("tw",(int16_t*)tw);
+  print_shorts("twb",(int16_t*)twb);
+  print_shorts("x1t",(int16_t*)&x1t);*/
   *y0  = _mm_adds_epi16(*x0,x1t);
   *y1  = _mm_subs_epi16(*x0,x1t);
-
+  /*  print_shorts("y0",(int16_t*)y0);
+      print_shorts("y1",(int16_t*)y1);*/
 }
+
+#ifdef __AVX2__
+
+static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *y1, __m256i *tw, __m256i *twb)__attribute__((always_inline));
+
+static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *y1, __m256i *tw, __m256i *twb)
+{
+
+  //  register __m256i x1t;
+  __m256i x1t;
+
+  x1t = packed_cmult2_256(*(x1),*(tw),*(twb));
+  /*
+  print_shorts256("x0",(int16_t*)x0);
+  print_shorts256("x1",(int16_t*)x1);
+  print_shorts256("tw",(int16_t*)tw);
+  print_shorts256("twb",(int16_t*)twb);
+  print_shorts256("x1t",(int16_t*)&x1t);*/
+  *y0  = _mm256_adds_epi16(*x0,x1t);
+  *y1  = _mm256_subs_epi16(*x0,x1t);
+  
+  /*print_shorts256("y0",(int16_t*)y0);
+    print_shorts256("y1",(int16_t*)y1);*/
+}
+#endif
 
 
 #elif defined(__arm__)
@@ -490,15 +694,10 @@ static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8
 static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)
 {
 
-  register int16x8_t x1t;
-
-  x1t = packed_cmult2(*(x1),*(tw),*(twb));
-
-  *y0  = vqaddq_s16(*x0,x1t);
-  *y1  = vqsubq_s16(*x0,x1t);
+  *y0  = vqaddq_s16(*x0,*x1);
+  *y1  = vqsubq_s16(*x0,*x1);
 
 }
-
 #endif
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -527,6 +726,35 @@ static inline void ibfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m1
   bfly2_tmp2 = _mm_unpackhi_epi32(dy1r,dy1i);
   *y1 = _mm_packs_epi32(bfly2_tmp1,bfly2_tmp2);
 }
+
+#ifdef __AVX2__
+static inline void ibfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)__attribute__((always_inline));
+
+static inline void ibfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)
+{
+
+  __m256i x0r_2,x0i_2,x1r_2,x1i_2,dy0r,dy1r,dy0i,dy1i;
+  __m256i bfly2_tmp1,bfly2_tmp2;
+
+  cmultc_256(*(x0),*(W0_256),&x0r_2,&x0i_2);
+  cmultc_256(*(x1),*(tw),&x1r_2,&x1i_2);
+
+  dy0r = _mm256_srai_epi32(_mm256_add_epi32(x0r_2,x1r_2),15);
+  dy1r = _mm256_srai_epi32(_mm256_sub_epi32(x0r_2,x1r_2),15);
+  dy0i = _mm256_srai_epi32(_mm256_add_epi32(x0i_2,x1i_2),15);
+  //  printf("y0i %d\n",((int16_t *)y0i)[0]);
+  dy1i = _mm256_srai_epi32(_mm256_sub_epi32(x0i_2,x1i_2),15);
+
+  bfly2_tmp1 = _mm256_unpacklo_epi32(dy0r,dy0i);
+  bfly2_tmp2 = _mm256_unpackhi_epi32(dy0r,dy0i);
+  *y0 = _mm256_packs_epi32(bfly2_tmp1,bfly2_tmp2);
+
+  bfly2_tmp1 = _mm256_unpacklo_epi32(dy1r,dy1i);
+  bfly2_tmp2 = _mm256_unpackhi_epi32(dy1r,dy1i);
+  *y1 = _mm256_packs_epi32(bfly2_tmp1,bfly2_tmp2);
+}
+#endif
+
 #elif defined(__arm__)
 static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t *y1,int16x8_t *tw)
 {
@@ -578,6 +806,33 @@ static inline void bfly3(__m128i *x0,__m128i *x1,__m128i *x2,
   *(y2) = cpack(tmpre,tmpim);
   *(y2) = _mm_adds_epi16(*(x0),*(y2));
 }
+
+#ifdef __AVX2__
+
+static inline void bfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
+			     __m256i *y0,__m256i *y1,__m256i *y2,
+			     __m256i *tw1,__m256i *tw2) __attribute__((always_inline));
+
+static inline void bfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
+			     __m256i *y0,__m256i *y1,__m256i *y2,
+			     __m256i *tw1,__m256i *tw2)
+{ 
+
+  __m256i tmpre,tmpim,x1_2,x2_2;
+
+  packed_cmult_256(*(x1),*(tw1),&x1_2);
+  packed_cmult_256(*(x2),*(tw2),&x2_2);
+  *(y0)  = _mm256_adds_epi16(*(x0),_mm256_adds_epi16(x1_2,x2_2));
+  cmult_256(x1_2,*(W13_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W23_256),&tmpre,&tmpim);
+  *(y1) = cpack_256(tmpre,tmpim);
+  *(y1) = _mm256_adds_epi16(*(x0),*(y1));
+  cmult_256(x1_2,*(W23_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W13_256),&tmpre,&tmpim);
+  *(y2) = cpack_256(tmpre,tmpim);
+  *(y2) = _mm256_adds_epi16(*(x0),*(y2));
+}
+#endif
 
 #elif defined(__arm__)
 static inline void bfly3(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,
@@ -632,6 +887,33 @@ static inline void ibfly3(__m128i *x0,__m128i *x1,__m128i *x2,
   *(y2) = _mm_adds_epi16(*(x0),*(y2));
 }
 
+#ifdef __AVX2__
+
+static inline void ibfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
+			      __m256i *y0,__m256i *y1,__m256i *y2,
+			      __m256i *tw1,__m256i *tw2) __attribute__((always_inline));
+
+static inline void ibfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
+			      __m256i *y0,__m256i *y1,__m256i *y2,
+			      __m256i *tw1,__m256i *tw2)
+{ 
+
+  __m256i tmpre,tmpim,x1_2,x2_2;
+
+  packed_cmultc_256(*(x1),*(tw1),&x1_2);
+  packed_cmultc_256(*(x2),*(tw2),&x2_2);
+  *(y0)  = _mm256_adds_epi16(*(x0),_mm256_adds_epi16(x1_2,x2_2));
+  cmultc_256(x1_2,*(W13_256),&tmpre,&tmpim);
+  cmacc_256(x2_2,*(W23_256),&tmpre,&tmpim);
+  *(y1) = cpack_256(tmpre,tmpim);
+  *(y1) = _mm256_adds_epi16(*(x0),*(y1));
+  cmultc_256(x1_2,*(W23_256),&tmpre,&tmpim);
+  cmacc_256(x2_2,*(W13_256),&tmpre,&tmpim);
+  *(y2) = cpack_256(tmpre,tmpim);
+  *(y2) = _mm256_adds_epi16(*(x0),*(y2));
+}
+#endif
+
 #elif defined(__arm__)
 static inline void ibfly3(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,
 			  int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,
@@ -679,6 +961,30 @@ static inline void bfly3_tw1(__m128i *x0,__m128i *x1,__m128i *x2,
   *(y2) = cpack(tmpre,tmpim);
   *(y2) = _mm_adds_epi16(*(x0),*(y2));
 }
+
+#ifdef __AVX2__
+
+static inline void bfly3_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,
+				 __m256i *y0,__m256i *y1,__m256i *y2) __attribute__((always_inline));
+
+static inline void bfly3_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,
+				 __m256i *y0,__m256i *y1,__m256i *y2)
+{
+
+  __m256i tmpre,tmpim;
+
+  *(y0) = _mm256_adds_epi16(*(x0),_mm256_adds_epi16(*(x1),*(x2)));
+  cmult_256(*(x1),*(W13_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W23_256),&tmpre,&tmpim);
+  *(y1) = cpack_256(tmpre,tmpim);
+  *(y1) = _mm256_adds_epi16(*(x0),*(y1));
+  cmult_256(*(x1),*(W23_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W13_256),&tmpre,&tmpim);
+  *(y2) = cpack_256(tmpre,tmpim);
+  *(y2) = _mm256_adds_epi16(*(x0),*(y2));
+}
+#endif
+
 #elif defined(__arm__)
 static inline void bfly3_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,
                              int16x8_t *y0,int16x8_t *y1,int16x8_t *y2) __attribute__((always_inline));
@@ -745,6 +1051,48 @@ static inline void bfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y3) = _mm_add_epi16(*(x0),cpack(dy3r,dy3i));
 }
 
+#ifdef __AVX2__
+static inline void bfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+			     __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+			     __m256i *tw1,__m256i *tw2,__m256i *tw3)__attribute__((always_inline));
+
+static inline void bfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+			     __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+			     __m256i *tw1,__m256i *tw2,__m256i *tw3)
+{
+
+  __m256i x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
+
+  //  cmult(*(x0),*(W0),&x0r_2,&x0i_2);
+  cmult_256(*(x1),*(tw1),&x1r_2,&x1i_2);
+  cmult_256(*(x2),*(tw2),&x2r_2,&x2i_2);
+  cmult_256(*(x3),*(tw3),&x3r_2,&x3i_2);
+  //  dy0r = _mm_add_epi32(x0r_2,_mm_add_epi32(x1r_2,_mm_add_epi32(x2r_2,x3r_2)));
+  //  dy0i = _mm_add_epi32(x0i_2,_mm_add_epi32(x1i_2,_mm_add_epi32(x2i_2,x3i_2)));
+  //  *(y0)  = cpack(dy0r,dy0i);
+  dy0r = _mm256_add_epi32(x1r_2,_mm256_add_epi32(x2r_2,x3r_2));
+  dy0i = _mm256_add_epi32(x1i_2,_mm256_add_epi32(x2i_2,x3i_2));
+  *(y0)  = _mm256_add_epi16(*(x0),cpack_256(dy0r,dy0i));
+  //  dy1r = _mm_add_epi32(x0r_2,_mm_sub_epi32(x1i_2,_mm_add_epi32(x2r_2,x3i_2)));
+  //  dy1i = _mm_sub_epi32(x0i_2,_mm_add_epi32(x1r_2,_mm_sub_epi32(x2i_2,x3r_2)));
+  //  *(y1)  = cpack(dy1r,dy1i);
+  dy1r = _mm256_sub_epi32(x1i_2,_mm256_add_epi32(x2r_2,x3i_2));
+  dy1i = _mm256_sub_epi32(_mm256_sub_epi32(x3r_2,x2i_2),x1r_2);
+  *(y1)  = _mm256_add_epi16(*(x0),cpack_256(dy1r,dy1i));
+  //  dy2r = _mm_sub_epi32(x0r_2,_mm_sub_epi32(x1r_2,_mm_sub_epi32(x2r_2,x3r_2)));
+  //  dy2i = _mm_sub_epi32(x0i_2,_mm_sub_epi32(x1i_2,_mm_sub_epi32(x2i_2,x3i_2)));
+  //  *(y2)  = cpack(dy2r,dy2i);
+  dy2r = _mm256_sub_epi32(_mm256_sub_epi32(x2r_2,x3r_2),x1r_2);
+  dy2i = _mm256_sub_epi32(_mm256_sub_epi32(x2i_2,x3i_2),x1i_2);
+  *(y2)  = _mm256_add_epi16(*(x0),cpack_256(dy2r,dy2i));
+  //  dy3r = _mm_sub_epi32(x0r_2,_mm_add_epi32(x1i_2,_mm_sub_epi32(x2r_2,x3i_2)));
+  //  dy3i = _mm_add_epi32(x0i_2,_mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2)));
+  //  *(y3) = cpack(dy3r,dy3i);
+  dy3r = _mm256_sub_epi32(_mm256_sub_epi32(x3i_2,x2r_2),x1i_2);
+  dy3i = _mm256_sub_epi32(x1r_2,_mm256_add_epi32(x2i_2,x3r_2));
+  *(y3) = _mm256_add_epi16(*(x0),cpack_256(dy3r,dy3i));
+}
+#endif
 #elif defined(__arm__)
 static inline void bfly4(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
                          int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3,
@@ -820,6 +1168,39 @@ static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y1) = _mm_add_epi16(*(x0),cpack(dy1r,dy1i));
 }
 
+#ifdef __AVX2__
+
+static inline void ibfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+			      __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+			      __m256i *tw1,__m256i *tw2,__m256i *tw3)__attribute__((always_inline));
+
+static inline void ibfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+			      __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+			      __m256i *tw1,__m256i *tw2,__m256i *tw3)
+{
+
+  __m256i x1r_2,x1i_2,x2r_2,x2i_2,x3r_2,x3i_2,dy0r,dy0i,dy1r,dy1i,dy2r,dy2i,dy3r,dy3i;
+
+
+  cmultc_256(*(x1),*(tw1),&x1r_2,&x1i_2);
+  cmultc_256(*(x2),*(tw2),&x2r_2,&x2i_2);
+  cmultc_256(*(x3),*(tw3),&x3r_2,&x3i_2);
+
+  dy0r = _mm256_add_epi32(x1r_2,_mm256_add_epi32(x2r_2,x3r_2));
+  dy0i = _mm256_add_epi32(x1i_2,_mm256_add_epi32(x2i_2,x3i_2));
+  *(y0)  = _mm256_add_epi16(*(x0),cpack_256(dy0r,dy0i));
+  dy3r = _mm256_sub_epi32(x1i_2,_mm256_add_epi32(x2r_2,x3i_2));
+  dy3i = _mm256_sub_epi32(_mm256_sub_epi32(x3r_2,x2i_2),x1r_2);
+  *(y3)  = _mm256_add_epi16(*(x0),cpack_256(dy3r,dy3i));
+  dy2r = _mm256_sub_epi32(_mm256_sub_epi32(x2r_2,x3r_2),x1r_2);
+  dy2i = _mm256_sub_epi32(_mm256_sub_epi32(x2i_2,x3i_2),x1i_2);
+  *(y2)  = _mm256_add_epi16(*(x0),cpack_256(dy2r,dy2i));
+  dy1r = _mm256_sub_epi32(_mm256_sub_epi32(x3i_2,x2r_2),x1i_2);
+  dy1i = _mm256_sub_epi32(x1r_2,_mm256_add_epi32(x2i_2,x3r_2));
+  *(y1) = _mm256_add_epi16(*(x0),cpack_256(dy1r,dy1i));
+}
+
+#endif
 #elif defined(__arm__)
 
 static inline void ibfly4(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
@@ -889,6 +1270,32 @@ static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(*(x2),x3_flip)));
   */
 }
+
+#ifdef __AVX2__
+
+static inline void bfly4_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3)__attribute__((always_inline));
+
+static inline void bfly4_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3)
+{
+  register __m256i x1_flip,x3_flip,x02t,x13t;
+  register __m256i complex_shuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  x02t    = _mm256_adds_epi16(*(x0),*(x2));
+  x13t    = _mm256_adds_epi16(*(x1),*(x3));
+  *(y0)   = _mm256_adds_epi16(x02t,x13t);
+  *(y2)   = _mm256_subs_epi16(x02t,x13t);
+  x1_flip = _mm256_sign_epi16(*(x1),*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(*(x3),*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t    = _mm256_subs_epi16(*(x0),*(x2));
+  x13t    = _mm256_subs_epi16(x1_flip,x3_flip);
+  *(y1)   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  *(y3)   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+}
+#endif
 
 #elif defined(__arm__)
 
@@ -1007,6 +1414,48 @@ static inline void bfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 
 }
 
+#ifdef __AVX2__
+static inline void bfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				__m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+				__m256i *tw1,__m256i *tw2,__m256i *tw3,
+				__m256i *tw1b,__m256i *tw2b,__m256i *tw3b)__attribute__((always_inline));
+
+static inline void bfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				__m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+				__m256i *tw1,__m256i *tw2,__m256i *tw3,
+				__m256i *tw1b,__m256i *tw2b,__m256i *tw3b)
+{
+
+  register __m256i x1t,x2t,x3t,x02t,x13t;
+  register __m256i x1_flip,x3_flip;
+  register __m256i complex_shuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  // each input xi is assumed to be to consecutive vectors xi0 xi1 on which to perform the 8 butterflies
+  // [xi00 xi01 xi02 xi03 xi10 xi20 xi30 xi40]
+  // each output yi is the same
+
+  x1t = packed_cmult2_256(*(x1),*(tw1),*(tw1b));
+  x2t = packed_cmult2_256(*(x2),*(tw2),*(tw2b));
+  x3t = packed_cmult2_256(*(x3),*(tw3),*(tw3b));
+
+  x02t  = _mm256_adds_epi16(*(x0),x2t);
+  x13t  = _mm256_adds_epi16(x1t,x3t);
+  *(y0)   = _mm256_adds_epi16(x02t,x13t);
+  *(y2)   = _mm256_subs_epi16(x02t,x13t);
+
+  x1_flip = _mm256_sign_epi16(x1t,*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(x3t,*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t  = _mm256_subs_epi16(*(x0),x2t);
+  x13t  = _mm256_subs_epi16(x1_flip,x3_flip);
+  *(y1)   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  *(y3)   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+}
+
+#endif
+
 #elif defined(__arm__)
 
 static inline void bfly4_16(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
@@ -1091,6 +1540,47 @@ static inline void ibfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
 
 }
 
+#ifdef __AVX2__
+static inline void ibfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+				 __m256i *tw1,__m256i *tw2,__m256i *tw3,
+				 __m256i *tw1b,__m256i *tw2b,__m256i *tw3b)__attribute__((always_inline));
+
+static inline void ibfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
+				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
+				 __m256i *tw1,__m256i *tw2,__m256i *tw3,
+				 __m256i *tw1b,__m256i *tw2b,__m256i *tw3b)
+{
+
+  register __m256i x1t,x2t,x3t,x02t,x13t;
+  register __m256i x1_flip,x3_flip;
+  register __m256i complex_shuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  // each input xi is assumed to be to consecutive vectors xi0 xi1 on which to perform the 8 butterflies
+  // [xi00 xi01 xi02 xi03 xi10 xi20 xi30 xi40]
+  // each output yi is the same
+
+  x1t = packed_cmult2_256(*(x1),*(tw1),*(tw1b));
+  x2t = packed_cmult2_256(*(x2),*(tw2),*(tw2b));
+  x3t = packed_cmult2_256(*(x3),*(tw3),*(tw3b));
+
+  x02t  = _mm256_adds_epi16(*(x0),x2t);
+  x13t  = _mm256_adds_epi16(x1t,x3t);
+  *(y0)   = _mm256_adds_epi16(x02t,x13t);
+  *(y2)   = _mm256_subs_epi16(x02t,x13t);
+
+  x1_flip = _mm256_sign_epi16(x1t,*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(x3t,*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t  = _mm256_subs_epi16(*(x0),x2t);
+  x13t  = _mm256_subs_epi16(x1_flip,x3_flip);
+  *(y3)   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  *(y1)   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+}
+#endif
+
 #elif defined(__arm__)
 static inline void ibfly4_16(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
 			     int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3,
@@ -1174,6 +1664,59 @@ static inline void bfly5(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,__m1
 
 
 }
+
+#ifdef __AVX2__
+
+static inline void bfly5_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
+			     __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4,
+			     __m256i *tw1,__m256i *tw2,__m256i *tw3,__m256i *tw4)__attribute__((always_inline));
+
+static inline void bfly5_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
+			     __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4,
+			     __m256i *tw1,__m256i *tw2,__m256i *tw3,__m256i *tw4)
+{
+
+
+
+  __m256i x1_2,x2_2,x3_2,x4_2,tmpre,tmpim;
+
+  packed_cmult_256(*(x1),*(tw1),&x1_2);
+  packed_cmult_256(*(x2),*(tw2),&x2_2);
+  packed_cmult_256(*(x3),*(tw3),&x3_2);
+  packed_cmult_256(*(x4),*(tw4),&x4_2);
+
+  *(y0)  = _mm256_adds_epi16(*(x0),_mm256_adds_epi16(x1_2,_mm256_adds_epi16(x2_2,_mm256_adds_epi16(x3_2,x4_2))));
+  cmult_256(x1_2,*(W15_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W25_256),&tmpre,&tmpim);
+  cmac_256(x3_2,*(W35_256),&tmpre,&tmpim);
+  cmac_256(x4_2,*(W45_256),&tmpre,&tmpim);
+  *(y1) = cpack_256(tmpre,tmpim);
+  *(y1) = _mm256_adds_epi16(*(x0),*(y1));
+
+  cmult_256(x1_2,*(W25_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W45_256),&tmpre,&tmpim);
+  cmac_256(x3_2,*(W15_256),&tmpre,&tmpim);
+  cmac_256(x4_2,*(W35_256),&tmpre,&tmpim);
+  *(y2) = cpack_256(tmpre,tmpim);
+  *(y2) = _mm256_adds_epi16(*(x0),*(y2));
+
+  cmult_256(x1_2,*(W35_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W15_256),&tmpre,&tmpim);
+  cmac_256(x3_2,*(W45_256),&tmpre,&tmpim);
+  cmac_256(x4_2,*(W25_256),&tmpre,&tmpim);
+  *(y3) = cpack_256(tmpre,tmpim);
+  *(y3) = _mm256_adds_epi16(*(x0),*(y3));
+
+  cmult_256(x1_2,*(W45_256),&tmpre,&tmpim);
+  cmac_256(x2_2,*(W35_256),&tmpre,&tmpim);
+  cmac_256(x3_2,*(W25_256),&tmpre,&tmpim);
+  cmac_256(x4_2,*(W15_256),&tmpre,&tmpim);
+  *(y4) = cpack_256(tmpre,tmpim);
+  *(y4) = _mm256_adds_epi16(*(x0),*(y4));
+
+
+}
+#endif
 
 #elif defined(__arm__)
 static inline void bfly5(int16x8_t *x0, int16x8_t *x1, int16x8_t *x2, int16x8_t *x3,int16x8_t *x4,
@@ -1267,6 +1810,43 @@ static inline void bfly5_tw1(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,
   *(y4) = _mm_adds_epi16(*(x0),*(y4));
 }
 
+#ifdef __AVX2__
+static inline void bfly5_tw1_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
+				 __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4) __attribute__((always_inline));
+
+static inline void bfly5_tw1_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
+				 __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4)
+{
+
+  __m256i tmpre,tmpim;
+
+  *(y0) = _mm256_adds_epi16(*(x0),_mm256_adds_epi16(*(x1),_mm256_adds_epi16(*(x2),_mm256_adds_epi16(*(x3),*(x4)))));
+  cmult_256(*(x1),*(W15_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W25_256),&tmpre,&tmpim);
+  cmac_256(*(x3),*(W35_256),&tmpre,&tmpim);
+  cmac_256(*(x4),*(W45_256),&tmpre,&tmpim);
+  *(y1) = cpack_256(tmpre,tmpim);
+  *(y1) = _mm256_adds_epi16(*(x0),*(y1));
+  cmult_256(*(x1),*(W25_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W45_256),&tmpre,&tmpim);
+  cmac_256(*(x3),*(W15_256),&tmpre,&tmpim);
+  cmac_256(*(x4),*(W35_256),&tmpre,&tmpim);
+  *(y2) = cpack_256(tmpre,tmpim);
+  *(y2) = _mm256_adds_epi16(*(x0),*(y2));
+  cmult_256(*(x1),*(W35_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W15_256),&tmpre,&tmpim);
+  cmac_256(*(x3),*(W45_256),&tmpre,&tmpim);
+  cmac_256(*(x4),*(W25_256),&tmpre,&tmpim);
+  *(y3) = cpack_256(tmpre,tmpim);
+  *(y3) = _mm256_adds_epi16(*(x0),*(y3));
+  cmult_256(*(x1),*(W45_256),&tmpre,&tmpim);
+  cmac_256(*(x2),*(W35_256),&tmpre,&tmpim);
+  cmac_256(*(x3),*(W25_256),&tmpre,&tmpim);
+  cmac_256(*(x4),*(W15_256),&tmpre,&tmpim);
+  *(y4) = cpack_256(tmpre,tmpim);
+  *(y4) = _mm256_adds_epi16(*(x0),*(y4));
+}
+#endif
 #elif defined(__arm__)
 static inline void bfly5_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *x2, int16x8_t *x3,int16x8_t *x4,
                              int16x8_t *y0, int16x8_t *y1, int16x8_t *y2, int16x8_t *y3,int16x8_t *y4) __attribute__((always_inline));
@@ -1349,18 +1929,46 @@ static inline void transpose16_ooff(__m128i *x,__m128i *y,int off)
   register __m128i ytmp0,ytmp1,ytmp2,ytmp3;
   __m128i *y2=y;
 
-  ytmp0 = _mm_unpacklo_epi32(x[0],x[1]);
-  ytmp1 = _mm_unpackhi_epi32(x[0],x[1]);
-  ytmp2 = _mm_unpacklo_epi32(x[2],x[3]);
-  ytmp3 = _mm_unpackhi_epi32(x[2],x[3]);
-  *y2     = _mm_unpacklo_epi64(ytmp0,ytmp2);
+  ytmp0 = _mm_unpacklo_epi32(x[0],x[1]); // x00 x10 x01 x11
+  ytmp1 = _mm_unpackhi_epi32(x[0],x[1]); // x02 x12 x03 x13
+  ytmp2 = _mm_unpacklo_epi32(x[2],x[3]); // x20 x30 x21 x31
+  ytmp3 = _mm_unpackhi_epi32(x[2],x[3]); // x22 x32 x23 x33
+  *y2     = _mm_unpacklo_epi64(ytmp0,ytmp2); // x00 x10 x20 x30 
   y2+=off;
-  *y2     = _mm_unpackhi_epi64(ytmp0,ytmp2);
+  *y2     = _mm_unpackhi_epi64(ytmp0,ytmp2); // x01 x11 x21 x31
   y2+=off;
-  *y2     = _mm_unpacklo_epi64(ytmp1,ytmp3);
+  *y2     = _mm_unpacklo_epi64(ytmp1,ytmp3); // x02 x12 x22 x32
   y2+=off;
-  *y2     = _mm_unpackhi_epi64(ytmp1,ytmp3);
+  *y2     = _mm_unpackhi_epi64(ytmp1,ytmp3); // x03 x13 x23 x33
 }
+
+#ifdef __AVX2__
+
+static inline void transpose16_ooff_simd256(__m256i *x,__m256i *y,int off) __attribute__((always_inline));
+static inline void transpose16_ooff_simd256(__m256i *x,__m256i *y,int off)
+{
+  register __m256i ytmp0,ytmp1,ytmp2,ytmp3,ytmp4,ytmp5,ytmp6,ytmp7;
+  __m256i *y2=y;
+  __m256i const perm_mask = _mm256_set_epi32(7, 3, 5, 1, 6, 2, 4, 0);
+
+  ytmp0 = _mm256_permutevar8x32_epi32(x[0],perm_mask);  // x00 x10 x01 x11 x02 x12 x03 x13
+  ytmp1 = _mm256_permutevar8x32_epi32(x[1],perm_mask);  // x20 x30 x21 x31 x22 x32 x23 x33
+  ytmp2 = _mm256_permutevar8x32_epi32(x[2],perm_mask);  // x40 x50 x41 x51 x42 x52 x43 x53
+  ytmp3 = _mm256_permutevar8x32_epi32(x[3],perm_mask);  // x60 x70 x61 x71 x62 x72 x63 x73
+  ytmp4 = _mm256_unpacklo_epi64(ytmp0,ytmp1);           // x00 x10 x20 x30 x01 x11 x21 x31
+  ytmp5 = _mm256_unpackhi_epi64(ytmp0,ytmp1);           // x02 x12 x22 x32 x03 x13 x23 x33
+  ytmp6 = _mm256_unpacklo_epi64(ytmp2,ytmp3);           // x40 x50 x60 x70 x41 x51 x61 x71
+  ytmp7 = _mm256_unpackhi_epi64(ytmp2,ytmp3);           // x42 x52 x62 x72 x43 x53 x63 x73
+
+  *y2    = _mm256_insertf128_si256(ytmp4,_mm256_extracti128_si256(ytmp6,0),1);  //x00 x10 x20 x30 x40 x50 x60 x70
+  y2+=off;  
+  *y2    = _mm256_insertf128_si256(ytmp6,_mm256_extracti128_si256(ytmp4,1),0);  //x01 x11 x21 x31 x41 x51 x61 x71
+  y2+=off;  
+  *y2    = _mm256_insertf128_si256(ytmp5,_mm256_extracti128_si256(ytmp7,0),1);  //x00 x10 x20 x30 x40 x50 x60 x70
+  y2+=off;  
+  *y2    = _mm256_insertf128_si256(ytmp7,_mm256_extracti128_si256(ytmp5,1),0);  //x01 x11 x21 x31 x41 x51 x61 x71
+}
+#endif
 
 #elif defined(__arm__)
 static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off) __attribute__((always_inline));
@@ -1390,7 +1998,29 @@ static inline void transpose4_ooff(__m64 *x,__m64 *y,int off)
 {
   y[0]   = _mm_unpacklo_pi32(x[0],x[1]);
   y[off] = _mm_unpackhi_pi32(x[0],x[1]);
+
+  // x[0] = [x0 x1]
+  // x[1] = [x2 x3]
+  // y[0] = [x0 x2]
+  // y[off] = [x1 x3]
 }
+#ifdef __AVX2__
+static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)__attribute__((always_inline));
+static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)
+{
+  __m256i const perm_mask = _mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0);
+  __m256i perm_tmp0,perm_tmp1;
+
+  // x[0] = [x0 x1 x2 x3 x4 x5 x6 x7]
+  // x[1] = [x8 x9 x10 x11 x12 x13 x14]
+  // y[0] = [x0 x2 x4 x6 x8 x10 x12 x14]
+  // y[off] = [x1 x3 x5 x7 x9 x11 x13 x15]
+  perm_tmp0 = _mm256_permutevar8x32_epi32(x[0],perm_mask);
+  perm_tmp1 = _mm256_permutevar8x32_epi32(x[1],perm_mask);
+  y[0]   = _mm256_insertf128_si256(perm_tmp0,_mm256_extracti128_si256(perm_tmp1,0),1);
+  y[off] = _mm256_insertf128_si256(perm_tmp1,_mm256_extracti128_si256(perm_tmp0,1),0);
+}
+#endif
 #elif (__arm__)
 
 static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)__attribute__((always_inline));
@@ -1406,25 +2036,45 @@ static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
 
 // 16-point optimized DFT kernel
 
-int16_t tw16[24] __attribute__((aligned(16))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
+int16_t tw16[24] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
                                                   32767,0,23169,-23170,0     ,-32767,-23170,-23170,
                                                   32767,0,12539,-30273,-23170,-23170,-30273,12539
                                                 };
 
-int16_t tw16a[24] __attribute__((aligned(16))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
+int16_t tw16a[24] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
                                                   32767,0,23169,23170,0     ,32767,-23170,23170,
                                                   32767,0,12539,30273,-23170,23170,-30273,-12539
                                                  };
 
-int16_t tw16b[24] __attribute__((aligned(16))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+int16_t tw16b[24] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
                                                    0,32767,-23170,23169,-32767,0     ,-23170,-23170,
                                                    0,32767,-30273,12539,-23170,-23170,12539 ,-30273
                                                  };
 
-int16_t tw16c[24] __attribute__((aligned(16))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
+int16_t tw16c[24] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
                                                    0,32767,23170,23169,32767,0     ,23170 ,-23170,
                                                    0,32767,30273,12539,23170,-23170,-12539,-30273
                                                  };
+
+int16_t tw16rep[48] __attribute__((aligned(32))) = { 32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,32767,0,30272,-12540,23169 ,-23170,12539 ,-30273,
+						     32767,0,23169,-23170,0     ,-32767,-23170,-23170,32767,0,23169,-23170,0     ,-32767,-23170,-23170,
+						     32767,0,12539,-30273,-23170,-23170,-30273,12539,32767,0,12539,-30273,-23170,-23170,-30273,12539
+                                                   };
+
+int16_t tw16arep[48] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,32767,0,30272,12540,23169 ,23170,12539 ,30273,
+						     32767,0,23169,23170,0     ,32767,-23170,23170,32767,0,23169,23170,0     ,32767,-23170,23170,
+						     32767,0,12539,30273,-23170,23170,-30273,-12539,32767,0,12539,30273,-23170,23170,-30273,-12539
+                                                    }; 
+
+int16_t tw16brep[48] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+                                                      0,32767,-23170,23169,-32767,0     ,-23170,-23170,0,32767,-23170,23169,-32767,0     ,-23170,-23170,
+                                                      0,32767,-30273,12539,-23170,-23170,12539 ,-30273,0,32767,-30273,12539,-23170,-23170,12539 ,-30273
+                                                    };
+
+int16_t tw16crep[48] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,0,32767,12540,30272,23170,23169 ,30273 ,12539,
+						      0,32767,23170,23169,32767,0     ,23170 ,-23170,0,32767,23170,23169,32767,0     ,23170 ,-23170,
+						      0,32767,30273,12539,23170,-23170,-12539,-30273,0,32767,30273,12539,23170,-23170,-12539,-30273
+                                                    };
 
 
 
@@ -1439,7 +2089,6 @@ static inline void dft16(int16_t *x,int16_t *y)
 
 
 
-#ifndef AVX2
   /*  This is the original version before unrolling
 
   bfly4_tw1(x128,x128+1,x128+2,x128+3,
@@ -1497,32 +2146,6 @@ static inline void dft16(int16_t *x,int16_t *y)
   x13t    = _mm_subs_epi16(x1_flip,x3_flip);
   y128[1] = _mm_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
   y128[3] = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
-
-#else
-
-  //  x02t    = _mm_adds_epi16(x128[0],x128[2]);
-  //  x13t    = _mm_adds_epi16(x128[1],x128[3]);
-
-  xt      = _mm256_adds_epi16(x256[0],x256[1]);
-
-  xtmp0   = _mm_adds_epi16(x02t,x13t);
-  xtmp2   = _mm_subs_epi16(x02t,x13t);
-
-  x13_flip
-  x1_flip = _mm_sign_epi16(x128[1],*(__m128i*)conjugatedft);
-  x1_flip = _mm_shuffle_epi8(x1_flip,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
-  x3_flip = _mm_sign_epi16(x128[3],*(__m128i*)conjugatedft);
-  x3_flip = _mm_shuffle_epi8(x3_flip,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
-
-  //  x02t    = _mm_subs_epi16(x128[0],x128[2]);
-  //  x13t    = _mm_subs_epi16(x1_flip,x3_flip);
-  xt      = _mm256_subs_epi16(x256flip0,x256flip1);
-
-  xtmp1   = _mm_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
-  xtmp3   = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
-
-
-#endif
 
 #elif defined(__arm__)
 
@@ -1594,6 +2217,90 @@ static inline void dft16(int16_t *x,int16_t *y)
 #endif
 }
 
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+// Does two 16-point DFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs) 
+static inline void dft16_simd256(int16_t *x,int16_t *y) __attribute__((always_inline));
+static inline void dft16_simd256(int16_t *x,int16_t *y)
+{
+
+  __m256i *tw16a_256=(__m256i *)tw16arep,*tw16b_256=(__m256i *)tw16brep,*x256=(__m256i *)x,*y256=(__m256i *)y;
+
+  __m256i x1_flip,x3_flip,x02t,x13t;
+  __m256i ytmp0,ytmp1,ytmp2,ytmp3,xtmp0,xtmp1,xtmp2,xtmp3;
+  register __m256i complex_shuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  // First stage : 4 Radix-4 butterflies without input twiddles
+
+  x02t    = _mm256_adds_epi16(x256[0],x256[2]);
+  x13t    = _mm256_adds_epi16(x256[1],x256[3]);
+  xtmp0   = _mm256_adds_epi16(x02t,x13t);
+  xtmp2   = _mm256_subs_epi16(x02t,x13t);
+  x1_flip = _mm256_sign_epi16(x256[1],*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(x256[3],*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t    = _mm256_subs_epi16(x256[0],x256[2]);
+  x13t    = _mm256_subs_epi16(x1_flip,x3_flip);
+  xtmp1   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  xtmp3   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+  /*  print_shorts256("xtmp0",(int16_t*)&xtmp0);
+      print_shorts256("xtmp1",(int16_t*)&xtmp1);
+  print_shorts256("xtmp2",(int16_t*)&xtmp2);
+  print_shorts256("xtmp3",(int16_t*)&xtmp3);*/
+
+  ytmp0   = _mm256_unpacklo_epi32(xtmp0,xtmp1);  
+  ytmp1   = _mm256_unpackhi_epi32(xtmp0,xtmp1);
+  ytmp2   = _mm256_unpacklo_epi32(xtmp2,xtmp3);
+  ytmp3   = _mm256_unpackhi_epi32(xtmp2,xtmp3);
+  xtmp0   = _mm256_unpacklo_epi64(ytmp0,ytmp2);
+  xtmp1   = _mm256_unpackhi_epi64(ytmp0,ytmp2);
+  xtmp2   = _mm256_unpacklo_epi64(ytmp1,ytmp3);
+  xtmp3   = _mm256_unpackhi_epi64(ytmp1,ytmp3);
+
+  // Second stage : 4 Radix-4 butterflies with input twiddles
+  xtmp1 = packed_cmult2_256(xtmp1,tw16a_256[0],tw16b_256[0]);
+  xtmp2 = packed_cmult2_256(xtmp2,tw16a_256[1],tw16b_256[1]);
+  xtmp3 = packed_cmult2_256(xtmp3,tw16a_256[2],tw16b_256[2]);
+
+  /*  print_shorts256("xtmp0",(int16_t*)&xtmp0);
+  print_shorts256("xtmp1",(int16_t*)&xtmp1);
+  print_shorts256("xtmp2",(int16_t*)&xtmp2);
+  print_shorts256("xtmp3",(int16_t*)&xtmp3);*/
+
+  x02t    = _mm256_adds_epi16(xtmp0,xtmp2);
+  x13t    = _mm256_adds_epi16(xtmp1,xtmp3);
+  ytmp0   = _mm256_adds_epi16(x02t,x13t);
+  ytmp2   = _mm256_subs_epi16(x02t,x13t);
+  x1_flip = _mm256_sign_epi16(xtmp1,*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(xtmp3,*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t    = _mm256_subs_epi16(xtmp0,xtmp2);
+  x13t    = _mm256_subs_epi16(x1_flip,x3_flip);
+  ytmp1   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  ytmp3   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+ 
+
+  // [y0  y1  y2  y3  y16 y17 y18 y19]
+  // [y4  y5  y6  y7  y20 y21 y22 y23]
+  // [y8  y9  y10 y11 y24 y25 y26 y27]
+  // [y12 y13 y14 y15 y28 y29 y30 y31]
+
+  y256[0] = _mm256_insertf128_si256(ytmp0,_mm256_extracti128_si256(ytmp1,0),1);
+  y256[1] = _mm256_insertf128_si256(ytmp2,_mm256_extracti128_si256(ytmp3,0),1);
+  y256[2] = _mm256_insertf128_si256(ytmp1,_mm256_extracti128_si256(ytmp0,1),0);
+  y256[3] = _mm256_insertf128_si256(ytmp3,_mm256_extracti128_si256(ytmp2,1),0);
+
+  // [y0  y1  y2  y3  y4  y5  y6  y7]
+  // [y8  y9  y10 y11 y12 y13 y14 y15]
+  // [y16 y17 y18 y19 y20 y21 y22 y23]
+  // [y24 y25 y26 y27 y28 y29 y30 y31]
+}
+
+#endif  
+#endif
 static inline void idft16(int16_t *x,int16_t *y) __attribute__((always_inline));
 
 static inline void idft16(int16_t *x,int16_t *y)
@@ -1725,27 +2432,193 @@ static inline void idft16(int16_t *x,int16_t *y)
 #endif
 }
 
+#if defined(__x86_64__) || defined(__i386__)
+#ifdef __AVX2__
+// Does two 16-point IDFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs) 
+static inline void idft16_simd256(int16_t *x,int16_t *y) __attribute__((always_inline));
+static inline void idft16_simd256(int16_t *x,int16_t *y)
+{
+
+  __m256i *tw16a_256=(__m256i *)tw16rep,*tw16b_256=(__m256i *)tw16crep,*x256=(__m256i *)x,*y256=(__m256i *)y;
+  register __m256i x1_flip,x3_flip,x02t,x13t;
+  register __m256i ytmp0,ytmp1,ytmp2,ytmp3,xtmp0,xtmp1,xtmp2,xtmp3;
+  register __m256i complex_shuffle = _mm256_set_epi8(29,28,31,30,25,24,27,26,21,20,23,22,17,16,19,18,13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2);
+
+  // First stage : 4 Radix-4 butterflies without input twiddles
+
+  x02t    = _mm256_adds_epi16(x256[0],x256[2]);
+  x13t    = _mm256_adds_epi16(x256[1],x256[3]);
+  xtmp0   = _mm256_adds_epi16(x02t,x13t);
+  xtmp2   = _mm256_subs_epi16(x02t,x13t);
+  x1_flip = _mm256_sign_epi16(x256[1],*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(x256[3],*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t    = _mm256_subs_epi16(x256[0],x256[2]);
+  x13t    = _mm256_subs_epi16(x1_flip,x3_flip);
+  xtmp3   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  xtmp1   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+  ytmp0   = _mm256_unpacklo_epi32(xtmp0,xtmp1);  
+  ytmp1   = _mm256_unpackhi_epi32(xtmp0,xtmp1);
+  ytmp2   = _mm256_unpacklo_epi32(xtmp2,xtmp3);
+  ytmp3   = _mm256_unpackhi_epi32(xtmp2,xtmp3);
+  xtmp0   = _mm256_unpacklo_epi64(ytmp0,ytmp2);
+  xtmp1   = _mm256_unpackhi_epi64(ytmp0,ytmp2);
+  xtmp2   = _mm256_unpacklo_epi64(ytmp1,ytmp3);
+  xtmp3   = _mm256_unpackhi_epi64(ytmp1,ytmp3);
+
+  // Second stage : 4 Radix-4 butterflies with input twiddles
+  xtmp1 = packed_cmult2_256(xtmp1,tw16a_256[0],tw16b_256[0]);
+  xtmp2 = packed_cmult2_256(xtmp2,tw16a_256[1],tw16b_256[1]);
+  xtmp3 = packed_cmult2_256(xtmp3,tw16a_256[2],tw16b_256[2]);
+
+  x02t    = _mm256_adds_epi16(xtmp0,xtmp2);
+  x13t    = _mm256_adds_epi16(xtmp1,xtmp3);
+  ytmp0   = _mm256_adds_epi16(x02t,x13t);
+  ytmp2   = _mm256_subs_epi16(x02t,x13t);
+  x1_flip = _mm256_sign_epi16(xtmp1,*(__m256i*)conjugatedft);
+  x1_flip = _mm256_shuffle_epi8(x1_flip,complex_shuffle);
+  x3_flip = _mm256_sign_epi16(xtmp3,*(__m256i*)conjugatedft);
+  x3_flip = _mm256_shuffle_epi8(x3_flip,complex_shuffle);
+  x02t    = _mm256_subs_epi16(xtmp0,xtmp2);
+  x13t    = _mm256_subs_epi16(x1_flip,x3_flip);
+  ytmp3   = _mm256_adds_epi16(x02t,x13t);  // x0 + x1f - x2 - x3f
+  ytmp1   = _mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
+
+  // [y0  y1  y2  y3  y16 y17 y18 y19]
+  // [y4  y5  y6  y7  y20 y21 y22 y23]
+  // [y8  y9  y10 y11 y24 y25 y26 y27]
+  // [y12 y13 y14 y15 y28 y29 y30 y31]
+
+  y256[0] = _mm256_insertf128_si256(ytmp0,_mm256_extracti128_si256(ytmp1,0),1);
+  y256[1] = _mm256_insertf128_si256(ytmp2,_mm256_extracti128_si256(ytmp3,0),1);
+  y256[2] = _mm256_insertf128_si256(ytmp1,_mm256_extracti128_si256(ytmp0,1),0);
+  y256[3] = _mm256_insertf128_si256(ytmp3,_mm256_extracti128_si256(ytmp2,1),0);
+
+}
+#endif  
+#endif
 
 // 64-point optimized DFT
 
-int16_t tw64[96] __attribute__((aligned(16))) = { 32767,0,32609,-3212,32137,-6393,31356,-9512,30272,-12540,28897,-15447,27244,-18205,25329,-20788,23169,-23170,20787,-25330,18204,-27245,15446,-28898,12539,-30273,9511,-31357,6392,-32138,3211,-32610,
-                                                  32767,0,32137,-6393,30272,-12540,27244,-18205,23169,-23170,18204,-27245,12539,-30273,6392,-32138,0,-32767,-6393,-32138,-12540,-30273,-18205,-27245,-23170,-23170,-27245,-18205,-30273,-12540,-32138,-6393,
-                                                  32767,0,31356,-9512,27244,-18205,20787,-25330,12539,-30273,3211,-32610,-6393,-32138,-15447,-28898,-23170,-23170,-28898,-15447,-32138,-6393,-32610,3211,-30273,12539,-25330,20787,-18205,27244,-9512,31356
+int16_t tw64[96] __attribute__((aligned(32))) = { 
+32767,0,32609,-3212,32137,-6393,31356,-9512,
+30272,-12540,28897,-15447,27244,-18205,25329,-20788,
+23169,-23170,20787,-25330,18204,-27245,15446,-28898,
+12539,-30273,9511,-31357,6392,-32138,3211,-32610,
+32767,0,32137,-6393,30272,-12540,27244,-18205,
+23169,-23170,18204,-27245,12539,-30273,6392,-32138,
+0,-32767,-6393,-32138,-12540,-30273,-18205,-27245,
+-23170,-23170,-27245,-18205,-30273,-12540,-32138,-6393,
+32767,0,31356,-9512,27244,-18205,20787,-25330,
+12539,-30273,3211,-32610,-6393,-32138,-15447,-28898,
+-23170,-23170,-28898,-15447,-32138,-6393,-32610,3211,
+-30273,12539,-25330,20787,-18205,27244,-9512,31356
                                                 };
 
-int16_t tw64a[96] __attribute__((aligned(16))) = { 32767,0,32609,3212,32137,6393,31356,9512,30272,12540,28897,15447,27244,18205,25329,20788,23169,23170,20787,25330,18204,27245,15446,28898,12539,30273,9511,31357,6392,32138,3211,32610,
-                                                   32767,0,32137,6393,30272,12540,27244,18205,23169,23170,18204,27245,12539,30273,6392,32138,0,32767,-6393,32138,-12540,30273,-18205,27245,-23170,23170,-27245,18205,-30273,12540,-32138,6393,
-                                                   32767,0,31356,9512,27244,18205,20787,25330,12539,30273,3211,32610,-6393,32138,-15447,28898,-23170,23170,-28898,15447,-32138,6393,-32610,-3211,-30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356
+int16_t tw64rep[192] __attribute__((aligned(32))) = { 
+32767,0,32609,-3212,32137,-6393,31356,-9512,32767,0,32609,-3212,32137,-6393,31356,-9512,
+30272,-12540,28897,-15447,27244,-18205,25329,-20788,30272,-12540,28897,-15447,27244,-18205,25329,-20788,
+23169,-23170,20787,-25330,18204,-27245,15446,-28898,23169,-23170,20787,-25330,18204,-27245,15446,-28898,
+12539,-30273,9511,-31357,6392,-32138,3211,-32610,12539,-30273,9511,-31357,6392,-32138,3211,-32610,
+32767,0,32137,-6393,30272,-12540,27244,-18205,32767,0,32137,-6393,30272,-12540,27244,-18205,
+23169,-23170,18204,-27245,12539,-30273,6392,-32138,23169,-23170,18204,-27245,12539,-30273,6392,-32138,
+0,-32767,-6393,-32138,-12540,-30273,-18205,-27245,0,-32767,-6393,-32138,-12540,-30273,-18205,-27245,
+-23170,-23170,-27245,-18205,-30273,-12540,-32138,-6393,-23170,-23170,-27245,-18205,-30273,-12540,-32138,-6393,
+32767,0,31356,-9512,27244,-18205,20787,-25330,32767,0,31356,-9512,27244,-18205,20787,-25330,
+12539,-30273,3211,-32610,-6393,-32138,-15447,-28898,12539,-30273,3211,-32610,-6393,-32138,-15447,-28898,
+-23170,-23170,-28898,-15447,-32138,-6393,-32610,3211,-23170,-23170,-28898,-15447,-32138,-6393,-32610,3211,
+-30273,12539,-25330,20787,-18205,27244,-9512,31356,-30273,12539,-25330,20787,-18205,27244,-9512,31356
+                                                };
+
+int16_t tw64a[96] __attribute__((aligned(32))) = { 
+32767,0,32609,3212,32137,6393,31356,9512,
+30272,12540,28897,15447,27244,18205,25329,20788,
+23169,23170,20787,25330,18204,27245,15446,28898,
+12539,30273,9511,31357,6392,32138,3211,32610,
+32767,0,32137,6393,30272,12540,27244,18205,
+23169,23170,18204,27245,12539,30273,6392,32138,
+0,32767,-6393,32138,-12540,30273,-18205,27245,
+-23170,23170,-27245,18205,-30273,12540,-32138,6393,
+32767,0,31356,9512,27244,18205,20787,25330,
+12539,30273,3211,32610,-6393,32138,-15447,28898,
+-23170,23170,-28898,15447,-32138,6393,-32610,-3211,
+-30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356
+                                                 };
+int16_t tw64arep[192] __attribute__((aligned(32))) = { 
+32767,0,32609,3212,32137,6393,31356,9512,32767,0,32609,3212,32137,6393,31356,9512,
+30272,12540,28897,15447,27244,18205,25329,20788,30272,12540,28897,15447,27244,18205,25329,20788,
+23169,23170,20787,25330,18204,27245,15446,28898,23169,23170,20787,25330,18204,27245,15446,28898,
+12539,30273,9511,31357,6392,32138,3211,32610,12539,30273,9511,31357,6392,32138,3211,32610,
+32767,0,32137,6393,30272,12540,27244,18205,32767,0,32137,6393,30272,12540,27244,18205,
+23169,23170,18204,27245,12539,30273,6392,32138,23169,23170,18204,27245,12539,30273,6392,32138,
+0,32767,-6393,32138,-12540,30273,-18205,27245,0,32767,-6393,32138,-12540,30273,-18205,27245,
+-23170,23170,-27245,18205,-30273,12540,-32138,6393,-23170,23170,-27245,18205,-30273,12540,-32138,6393,
+32767,0,31356,9512,27244,18205,20787,25330,32767,0,31356,9512,27244,18205,20787,25330,
+12539,30273,3211,32610,-6393,32138,-15447,28898,12539,30273,3211,32610,-6393,32138,-15447,28898,
+-23170,23170,-28898,15447,-32138,6393,-32610,-3211,-23170,23170,-28898,15447,-32138,6393,-32610,-3211,
+-30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356,-30273,-12539,-25330,-20787,-18205,-27244,-9512,-31356
                                                  };
 
-int16_t tw64b[96] __attribute__((aligned(16))) = { 0,32767,-3212,32609,-6393,32137,-9512,31356,-12540,30272,-15447,28897,-18205,27244,-20788,25329,-23170,23169,-25330,20787,-27245,18204,-28898,15446,-30273,12539,-31357,9511,-32138,6392,-32610,3211,
-                                                   0,32767,-6393,32137,-12540,30272,-18205,27244,-23170,23169,-27245,18204,-30273,12539,-32138,6392,-32767,0,-32138,-6393,-30273,-12540,-27245,-18205,-23170,-23170,-18205,-27245,-12540,-30273,-6393,-32138,
-                                                   0,32767,-9512,31356,-18205,27244,-25330,20787,-30273,12539,-32610,3211,-32138,-6393,-28898,-15447,-23170,-23170,-15447,-28898,-6393,-32138,3211,-32610,12539,-30273,20787,-25330,27244,-18205,31356,-9512
+int16_t tw64b[96] __attribute__((aligned(32))) = { 
+0,32767,-3212,32609,-6393,32137,-9512,31356,
+-12540,30272,-15447,28897,-18205,27244,-20788,25329,
+-23170,23169,-25330,20787,-27245,18204,-28898,15446,
+-30273,12539,-31357,9511,-32138,6392,-32610,3211,
+0,32767,-6393,32137,-12540,30272,-18205,27244,
+-23170,23169,-27245,18204,-30273,12539,-32138,6392,
+-32767,0,-32138,-6393,-30273,-12540,-27245,-18205,
+-23170,-23170,-18205,-27245,-12540,-30273,-6393,-32138,
+0,32767,-9512,31356,-18205,27244,-25330,20787,
+-30273,12539,-32610,3211,-32138,-6393,-28898,-15447,
+-23170,-23170,-15447,-28898,-6393,-32138,3211,-32610,
+12539,-30273,20787,-25330,27244,-18205,31356,-9512
                                                  };
 
-int16_t tw64c[96] __attribute__((aligned(16))) = { 0,32767,3212,32609,6393,32137,9512,31356,12540,30272,15447,28897,18205,27244,20788,25329,23170,23169,25330,20787,27245,18204,28898,15446,30273,12539,31357,9511,32138,6392,32610,3211,
-                                                   0,32767,6393,32137,12540,30272,18205,27244,23170,23169,27245,18204,30273,12539,32138,6392,32767,0,32138,-6393,30273,-12540,27245,-18205,23170,-23170,18205,-27245,12540,-30273,6393,-32138,
-                                                   0,32767,9512,31356,18205,27244,25330,20787,30273,12539,32610,3211,32138,-6393,28898,-15447,23170,-23170,15447,-28898,6393,-32138,-3211,-32610,-12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512
+int16_t tw64brep[192] __attribute__((aligned(32))) = { 
+0,32767,-3212,32609,-6393,32137,-9512,31356,0,32767,-3212,32609,-6393,32137,-9512,31356,
+-12540,30272,-15447,28897,-18205,27244,-20788,25329,-12540,30272,-15447,28897,-18205,27244,-20788,25329,
+-23170,23169,-25330,20787,-27245,18204,-28898,15446,-23170,23169,-25330,20787,-27245,18204,-28898,15446,
+-30273,12539,-31357,9511,-32138,6392,-32610,3211,-30273,12539,-31357,9511,-32138,6392,-32610,3211,
+0,32767,-6393,32137,-12540,30272,-18205,27244,0,32767,-6393,32137,-12540,30272,-18205,27244,
+-23170,23169,-27245,18204,-30273,12539,-32138,6392,-23170,23169,-27245,18204,-30273,12539,-32138,6392,
+-32767,0,-32138,-6393,-30273,-12540,-27245,-18205,-32767,0,-32138,-6393,-30273,-12540,-27245,-18205,
+-23170,-23170,-18205,-27245,-12540,-30273,-6393,-32138,-23170,-23170,-18205,-27245,-12540,-30273,-6393,-32138,
+0,32767,-9512,31356,-18205,27244,-25330,20787,0,32767,-9512,31356,-18205,27244,-25330,20787,
+-30273,12539,-32610,3211,-32138,-6393,-28898,-15447,-30273,12539,-32610,3211,-32138,-6393,-28898,-15447,
+-23170,-23170,-15447,-28898,-6393,-32138,3211,-32610,-23170,-23170,-15447,-28898,-6393,-32138,3211,-32610,
+12539,-30273,20787,-25330,27244,-18205,31356,-9512,12539,-30273,20787,-25330,27244,-18205,31356,-9512
+                                                 };
+
+int16_t tw64c[96] __attribute__((aligned(32))) = { 
+0,32767,3212,32609,6393,32137,9512,31356,
+12540,30272,15447,28897,18205,27244,20788,25329,
+23170,23169,25330,20787,27245,18204,28898,15446,
+30273,12539,31357,9511,32138,6392,32610,3211,
+0,32767,6393,32137,12540,30272,18205,27244,
+23170,23169,27245,18204,30273,12539,32138,6392,
+32767,0,32138,-6393,30273,-12540,27245,-18205,
+23170,-23170,18205,-27245,12540,-30273,6393,-32138,
+0,32767,9512,31356,18205,27244,25330,20787,
+30273,12539,32610,3211,32138,-6393,28898,-15447,
+23170,-23170,15447,-28898,6393,-32138,-3211,-32610,
+-12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512
+                                                 };
+
+int16_t tw64crep[192] __attribute__((aligned(32))) = { 
+0,32767,3212,32609,6393,32137,9512,31356,0,32767,3212,32609,6393,32137,9512,31356,
+12540,30272,15447,28897,18205,27244,20788,25329,12540,30272,15447,28897,18205,27244,20788,25329,
+23170,23169,25330,20787,27245,18204,28898,15446,23170,23169,25330,20787,27245,18204,28898,15446,
+30273,12539,31357,9511,32138,6392,32610,3211,30273,12539,31357,9511,32138,6392,32610,3211,
+0,32767,6393,32137,12540,30272,18205,27244,0,32767,6393,32137,12540,30272,18205,27244,
+23170,23169,27245,18204,30273,12539,32138,6392,23170,23169,27245,18204,30273,12539,32138,6392,
+32767,0,32138,-6393,30273,-12540,27245,-18205,32767,0,32138,-6393,30273,-12540,27245,-18205,
+23170,-23170,18205,-27245,12540,-30273,6393,-32138,23170,-23170,18205,-27245,12540,-30273,6393,-32138,
+0,32767,9512,31356,18205,27244,25330,20787,0,32767,9512,31356,18205,27244,25330,20787,
+30273,12539,32610,3211,32138,-6393,28898,-15447,30273,12539,32610,3211,32138,-6393,28898,-15447,
+23170,-23170,15447,-28898,6393,-32138,-3211,-32610,23170,-23170,15447,-28898,6393,-32138,-3211,-32610,
+-12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512,-12539,-30273,-20787,-25330,-27244,-18205,-31356,-9512
                                                  };
 
 
@@ -1755,6 +2628,13 @@ int16_t tw64c[96] __attribute__((aligned(16))) = { 0,32767,3212,32609,6393,32137
 #define shiftright_int16(a,shift) _mm_srai_epi16(a,shift)
 #define set1_int16(a) _mm_set1_epi16(a);
 #define mulhi_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),1);
+#ifdef __AVX2__
+#define simd256_q15_t __m256i
+#define shiftright_int16_simd256(a,shift) _mm256_srai_epi16(a,shift)
+#define set1_int16_simd256(a) _mm256_set1_epi16(a);
+#define mulhi_int16_simd256(a,b) _mm256_slli_epi16(_mm256_mulhi_epi16(a,b),1);
+#endif
+
 #elif defined(__arm__)
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
@@ -1763,8 +2643,10 @@ int16_t tw64c[96] __attribute__((aligned(16))) = { 0,32767,3212,32609,6393,32137
 #define mulhi_int16(a,b) vqdmulhq_s16(a,b);
 #define _mm_empty() 
 #define _m_empty()
+
 #endif
 
+#ifndef __AVX2__
 void dft64(int16_t *x,int16_t *y,int scale)
 {
 
@@ -1782,18 +2664,41 @@ void dft64(int16_t *x,int16_t *y,int scale)
 
 
   transpose16_ooff(x128,xtmp,4);
+  // xtmp0  = x00 x10 x20 x30
+  // xtmp4  = x01 x11 x21 x31
+  // xtmp8  = x02 x12 x22 x32
+  // xtmp12 = x03 x13 x23 x33
   transpose16_ooff(x128+4,xtmp+1,4);
+  // xtmp1  = x40 x50 x60 x70
+  // xtmp5  = x41 x51 x61 x71
+  // xtmp9  = x42 x52 x62 x72
+  // xtmp13 = x43 x53 x63 x73
   transpose16_ooff(x128+8,xtmp+2,4);
+  // xtmp2  = x80 x90 xa0 xb0
+  // xtmp6  = x41 x51 x61 x71
+  // xtmp10 = x82 x92 xa2 xb2
+  // xtmp14 = x83 x93 xa3 xb3
   transpose16_ooff(x128+12,xtmp+3,4);
-
+  // xtmp3  = xc0 xd0 xe0 xf0
+  // xtmp7  = xc1 xd1 xe1 xf1
+  // xtmp11 = xc2 xd2 xe2 xf2
+  // xtmp15 = xc3 xd3 xe3 xf3
 
 #ifdef D64STATS
   stop_meas(&ts_t);
   start_meas(&ts_d);
 #endif
 
-
+  // xtmp0  = x00 x10 x20 x30
+  // xtmp1  = x40 x50 x60 x70
+  // xtmp2  = x80 x90 xa0 xb0
+  // xtmp3  = xc0 xd0 xe0 xf0
   dft16((int16_t*)(xtmp),(int16_t*)ytmp);
+
+  // xtmp4  = x01 x11 x21 x31
+  // xtmp5  = x41 x51 x61 x71
+  // xtmp6  = x81 x91 xa1 xb1
+  // xtmp7  = xc1 xd1 xe1 xf1
   dft16((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
   dft16((int16_t*)(xtmp+8),(int16_t*)(ytmp+8));
   dft16((int16_t*)(xtmp+12),(int16_t*)(ytmp+12));
@@ -1855,6 +2760,155 @@ void dft64(int16_t *x,int16_t *y,int scale)
 
 }
 
+#else // __AVX2__
+void dft64(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[16],ytmp[16],*tw64a_256=(simd256_q15_t *)tw64a,*tw64b_256=(simd256_q15_t *)tw64b,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y;
+  simd256_q15_t xintl0,xintl1,xintl2,xintl3,xintl4,xintl5,xintl6,xintl7;
+  simd256_q15_t const perm_mask = _mm256_set_epi32(7, 3, 5, 1, 6, 2, 4, 0);
+
+
+#ifdef D64STATS
+  time_stats_t ts_t,ts_d,ts_b;
+
+  reset_meas(&ts_t);
+  reset_meas(&ts_d);
+  reset_meas(&ts_b);
+  start_meas(&ts_t);
+#endif
+
+#ifdef D64STATS
+  stop_meas(&ts_t);
+  start_meas(&ts_d);
+#endif
+  /*  
+  print_shorts256("x2560",(int16_t*)x256);
+  print_shorts256("x2561",(int16_t*)(x256+1));
+  print_shorts256("x2562",(int16_t*)(x256+2));
+  print_shorts256("x2563",(int16_t*)(x256+3));
+  print_shorts256("x2564",(int16_t*)(x256+4));
+  print_shorts256("x2565",(int16_t*)(x256+5));
+  print_shorts256("x2566",(int16_t*)(x256+6));
+  print_shorts256("x2567",(int16_t*)(x256+7));
+  */
+  xintl0 = _mm256_permutevar8x32_epi32(x256[0],perm_mask);  // x0  x4  x1  x5  x2  x6  x3  x7
+  xintl1 = _mm256_permutevar8x32_epi32(x256[1],perm_mask);  // x8  x12 x9  x13 x10 x14 x11 x15
+  xintl2 = _mm256_permutevar8x32_epi32(x256[2],perm_mask);  // x16 x20 x17 x21 x18 x22 x19 x23
+  xintl3 = _mm256_permutevar8x32_epi32(x256[3],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+  xintl4 = _mm256_permutevar8x32_epi32(x256[4],perm_mask);  // x32 x28 x25 x29 x26 x30 x27 x31
+  xintl5 = _mm256_permutevar8x32_epi32(x256[5],perm_mask);  // x40 x28 x25 x29 x26 x30 x27 x31
+  xintl6 = _mm256_permutevar8x32_epi32(x256[6],perm_mask);  // x48 x28 x25 x29 x26 x30 x27 x31
+  xintl7 = _mm256_permutevar8x32_epi32(x256[7],perm_mask);  // x56 x28 x25 x29 x26 x30 x27 x31
+  /*
+  print_shorts256("xintl0",(int16_t*)&xintl0);
+  print_shorts256("xintl1",(int16_t*)&xintl1);
+  print_shorts256("xintl2",(int16_t*)&xintl2);
+  print_shorts256("xintl3",(int16_t*)&xintl3);
+  print_shorts256("xintl4",(int16_t*)&xintl4);
+  print_shorts256("xintl5",(int16_t*)&xintl5);
+  print_shorts256("xintl6",(int16_t*)&xintl6);
+  print_shorts256("xintl7",(int16_t*)&xintl7);
+  */
+  xtmp[0] = _mm256_unpacklo_epi64(xintl0,xintl1);        // x0  x4  x8  x12 x1  x5  x9  x13
+  xtmp[4] = _mm256_unpackhi_epi64(xintl0,xintl1);        // x2  x6  x10 x14 x3  x7  x11 x15
+  xtmp[1] = _mm256_unpacklo_epi64(xintl2,xintl3);        // x16 x20 x24 x28 x17 x21 x25 x29
+  xtmp[5] = _mm256_unpackhi_epi64(xintl2,xintl3);        // x18 x22 x26 x30 x19 x23 x27 x31
+  xtmp[2] = _mm256_unpacklo_epi64(xintl4,xintl5);        // x32 x36 x40 x44 x33 x37 x41 x45
+  xtmp[6] = _mm256_unpackhi_epi64(xintl4,xintl5);        // x34 x38 x42 x46 x35 x39 x43 x47
+  xtmp[3] = _mm256_unpacklo_epi64(xintl6,xintl7);        // x48 x52 x56 x60 x49 x53 x57 x61
+  xtmp[7] = _mm256_unpackhi_epi64(xintl6,xintl7);        // x50 x54 x58 x62 x51 x55 x59 x63
+  /*
+  print_shorts256("xtmp0",(int16_t*)xtmp);
+  print_shorts256("xtmp1",(int16_t*)(xtmp+1));
+  print_shorts256("xtmp2",(int16_t*)(xtmp+2));
+  print_shorts256("xtmp3",(int16_t*)(xtmp+3));
+  print_shorts256("xtmp4",(int16_t*)(xtmp+4));
+  print_shorts256("xtmp5",(int16_t*)(xtmp+5));
+  print_shorts256("xtmp6",(int16_t*)(xtmp+6));
+  print_shorts256("xtmp7",(int16_t*)(xtmp+7));
+  */
+  dft16_simd256((int16_t*)(xtmp),(int16_t*)ytmp);
+  // [y0  y1  y2  y3  y4  y5  y6  y7]
+  // [y8  y9  y10 y11 y12 y13 y14 y15]
+  // [y16 y17 y18 y19 y20 y21 y22 y23]
+  // [y24 y25 y26 y27 y28 y29 y30 y31]
+  /*
+  print_shorts256("ytmp0",(int16_t*)ytmp);
+  print_shorts256("ytmp1",(int16_t*)(ytmp+1));
+  print_shorts256("ytmp2",(int16_t*)(ytmp+2));
+  print_shorts256("ytmp3",(int16_t*)(ytmp+3));
+  */
+  dft16_simd256((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
+  // [y32 y33 y34 y35 y36 y37 y38 y39]
+  // [y40 y41 y42 y43 y44 y45 y46 y47]
+  // [y48 y49 y50 y51 y52 y53 y54 y55]
+  // [y56 y57 y58 y59 y60 y61 y62 y63]
+  /*
+  print_shorts256("ytmp4",(int16_t*)(ytmp+4));
+  print_shorts256("ytmp5",(int16_t*)(ytmp+5));
+  print_shorts256("ytmp6",(int16_t*)(ytmp+6));
+  print_shorts256("ytmp7",(int16_t*)(ytmp+7));
+  */
+#ifdef D64STATS
+  stop_meas(&ts_d);
+  start_meas(&ts_b);
+#endif
+
+
+  bfly4_16_256(ytmp,ytmp+2,ytmp+4,ytmp+6,
+	       y256,y256+2,y256+4,y256+6,
+	       tw64a_256,tw64a_256+2,tw64a_256+4,
+	       tw64b_256,tw64b_256+2,tw64b_256+4);
+  // [y0  y1  y2  y3  y4  y5  y6  y7]
+  // [y16 y17 y18 y19 y20 y21 y22 y23]
+  // [y32 y33 y34 y35 y36 y37 y38 y39]
+  // [y48 y49 y50 y51 y52 y53 y54 y55]
+
+  bfly4_16_256(ytmp+1,ytmp+3,ytmp+5,ytmp+7,
+	       y256+1,y256+3,y256+5,y256+7,
+	       tw64a_256+1,tw64a_256+3,tw64a_256+5,
+	       tw64b_256+1,tw64b_256+3,tw64b_256+5);
+  // [y8  y9  y10 y11 y12 y13 y14 y15]
+  // [y24 y25 y26 y27 y28 y29 y30 y31]
+  // [y40 y41 y42 y43 y44 y45 y46 y47]
+  // [y56 y57 y58 y59 y60 y61 y62 y63]
+  /*  
+  print_shorts256("y256_0",(int16_t*)&y256[0]);
+  print_shorts256("y256_1",(int16_t*)&y256[1]);
+  print_shorts256("y256_2",(int16_t*)&y256[2]);
+  print_shorts256("y256_3",(int16_t*)&y256[3]);
+  print_shorts256("y256_4",(int16_t*)&y256[4]);
+  print_shorts256("y256_5",(int16_t*)&y256[5]);
+  print_shorts256("y256_6",(int16_t*)&y256[6]);
+  print_shorts256("y256_7",(int16_t*)&y256[7]);
+  */
+
+#ifdef D64STATS
+  stop_meas(&ts_b);
+  printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
+#endif
+
+
+  if (scale>0) {
+    y256[0]  = shiftright_int16_simd256(y256[0],3);
+    y256[1]  = shiftright_int16_simd256(y256[1],3);
+    y256[2]  = shiftright_int16_simd256(y256[2],3);
+    y256[3]  = shiftright_int16_simd256(y256[3],3);
+    y256[4]  = shiftright_int16_simd256(y256[4],3);
+    y256[5]  = shiftright_int16_simd256(y256[5],3);
+    y256[6]  = shiftright_int16_simd256(y256[6],3);
+    y256[7]  = shiftright_int16_simd256(y256[7],3);
+  }
+
+  _mm_empty();
+  _m_empty();
+
+
+}
+#endif
+
+#ifndef __AVX2__
 void idft64(int16_t *x,int16_t *y,int scale)
 {
 
@@ -1899,7 +2953,6 @@ void idft64(int16_t *x,int16_t *y,int scale)
             y128,y128+4,y128+8,y128+12,
             tw64a_128,tw64a_128+4,tw64a_128+8,
             tw64b_128,tw64b_128+4,tw64b_128+8);
-
   ibfly4_16(ytmp+1,ytmp+5,ytmp+9,ytmp+13,
             y128+1,y128+5,y128+9,y128+13,
             tw64a_128+1,tw64a_128+5,tw64a_128+9,
@@ -1947,15 +3000,117 @@ void idft64(int16_t *x,int16_t *y,int scale)
 
 }
 
+#else // __AVX2__
+void idft64(int16_t *x,int16_t *y,int scale)
+{
 
-int16_t tw128[128] __attribute__((aligned(16))) = {  32767,0,32727,-1608,32609,-3212,32412,-4808,32137,-6393,31785,-7962,31356,-9512,30851,-11039,30272,-12540,29621,-14010,28897,-15447,28105,-16846,27244,-18205,26318,-19520,25329,-20788,24278,-22005,23169,-23170,22004,-24279,20787,-25330,19519,-26319,18204,-27245,16845,-28106,15446,-28898,14009,-29622,12539,-30273,11038,-30852,9511,-31357,7961,-31786,6392,-32138,4807,-32413,3211,-32610,1607,-32728,0,-32767,-1608,-32728,-3212,-32610,-4808,-32413,-6393,-32138,-7962,-31786,-9512,-31357,-11039,-30852,-12540,-30273,-14010,-29622,-15447,-28898,-16846,-28106,-18205,-27245,-19520,-26319,-20788,-25330,-22005,-24279,-23170,-23170,-24279,-22005,-25330,-20788,-26319,-19520,-27245,-18205,-28106,-16846,-28898,-15447,-29622,-14010,-30273,-12540,-30852,-11039,-31357,-9512,-31786,-7962,-32138,-6393,-32413,-4808,-32610,-3212,-32728,-1608};
+  simd256_q15_t xtmp[16],ytmp[16],*tw64a_256=(simd256_q15_t *)tw64,*tw64b_256=(simd256_q15_t *)tw64c,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y;
+  register simd256_q15_t xintl0,xintl1,xintl2,xintl3,xintl4,xintl5,xintl6,xintl7;
+  simd256_q15_t const perm_mask = _mm256_set_epi32(7, 3, 5, 1, 6, 2, 4, 0);
 
-int16_t tw128a[128] __attribute__((aligned(16))) = { 32767,0,32727,1608,32609,3212,32412,4808,32137,6393,31785,7962,31356,9512,30851,11039,30272,12540,29621,14010,28897,15447,28105,16846,27244,18205,26318,19520,25329,20788,24278,22005,23169,23170,22004,24279,20787,25330,19519,26319,18204,27245,16845,28106,15446,28898,14009,29622,12539,30273,11038,30852,9511,31357,7961,31786,6392,32138,4807,32413,3211,32610,1607,32728,0,32767,-1608,32728,-3212,32610,-4808,32413,-6393,32138,-7962,31786,-9512,31357,-11039,30852,-12540,30273,-14010,29622,-15447,28898,-16846,28106,-18205,27245,-19520,26319,-20788,25330,-22005,24279,-23170,23170,-24279,22005,-25330,20788,-26319,19520,-27245,18205,-28106,16846,-28898,15447,-29622,14010,-30273,12540,-30852,11039,-31357,9512,-31786,7962,-32138,6393,-32413,4808,-32610,3212,-32728,1608};
 
-int16_t tw128b[128] __attribute__((aligned(16))) = {0,32767,-1608,32727,-3212,32609,-4808,32412,-6393,32137,-7962,31785,-9512,31356,-11039,30851,-12540,30272,-14010,29621,-15447,28897,-16846,28105,-18205,27244,-19520,26318,-20788,25329,-22005,24278,-23170,23169,-24279,22004,-25330,20787,-26319,19519,-27245,18204,-28106,16845,-28898,15446,-29622,14009,-30273,12539,-30852,11038,-31357,9511,-31786,7961,-32138,6392,-32413,4807,-32610,3211,-32728,1607,-32767,0,-32728,-1608,-32610,-3212,-32413,-4808,-32138,-6393,-31786,-7962,-31357,-9512,-30852,-11039,-30273,-12540,-29622,-14010,-28898,-15447,-28106,-16846,-27245,-18205,-26319,-19520,-25330,-20788,-24279,-22005,-23170,-23170,-22005,-24279,-20788,-25330,-19520,-26319,-18205,-27245,-16846,-28106,-15447,-28898,-14010,-29622,-12540,-30273,-11039,-30852,-9512,-31357,-7962,-31786,-6393,-32138,-4808,-32413,-3212,-32610,-1608,-32728};
+#ifdef D64STATS
+  time_stats_t ts_t,ts_d,ts_b;
 
-int16_t tw128c[128] __attribute__((aligned(16))) = {0,32767,1608,32727,3212,32609,4808,32412,6393,32137,7962,31785,9512,31356,11039,30851,12540,30272,14010,29621,15447,28897,16846,28105,18205,27244,19520,26318,20788,25329,22005,24278,23170,23169,24279,22004,25330,20787,26319,19519,27245,18204,28106,16845,28898,15446,29622,14009,30273,12539,30852,11038,31357,9511,31786,7961,32138,6392,32413,4807,32610,3211,32728,1607,32767,0,32728,-1608,32610,-3212,32413,-4808,32138,-6393,31786,-7962,31357,-9512,30852,-11039,30273,-12540,29622,-14010,28898,-15447,28106,-16846,27245,-18205,26319,-19520,25330,-20788,24279,-22005,23170,-23170,22005,-24279,20788,-25330,19520,-26319,18205,-27245,16846,-28106,15447,-28898,14010,-29622,12540,-30273,11039,-30852,9512,-31357,7962,-31786,6393,-32138,4808,-32413,3212,-32610,1608,-32728};
+  reset_meas(&ts_t);
+  reset_meas(&ts_d);
+  reset_meas(&ts_b);
+  start_meas(&ts_t);
+#endif
 
+#ifdef D64STATS
+  stop_meas(&ts_t);
+  start_meas(&ts_d);
+#endif
+
+  xintl0 = _mm256_permutevar8x32_epi32(x256[0],perm_mask);  // x0  x4  x1  x5  x2  x6  x3  x7
+  xintl1 = _mm256_permutevar8x32_epi32(x256[1],perm_mask);  // x8  x12 x9  x13 x10 x14 x11 x15
+  xintl2 = _mm256_permutevar8x32_epi32(x256[2],perm_mask);  // x16 x20 x17 x21 x18 x22 x19 x23
+  xintl3 = _mm256_permutevar8x32_epi32(x256[3],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+  xintl4 = _mm256_permutevar8x32_epi32(x256[4],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+  xintl5 = _mm256_permutevar8x32_epi32(x256[5],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+  xintl6 = _mm256_permutevar8x32_epi32(x256[6],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+  xintl7 = _mm256_permutevar8x32_epi32(x256[7],perm_mask);  // x24 x28 x25 x29 x26 x30 x27 x31
+
+  xtmp[0] = _mm256_unpacklo_epi64(xintl0,xintl1);        // x0  x4  x8  x12 x1  x5  x9  x13
+  xtmp[4] = _mm256_unpackhi_epi64(xintl0,xintl1);        // x2  x6  x10 x14 x3  x7  x11 x15
+  xtmp[1] = _mm256_unpacklo_epi64(xintl2,xintl3);        // x16 x20 x24 x28 x17 x21 x25 x29
+  xtmp[5] = _mm256_unpackhi_epi64(xintl2,xintl3);        // x18 x22 x26 x30 x19 x23 x27 x31
+  xtmp[2] = _mm256_unpacklo_epi64(xintl4,xintl5);        // x32 x36 x40 x44 x33 x37 x41 x45
+  xtmp[6] = _mm256_unpackhi_epi64(xintl4,xintl5);        // x34 x38 x42 x46 x35 x39 x43 x47
+  xtmp[3] = _mm256_unpacklo_epi64(xintl6,xintl7);        // x48 x52 x56 x60 x49 x53 x57 x61
+  xtmp[7] = _mm256_unpackhi_epi64(xintl6,xintl7);        // x50 x54 x58 x62 x51 x55 x59 x63
+
+
+  idft16_simd256((int16_t*)(xtmp),(int16_t*)ytmp);
+  // [y0  y1  y2  y3  y16 y17 y18 y19]
+  // [y4  y5  y6  y7  y20 y21 y22 y23]
+  // [y8  y9  y10 y11 y24 y25 y26 y27]
+  // [y12 y13 y14 y15 y28 y29 y30 y31]
+
+  idft16_simd256((int16_t*)(xtmp+4),(int16_t*)(ytmp+4));
+  // [y32 y33 y34 y35 y48 y49 y50 y51]
+  // [y36 y37 y38 y39 y52 y53 y54 y55]
+  // [y40 y41 y42 y43 y56 y57 y58 y59]
+  // [y44 y45 y46 y47 y60 y61 y62 y63]
+
+#ifdef D64STATS
+  stop_meas(&ts_d);
+  start_meas(&ts_b);
+#endif
+
+
+  ibfly4_16_256(ytmp,ytmp+2,ytmp+4,ytmp+6,
+		y256,y256+2,y256+4,y256+6,
+		tw64a_256,tw64a_256+2,tw64a_256+4,
+		tw64b_256,tw64b_256+2,tw64b_256+4);
+  // [y0  y1  y2  y3  y4  y5  y6  y7]
+  // [y16 y17 y18 y19 y20 y21 y22 y23]
+  // [y32 y33 y34 y35 y36 y37 y38 y39]
+  // [y48 y49 y50 y51 y52 y53 y54 y55]
+
+  ibfly4_16_256(ytmp+1,ytmp+3,ytmp+5,ytmp+7,
+		y256+1,y256+3,y256+5,y256+7,
+		tw64a_256+1,tw64a_256+3,tw64a_256+5,
+		tw64b_256+1,tw64b_256+3,tw64b_256+5);
+  // [y8  y9  y10 y11 y12 y13 y14 y15]
+  // [y24 y25 y26 y27 y28 y29 y30 y31]
+  // [y40 y41 y42 y43 y44 y45 y46 y47]
+  // [y56 y57 y58 y59 y60 y61 y62 y63]
+
+
+#ifdef D64STATS
+  stop_meas(&ts_b);
+  printf("t: %llu cycles, d: %llu cycles, b: %llu cycles\n",ts_t.diff,ts_d.diff,ts_b.diff);
+#endif
+
+
+  if (scale>0) {
+    y256[0]  = shiftright_int16_simd256(y256[0],3);
+    y256[1]  = shiftright_int16_simd256(y256[1],3);
+    y256[2]  = shiftright_int16_simd256(y256[2],3);
+    y256[3]  = shiftright_int16_simd256(y256[3],3);
+    y256[4]  = shiftright_int16_simd256(y256[4],3);
+    y256[5]  = shiftright_int16_simd256(y256[5],3);
+    y256[6]  = shiftright_int16_simd256(y256[6],3);
+    y256[7]  = shiftright_int16_simd256(y256[7],3);
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+#endif
+
+int16_t tw128[128] __attribute__((aligned(32))) = {  32767,0,32727,-1608,32609,-3212,32412,-4808,32137,-6393,31785,-7962,31356,-9512,30851,-11039,30272,-12540,29621,-14010,28897,-15447,28105,-16846,27244,-18205,26318,-19520,25329,-20788,24278,-22005,23169,-23170,22004,-24279,20787,-25330,19519,-26319,18204,-27245,16845,-28106,15446,-28898,14009,-29622,12539,-30273,11038,-30852,9511,-31357,7961,-31786,6392,-32138,4807,-32413,3211,-32610,1607,-32728,0,-32767,-1608,-32728,-3212,-32610,-4808,-32413,-6393,-32138,-7962,-31786,-9512,-31357,-11039,-30852,-12540,-30273,-14010,-29622,-15447,-28898,-16846,-28106,-18205,-27245,-19520,-26319,-20788,-25330,-22005,-24279,-23170,-23170,-24279,-22005,-25330,-20788,-26319,-19520,-27245,-18205,-28106,-16846,-28898,-15447,-29622,-14010,-30273,-12540,-30852,-11039,-31357,-9512,-31786,-7962,-32138,-6393,-32413,-4808,-32610,-3212,-32728,-1608};
+
+int16_t tw128a[128] __attribute__((aligned(32))) = { 32767,0,32727,1608,32609,3212,32412,4808,32137,6393,31785,7962,31356,9512,30851,11039,30272,12540,29621,14010,28897,15447,28105,16846,27244,18205,26318,19520,25329,20788,24278,22005,23169,23170,22004,24279,20787,25330,19519,26319,18204,27245,16845,28106,15446,28898,14009,29622,12539,30273,11038,30852,9511,31357,7961,31786,6392,32138,4807,32413,3211,32610,1607,32728,0,32767,-1608,32728,-3212,32610,-4808,32413,-6393,32138,-7962,31786,-9512,31357,-11039,30852,-12540,30273,-14010,29622,-15447,28898,-16846,28106,-18205,27245,-19520,26319,-20788,25330,-22005,24279,-23170,23170,-24279,22005,-25330,20788,-26319,19520,-27245,18205,-28106,16846,-28898,15447,-29622,14010,-30273,12540,-30852,11039,-31357,9512,-31786,7962,-32138,6393,-32413,4808,-32610,3212,-32728,1608};
+
+int16_t tw128b[128] __attribute__((aligned(32))) = {0,32767,-1608,32727,-3212,32609,-4808,32412,-6393,32137,-7962,31785,-9512,31356,-11039,30851,-12540,30272,-14010,29621,-15447,28897,-16846,28105,-18205,27244,-19520,26318,-20788,25329,-22005,24278,-23170,23169,-24279,22004,-25330,20787,-26319,19519,-27245,18204,-28106,16845,-28898,15446,-29622,14009,-30273,12539,-30852,11038,-31357,9511,-31786,7961,-32138,6392,-32413,4807,-32610,3211,-32728,1607,-32767,0,-32728,-1608,-32610,-3212,-32413,-4808,-32138,-6393,-31786,-7962,-31357,-9512,-30852,-11039,-30273,-12540,-29622,-14010,-28898,-15447,-28106,-16846,-27245,-18205,-26319,-19520,-25330,-20788,-24279,-22005,-23170,-23170,-22005,-24279,-20788,-25330,-19520,-26319,-18205,-27245,-16846,-28106,-15447,-28898,-14010,-29622,-12540,-30273,-11039,-30852,-9512,-31357,-7962,-31786,-6393,-32138,-4808,-32413,-3212,-32610,-1608,-32728};
+
+int16_t tw128c[128] __attribute__((aligned(32))) = {0,32767,1608,32727,3212,32609,4808,32412,6393,32137,7962,31785,9512,31356,11039,30851,12540,30272,14010,29621,15447,28897,16846,28105,18205,27244,19520,26318,20788,25329,22005,24278,23170,23169,24279,22004,25330,20787,26319,19519,27245,18204,28106,16845,28898,15446,29622,14009,30273,12539,30852,11038,31357,9511,31786,7961,32138,6392,32413,4807,32610,3211,32728,1607,32767,0,32728,-1608,32610,-3212,32413,-4808,32138,-6393,31786,-7962,31357,-9512,30852,-11039,30273,-12540,29622,-14010,28898,-15447,28106,-16846,27245,-18205,26319,-19520,25330,-20788,24279,-22005,23170,-23170,22005,-24279,20788,-25330,19520,-26319,18205,-27245,16846,-28106,15447,-28898,14010,-29622,12540,-30273,11039,-30852,9512,-31357,7962,-31786,6393,-32138,4808,-32413,3212,-32610,1608,-32728};
+
+#ifndef __AVX2__
 void dft128(int16_t *x,int16_t *y,int scale)
 {
 
@@ -2002,6 +3157,8 @@ void dft128(int16_t *x,int16_t *y,int scale)
   dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+16),1);
 
+  /*  write_output("dft128a.m","dfta",ytmp,64,1,1);
+      write_output("dft128b.m","dftb",ytmp+16,64,1,1);*/
 
   for (i=0; i<16; i++) {
     bfly2_16(ytmpp,ytmpp+16,
@@ -2052,11 +3209,83 @@ void dft128(int16_t *x,int16_t *y,int scale)
 
   }
 
+  /*  write_output("dft128out.m","dft128",y,128,1,1);
+      exit(-1);*/
   _mm_empty();
   _m_empty();
 
 }
 
+#else // __AVX2__
+void dft128(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[16],*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[16],*y256=(simd256_q15_t*)y;
+  simd256_q15_t *tw128a_256p=(simd256_q15_t *)tw128a,*tw128b_256p=(simd256_q15_t *)tw128b,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_256 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+  transpose4_ooff_simd256(x256  ,xtmp,8);
+  transpose4_ooff_simd256(x256+2,xtmp+1,8);
+  transpose4_ooff_simd256(x256+4,xtmp+2,8);
+  transpose4_ooff_simd256(x256+6,xtmp+3,8);
+  transpose4_ooff_simd256(x256+8,xtmp+4,8);
+  transpose4_ooff_simd256(x256+10,xtmp+5,8);
+  transpose4_ooff_simd256(x256+12,xtmp+6,8);
+  transpose4_ooff_simd256(x256+14,xtmp+7,8);
+  
+  /*  write_output("dft128ina_256.m","dftina",xtmp,64,1,1);
+  write_output("dft128inb_256.m","dftinb",xtmp+8,64,1,1);
+  */
+
+  dft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
+  
+  /*write_output("dft128outa_256.m","dftouta",ytmp,64,1,1);
+  write_output("dft128outb_256.m","dftoutb",ytmp+8,64,1,1);
+  */
+
+  for (i=0; i<8; i++) {
+    bfly2_16_256(ytmpp,ytmpp+8,
+		 y256p,y256p+8,
+		 tw128a_256p,
+		 tw128b_256p);
+    tw128a_256p++;
+    tw128b_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    y256[0] = mulhi_int16_simd256(y256[0],ONE_OVER_SQRT2_Q15_256);
+    y256[1] = mulhi_int16_simd256(y256[1],ONE_OVER_SQRT2_Q15_256);
+    y256[2] = mulhi_int16_simd256(y256[2],ONE_OVER_SQRT2_Q15_256);
+    y256[3] = mulhi_int16_simd256(y256[3],ONE_OVER_SQRT2_Q15_256);
+    y256[4] = mulhi_int16_simd256(y256[4],ONE_OVER_SQRT2_Q15_256);
+    y256[5] = mulhi_int16_simd256(y256[5],ONE_OVER_SQRT2_Q15_256);
+    y256[6] = mulhi_int16_simd256(y256[6],ONE_OVER_SQRT2_Q15_256);
+    y256[7] = mulhi_int16_simd256(y256[7],ONE_OVER_SQRT2_Q15_256);
+    y256[8] = mulhi_int16_simd256(y256[8],ONE_OVER_SQRT2_Q15_256);
+    y256[9] = mulhi_int16_simd256(y256[9],ONE_OVER_SQRT2_Q15_256);
+    y256[10] = mulhi_int16_simd256(y256[10],ONE_OVER_SQRT2_Q15_256);
+    y256[11] = mulhi_int16_simd256(y256[11],ONE_OVER_SQRT2_Q15_256);
+    y256[12] = mulhi_int16_simd256(y256[12],ONE_OVER_SQRT2_Q15_256);
+    y256[13] = mulhi_int16_simd256(y256[13],ONE_OVER_SQRT2_Q15_256);
+    y256[14] = mulhi_int16_simd256(y256[14],ONE_OVER_SQRT2_Q15_256);
+    y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
+
+  }
+  
+  /*  write_output("dft128.m","dft",y256,128,1,1);
+      exit(-1);*/
+}
+
+#endif
+
+#ifndef __AVX2__
 void idft128(int16_t *x,int16_t *y,int scale)
 {
 
@@ -2155,22 +3384,80 @@ void idft128(int16_t *x,int16_t *y,int scale)
 
 }
 
+#else // __AVX2__
+void idft128(int16_t *x,int16_t *y,int scale)
+{
 
-int16_t tw256[384] __attribute__((aligned(16))) = {  32767,0,32757,-805,32727,-1608,32678,-2411,32609,-3212,32520,-4012,32412,-4808,32284,-5602,32137,-6393,31970,-7180,31785,-7962,31580,-8740,31356,-9512,31113,-10279,30851,-11039,30571,-11793,30272,-12540,29955,-13279,29621,-14010,29268,-14733,28897,-15447,28510,-16151,28105,-16846,27683,-17531,27244,-18205,26789,-18868,26318,-19520,25831,-20160,25329,-20788,24811,-21403,24278,-22005,23731,-22595,23169,-23170,22594,-23732,22004,-24279,21402,-24812,20787,-25330,20159,-25832,19519,-26319,18867,-26790,18204,-27245,17530,-27684,16845,-28106,16150,-28511,15446,-28898,14732,-29269,14009,-29622,13278,-29956,12539,-30273,11792,-30572,11038,-30852,10278,-31114,9511,-31357,8739,-31581,7961,-31786,7179,-31971,6392,-32138,5601,-32285,4807,-32413,4011,-32521,3211,-32610,2410,-32679,1607,-32728,804,-32758,
+  simd256_q15_t xtmp[16],*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[16],*y256=(simd256_q15_t*)y;
+  simd256_q15_t *tw128_256p=(simd256_q15_t *)tw128,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_256 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+
+  transpose4_ooff_simd256(x256  ,xtmp,8);
+  transpose4_ooff_simd256(x256+2,xtmp+1,8);
+  transpose4_ooff_simd256(x256+4,xtmp+2,8);
+  transpose4_ooff_simd256(x256+6,xtmp+3,8);
+  transpose4_ooff_simd256(x256+8,xtmp+4,8);
+  transpose4_ooff_simd256(x256+10,xtmp+5,8);
+  transpose4_ooff_simd256(x256+12,xtmp+6,8);
+  transpose4_ooff_simd256(x256+14,xtmp+7,8);
+
+  idft64((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
+
+
+  for (i=0; i<8; i++) {
+    ibfly2_256(ytmpp,ytmpp+8,
+	       y256p,y256p+8,
+	       tw128_256p);
+    tw128_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    y256[0] = mulhi_int16_simd256(y256[0],ONE_OVER_SQRT2_Q15_256);
+    y256[1] = mulhi_int16_simd256(y256[1],ONE_OVER_SQRT2_Q15_256);
+    y256[2] = mulhi_int16_simd256(y256[2],ONE_OVER_SQRT2_Q15_256);
+    y256[3] = mulhi_int16_simd256(y256[3],ONE_OVER_SQRT2_Q15_256);
+    y256[4] = mulhi_int16_simd256(y256[4],ONE_OVER_SQRT2_Q15_256);
+    y256[5] = mulhi_int16_simd256(y256[5],ONE_OVER_SQRT2_Q15_256);
+    y256[6] = mulhi_int16_simd256(y256[6],ONE_OVER_SQRT2_Q15_256);
+    y256[7] = mulhi_int16_simd256(y256[7],ONE_OVER_SQRT2_Q15_256);
+    y256[8] = mulhi_int16_simd256(y256[8],ONE_OVER_SQRT2_Q15_256);
+    y256[9] = mulhi_int16_simd256(y256[9],ONE_OVER_SQRT2_Q15_256);
+    y256[10] = mulhi_int16_simd256(y256[10],ONE_OVER_SQRT2_Q15_256);
+    y256[11] = mulhi_int16_simd256(y256[11],ONE_OVER_SQRT2_Q15_256);
+    y256[12] = mulhi_int16_simd256(y256[12],ONE_OVER_SQRT2_Q15_256);
+    y256[13] = mulhi_int16_simd256(y256[13],ONE_OVER_SQRT2_Q15_256);
+    y256[14] = mulhi_int16_simd256(y256[14],ONE_OVER_SQRT2_Q15_256);
+    y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
+
+  }
+
+}
+
+#endif
+
+int16_t tw256[384] __attribute__((aligned(32))) = {  32767,0,32757,-805,32727,-1608,32678,-2411,32609,-3212,32520,-4012,32412,-4808,32284,-5602,32137,-6393,31970,-7180,31785,-7962,31580,-8740,31356,-9512,31113,-10279,30851,-11039,30571,-11793,30272,-12540,29955,-13279,29621,-14010,29268,-14733,28897,-15447,28510,-16151,28105,-16846,27683,-17531,27244,-18205,26789,-18868,26318,-19520,25831,-20160,25329,-20788,24811,-21403,24278,-22005,23731,-22595,23169,-23170,22594,-23732,22004,-24279,21402,-24812,20787,-25330,20159,-25832,19519,-26319,18867,-26790,18204,-27245,17530,-27684,16845,-28106,16150,-28511,15446,-28898,14732,-29269,14009,-29622,13278,-29956,12539,-30273,11792,-30572,11038,-30852,10278,-31114,9511,-31357,8739,-31581,7961,-31786,7179,-31971,6392,-32138,5601,-32285,4807,-32413,4011,-32521,3211,-32610,2410,-32679,1607,-32728,804,-32758,
                                                      32767,0,32727,-1608,32609,-3212,32412,-4808,32137,-6393,31785,-7962,31356,-9512,30851,-11039,30272,-12540,29621,-14010,28897,-15447,28105,-16846,27244,-18205,26318,-19520,25329,-20788,24278,-22005,23169,-23170,22004,-24279,20787,-25330,19519,-26319,18204,-27245,16845,-28106,15446,-28898,14009,-29622,12539,-30273,11038,-30852,9511,-31357,7961,-31786,6392,-32138,4807,-32413,3211,-32610,1607,-32728,0,-32767,-1608,-32728,-3212,-32610,-4808,-32413,-6393,-32138,-7962,-31786,-9512,-31357,-11039,-30852,-12540,-30273,-14010,-29622,-15447,-28898,-16846,-28106,-18205,-27245,-19520,-26319,-20788,-25330,-22005,-24279,-23170,-23170,-24279,-22005,-25330,-20788,-26319,-19520,-27245,-18205,-28106,-16846,-28898,-15447,-29622,-14010,-30273,-12540,-30852,-11039,-31357,-9512,-31786,-7962,-32138,-6393,-32413,-4808,-32610,-3212,-32728,-1608,
                                                      32767,0,32678,-2411,32412,-4808,31970,-7180,31356,-9512,30571,-11793,29621,-14010,28510,-16151,27244,-18205,25831,-20160,24278,-22005,22594,-23732,20787,-25330,18867,-26790,16845,-28106,14732,-29269,12539,-30273,10278,-31114,7961,-31786,5601,-32285,3211,-32610,804,-32758,-1608,-32728,-4012,-32521,-6393,-32138,-8740,-31581,-11039,-30852,-13279,-29956,-15447,-28898,-17531,-27684,-19520,-26319,-21403,-24812,-23170,-23170,-24812,-21403,-26319,-19520,-27684,-17531,-28898,-15447,-29956,-13279,-30852,-11039,-31581,-8740,-32138,-6393,-32521,-4012,-32728,-1608,-32758,804,-32610,3211,-32285,5601,-31786,7961,-31114,10278,-30273,12539,-29269,14732,-28106,16845,-26790,18867,-25330,20787,-23732,22594,-22005,24278,-20160,25831,-18205,27244,-16151,28510,-14010,29621,-11793,30571,-9512,31356,-7180,31970,-4808,32412,-2411,32678
                                                   };
 
-int16_t tw256a[384] __attribute__((aligned(16))) = { 32767,0,32757,804,32727,1607,32678,2410,32609,3211,32520,4011,32412,4807,32284,5601,32137,6392,31970,7179,31785,7961,31580,8739,31356,9511,31113,10278,30851,11038,30571,11792,30272,12539,29955,13278,29621,14009,29268,14732,28897,15446,28510,16150,28105,16845,27683,17530,27244,18204,26789,18867,26318,19519,25831,20159,25329,20787,24811,21402,24278,22004,23731,22594,23169,23169,22594,23731,22004,24278,21402,24811,20787,25329,20159,25831,19519,26318,18867,26789,18204,27244,17530,27683,16845,28105,16150,28510,15446,28897,14732,29268,14009,29621,13278,29955,12539,30272,11792,30571,11038,30851,10278,31113,9511,31356,8739,31580,7961,31785,7179,31970,6392,32137,5601,32284,4807,32412,4011,32520,3211,32609,2410,32678,1607,32727,804,32757,
+int16_t tw256a[384] __attribute__((aligned(32))) = { 32767,0,32757,804,32727,1607,32678,2410,32609,3211,32520,4011,32412,4807,32284,5601,32137,6392,31970,7179,31785,7961,31580,8739,31356,9511,31113,10278,30851,11038,30571,11792,30272,12539,29955,13278,29621,14009,29268,14732,28897,15446,28510,16150,28105,16845,27683,17530,27244,18204,26789,18867,26318,19519,25831,20159,25329,20787,24811,21402,24278,22004,23731,22594,23169,23169,22594,23731,22004,24278,21402,24811,20787,25329,20159,25831,19519,26318,18867,26789,18204,27244,17530,27683,16845,28105,16150,28510,15446,28897,14732,29268,14009,29621,13278,29955,12539,30272,11792,30571,11038,30851,10278,31113,9511,31356,8739,31580,7961,31785,7179,31970,6392,32137,5601,32284,4807,32412,4011,32520,3211,32609,2410,32678,1607,32727,804,32757,
                                                      32767,0,32727,1607,32609,3211,32412,4807,32137,6392,31785,7961,31356,9511,30851,11038,30272,12539,29621,14009,28897,15446,28105,16845,27244,18204,26318,19519,25329,20787,24278,22004,23169,23169,22004,24278,20787,25329,19519,26318,18204,27244,16845,28105,15446,28897,14009,29621,12539,30272,11038,30851,9511,31356,7961,31785,6392,32137,4807,32412,3211,32609,1607,32727,0,32767,-1608,32727,-3212,32609,-4808,32412,-6393,32137,-7962,31785,-9512,31356,-11039,30851,-12540,30272,-14010,29621,-15447,28897,-16846,28105,-18205,27244,-19520,26318,-20788,25329,-22005,24278,-23170,23169,-24279,22004,-25330,20787,-26319,19519,-27245,18204,-28106,16845,-28898,15446,-29622,14009,-30273,12539,-30852,11038,-31357,9511,-31786,7961,-32138,6392,-32413,4807,-32610,3211,-32728,1607,
                                                      32767,0,32678,2410,32412,4807,31970,7179,31356,9511,30571,11792,29621,14009,28510,16150,27244,18204,25831,20159,24278,22004,22594,23731,20787,25329,18867,26789,16845,28105,14732,29268,12539,30272,10278,31113,7961,31785,5601,32284,3211,32609,804,32757,-1608,32727,-4012,32520,-6393,32137,-8740,31580,-11039,30851,-13279,29955,-15447,28897,-17531,27683,-19520,26318,-21403,24811,-23170,23169,-24812,21402,-26319,19519,-27684,17530,-28898,15446,-29956,13278,-30852,11038,-31581,8739,-32138,6392,-32521,4011,-32728,1607,-32758,-805,-32610,-3212,-32285,-5602,-31786,-7962,-31114,-10279,-30273,-12540,-29269,-14733,-28106,-16846,-26790,-18868,-25330,-20788,-23732,-22595,-22005,-24279,-20160,-25832,-18205,-27245,-16151,-28511,-14010,-29622,-11793,-30572,-9512,-31357,-7180,-31971,-4808,-32413,-2411,-32679
                                                    };
 
-int16_t tw256b[384] __attribute__((aligned(16))) = {0,32767,-805,32757,-1608,32727,-2411,32678,-3212,32609,-4012,32520,-4808,32412,-5602,32284,-6393,32137,-7180,31970,-7962,31785,-8740,31580,-9512,31356,-10279,31113,-11039,30851,-11793,30571,-12540,30272,-13279,29955,-14010,29621,-14733,29268,-15447,28897,-16151,28510,-16846,28105,-17531,27683,-18205,27244,-18868,26789,-19520,26318,-20160,25831,-20788,25329,-21403,24811,-22005,24278,-22595,23731,-23170,23169,-23732,22594,-24279,22004,-24812,21402,-25330,20787,-25832,20159,-26319,19519,-26790,18867,-27245,18204,-27684,17530,-28106,16845,-28511,16150,-28898,15446,-29269,14732,-29622,14009,-29956,13278,-30273,12539,-30572,11792,-30852,11038,-31114,10278,-31357,9511,-31581,8739,-31786,7961,-31971,7179,-32138,6392,-32285,5601,-32413,4807,-32521,4011,-32610,3211,-32679,2410,-32728,1607,-32758,804,
+int16_t tw256b[384] __attribute__((aligned(32))) = {0,32767,-805,32757,-1608,32727,-2411,32678,-3212,32609,-4012,32520,-4808,32412,-5602,32284,-6393,32137,-7180,31970,-7962,31785,-8740,31580,-9512,31356,-10279,31113,-11039,30851,-11793,30571,-12540,30272,-13279,29955,-14010,29621,-14733,29268,-15447,28897,-16151,28510,-16846,28105,-17531,27683,-18205,27244,-18868,26789,-19520,26318,-20160,25831,-20788,25329,-21403,24811,-22005,24278,-22595,23731,-23170,23169,-23732,22594,-24279,22004,-24812,21402,-25330,20787,-25832,20159,-26319,19519,-26790,18867,-27245,18204,-27684,17530,-28106,16845,-28511,16150,-28898,15446,-29269,14732,-29622,14009,-29956,13278,-30273,12539,-30572,11792,-30852,11038,-31114,10278,-31357,9511,-31581,8739,-31786,7961,-31971,7179,-32138,6392,-32285,5601,-32413,4807,-32521,4011,-32610,3211,-32679,2410,-32728,1607,-32758,804,
                                                     0,32767,-1608,32727,-3212,32609,-4808,32412,-6393,32137,-7962,31785,-9512,31356,-11039,30851,-12540,30272,-14010,29621,-15447,28897,-16846,28105,-18205,27244,-19520,26318,-20788,25329,-22005,24278,-23170,23169,-24279,22004,-25330,20787,-26319,19519,-27245,18204,-28106,16845,-28898,15446,-29622,14009,-30273,12539,-30852,11038,-31357,9511,-31786,7961,-32138,6392,-32413,4807,-32610,3211,-32728,1607,-32767,0,-32728,-1608,-32610,-3212,-32413,-4808,-32138,-6393,-31786,-7962,-31357,-9512,-30852,-11039,-30273,-12540,-29622,-14010,-28898,-15447,-28106,-16846,-27245,-18205,-26319,-19520,-25330,-20788,-24279,-22005,-23170,-23170,-22005,-24279,-20788,-25330,-19520,-26319,-18205,-27245,-16846,-28106,-15447,-28898,-14010,-29622,-12540,-30273,-11039,-30852,-9512,-31357,-7962,-31786,-6393,-32138,-4808,-32413,-3212,-32610,-1608,-32728,
                                                     0,32767,-2411,32678,-4808,32412,-7180,31970,-9512,31356,-11793,30571,-14010,29621,-16151,28510,-18205,27244,-20160,25831,-22005,24278,-23732,22594,-25330,20787,-26790,18867,-28106,16845,-29269,14732,-30273,12539,-31114,10278,-31786,7961,-32285,5601,-32610,3211,-32758,804,-32728,-1608,-32521,-4012,-32138,-6393,-31581,-8740,-30852,-11039,-29956,-13279,-28898,-15447,-27684,-17531,-26319,-19520,-24812,-21403,-23170,-23170,-21403,-24812,-19520,-26319,-17531,-27684,-15447,-28898,-13279,-29956,-11039,-30852,-8740,-31581,-6393,-32138,-4012,-32521,-1608,-32728,804,-32758,3211,-32610,5601,-32285,7961,-31786,10278,-31114,12539,-30273,14732,-29269,16845,-28106,18867,-26790,20787,-25330,22594,-23732,24278,-22005,25831,-20160,27244,-18205,28510,-16151,29621,-14010,30571,-11793,31356,-9512,31970,-7180,32412,-4808,32678,-2411
                                                    };
-
+#ifndef __AVX2__
 void dft256(int16_t *x,int16_t *y,int scale)
 {
 
@@ -2339,25 +3626,205 @@ void idft256(int16_t *x,int16_t *y,int scale)
 
 }
 
-int16_t tw512[512] __attribute__((aligned(16))) = {
+#else //__AVX2__
+
+void dft256(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[32],ytmp[32],*tw256a_256p=(simd256_q15_t *)tw256a,*tw256b_256p=(simd256_q15_t *)tw256b,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+
+  transpose16_ooff_simd256(x256+0,xtmp+0,8);
+  transpose16_ooff_simd256(x256+4,xtmp+1,8);
+  transpose16_ooff_simd256(x256+8,xtmp+2,8);
+  transpose16_ooff_simd256(x256+12,xtmp+3,8);
+  transpose16_ooff_simd256(x256+16,xtmp+4,8);
+  transpose16_ooff_simd256(x256+20,xtmp+5,8);
+  transpose16_ooff_simd256(x256+24,xtmp+6,8);
+  transpose16_ooff_simd256(x256+28,xtmp+7,8);
+  /*
+  char vname[10];
+  for (i=0;i<32;i++) {
+    sprintf(vname,"xtmp%d",i);
+    print_shorts256(vname,(int16_t*)(xtmp+i));
+  }
+  exit(-1);*/
+
+  dft64((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  dft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
+  dft64((int16_t*)(xtmp+16),(int16_t*)(ytmp+16),1);
+  dft64((int16_t*)(xtmp+24),(int16_t*)(ytmp+24),1);
+
+
+  bfly4_16_256(ytmpp,ytmpp+8,ytmpp+16,ytmpp+24,
+	       y256p,y256p+8,y256p+16,y256p+24,
+	       tw256a_256p,tw256a_256p+8,tw256a_256p+16,
+	       tw256b_256p,tw256b_256p+8,tw256b_256p+16);
+  bfly4_16_256(ytmpp+1,ytmpp+9,ytmpp+17,ytmpp+25,
+	       y256p+1,y256p+9,y256p+17,y256p+25,
+	       tw256a_256p+1,tw256a_256p+9,tw256a_256p+17,
+	       tw256b_256p+1,tw256b_256p+9,tw256b_256p+17);
+  bfly4_16_256(ytmpp+2,ytmpp+10,ytmpp+18,ytmpp+26,
+	       y256p+2,y256p+10,y256p+18,y256p+26,
+	       tw256a_256p+2,tw256a_256p+10,tw256a_256p+18,
+	       tw256b_256p+2,tw256b_256p+10,tw256b_256p+18);
+  bfly4_16_256(ytmpp+3,ytmpp+11,ytmpp+19,ytmpp+27,
+	       y256p+3,y256p+11,y256p+19,y256p+27,
+	       tw256a_256p+3,tw256a_256p+11,tw256a_256p+19,
+	       tw256b_256p+3,tw256b_256p+11,tw256b_256p+19);
+  bfly4_16_256(ytmpp+4,ytmpp+12,ytmpp+20,ytmpp+28,
+	       y256p+4,y256p+12,y256p+20,y256p+28,
+	       tw256a_256p+4,tw256a_256p+12,tw256a_256p+20,
+	       tw256b_256p+4,tw256b_256p+12,tw256b_256p+20);
+  bfly4_16_256(ytmpp+5,ytmpp+13,ytmpp+21,ytmpp+29,
+	       y256p+5,y256p+13,y256p+21,y256p+29,
+	       tw256a_256p+5,tw256a_256p+13,tw256a_256p+21,
+	       tw256b_256p+5,tw256b_256p+13,tw256b_256p+21);
+  bfly4_16_256(ytmpp+6,ytmpp+14,ytmpp+22,ytmpp+30,
+	       y256p+6,y256p+14,y256p+22,y256p+30,
+	       tw256a_256p+6,tw256a_256p+14,tw256a_256p+22,
+	       tw256b_256p+6,tw256b_256p+14,tw256b_256p+22);
+  bfly4_16_256(ytmpp+7,ytmpp+15,ytmpp+23,ytmpp+31,
+	       y256p+7,y256p+15,y256p+23,y256p+31,
+	       tw256a_256p+7,tw256a_256p+15,tw256a_256p+23,
+	       tw256b_256p+7,tw256b_256p+15,tw256b_256p+23);
+
+  if (scale>0) {
+
+    for (i=0; i<2; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft256(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[32],ytmp[32],*tw256_256p=(simd256_q15_t *)tw256,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+
+  transpose16_ooff_simd256(x256+0,xtmp+0,8);
+  transpose16_ooff_simd256(x256+4,xtmp+1,8);
+  transpose16_ooff_simd256(x256+8,xtmp+2,8);
+  transpose16_ooff_simd256(x256+12,xtmp+3,8);
+  transpose16_ooff_simd256(x256+16,xtmp+4,8);
+  transpose16_ooff_simd256(x256+20,xtmp+5,8);
+  transpose16_ooff_simd256(x256+24,xtmp+6,8);
+  transpose16_ooff_simd256(x256+28,xtmp+7,8);
+  
+  idft64((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft64((int16_t*)(xtmp+8),(int16_t*)(ytmp+8),1);
+  idft64((int16_t*)(xtmp+16),(int16_t*)(ytmp+16),1);
+  idft64((int16_t*)(xtmp+24),(int16_t*)(ytmp+24),1);
+  
+  
+  ibfly4_256(ytmpp,ytmpp+8,ytmpp+16,ytmpp+24,
+	     y256p,y256p+8,y256p+16,y256p+24,
+	     tw256_256p,tw256_256p+8,tw256_256p+16);
+
+  ibfly4_256(ytmpp+1,ytmpp+9,ytmpp+17,ytmpp+25,
+	     y256p+1,y256p+9,y256p+17,y256p+25,
+	     tw256_256p+1,tw256_256p+9,tw256_256p+17);
+
+  ibfly4_256(ytmpp+2,ytmpp+10,ytmpp+18,ytmpp+26,
+	     y256p+2,y256p+10,y256p+18,y256p+26,
+	     tw256_256p+2,tw256_256p+10,tw256_256p+18);
+
+  ibfly4_256(ytmpp+3,ytmpp+11,ytmpp+19,ytmpp+27,
+	     y256p+3,y256p+11,y256p+19,y256p+27,
+	     tw256_256p+3,tw256_256p+11,tw256_256p+19);
+
+  ibfly4_256(ytmpp+4,ytmpp+12,ytmpp+20,ytmpp+28,
+	     y256p+4,y256p+12,y256p+20,y256p+28,
+	     tw256_256p+4,tw256_256p+12,tw256_256p+20);
+
+  ibfly4_256(ytmpp+5,ytmpp+13,ytmpp+21,ytmpp+29,
+	     y256p+5,y256p+13,y256p+21,y256p+29,
+	     tw256_256p+5,tw256_256p+13,tw256_256p+21);
+
+  ibfly4_256(ytmpp+6,ytmpp+14,ytmpp+22,ytmpp+30,
+	     y256p+6,y256p+14,y256p+22,y256p+30,
+	     tw256_256p+6,tw256_256p+14,tw256_256p+22);
+
+  ibfly4_256(ytmpp+7,ytmpp+15,ytmpp+23,ytmpp+31,
+	     y256p+7,y256p+15,y256p+23,y256p+31,
+	     tw256_256p+7,tw256_256p+15,tw256_256p+23);
+
+  
+  if (scale>0) {
+
+    for (i=0; i<2; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#endif
+int16_t tw512[512] __attribute__((aligned(32))) = {
   32767,0,32764,-403,32757,-805,32744,-1207,32727,-1608,32705,-2010,32678,-2411,32646,-2812,32609,-3212,32567,-3612,32520,-4012,32468,-4410,32412,-4808,32350,-5206,32284,-5602,32213,-5998,32137,-6393,32056,-6787,31970,-7180,31880,-7572,31785,-7962,31684,-8352,31580,-8740,31470,-9127,31356,-9512,31236,-9896,31113,-10279,30984,-10660,30851,-11039,30713,-11417,30571,-11793,30424,-12167,30272,-12540,30116,-12910,29955,-13279,29790,-13646,29621,-14010,29446,-14373,29268,-14733,29085,-15091,28897,-15447,28706,-15800,28510,-16151,28309,-16500,28105,-16846,27896,-17190,27683,-17531,27466,-17869,27244,-18205,27019,-18538,26789,-18868,26556,-19195,26318,-19520,26077,-19841,25831,-20160,25582,-20475,25329,-20788,25072,-21097,24811,-21403,24546,-21706,24278,-22005,24006,-22302,23731,-22595,23452,-22884,23169,-23170,22883,-23453,22594,-23732,22301,-24007,22004,-24279,21705,-24547,21402,-24812,21096,-25073,20787,-25330,20474,-25583,20159,-25832,19840,-26078,19519,-26319,19194,-26557,18867,-26790,18537,-27020,18204,-27245,17868,-27467,17530,-27684,17189,-27897,16845,-28106,16499,-28310,16150,-28511,15799,-28707,15446,-28898,15090,-29086,14732,-29269,14372,-29447,14009,-29622,13645,-29791,13278,-29956,12909,-30117,12539,-30273,12166,-30425,11792,-30572,11416,-30714,11038,-30852,10659,-30985,10278,-31114,9895,-31237,9511,-31357,9126,-31471,8739,-31581,8351,-31685,7961,-31786,7571,-31881,7179,-31971,6786,-32057,6392,-32138,5997,-32214,5601,-32285,5205,-32351,4807,-32413,4409,-32469,4011,-32521,3611,-32568,3211,-32610,2811,-32647,2410,-32679,2009,-32706,1607,-32728,1206,-32745,804,-32758,402,-32765,0,-32767,-403,-32765,-805,-32758,-1207,-32745,-1608,-32728,-2010,-32706,-2411,-32679,-2812,-32647,-3212,-32610,-3612,-32568,-4012,-32521,-4410,-32469,-4808,-32413,-5206,-32351,-5602,-32285,-5998,-32214,-6393,-32138,-6787,-32057,-7180,-31971,-7572,-31881,-7962,-31786,-8352,-31685,-8740,-31581,-9127,-31471,-9512,-31357,-9896,-31237,-10279,-31114,-10660,-30985,-11039,-30852,-11417,-30714,-11793,-30572,-12167,-30425,-12540,-30273,-12910,-30117,-13279,-29956,-13646,-29791,-14010,-29622,-14373,-29447,-14733,-29269,-15091,-29086,-15447,-28898,-15800,-28707,-16151,-28511,-16500,-28310,-16846,-28106,-17190,-27897,-17531,-27684,-17869,-27467,-18205,-27245,-18538,-27020,-18868,-26790,-19195,-26557,-19520,-26319,-19841,-26078,-20160,-25832,-20475,-25583,-20788,-25330,-21097,-25073,-21403,-24812,-21706,-24547,-22005,-24279,-22302,-24007,-22595,-23732,-22884,-23453,-23170,-23170,-23453,-22884,-23732,-22595,-24007,-22302,-24279,-22005,-24547,-21706,-24812,-21403,-25073,-21097,-25330,-20788,-25583,-20475,-25832,-20160,-26078,-19841,-26319,-19520,-26557,-19195,-26790,-18868,-27020,-18538,-27245,-18205,-27467,-17869,-27684,-17531,-27897,-17190,-28106,-16846,-28310,-16500,-28511,-16151,-28707,-15800,-28898,-15447,-29086,-15091,-29269,-14733,-29447,-14373,-29622,-14010,-29791,-13646,-29956,-13279,-30117,-12910,-30273,-12540,-30425,-12167,-30572,-11793,-30714,-11417,-30852,-11039,-30985,-10660,-31114,-10279,-31237,-9896,-31357,-9512,-31471,-9127,-31581,-8740,-31685,-8352,-31786,-7962,-31881,-7572,-31971,-7180,-32057,-6787,-32138,-6393,-32214,-5998,-32285,-5602,-32351,-5206,-32413,-4808,-32469,-4410,-32521,-4012,-32568,-3612,-32610,-3212,-32647,-2812,-32679,-2411,-32706,-2010,-32728,-1608,-32745,-1207,-32758,-805,-32765,-403
 };
 
-int16_t tw512a[512] __attribute__((aligned(16))) = {
+int16_t tw512a[512] __attribute__((aligned(32))) = {
   32767,0,32764,403,32757,805,32744,1207,32727,1608,32705,2010,32678,2411,32646,2812,32609,3212,32567,3612,32520,4012,32468,4410,32412,4808,32350,5206,32284,5602,32213,5998,32137,6393,32056,6787,31970,7180,31880,7572,31785,7962,31684,8352,31580,8740,31470,9127,31356,9512,31236,9896,31113,10279,30984,10660,30851,11039,30713,11417,30571,11793,30424,12167,30272,12540,30116,12910,29955,13279,29790,13646,29621,14010,29446,14373,29268,14733,29085,15091,28897,15447,28706,15800,28510,16151,28309,16500,28105,16846,27896,17190,27683,17531,27466,17869,27244,18205,27019,18538,26789,18868,26556,19195,26318,19520,26077,19841,25831,20160,25582,20475,25329,20788,25072,21097,24811,21403,24546,21706,24278,22005,24006,22302,23731,22595,23452,22884,23169,23170,22883,23453,22594,23732,22301,24007,22004,24279,21705,24547,21402,24812,21096,25073,20787,25330,20474,25583,20159,25832,19840,26078,19519,26319,19194,26557,18867,26790,18537,27020,18204,27245,17868,27467,17530,27684,17189,27897,16845,28106,16499,28310,16150,28511,15799,28707,15446,28898,15090,29086,14732,29269,14372,29447,14009,29622,13645,29791,13278,29956,12909,30117,12539,30273,12166,30425,11792,30572,11416,30714,11038,30852,10659,30985,10278,31114,9895,31237,9511,31357,9126,31471,8739,31581,8351,31685,7961,31786,7571,31881,7179,31971,6786,32057,6392,32138,5997,32214,5601,32285,5205,32351,4807,32413,4409,32469,4011,32521,3611,32568,3211,32610,2811,32647,2410,32679,2009,32706,1607,32728,1206,32745,804,32758,402,32765,0,32767,-403,32765,-805,32758,-1207,32745,-1608,32728,-2010,32706,-2411,32679,-2812,32647,-3212,32610,-3612,32568,-4012,32521,-4410,32469,-4808,32413,-5206,32351,-5602,32285,-5998,32214,-6393,32138,-6787,32057,-7180,31971,-7572,31881,-7962,31786,-8352,31685,-8740,31581,-9127,31471,-9512,31357,-9896,31237,-10279,31114,-10660,30985,-11039,30852,-11417,30714,-11793,30572,-12167,30425,-12540,30273,-12910,30117,-13279,29956,-13646,29791,-14010,29622,-14373,29447,-14733,29269,-15091,29086,-15447,28898,-15800,28707,-16151,28511,-16500,28310,-16846,28106,-17190,27897,-17531,27684,-17869,27467,-18205,27245,-18538,27020,-18868,26790,-19195,26557,-19520,26319,-19841,26078,-20160,25832,-20475,25583,-20788,25330,-21097,25073,-21403,24812,-21706,24547,-22005,24279,-22302,24007,-22595,23732,-22884,23453,-23170,23170,-23453,22884,-23732,22595,-24007,22302,-24279,22005,-24547,21706,-24812,21403,-25073,21097,-25330,20788,-25583,20475,-25832,20160,-26078,19841,-26319,19520,-26557,19195,-26790,18868,-27020,18538,-27245,18205,-27467,17869,-27684,17531,-27897,17190,-28106,16846,-28310,16500,-28511,16151,-28707,15800,-28898,15447,-29086,15091,-29269,14733,-29447,14373,-29622,14010,-29791,13646,-29956,13279,-30117,12910,-30273,12540,-30425,12167,-30572,11793,-30714,11417,-30852,11039,-30985,10660,-31114,10279,-31237,9896,-31357,9512,-31471,9127,-31581,8740,-31685,8352,-31786,7962,-31881,7572,-31971,7180,-32057,6787,-32138,6393,-32214,5998,-32285,5602,-32351,5206,-32413,4808,-32469,4410,-32521,4012,-32568,3612,-32610,3212,-32647,2812,-32679,2411,-32706,2010,-32728,1608,-32745,1207,-32758,805,-32765,403
 };
 
 
 
-int16_t tw512b[512] __attribute__((aligned(16))) = {
+int16_t tw512b[512] __attribute__((aligned(32))) = {
   0,32767,-403,32764,-805,32757,-1207,32744,-1608,32727,-2010,32705,-2411,32678,-2812,32646,-3212,32609,-3612,32567,-4012,32520,-4410,32468,-4808,32412,-5206,32350,-5602,32284,-5998,32213,-6393,32137,-6787,32056,-7180,31970,-7572,31880,-7962,31785,-8352,31684,-8740,31580,-9127,31470,-9512,31356,-9896,31236,-10279,31113,-10660,30984,-11039,30851,-11417,30713,-11793,30571,-12167,30424,-12540,30272,-12910,30116,-13279,29955,-13646,29790,-14010,29621,-14373,29446,-14733,29268,-15091,29085,-15447,28897,-15800,28706,-16151,28510,-16500,28309,-16846,28105,-17190,27896,-17531,27683,-17869,27466,-18205,27244,-18538,27019,-18868,26789,-19195,26556,-19520,26318,-19841,26077,-20160,25831,-20475,25582,-20788,25329,-21097,25072,-21403,24811,-21706,24546,-22005,24278,-22302,24006,-22595,23731,-22884,23452,-23170,23169,-23453,22883,-23732,22594,-24007,22301,-24279,22004,-24547,21705,-24812,21402,-25073,21096,-25330,20787,-25583,20474,-25832,20159,-26078,19840,-26319,19519,-26557,19194,-26790,18867,-27020,18537,-27245,18204,-27467,17868,-27684,17530,-27897,17189,-28106,16845,-28310,16499,-28511,16150,-28707,15799,-28898,15446,-29086,15090,-29269,14732,-29447,14372,-29622,14009,-29791,13645,-29956,13278,-30117,12909,-30273,12539,-30425,12166,-30572,11792,-30714,11416,-30852,11038,-30985,10659,-31114,10278,-31237,9895,-31357,9511,-31471,9126,-31581,8739,-31685,8351,-31786,7961,-31881,7571,-31971,7179,-32057,6786,-32138,6392,-32214,5997,-32285,5601,-32351,5205,-32413,4807,-32469,4409,-32521,4011,-32568,3611,-32610,3211,-32647,2811,-32679,2410,-32706,2009,-32728,1607,-32745,1206,-32758,804,-32765,402,-32767,0,-32765,-403,-32758,-805,-32745,-1207,-32728,-1608,-32706,-2010,-32679,-2411,-32647,-2812,-32610,-3212,-32568,-3612,-32521,-4012,-32469,-4410,-32413,-4808,-32351,-5206,-32285,-5602,-32214,-5998,-32138,-6393,-32057,-6787,-31971,-7180,-31881,-7572,-31786,-7962,-31685,-8352,-31581,-8740,-31471,-9127,-31357,-9512,-31237,-9896,-31114,-10279,-30985,-10660,-30852,-11039,-30714,-11417,-30572,-11793,-30425,-12167,-30273,-12540,-30117,-12910,-29956,-13279,-29791,-13646,-29622,-14010,-29447,-14373,-29269,-14733,-29086,-15091,-28898,-15447,-28707,-15800,-28511,-16151,-28310,-16500,-28106,-16846,-27897,-17190,-27684,-17531,-27467,-17869,-27245,-18205,-27020,-18538,-26790,-18868,-26557,-19195,-26319,-19520,-26078,-19841,-25832,-20160,-25583,-20475,-25330,-20788,-25073,-21097,-24812,-21403,-24547,-21706,-24279,-22005,-24007,-22302,-23732,-22595,-23453,-22884,-23170,-23170,-22884,-23453,-22595,-23732,-22302,-24007,-22005,-24279,-21706,-24547,-21403,-24812,-21097,-25073,-20788,-25330,-20475,-25583,-20160,-25832,-19841,-26078,-19520,-26319,-19195,-26557,-18868,-26790,-18538,-27020,-18205,-27245,-17869,-27467,-17531,-27684,-17190,-27897,-16846,-28106,-16500,-28310,-16151,-28511,-15800,-28707,-15447,-28898,-15091,-29086,-14733,-29269,-14373,-29447,-14010,-29622,-13646,-29791,-13279,-29956,-12910,-30117,-12540,-30273,-12167,-30425,-11793,-30572,-11417,-30714,-11039,-30852,-10660,-30985,-10279,-31114,-9896,-31237,-9512,-31357,-9127,-31471,-8740,-31581,-8352,-31685,-7962,-31786,-7572,-31881,-7180,-31971,-6787,-32057,-6393,-32138,-5998,-32214,-5602,-32285,-5206,-32351,-4808,-32413,-4410,-32469,-4012,-32521,-3612,-32568,-3212,-32610,-2812,-32647,-2411,-32679,-2010,-32706,-1608,-32728,-1207,-32745,-805,-32758,-403,-32765
 };
 
-int16_t tw512c[512] __attribute__((aligned(16))) = {
+int16_t tw512c[512] __attribute__((aligned(32))) = {
   0,32767,403,32764,805,32757,1207,32744,1608,32727,2010,32705,2411,32678,2812,32646,3212,32609,3612,32567,4012,32520,4410,32468,4808,32412,5206,32350,5602,32284,5998,32213,6393,32137,6787,32056,7180,31970,7572,31880,7962,31785,8352,31684,8740,31580,9127,31470,9512,31356,9896,31236,10279,31113,10660,30984,11039,30851,11417,30713,11793,30571,12167,30424,12540,30272,12910,30116,13279,29955,13646,29790,14010,29621,14373,29446,14733,29268,15091,29085,15447,28897,15800,28706,16151,28510,16500,28309,16846,28105,17190,27896,17531,27683,17869,27466,18205,27244,18538,27019,18868,26789,19195,26556,19520,26318,19841,26077,20160,25831,20475,25582,20788,25329,21097,25072,21403,24811,21706,24546,22005,24278,22302,24006,22595,23731,22884,23452,23170,23169,23453,22883,23732,22594,24007,22301,24279,22004,24547,21705,24812,21402,25073,21096,25330,20787,25583,20474,25832,20159,26078,19840,26319,19519,26557,19194,26790,18867,27020,18537,27245,18204,27467,17868,27684,17530,27897,17189,28106,16845,28310,16499,28511,16150,28707,15799,28898,15446,29086,15090,29269,14732,29447,14372,29622,14009,29791,13645,29956,13278,30117,12909,30273,12539,30425,12166,30572,11792,30714,11416,30852,11038,30985,10659,31114,10278,31237,9895,31357,9511,31471,9126,31581,8739,31685,8351,31786,7961,31881,7571,31971,7179,32057,6786,32138,6392,32214,5997,32285,5601,32351,5205,32413,4807,32469,4409,32521,4011,32568,3611,32610,3211,32647,2811,32679,2410,32706,2009,32728,1607,32745,1206,32758,804,32765,402,32767,0,32765,-403,32758,-805,32745,-1207,32728,-1608,32706,-2010,32679,-2411,32647,-2812,32610,-3212,32568,-3612,32521,-4012,32469,-4410,32413,-4808,32351,-5206,32285,-5602,32214,-5998,32138,-6393,32057,-6787,31971,-7180,31881,-7572,31786,-7962,31685,-8352,31581,-8740,31471,-9127,31357,-9512,31237,-9896,31114,-10279,30985,-10660,30852,-11039,30714,-11417,30572,-11793,30425,-12167,30273,-12540,30117,-12910,29956,-13279,29791,-13646,29622,-14010,29447,-14373,29269,-14733,29086,-15091,28898,-15447,28707,-15800,28511,-16151,28310,-16500,28106,-16846,27897,-17190,27684,-17531,27467,-17869,27245,-18205,27020,-18538,26790,-18868,26557,-19195,26319,-19520,26078,-19841,25832,-20160,25583,-20475,25330,-20788,25073,-21097,24812,-21403,24547,-21706,24279,-22005,24007,-22302,23732,-22595,23453,-22884,23170,-23170,22884,-23453,22595,-23732,22302,-24007,22005,-24279,21706,-24547,21403,-24812,21097,-25073,20788,-25330,20475,-25583,20160,-25832,19841,-26078,19520,-26319,19195,-26557,18868,-26790,18538,-27020,18205,-27245,17869,-27467,17531,-27684,17190,-27897,16846,-28106,16500,-28310,16151,-28511,15800,-28707,15447,-28898,15091,-29086,14733,-29269,14373,-29447,14010,-29622,13646,-29791,13279,-29956,12910,-30117,12540,-30273,12167,-30425,11793,-30572,11417,-30714,11039,-30852,10660,-30985,10279,-31114,9896,-31237,9512,-31357,9127,-31471,8740,-31581,8352,-31685,7962,-31786,7572,-31881,7180,-31971,6787,-32057,6393,-32138,5998,-32214,5602,-32285,5206,-32351,4808,-32413,4410,-32469,4012,-32521,3612,-32568,3212,-32610,2812,-32647,2411,-32679,2010,-32706,1608,-32728,1207,-32745,805,-32758,403,-32765
 };
 
-
+#ifndef __AVX2__
 void dft512(int16_t *x,int16_t *y,int scale)
 {
 
@@ -2568,11 +4035,179 @@ void idft512(int16_t *x,int16_t *y,int scale)
 
 }
 
-int16_t tw1024[1536] __attribute__((aligned(16))) = {  32767,0,32766,-202,32764,-403,32761,-604,32757,-805,32751,-1006,32744,-1207,32736,-1407,32727,-1608,32717,-1809,32705,-2010,32692,-2210,32678,-2411,32662,-2611,32646,-2812,32628,-3012,32609,-3212,32588,-3412,32567,-3612,32544,-3812,32520,-4012,32495,-4211,32468,-4410,32441,-4609,32412,-4808,32382,-5007,32350,-5206,32318,-5404,32284,-5602,32249,-5800,32213,-5998,32176,-6196,32137,-6393,32097,-6590,32056,-6787,32014,-6983,31970,-7180,31926,-7376,31880,-7572,31833,-7767,31785,-7962,31735,-8157,31684,-8352,31633,-8546,31580,-8740,31525,-8933,31470,-9127,31413,-9320,31356,-9512,31297,-9704,31236,-9896,31175,-10088,31113,-10279,31049,-10470,30984,-10660,30918,-10850,30851,-11039,30783,-11228,30713,-11417,30643,-11605,30571,-11793,30498,-11981,30424,-12167,30349,-12354,30272,-12540,30195,-12725,30116,-12910,30036,-13095,29955,-13279,29873,-13463,29790,-13646,29706,-13828,29621,-14010,29534,-14192,29446,-14373,29358,-14553,29268,-14733,29177,-14912,29085,-15091,28992,-15269,28897,-15447,28802,-15624,28706,-15800,28608,-15976,28510,-16151,28410,-16326,28309,-16500,28208,-16673,28105,-16846,28001,-17018,27896,-17190,27790,-17361,27683,-17531,27575,-17700,27466,-17869,27355,-18037,27244,-18205,27132,-18372,27019,-18538,26905,-18703,26789,-18868,26673,-19032,26556,-19195,26437,-19358,26318,-19520,26198,-19681,26077,-19841,25954,-20001,25831,-20160,25707,-20318,25582,-20475,25456,-20632,25329,-20788,25201,-20943,25072,-21097,24942,-21250,24811,-21403,24679,-21555,24546,-21706,24413,-21856,24278,-22005,24143,-22154,24006,-22302,23869,-22449,23731,-22595,23592,-22740,23452,-22884,23311,-23028,23169,-23170,23027,-23312,22883,-23453,22739,-23593,22594,-23732,22448,-23870,22301,-24007,22153,-24144,22004,-24279,21855,-24414,21705,-24547,21554,-24680,21402,-24812,21249,-24943,21096,-25073,20942,-25202,20787,-25330,20631,-25457,20474,-25583,20317,-25708,20159,-25832,20000,-25955,19840,-26078,19680,-26199,19519,-26319,19357,-26438,19194,-26557,19031,-26674,18867,-26790,18702,-26906,18537,-27020,18371,-27133,18204,-27245,18036,-27356,17868,-27467,17699,-27576,17530,-27684,17360,-27791,17189,-27897,17017,-28002,16845,-28106,16672,-28209,16499,-28310,16325,-28411,16150,-28511,15975,-28609,15799,-28707,15623,-28803,15446,-28898,15268,-28993,15090,-29086,14911,-29178,14732,-29269,14552,-29359,14372,-29447,14191,-29535,14009,-29622,13827,-29707,13645,-29791,13462,-29874,13278,-29956,13094,-30037,12909,-30117,12724,-30196,12539,-30273,12353,-30350,12166,-30425,11980,-30499,11792,-30572,11604,-30644,11416,-30714,11227,-30784,11038,-30852,10849,-30919,10659,-30985,10469,-31050,10278,-31114,10087,-31176,9895,-31237,9703,-31298,9511,-31357,9319,-31414,9126,-31471,8932,-31526,8739,-31581,8545,-31634,8351,-31685,8156,-31736,7961,-31786,7766,-31834,7571,-31881,7375,-31927,7179,-31971,6982,-32015,6786,-32057,6589,-32098,6392,-32138,6195,-32177,5997,-32214,5799,-32250,5601,-32285,5403,-32319,5205,-32351,5006,-32383,4807,-32413,4608,-32442,4409,-32469,4210,-32496,4011,-32521,3811,-32545,3611,-32568,3411,-32589,3211,-32610,3011,-32629,2811,-32647,2610,-32663,2410,-32679,2209,-32693,2009,-32706,1808,-32718,1607,-32728,1406,-32737,1206,-32745,1005,-32752,804,-32758,603,-32762,402,-32765,201,-32767,
+#else //__AVX2__
+
+void dft512(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[64],*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[64],*y256=(simd256_q15_t*)y;
+  simd256_q15_t *tw512_256p=(simd256_q15_t*)tw512,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_256 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+
+  transpose4_ooff_simd256(x256  ,xtmp,32);
+  transpose4_ooff_simd256(x256+2,xtmp+1,32);
+  transpose4_ooff_simd256(x256+4,xtmp+2,32);
+  transpose4_ooff_simd256(x256+6,xtmp+3,32);
+  transpose4_ooff_simd256(x256+8,xtmp+4,32);
+  transpose4_ooff_simd256(x256+10,xtmp+5,32);
+  transpose4_ooff_simd256(x256+12,xtmp+6,32);
+  transpose4_ooff_simd256(x256+14,xtmp+7,32);
+  transpose4_ooff_simd256(x256+16,xtmp+8,32);
+  transpose4_ooff_simd256(x256+18,xtmp+9,32);
+  transpose4_ooff_simd256(x256+20,xtmp+10,32);
+  transpose4_ooff_simd256(x256+22,xtmp+11,32);
+  transpose4_ooff_simd256(x256+24,xtmp+12,32);
+  transpose4_ooff_simd256(x256+26,xtmp+13,32);
+  transpose4_ooff_simd256(x256+28,xtmp+14,32);
+  transpose4_ooff_simd256(x256+30,xtmp+15,32);
+  transpose4_ooff_simd256(x256+32,xtmp+16,32);
+  transpose4_ooff_simd256(x256+34,xtmp+17,32);
+  transpose4_ooff_simd256(x256+36,xtmp+18,32);
+  transpose4_ooff_simd256(x256+38,xtmp+19,32);
+  transpose4_ooff_simd256(x256+40,xtmp+20,32);
+  transpose4_ooff_simd256(x256+42,xtmp+21,32);
+  transpose4_ooff_simd256(x256+44,xtmp+22,32);
+  transpose4_ooff_simd256(x256+46,xtmp+23,32);
+  transpose4_ooff_simd256(x256+48,xtmp+24,32);
+  transpose4_ooff_simd256(x256+50,xtmp+25,32);
+  transpose4_ooff_simd256(x256+52,xtmp+26,32);
+  transpose4_ooff_simd256(x256+54,xtmp+27,32);
+  transpose4_ooff_simd256(x256+56,xtmp+28,32);
+  transpose4_ooff_simd256(x256+58,xtmp+29,32);
+  transpose4_ooff_simd256(x256+60,xtmp+30,32);
+  transpose4_ooff_simd256(x256+62,xtmp+31,32);
+
+  dft256((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft256((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
+
+
+  for (i=0; i<32; i++) {
+    bfly2_256(ytmpp,ytmpp+32,
+	      y256p,y256p+32,
+	      tw512_256p);
+    tw512_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0;i<4;i++) {
+      y256[0] = mulhi_int16_simd256(y256[0],ONE_OVER_SQRT2_Q15_256);
+      y256[1] = mulhi_int16_simd256(y256[1],ONE_OVER_SQRT2_Q15_256);
+      y256[2] = mulhi_int16_simd256(y256[2],ONE_OVER_SQRT2_Q15_256);
+      y256[3] = mulhi_int16_simd256(y256[3],ONE_OVER_SQRT2_Q15_256);
+      y256[4] = mulhi_int16_simd256(y256[4],ONE_OVER_SQRT2_Q15_256);
+      y256[5] = mulhi_int16_simd256(y256[5],ONE_OVER_SQRT2_Q15_256);
+      y256[6] = mulhi_int16_simd256(y256[6],ONE_OVER_SQRT2_Q15_256);
+      y256[7] = mulhi_int16_simd256(y256[7],ONE_OVER_SQRT2_Q15_256);
+      y256[8] = mulhi_int16_simd256(y256[8],ONE_OVER_SQRT2_Q15_256);
+      y256[9] = mulhi_int16_simd256(y256[9],ONE_OVER_SQRT2_Q15_256);
+      y256[10] = mulhi_int16_simd256(y256[10],ONE_OVER_SQRT2_Q15_256);
+      y256[11] = mulhi_int16_simd256(y256[11],ONE_OVER_SQRT2_Q15_256);
+      y256[12] = mulhi_int16_simd256(y256[12],ONE_OVER_SQRT2_Q15_256);
+      y256[13] = mulhi_int16_simd256(y256[13],ONE_OVER_SQRT2_Q15_256);
+      y256[14] = mulhi_int16_simd256(y256[14],ONE_OVER_SQRT2_Q15_256);
+      y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
+      y256+=16;
+    }
+  }
+
+}
+
+void idft512(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[64],*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[64],*y256=(simd256_q15_t*)y;
+  simd256_q15_t *tw512_256p=(simd256_q15_t *)tw512,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_256 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+
+  transpose4_ooff_simd256(x256  ,xtmp,32);
+  transpose4_ooff_simd256(x256+2,xtmp+1,32);
+  transpose4_ooff_simd256(x256+4,xtmp+2,32);
+  transpose4_ooff_simd256(x256+6,xtmp+3,32);
+  transpose4_ooff_simd256(x256+8,xtmp+4,32);
+  transpose4_ooff_simd256(x256+10,xtmp+5,32);
+  transpose4_ooff_simd256(x256+12,xtmp+6,32);
+  transpose4_ooff_simd256(x256+14,xtmp+7,32);
+  transpose4_ooff_simd256(x256+16,xtmp+8,32);
+  transpose4_ooff_simd256(x256+18,xtmp+9,32);
+  transpose4_ooff_simd256(x256+20,xtmp+10,32);
+  transpose4_ooff_simd256(x256+22,xtmp+11,32);
+  transpose4_ooff_simd256(x256+24,xtmp+12,32);
+  transpose4_ooff_simd256(x256+26,xtmp+13,32);
+  transpose4_ooff_simd256(x256+28,xtmp+14,32);
+  transpose4_ooff_simd256(x256+30,xtmp+15,32);
+  transpose4_ooff_simd256(x256+32,xtmp+16,32);
+  transpose4_ooff_simd256(x256+34,xtmp+17,32);
+  transpose4_ooff_simd256(x256+36,xtmp+18,32);
+  transpose4_ooff_simd256(x256+38,xtmp+19,32);
+  transpose4_ooff_simd256(x256+40,xtmp+20,32);
+  transpose4_ooff_simd256(x256+42,xtmp+21,32);
+  transpose4_ooff_simd256(x256+44,xtmp+22,32);
+  transpose4_ooff_simd256(x256+46,xtmp+23,32);
+  transpose4_ooff_simd256(x256+48,xtmp+24,32);
+  transpose4_ooff_simd256(x256+50,xtmp+25,32);
+  transpose4_ooff_simd256(x256+52,xtmp+26,32);
+  transpose4_ooff_simd256(x256+54,xtmp+27,32);
+  transpose4_ooff_simd256(x256+56,xtmp+28,32);
+  transpose4_ooff_simd256(x256+58,xtmp+29,32);
+  transpose4_ooff_simd256(x256+60,xtmp+30,32);
+  transpose4_ooff_simd256(x256+62,xtmp+31,32);
+
+  idft256((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft256((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
+
+
+  for (i=0; i<32; i++) {
+    ibfly2_256(ytmpp,ytmpp+32,
+	       y256p,y256p+32,
+	       tw512_256p);
+    tw512_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0;i<4;i++) {
+      y256[0] = mulhi_int16_simd256(y256[0],ONE_OVER_SQRT2_Q15_256);
+      y256[1] = mulhi_int16_simd256(y256[1],ONE_OVER_SQRT2_Q15_256);
+      y256[2] = mulhi_int16_simd256(y256[2],ONE_OVER_SQRT2_Q15_256);
+      y256[3] = mulhi_int16_simd256(y256[3],ONE_OVER_SQRT2_Q15_256);
+      y256[4] = mulhi_int16_simd256(y256[4],ONE_OVER_SQRT2_Q15_256);
+      y256[5] = mulhi_int16_simd256(y256[5],ONE_OVER_SQRT2_Q15_256);
+      y256[6] = mulhi_int16_simd256(y256[6],ONE_OVER_SQRT2_Q15_256);
+      y256[7] = mulhi_int16_simd256(y256[7],ONE_OVER_SQRT2_Q15_256);
+      y256[8] = mulhi_int16_simd256(y256[8],ONE_OVER_SQRT2_Q15_256);
+      y256[9] = mulhi_int16_simd256(y256[9],ONE_OVER_SQRT2_Q15_256);
+      y256[10] = mulhi_int16_simd256(y256[10],ONE_OVER_SQRT2_Q15_256);
+      y256[11] = mulhi_int16_simd256(y256[11],ONE_OVER_SQRT2_Q15_256);
+      y256[12] = mulhi_int16_simd256(y256[12],ONE_OVER_SQRT2_Q15_256);
+      y256[13] = mulhi_int16_simd256(y256[13],ONE_OVER_SQRT2_Q15_256);
+      y256[14] = mulhi_int16_simd256(y256[14],ONE_OVER_SQRT2_Q15_256);
+      y256[15] = mulhi_int16_simd256(y256[15],ONE_OVER_SQRT2_Q15_256);
+      y256+=16;
+    }
+  }
+
+}
+
+#endif
+
+int16_t tw1024[1536] __attribute__((aligned(32))) = {  32767,0,32766,-202,32764,-403,32761,-604,32757,-805,32751,-1006,32744,-1207,32736,-1407,32727,-1608,32717,-1809,32705,-2010,32692,-2210,32678,-2411,32662,-2611,32646,-2812,32628,-3012,32609,-3212,32588,-3412,32567,-3612,32544,-3812,32520,-4012,32495,-4211,32468,-4410,32441,-4609,32412,-4808,32382,-5007,32350,-5206,32318,-5404,32284,-5602,32249,-5800,32213,-5998,32176,-6196,32137,-6393,32097,-6590,32056,-6787,32014,-6983,31970,-7180,31926,-7376,31880,-7572,31833,-7767,31785,-7962,31735,-8157,31684,-8352,31633,-8546,31580,-8740,31525,-8933,31470,-9127,31413,-9320,31356,-9512,31297,-9704,31236,-9896,31175,-10088,31113,-10279,31049,-10470,30984,-10660,30918,-10850,30851,-11039,30783,-11228,30713,-11417,30643,-11605,30571,-11793,30498,-11981,30424,-12167,30349,-12354,30272,-12540,30195,-12725,30116,-12910,30036,-13095,29955,-13279,29873,-13463,29790,-13646,29706,-13828,29621,-14010,29534,-14192,29446,-14373,29358,-14553,29268,-14733,29177,-14912,29085,-15091,28992,-15269,28897,-15447,28802,-15624,28706,-15800,28608,-15976,28510,-16151,28410,-16326,28309,-16500,28208,-16673,28105,-16846,28001,-17018,27896,-17190,27790,-17361,27683,-17531,27575,-17700,27466,-17869,27355,-18037,27244,-18205,27132,-18372,27019,-18538,26905,-18703,26789,-18868,26673,-19032,26556,-19195,26437,-19358,26318,-19520,26198,-19681,26077,-19841,25954,-20001,25831,-20160,25707,-20318,25582,-20475,25456,-20632,25329,-20788,25201,-20943,25072,-21097,24942,-21250,24811,-21403,24679,-21555,24546,-21706,24413,-21856,24278,-22005,24143,-22154,24006,-22302,23869,-22449,23731,-22595,23592,-22740,23452,-22884,23311,-23028,23169,-23170,23027,-23312,22883,-23453,22739,-23593,22594,-23732,22448,-23870,22301,-24007,22153,-24144,22004,-24279,21855,-24414,21705,-24547,21554,-24680,21402,-24812,21249,-24943,21096,-25073,20942,-25202,20787,-25330,20631,-25457,20474,-25583,20317,-25708,20159,-25832,20000,-25955,19840,-26078,19680,-26199,19519,-26319,19357,-26438,19194,-26557,19031,-26674,18867,-26790,18702,-26906,18537,-27020,18371,-27133,18204,-27245,18036,-27356,17868,-27467,17699,-27576,17530,-27684,17360,-27791,17189,-27897,17017,-28002,16845,-28106,16672,-28209,16499,-28310,16325,-28411,16150,-28511,15975,-28609,15799,-28707,15623,-28803,15446,-28898,15268,-28993,15090,-29086,14911,-29178,14732,-29269,14552,-29359,14372,-29447,14191,-29535,14009,-29622,13827,-29707,13645,-29791,13462,-29874,13278,-29956,13094,-30037,12909,-30117,12724,-30196,12539,-30273,12353,-30350,12166,-30425,11980,-30499,11792,-30572,11604,-30644,11416,-30714,11227,-30784,11038,-30852,10849,-30919,10659,-30985,10469,-31050,10278,-31114,10087,-31176,9895,-31237,9703,-31298,9511,-31357,9319,-31414,9126,-31471,8932,-31526,8739,-31581,8545,-31634,8351,-31685,8156,-31736,7961,-31786,7766,-31834,7571,-31881,7375,-31927,7179,-31971,6982,-32015,6786,-32057,6589,-32098,6392,-32138,6195,-32177,5997,-32214,5799,-32250,5601,-32285,5403,-32319,5205,-32351,5006,-32383,4807,-32413,4608,-32442,4409,-32469,4210,-32496,4011,-32521,3811,-32545,3611,-32568,3411,-32589,3211,-32610,3011,-32629,2811,-32647,2610,-32663,2410,-32679,2209,-32693,2009,-32706,1808,-32718,1607,-32728,1406,-32737,1206,-32745,1005,-32752,804,-32758,603,-32762,402,-32765,201,-32767,
                                                        32767,0,32764,-403,32757,-805,32744,-1207,32727,-1608,32705,-2010,32678,-2411,32646,-2812,32609,-3212,32567,-3612,32520,-4012,32468,-4410,32412,-4808,32350,-5206,32284,-5602,32213,-5998,32137,-6393,32056,-6787,31970,-7180,31880,-7572,31785,-7962,31684,-8352,31580,-8740,31470,-9127,31356,-9512,31236,-9896,31113,-10279,30984,-10660,30851,-11039,30713,-11417,30571,-11793,30424,-12167,30272,-12540,30116,-12910,29955,-13279,29790,-13646,29621,-14010,29446,-14373,29268,-14733,29085,-15091,28897,-15447,28706,-15800,28510,-16151,28309,-16500,28105,-16846,27896,-17190,27683,-17531,27466,-17869,27244,-18205,27019,-18538,26789,-18868,26556,-19195,26318,-19520,26077,-19841,25831,-20160,25582,-20475,25329,-20788,25072,-21097,24811,-21403,24546,-21706,24278,-22005,24006,-22302,23731,-22595,23452,-22884,23169,-23170,22883,-23453,22594,-23732,22301,-24007,22004,-24279,21705,-24547,21402,-24812,21096,-25073,20787,-25330,20474,-25583,20159,-25832,19840,-26078,19519,-26319,19194,-26557,18867,-26790,18537,-27020,18204,-27245,17868,-27467,17530,-27684,17189,-27897,16845,-28106,16499,-28310,16150,-28511,15799,-28707,15446,-28898,15090,-29086,14732,-29269,14372,-29447,14009,-29622,13645,-29791,13278,-29956,12909,-30117,12539,-30273,12166,-30425,11792,-30572,11416,-30714,11038,-30852,10659,-30985,10278,-31114,9895,-31237,9511,-31357,9126,-31471,8739,-31581,8351,-31685,7961,-31786,7571,-31881,7179,-31971,6786,-32057,6392,-32138,5997,-32214,5601,-32285,5205,-32351,4807,-32413,4409,-32469,4011,-32521,3611,-32568,3211,-32610,2811,-32647,2410,-32679,2009,-32706,1607,-32728,1206,-32745,804,-32758,402,-32765,0,-32767,-403,-32765,-805,-32758,-1207,-32745,-1608,-32728,-2010,-32706,-2411,-32679,-2812,-32647,-3212,-32610,-3612,-32568,-4012,-32521,-4410,-32469,-4808,-32413,-5206,-32351,-5602,-32285,-5998,-32214,-6393,-32138,-6787,-32057,-7180,-31971,-7572,-31881,-7962,-31786,-8352,-31685,-8740,-31581,-9127,-31471,-9512,-31357,-9896,-31237,-10279,-31114,-10660,-30985,-11039,-30852,-11417,-30714,-11793,-30572,-12167,-30425,-12540,-30273,-12910,-30117,-13279,-29956,-13646,-29791,-14010,-29622,-14373,-29447,-14733,-29269,-15091,-29086,-15447,-28898,-15800,-28707,-16151,-28511,-16500,-28310,-16846,-28106,-17190,-27897,-17531,-27684,-17869,-27467,-18205,-27245,-18538,-27020,-18868,-26790,-19195,-26557,-19520,-26319,-19841,-26078,-20160,-25832,-20475,-25583,-20788,-25330,-21097,-25073,-21403,-24812,-21706,-24547,-22005,-24279,-22302,-24007,-22595,-23732,-22884,-23453,-23170,-23170,-23453,-22884,-23732,-22595,-24007,-22302,-24279,-22005,-24547,-21706,-24812,-21403,-25073,-21097,-25330,-20788,-25583,-20475,-25832,-20160,-26078,-19841,-26319,-19520,-26557,-19195,-26790,-18868,-27020,-18538,-27245,-18205,-27467,-17869,-27684,-17531,-27897,-17190,-28106,-16846,-28310,-16500,-28511,-16151,-28707,-15800,-28898,-15447,-29086,-15091,-29269,-14733,-29447,-14373,-29622,-14010,-29791,-13646,-29956,-13279,-30117,-12910,-30273,-12540,-30425,-12167,-30572,-11793,-30714,-11417,-30852,-11039,-30985,-10660,-31114,-10279,-31237,-9896,-31357,-9512,-31471,-9127,-31581,-8740,-31685,-8352,-31786,-7962,-31881,-7572,-31971,-7180,-32057,-6787,-32138,-6393,-32214,-5998,-32285,-5602,-32351,-5206,-32413,-4808,-32469,-4410,-32521,-4012,-32568,-3612,-32610,-3212,-32647,-2812,-32679,-2411,-32706,-2010,-32728,-1608,-32745,-1207,-32758,-805,-32765,-403,
                                                        32767,0,32761,-604,32744,-1207,32717,-1809,32678,-2411,32628,-3012,32567,-3612,32495,-4211,32412,-4808,32318,-5404,32213,-5998,32097,-6590,31970,-7180,31833,-7767,31684,-8352,31525,-8933,31356,-9512,31175,-10088,30984,-10660,30783,-11228,30571,-11793,30349,-12354,30116,-12910,29873,-13463,29621,-14010,29358,-14553,29085,-15091,28802,-15624,28510,-16151,28208,-16673,27896,-17190,27575,-17700,27244,-18205,26905,-18703,26556,-19195,26198,-19681,25831,-20160,25456,-20632,25072,-21097,24679,-21555,24278,-22005,23869,-22449,23452,-22884,23027,-23312,22594,-23732,22153,-24144,21705,-24547,21249,-24943,20787,-25330,20317,-25708,19840,-26078,19357,-26438,18867,-26790,18371,-27133,17868,-27467,17360,-27791,16845,-28106,16325,-28411,15799,-28707,15268,-28993,14732,-29269,14191,-29535,13645,-29791,13094,-30037,12539,-30273,11980,-30499,11416,-30714,10849,-30919,10278,-31114,9703,-31298,9126,-31471,8545,-31634,7961,-31786,7375,-31927,6786,-32057,6195,-32177,5601,-32285,5006,-32383,4409,-32469,3811,-32545,3211,-32610,2610,-32663,2009,-32706,1406,-32737,804,-32758,201,-32767,-403,-32765,-1006,-32752,-1608,-32728,-2210,-32693,-2812,-32647,-3412,-32589,-4012,-32521,-4609,-32442,-5206,-32351,-5800,-32250,-6393,-32138,-6983,-32015,-7572,-31881,-8157,-31736,-8740,-31581,-9320,-31414,-9896,-31237,-10470,-31050,-11039,-30852,-11605,-30644,-12167,-30425,-12725,-30196,-13279,-29956,-13828,-29707,-14373,-29447,-14912,-29178,-15447,-28898,-15976,-28609,-16500,-28310,-17018,-28002,-17531,-27684,-18037,-27356,-18538,-27020,-19032,-26674,-19520,-26319,-20001,-25955,-20475,-25583,-20943,-25202,-21403,-24812,-21856,-24414,-22302,-24007,-22740,-23593,-23170,-23170,-23593,-22740,-24007,-22302,-24414,-21856,-24812,-21403,-25202,-20943,-25583,-20475,-25955,-20001,-26319,-19520,-26674,-19032,-27020,-18538,-27356,-18037,-27684,-17531,-28002,-17018,-28310,-16500,-28609,-15976,-28898,-15447,-29178,-14912,-29447,-14373,-29707,-13828,-29956,-13279,-30196,-12725,-30425,-12167,-30644,-11605,-30852,-11039,-31050,-10470,-31237,-9896,-31414,-9320,-31581,-8740,-31736,-8157,-31881,-7572,-32015,-6983,-32138,-6393,-32250,-5800,-32351,-5206,-32442,-4609,-32521,-4012,-32589,-3412,-32647,-2812,-32693,-2210,-32728,-1608,-32752,-1006,-32765,-403,-32767,201,-32758,804,-32737,1406,-32706,2009,-32663,2610,-32610,3211,-32545,3811,-32469,4409,-32383,5006,-32285,5601,-32177,6195,-32057,6786,-31927,7375,-31786,7961,-31634,8545,-31471,9126,-31298,9703,-31114,10278,-30919,10849,-30714,11416,-30499,11980,-30273,12539,-30037,13094,-29791,13645,-29535,14191,-29269,14732,-28993,15268,-28707,15799,-28411,16325,-28106,16845,-27791,17360,-27467,17868,-27133,18371,-26790,18867,-26438,19357,-26078,19840,-25708,20317,-25330,20787,-24943,21249,-24547,21705,-24144,22153,-23732,22594,-23312,23027,-22884,23452,-22449,23869,-22005,24278,-21555,24679,-21097,25072,-20632,25456,-20160,25831,-19681,26198,-19195,26556,-18703,26905,-18205,27244,-17700,27575,-17190,27896,-16673,28208,-16151,28510,-15624,28802,-15091,29085,-14553,29358,-14010,29621,-13463,29873,-12910,30116,-12354,30349,-11793,30571,-11228,30783,-10660,30984,-10088,31175,-9512,31356,-8933,31525,-8352,31684,-7767,31833,-7180,31970,-6590,32097,-5998,32213,-5404,32318,-4808,32412,-4211,32495,-3612,32567,-3012,32628,-2411,32678,-1809,32717,-1207,32744,-604,32761
                                                     };
-
+#ifndef __AVX2__
 void dft1024(int16_t *x,int16_t *y,int scale)
 {
 
@@ -2685,13 +4320,127 @@ void idft1024(int16_t *x,int16_t *y,int scale)
 
 }
 
-int16_t tw2048[2048] __attribute__((aligned(16))) = {32767,0,32766,-101,32766,-202,32765,-302,32764,-403,32763,-503,32761,-604,32759,-704,32757,-805,32754,-905,32751,-1006,32748,-1106,32744,-1207,32740,-1307,32736,-1407,32732,-1508,32727,-1608,32722,-1709,32717,-1809,32711,-1909,32705,-2010,32699,-2110,32692,-2210,32685,-2311,32678,-2411,32670,-2511,32662,-2611,32654,-2712,32646,-2812,32637,-2912,32628,-3012,32618,-3112,32609,-3212,32599,-3312,32588,-3412,32578,-3512,32567,-3612,32556,-3712,32544,-3812,32532,-3912,32520,-4012,32508,-4111,32495,-4211,32482,-4311,32468,-4410,32455,-4510,32441,-4609,32426,-4709,32412,-4808,32397,-4908,32382,-5007,32366,-5107,32350,-5206,32334,-5305,32318,-5404,32301,-5503,32284,-5602,32267,-5701,32249,-5800,32231,-5899,32213,-5998,32194,-6097,32176,-6196,32156,-6294,32137,-6393,32117,-6492,32097,-6590,32077,-6689,32056,-6787,32035,-6885,32014,-6983,31992,-7082,31970,-7180,31948,-7278,31926,-7376,31903,-7474,31880,-7572,31856,-7669,31833,-7767,31809,-7865,31785,-7962,31760,-8060,31735,-8157,31710,-8254,31684,-8352,31659,-8449,31633,-8546,31606,-8643,31580,-8740,31553,-8837,31525,-8933,31498,-9030,31470,-9127,31442,-9223,31413,-9320,31385,-9416,31356,-9512,31326,-9608,31297,-9704,31267,-9800,31236,-9896,31206,-9992,31175,-10088,31144,-10183,31113,-10279,31081,-10374,31049,-10470,31017,-10565,30984,-10660,30951,-10755,30918,-10850,30885,-10945,30851,-11039,30817,-11134,30783,-11228,30748,-11323,30713,-11417,30678,-11511,30643,-11605,30607,-11699,30571,-11793,30535,-11887,30498,-11981,30461,-12074,30424,-12167,30386,-12261,30349,-12354,30311,-12447,30272,-12540,30234,-12633,30195,-12725,30156,-12818,30116,-12910,30076,-13003,30036,-13095,29996,-13187,29955,-13279,29915,-13371,29873,-13463,29832,-13554,29790,-13646,29748,-13737,29706,-13828,29663,-13919,29621,-14010,29577,-14101,29534,-14192,29490,-14282,29446,-14373,29402,-14463,29358,-14553,29313,-14643,29268,-14733,29222,-14823,29177,-14912,29131,-15002,29085,-15091,29038,-15180,28992,-15269,28945,-15358,28897,-15447,28850,-15535,28802,-15624,28754,-15712,28706,-15800,28657,-15888,28608,-15976,28559,-16064,28510,-16151,28460,-16239,28410,-16326,28360,-16413,28309,-16500,28259,-16587,28208,-16673,28156,-16760,28105,-16846,28053,-16932,28001,-17018,27948,-17104,27896,-17190,27843,-17275,27790,-17361,27736,-17446,27683,-17531,27629,-17616,27575,-17700,27520,-17785,27466,-17869,27411,-17953,27355,-18037,27300,-18121,27244,-18205,27188,-18288,27132,-18372,27076,-18455,27019,-18538,26962,-18621,26905,-18703,26847,-18786,26789,-18868,26731,-18950,26673,-19032,26615,-19114,26556,-19195,26497,-19277,26437,-19358,26378,-19439,26318,-19520,26258,-19600,26198,-19681,26137,-19761,26077,-19841,26016,-19921,25954,-20001,25893,-20080,25831,-20160,25769,-20239,25707,-20318,25645,-20397,25582,-20475,25519,-20554,25456,-20632,25392,-20710,25329,-20788,25265,-20865,25201,-20943,25136,-21020,25072,-21097,25007,-21174,24942,-21250,24877,-21327,24811,-21403,24745,-21479,24679,-21555,24613,-21630,24546,-21706,24480,-21781,24413,-21856,24346,-21931,24278,-22005,24211,-22080,24143,-22154,24075,-22228,24006,-22302,23938,-22375,23869,-22449,23800,-22522,23731,-22595,23661,-22667,23592,-22740,23522,-22812,23452,-22884,23382,-22956,23311,-23028,23240,-23099,23169,-23170,23098,-23241,23027,-23312,22955,-23383,22883,-23453,22811,-23523,22739,-23593,22666,-23662,22594,-23732,22521,-23801,22448,-23870,22374,-23939,22301,-24007,22227,-24076,22153,-24144,22079,-24212,22004,-24279,21930,-24347,21855,-24414,21780,-24481,21705,-24547,21629,-24614,21554,-24680,21478,-24746,21402,-24812,21326,-24878,21249,-24943,21173,-25008,21096,-25073,21019,-25137,20942,-25202,20864,-25266,20787,-25330,20709,-25393,20631,-25457,20553,-25520,20474,-25583,20396,-25646,20317,-25708,20238,-25770,20159,-25832,20079,-25894,20000,-25955,19920,-26017,19840,-26078,19760,-26138,19680,-26199,19599,-26259,19519,-26319,19438,-26379,19357,-26438,19276,-26498,19194,-26557,19113,-26616,19031,-26674,18949,-26732,18867,-26790,18785,-26848,18702,-26906,18620,-26963,18537,-27020,18454,-27077,18371,-27133,18287,-27189,18204,-27245,18120,-27301,18036,-27356,17952,-27412,17868,-27467,17784,-27521,17699,-27576,17615,-27630,17530,-27684,17445,-27737,17360,-27791,17274,-27844,17189,-27897,17103,-27949,17017,-28002,16931,-28054,16845,-28106,16759,-28157,16672,-28209,16586,-28260,16499,-28310,16412,-28361,16325,-28411,16238,-28461,16150,-28511,16063,-28560,15975,-28609,15887,-28658,15799,-28707,15711,-28755,15623,-28803,15534,-28851,15446,-28898,15357,-28946,15268,-28993,15179,-29039,15090,-29086,15001,-29132,14911,-29178,14822,-29223,14732,-29269,14642,-29314,14552,-29359,14462,-29403,14372,-29447,14281,-29491,14191,-29535,14100,-29578,14009,-29622,13918,-29664,13827,-29707,13736,-29749,13645,-29791,13553,-29833,13462,-29874,13370,-29916,13278,-29956,13186,-29997,13094,-30037,13002,-30077,12909,-30117,12817,-30157,12724,-30196,12632,-30235,12539,-30273,12446,-30312,12353,-30350,12260,-30387,12166,-30425,12073,-30462,11980,-30499,11886,-30536,11792,-30572,11698,-30608,11604,-30644,11510,-30679,11416,-30714,11322,-30749,11227,-30784,11133,-30818,11038,-30852,10944,-30886,10849,-30919,10754,-30952,10659,-30985,10564,-31018,10469,-31050,10373,-31082,10278,-31114,10182,-31145,10087,-31176,9991,-31207,9895,-31237,9799,-31268,9703,-31298,9607,-31327,9511,-31357,9415,-31386,9319,-31414,9222,-31443,9126,-31471,9029,-31499,8932,-31526,8836,-31554,8739,-31581,8642,-31607,8545,-31634,8448,-31660,8351,-31685,8253,-31711,8156,-31736,8059,-31761,7961,-31786,7864,-31810,7766,-31834,7668,-31857,7571,-31881,7473,-31904,7375,-31927,7277,-31949,7179,-31971,7081,-31993,6982,-32015,6884,-32036,6786,-32057,6688,-32078,6589,-32098,6491,-32118,6392,-32138,6293,-32157,6195,-32177,6096,-32195,5997,-32214,5898,-32232,5799,-32250,5700,-32268,5601,-32285,5502,-32302,5403,-32319,5304,-32335,5205,-32351,5106,-32367,5006,-32383,4907,-32398,4807,-32413,4708,-32427,4608,-32442,4509,-32456,4409,-32469,4310,-32483,4210,-32496,4110,-32509,4011,-32521,3911,-32533,3811,-32545,3711,-32557,3611,-32568,3511,-32579,3411,-32589,3311,-32600,3211,-32610,3111,-32619,3011,-32629,2911,-32638,2811,-32647,2711,-32655,2610,-32663,2510,-32671,2410,-32679,2310,-32686,2209,-32693,2109,-32700,2009,-32706,1908,-32712,1808,-32718,1708,-32723,1607,-32728,1507,-32733,1406,-32737,1306,-32741,1206,-32745,1105,-32749,1005,-32752,904,-32755,804,-32758,703,-32760,603,-32762,502,-32764,402,-32765,301,-32766,201,-32767,100,-32767,0,-32767,-101,-32767,-202,-32767,-302,-32766,-403,-32765,-503,-32764,-604,-32762,-704,-32760,-805,-32758,-905,-32755,-1006,-32752,-1106,-32749,-1207,-32745,-1307,-32741,-1407,-32737,-1508,-32733,-1608,-32728,-1709,-32723,-1809,-32718,-1909,-32712,-2010,-32706,-2110,-32700,-2210,-32693,-2311,-32686,-2411,-32679,-2511,-32671,-2611,-32663,-2712,-32655,-2812,-32647,-2912,-32638,-3012,-32629,-3112,-32619,-3212,-32610,-3312,-32600,-3412,-32589,-3512,-32579,-3612,-32568,-3712,-32557,-3812,-32545,-3912,-32533,-4012,-32521,-4111,-32509,-4211,-32496,-4311,-32483,-4410,-32469,-4510,-32456,-4609,-32442,-4709,-32427,-4808,-32413,-4908,-32398,-5007,-32383,-5107,-32367,-5206,-32351,-5305,-32335,-5404,-32319,-5503,-32302,-5602,-32285,-5701,-32268,-5800,-32250,-5899,-32232,-5998,-32214,-6097,-32195,-6196,-32177,-6294,-32157,-6393,-32138,-6492,-32118,-6590,-32098,-6689,-32078,-6787,-32057,-6885,-32036,-6983,-32015,-7082,-31993,-7180,-31971,-7278,-31949,-7376,-31927,-7474,-31904,-7572,-31881,-7669,-31857,-7767,-31834,-7865,-31810,-7962,-31786,-8060,-31761,-8157,-31736,-8254,-31711,-8352,-31685,-8449,-31660,-8546,-31634,-8643,-31607,-8740,-31581,-8837,-31554,-8933,-31526,-9030,-31499,-9127,-31471,-9223,-31443,-9320,-31414,-9416,-31386,-9512,-31357,-9608,-31327,-9704,-31298,-9800,-31268,-9896,-31237,-9992,-31207,-10088,-31176,-10183,-31145,-10279,-31114,-10374,-31082,-10470,-31050,-10565,-31018,-10660,-30985,-10755,-30952,-10850,-30919,-10945,-30886,-11039,-30852,-11134,-30818,-11228,-30784,-11323,-30749,-11417,-30714,-11511,-30679,-11605,-30644,-11699,-30608,-11793,-30572,-11887,-30536,-11981,-30499,-12074,-30462,-12167,-30425,-12261,-30387,-12354,-30350,-12447,-30312,-12540,-30273,-12633,-30235,-12725,-30196,-12818,-30157,-12910,-30117,-13003,-30077,-13095,-30037,-13187,-29997,-13279,-29956,-13371,-29916,-13463,-29874,-13554,-29833,-13646,-29791,-13737,-29749,-13828,-29707,-13919,-29664,-14010,-29622,-14101,-29578,-14192,-29535,-14282,-29491,-14373,-29447,-14463,-29403,-14553,-29359,-14643,-29314,-14733,-29269,-14823,-29223,-14912,-29178,-15002,-29132,-15091,-29086,-15180,-29039,-15269,-28993,-15358,-28946,-15447,-28898,-15535,-28851,-15624,-28803,-15712,-28755,-15800,-28707,-15888,-28658,-15976,-28609,-16064,-28560,-16151,-28511,-16239,-28461,-16326,-28411,-16413,-28361,-16500,-28310,-16587,-28260,-16673,-28209,-16760,-28157,-16846,-28106,-16932,-28054,-17018,-28002,-17104,-27949,-17190,-27897,-17275,-27844,-17361,-27791,-17446,-27737,-17531,-27684,-17616,-27630,-17700,-27576,-17785,-27521,-17869,-27467,-17953,-27412,-18037,-27356,-18121,-27301,-18205,-27245,-18288,-27189,-18372,-27133,-18455,-27077,-18538,-27020,-18621,-26963,-18703,-26906,-18786,-26848,-18868,-26790,-18950,-26732,-19032,-26674,-19114,-26616,-19195,-26557,-19277,-26498,-19358,-26438,-19439,-26379,-19520,-26319,-19600,-26259,-19681,-26199,-19761,-26138,-19841,-26078,-19921,-26017,-20001,-25955,-20080,-25894,-20160,-25832,-20239,-25770,-20318,-25708,-20397,-25646,-20475,-25583,-20554,-25520,-20632,-25457,-20710,-25393,-20788,-25330,-20865,-25266,-20943,-25202,-21020,-25137,-21097,-25073,-21174,-25008,-21250,-24943,-21327,-24878,-21403,-24812,-21479,-24746,-21555,-24680,-21630,-24614,-21706,-24547,-21781,-24481,-21856,-24414,-21931,-24347,-22005,-24279,-22080,-24212,-22154,-24144,-22228,-24076,-22302,-24007,-22375,-23939,-22449,-23870,-22522,-23801,-22595,-23732,-22667,-23662,-22740,-23593,-22812,-23523,-22884,-23453,-22956,-23383,-23028,-23312,-23099,-23241,-23170,-23170,-23241,-23099,-23312,-23028,-23383,-22956,-23453,-22884,-23523,-22812,-23593,-22740,-23662,-22667,-23732,-22595,-23801,-22522,-23870,-22449,-23939,-22375,-24007,-22302,-24076,-22228,-24144,-22154,-24212,-22080,-24279,-22005,-24347,-21931,-24414,-21856,-24481,-21781,-24547,-21706,-24614,-21630,-24680,-21555,-24746,-21479,-24812,-21403,-24878,-21327,-24943,-21250,-25008,-21174,-25073,-21097,-25137,-21020,-25202,-20943,-25266,-20865,-25330,-20788,-25393,-20710,-25457,-20632,-25520,-20554,-25583,-20475,-25646,-20397,-25708,-20318,-25770,-20239,-25832,-20160,-25894,-20080,-25955,-20001,-26017,-19921,-26078,-19841,-26138,-19761,-26199,-19681,-26259,-19600,-26319,-19520,-26379,-19439,-26438,-19358,-26498,-19277,-26557,-19195,-26616,-19114,-26674,-19032,-26732,-18950,-26790,-18868,-26848,-18786,-26906,-18703,-26963,-18621,-27020,-18538,-27077,-18455,-27133,-18372,-27189,-18288,-27245,-18205,-27301,-18121,-27356,-18037,-27412,-17953,-27467,-17869,-27521,-17785,-27576,-17700,-27630,-17616,-27684,-17531,-27737,-17446,-27791,-17361,-27844,-17275,-27897,-17190,-27949,-17104,-28002,-17018,-28054,-16932,-28106,-16846,-28157,-16760,-28209,-16673,-28260,-16587,-28310,-16500,-28361,-16413,-28411,-16326,-28461,-16239,-28511,-16151,-28560,-16064,-28609,-15976,-28658,-15888,-28707,-15800,-28755,-15712,-28803,-15624,-28851,-15535,-28898,-15447,-28946,-15358,-28993,-15269,-29039,-15180,-29086,-15091,-29132,-15002,-29178,-14912,-29223,-14823,-29269,-14733,-29314,-14643,-29359,-14553,-29403,-14463,-29447,-14373,-29491,-14282,-29535,-14192,-29578,-14101,-29622,-14010,-29664,-13919,-29707,-13828,-29749,-13737,-29791,-13646,-29833,-13554,-29874,-13463,-29916,-13371,-29956,-13279,-29997,-13187,-30037,-13095,-30077,-13003,-30117,-12910,-30157,-12818,-30196,-12725,-30235,-12633,-30273,-12540,-30312,-12447,-30350,-12354,-30387,-12261,-30425,-12167,-30462,-12074,-30499,-11981,-30536,-11887,-30572,-11793,-30608,-11699,-30644,-11605,-30679,-11511,-30714,-11417,-30749,-11323,-30784,-11228,-30818,-11134,-30852,-11039,-30886,-10945,-30919,-10850,-30952,-10755,-30985,-10660,-31018,-10565,-31050,-10470,-31082,-10374,-31114,-10279,-31145,-10183,-31176,-10088,-31207,-9992,-31237,-9896,-31268,-9800,-31298,-9704,-31327,-9608,-31357,-9512,-31386,-9416,-31414,-9320,-31443,-9223,-31471,-9127,-31499,-9030,-31526,-8933,-31554,-8837,-31581,-8740,-31607,-8643,-31634,-8546,-31660,-8449,-31685,-8352,-31711,-8254,-31736,-8157,-31761,-8060,-31786,-7962,-31810,-7865,-31834,-7767,-31857,-7669,-31881,-7572,-31904,-7474,-31927,-7376,-31949,-7278,-31971,-7180,-31993,-7082,-32015,-6983,-32036,-6885,-32057,-6787,-32078,-6689,-32098,-6590,-32118,-6492,-32138,-6393,-32157,-6294,-32177,-6196,-32195,-6097,-32214,-5998,-32232,-5899,-32250,-5800,-32268,-5701,-32285,-5602,-32302,-5503,-32319,-5404,-32335,-5305,-32351,-5206,-32367,-5107,-32383,-5007,-32398,-4908,-32413,-4808,-32427,-4709,-32442,-4609,-32456,-4510,-32469,-4410,-32483,-4311,-32496,-4211,-32509,-4111,-32521,-4012,-32533,-3912,-32545,-3812,-32557,-3712,-32568,-3612,-32579,-3512,-32589,-3412,-32600,-3312,-32610,-3212,-32619,-3112,-32629,-3012,-32638,-2912,-32647,-2812,-32655,-2712,-32663,-2611,-32671,-2511,-32679,-2411,-32686,-2311,-32693,-2210,-32700,-2110,-32706,-2010,-32712,-1909,-32718,-1809,-32723,-1709,-32728,-1608,-32733,-1508,-32737,-1407,-32741,-1307,-32745,-1207,-32749,-1106,-32752,-1006,-32755,-905,-32758,-805,-32760,-704,-32762,-604,-32764,-503,-32765,-403,-32766,-302,-32767,-202,-32767,-101};
+#else //__AVX2__
+void dft1024(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[128],ytmp[128],*tw1024_256p=(simd256_q15_t *)tw1024,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<128; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,32);
+  }
 
 
+  dft256((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  dft256((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
+  dft256((int16_t*)(xtmp+64),(int16_t*)(ytmp+64),1);
+  dft256((int16_t*)(xtmp+96),(int16_t*)(ytmp+96),1);
+
+  for (i=0; i<32; i++) {
+    bfly4_256(ytmpp,ytmpp+32,ytmpp+64,ytmpp+96,
+	      y256p,y256p+32,y256p+64,y256p+96,
+	      tw1024_256p,tw1024_256p+32,tw1024_256p+64);
+    tw1024_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<8; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft1024(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[128],ytmp[128],*tw1024_256p=(simd256_q15_t *)tw1024,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<128; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,32);
+  }
+
+
+  idft256((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft256((int16_t*)(xtmp+32),(int16_t*)(ytmp+32),1);
+  idft256((int16_t*)(xtmp+64),(int16_t*)(ytmp+64),1);
+  idft256((int16_t*)(xtmp+96),(int16_t*)(ytmp+96),1);
+
+  for (i=0; i<32; i++) {
+    ibfly4_256(ytmpp,ytmpp+32,ytmpp+64,ytmpp+96,
+	       y256p,y256p+32,y256p+64,y256p+96,
+	       tw1024_256p,tw1024_256p+32,tw1024_256p+64);
+    tw1024_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<8; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+#endif
+
+int16_t tw2048[2048] __attribute__((aligned(32))) = {32767,0,32766,-101,32766,-202,32765,-302,32764,-403,32763,-503,32761,-604,32759,-704,32757,-805,32754,-905,32751,-1006,32748,-1106,32744,-1207,32740,-1307,32736,-1407,32732,-1508,32727,-1608,32722,-1709,32717,-1809,32711,-1909,32705,-2010,32699,-2110,32692,-2210,32685,-2311,32678,-2411,32670,-2511,32662,-2611,32654,-2712,32646,-2812,32637,-2912,32628,-3012,32618,-3112,32609,-3212,32599,-3312,32588,-3412,32578,-3512,32567,-3612,32556,-3712,32544,-3812,32532,-3912,32520,-4012,32508,-4111,32495,-4211,32482,-4311,32468,-4410,32455,-4510,32441,-4609,32426,-4709,32412,-4808,32397,-4908,32382,-5007,32366,-5107,32350,-5206,32334,-5305,32318,-5404,32301,-5503,32284,-5602,32267,-5701,32249,-5800,32231,-5899,32213,-5998,32194,-6097,32176,-6196,32156,-6294,32137,-6393,32117,-6492,32097,-6590,32077,-6689,32056,-6787,32035,-6885,32014,-6983,31992,-7082,31970,-7180,31948,-7278,31926,-7376,31903,-7474,31880,-7572,31856,-7669,31833,-7767,31809,-7865,31785,-7962,31760,-8060,31735,-8157,31710,-8254,31684,-8352,31659,-8449,31633,-8546,31606,-8643,31580,-8740,31553,-8837,31525,-8933,31498,-9030,31470,-9127,31442,-9223,31413,-9320,31385,-9416,31356,-9512,31326,-9608,31297,-9704,31267,-9800,31236,-9896,31206,-9992,31175,-10088,31144,-10183,31113,-10279,31081,-10374,31049,-10470,31017,-10565,30984,-10660,30951,-10755,30918,-10850,30885,-10945,30851,-11039,30817,-11134,30783,-11228,30748,-11323,30713,-11417,30678,-11511,30643,-11605,30607,-11699,30571,-11793,30535,-11887,30498,-11981,30461,-12074,30424,-12167,30386,-12261,30349,-12354,30311,-12447,30272,-12540,30234,-12633,30195,-12725,30156,-12818,30116,-12910,30076,-13003,30036,-13095,29996,-13187,29955,-13279,29915,-13371,29873,-13463,29832,-13554,29790,-13646,29748,-13737,29706,-13828,29663,-13919,29621,-14010,29577,-14101,29534,-14192,29490,-14282,29446,-14373,29402,-14463,29358,-14553,29313,-14643,29268,-14733,29222,-14823,29177,-14912,29131,-15002,29085,-15091,29038,-15180,28992,-15269,28945,-15358,28897,-15447,28850,-15535,28802,-15624,28754,-15712,28706,-15800,28657,-15888,28608,-15976,28559,-16064,28510,-16151,28460,-16239,28410,-16326,28360,-16413,28309,-16500,28259,-16587,28208,-16673,28156,-16760,28105,-16846,28053,-16932,28001,-17018,27948,-17104,27896,-17190,27843,-17275,27790,-17361,27736,-17446,27683,-17531,27629,-17616,27575,-17700,27520,-17785,27466,-17869,27411,-17953,27355,-18037,27300,-18121,27244,-18205,27188,-18288,27132,-18372,27076,-18455,27019,-18538,26962,-18621,26905,-18703,26847,-18786,26789,-18868,26731,-18950,26673,-19032,26615,-19114,26556,-19195,26497,-19277,26437,-19358,26378,-19439,26318,-19520,26258,-19600,26198,-19681,26137,-19761,26077,-19841,26016,-19921,25954,-20001,25893,-20080,25831,-20160,25769,-20239,25707,-20318,25645,-20397,25582,-20475,25519,-20554,25456,-20632,25392,-20710,25329,-20788,25265,-20865,25201,-20943,25136,-21020,25072,-21097,25007,-21174,24942,-21250,24877,-21327,24811,-21403,24745,-21479,24679,-21555,24613,-21630,24546,-21706,24480,-21781,24413,-21856,24346,-21931,24278,-22005,24211,-22080,24143,-22154,24075,-22228,24006,-22302,23938,-22375,23869,-22449,23800,-22522,23731,-22595,23661,-22667,23592,-22740,23522,-22812,23452,-22884,23382,-22956,23311,-23028,23240,-23099,23169,-23170,23098,-23241,23027,-23312,22955,-23383,22883,-23453,22811,-23523,22739,-23593,22666,-23662,22594,-23732,22521,-23801,22448,-23870,22374,-23939,22301,-24007,22227,-24076,22153,-24144,22079,-24212,22004,-24279,21930,-24347,21855,-24414,21780,-24481,21705,-24547,21629,-24614,21554,-24680,21478,-24746,21402,-24812,21326,-24878,21249,-24943,21173,-25008,21096,-25073,21019,-25137,20942,-25202,20864,-25266,20787,-25330,20709,-25393,20631,-25457,20553,-25520,20474,-25583,20396,-25646,20317,-25708,20238,-25770,20159,-25832,20079,-25894,20000,-25955,19920,-26017,19840,-26078,19760,-26138,19680,-26199,19599,-26259,19519,-26319,19438,-26379,19357,-26438,19276,-26498,19194,-26557,19113,-26616,19031,-26674,18949,-26732,18867,-26790,18785,-26848,18702,-26906,18620,-26963,18537,-27020,18454,-27077,18371,-27133,18287,-27189,18204,-27245,18120,-27301,18036,-27356,17952,-27412,17868,-27467,17784,-27521,17699,-27576,17615,-27630,17530,-27684,17445,-27737,17360,-27791,17274,-27844,17189,-27897,17103,-27949,17017,-28002,16931,-28054,16845,-28106,16759,-28157,16672,-28209,16586,-28260,16499,-28310,16412,-28361,16325,-28411,16238,-28461,16150,-28511,16063,-28560,15975,-28609,15887,-28658,15799,-28707,15711,-28755,15623,-28803,15534,-28851,15446,-28898,15357,-28946,15268,-28993,15179,-29039,15090,-29086,15001,-29132,14911,-29178,14822,-29223,14732,-29269,14642,-29314,14552,-29359,14462,-29403,14372,-29447,14281,-29491,14191,-29535,14100,-29578,14009,-29622,13918,-29664,13827,-29707,13736,-29749,13645,-29791,13553,-29833,13462,-29874,13370,-29916,13278,-29956,13186,-29997,13094,-30037,13002,-30077,12909,-30117,12817,-30157,12724,-30196,12632,-30235,12539,-30273,12446,-30312,12353,-30350,12260,-30387,12166,-30425,12073,-30462,11980,-30499,11886,-30536,11792,-30572,11698,-30608,11604,-30644,11510,-30679,11416,-30714,11322,-30749,11227,-30784,11133,-30818,11038,-30852,10944,-30886,10849,-30919,10754,-30952,10659,-30985,10564,-31018,10469,-31050,10373,-31082,10278,-31114,10182,-31145,10087,-31176,9991,-31207,9895,-31237,9799,-31268,9703,-31298,9607,-31327,9511,-31357,9415,-31386,9319,-31414,9222,-31443,9126,-31471,9029,-31499,8932,-31526,8836,-31554,8739,-31581,8642,-31607,8545,-31634,8448,-31660,8351,-31685,8253,-31711,8156,-31736,8059,-31761,7961,-31786,7864,-31810,7766,-31834,7668,-31857,7571,-31881,7473,-31904,7375,-31927,7277,-31949,7179,-31971,7081,-31993,6982,-32015,6884,-32036,6786,-32057,6688,-32078,6589,-32098,6491,-32118,6392,-32138,6293,-32157,6195,-32177,6096,-32195,5997,-32214,5898,-32232,5799,-32250,5700,-32268,5601,-32285,5502,-32302,5403,-32319,5304,-32335,5205,-32351,5106,-32367,5006,-32383,4907,-32398,4807,-32413,4708,-32427,4608,-32442,4509,-32456,4409,-32469,4310,-32483,4210,-32496,4110,-32509,4011,-32521,3911,-32533,3811,-32545,3711,-32557,3611,-32568,3511,-32579,3411,-32589,3311,-32600,3211,-32610,3111,-32619,3011,-32629,2911,-32638,2811,-32647,2711,-32655,2610,-32663,2510,-32671,2410,-32679,2310,-32686,2209,-32693,2109,-32700,2009,-32706,1908,-32712,1808,-32718,1708,-32723,1607,-32728,1507,-32733,1406,-32737,1306,-32741,1206,-32745,1105,-32749,1005,-32752,904,-32755,804,-32758,703,-32760,603,-32762,502,-32764,402,-32765,301,-32766,201,-32767,100,-32767,0,-32767,-101,-32767,-202,-32767,-302,-32766,-403,-32765,-503,-32764,-604,-32762,-704,-32760,-805,-32758,-905,-32755,-1006,-32752,-1106,-32749,-1207,-32745,-1307,-32741,-1407,-32737,-1508,-32733,-1608,-32728,-1709,-32723,-1809,-32718,-1909,-32712,-2010,-32706,-2110,-32700,-2210,-32693,-2311,-32686,-2411,-32679,-2511,-32671,-2611,-32663,-2712,-32655,-2812,-32647,-2912,-32638,-3012,-32629,-3112,-32619,-3212,-32610,-3312,-32600,-3412,-32589,-3512,-32579,-3612,-32568,-3712,-32557,-3812,-32545,-3912,-32533,-4012,-32521,-4111,-32509,-4211,-32496,-4311,-32483,-4410,-32469,-4510,-32456,-4609,-32442,-4709,-32427,-4808,-32413,-4908,-32398,-5007,-32383,-5107,-32367,-5206,-32351,-5305,-32335,-5404,-32319,-5503,-32302,-5602,-32285,-5701,-32268,-5800,-32250,-5899,-32232,-5998,-32214,-6097,-32195,-6196,-32177,-6294,-32157,-6393,-32138,-6492,-32118,-6590,-32098,-6689,-32078,-6787,-32057,-6885,-32036,-6983,-32015,-7082,-31993,-7180,-31971,-7278,-31949,-7376,-31927,-7474,-31904,-7572,-31881,-7669,-31857,-7767,-31834,-7865,-31810,-7962,-31786,-8060,-31761,-8157,-31736,-8254,-31711,-8352,-31685,-8449,-31660,-8546,-31634,-8643,-31607,-8740,-31581,-8837,-31554,-8933,-31526,-9030,-31499,-9127,-31471,-9223,-31443,-9320,-31414,-9416,-31386,-9512,-31357,-9608,-31327,-9704,-31298,-9800,-31268,-9896,-31237,-9992,-31207,-10088,-31176,-10183,-31145,-10279,-31114,-10374,-31082,-10470,-31050,-10565,-31018,-10660,-30985,-10755,-30952,-10850,-30919,-10945,-30886,-11039,-30852,-11134,-30818,-11228,-30784,-11323,-30749,-11417,-30714,-11511,-30679,-11605,-30644,-11699,-30608,-11793,-30572,-11887,-30536,-11981,-30499,-12074,-30462,-12167,-30425,-12261,-30387,-12354,-30350,-12447,-30312,-12540,-30273,-12633,-30235,-12725,-30196,-12818,-30157,-12910,-30117,-13003,-30077,-13095,-30037,-13187,-29997,-13279,-29956,-13371,-29916,-13463,-29874,-13554,-29833,-13646,-29791,-13737,-29749,-13828,-29707,-13919,-29664,-14010,-29622,-14101,-29578,-14192,-29535,-14282,-29491,-14373,-29447,-14463,-29403,-14553,-29359,-14643,-29314,-14733,-29269,-14823,-29223,-14912,-29178,-15002,-29132,-15091,-29086,-15180,-29039,-15269,-28993,-15358,-28946,-15447,-28898,-15535,-28851,-15624,-28803,-15712,-28755,-15800,-28707,-15888,-28658,-15976,-28609,-16064,-28560,-16151,-28511,-16239,-28461,-16326,-28411,-16413,-28361,-16500,-28310,-16587,-28260,-16673,-28209,-16760,-28157,-16846,-28106,-16932,-28054,-17018,-28002,-17104,-27949,-17190,-27897,-17275,-27844,-17361,-27791,-17446,-27737,-17531,-27684,-17616,-27630,-17700,-27576,-17785,-27521,-17869,-27467,-17953,-27412,-18037,-27356,-18121,-27301,-18205,-27245,-18288,-27189,-18372,-27133,-18455,-27077,-18538,-27020,-18621,-26963,-18703,-26906,-18786,-26848,-18868,-26790,-18950,-26732,-19032,-26674,-19114,-26616,-19195,-26557,-19277,-26498,-19358,-26438,-19439,-26379,-19520,-26319,-19600,-26259,-19681,-26199,-19761,-26138,-19841,-26078,-19921,-26017,-20001,-25955,-20080,-25894,-20160,-25832,-20239,-25770,-20318,-25708,-20397,-25646,-20475,-25583,-20554,-25520,-20632,-25457,-20710,-25393,-20788,-25330,-20865,-25266,-20943,-25202,-21020,-25137,-21097,-25073,-21174,-25008,-21250,-24943,-21327,-24878,-21403,-24812,-21479,-24746,-21555,-24680,-21630,-24614,-21706,-24547,-21781,-24481,-21856,-24414,-21931,-24347,-22005,-24279,-22080,-24212,-22154,-24144,-22228,-24076,-22302,-24007,-22375,-23939,-22449,-23870,-22522,-23801,-22595,-23732,-22667,-23662,-22740,-23593,-22812,-23523,-22884,-23453,-22956,-23383,-23028,-23312,-23099,-23241,-23170,-23170,-23241,-23099,-23312,-23028,-23383,-22956,-23453,-22884,-23523,-22812,-23593,-22740,-23662,-22667,-23732,-22595,-23801,-22522,-23870,-22449,-23939,-22375,-24007,-22302,-24076,-22228,-24144,-22154,-24212,-22080,-24279,-22005,-24347,-21931,-24414,-21856,-24481,-21781,-24547,-21706,-24614,-21630,-24680,-21555,-24746,-21479,-24812,-21403,-24878,-21327,-24943,-21250,-25008,-21174,-25073,-21097,-25137,-21020,-25202,-20943,-25266,-20865,-25330,-20788,-25393,-20710,-25457,-20632,-25520,-20554,-25583,-20475,-25646,-20397,-25708,-20318,-25770,-20239,-25832,-20160,-25894,-20080,-25955,-20001,-26017,-19921,-26078,-19841,-26138,-19761,-26199,-19681,-26259,-19600,-26319,-19520,-26379,-19439,-26438,-19358,-26498,-19277,-26557,-19195,-26616,-19114,-26674,-19032,-26732,-18950,-26790,-18868,-26848,-18786,-26906,-18703,-26963,-18621,-27020,-18538,-27077,-18455,-27133,-18372,-27189,-18288,-27245,-18205,-27301,-18121,-27356,-18037,-27412,-17953,-27467,-17869,-27521,-17785,-27576,-17700,-27630,-17616,-27684,-17531,-27737,-17446,-27791,-17361,-27844,-17275,-27897,-17190,-27949,-17104,-28002,-17018,-28054,-16932,-28106,-16846,-28157,-16760,-28209,-16673,-28260,-16587,-28310,-16500,-28361,-16413,-28411,-16326,-28461,-16239,-28511,-16151,-28560,-16064,-28609,-15976,-28658,-15888,-28707,-15800,-28755,-15712,-28803,-15624,-28851,-15535,-28898,-15447,-28946,-15358,-28993,-15269,-29039,-15180,-29086,-15091,-29132,-15002,-29178,-14912,-29223,-14823,-29269,-14733,-29314,-14643,-29359,-14553,-29403,-14463,-29447,-14373,-29491,-14282,-29535,-14192,-29578,-14101,-29622,-14010,-29664,-13919,-29707,-13828,-29749,-13737,-29791,-13646,-29833,-13554,-29874,-13463,-29916,-13371,-29956,-13279,-29997,-13187,-30037,-13095,-30077,-13003,-30117,-12910,-30157,-12818,-30196,-12725,-30235,-12633,-30273,-12540,-30312,-12447,-30350,-12354,-30387,-12261,-30425,-12167,-30462,-12074,-30499,-11981,-30536,-11887,-30572,-11793,-30608,-11699,-30644,-11605,-30679,-11511,-30714,-11417,-30749,-11323,-30784,-11228,-30818,-11134,-30852,-11039,-30886,-10945,-30919,-10850,-30952,-10755,-30985,-10660,-31018,-10565,-31050,-10470,-31082,-10374,-31114,-10279,-31145,-10183,-31176,-10088,-31207,-9992,-31237,-9896,-31268,-9800,-31298,-9704,-31327,-9608,-31357,-9512,-31386,-9416,-31414,-9320,-31443,-9223,-31471,-9127,-31499,-9030,-31526,-8933,-31554,-8837,-31581,-8740,-31607,-8643,-31634,-8546,-31660,-8449,-31685,-8352,-31711,-8254,-31736,-8157,-31761,-8060,-31786,-7962,-31810,-7865,-31834,-7767,-31857,-7669,-31881,-7572,-31904,-7474,-31927,-7376,-31949,-7278,-31971,-7180,-31993,-7082,-32015,-6983,-32036,-6885,-32057,-6787,-32078,-6689,-32098,-6590,-32118,-6492,-32138,-6393,-32157,-6294,-32177,-6196,-32195,-6097,-32214,-5998,-32232,-5899,-32250,-5800,-32268,-5701,-32285,-5602,-32302,-5503,-32319,-5404,-32335,-5305,-32351,-5206,-32367,-5107,-32383,-5007,-32398,-4908,-32413,-4808,-32427,-4709,-32442,-4609,-32456,-4510,-32469,-4410,-32483,-4311,-32496,-4211,-32509,-4111,-32521,-4012,-32533,-3912,-32545,-3812,-32557,-3712,-32568,-3612,-32579,-3512,-32589,-3412,-32600,-3312,-32610,-3212,-32619,-3112,-32629,-3012,-32638,-2912,-32647,-2812,-32655,-2712,-32663,-2611,-32671,-2511,-32679,-2411,-32686,-2311,-32693,-2210,-32700,-2110,-32706,-2010,-32712,-1909,-32718,-1809,-32723,-1709,-32728,-1608,-32733,-1508,-32737,-1407,-32741,-1307,-32745,-1207,-32749,-1106,-32752,-1006,-32755,-905,-32758,-805,-32760,-704,-32762,-604,-32764,-503,-32765,-403,-32766,-302,-32767,-202,-32767,-101};
+
+#ifndef __AVX2__
 void dft2048(int16_t *x,int16_t *y,int scale)
 {
 
-  simdshort_q15_t xtmp[2048],*xtmpp,*x64 = (simdshort_q15_t *)x;
+  simdshort_q15_t xtmp[1024],*xtmpp,*x64 = (simdshort_q15_t *)x;
   simd_q15_t ytmp[512],*tw2048_128p=(simd_q15_t *)tw2048,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
   simd_q15_t *ytmpp = &ytmp[0];
   int i;
@@ -2781,7 +4530,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
 void idft2048(int16_t *x,int16_t *y,int scale)
 {
 
-  simdshort_q15_t xtmp[2048],*xtmpp,*x64 = (simdshort_q15_t *)x;
+  simdshort_q15_t xtmp[1024],*xtmpp,*x64 = (simdshort_q15_t *)x;
   simd_q15_t ytmp[512],*tw2048_128p=(simd_q15_t *)tw2048,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
   simd_q15_t *ytmpp = &ytmp[0];
   int i;
@@ -2868,12 +4617,197 @@ void idft2048(int16_t *x,int16_t *y,int scale)
 
 }
 
+#else // __AVX2__
+
+void dft2048(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[256],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[256],*tw2048_256p=(simd256_q15_t *)tw2048,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+  xtmpp = xtmp;
+
+  for (i=0; i<4; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,128);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,128);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,128);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,128);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,128);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,128);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,128);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,128);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,128);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,128);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,128);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,128);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,128);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,128);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,128);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,128);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,128);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,128);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,128);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,128);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,128);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,128);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,128);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,128);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,128);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,128);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,128);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,128);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,128);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,128);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,128);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,128);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  dft1024((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft1024((int16_t*)(xtmp+128),(int16_t*)(ytmp+128),1);
+
+
+  for (i=0; i<128; i++) {
+    bfly2_256(ytmpp,ytmpp+128,
+	      y256p,y256p+128,
+	      tw2048_256p);
+    tw2048_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<16; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft2048(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[256],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[256],*tw2048_256p=(simd256_q15_t *)tw2048,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+
+  xtmpp = xtmp;
+
+  for (i=0; i<4; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,128);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,128);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,128);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,128);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,128);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,128);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,128);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,128);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,128);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,128);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,128);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,128);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,128);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,128);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,128);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,128);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,128);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,128);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,128);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,128);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,128);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,128);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,128);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,128);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,128);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,128);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,128);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,128);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,128);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,128);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,128);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,128);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  idft1024((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft1024((int16_t*)(xtmp+128),(int16_t*)(ytmp+128),1);
+
+
+  for (i=0; i<128; i++) {
+    ibfly2_256(ytmpp,ytmpp+128,
+	       y256p,y256p+128,
+	       tw2048_256p);
+    tw2048_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<16; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#endif
+
 #include "twiddles4096.h"
 
+#ifndef __AVX2__
 void dft4096(int16_t *x,int16_t *y,int scale)
 {
 
-  simd_q15_t xtmp[4096],ytmp[4096],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t xtmp[1024],ytmp[1024],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
   simd_q15_t *ytmpp = &ytmp[0];
   int i,j;
 
@@ -2926,10 +4860,12 @@ void dft4096(int16_t *x,int16_t *y,int scale)
 
 }
 
+
+
 void idft4096(int16_t *x,int16_t *y,int scale)
 {
 
-  simd_q15_t xtmp[4096],ytmp[4096],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t xtmp[1024],ytmp[1024],*tw4096_128p=(simd_q15_t *)tw4096,*x128=(simd_q15_t *)x,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
   simd_q15_t *ytmpp = &ytmp[0];
   int i,j;
 
@@ -2982,19 +4918,125 @@ void idft4096(int16_t *x,int16_t *y,int scale)
 
 }
 
-/* Twiddles generated with
-twa = floor(32767*exp(-sqrt(-1)*2*pi*(0:4095)/8192));
-twa2 = zeros(1,2*4096);
-twa2(1:2:end) = real(twa);
-twa2(2:2:end) = imag(twa);
-fd=fopen("twiddle_tmp.txt","w");
-fprintf(fd,"static int16_t tw8192[4096*2] = {");
-fprintf(fd,"%d,",twa2(1:(4096*2)-1));
-fprintf(fd,"%d};\n",twa2(end));
-fclose(fd);
-*/
-static int16_t tw8192[4096*2] = {32767,0,32766,-26,32766,-51,32766,-76,32766,-101,32766,-126,32766,-151,32766,-176,32766,-202,32766,-227,32766,-252,32765,-277,32765,-302,32765,-327,32765,-352,32764,-377,32764,-403,32764,-428,32763,-453,32763,-478,32763,-503,32762,-528,32762,-553,32761,-579,32761,-604,32760,-629,32760,-654,32759,-679,32759,-704,32758,-729,32758,-754,32757,-780,32757,-805,32756,-830,32755,-855,32755,-880,32754,-905,32753,-930,32753,-955,32752,-981,32751,-1006,32750,-1031,32750,-1056,32749,-1081,32748,-1106,32747,-1131,32746,-1156,32745,-1181,32744,-1207,32743,-1232,32742,-1257,32741,-1282,32740,-1307,32739,-1332,32738,-1357,32737,-1382,32736,-1407,32735,-1433,32734,-1458,32733,-1483,32732,-1508,32731,-1533,32729,-1558,32728,-1583,32727,-1608,32726,-1633,32725,-1659,32723,-1684,32722,-1709,32721,-1734,32719,-1759,32718,-1784,32717,-1809,32715,-1834,32714,-1859,32712,-1884,32711,-1909,32709,-1935,32708,-1960,32706,-1985,32705,-2010,32703,-2035,32702,-2060,32700,-2085,32699,-2110,32697,-2135,32695,-2160,32694,-2185,32692,-2210,32690,-2236,32688,-2261,32687,-2286,32685,-2311,32683,-2336,32681,-2361,32680,-2386,32678,-2411,32676,-2436,32674,-2461,32672,-2486,32670,-2511,32668,-2536,32666,-2561,32664,-2586,32662,-2611,32660,-2637,32658,-2662,32656,-2687,32654,-2712,32652,-2737,32650,-2762,32648,-2787,32646,-2812,32644,-2837,32641,-2862,32639,-2887,32637,-2912,32635,-2937,32632,-2962,32630,-2987,32628,-3012,32625,-3037,32623,-3062,32621,-3087,32618,-3112,32616,-3137,32614,-3162,32611,-3187,32609,-3212,32606,-3237,32604,-3262,32601,-3287,32599,-3312,32596,-3337,32594,-3362,32591,-3387,32588,-3412,32586,-3437,32583,-3462,32580,-3487,32578,-3512,32575,-3537,32572,-3562,32570,-3587,32567,-3612,32564,-3637,32561,-3662,32558,-3687,32556,-3712,32553,-3737,32550,-3762,32547,-3787,32544,-3812,32541,-3837,32538,-3862,32535,-3887,32532,-3912,32529,-3937,32526,-3962,32523,-3987,32520,-4012,32517,-4036,32514,-4061,32511,-4086,32508,-4111,32504,-4136,32501,-4161,32498,-4186,32495,-4211,32492,-4236,32488,-4261,32485,-4286,32482,-4311,32478,-4336,32475,-4360,32472,-4385,32468,-4410,32465,-4435,32462,-4460,32458,-4485,32455,-4510,32451,-4535,32448,-4560,32444,-4585,32441,-4609,32437,-4634,32434,-4659,32430,-4684,32426,-4709,32423,-4734,32419,-4759,32416,-4784,32412,-4808,32408,-4833,32404,-4858,32401,-4883,32397,-4908,32393,-4933,32389,-4958,32386,-4982,32382,-5007,32378,-5032,32374,-5057,32370,-5082,32366,-5107,32362,-5131,32358,-5156,32354,-5181,32350,-5206,32346,-5231,32342,-5255,32338,-5280,32334,-5305,32330,-5330,32326,-5355,32322,-5379,32318,-5404,32314,-5429,32310,-5454,32305,-5479,32301,-5503,32297,-5528,32293,-5553,32288,-5578,32284,-5602,32280,-5627,32275,-5652,32271,-5677,32267,-5701,32262,-5726,32258,-5751,32254,-5776,32249,-5800,32245,-5825,32240,-5850,32236,-5875,32231,-5899,32227,-5924,32222,-5949,32218,-5973,32213,-5998,32208,-6023,32204,-6048,32199,-6072,32194,-6097,32190,-6122,32185,-6146,32180,-6171,32176,-6196,32171,-6220,32166,-6245,32161,-6270,32156,-6294,32152,-6319,32147,-6344,32142,-6368,32137,-6393,32132,-6418,32127,-6442,32122,-6467,32117,-6492,32112,-6516,32107,-6541,32102,-6565,32097,-6590,32092,-6615,32087,-6639,32082,-6664,32077,-6689,32072,-6713,32066,-6738,32061,-6762,32056,-6787,32051,-6812,32046,-6836,32040,-6861,32035,-6885,32030,-6910,32024,-6934,32019,-6959,32014,-6983,32008,-7008,32003,-7033,31998,-7057,31992,-7082,31987,-7106,31981,-7131,31976,-7155,31970,-7180,31965,-7204,31959,-7229,31954,-7253,31948,-7278,31943,-7302,31937,-7327,31931,-7351,31926,-7376,31920,-7400,31914,-7425,31909,-7449,31903,-7474,31897,-7498,31891,-7523,31886,-7547,31880,-7572,31874,-7596,31868,-7620,31862,-7645,31856,-7669,31851,-7694,31845,-7718,31839,-7743,31833,-7767,31827,-7791,31821,-7816,31815,-7840,31809,-7865,31803,-7889,31797,-7913,31791,-7938,31785,-7962,31778,-7987,31772,-8011,31766,-8035,31760,-8060,31754,-8084,31748,-8108,31741,-8133,31735,-8157,31729,-8181,31723,-8206,31716,-8230,31710,-8254,31704,-8279,31697,-8303,31691,-8327,31684,-8352,31678,-8376,31672,-8400,31665,-8425,31659,-8449,31652,-8473,31646,-8497,31639,-8522,31633,-8546,31626,-8570,31619,-8594,31613,-8619,31606,-8643,31600,-8667,31593,-8691,31586,-8716,31580,-8740,31573,-8764,31566,-8788,31559,-8813,31553,-8837,31546,-8861,31539,-8885,31532,-8909,31525,-8933,31518,-8958,31512,-8982,31505,-9006,31498,-9030,31491,-9054,31484,-9078,31477,-9103,31470,-9127,31463,-9151,31456,-9175,31449,-9199,31442,-9223,31435,-9247,31428,-9271,31420,-9296,31413,-9320,31406,-9344,31399,-9368,31392,-9392,31385,-9416,31377,-9440,31370,-9464,31363,-9488,31356,-9512,31348,-9536,31341,-9560,31334,-9584,31326,-9608,31319,-9632,31311,-9656,31304,-9680,31297,-9704,31289,-9728,31282,-9752,31274,-9776,31267,-9800,31259,-9824,31252,-9848,31244,-9872,31236,-9896,31229,-9920,31221,-9944,31214,-9968,31206,-9992,31198,-10016,31191,-10040,31183,-10064,31175,-10088,31167,-10112,31160,-10136,31152,-10160,31144,-10183,31136,-10207,31128,-10231,31121,-10255,31113,-10279,31105,-10303,31097,-10327,31089,-10350,31081,-10374,31073,-10398,31065,-10422,31057,-10446,31049,-10470,31041,-10493,31033,-10517,31025,-10541,31017,-10565,31009,-10589,31001,-10612,30992,-10636,30984,-10660,30976,-10684,30968,-10707,30960,-10731,30951,-10755,30943,-10779,30935,-10802,30927,-10826,30918,-10850,30910,-10874,30902,-10897,30893,-10921,30885,-10945,30876,-10968,30868,-10992,30860,-11016,30851,-11039,30843,-11063,30834,-11087,30826,-11110,30817,-11134,30809,-11158,30800,-11181,30791,-11205,30783,-11228,30774,-11252,30766,-11276,30757,-11299,30748,-11323,30739,-11346,30731,-11370,30722,-11394,30713,-11417,30705,-11441,30696,-11464,30687,-11488,30678,-11511,30669,-11535,30660,-11558,30652,-11582,30643,-11605,30634,-11629,30625,-11652,30616,-11676,30607,-11699,30598,-11723,30589,-11746,30580,-11770,30571,-11793,30562,-11817,30553,-11840,30544,-11863,30535,-11887,30525,-11910,30516,-11934,30507,-11957,30498,-11981,30489,-12004,30480,-12027,30470,-12051,30461,-12074,30452,-12097,30442,-12121,30433,-12144,30424,-12167,30415,-12191,30405,-12214,30396,-12237,30386,-12261,30377,-12284,30368,-12307,30358,-12331,30349,-12354,30339,-12377,30330,-12400,30320,-12424,30311,-12447,30301,-12470,30291,-12493,30282,-12517,30272,-12540,30263,-12563,30253,-12586,30243,-12610,30234,-12633,30224,-12656,30214,-12679,30205,-12702,30195,-12725,30185,-12749,30175,-12772,30165,-12795,30156,-12818,30146,-12841,30136,-12864,30126,-12887,30116,-12910,30106,-12934,30096,-12957,30086,-12980,30076,-13003,30066,-13026,30056,-13049,30046,-13072,30036,-13095,30026,-13118,30016,-13141,30006,-13164,29996,-13187,29986,-13210,29976,-13233,29966,-13256,29955,-13279,29945,-13302,29935,-13325,29925,-13348,29915,-13371,29904,-13394,29894,-13417,29884,-13440,29873,-13463,29863,-13486,29853,-13508,29842,-13531,29832,-13554,29822,-13577,29811,-13600,29801,-13623,29790,-13646,29780,-13668,29769,-13691,29759,-13714,29748,-13737,29738,-13760,29727,-13783,29717,-13805,29706,-13828,29695,-13851,29685,-13874,29674,-13896,29663,-13919,29653,-13942,29642,-13965,29631,-13987,29621,-14010,29610,-14033,29599,-14056,29588,-14078,29577,-14101,29567,-14124,29556,-14146,29545,-14169,29534,-14192,29523,-14214,29512,-14237,29501,-14260,29490,-14282,29479,-14305,29468,-14327,29457,-14350,29446,-14373,29435,-14395,29424,-14418,29413,-14440,29402,-14463,29391,-14485,29380,-14508,29369,-14531,29358,-14553,29346,-14576,29335,-14598,29324,-14621,29313,-14643,29302,-14666,29290,-14688,29279,-14710,29268,-14733,29256,-14755,29245,-14778,29234,-14800,29222,-14823,29211,-14845,29200,-14867,29188,-14890,29177,-14912,29165,-14935,29154,-14957,29142,-14979,29131,-15002,29119,-15024,29108,-15046,29096,-15069,29085,-15091,29073,-15113,29062,-15136,29050,-15158,29038,-15180,29027,-15202,29015,-15225,29003,-15247,28992,-15269,28980,-15291,28968,-15314,28956,-15336,28945,-15358,28933,-15380,28921,-15402,28909,-15425,28897,-15447,28886,-15469,28874,-15491,28862,-15513,28850,-15535,28838,-15557,28826,-15580,28814,-15602,28802,-15624,28790,-15646,28778,-15668,28766,-15690,28754,-15712,28742,-15734,28730,-15756,28718,-15778,28706,-15800,28694,-15822,28681,-15844,28669,-15866,28657,-15888,28645,-15910,28633,-15932,28620,-15954,28608,-15976,28596,-15998,28584,-16020,28571,-16042,28559,-16064,28547,-16086,28534,-16108,28522,-16129,28510,-16151,28497,-16173,28485,-16195,28472,-16217,28460,-16239,28447,-16261,28435,-16282,28423,-16304,28410,-16326,28397,-16348,28385,-16369,28372,-16391,28360,-16413,28347,-16435,28335,-16456,28322,-16478,28309,-16500,28297,-16522,28284,-16543,28271,-16565,28259,-16587,28246,-16608,28233,-16630,28220,-16652,28208,-16673,28195,-16695,28182,-16717,28169,-16738,28156,-16760,28143,-16781,28131,-16803,28118,-16825,28105,-16846,28092,-16868,28079,-16889,28066,-16911,28053,-16932,28040,-16954,28027,-16975,28014,-16997,28001,-17018,27988,-17040,27975,-17061,27962,-17083,27948,-17104,27935,-17125,27922,-17147,27909,-17168,27896,-17190,27883,-17211,27869,-17233,27856,-17254,27843,-17275,27830,-17297,27816,-17318,27803,-17339,27790,-17361,27777,-17382,27763,-17403,27750,-17424,27736,-17446,27723,-17467,27710,-17488,27696,-17510,27683,-17531,27669,-17552,27656,-17573,27642,-17594,27629,-17616,27615,-17637,27602,-17658,27588,-17679,27575,-17700,27561,-17721,27548,-17743,27534,-17764,27520,-17785,27507,-17806,27493,-17827,27479,-17848,27466,-17869,27452,-17890,27438,-17911,27424,-17932,27411,-17953,27397,-17974,27383,-17995,27369,-18016,27355,-18037,27342,-18058,27328,-18079,27314,-18100,27300,-18121,27286,-18142,27272,-18163,27258,-18184,27244,-18205,27230,-18226,27216,-18247,27202,-18268,27188,-18288,27174,-18309,27160,-18330,27146,-18351,27132,-18372,27118,-18393,27104,-18413,27090,-18434,27076,-18455,27061,-18476,27047,-18496,27033,-18517,27019,-18538,27005,-18559,26990,-18579,26976,-18600,26962,-18621,26948,-18641,26933,-18662,26919,-18683,26905,-18703,26890,-18724,26876,-18745,26861,-18765,26847,-18786,26833,-18806,26818,-18827,26804,-18847,26789,-18868,26775,-18889,26760,-18909,26746,-18930,26731,-18950,26717,-18971,26702,-18991,26688,-19012,26673,-19032,26658,-19052,26644,-19073,26629,-19093,26615,-19114,26600,-19134,26585,-19155,26570,-19175,26556,-19195,26541,-19216,26526,-19236,26512,-19256,26497,-19277,26482,-19297,26467,-19317,26452,-19338,26437,-19358,26423,-19378,26408,-19398,26393,-19419,26378,-19439,26363,-19459,26348,-19479,26333,-19500,26318,-19520,26303,-19540,26288,-19560,26273,-19580,26258,-19600,26243,-19621,26228,-19641,26213,-19661,26198,-19681,26183,-19701,26168,-19721,26153,-19741,26137,-19761,26122,-19781,26107,-19801,26092,-19821,26077,-19841,26061,-19861,26046,-19881,26031,-19901,26016,-19921,26000,-19941,25985,-19961,25970,-19981,25954,-20001,25939,-20021,25924,-20041,25908,-20061,25893,-20080,25878,-20100,25862,-20120,25847,-20140,25831,-20160,25816,-20180,25800,-20199,25785,-20219,25769,-20239,25754,-20259,25738,-20278,25723,-20298,25707,-20318,25691,-20338,25676,-20357,25660,-20377,25645,-20397,25629,-20416,25613,-20436,25598,-20456,25582,-20475,25566,-20495,25550,-20514,25535,-20534,25519,-20554,25503,-20573,25487,-20593,25472,-20612,25456,-20632,25440,-20651,25424,-20671,25408,-20690,25392,-20710,25376,-20729,25361,-20749,25345,-20768,25329,-20788,25313,-20807,25297,-20826,25281,-20846,25265,-20865,25249,-20885,25233,-20904,25217,-20923,25201,-20943,25185,-20962,25169,-20981,25152,-21001,25136,-21020,25120,-21039,25104,-21058,25088,-21078,25072,-21097,25056,-21116,25039,-21135,25023,-21155,25007,-21174,24991,-21193,24974,-21212,24958,-21231,24942,-21250,24926,-21269,24909,-21289,24893,-21308,24877,-21327,24860,-21346,24844,-21365,24827,-21384,24811,-21403,24795,-21422,24778,-21441,24762,-21460,24745,-21479,24729,-21498,24712,-21517,24696,-21536,24679,-21555,24663,-21574,24646,-21593,24630,-21612,24613,-21630,24596,-21649,24580,-21668,24563,-21687,24546,-21706,24530,-21725,24513,-21744,24496,-21762,24480,-21781,24463,-21800,24446,-21819,24430,-21837,24413,-21856,24396,-21875,24379,-21894,24362,-21912,24346,-21931,24329,-21950,24312,-21968,24295,-21987,24278,-22005,24261,-22024,24244,-22043,24228,-22061,24211,-22080,24194,-22098,24177,-22117,24160,-22136,24143,-22154,24126,-22173,24109,-22191,24092,-22210,24075,-22228,24058,-22246,24041,-22265,24023,-22283,24006,-22302,23989,-22320,23972,-22339,23955,-22357,23938,-22375,23921,-22394,23903,-22412,23886,-22430,23869,-22449,23852,-22467,23835,-22485,23817,-22504,23800,-22522,23783,-22540,23766,-22558,23748,-22576,23731,-22595,23714,-22613,23696,-22631,23679,-22649,23661,-22667,23644,-22686,23627,-22704,23609,-22722,23592,-22740,23574,-22758,23557,-22776,23539,-22794,23522,-22812,23504,-22830,23487,-22848,23469,-22866,23452,-22884,23434,-22902,23417,-22920,23399,-22938,23382,-22956,23364,-22974,23346,-22992,23329,-23010,23311,-23028,23293,-23046,23276,-23063,23258,-23081,23240,-23099,23223,-23117,23205,-23135,23187,-23152,23169,-23170,23151,-23188,23134,-23206,23116,-23224,23098,-23241,23080,-23259,23062,-23277,23045,-23294,23027,-23312,23009,-23330,22991,-23347,22973,-23365,22955,-23383,22937,-23400,22919,-23418,22901,-23435,22883,-23453,22865,-23470,22847,-23488,22829,-23505,22811,-23523,22793,-23540,22775,-23558,22757,-23575,22739,-23593,22721,-23610,22703,-23628,22685,-23645,22666,-23662,22648,-23680,22630,-23697,22612,-23715,22594,-23732,22575,-23749,22557,-23767,22539,-23784,22521,-23801,22503,-23818,22484,-23836,22466,-23853,22448,-23870,22429,-23887,22411,-23904,22393,-23922,22374,-23939,22356,-23956,22338,-23973,22319,-23990,22301,-24007,22282,-24024,22264,-24042,22245,-24059,22227,-24076,22209,-24093,22190,-24110,22172,-24127,22153,-24144,22135,-24161,22116,-24178,22097,-24195,22079,-24212,22060,-24229,22042,-24245,22023,-24262,22004,-24279,21986,-24296,21967,-24313,21949,-24330,21930,-24347,21911,-24363,21893,-24380,21874,-24397,21855,-24414,21836,-24431,21818,-24447,21799,-24464,21780,-24481,21761,-24497,21743,-24514,21724,-24531,21705,-24547,21686,-24564,21667,-24581,21648,-24597,21629,-24614,21611,-24631,21592,-24647,21573,-24664,21554,-24680,21535,-24697,21516,-24713,21497,-24730,21478,-24746,21459,-24763,21440,-24779,21421,-24796,21402,-24812,21383,-24828,21364,-24845,21345,-24861,21326,-24878,21307,-24894,21288,-24910,21268,-24927,21249,-24943,21230,-24959,21211,-24975,21192,-24992,21173,-25008,21154,-25024,21134,-25040,21115,-25057,21096,-25073,21077,-25089,21057,-25105,21038,-25121,21019,-25137,21000,-25153,20980,-25170,20961,-25186,20942,-25202,20922,-25218,20903,-25234,20884,-25250,20864,-25266,20845,-25282,20825,-25298,20806,-25314,20787,-25330,20767,-25346,20748,-25362,20728,-25377,20709,-25393,20689,-25409,20670,-25425,20650,-25441,20631,-25457,20611,-25473,20592,-25488,20572,-25504,20553,-25520,20533,-25536,20513,-25551,20494,-25567,20474,-25583,20455,-25599,20435,-25614,20415,-25630,20396,-25646,20376,-25661,20356,-25677,20337,-25692,20317,-25708,20297,-25724,20277,-25739,20258,-25755,20238,-25770,20218,-25786,20198,-25801,20179,-25817,20159,-25832,20139,-25848,20119,-25863,20099,-25879,20079,-25894,20060,-25909,20040,-25925,20020,-25940,20000,-25955,19980,-25971,19960,-25986,19940,-26001,19920,-26017,19900,-26032,19880,-26047,19860,-26062,19840,-26078,19820,-26093,19800,-26108,19780,-26123,19760,-26138,19740,-26154,19720,-26169,19700,-26184,19680,-26199,19660,-26214,19640,-26229,19620,-26244,19599,-26259,19579,-26274,19559,-26289,19539,-26304,19519,-26319,19499,-26334,19478,-26349,19458,-26364,19438,-26379,19418,-26394,19397,-26409,19377,-26424,19357,-26438,19337,-26453,19316,-26468,19296,-26483,19276,-26498,19255,-26513,19235,-26527,19215,-26542,19194,-26557,19174,-26571,19154,-26586,19133,-26601,19113,-26616,19092,-26630,19072,-26645,19051,-26659,19031,-26674,19011,-26689,18990,-26703,18970,-26718,18949,-26732,18929,-26747,18908,-26761,18888,-26776,18867,-26790,18846,-26805,18826,-26819,18805,-26834,18785,-26848,18764,-26862,18744,-26877,18723,-26891,18702,-26906,18682,-26920,18661,-26934,18640,-26949,18620,-26963,18599,-26977,18578,-26991,18558,-27006,18537,-27020,18516,-27034,18495,-27048,18475,-27062,18454,-27077,18433,-27091,18412,-27105,18392,-27119,18371,-27133,18350,-27147,18329,-27161,18308,-27175,18287,-27189,18267,-27203,18246,-27217,18225,-27231,18204,-27245,18183,-27259,18162,-27273,18141,-27287,18120,-27301,18099,-27315,18078,-27329,18057,-27343,18036,-27356,18015,-27370,17994,-27384,17973,-27398,17952,-27412,17931,-27425,17910,-27439,17889,-27453,17868,-27467,17847,-27480,17826,-27494,17805,-27508,17784,-27521,17763,-27535,17742,-27549,17720,-27562,17699,-27576,17678,-27589,17657,-27603,17636,-27616,17615,-27630,17593,-27643,17572,-27657,17551,-27670,17530,-27684,17509,-27697,17487,-27711,17466,-27724,17445,-27737,17423,-27751,17402,-27764,17381,-27778,17360,-27791,17338,-27804,17317,-27817,17296,-27831,17274,-27844,17253,-27857,17232,-27870,17210,-27884,17189,-27897,17167,-27910,17146,-27923,17124,-27936,17103,-27949,17082,-27963,17060,-27976,17039,-27989,17017,-28002,16996,-28015,16974,-28028,16953,-28041,16931,-28054,16910,-28067,16888,-28080,16867,-28093,16845,-28106,16824,-28119,16802,-28132,16780,-28144,16759,-28157,16737,-28170,16716,-28183,16694,-28196,16672,-28209,16651,-28221,16629,-28234,16607,-28247,16586,-28260,16564,-28272,16542,-28285,16521,-28298,16499,-28310,16477,-28323,16455,-28336,16434,-28348,16412,-28361,16390,-28373,16368,-28386,16347,-28398,16325,-28411,16303,-28424,16281,-28436,16260,-28448,16238,-28461,16216,-28473,16194,-28486,16172,-28498,16150,-28511,16128,-28523,16107,-28535,16085,-28548,16063,-28560,16041,-28572,16019,-28585,15997,-28597,15975,-28609,15953,-28621,15931,-28634,15909,-28646,15887,-28658,15865,-28670,15843,-28682,15821,-28695,15799,-28707,15777,-28719,15755,-28731,15733,-28743,15711,-28755,15689,-28767,15667,-28779,15645,-28791,15623,-28803,15601,-28815,15579,-28827,15556,-28839,15534,-28851,15512,-28863,15490,-28875,15468,-28887,15446,-28898,15424,-28910,15401,-28922,15379,-28934,15357,-28946,15335,-28957,15313,-28969,15290,-28981,15268,-28993,15246,-29004,15224,-29016,15201,-29028,15179,-29039,15157,-29051,15135,-29063,15112,-29074,15090,-29086,15068,-29097,15045,-29109,15023,-29120,15001,-29132,14978,-29143,14956,-29155,14934,-29166,14911,-29178,14889,-29189,14866,-29201,14844,-29212,14822,-29223,14799,-29235,14777,-29246,14754,-29257,14732,-29269,14709,-29280,14687,-29291,14665,-29303,14642,-29314,14620,-29325,14597,-29336,14575,-29347,14552,-29359,14530,-29370,14507,-29381,14484,-29392,14462,-29403,14439,-29414,14417,-29425,14394,-29436,14372,-29447,14349,-29458,14326,-29469,14304,-29480,14281,-29491,14259,-29502,14236,-29513,14213,-29524,14191,-29535,14168,-29546,14145,-29557,14123,-29568,14100,-29578,14077,-29589,14055,-29600,14032,-29611,14009,-29622,13986,-29632,13964,-29643,13941,-29654,13918,-29664,13895,-29675,13873,-29686,13850,-29696,13827,-29707,13804,-29718,13782,-29728,13759,-29739,13736,-29749,13713,-29760,13690,-29770,13667,-29781,13645,-29791,13622,-29802,13599,-29812,13576,-29823,13553,-29833,13530,-29843,13507,-29854,13485,-29864,13462,-29874,13439,-29885,13416,-29895,13393,-29905,13370,-29916,13347,-29926,13324,-29936,13301,-29946,13278,-29956,13255,-29967,13232,-29977,13209,-29987,13186,-29997,13163,-30007,13140,-30017,13117,-30027,13094,-30037,13071,-30047,13048,-30057,13025,-30067,13002,-30077,12979,-30087,12956,-30097,12933,-30107,12909,-30117,12886,-30127,12863,-30137,12840,-30147,12817,-30157,12794,-30166,12771,-30176,12748,-30186,12724,-30196,12701,-30206,12678,-30215,12655,-30225,12632,-30235,12609,-30244,12585,-30254,12562,-30264,12539,-30273,12516,-30283,12492,-30292,12469,-30302,12446,-30312,12423,-30321,12399,-30331,12376,-30340,12353,-30350,12330,-30359,12306,-30369,12283,-30378,12260,-30387,12236,-30397,12213,-30406,12190,-30416,12166,-30425,12143,-30434,12120,-30443,12096,-30453,12073,-30462,12050,-30471,12026,-30481,12003,-30490,11980,-30499,11956,-30508,11933,-30517,11909,-30526,11886,-30536,11862,-30545,11839,-30554,11816,-30563,11792,-30572,11769,-30581,11745,-30590,11722,-30599,11698,-30608,11675,-30617,11651,-30626,11628,-30635,11604,-30644,11581,-30653,11557,-30661,11534,-30670,11510,-30679,11487,-30688,11463,-30697,11440,-30706,11416,-30714,11393,-30723,11369,-30732,11345,-30740,11322,-30749,11298,-30758,11275,-30767,11251,-30775,11227,-30784,11204,-30792,11180,-30801,11157,-30810,11133,-30818,11109,-30827,11086,-30835,11062,-30844,11038,-30852,11015,-30861,10991,-30869,10967,-30877,10944,-30886,10920,-30894,10896,-30903,10873,-30911,10849,-30919,10825,-30928,10801,-30936,10778,-30944,10754,-30952,10730,-30961,10706,-30969,10683,-30977,10659,-30985,10635,-30993,10611,-31002,10588,-31010,10564,-31018,10540,-31026,10516,-31034,10492,-31042,10469,-31050,10445,-31058,10421,-31066,10397,-31074,10373,-31082,10349,-31090,10326,-31098,10302,-31106,10278,-31114,10254,-31122,10230,-31129,10206,-31137,10182,-31145,10159,-31153,10135,-31161,10111,-31168,10087,-31176,10063,-31184,10039,-31192,10015,-31199,9991,-31207,9967,-31215,9943,-31222,9919,-31230,9895,-31237,9871,-31245,9847,-31253,9823,-31260,9799,-31268,9775,-31275,9751,-31283,9727,-31290,9703,-31298,9679,-31305,9655,-31312,9631,-31320,9607,-31327,9583,-31335,9559,-31342,9535,-31349,9511,-31357,9487,-31364,9463,-31371,9439,-31378,9415,-31386,9391,-31393,9367,-31400,9343,-31407,9319,-31414,9295,-31421,9270,-31429,9246,-31436,9222,-31443,9198,-31450,9174,-31457,9150,-31464,9126,-31471,9102,-31478,9077,-31485,9053,-31492,9029,-31499,9005,-31506,8981,-31513,8957,-31519,8932,-31526,8908,-31533,8884,-31540,8860,-31547,8836,-31554,8812,-31560,8787,-31567,8763,-31574,8739,-31581,8715,-31587,8690,-31594,8666,-31601,8642,-31607,8618,-31614,8593,-31620,8569,-31627,8545,-31634,8521,-31640,8496,-31647,8472,-31653,8448,-31660,8424,-31666,8399,-31673,8375,-31679,8351,-31685,8326,-31692,8302,-31698,8278,-31705,8253,-31711,8229,-31717,8205,-31724,8180,-31730,8156,-31736,8132,-31742,8107,-31749,8083,-31755,8059,-31761,8034,-31767,8010,-31773,7986,-31779,7961,-31786,7937,-31792,7912,-31798,7888,-31804,7864,-31810,7839,-31816,7815,-31822,7790,-31828,7766,-31834,7742,-31840,7717,-31846,7693,-31852,7668,-31857,7644,-31863,7619,-31869,7595,-31875,7571,-31881,7546,-31887,7522,-31892,7497,-31898,7473,-31904,7448,-31910,7424,-31915,7399,-31921,7375,-31927,7350,-31932,7326,-31938,7301,-31944,7277,-31949,7252,-31955,7228,-31960,7203,-31966,7179,-31971,7154,-31977,7130,-31982,7105,-31988,7081,-31993,7056,-31999,7032,-32004,7007,-32009,6982,-32015,6958,-32020,6933,-32025,6909,-32031,6884,-32036,6860,-32041,6835,-32047,6811,-32052,6786,-32057,6761,-32062,6737,-32067,6712,-32073,6688,-32078,6663,-32083,6638,-32088,6614,-32093,6589,-32098,6564,-32103,6540,-32108,6515,-32113,6491,-32118,6466,-32123,6441,-32128,6417,-32133,6392,-32138,6367,-32143,6343,-32148,6318,-32153,6293,-32157,6269,-32162,6244,-32167,6219,-32172,6195,-32177,6170,-32181,6145,-32186,6121,-32191,6096,-32195,6071,-32200,6047,-32205,6022,-32209,5997,-32214,5972,-32219,5948,-32223,5923,-32228,5898,-32232,5874,-32237,5849,-32241,5824,-32246,5799,-32250,5775,-32255,5750,-32259,5725,-32263,5700,-32268,5676,-32272,5651,-32276,5626,-32281,5601,-32285,5577,-32289,5552,-32294,5527,-32298,5502,-32302,5478,-32306,5453,-32311,5428,-32315,5403,-32319,5378,-32323,5354,-32327,5329,-32331,5304,-32335,5279,-32339,5254,-32343,5230,-32347,5205,-32351,5180,-32355,5155,-32359,5130,-32363,5106,-32367,5081,-32371,5056,-32375,5031,-32379,5006,-32383,4981,-32387,4957,-32390,4932,-32394,4907,-32398,4882,-32402,4857,-32405,4832,-32409,4807,-32413,4783,-32417,4758,-32420,4733,-32424,4708,-32427,4683,-32431,4658,-32435,4633,-32438,4608,-32442,4584,-32445,4559,-32449,4534,-32452,4509,-32456,4484,-32459,4459,-32463,4434,-32466,4409,-32469,4384,-32473,4359,-32476,4335,-32479,4310,-32483,4285,-32486,4260,-32489,4235,-32493,4210,-32496,4185,-32499,4160,-32502,4135,-32505,4110,-32509,4085,-32512,4060,-32515,4035,-32518,4011,-32521,3986,-32524,3961,-32527,3936,-32530,3911,-32533,3886,-32536,3861,-32539,3836,-32542,3811,-32545,3786,-32548,3761,-32551,3736,-32554,3711,-32557,3686,-32559,3661,-32562,3636,-32565,3611,-32568,3586,-32571,3561,-32573,3536,-32576,3511,-32579,3486,-32581,3461,-32584,3436,-32587,3411,-32589,3386,-32592,3361,-32595,3336,-32597,3311,-32600,3286,-32602,3261,-32605,3236,-32607,3211,-32610,3186,-32612,3161,-32615,3136,-32617,3111,-32619,3086,-32622,3061,-32624,3036,-32626,3011,-32629,2986,-32631,2961,-32633,2936,-32636,2911,-32638,2886,-32640,2861,-32642,2836,-32645,2811,-32647,2786,-32649,2761,-32651,2736,-32653,2711,-32655,2686,-32657,2661,-32659,2636,-32661,2610,-32663,2585,-32665,2560,-32667,2535,-32669,2510,-32671,2485,-32673,2460,-32675,2435,-32677,2410,-32679,2385,-32681,2360,-32682,2335,-32684,2310,-32686,2285,-32688,2260,-32689,2235,-32691,2209,-32693,2184,-32695,2159,-32696,2134,-32698,2109,-32700,2084,-32701,2059,-32703,2034,-32704,2009,-32706,1984,-32707,1959,-32709,1934,-32710,1908,-32712,1883,-32713,1858,-32715,1833,-32716,1808,-32718,1783,-32719,1758,-32720,1733,-32722,1708,-32723,1683,-32724,1658,-32726,1632,-32727,1607,-32728,1582,-32729,1557,-32730,1532,-32732,1507,-32733,1482,-32734,1457,-32735,1432,-32736,1406,-32737,1381,-32738,1356,-32739,1331,-32740,1306,-32741,1281,-32742,1256,-32743,1231,-32744,1206,-32745,1180,-32746,1155,-32747,1130,-32748,1105,-32749,1080,-32750,1055,-32751,1030,-32751,1005,-32752,980,-32753,954,-32754,929,-32754,904,-32755,879,-32756,854,-32756,829,-32757,804,-32758,779,-32758,753,-32759,728,-32759,703,-32760,678,-32760,653,-32761,628,-32761,603,-32762,578,-32762,552,-32763,527,-32763,502,-32764,477,-32764,452,-32764,427,-32765,402,-32765,376,-32765,351,-32766,326,-32766,301,-32766,276,-32766,251,-32767,226,-32767,201,-32767,175,-32767,150,-32767,125,-32767,100,-32767,75,-32767,50,-32767,25,-32767,0,-32767,-26,-32767,-51,-32767,-76,-32767,-101,-32767,-126,-32767,-151,-32767,-176,-32767,-202,-32767,-227,-32767,-252,-32767,-277,-32766,-302,-32766,-327,-32766,-352,-32766,-377,-32765,-403,-32765,-428,-32765,-453,-32764,-478,-32764,-503,-32764,-528,-32763,-553,-32763,-579,-32762,-604,-32762,-629,-32761,-654,-32761,-679,-32760,-704,-32760,-729,-32759,-754,-32759,-780,-32758,-805,-32758,-830,-32757,-855,-32756,-880,-32756,-905,-32755,-930,-32754,-955,-32754,-981,-32753,-1006,-32752,-1031,-32751,-1056,-32751,-1081,-32750,-1106,-32749,-1131,-32748,-1156,-32747,-1181,-32746,-1207,-32745,-1232,-32744,-1257,-32743,-1282,-32742,-1307,-32741,-1332,-32740,-1357,-32739,-1382,-32738,-1407,-32737,-1433,-32736,-1458,-32735,-1483,-32734,-1508,-32733,-1533,-32732,-1558,-32730,-1583,-32729,-1608,-32728,-1633,-32727,-1659,-32726,-1684,-32724,-1709,-32723,-1734,-32722,-1759,-32720,-1784,-32719,-1809,-32718,-1834,-32716,-1859,-32715,-1884,-32713,-1909,-32712,-1935,-32710,-1960,-32709,-1985,-32707,-2010,-32706,-2035,-32704,-2060,-32703,-2085,-32701,-2110,-32700,-2135,-32698,-2160,-32696,-2185,-32695,-2210,-32693,-2236,-32691,-2261,-32689,-2286,-32688,-2311,-32686,-2336,-32684,-2361,-32682,-2386,-32681,-2411,-32679,-2436,-32677,-2461,-32675,-2486,-32673,-2511,-32671,-2536,-32669,-2561,-32667,-2586,-32665,-2611,-32663,-2637,-32661,-2662,-32659,-2687,-32657,-2712,-32655,-2737,-32653,-2762,-32651,-2787,-32649,-2812,-32647,-2837,-32645,-2862,-32642,-2887,-32640,-2912,-32638,-2937,-32636,-2962,-32633,-2987,-32631,-3012,-32629,-3037,-32626,-3062,-32624,-3087,-32622,-3112,-32619,-3137,-32617,-3162,-32615,-3187,-32612,-3212,-32610,-3237,-32607,-3262,-32605,-3287,-32602,-3312,-32600,-3337,-32597,-3362,-32595,-3387,-32592,-3412,-32589,-3437,-32587,-3462,-32584,-3487,-32581,-3512,-32579,-3537,-32576,-3562,-32573,-3587,-32571,-3612,-32568,-3637,-32565,-3662,-32562,-3687,-32559,-3712,-32557,-3737,-32554,-3762,-32551,-3787,-32548,-3812,-32545,-3837,-32542,-3862,-32539,-3887,-32536,-3912,-32533,-3937,-32530,-3962,-32527,-3987,-32524,-4012,-32521,-4036,-32518,-4061,-32515,-4086,-32512,-4111,-32509,-4136,-32505,-4161,-32502,-4186,-32499,-4211,-32496,-4236,-32493,-4261,-32489,-4286,-32486,-4311,-32483,-4336,-32479,-4360,-32476,-4385,-32473,-4410,-32469,-4435,-32466,-4460,-32463,-4485,-32459,-4510,-32456,-4535,-32452,-4560,-32449,-4585,-32445,-4609,-32442,-4634,-32438,-4659,-32435,-4684,-32431,-4709,-32427,-4734,-32424,-4759,-32420,-4784,-32417,-4808,-32413,-4833,-32409,-4858,-32405,-4883,-32402,-4908,-32398,-4933,-32394,-4958,-32390,-4982,-32387,-5007,-32383,-5032,-32379,-5057,-32375,-5082,-32371,-5107,-32367,-5131,-32363,-5156,-32359,-5181,-32355,-5206,-32351,-5231,-32347,-5255,-32343,-5280,-32339,-5305,-32335,-5330,-32331,-5355,-32327,-5379,-32323,-5404,-32319,-5429,-32315,-5454,-32311,-5479,-32306,-5503,-32302,-5528,-32298,-5553,-32294,-5578,-32289,-5602,-32285,-5627,-32281,-5652,-32276,-5677,-32272,-5701,-32268,-5726,-32263,-5751,-32259,-5776,-32255,-5800,-32250,-5825,-32246,-5850,-32241,-5875,-32237,-5899,-32232,-5924,-32228,-5949,-32223,-5973,-32219,-5998,-32214,-6023,-32209,-6048,-32205,-6072,-32200,-6097,-32195,-6122,-32191,-6146,-32186,-6171,-32181,-6196,-32177,-6220,-32172,-6245,-32167,-6270,-32162,-6294,-32157,-6319,-32153,-6344,-32148,-6368,-32143,-6393,-32138,-6418,-32133,-6442,-32128,-6467,-32123,-6492,-32118,-6516,-32113,-6541,-32108,-6565,-32103,-6590,-32098,-6615,-32093,-6639,-32088,-6664,-32083,-6689,-32078,-6713,-32073,-6738,-32067,-6762,-32062,-6787,-32057,-6812,-32052,-6836,-32047,-6861,-32041,-6885,-32036,-6910,-32031,-6934,-32025,-6959,-32020,-6983,-32015,-7008,-32009,-7033,-32004,-7057,-31999,-7082,-31993,-7106,-31988,-7131,-31982,-7155,-31977,-7180,-31971,-7204,-31966,-7229,-31960,-7253,-31955,-7278,-31949,-7302,-31944,-7327,-31938,-7351,-31932,-7376,-31927,-7400,-31921,-7425,-31915,-7449,-31910,-7474,-31904,-7498,-31898,-7523,-31892,-7547,-31887,-7572,-31881,-7596,-31875,-7620,-31869,-7645,-31863,-7669,-31857,-7694,-31852,-7718,-31846,-7743,-31840,-7767,-31834,-7791,-31828,-7816,-31822,-7840,-31816,-7865,-31810,-7889,-31804,-7913,-31798,-7938,-31792,-7962,-31786,-7987,-31779,-8011,-31773,-8035,-31767,-8060,-31761,-8084,-31755,-8108,-31749,-8133,-31742,-8157,-31736,-8181,-31730,-8206,-31724,-8230,-31717,-8254,-31711,-8279,-31705,-8303,-31698,-8327,-31692,-8352,-31685,-8376,-31679,-8400,-31673,-8425,-31666,-8449,-31660,-8473,-31653,-8497,-31647,-8522,-31640,-8546,-31634,-8570,-31627,-8594,-31620,-8619,-31614,-8643,-31607,-8667,-31601,-8691,-31594,-8716,-31587,-8740,-31581,-8764,-31574,-8788,-31567,-8813,-31560,-8837,-31554,-8861,-31547,-8885,-31540,-8909,-31533,-8933,-31526,-8958,-31519,-8982,-31513,-9006,-31506,-9030,-31499,-9054,-31492,-9078,-31485,-9103,-31478,-9127,-31471,-9151,-31464,-9175,-31457,-9199,-31450,-9223,-31443,-9247,-31436,-9271,-31429,-9296,-31421,-9320,-31414,-9344,-31407,-9368,-31400,-9392,-31393,-9416,-31386,-9440,-31378,-9464,-31371,-9488,-31364,-9512,-31357,-9536,-31349,-9560,-31342,-9584,-31335,-9608,-31327,-9632,-31320,-9656,-31312,-9680,-31305,-9704,-31298,-9728,-31290,-9752,-31283,-9776,-31275,-9800,-31268,-9824,-31260,-9848,-31253,-9872,-31245,-9896,-31237,-9920,-31230,-9944,-31222,-9968,-31215,-9992,-31207,-10016,-31199,-10040,-31192,-10064,-31184,-10088,-31176,-10112,-31168,-10136,-31161,-10160,-31153,-10183,-31145,-10207,-31137,-10231,-31129,-10255,-31122,-10279,-31114,-10303,-31106,-10327,-31098,-10350,-31090,-10374,-31082,-10398,-31074,-10422,-31066,-10446,-31058,-10470,-31050,-10493,-31042,-10517,-31034,-10541,-31026,-10565,-31018,-10589,-31010,-10612,-31002,-10636,-30993,-10660,-30985,-10684,-30977,-10707,-30969,-10731,-30961,-10755,-30952,-10779,-30944,-10802,-30936,-10826,-30928,-10850,-30919,-10874,-30911,-10897,-30903,-10921,-30894,-10945,-30886,-10968,-30877,-10992,-30869,-11016,-30861,-11039,-30852,-11063,-30844,-11087,-30835,-11110,-30827,-11134,-30818,-11158,-30810,-11181,-30801,-11205,-30792,-11228,-30784,-11252,-30775,-11276,-30767,-11299,-30758,-11323,-30749,-11346,-30740,-11370,-30732,-11394,-30723,-11417,-30714,-11441,-30706,-11464,-30697,-11488,-30688,-11511,-30679,-11535,-30670,-11558,-30661,-11582,-30653,-11605,-30644,-11629,-30635,-11652,-30626,-11676,-30617,-11699,-30608,-11723,-30599,-11746,-30590,-11770,-30581,-11793,-30572,-11817,-30563,-11840,-30554,-11863,-30545,-11887,-30536,-11910,-30526,-11934,-30517,-11957,-30508,-11981,-30499,-12004,-30490,-12027,-30481,-12051,-30471,-12074,-30462,-12097,-30453,-12121,-30443,-12144,-30434,-12167,-30425,-12191,-30416,-12214,-30406,-12237,-30397,-12261,-30387,-12284,-30378,-12307,-30369,-12331,-30359,-12354,-30350,-12377,-30340,-12400,-30331,-12424,-30321,-12447,-30312,-12470,-30302,-12493,-30292,-12517,-30283,-12540,-30273,-12563,-30264,-12586,-30254,-12610,-30244,-12633,-30235,-12656,-30225,-12679,-30215,-12702,-30206,-12725,-30196,-12749,-30186,-12772,-30176,-12795,-30166,-12818,-30157,-12841,-30147,-12864,-30137,-12887,-30127,-12910,-30117,-12934,-30107,-12957,-30097,-12980,-30087,-13003,-30077,-13026,-30067,-13049,-30057,-13072,-30047,-13095,-30037,-13118,-30027,-13141,-30017,-13164,-30007,-13187,-29997,-13210,-29987,-13233,-29977,-13256,-29967,-13279,-29956,-13302,-29946,-13325,-29936,-13348,-29926,-13371,-29916,-13394,-29905,-13417,-29895,-13440,-29885,-13463,-29874,-13486,-29864,-13508,-29854,-13531,-29843,-13554,-29833,-13577,-29823,-13600,-29812,-13623,-29802,-13646,-29791,-13668,-29781,-13691,-29770,-13714,-29760,-13737,-29749,-13760,-29739,-13783,-29728,-13805,-29718,-13828,-29707,-13851,-29696,-13874,-29686,-13896,-29675,-13919,-29664,-13942,-29654,-13965,-29643,-13987,-29632,-14010,-29622,-14033,-29611,-14056,-29600,-14078,-29589,-14101,-29578,-14124,-29568,-14146,-29557,-14169,-29546,-14192,-29535,-14214,-29524,-14237,-29513,-14260,-29502,-14282,-29491,-14305,-29480,-14327,-29469,-14350,-29458,-14373,-29447,-14395,-29436,-14418,-29425,-14440,-29414,-14463,-29403,-14485,-29392,-14508,-29381,-14531,-29370,-14553,-29359,-14576,-29347,-14598,-29336,-14621,-29325,-14643,-29314,-14666,-29303,-14688,-29291,-14710,-29280,-14733,-29269,-14755,-29257,-14778,-29246,-14800,-29235,-14823,-29223,-14845,-29212,-14867,-29201,-14890,-29189,-14912,-29178,-14935,-29166,-14957,-29155,-14979,-29143,-15002,-29132,-15024,-29120,-15046,-29109,-15069,-29097,-15091,-29086,-15113,-29074,-15136,-29063,-15158,-29051,-15180,-29039,-15202,-29028,-15225,-29016,-15247,-29004,-15269,-28993,-15291,-28981,-15314,-28969,-15336,-28957,-15358,-28946,-15380,-28934,-15402,-28922,-15425,-28910,-15447,-28898,-15469,-28887,-15491,-28875,-15513,-28863,-15535,-28851,-15557,-28839,-15580,-28827,-15602,-28815,-15624,-28803,-15646,-28791,-15668,-28779,-15690,-28767,-15712,-28755,-15734,-28743,-15756,-28731,-15778,-28719,-15800,-28707,-15822,-28695,-15844,-28682,-15866,-28670,-15888,-28658,-15910,-28646,-15932,-28634,-15954,-28621,-15976,-28609,-15998,-28597,-16020,-28585,-16042,-28572,-16064,-28560,-16086,-28548,-16108,-28535,-16129,-28523,-16151,-28511,-16173,-28498,-16195,-28486,-16217,-28473,-16239,-28461,-16261,-28448,-16282,-28436,-16304,-28424,-16326,-28411,-16348,-28398,-16369,-28386,-16391,-28373,-16413,-28361,-16435,-28348,-16456,-28336,-16478,-28323,-16500,-28310,-16522,-28298,-16543,-28285,-16565,-28272,-16587,-28260,-16608,-28247,-16630,-28234,-16652,-28221,-16673,-28209,-16695,-28196,-16717,-28183,-16738,-28170,-16760,-28157,-16781,-28144,-16803,-28132,-16825,-28119,-16846,-28106,-16868,-28093,-16889,-28080,-16911,-28067,-16932,-28054,-16954,-28041,-16975,-28028,-16997,-28015,-17018,-28002,-17040,-27989,-17061,-27976,-17083,-27963,-17104,-27949,-17125,-27936,-17147,-27923,-17168,-27910,-17190,-27897,-17211,-27884,-17233,-27870,-17254,-27857,-17275,-27844,-17297,-27831,-17318,-27817,-17339,-27804,-17361,-27791,-17382,-27778,-17403,-27764,-17424,-27751,-17446,-27737,-17467,-27724,-17488,-27711,-17510,-27697,-17531,-27684,-17552,-27670,-17573,-27657,-17594,-27643,-17616,-27630,-17637,-27616,-17658,-27603,-17679,-27589,-17700,-27576,-17721,-27562,-17743,-27549,-17764,-27535,-17785,-27521,-17806,-27508,-17827,-27494,-17848,-27480,-17869,-27467,-17890,-27453,-17911,-27439,-17932,-27425,-17953,-27412,-17974,-27398,-17995,-27384,-18016,-27370,-18037,-27356,-18058,-27343,-18079,-27329,-18100,-27315,-18121,-27301,-18142,-27287,-18163,-27273,-18184,-27259,-18205,-27245,-18226,-27231,-18247,-27217,-18268,-27203,-18288,-27189,-18309,-27175,-18330,-27161,-18351,-27147,-18372,-27133,-18393,-27119,-18413,-27105,-18434,-27091,-18455,-27077,-18476,-27062,-18496,-27048,-18517,-27034,-18538,-27020,-18559,-27006,-18579,-26991,-18600,-26977,-18621,-26963,-18641,-26949,-18662,-26934,-18683,-26920,-18703,-26906,-18724,-26891,-18745,-26877,-18765,-26862,-18786,-26848,-18806,-26834,-18827,-26819,-18847,-26805,-18868,-26790,-18889,-26776,-18909,-26761,-18930,-26747,-18950,-26732,-18971,-26718,-18991,-26703,-19012,-26689,-19032,-26674,-19052,-26659,-19073,-26645,-19093,-26630,-19114,-26616,-19134,-26601,-19155,-26586,-19175,-26571,-19195,-26557,-19216,-26542,-19236,-26527,-19256,-26513,-19277,-26498,-19297,-26483,-19317,-26468,-19338,-26453,-19358,-26438,-19378,-26424,-19398,-26409,-19419,-26394,-19439,-26379,-19459,-26364,-19479,-26349,-19500,-26334,-19520,-26319,-19540,-26304,-19560,-26289,-19580,-26274,-19600,-26259,-19621,-26244,-19641,-26229,-19661,-26214,-19681,-26199,-19701,-26184,-19721,-26169,-19741,-26154,-19761,-26138,-19781,-26123,-19801,-26108,-19821,-26093,-19841,-26078,-19861,-26062,-19881,-26047,-19901,-26032,-19921,-26017,-19941,-26001,-19961,-25986,-19981,-25971,-20001,-25955,-20021,-25940,-20041,-25925,-20061,-25909,-20080,-25894,-20100,-25879,-20120,-25863,-20140,-25848,-20160,-25832,-20180,-25817,-20199,-25801,-20219,-25786,-20239,-25770,-20259,-25755,-20278,-25739,-20298,-25724,-20318,-25708,-20338,-25692,-20357,-25677,-20377,-25661,-20397,-25646,-20416,-25630,-20436,-25614,-20456,-25599,-20475,-25583,-20495,-25567,-20514,-25551,-20534,-25536,-20554,-25520,-20573,-25504,-20593,-25488,-20612,-25473,-20632,-25457,-20651,-25441,-20671,-25425,-20690,-25409,-20710,-25393,-20729,-25377,-20749,-25362,-20768,-25346,-20788,-25330,-20807,-25314,-20826,-25298,-20846,-25282,-20865,-25266,-20885,-25250,-20904,-25234,-20923,-25218,-20943,-25202,-20962,-25186,-20981,-25170,-21001,-25153,-21020,-25137,-21039,-25121,-21058,-25105,-21078,-25089,-21097,-25073,-21116,-25057,-21135,-25040,-21155,-25024,-21174,-25008,-21193,-24992,-21212,-24975,-21231,-24959,-21250,-24943,-21269,-24927,-21289,-24910,-21308,-24894,-21327,-24878,-21346,-24861,-21365,-24845,-21384,-24828,-21403,-24812,-21422,-24796,-21441,-24779,-21460,-24763,-21479,-24746,-21498,-24730,-21517,-24713,-21536,-24697,-21555,-24680,-21574,-24664,-21593,-24647,-21612,-24631,-21630,-24614,-21649,-24597,-21668,-24581,-21687,-24564,-21706,-24547,-21725,-24531,-21744,-24514,-21762,-24497,-21781,-24481,-21800,-24464,-21819,-24447,-21837,-24431,-21856,-24414,-21875,-24397,-21894,-24380,-21912,-24363,-21931,-24347,-21950,-24330,-21968,-24313,-21987,-24296,-22005,-24279,-22024,-24262,-22043,-24245,-22061,-24229,-22080,-24212,-22098,-24195,-22117,-24178,-22136,-24161,-22154,-24144,-22173,-24127,-22191,-24110,-22210,-24093,-22228,-24076,-22246,-24059,-22265,-24042,-22283,-24024,-22302,-24007,-22320,-23990,-22339,-23973,-22357,-23956,-22375,-23939,-22394,-23922,-22412,-23904,-22430,-23887,-22449,-23870,-22467,-23853,-22485,-23836,-22504,-23818,-22522,-23801,-22540,-23784,-22558,-23767,-22576,-23749,-22595,-23732,-22613,-23715,-22631,-23697,-22649,-23680,-22667,-23662,-22686,-23645,-22704,-23628,-22722,-23610,-22740,-23593,-22758,-23575,-22776,-23558,-22794,-23540,-22812,-23523,-22830,-23505,-22848,-23488,-22866,-23470,-22884,-23453,-22902,-23435,-22920,-23418,-22938,-23400,-22956,-23383,-22974,-23365,-22992,-23347,-23010,-23330,-23028,-23312,-23046,-23294,-23063,-23277,-23081,-23259,-23099,-23241,-23117,-23224,-23135,-23206,-23152,-23188,-23170,-23170,-23188,-23152,-23206,-23135,-23224,-23117,-23241,-23099,-23259,-23081,-23277,-23063,-23294,-23046,-23312,-23028,-23330,-23010,-23347,-22992,-23365,-22974,-23383,-22956,-23400,-22938,-23418,-22920,-23435,-22902,-23453,-22884,-23470,-22866,-23488,-22848,-23505,-22830,-23523,-22812,-23540,-22794,-23558,-22776,-23575,-22758,-23593,-22740,-23610,-22722,-23628,-22704,-23645,-22686,-23662,-22667,-23680,-22649,-23697,-22631,-23715,-22613,-23732,-22595,-23749,-22576,-23767,-22558,-23784,-22540,-23801,-22522,-23818,-22504,-23836,-22485,-23853,-22467,-23870,-22449,-23887,-22430,-23904,-22412,-23922,-22394,-23939,-22375,-23956,-22357,-23973,-22339,-23990,-22320,-24007,-22302,-24024,-22283,-24042,-22265,-24059,-22246,-24076,-22228,-24093,-22210,-24110,-22191,-24127,-22173,-24144,-22154,-24161,-22136,-24178,-22117,-24195,-22098,-24212,-22080,-24229,-22061,-24245,-22043,-24262,-22024,-24279,-22005,-24296,-21987,-24313,-21968,-24330,-21950,-24347,-21931,-24363,-21912,-24380,-21894,-24397,-21875,-24414,-21856,-24431,-21837,-24447,-21819,-24464,-21800,-24481,-21781,-24497,-21762,-24514,-21744,-24531,-21725,-24547,-21706,-24564,-21687,-24581,-21668,-24597,-21649,-24614,-21630,-24631,-21612,-24647,-21593,-24664,-21574,-24680,-21555,-24697,-21536,-24713,-21517,-24730,-21498,-24746,-21479,-24763,-21460,-24779,-21441,-24796,-21422,-24812,-21403,-24828,-21384,-24845,-21365,-24861,-21346,-24878,-21327,-24894,-21308,-24910,-21289,-24927,-21269,-24943,-21250,-24959,-21231,-24975,-21212,-24992,-21193,-25008,-21174,-25024,-21155,-25040,-21135,-25057,-21116,-25073,-21097,-25089,-21078,-25105,-21058,-25121,-21039,-25137,-21020,-25153,-21001,-25170,-20981,-25186,-20962,-25202,-20943,-25218,-20923,-25234,-20904,-25250,-20885,-25266,-20865,-25282,-20846,-25298,-20826,-25314,-20807,-25330,-20788,-25346,-20768,-25362,-20749,-25377,-20729,-25393,-20710,-25409,-20690,-25425,-20671,-25441,-20651,-25457,-20632,-25473,-20612,-25488,-20593,-25504,-20573,-25520,-20554,-25536,-20534,-25551,-20514,-25567,-20495,-25583,-20475,-25599,-20456,-25614,-20436,-25630,-20416,-25646,-20397,-25661,-20377,-25677,-20357,-25692,-20338,-25708,-20318,-25724,-20298,-25739,-20278,-25755,-20259,-25770,-20239,-25786,-20219,-25801,-20199,-25817,-20180,-25832,-20160,-25848,-20140,-25863,-20120,-25879,-20100,-25894,-20080,-25909,-20061,-25925,-20041,-25940,-20021,-25955,-20001,-25971,-19981,-25986,-19961,-26001,-19941,-26017,-19921,-26032,-19901,-26047,-19881,-26062,-19861,-26078,-19841,-26093,-19821,-26108,-19801,-26123,-19781,-26138,-19761,-26154,-19741,-26169,-19721,-26184,-19701,-26199,-19681,-26214,-19661,-26229,-19641,-26244,-19621,-26259,-19600,-26274,-19580,-26289,-19560,-26304,-19540,-26319,-19520,-26334,-19500,-26349,-19479,-26364,-19459,-26379,-19439,-26394,-19419,-26409,-19398,-26424,-19378,-26438,-19358,-26453,-19338,-26468,-19317,-26483,-19297,-26498,-19277,-26513,-19256,-26527,-19236,-26542,-19216,-26557,-19195,-26571,-19175,-26586,-19155,-26601,-19134,-26616,-19114,-26630,-19093,-26645,-19073,-26659,-19052,-26674,-19032,-26689,-19012,-26703,-18991,-26718,-18971,-26732,-18950,-26747,-18930,-26761,-18909,-26776,-18889,-26790,-18868,-26805,-18847,-26819,-18827,-26834,-18806,-26848,-18786,-26862,-18765,-26877,-18745,-26891,-18724,-26906,-18703,-26920,-18683,-26934,-18662,-26949,-18641,-26963,-18621,-26977,-18600,-26991,-18579,-27006,-18559,-27020,-18538,-27034,-18517,-27048,-18496,-27062,-18476,-27077,-18455,-27091,-18434,-27105,-18413,-27119,-18393,-27133,-18372,-27147,-18351,-27161,-18330,-27175,-18309,-27189,-18288,-27203,-18268,-27217,-18247,-27231,-18226,-27245,-18205,-27259,-18184,-27273,-18163,-27287,-18142,-27301,-18121,-27315,-18100,-27329,-18079,-27343,-18058,-27356,-18037,-27370,-18016,-27384,-17995,-27398,-17974,-27412,-17953,-27425,-17932,-27439,-17911,-27453,-17890,-27467,-17869,-27480,-17848,-27494,-17827,-27508,-17806,-27521,-17785,-27535,-17764,-27549,-17743,-27562,-17721,-27576,-17700,-27589,-17679,-27603,-17658,-27616,-17637,-27630,-17616,-27643,-17594,-27657,-17573,-27670,-17552,-27684,-17531,-27697,-17510,-27711,-17488,-27724,-17467,-27737,-17446,-27751,-17424,-27764,-17403,-27778,-17382,-27791,-17361,-27804,-17339,-27817,-17318,-27831,-17297,-27844,-17275,-27857,-17254,-27870,-17233,-27884,-17211,-27897,-17190,-27910,-17168,-27923,-17147,-27936,-17125,-27949,-17104,-27963,-17083,-27976,-17061,-27989,-17040,-28002,-17018,-28015,-16997,-28028,-16975,-28041,-16954,-28054,-16932,-28067,-16911,-28080,-16889,-28093,-16868,-28106,-16846,-28119,-16825,-28132,-16803,-28144,-16781,-28157,-16760,-28170,-16738,-28183,-16717,-28196,-16695,-28209,-16673,-28221,-16652,-28234,-16630,-28247,-16608,-28260,-16587,-28272,-16565,-28285,-16543,-28298,-16522,-28310,-16500,-28323,-16478,-28336,-16456,-28348,-16435,-28361,-16413,-28373,-16391,-28386,-16369,-28398,-16348,-28411,-16326,-28424,-16304,-28436,-16282,-28448,-16261,-28461,-16239,-28473,-16217,-28486,-16195,-28498,-16173,-28511,-16151,-28523,-16129,-28535,-16108,-28548,-16086,-28560,-16064,-28572,-16042,-28585,-16020,-28597,-15998,-28609,-15976,-28621,-15954,-28634,-15932,-28646,-15910,-28658,-15888,-28670,-15866,-28682,-15844,-28695,-15822,-28707,-15800,-28719,-15778,-28731,-15756,-28743,-15734,-28755,-15712,-28767,-15690,-28779,-15668,-28791,-15646,-28803,-15624,-28815,-15602,-28827,-15580,-28839,-15557,-28851,-15535,-28863,-15513,-28875,-15491,-28887,-15469,-28898,-15447,-28910,-15425,-28922,-15402,-28934,-15380,-28946,-15358,-28957,-15336,-28969,-15314,-28981,-15291,-28993,-15269,-29004,-15247,-29016,-15225,-29028,-15202,-29039,-15180,-29051,-15158,-29063,-15136,-29074,-15113,-29086,-15091,-29097,-15069,-29109,-15046,-29120,-15024,-29132,-15002,-29143,-14979,-29155,-14957,-29166,-14935,-29178,-14912,-29189,-14890,-29201,-14867,-29212,-14845,-29223,-14823,-29235,-14800,-29246,-14778,-29257,-14755,-29269,-14733,-29280,-14710,-29291,-14688,-29303,-14666,-29314,-14643,-29325,-14621,-29336,-14598,-29347,-14576,-29359,-14553,-29370,-14531,-29381,-14508,-29392,-14485,-29403,-14463,-29414,-14440,-29425,-14418,-29436,-14395,-29447,-14373,-29458,-14350,-29469,-14327,-29480,-14305,-29491,-14282,-29502,-14260,-29513,-14237,-29524,-14214,-29535,-14192,-29546,-14169,-29557,-14146,-29568,-14124,-29578,-14101,-29589,-14078,-29600,-14056,-29611,-14033,-29622,-14010,-29632,-13987,-29643,-13965,-29654,-13942,-29664,-13919,-29675,-13896,-29686,-13874,-29696,-13851,-29707,-13828,-29718,-13805,-29728,-13783,-29739,-13760,-29749,-13737,-29760,-13714,-29770,-13691,-29781,-13668,-29791,-13646,-29802,-13623,-29812,-13600,-29823,-13577,-29833,-13554,-29843,-13531,-29854,-13508,-29864,-13486,-29874,-13463,-29885,-13440,-29895,-13417,-29905,-13394,-29916,-13371,-29926,-13348,-29936,-13325,-29946,-13302,-29956,-13279,-29967,-13256,-29977,-13233,-29987,-13210,-29997,-13187,-30007,-13164,-30017,-13141,-30027,-13118,-30037,-13095,-30047,-13072,-30057,-13049,-30067,-13026,-30077,-13003,-30087,-12980,-30097,-12957,-30107,-12934,-30117,-12910,-30127,-12887,-30137,-12864,-30147,-12841,-30157,-12818,-30166,-12795,-30176,-12772,-30186,-12749,-30196,-12725,-30206,-12702,-30215,-12679,-30225,-12656,-30235,-12633,-30244,-12610,-30254,-12586,-30264,-12563,-30273,-12540,-30283,-12517,-30292,-12493,-30302,-12470,-30312,-12447,-30321,-12424,-30331,-12400,-30340,-12377,-30350,-12354,-30359,-12331,-30369,-12307,-30378,-12284,-30387,-12261,-30397,-12237,-30406,-12214,-30416,-12191,-30425,-12167,-30434,-12144,-30443,-12121,-30453,-12097,-30462,-12074,-30471,-12051,-30481,-12027,-30490,-12004,-30499,-11981,-30508,-11957,-30517,-11934,-30526,-11910,-30536,-11887,-30545,-11863,-30554,-11840,-30563,-11817,-30572,-11793,-30581,-11770,-30590,-11746,-30599,-11723,-30608,-11699,-30617,-11676,-30626,-11652,-30635,-11629,-30644,-11605,-30653,-11582,-30661,-11558,-30670,-11535,-30679,-11511,-30688,-11488,-30697,-11464,-30706,-11441,-30714,-11417,-30723,-11394,-30732,-11370,-30740,-11346,-30749,-11323,-30758,-11299,-30767,-11276,-30775,-11252,-30784,-11228,-30792,-11205,-30801,-11181,-30810,-11158,-30818,-11134,-30827,-11110,-30835,-11087,-30844,-11063,-30852,-11039,-30861,-11016,-30869,-10992,-30877,-10968,-30886,-10945,-30894,-10921,-30903,-10897,-30911,-10874,-30919,-10850,-30928,-10826,-30936,-10802,-30944,-10779,-30952,-10755,-30961,-10731,-30969,-10707,-30977,-10684,-30985,-10660,-30993,-10636,-31002,-10612,-31010,-10589,-31018,-10565,-31026,-10541,-31034,-10517,-31042,-10493,-31050,-10470,-31058,-10446,-31066,-10422,-31074,-10398,-31082,-10374,-31090,-10350,-31098,-10327,-31106,-10303,-31114,-10279,-31122,-10255,-31129,-10231,-31137,-10207,-31145,-10183,-31153,-10160,-31161,-10136,-31168,-10112,-31176,-10088,-31184,-10064,-31192,-10040,-31199,-10016,-31207,-9992,-31215,-9968,-31222,-9944,-31230,-9920,-31237,-9896,-31245,-9872,-31253,-9848,-31260,-9824,-31268,-9800,-31275,-9776,-31283,-9752,-31290,-9728,-31298,-9704,-31305,-9680,-31312,-9656,-31320,-9632,-31327,-9608,-31335,-9584,-31342,-9560,-31349,-9536,-31357,-9512,-31364,-9488,-31371,-9464,-31378,-9440,-31386,-9416,-31393,-9392,-31400,-9368,-31407,-9344,-31414,-9320,-31421,-9296,-31429,-9271,-31436,-9247,-31443,-9223,-31450,-9199,-31457,-9175,-31464,-9151,-31471,-9127,-31478,-9103,-31485,-9078,-31492,-9054,-31499,-9030,-31506,-9006,-31513,-8982,-31519,-8958,-31526,-8933,-31533,-8909,-31540,-8885,-31547,-8861,-31554,-8837,-31560,-8813,-31567,-8788,-31574,-8764,-31581,-8740,-31587,-8716,-31594,-8691,-31601,-8667,-31607,-8643,-31614,-8619,-31620,-8594,-31627,-8570,-31634,-8546,-31640,-8522,-31647,-8497,-31653,-8473,-31660,-8449,-31666,-8425,-31673,-8400,-31679,-8376,-31685,-8352,-31692,-8327,-31698,-8303,-31705,-8279,-31711,-8254,-31717,-8230,-31724,-8206,-31730,-8181,-31736,-8157,-31742,-8133,-31749,-8108,-31755,-8084,-31761,-8060,-31767,-8035,-31773,-8011,-31779,-7987,-31786,-7962,-31792,-7938,-31798,-7913,-31804,-7889,-31810,-7865,-31816,-7840,-31822,-7816,-31828,-7791,-31834,-7767,-31840,-7743,-31846,-7718,-31852,-7694,-31857,-7669,-31863,-7645,-31869,-7620,-31875,-7596,-31881,-7572,-31887,-7547,-31892,-7523,-31898,-7498,-31904,-7474,-31910,-7449,-31915,-7425,-31921,-7400,-31927,-7376,-31932,-7351,-31938,-7327,-31944,-7302,-31949,-7278,-31955,-7253,-31960,-7229,-31966,-7204,-31971,-7180,-31977,-7155,-31982,-7131,-31988,-7106,-31993,-7082,-31999,-7057,-32004,-7033,-32009,-7008,-32015,-6983,-32020,-6959,-32025,-6934,-32031,-6910,-32036,-6885,-32041,-6861,-32047,-6836,-32052,-6812,-32057,-6787,-32062,-6762,-32067,-6738,-32073,-6713,-32078,-6689,-32083,-6664,-32088,-6639,-32093,-6615,-32098,-6590,-32103,-6565,-32108,-6541,-32113,-6516,-32118,-6492,-32123,-6467,-32128,-6442,-32133,-6418,-32138,-6393,-32143,-6368,-32148,-6344,-32153,-6319,-32157,-6294,-32162,-6270,-32167,-6245,-32172,-6220,-32177,-6196,-32181,-6171,-32186,-6146,-32191,-6122,-32195,-6097,-32200,-6072,-32205,-6048,-32209,-6023,-32214,-5998,-32219,-5973,-32223,-5949,-32228,-5924,-32232,-5899,-32237,-5875,-32241,-5850,-32246,-5825,-32250,-5800,-32255,-5776,-32259,-5751,-32263,-5726,-32268,-5701,-32272,-5677,-32276,-5652,-32281,-5627,-32285,-5602,-32289,-5578,-32294,-5553,-32298,-5528,-32302,-5503,-32306,-5479,-32311,-5454,-32315,-5429,-32319,-5404,-32323,-5379,-32327,-5355,-32331,-5330,-32335,-5305,-32339,-5280,-32343,-5255,-32347,-5231,-32351,-5206,-32355,-5181,-32359,-5156,-32363,-5131,-32367,-5107,-32371,-5082,-32375,-5057,-32379,-5032,-32383,-5007,-32387,-4982,-32390,-4958,-32394,-4933,-32398,-4908,-32402,-4883,-32405,-4858,-32409,-4833,-32413,-4808,-32417,-4784,-32420,-4759,-32424,-4734,-32427,-4709,-32431,-4684,-32435,-4659,-32438,-4634,-32442,-4609,-32445,-4585,-32449,-4560,-32452,-4535,-32456,-4510,-32459,-4485,-32463,-4460,-32466,-4435,-32469,-4410,-32473,-4385,-32476,-4360,-32479,-4336,-32483,-4311,-32486,-4286,-32489,-4261,-32493,-4236,-32496,-4211,-32499,-4186,-32502,-4161,-32505,-4136,-32509,-4111,-32512,-4086,-32515,-4061,-32518,-4036,-32521,-4012,-32524,-3987,-32527,-3962,-32530,-3937,-32533,-3912,-32536,-3887,-32539,-3862,-32542,-3837,-32545,-3812,-32548,-3787,-32551,-3762,-32554,-3737,-32557,-3712,-32559,-3687,-32562,-3662,-32565,-3637,-32568,-3612,-32571,-3587,-32573,-3562,-32576,-3537,-32579,-3512,-32581,-3487,-32584,-3462,-32587,-3437,-32589,-3412,-32592,-3387,-32595,-3362,-32597,-3337,-32600,-3312,-32602,-3287,-32605,-3262,-32607,-3237,-32610,-3212,-32612,-3187,-32615,-3162,-32617,-3137,-32619,-3112,-32622,-3087,-32624,-3062,-32626,-3037,-32629,-3012,-32631,-2987,-32633,-2962,-32636,-2937,-32638,-2912,-32640,-2887,-32642,-2862,-32645,-2837,-32647,-2812,-32649,-2787,-32651,-2762,-32653,-2737,-32655,-2712,-32657,-2687,-32659,-2662,-32661,-2637,-32663,-2611,-32665,-2586,-32667,-2561,-32669,-2536,-32671,-2511,-32673,-2486,-32675,-2461,-32677,-2436,-32679,-2411,-32681,-2386,-32682,-2361,-32684,-2336,-32686,-2311,-32688,-2286,-32689,-2261,-32691,-2236,-32693,-2210,-32695,-2185,-32696,-2160,-32698,-2135,-32700,-2110,-32701,-2085,-32703,-2060,-32704,-2035,-32706,-2010,-32707,-1985,-32709,-1960,-32710,-1935,-32712,-1909,-32713,-1884,-32715,-1859,-32716,-1834,-32718,-1809,-32719,-1784,-32720,-1759,-32722,-1734,-32723,-1709,-32724,-1684,-32726,-1659,-32727,-1633,-32728,-1608,-32729,-1583,-32730,-1558,-32732,-1533,-32733,-1508,-32734,-1483,-32735,-1458,-32736,-1433,-32737,-1407,-32738,-1382,-32739,-1357,-32740,-1332,-32741,-1307,-32742,-1282,-32743,-1257,-32744,-1232,-32745,-1207,-32746,-1181,-32747,-1156,-32748,-1131,-32749,-1106,-32750,-1081,-32751,-1056,-32751,-1031,-32752,-1006,-32753,-981,-32754,-955,-32754,-930,-32755,-905,-32756,-880,-32756,-855,-32757,-830,-32758,-805,-32758,-780,-32759,-754,-32759,-729,-32760,-704,-32760,-679,-32761,-654,-32761,-629,-32762,-604,-32762,-579,-32763,-553,-32763,-528,-32764,-503,-32764,-478,-32764,-453,-32765,-428,-32765,-403,-32765,-377,-32766,-352,-32766,-327,-32766,-302,-32766,-277,-32767,-252,-32767,-227,-32767,-202,-32767,-176,-32767,-151,-32767,-126,-32767,-101,-32767,-76,-32767,-51,-32767,-26};
+#else //__AVX2__
+void dft4096(int16_t *x,int16_t *y,int scale)
+{
 
+  simd256_q15_t xtmp[512],ytmp[512],*tw4096_256p=(simd256_q15_t *)tw4096,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<512; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,128);
+  }
+
+
+  dft1024((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  dft1024((int16_t*)(xtmp+128),(int16_t*)(ytmp+128),1);
+  dft1024((int16_t*)(xtmp+256),(int16_t*)(ytmp+256),1);
+  dft1024((int16_t*)(xtmp+384),(int16_t*)(ytmp+384),1);
+
+  for (i=0; i<128; i++) {
+    bfly4_256(ytmpp,ytmpp+128,ytmpp+256,ytmpp+384,
+	      y256p,y256p+128,y256p+256,y256p+384,
+	      tw4096_256p,tw4096_256p+128,tw4096_256p+256);
+    tw4096_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<32; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft4096(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[512],ytmp[512],*tw4096_256p=(simd256_q15_t *)tw4096,*x256=(simd256_q15_t *)x,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i,j;
+
+  for (i=0,j=0; i<512; i+=4,j++) {
+    transpose16_ooff_simd256(x256+i,xtmp+j,128);
+  }
+
+
+  idft1024((int16_t*)(xtmp),(int16_t*)(ytmp),1);
+  idft1024((int16_t*)(xtmp+128),(int16_t*)(ytmp+128),1);
+  idft1024((int16_t*)(xtmp+256),(int16_t*)(ytmp+256),1);
+  idft1024((int16_t*)(xtmp+384),(int16_t*)(ytmp+384),1);
+
+  for (i=0; i<128; i++) {
+    ibfly4_256(ytmpp,ytmpp+128,ytmpp+256,ytmpp+384,
+	       y256p,y256p+128,y256p+256,y256p+384,
+	       tw4096_256p,tw4096_256p+128,tw4096_256p+256);
+    tw4096_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+
+    for (i=0; i<32; i++) {
+      y256[0]  = shiftright_int16_simd256(y256[0],1);
+      y256[1]  = shiftright_int16_simd256(y256[1],1);
+      y256[2]  = shiftright_int16_simd256(y256[2],1);
+      y256[3]  = shiftright_int16_simd256(y256[3],1);
+      y256[4]  = shiftright_int16_simd256(y256[4],1);
+      y256[5]  = shiftright_int16_simd256(y256[5],1);
+      y256[6]  = shiftright_int16_simd256(y256[6],1);
+      y256[7]  = shiftright_int16_simd256(y256[7],1);
+      y256[8]  = shiftright_int16_simd256(y256[8],1);
+      y256[9]  = shiftright_int16_simd256(y256[9],1);
+      y256[10] = shiftright_int16_simd256(y256[10],1);
+      y256[11] = shiftright_int16_simd256(y256[11],1);
+      y256[12] = shiftright_int16_simd256(y256[12],1);
+      y256[13] = shiftright_int16_simd256(y256[13],1);
+      y256[14] = shiftright_int16_simd256(y256[14],1);
+      y256[15] = shiftright_int16_simd256(y256[15],1);
+
+      y256+=16;
+    }
+
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+#endif //__AVX2__
+
+
+#include "twiddles8192.h"
+
+#ifndef __AVX2__
 void dft8192(int16_t *x,int16_t *y,int scale)
 {
 
@@ -3175,13 +5217,197 @@ void idft8192(int16_t *x,int16_t *y,int scale)
 
 }
 
+#else // __AVX2__
+void dft8192(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[1024],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[1024],*tw8192_256p=(simd256_q15_t *)tw8192,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+  
+  xtmpp = xtmp;
+
+  for (i=0; i<32; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,512);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,512);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,512);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,512);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,512);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,512);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,512);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,512);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,512);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,512);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,512);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,512);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,512);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,512);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,512);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,512);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,512);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,512);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,512);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,512);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,512);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,512);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,512);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,512);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,512);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,512);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,512);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,512);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,512);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,512);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,512);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,512);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  dft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  dft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+
+
+  for (i=0; i<512; i++) {
+    bfly2_256(ytmpp,ytmpp+512,
+	      y256p,y256p+512,
+	      tw8192_256p);
+    tw8192_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<64; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+void idft8192(int16_t *x,int16_t *y,int scale)
+{
+
+  simd256_q15_t xtmp[1024],*xtmpp,*x256 = (simd256_q15_t *)x;
+  simd256_q15_t ytmp[1024],*tw8192_256p=(simd256_q15_t *)tw8192,*y256=(simd256_q15_t *)y,*y256p=(simd256_q15_t *)y;
+  simd256_q15_t *ytmpp = &ytmp[0];
+  int i;
+  simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
+  
+  xtmpp = xtmp;
+
+  for (i=0; i<32; i++) {
+    transpose4_ooff_simd256(x256  ,xtmpp,512);
+    transpose4_ooff_simd256(x256+2,xtmpp+1,512);
+    transpose4_ooff_simd256(x256+4,xtmpp+2,512);
+    transpose4_ooff_simd256(x256+6,xtmpp+3,512);
+    transpose4_ooff_simd256(x256+8,xtmpp+4,512);
+    transpose4_ooff_simd256(x256+10,xtmpp+5,512);
+    transpose4_ooff_simd256(x256+12,xtmpp+6,512);
+    transpose4_ooff_simd256(x256+14,xtmpp+7,512);
+    transpose4_ooff_simd256(x256+16,xtmpp+8,512);
+    transpose4_ooff_simd256(x256+18,xtmpp+9,512);
+    transpose4_ooff_simd256(x256+20,xtmpp+10,512);
+    transpose4_ooff_simd256(x256+22,xtmpp+11,512);
+    transpose4_ooff_simd256(x256+24,xtmpp+12,512);
+    transpose4_ooff_simd256(x256+26,xtmpp+13,512);
+    transpose4_ooff_simd256(x256+28,xtmpp+14,512);
+    transpose4_ooff_simd256(x256+30,xtmpp+15,512);
+    transpose4_ooff_simd256(x256+32,xtmpp+16,512);
+    transpose4_ooff_simd256(x256+34,xtmpp+17,512);
+    transpose4_ooff_simd256(x256+36,xtmpp+18,512);
+    transpose4_ooff_simd256(x256+38,xtmpp+19,512);
+    transpose4_ooff_simd256(x256+40,xtmpp+20,512);
+    transpose4_ooff_simd256(x256+42,xtmpp+21,512);
+    transpose4_ooff_simd256(x256+44,xtmpp+22,512);
+    transpose4_ooff_simd256(x256+46,xtmpp+23,512);
+    transpose4_ooff_simd256(x256+48,xtmpp+24,512);
+    transpose4_ooff_simd256(x256+50,xtmpp+25,512);
+    transpose4_ooff_simd256(x256+52,xtmpp+26,512);
+    transpose4_ooff_simd256(x256+54,xtmpp+27,512);
+    transpose4_ooff_simd256(x256+56,xtmpp+28,512);
+    transpose4_ooff_simd256(x256+58,xtmpp+29,512);
+    transpose4_ooff_simd256(x256+60,xtmpp+30,512);
+    transpose4_ooff_simd256(x256+62,xtmpp+31,512);
+    x256+=64;
+    xtmpp+=32;
+  }
+
+  idft4096((int16_t*)(xtmp),(int16_t*)ytmp,1);
+  idft4096((int16_t*)(xtmp+1024),(int16_t*)(ytmp+512),1);
+
+
+  for (i=0; i<512; i++) {
+    ibfly2_256(ytmpp,ytmpp+512,
+	       y256p,y256p+512,
+	       tw8192_256p);
+    tw8192_256p++;
+    y256p++;
+    ytmpp++;
+  }
+
+  if (scale>0) {
+    y256p = y256;
+
+    for (i=0; i<64; i++) {
+      y256p[0]  = mulhi_int16_simd256(y256p[0],ONE_OVER_SQRT2_Q15_128);
+      y256p[1]  = mulhi_int16_simd256(y256p[1],ONE_OVER_SQRT2_Q15_128);
+      y256p[2]  = mulhi_int16_simd256(y256p[2],ONE_OVER_SQRT2_Q15_128);
+      y256p[3]  = mulhi_int16_simd256(y256p[3],ONE_OVER_SQRT2_Q15_128);
+      y256p[4]  = mulhi_int16_simd256(y256p[4],ONE_OVER_SQRT2_Q15_128);
+      y256p[5]  = mulhi_int16_simd256(y256p[5],ONE_OVER_SQRT2_Q15_128);
+      y256p[6]  = mulhi_int16_simd256(y256p[6],ONE_OVER_SQRT2_Q15_128);
+      y256p[7]  = mulhi_int16_simd256(y256p[7],ONE_OVER_SQRT2_Q15_128);
+      y256p[8]  = mulhi_int16_simd256(y256p[8],ONE_OVER_SQRT2_Q15_128);
+      y256p[9]  = mulhi_int16_simd256(y256p[9],ONE_OVER_SQRT2_Q15_128);
+      y256p[10] = mulhi_int16_simd256(y256p[10],ONE_OVER_SQRT2_Q15_128);
+      y256p[11] = mulhi_int16_simd256(y256p[11],ONE_OVER_SQRT2_Q15_128);
+      y256p[12] = mulhi_int16_simd256(y256p[12],ONE_OVER_SQRT2_Q15_128);
+      y256p[13] = mulhi_int16_simd256(y256p[13],ONE_OVER_SQRT2_Q15_128);
+      y256p[14] = mulhi_int16_simd256(y256p[14],ONE_OVER_SQRT2_Q15_128);
+      y256p[15] = mulhi_int16_simd256(y256p[15],ONE_OVER_SQRT2_Q15_128);
+      y256p+=16;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+
+}
+
+
+#endif
+
 #include "twiddle1536.h"
 // 512 x 3
-void idft1536(int16_t *input, int16_t *output)
+void idft1536(int16_t *input, int16_t *output, int scale)
 {
   int i,i2,j;
-  uint32_t tmp[3][512 ]__attribute__((aligned(16)));
-  uint32_t tmpo[3][512] __attribute__((aligned(16)));
+  uint32_t tmp[3][512 ]__attribute__((aligned(32)));
+  uint32_t tmpo[3][512] __attribute__((aligned(32)));
   simd_q15_t *y128p=(simd_q15_t*)output;
   simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
 
@@ -3202,24 +5428,26 @@ void idft1536(int16_t *input, int16_t *output)
   }
 
 
-  for (i=0; i<24; i++) {
-    y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
-    y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
-    y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
-    y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
-    y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
-    y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
-    y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
-    y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
-    y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
-    y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
-    y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
-    y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
-    y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
-    y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
-    y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
-    y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
-    y128p+=16;
+  if (scale==1) {
+    for (i=0; i<24; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
   }
 
   _mm_empty();
@@ -3227,11 +5455,13 @@ void idft1536(int16_t *input, int16_t *output)
 
 }
 
-void dft1536(int16_t *input, int16_t *output)
+void dft1536(int16_t *input, int16_t *output, int scale)
 {
   int i,i2,j;
-  uint32_t tmp[3][512] __attribute__((aligned(16)));
-  uint32_t tmpo[3][512] __attribute__((aligned(16)));
+  uint32_t tmp[3][512] __attribute__((aligned(32)));
+  uint32_t tmpo[3][512] __attribute__((aligned(32)));
+  simd_q15_t *y128p=(simd_q15_t*)output;
+  simd_q15_t ONE_OVER_SQRT3_Q15_128 = set1_int16(ONE_OVER_SQRT3_Q15);
 
   for (i=0,j=0; i<512; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3259,6 +5489,28 @@ void dft1536(int16_t *input, int16_t *output)
           (simd_q15_t*)(twa1536+i),(simd_q15_t*)(twb1536+i));
   }
 
+  if (scale==1) {
+    for (i=0; i<24; i++) {
+      y128p[0]  = mulhi_int16(y128p[0],ONE_OVER_SQRT3_Q15_128);
+      y128p[1]  = mulhi_int16(y128p[1],ONE_OVER_SQRT3_Q15_128);
+      y128p[2]  = mulhi_int16(y128p[2],ONE_OVER_SQRT3_Q15_128);
+      y128p[3]  = mulhi_int16(y128p[3],ONE_OVER_SQRT3_Q15_128);
+      y128p[4]  = mulhi_int16(y128p[4],ONE_OVER_SQRT3_Q15_128);
+      y128p[5]  = mulhi_int16(y128p[5],ONE_OVER_SQRT3_Q15_128);
+      y128p[6]  = mulhi_int16(y128p[6],ONE_OVER_SQRT3_Q15_128);
+      y128p[7]  = mulhi_int16(y128p[7],ONE_OVER_SQRT3_Q15_128);
+      y128p[8]  = mulhi_int16(y128p[8],ONE_OVER_SQRT3_Q15_128);
+      y128p[9]  = mulhi_int16(y128p[9],ONE_OVER_SQRT3_Q15_128);
+      y128p[10] = mulhi_int16(y128p[10],ONE_OVER_SQRT3_Q15_128);
+      y128p[11] = mulhi_int16(y128p[11],ONE_OVER_SQRT3_Q15_128);
+      y128p[12] = mulhi_int16(y128p[12],ONE_OVER_SQRT3_Q15_128);
+      y128p[13] = mulhi_int16(y128p[13],ONE_OVER_SQRT3_Q15_128);
+      y128p[14] = mulhi_int16(y128p[14],ONE_OVER_SQRT3_Q15_128);
+      y128p[15] = mulhi_int16(y128p[15],ONE_OVER_SQRT3_Q15_128);
+      y128p+=16;
+    }
+  }
+
   _mm_empty();
   _m_empty();
 
@@ -3280,8 +5532,8 @@ void idft3072(int16_t *input, int16_t *output)
 void idft6144(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][2048] __attribute__((aligned(16)));
-  uint32_t tmpo[3][2048] __attribute__((aligned(16)));
+  uint32_t tmp[3][2048] __attribute__((aligned(32)));
+  uint32_t tmpo[3][2048] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<2048; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3321,8 +5573,8 @@ void idft6144(int16_t *input, int16_t *output)
 void dft6144(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][2048] __attribute__((aligned(16)));
-  uint32_t tmpo[3][2048] __attribute__((aligned(16)));
+  uint32_t tmp[3][2048] __attribute__((aligned(32)));
+  uint32_t tmpo[3][2048] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<2048; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3361,8 +5613,8 @@ void dft6144(int16_t *input, int16_t *output)
 void dft12288(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][4096] __attribute__((aligned(16)));
-  uint32_t tmpo[3][4096] __attribute__((aligned(16)));
+  uint32_t tmp[3][4096] __attribute__((aligned(32)));
+  uint32_t tmpo[3][4096] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<4096; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3397,8 +5649,8 @@ void dft12288(int16_t *input, int16_t *output)
 void idft12288(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][4096] __attribute__((aligned(16)));
-  uint32_t tmpo[3][4096] __attribute__((aligned(16)));
+  uint32_t tmp[3][4096] __attribute__((aligned(32)));
+  uint32_t tmpo[3][4096] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<4096; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3444,8 +5696,8 @@ void idft18432(int16_t *input, int16_t *output)
 void dft24576(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][8192] __attribute__((aligned(16)));
-  uint32_t tmpo[3][8192] __attribute__((aligned(16)));
+  uint32_t tmp[3][8192] __attribute__((aligned(32)));
+  uint32_t tmpo[3][8192] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<8192; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3481,8 +5733,8 @@ void dft24576(int16_t *input, int16_t *output)
 void idft24576(int16_t *input, int16_t *output)
 {
   int i,i2,j;
-  uint32_t tmp[3][16384] __attribute__((aligned(16)));
-  uint32_t tmpo[3][16384] __attribute__((aligned(16)));
+  uint32_t tmp[3][16384] __attribute__((aligned(32)));
+  uint32_t tmpo[3][16384] __attribute__((aligned(32)));
 
   for (i=0,j=0; i<8192; i++) {
     tmp[0][i] = ((uint32_t *)input)[j++];
@@ -3523,11 +5775,11 @@ void idft24576(int16_t *input, int16_t *output)
 ///  THIS SECTION IS FOR ALL PUSCH DFTS (i.e. radix 2^a * 3^b * 4^c * 5^d)
 ///  They use twiddles for 4-way parallel DFTS (i.e. 4 DFTS with interleaved input/output)
 
-static int16_t W1_12s[8]__attribute__((aligned(16))) = {28377,-16383,28377,-16383,28377,-16383,28377,-16383};
-static int16_t W2_12s[8]__attribute__((aligned(16))) = {16383,-28377,16383,-28377,16383,-28377,16383,-28377};
-static int16_t W3_12s[8]__attribute__((aligned(16))) = {0,-32767,0,-32767,0,-32767,0,-32767};
-static int16_t W4_12s[8]__attribute__((aligned(16))) = {-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377};
-static int16_t W6_12s[8]__attribute__((aligned(16))) = {-32767,0,-32767,0,-32767,0,-32767,0};
+static int16_t W1_12s[8]__attribute__((aligned(32))) = {28377,-16383,28377,-16383,28377,-16383,28377,-16383};
+static int16_t W2_12s[8]__attribute__((aligned(32))) = {16383,-28377,16383,-28377,16383,-28377,16383,-28377};
+static int16_t W3_12s[8]__attribute__((aligned(32))) = {0,-32767,0,-32767,0,-32767,0,-32767};
+static int16_t W4_12s[8]__attribute__((aligned(32))) = {-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377};
+static int16_t W6_12s[8]__attribute__((aligned(32))) = {-32767,0,-32767,0,-32767,0,-32767,0};
 
 simd_q15_t *W1_12=(simd_q15_t *)W1_12s;
 simd_q15_t *W2_12=(simd_q15_t *)W2_12s;
@@ -3706,7 +5958,193 @@ void dft12(int16_t *x,int16_t *y)
 
 }
 
-static int16_t tw24[88]__attribute__((aligned(16))) = {31650,-8480,31650,-8480,31650,-8480,31650,-8480,
+#ifdef __AVX2__
+
+static int16_t W1_12s_256[16]__attribute__((aligned(32))) = {28377,-16383,28377,-16383,28377,-16383,28377,-16383,28377,-16383,28377,-16383,28377,-16383,28377,-16383};
+static int16_t W2_12s_256[16]__attribute__((aligned(32))) = {16383,-28377,16383,-28377,16383,-28377,16383,-28377,16383,-28377,16383,-28377,16383,-28377,16383,-28377};
+static int16_t W3_12s_256[16]__attribute__((aligned(32))) = {0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767};
+static int16_t W4_12s_256[16]__attribute__((aligned(32))) = {-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377};
+static int16_t W6_12s_256[16]__attribute__((aligned(32))) = {-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0,-32767,0};
+
+simd256_q15_t *W1_12_256=(simd256_q15_t *)W1_12s_256;
+simd256_q15_t *W2_12_256=(simd256_q15_t *)W2_12s_256;
+simd256_q15_t *W3_12_256=(simd256_q15_t *)W3_12s_256;
+simd256_q15_t *W4_12_256=(simd256_q15_t *)W4_12s_256;
+simd256_q15_t *W6_12_256=(simd256_q15_t *)W6_12s_256;
+
+
+
+static inline void dft12f_simd256(simd256_q15_t *x0,
+				  simd256_q15_t *x1,
+				  simd256_q15_t *x2,
+				  simd256_q15_t *x3,
+				  simd256_q15_t *x4,
+				  simd256_q15_t *x5,
+				  simd256_q15_t *x6,
+				  simd256_q15_t *x7,
+				  simd256_q15_t *x8,
+				  simd256_q15_t *x9,
+				  simd256_q15_t *x10,
+				  simd256_q15_t *x11,
+				  simd256_q15_t *y0,
+				  simd256_q15_t *y1,
+				  simd256_q15_t *y2,
+				  simd256_q15_t *y3,
+				  simd256_q15_t *y4,
+				  simd256_q15_t *y5,
+				  simd256_q15_t *y6,
+				  simd256_q15_t *y7,
+				  simd256_q15_t *y8,
+				  simd256_q15_t *y9,
+				  simd256_q15_t *y10,
+				  simd256_q15_t *y11) __attribute__((always_inline));
+
+static inline void dft12f_simd256(simd256_q15_t *x0,
+				  simd256_q15_t *x1,
+				  simd256_q15_t *x2,
+				  simd256_q15_t *x3,
+				  simd256_q15_t *x4,
+				  simd256_q15_t *x5,
+				  simd256_q15_t *x6,
+				  simd256_q15_t *x7,
+				  simd256_q15_t *x8,
+				  simd256_q15_t *x9,
+				  simd256_q15_t *x10,
+				  simd256_q15_t *x11,
+				  simd256_q15_t *y0,
+				  simd256_q15_t *y1,
+				  simd256_q15_t *y2,
+				  simd256_q15_t *y3,
+				  simd256_q15_t *y4,
+				  simd256_q15_t *y5,
+				  simd256_q15_t *y6,
+				  simd256_q15_t *y7,
+				  simd256_q15_t *y8,
+				  simd256_q15_t *y9,
+				  simd256_q15_t *y10,
+				  simd256_q15_t *y11)
+{
+
+
+  simd256_q15_t tmp_dft12[12];
+
+  simd256_q15_t *tmp_dft12_ptr = &tmp_dft12[0];
+
+  // msg("dft12\n");
+
+  bfly4_tw1_256(x0,
+		x3,
+		x6,
+		x9,
+		tmp_dft12_ptr,
+		tmp_dft12_ptr+3,
+		tmp_dft12_ptr+6,
+		tmp_dft12_ptr+9);
+
+
+  bfly4_tw1_256(x1,
+		x4,
+		x7,
+		x10,
+		tmp_dft12_ptr+1,
+		tmp_dft12_ptr+4,
+		tmp_dft12_ptr+7,
+		tmp_dft12_ptr+10);
+  
+
+  bfly4_tw1_256(x2,
+		x5,
+		x8,
+		x11,
+		tmp_dft12_ptr+2,
+		tmp_dft12_ptr+5,
+		tmp_dft12_ptr+8,
+		tmp_dft12_ptr+11);
+  
+  //  k2=0;
+  bfly3_tw1_256(tmp_dft12_ptr,
+		tmp_dft12_ptr+1,
+		tmp_dft12_ptr+2,
+		y0,
+		y4,
+		y8);
+  
+  
+  
+  //  k2=1;
+  bfly3_256(tmp_dft12_ptr+3,
+	    tmp_dft12_ptr+4,
+	    tmp_dft12_ptr+5,
+	    y1,
+	    y5,
+	    y9,
+	    W1_12_256,
+	    W2_12_256);
+  
+  
+  
+  //  k2=2;
+  bfly3_256(tmp_dft12_ptr+6,
+	    tmp_dft12_ptr+7,
+	    tmp_dft12_ptr+8,
+	    y2,
+	    y6,
+	    y10,
+	    W2_12_256,
+	    W4_12_256);
+  
+  //  k2=3;
+  bfly3_256(tmp_dft12_ptr+9,
+	    tmp_dft12_ptr+10,
+	    tmp_dft12_ptr+11,
+	    y3,
+	    y7,
+	    y11,
+	    W3_12_256,
+	    W6_12_256);
+  
+}
+
+
+
+
+void dft12_simd256(int16_t *x,int16_t *y)
+{
+
+  simd256_q15_t *x256 = (simd256_q15_t *)x,*y256 = (simd256_q15_t *)y;
+  dft12f_simd256(&x256[0],
+		 &x256[1],
+		 &x256[2],
+		 &x256[3],
+		 &x256[4],
+		 &x256[5],
+		 &x256[6],
+		 &x256[7],
+		 &x256[8],
+		 &x256[9],
+		 &x256[10],
+		 &x256[11],
+		 &y256[0],
+		 &y256[1],
+		 &y256[2],
+		 &y256[3],
+		 &y256[4],
+		 &y256[5],
+		 &y256[6],
+		 &y256[7],
+		 &y256[8],
+		 &y256[9],
+		 &y256[10],
+		 &y256[11]);
+  
+  _mm_empty();
+  _m_empty();
+
+}
+
+#endif
+
+static int16_t tw24[88]__attribute__((aligned(32))) = {31650,-8480,31650,-8480,31650,-8480,31650,-8480,
                                                        28377,-16383,28377,-16383,28377,-16383,28377,-16383,
                                                        23169,-23169,23169,-23169,23169,-23169,23169,-23169,
                                                        16383,-28377,16383,-28377,16383,-28377,16383,-28377,
@@ -3817,7 +6255,7 @@ void dft24(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa36[88]__attribute__((aligned(16))) = {32269,-5689,32269,-5689,32269,-5689,32269,-5689,
+static int16_t twa36[88]__attribute__((aligned(32))) = {32269,-5689,32269,-5689,32269,-5689,32269,-5689,
                                                         30790,-11206,30790,-11206,30790,-11206,30790,-11206,
                                                         28377,-16383,28377,-16383,28377,-16383,28377,-16383,
                                                         25100,-21062,25100,-21062,25100,-21062,25100,-21062,
@@ -3830,7 +6268,7 @@ static int16_t twa36[88]__attribute__((aligned(16))) = {32269,-5689,32269,-5689,
                                                         -11206,-30790,-11206,-30790,-11206,-30790,-11206,-30790
                                                        };
 
-static int16_t twb36[88]__attribute__((aligned(16))) = {30790,-11206,30790,-11206,30790,-11206,30790,-11206,
+static int16_t twb36[88]__attribute__((aligned(32))) = {30790,-11206,30790,-11206,30790,-11206,30790,-11206,
                                                         25100,-21062,25100,-21062,25100,-21062,25100,-21062,
                                                         16383,-28377,16383,-28377,16383,-28377,16383,-28377,
                                                         5689,-32269,5689,-32269,5689,-32269,5689,-32269,
@@ -3963,7 +6401,7 @@ void dft36(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa48[88]__attribute__((aligned(16))) = {32486,-4276,32486,-4276,32486,-4276,32486,-4276,
+static int16_t twa48[88]__attribute__((aligned(32))) = {32486,-4276,32486,-4276,32486,-4276,32486,-4276,
                                                         31650,-8480,31650,-8480,31650,-8480,31650,-8480,
                                                         30272,-12539,30272,-12539,30272,-12539,30272,-12539,
                                                         28377,-16383,28377,-16383,28377,-16383,28377,-16383,
@@ -3976,7 +6414,7 @@ static int16_t twa48[88]__attribute__((aligned(16))) = {32486,-4276,32486,-4276,
                                                         4276,-32486,4276,-32486,4276,-32486,4276,-32486
                                                        };
 
-static int16_t twb48[88]__attribute__((aligned(16))) = {31650,-8480,31650,-8480,31650,-8480,31650,-8480,
+static int16_t twb48[88]__attribute__((aligned(32))) = {31650,-8480,31650,-8480,31650,-8480,31650,-8480,
                                                         28377,-16383,28377,-16383,28377,-16383,28377,-16383,
                                                         23169,-23169,23169,-23169,23169,-23169,23169,-23169,
                                                         16383,-28377,16383,-28377,16383,-28377,16383,-28377,
@@ -3989,7 +6427,7 @@ static int16_t twb48[88]__attribute__((aligned(16))) = {31650,-8480,31650,-8480,
                                                         -31650,-8480,-31650,-8480,-31650,-8480,-31650,-8480
                                                        };
 
-static int16_t twc48[88]__attribute__((aligned(16))) = {30272,-12539,30272,-12539,30272,-12539,30272,-12539,
+static int16_t twc48[88]__attribute__((aligned(32))) = {30272,-12539,30272,-12539,30272,-12539,30272,-12539,
                                                         23169,-23169,23169,-23169,23169,-23169,23169,-23169,
                                                         12539,-30272,12539,-30272,12539,-30272,12539,-30272,
                                                         0,-32767,0,-32767,0,-32767,0,-32767,
@@ -4159,7 +6597,7 @@ void dft48(int16_t *x, int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa60[88]__attribute__((aligned(16))) = {32587,-3425,32587,-3425,32587,-3425,32587,-3425,
+static int16_t twa60[88]__attribute__((aligned(32))) = {32587,-3425,32587,-3425,32587,-3425,32587,-3425,
                                                         32050,-6812,32050,-6812,32050,-6812,32050,-6812,
                                                         31163,-10125,31163,-10125,31163,-10125,31163,-10125,
                                                         29934,-13327,29934,-13327,29934,-13327,29934,-13327,
@@ -4171,7 +6609,7 @@ static int16_t twa60[88]__attribute__((aligned(16))) = {32587,-3425,32587,-3425,
                                                         16383,-28377,16383,-28377,16383,-28377,16383,-28377,
                                                         13327,-29934,13327,-29934,13327,-29934,13327,-29934
                                                        };
-static int16_t twb60[88]__attribute__((aligned(16))) = {32050,-6812,32050,-6812,32050,-6812,32050,-6812,
+static int16_t twb60[88]__attribute__((aligned(32))) = {32050,-6812,32050,-6812,32050,-6812,32050,-6812,
                                                         29934,-13327,29934,-13327,29934,-13327,29934,-13327,
                                                         26509,-19259,26509,-19259,26509,-19259,26509,-19259,
                                                         21925,-24350,21925,-24350,21925,-24350,21925,-24350,
@@ -4183,7 +6621,7 @@ static int16_t twb60[88]__attribute__((aligned(16))) = {32050,-6812,32050,-6812,
                                                         -16383,-28377,-16383,-28377,-16383,-28377,-16383,-28377,
                                                         -21925,-24350,-21925,-24350,-21925,-24350,-21925,-24350
                                                        };
-static int16_t twc60[88]__attribute__((aligned(16))) = {31163,-10125,31163,-10125,31163,-10125,31163,-10125,
+static int16_t twc60[88]__attribute__((aligned(32))) = {31163,-10125,31163,-10125,31163,-10125,31163,-10125,
                                                         26509,-19259,26509,-19259,26509,-19259,26509,-19259,
                                                         19259,-26509,19259,-26509,19259,-26509,19259,-26509,
                                                         10125,-31163,10125,-31163,10125,-31163,10125,-31163,
@@ -4195,7 +6633,7 @@ static int16_t twc60[88]__attribute__((aligned(16))) = {31163,-10125,31163,-1012
                                                         -32767,0,-32767,0,-32767,0,-32767,0,
                                                         -31163,10125,-31163,10125,-31163,10125,-31163,10125
                                                        };
-static int16_t twd60[88]__attribute__((aligned(16))) = {29934,-13327,29934,-13327,29934,-13327,29934,-13327,
+static int16_t twd60[88]__attribute__((aligned(32))) = {29934,-13327,29934,-13327,29934,-13327,29934,-13327,
                                                         21925,-24350,21925,-24350,21925,-24350,21925,-24350,
                                                         10125,-31163,10125,-31163,10125,-31163,10125,-31163,
                                                         -3425,-32587,-3425,-32587,-3425,-32587,-3425,-32587,
@@ -4387,7 +6825,7 @@ void dft60(int16_t *x,int16_t *y,unsigned char scale)
 
 }
 
-static int16_t tw72[280]__attribute__((aligned(16))) = {32642,-2855,32642,-2855,32642,-2855,32642,-2855,
+static int16_t tw72[280]__attribute__((aligned(32))) = {32642,-2855,32642,-2855,32642,-2855,32642,-2855,
                                                         32269,-5689,32269,-5689,32269,-5689,32269,-5689,
                                                         31650,-8480,31650,-8480,31650,-8480,31650,-8480,
                                                         30790,-11206,30790,-11206,30790,-11206,30790,-11206,
@@ -4466,7 +6904,7 @@ void dft72(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t tw96[376]__attribute__((aligned(16))) = {32696,-2143,32696,-2143,32696,-2143,32696,-2143,
+static int16_t tw96[376]__attribute__((aligned(32))) = {32696,-2143,32696,-2143,32696,-2143,32696,-2143,
                                                         32486,-4276,32486,-4276,32486,-4276,32486,-4276,
                                                         32137,-6392,32137,-6392,32137,-6392,32137,-6392,
                                                         31650,-8480,31650,-8480,31650,-8480,31650,-8480,
@@ -4559,7 +6997,7 @@ void dft96(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa108[280]__attribute__((aligned(16))) = {32711,-1905,32711,-1905,32711,-1905,32711,-1905,
+static int16_t twa108[280]__attribute__((aligned(32))) = {32711,-1905,32711,-1905,32711,-1905,32711,-1905,
                                                           32545,-3804,32545,-3804,32545,-3804,32545,-3804,
                                                           32269,-5689,32269,-5689,32269,-5689,32269,-5689,
                                                           31883,-7556,31883,-7556,31883,-7556,31883,-7556,
@@ -4596,7 +7034,7 @@ static int16_t twa108[280]__attribute__((aligned(16))) = {32711,-1905,32711,-190
                                                           -14705,-29281,-14705,-29281,-14705,-29281,-14705,-29281
                                                          };
 
-static int16_t twb108[280]__attribute__((aligned(16))) = {32545,-3804,32545,-3804,32545,-3804,32545,-3804,
+static int16_t twb108[280]__attribute__((aligned(32))) = {32545,-3804,32545,-3804,32545,-3804,32545,-3804,
                                                           31883,-7556,31883,-7556,31883,-7556,31883,-7556,
                                                           30790,-11206,30790,-11206,30790,-11206,30790,-11206,
                                                           29281,-14705,29281,-14705,29281,-14705,29281,-14705,
@@ -4683,7 +7121,7 @@ void dft108(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t tw120[472]__attribute__((aligned(16))) = {32722,-1714,32722,-1714,32722,-1714,32722,-1714,
+static int16_t tw120[472]__attribute__((aligned(32))) = {32722,-1714,32722,-1714,32722,-1714,32722,-1714,
                                                          32587,-3425,32587,-3425,32587,-3425,32587,-3425,
                                                          32363,-5125,32363,-5125,32363,-5125,32363,-5125,
                                                          32050,-6812,32050,-6812,32050,-6812,32050,-6812,
@@ -4788,7 +7226,7 @@ void dft120(int16_t *x,int16_t *y, unsigned char scale_flag)
 
 }
 
-static int16_t twa144[376]__attribute__((aligned(16))) = {32735,-1429,32735,-1429,32735,-1429,32735,-1429,
+static int16_t twa144[376]__attribute__((aligned(32))) = {32735,-1429,32735,-1429,32735,-1429,32735,-1429,
                                                           32642,-2855,32642,-2855,32642,-2855,32642,-2855,
                                                           32486,-4276,32486,-4276,32486,-4276,32486,-4276,
                                                           32269,-5689,32269,-5689,32269,-5689,32269,-5689,
@@ -4837,7 +7275,7 @@ static int16_t twa144[376]__attribute__((aligned(16))) = {32735,-1429,32735,-142
                                                           -15130,-29064,-15130,-29064,-15130,-29064,-15130,-29064
                                                          };
 
-static int16_t twb144[376]__attribute__((aligned(16))) = {32642,-2855,32642,-2855,32642,-2855,32642,-2855,
+static int16_t twb144[376]__attribute__((aligned(32))) = {32642,-2855,32642,-2855,32642,-2855,32642,-2855,
                                                           32269,-5689,32269,-5689,32269,-5689,32269,-5689,
                                                           31650,-8480,31650,-8480,31650,-8480,31650,-8480,
                                                           30790,-11206,30790,-11206,30790,-11206,30790,-11206,
@@ -4935,7 +7373,7 @@ void dft144(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa180[472]__attribute__((aligned(16))) = {32747,-1143,32747,-1143,32747,-1143,32747,-1143,
+static int16_t twa180[472]__attribute__((aligned(32))) = {32747,-1143,32747,-1143,32747,-1143,32747,-1143,
                                                           32687,-2285,32687,-2285,32687,-2285,32687,-2285,
                                                           32587,-3425,32587,-3425,32587,-3425,32587,-3425,
                                                           32448,-4560,32448,-4560,32448,-4560,32448,-4560,
@@ -4996,7 +7434,7 @@ static int16_t twa180[472]__attribute__((aligned(16))) = {32747,-1143,32747,-114
                                                           -15383,-28931,-15383,-28931,-15383,-28931,-15383,-28931
                                                          };
 
-static int16_t twb180[472]__attribute__((aligned(16))) = {32687,-2285,32687,-2285,32687,-2285,32687,-2285,
+static int16_t twb180[472]__attribute__((aligned(32))) = {32687,-2285,32687,-2285,32687,-2285,32687,-2285,
                                                           32448,-4560,32448,-4560,32448,-4560,32448,-4560,
                                                           32050,-6812,32050,-6812,32050,-6812,32050,-6812,
                                                           31497,-9031,31497,-9031,31497,-9031,31497,-9031,
@@ -5106,7 +7544,7 @@ void dft180(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa192[376]__attribute__((aligned(16))) = {32749,-1072,32749,-1072,32749,-1072,32749,-1072,
+static int16_t twa192[376]__attribute__((aligned(32))) = {32749,-1072,32749,-1072,32749,-1072,32749,-1072,
                                                           32696,-2143,32696,-2143,32696,-2143,32696,-2143,
                                                           32609,-3211,32609,-3211,32609,-3211,32609,-3211,
                                                           32486,-4276,32486,-4276,32486,-4276,32486,-4276,
@@ -5155,7 +7593,7 @@ static int16_t twa192[376]__attribute__((aligned(16))) = {32749,-1072,32749,-107
                                                           1072,-32749,1072,-32749,1072,-32749,1072,-32749
                                                          };
 
-static int16_t twb192[376]__attribute__((aligned(16))) = {32696,-2143,32696,-2143,32696,-2143,32696,-2143,
+static int16_t twb192[376]__attribute__((aligned(32))) = {32696,-2143,32696,-2143,32696,-2143,32696,-2143,
                                                           32486,-4276,32486,-4276,32486,-4276,32486,-4276,
                                                           32137,-6392,32137,-6392,32137,-6392,32137,-6392,
                                                           31650,-8480,31650,-8480,31650,-8480,31650,-8480,
@@ -5204,7 +7642,7 @@ static int16_t twb192[376]__attribute__((aligned(16))) = {32696,-2143,32696,-214
                                                           -32696,-2143,-32696,-2143,-32696,-2143,-32696,-2143
                                                          };
 
-static int16_t twc192[376]__attribute__((aligned(16))) = {32609,-3211,32609,-3211,32609,-3211,32609,-3211,
+static int16_t twc192[376]__attribute__((aligned(32))) = {32609,-3211,32609,-3211,32609,-3211,32609,-3211,
                                                           32137,-6392,32137,-6392,32137,-6392,32137,-6392,
                                                           31356,-9511,31356,-9511,31356,-9511,31356,-9511,
                                                           30272,-12539,30272,-12539,30272,-12539,30272,-12539,
@@ -5308,7 +7746,7 @@ void dft192(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa216[568]__attribute__((aligned(16))) = {32753,-953,32753,-953,32753,-953,32753,-953,
+static int16_t twa216[568]__attribute__((aligned(32))) = {32753,-953,32753,-953,32753,-953,32753,-953,
                                                           32711,-1905,32711,-1905,32711,-1905,32711,-1905,
                                                           32642,-2855,32642,-2855,32642,-2855,32642,-2855,
                                                           32545,-3804,32545,-3804,32545,-3804,32545,-3804,
@@ -5381,7 +7819,7 @@ static int16_t twa216[568]__attribute__((aligned(16))) = {32753,-953,32753,-953,
                                                           -15551,-28841,-15551,-28841,-15551,-28841,-15551,-28841
                                                          };
 
-static int16_t twb216[568]__attribute__((aligned(16))) = {32711,-1905,32711,-1905,32711,-1905,32711,-1905,
+static int16_t twb216[568]__attribute__((aligned(32))) = {32711,-1905,32711,-1905,32711,-1905,32711,-1905,
                                                           32545,-3804,32545,-3804,32545,-3804,32545,-3804,
                                                           32269,-5689,32269,-5689,32269,-5689,32269,-5689,
                                                           31883,-7556,31883,-7556,31883,-7556,31883,-7556,
@@ -5503,7 +7941,7 @@ void dft216(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa240[472]__attribute__((aligned(16))) = {32755,-857,32755,-857,32755,-857,32755,-857,
+static int16_t twa240[472]__attribute__((aligned(32))) = {32755,-857,32755,-857,32755,-857,32755,-857,
                                                           32722,-1714,32722,-1714,32722,-1714,32722,-1714,
                                                           32665,-2570,32665,-2570,32665,-2570,32665,-2570,
                                                           32587,-3425,32587,-3425,32587,-3425,32587,-3425,
@@ -5564,7 +8002,7 @@ static int16_t twa240[472]__attribute__((aligned(16))) = {32755,-857,32755,-857,
                                                           857,-32755,857,-32755,857,-32755,857,-32755
                                                          };
 
-static int16_t twb240[472]__attribute__((aligned(16))) = {32722,-1714,32722,-1714,32722,-1714,32722,-1714,
+static int16_t twb240[472]__attribute__((aligned(32))) = {32722,-1714,32722,-1714,32722,-1714,32722,-1714,
                                                           32587,-3425,32587,-3425,32587,-3425,32587,-3425,
                                                           32363,-5125,32363,-5125,32363,-5125,32363,-5125,
                                                           32050,-6812,32050,-6812,32050,-6812,32050,-6812,
@@ -5625,7 +8063,7 @@ static int16_t twb240[472]__attribute__((aligned(16))) = {32722,-1714,32722,-171
                                                           -32722,-1714,-32722,-1714,-32722,-1714,-32722,-1714
                                                          };
 
-static int16_t twc240[472]__attribute__((aligned(16))) = {32665,-2570,32665,-2570,32665,-2570,32665,-2570,
+static int16_t twc240[472]__attribute__((aligned(32))) = {32665,-2570,32665,-2570,32665,-2570,32665,-2570,
                                                           32363,-5125,32363,-5125,32363,-5125,32363,-5125,
                                                           31861,-7649,31861,-7649,31861,-7649,31861,-7649,
                                                           31163,-10125,31163,-10125,31163,-10125,31163,-10125,
@@ -5753,7 +8191,7 @@ twb2(2:2:end) = imag(twb);
 
 
  */
-static int16_t twa288[760]__attribute__((aligned(16))) = {32759,-714,32759,-714,32759,-714,32759,-714,
+static int16_t twa288[760]__attribute__((aligned(32))) = {32759,-714,32759,-714,32759,-714,32759,-714,
                                                           32735,-1429,32735,-1429,32735,-1429,32735,-1429,
                                                           32696,-2143,32696,-2143,32696,-2143,32696,-2143,
                                                           32642,-2855,32642,-2855,32642,-2855,32642,-2855,
@@ -5850,7 +8288,7 @@ static int16_t twa288[760]__attribute__((aligned(16))) = {32759,-714,32759,-714,
                                                           -15760,-28727,-15760,-28727,-15760,-28727,-15760,-28727
                                                          };
 
-static int16_t twb288[760]__attribute__((aligned(16))) = {32735,-1429,32735,-1429,32735,-1429,32735,-1429,
+static int16_t twb288[760]__attribute__((aligned(32))) = {32735,-1429,32735,-1429,32735,-1429,32735,-1429,
                                                           32642,-2855,32642,-2855,32642,-2855,32642,-2855,
                                                           32486,-4276,32486,-4276,32486,-4276,32486,-4276,
                                                           32269,-5689,32269,-5689,32269,-5689,32269,-5689,
@@ -5996,7 +8434,7 @@ void dft288(int16_t *x,int16_t *y,unsigned char scale_flag)
 
 }
 
-static int16_t twa300[472]__attribute__((aligned(16))) = {32759,-686,32759,-686,32759,-686,32759,-686,
+static int16_t twa300[472]__attribute__((aligned(32))) = {32759,-686,32759,-686,32759,-686,32759,-686,
                                                           32738,-1372,32738,-1372,32738,-1372,32738,-1372,
                                                           32702,-2057,32702,-2057,32702,-2057,32702,-2057,
                                                           32652,-2741,32652,-2741,32652,-2741,32652,-2741,
@@ -6057,7 +8495,7 @@ static int16_t twa300[472]__attribute__((aligned(16))) = {32759,-686,32759,-686,
                                                           10775,-30944,10775,-30944,10775,-30944,10775,-30944
                                                          };
 
-static int16_t twb300[472]__attribute__((aligned(16))) = {32738,-1372,32738,-1372,32738,-1372,32738,-1372,
+static int16_t twb300[472]__attribute__((aligned(32))) = {32738,-1372,32738,-1372,32738,-1372,32738,-1372,
                                                           32652,-2741,32652,-2741,32652,-2741,32652,-2741,
                                                           32508,-4106,32508,-4106,32508,-4106,32508,-4106,
                                                           32308,-5464,32308,-5464,32308,-5464,32308,-5464,
@@ -6118,7 +8556,7 @@ static int16_t twb300[472]__attribute__((aligned(16))) = {32738,-1372,32738,-137
                                                           -25679,-20353,-25679,-20353,-25679,-20353,-25679,-20353
                                                          };
 
-static int16_t twc300[472]__attribute__((aligned(16))) = {32702,-2057,32702,-2057,32702,-2057,32702,-2057,
+static int16_t twc300[472]__attribute__((aligned(32))) = {32702,-2057,32702,-2057,32702,-2057,32702,-2057,
                                                           32508,-4106,32508,-4106,32508,-4106,32508,-4106,
                                                           32186,-6139,32186,-6139,32186,-6139,32186,-6139,
                                                           31737,-8148,31737,-8148,31737,-8148,31737,-8148,
@@ -6179,7 +8617,7 @@ static int16_t twc300[472]__attribute__((aligned(16))) = {32702,-2057,32702,-205
                                                           -27666,17557,-27666,17557,-27666,17557,-27666,17557
                                                          };
 
-static int16_t twd300[472]__attribute__((aligned(16))) = {32652,-2741,32652,-2741,32652,-2741,32652,-2741,
+static int16_t twd300[472]__attribute__((aligned(32))) = {32652,-2741,32652,-2741,32652,-2741,32652,-2741,
                                                           32308,-5464,32308,-5464,32308,-5464,32308,-5464,
                                                           31737,-8148,31737,-8148,31737,-8148,31737,-8148,
                                                           30944,-10775,30944,-10775,30944,-10775,30944,-10775,
@@ -16088,7 +18526,6 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag)
 
   if (scale_flag==1) {
     norm128 = set1_int16(16384);//dft_norm_table[13]);
-
     for (i=0; i<1200; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
     }
@@ -16110,9 +18547,11 @@ int main(int argc, char**argv)
 
 
   time_stats_t ts;
-  simd_q15_t x[2048],y[2048],tw0,tw1,tw2,tw3;
-
-
+#ifdef __AVX2__
+  simd256_q15_t x[2048],y[2048],tw0,tw1,tw2,tw3;
+#else
+  simd_q15_t x[4096],y[4096],tw0,tw1,tw2,tw3;
+#endif
   int i;
 
   set_taus_seed(0);
@@ -16439,10 +18878,10 @@ int main(int argc, char**argv)
     for (i=0;i<4;i++)
       printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
     printf("\n");
-  */
-  memset((void*)&x[0],0,64*4);
-/*
-  for (i=0; i<64; i+=4) {
+ */
+  memset((void*)&x[0],0,2048*4);
+      
+  for (i=0; i<2048; i+=4) {
      ((int16_t*)x)[i<<1] = 1024;
      ((int16_t*)x)[1+(i<<1)] = 0;
      ((int16_t*)x)[2+(i<<1)] = 0;
@@ -16451,40 +18890,65 @@ int main(int argc, char**argv)
      ((int16_t*)x)[5+(i<<1)] = 0;
      ((int16_t*)x)[6+(i<<1)] = 0;
      ((int16_t*)x)[7+(i<<1)] = -1024;
+     }
+  /*
+  for (i=0; i<2048; i+=2) {
+     ((int16_t*)x)[i<<1] = 1024;
+     ((int16_t*)x)[1+(i<<1)] = 0;
+     ((int16_t*)x)[2+(i<<1)] = -1024;
+     ((int16_t*)x)[3+(i<<1)] = 0;
+     }
+       
+  for (i=0;i<2048*2;i++) {
+    ((int16_t*)x)[i] = i/2;//(int16_t)((taus()&0xffff))>>5;
   }
-*/
-  for (i=0;i<64;i++) {
-      ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
+     */
+  memset((void*)&x[0],0,64*sizeof(int32_t));
+  for (i=2;i<36;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
   }
-  memset((void*)&y[0],0,64*4);
-/*
-  dft16((int16_t *)x,(int16_t *)y);
-  printf("16-point\n");
+  for (i=(128-36);i<128;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  idft64((int16_t *)x,(int16_t *)y,1);
+  
+
+  printf("64-point\n");
   printf("X: ");
-  for (i=0;i<4;i++)
-    printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
+  for (i=0;i<8;i++)
+    print_shorts256("",((int16_t *)x)+(i*16));
+
   printf("\nY:");
 
-  for (i=0;i<4;i++)
-    printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
+  for (i=0;i<8;i++)
+    print_shorts256("",((int16_t *)y)+(i*16));
   printf("\n");
-  exit(-1); 
-*/
-  dft64((int16_t *)x,(int16_t *)y,1);
-  dft64((int16_t *)x,(int16_t *)y,1);
-  dft64((int16_t *)x,(int16_t *)y,1);
+
+  
+
+
+  idft64((int16_t *)x,(int16_t *)y,1);
+  idft64((int16_t *)x,(int16_t *)y,1);
+  idft64((int16_t *)x,(int16_t *)y,1);
   reset_meas(&ts);
 
   for (i=0; i<10000000; i++) {
     start_meas(&ts);
-    dft64((int16_t *)x,(int16_t *)y,1);
+    idft64((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
 
   }
 
   printf("\n\n64-point (%f cycles, #trials %d)\n",(double)ts.diff/(double)ts.trials,ts.trials);
-  write_output("x64.m","x64",x,64,1,1);
+  //  write_output("x64.m","x64",x,64,1,1);
   write_output("y64.m","y64",y,64,1,1);
+  write_output("x64.m","x64",x,64,1,1);
 
 /*
   printf("X: ");
@@ -16506,18 +18970,32 @@ int main(int argc, char**argv)
   }
 */
   
-  memset((void*)&y[0],0,128*4);
+  memset((void*)&x[0],0,128*4);
+  for (i=2;i<72;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=(256-72);i<256;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
   reset_meas(&ts);
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    dft128((int16_t *)x,(int16_t *)y,0);
+    idft128((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
   printf("\n\n128-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-
-  /* printf("X: ");
+  write_output("y128.m","y128",y,128,1,1);
+  write_output("x128.m","x128",x,128,1,1);
+/*
+  printf("X: ");
    for (i=0;i<32;i++)
      printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&x[i])[0],((int16_t *)&x[i])[1],((int16_t*)&x[i])[2],((int16_t *)&x[i])[3],((int16_t*)&x[i])[4],((int16_t*)&x[i])[5],((int16_t*)&x[i])[6],((int16_t*)&x[i])[7]);
    printf("\nY:");
@@ -16525,35 +19003,64 @@ int main(int argc, char**argv)
    for (i=0;i<32;i++)
      printf("%d,%d,%d,%d,%d,%d,%d,%d,",((int16_t*)&y[i])[0],((int16_t *)&y[i])[1],((int16_t*)&y[i])[2],((int16_t *)&y[i])[3],((int16_t*)&y[i])[4],((int16_t *)&y[i])[5],((int16_t*)&y[i])[6],((int16_t *)&y[i])[7]);
    printf("\n");
-  */
+*/
+
+  /*
   for (i=0; i<512; i++) {
     ((int16_t*)x)[i] = (int16_t)((taus()&0xffff))>>5;
   }
-
+  
   memset((void*)&y[0],0,256*4);
+  */
+  memset((void*)&x[0],0,256*sizeof(int32_t));
+  for (i=2;i<144;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=(512-144);i<512;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
   reset_meas(&ts);
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    dft256((int16_t *)x,(int16_t *)y,1);
+    idft256((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
   printf("\n\n256-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y256.m","y256",y,256,1,1);
+  write_output("x256.m","x256",x,256,1,1);
+
+  memset((void*)&x[0],0,512*sizeof(int32_t));
+  for (i=2;i<302;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=(1024-300);i<1024;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
 
   reset_meas(&ts);
-
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    dft512((int16_t *)x,(int16_t *)y,1);
+    idft512((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
   printf("\n\n512-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
-
-  write_output("x.m","x",x,512,1,1);
-  write_output("y.m","y",y,512,1,1);
-
+  write_output("y512.m","y512",y,512,1,1);
+  write_output("x512.m","x512",x,512,1,1);
   /*
   printf("X: ");
   for (i=0;i<64;i++)
@@ -16565,25 +19072,56 @@ int main(int argc, char**argv)
   printf("\n");
   */
 
+  memset((void*)x,0,1024*sizeof(int32_t));
+  for (i=2;i<602;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*724;i<2048;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
   reset_meas(&ts);
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    dft1024((int16_t *)x,(int16_t *)y,1);
+    idft1024((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
   printf("\n\n1024-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y1024.m","y1024",y,1024,1,1);
+  write_output("x1024.m","x1024",x,1024,1,1);
 
+  memset((void*)x,0,2048*sizeof(int32_t));
+  for (i=2;i<1202;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
+  for (i=2*(2048-600);i<4096;i++) {
+    if ((taus() & 1)==0)
+      ((int16_t*)x)[i] = 364;
+    else
+      ((int16_t*)x)[i] = -364;
+  }
   reset_meas(&ts);
 
   for (i=0; i<10000; i++) {
     start_meas(&ts);
-    dft2048((int16_t *)x,(int16_t *)y,1);
+    idft2048((int16_t *)x,(int16_t *)y,1);
     stop_meas(&ts);
   }
 
   printf("\n\n2048-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
+  write_output("y2048.m","y2048",y,2048,1,1);
+  write_output("x2048.m","x2048",x,2048,1,1);
+
   return(0);
 }
 

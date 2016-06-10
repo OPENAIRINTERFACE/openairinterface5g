@@ -190,15 +190,13 @@ static int __init openair_init_module( void )
     mmio_length[card] = pci_resource_len  (pdev[card], 0);
     mmio_flags[card]  = pci_resource_flags(pdev[card], 0);
 
-    if (check_mem_region(mmio_start[card],256) < 0) {
+    if (request_mem_region(mmio_start[card],256,"openair_rf") == NULL) {
       printk("[openair][INIT_MODULE][FATAL] : Cannot get memory region 0, aborting\n");
       mmio_start[card] = 0;
       openair_cleanup();
       return -EBUSY;
     } else
-      printk("[openair][INIT_MODULE][INFO] : Reserving memory region 0 : mmio_start = 0x%x\n",(unsigned int)mmio_start[card]);
-
-    request_mem_region(mmio_start[card], 256, "openair_rf");
+      printk("[openair][INIT_MODULE][INFO] : Reserved memory region 0 : mmio_start = 0x%x\n",(unsigned int)mmio_start[card]);
 
     bar[card] = pci_iomap( pdev[card], 0, mmio_length[card] );   // get virtual kernel address for BAR0
 

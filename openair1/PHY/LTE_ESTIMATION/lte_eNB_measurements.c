@@ -48,15 +48,14 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
   LTE_eNB_COMMON *eNB_common_vars = &phy_vars_eNB->lte_eNB_common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
   PHY_MEASUREMENTS_eNB *phy_measurements = &phy_vars_eNB->PHY_measurements_eNB[eNB_id];
-  int32_t *rb_mask = phy_vars_eNB->rb_mask_ul;
+  uint32_t *rb_mask = phy_vars_eNB->rb_mask_ul;
 
-  uint32_t aarx,rx_power_correction;
+  uint32_t aarx /* ,rx_power_correction */;
   uint32_t rb;
   int32_t *ul_ch;
   int32_t n0_power_tot;
   int len;
   int offset;
-  int Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
   // noise measurements
   // for the moment we measure the noise on the 7th OFDM symbol (in S subframe)
 
@@ -68,8 +67,8 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
 
 
     phy_measurements->n0_power[aarx] = ((k1*signal_energy(&eNB_common_vars->rxdata[eNB_id][aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
-                                         frame_parms->ofdm_symbol_size)) + k2*phy_measurements->n0_power[aarx])>>10;
-    phy_measurements->n0_power[aarx] = (phy_measurements->n0_power[aarx] * 12*frame_parms->N_RB_DL)/(frame_parms->ofdm_symbol_size);
+							  frame_parms->ofdm_symbol_size)) + k2*phy_measurements->n0_power[aarx])>>10;
+    //phy_measurements->n0_power[aarx] = (phy_measurements->n0_power[aarx]) * 12*frame_parms->N_RB_DL)/(frame_parms->ofdm_symbol_size);
     phy_measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(phy_measurements->n0_power[aarx]);
     phy_measurements->n0_power_tot +=  phy_measurements->n0_power[aarx];
   }
@@ -88,7 +87,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *phy_vars_eNB,
 
       // select the 7th symbol in an uplink subframe
 	offset = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
-	offset += (7*frame_parms->ofdm_symbol_size);//(((Nsymb*subframe)+7)*frame_parms->ofdm_symbol_size);
+	offset += (7*frame_parms->ofdm_symbol_size);
 	ul_ch  = &eNB_common_vars->rxdataF[eNB_id][aarx][offset];
 	len = 12;
 	// just do first half of middle PRB for odd number of PRBs

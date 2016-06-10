@@ -34,7 +34,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -67,9 +66,9 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
   uint32_t UL_alloc_pdu[2];
 
   int i;
-  int dci_length_bytes,dci_length;
-  int BCCH_pdu_size_bits, BCCH_pdu_size_bytes;
-  int UL_pdu_size_bits, UL_pdu_size_bytes;
+  int dci_length_bytes=0,dci_length=0;
+  int BCCH_pdu_size_bits=0, BCCH_pdu_size_bytes=0;
+  int UL_pdu_size_bits=0, UL_pdu_size_bytes=0;
   int mcs = 3;
 
   DCI_pdu.Num_ue_spec_dci = 0;
@@ -393,11 +392,7 @@ DCI_PDU *get_dci(LTE_DL_FRAME_PARMS *lte_frame_parms,uint8_t log2L, uint8_t log2
 
 
 
-  DCI_pdu.nCCE = 0;
 
-  for (i=0; i<DCI_pdu.Num_common_dci+DCI_pdu.Num_ue_spec_dci; i++) {
-    DCI_pdu.nCCE += (1<<(DCI_pdu.dci_alloc[i].L));
-  }
   
   return(&DCI_pdu);
 }
@@ -411,7 +406,6 @@ int main(int argc, char **argv)
 
   int i,l,aa;
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1;
-  //mod_sym_t **txdataF;
 
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
@@ -712,6 +706,7 @@ int main(int argc, char **argv)
                  Nid_cell,
                  tdd_config,
                  N_RB_DL,
+		 0,
                  osf,
                  perfect_ce);
 
@@ -774,8 +769,8 @@ int main(int argc, char **argv)
 
 
 
-  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(8,MAX_TURBO_ITERATIONS,N_RB_DL,0);
-  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(8,N_RB_DL,0);
+  PHY_vars_eNB->ulsch_eNB[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,N_RB_DL,0);
+  PHY_vars_UE->ulsch_ue[0]   = new_ue_ulsch(N_RB_DL,0);
 
 
   PHY_vars_eNB->proc[subframe].frame_tx    = 0;
@@ -788,6 +783,11 @@ int main(int argc, char **argv)
 
     while (!feof(input_fd)) {
       ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+
+      if (ret != 2) {
+        printf("%s:%d:%s: fscanf error, exiting\n", __FILE__, __LINE__, __FUNCTION__);
+        exit(1);
+      }
 
       if ((i%4)==0) {
         ((short*)txdata[0])[i/2] = (short)((1<<15)*strtod(input_val_str,NULL));
@@ -834,7 +834,7 @@ int main(int argc, char **argv)
 
       //    printf("DCI (SF %d): txdataF %p (0 %p)\n",subframe,&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][512*14*subframe],&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][0]);
       for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx_eNB; aa++) {
-        memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+        memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 
         /*
         re_offset = PHY_vars_eNB->lte_frame_parms.first_carrier_offset;

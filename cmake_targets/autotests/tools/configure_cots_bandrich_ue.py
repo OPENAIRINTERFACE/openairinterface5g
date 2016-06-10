@@ -1,4 +1,34 @@
 #!/usr/bin/python 
+#******************************************************************************
+
+#    OpenAirInterface 
+#    Copyright(c) 1999 - 2014 Eurecom
+
+#    OpenAirInterface is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+
+
+#    OpenAirInterface is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+
+#   You should have received a copy of the GNU General Public License
+#   along with OpenAirInterface.The full GNU General Public License is 
+#   included in this distribution in the file called "COPYING". If not, 
+#   see <http://www.gnu.org/licenses/>.
+
+#  Contact Information
+#  OpenAirInterface Admin: openair_admin@eurecom.fr
+#  OpenAirInterface Tech : openair_tech@eurecom.fr
+#  OpenAirInterface Dev  : openair4g-devel@lists.eurecom.fr
+  
+#  Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 06904 Biot Sophia Antipolis cedex, FRANCE
+
+# *******************************************************************************/
+# \author Navid Nikaein, Rohit Gupta
 
 import time
 import serial
@@ -28,17 +58,22 @@ from lib_autotest import *
 def find_open_port():
    global serial_port, ser
    max_ports=100
-   if os.path.exists(serial_port) == True:
-     return serial_port
-   for port in range(2,100):
-      serial_port = '/dev/ttyUSB'+str(port)
-      if os.path.exists(serial_port) == True:
-         print 'New Serial Port : ' + serial_port
-         break
-
-   ser = serial.Serial(port=serial_port)
-   return
-
+   serial_port=''
+   while True:
+     if os.path.exists(serial_port) == True:
+       return serial_port
+     for port in range(2,100):
+        serial_port_tmp = '/dev/ttyUSB'+str(port)
+        if os.path.exists(serial_port_tmp) == True:
+           print 'New Serial Port : ' + serial_port_tmp
+           serial_port = serial_port_tmp
+           break
+     if serial_port == '':
+        print" Not able to detect valid serial ports. Resetting the modem now..."
+        reset_ue()
+     else :
+        ser = serial.Serial(port=serial_port)
+        return
 
     
 #serial_port = '/dev/ttyUSB2'
@@ -106,6 +141,7 @@ def send_command (cmd, response, timeout):
         error = error + ' In function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
         error = error + traceback.format_exc()
         print error
+        time.sleep(1)
         
 
 def start_ue () :
@@ -165,10 +201,12 @@ def reset_ue():
   ProductId=res[0][3]
   usb_dir= find_usb_path(VendorId, ProductId)
   print "Bandrich 4G LTE Adapter found in..." + usb_dir
+  print "Sleeping now for 45 seconds...please wait..."
   cmd = "sudo sh -c \"echo 0 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 30" )
+  stop_ue()
 
 i=1
 gw='192.172.0.1'
@@ -183,6 +221,7 @@ while i <  len(sys.argv):
         print 'Using Serial port : ' + serial_port  
         stop_ue()
     elif arg == '--reset-ue' :
+        find_open_port()
         reset_ue()
     elif arg == '-gw' :
         gw = sys.argv[i+1]

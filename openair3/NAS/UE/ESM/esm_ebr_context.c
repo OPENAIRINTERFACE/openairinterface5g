@@ -114,7 +114,7 @@ int esm_ebr_context_create(
   int                 bid     = 0;
   esm_data_context_t *esm_ctx = NULL;
   esm_pdn_t          *pdn     = NULL;
-  unsigned int        ueid    = 0;
+  //unsigned int        ueid    = 0;
 
   LOG_FUNC_IN;
 
@@ -212,7 +212,7 @@ int esm_ebr_context_create(
         {
            char          *tmp          = NULL;
            char           ipv4_addr[INET_ADDRSTRLEN];
-           char           ipv6_addr[INET6_ADDRSTRLEN];
+           //char           ipv6_addr[INET6_ADDRSTRLEN];
            char          *netmask      = NULL;
            char           broadcast[INET_ADDRSTRLEN];
            struct in_addr in_addr;
@@ -221,7 +221,8 @@ int esm_ebr_context_create(
 
            switch (pdn->type) {
            case NET_PDN_TYPE_IPV4V6:
-             ipv6_addr[0] = pdn->ip_addr[4];
+             //ipv6_addr[0] = pdn->ip_addr[4];
+             /* TODO? */
 
              // etc
            case NET_PDN_TYPE_IPV4:
@@ -281,13 +282,16 @@ int esm_ebr_context_create(
              }
 
              res = sprintf(command_line,
-                           "ifconfig oip1 %s netmask %s broadcast %s up",
+                           "ifconfig oip1 %s netmask %s broadcast %s",
                            ipv4_addr, netmask, broadcast);
+             (void)res; /* avoid gcc warning "set but not used" */
              //                            AssertFatal((res > 0) && (res < 128),
              //                                    "error in system command line");
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
-             system(command_line);
+
+             if (system(command_line)) ; /* TODO: what to do? */
+
              break;
 
            case NET_PDN_TYPE_IPV6:
@@ -341,7 +345,7 @@ int esm_ebr_context_release(
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
 
-  unsigned int ueid = 0;
+  //unsigned int ueid = 0;
 
   LOG_FUNC_IN;
 

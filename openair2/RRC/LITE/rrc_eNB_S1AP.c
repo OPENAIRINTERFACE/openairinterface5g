@@ -60,6 +60,9 @@
 #endif
 #include "msc.h"
 
+#include "gtpv1u_eNB_task.h"
+#include "RRC/LITE/rrc_eNB_GTPV1U.h"
+
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
 
@@ -233,7 +236,7 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
 static e_SecurityAlgorithmConfig__cipheringAlgorithm rrc_eNB_select_ciphering(uint16_t algorithms)
 {
 
-#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
+//#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
@@ -392,6 +395,7 @@ rrc_pdcp_config_security(
 #define DEBUG_SECURITY 1
 
 #if defined (DEBUG_SECURITY)
+#undef msg
 #define msg printf
 
   if (print_keys ==1 ) {
@@ -671,7 +675,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
         struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
-        int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
+        //int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
@@ -840,15 +844,15 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
     LOG_F(RRC,"\n");
 #endif
     /* Transfer data to PDCP */
-    pdcp_rrc_data_req (
-      &ctxt,
-      DCCH,
-      *rrc_eNB_mui++,
-      SDU_CONFIRM_NO,
-      length,
-      buffer,
-      PDCP_TRANSMISSION_MODE_CONTROL);
-
+    rrc_data_req (
+		  &ctxt,
+		  DCCH,
+		  *rrc_eNB_mui++,
+		  SDU_CONFIRM_NO,
+		  length,
+		  buffer,
+		  PDCP_TRANSMISSION_MODE_CONTROL);
+    
     return (0);
   }
 }
@@ -858,7 +862,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 {
   uint16_t                        ue_initial_id;
   uint32_t                        eNB_ue_s1ap_id;
-  MessageDef                     *message_gtpv1u_p = NULL;
+  //MessageDef                     *message_gtpv1u_p = NULL;
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
 
@@ -1169,7 +1173,7 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const ch
     */
     {
       int      e_rab;
-      int      mod_id = 0;
+      //int      mod_id = 0;
       MessageDef *msg_delete_tunnels_p = NULL;
 
       MSC_LOG_TX_MESSAGE(

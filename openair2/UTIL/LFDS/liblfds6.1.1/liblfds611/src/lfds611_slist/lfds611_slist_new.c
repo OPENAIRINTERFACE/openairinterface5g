@@ -31,7 +31,7 @@ int lfds611_slist_new( struct lfds611_slist_state **ss, void (*user_data_delete_
 
 
 /****************************************************************************/
-#pragma warning( disable : 4100 )
+//#pragma warning( disable : 4100 )
 
 void lfds611_slist_use( struct lfds611_slist_state *ss )
 {
@@ -42,7 +42,7 @@ void lfds611_slist_use( struct lfds611_slist_state *ss )
   return;
 }
 
-#pragma warning( default : 4100 )
+//#pragma warning( default : 4100 )
 
 
 

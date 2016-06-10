@@ -141,7 +141,9 @@ static uint8_t check_trigger_meas_event(
   Q_OffsetRange_t ofn, Q_OffsetRange_t ocn, Hysteresis_t hys,
   Q_OffsetRange_t ofs, Q_OffsetRange_t ocs, long a3_offset, TimeToTrigger_t ttt);
 
+#ifdef Rel10
 static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_index, frame_t frameP,uint8_t mbsfn_sync_area);
+#endif
 
 
 
@@ -151,10 +153,13 @@ static void decode_MBSFNAreaConfiguration(module_id_t module_idP, uint8_t eNB_in
 
 
 /*------------------------------------------------------------------------------*/
+/* to avoid gcc warnings when compiling with certain options */
+#if defined(ENABLE_USE_MME) || ENABLE_RAL
 static Rrc_State_t rrc_get_state (module_id_t ue_mod_idP)
 {
   return UE_rrc_inst[ue_mod_idP].RrcState;
 }
+#endif
 
 static Rrc_Sub_State_t rrc_get_sub_state (module_id_t ue_mod_idP)
 {
@@ -261,6 +266,7 @@ static void init_SI_UE( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_
 
 #ifdef Rel10
 //-----------------------------------------------------------------------------
+#if 0
 static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
 {
   int i;
@@ -274,9 +280,10 @@ static void init_MCCH_UE(module_id_t ue_mod_idP, uint8_t eNB_index)
   }
 }
 #endif
+#endif
 
 //-----------------------------------------------------------------------------
-static void openair_rrc_lite_ue_init_security( const protocol_ctxt_t* const ctxt_pP )
+static void openair_rrc_ue_init_security( const protocol_ctxt_t* const ctxt_pP )
 {
 #if defined(ENABLE_SECURITY)
   //    uint8_t *kRRCenc;
@@ -297,7 +304,7 @@ static void openair_rrc_lite_ue_init_security( const protocol_ctxt_t* const ctxt
 }
 
 //-----------------------------------------------------------------------------
-char openair_rrc_lite_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_index )
+char openair_rrc_ue_init( const module_id_t ue_mod_idP, const unsigned char eNB_index )
 {
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_idP, ENB_FLAG_NO, NOT_A_RNTI, 0, 0,eNB_index);
@@ -324,7 +331,7 @@ char openair_rrc_lite_ue_init( const module_id_t ue_mod_idP, const unsigned char
   UE_rrc_inst[ctxt.module_id].integrity_algorithm = SecurityAlgorithmConfig__integrityProtAlgorithm_reserved;
 #endif
 
-  openair_rrc_lite_ue_init_security(&ctxt);
+  openair_rrc_ue_init_security(&ctxt);
   init_SI_UE(&ctxt,eNB_index);
   LOG_D(RRC,PROTOCOL_RRC_CTXT_FMT"  INIT: phy_sync_2_ch_ind\n",
         PROTOCOL_RRC_CTXT_ARGS(&ctxt));
@@ -445,14 +452,14 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t* c
   LOG_D(RLC,
         "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
         ctxt_pP->frame, ctxt_pP->module_id+NB_eNB_INST, size, eNB_index, rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
-  pdcp_rrc_data_req (
-    ctxt_pP,
-    DCCH,
-    rrc_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req (
+		ctxt_pP,
+		DCCH,
+		rrc_mui++,
+		SDU_CONFIRM_NO,
+		size,
+		buffer,
+		PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 //-----------------------------------------------------------------------------
@@ -472,14 +479,14 @@ static void rrc_ue_generate_RRCConnectionReconfigurationComplete( const protocol
         rrc_mui,
         UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
         DCCH);
-  pdcp_rrc_data_req (
-    ctxt_pP,
-    DCCH,
-    rrc_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
+  rrc_data_req (
+		ctxt_pP,
+		DCCH,
+		rrc_mui++,
+		SDU_CONFIRM_NO,
+		size,
+		buffer,
+		PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 
@@ -697,6 +704,10 @@ rrc_ue_establish_drb(
   // add descriptor from RRC PDU
 #ifdef PDCP_USE_NETLINK
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
+  /* avoid gcc warnings */
+  (void)oip_ifup;
+  (void)ip_addr_offset3;
+  (void)ip_addr_offset4;
 #endif
 
   LOG_I(RRC,"[UE %d] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
@@ -1296,7 +1307,7 @@ rrc_ue_process_radioResourceConfigDedicated(
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[1],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[2],
     UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index]->cellAccessRelatedInfo.cellIdentity.buf[3]);
-#    endif OAI_EMU
+#    endif /* OAI_EMU */
 #endif
 }
 
@@ -1430,14 +1441,14 @@ rrc_ue_process_securityModeCommand(
       }
 
       LOG_T(RRC, "\n");
-      pdcp_rrc_data_req (
-        ctxt_pP,
-        DCCH,
-        rrc_mui++,
-        SDU_CONFIRM_NO,
-        (enc_rval.encoded + 7) / 8,
-        buffer,
-        PDCP_TRANSMISSION_MODE_CONTROL);
+      rrc_data_req (
+		    ctxt_pP,
+		    DCCH,
+		    rrc_mui++,
+		    SDU_CONFIRM_NO,
+		    (enc_rval.encoded + 7) / 8,
+		    buffer,
+		    PDCP_TRANSMISSION_MODE_CONTROL);
     }
   }
 }
@@ -1535,14 +1546,14 @@ rrc_ue_process_ueCapabilityEnquiry(
           }
 
           LOG_T(RRC, "\n");
-          pdcp_rrc_data_req (
-            ctxt_pP,
-            DCCH,
-            rrc_mui++,
-            SDU_CONFIRM_NO,
-            (enc_rval.encoded + 7) / 8,
-            buffer,
-            PDCP_TRANSMISSION_MODE_CONTROL);
+          rrc_data_req (
+			ctxt_pP,
+			DCCH,
+			rrc_mui++,
+			SDU_CONFIRM_NO,
+			(enc_rval.encoded + 7) / 8,
+			buffer,
+			PDCP_TRANSMISSION_MODE_CONTROL);
         }
       }
     }
@@ -2266,6 +2277,9 @@ static const char* SIB2preambleTransMax( long value )
   case 10:
     return "n200";
   }
+
+  /* unreachable but gcc warns... */
+  return "ERR";
 }
 static const char* SIB2ra_ResponseWindowSize( long value )
 {
@@ -3061,9 +3075,10 @@ uint64_t arfcn_to_freq(long arfcn) {
     return((uint64_t)3400000000 + ((arfcn-41590)*100000));
   else if (arfcn <45590) // Band 43
     return((uint64_t)3600000000 + ((arfcn-43950)*100000));
-  else
+  else {
     LOG_E(RRC,"Unknown EARFCN %d\n",arfcn);
-
+    exit(1);
+  }
 }
 static void dump_sib5( SystemInformationBlockType5_t *sib5 )
 {
@@ -4160,15 +4175,15 @@ void *rrc_ue_task( void *args_p )
 
       /* Transfer data to PDCP */
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
-      pdcp_rrc_data_req (&ctxt,
-                         DCCH,
-                         rrc_mui++,
-                         SDU_CONFIRM_NO,
-                         length, buffer,
-                         PDCP_TRANSMISSION_MODE_CONTROL);
+      rrc_data_req (&ctxt,
+		    DCCH,
+		    rrc_mui++,
+		    SDU_CONFIRM_NO,
+		    length, buffer,
+		    PDCP_TRANSMISSION_MODE_CONTROL);
       break;
     }
-
+      
 # endif
 
 # if ENABLE_RAL

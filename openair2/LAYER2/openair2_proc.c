@@ -74,7 +74,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
   int eNB_id,UE_id,number_of_cards;
   int len= length;
   int CC_id=0;
-  int i,j;
+  int i;
   protocol_ctxt_t      ctxt;
   rlc_op_status_t rlc_status;
   unsigned int stat_rlc_mode;
@@ -150,7 +150,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
                      eNB->eNB_stats[CC_id].dlsch_pdus_tx,
                      eNB->eNB_stats[CC_id].total_dlsch_pdus_tx);
 
-      len += sprintf(&buffer[len],"ULSCH bitrate (TTI %u, avg %u) kbps, Received bytes (TTI %u, total %u), Received PDU (TTI %u, total %lu) \n",
+      len += sprintf(&buffer[len],"ULSCH bitrate (TTI %u, avg %u) kbps, Received bytes (TTI %u, total %u), Received PDU (TTI %lu, total %u) \n",
                      eNB->eNB_stats[CC_id].ulsch_bitrate,
                      eNB->eNB_stats[CC_id].total_ulsch_bitrate,
                      eNB->eNB_stats[CC_id].ulsch_bytes_rx,
@@ -201,9 +201,11 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_list->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes
                       );
         
-	len += sprintf(&buffer[len],"[MAC] UE %d (ULSCH), Status %d, RNTI %x : rx power (normalized %d,  target %d), MCS (pre %d, post %d), RB (rx %d, retx %d, total %d), Current TBS %d \n",
+
+	len += sprintf(&buffer[len],"[MAC] UE %d (ULSCH), Status %s, Failute timer %d, RNTI %x : rx power (normalized %d,  target %d), MCS (pre %d, post %d), RB (rx %d, retx %d, total %d), Current TBS %d \n",
                        UE_id,
                        map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
+		       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer,
                        UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
 		       UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power,
 		       UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power,
