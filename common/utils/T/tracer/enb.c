@@ -19,6 +19,9 @@
 
 typedef struct {
   view *phyview;
+  view *macview;
+  view *rlcview;
+  view *pdcpview;
   view *rrcview;
   view *legacy;
 } enb_gui;
@@ -302,6 +305,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, col, text, -1);
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
+  e->macview = textview;
 
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
@@ -316,6 +320,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, col, text, -1);
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
+  e->rlcview = textview;
 
   /* pdcp */
   col = new_container(g, VERTICAL);
@@ -326,6 +331,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget_add_child(g, col, text, -1);
   container_set_child_growable(g, col, text, 1);
   textview = new_view_textlist(10000, 10, g, text);
+  e->pdcpview = textview;
 
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
@@ -464,6 +470,22 @@ int main(int n, char **v)
       h, database, is_on);
   view_add_log(eg.phyview, "ENB_ULSCH_UE_ACK", h, database, is_on);
   view_add_log(eg.phyview, "ENB_ULSCH_UE_NACK", h, database, is_on);
+
+  view_add_log(eg.macview, "ENB_MAC_UE_DL_SDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_SCHEDULE", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION",
+      h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_PDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_SDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_CE", h, database, is_on);
+
+  view_add_log(eg.rlcview, "ENB_RLC_DL", h, database, is_on);
+  view_add_log(eg.rlcview, "ENB_RLC_UL", h, database, is_on);
+  view_add_log(eg.rlcview, "ENB_RLC_MAC_DL", h, database, is_on);
+  view_add_log(eg.rlcview, "ENB_RLC_MAC_UL", h, database, is_on);
+
+  view_add_log(eg.pdcpview, "ENB_PDCP_UL", h, database, is_on);
+  view_add_log(eg.pdcpview, "ENB_PDCP_DL", h, database, is_on);
 
   view_add_log(eg.rrcview, "ENB_RRC_CONNECTION_SETUP_COMPLETE",
       h, database, is_on);
