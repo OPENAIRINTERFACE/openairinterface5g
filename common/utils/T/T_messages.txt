@@ -62,6 +62,60 @@ ID = PUCCH_1_ENERGY
     GROUP = ALL:PHY:GRAPHIC:HEAVY:ENB
     FORMAT = int,eNB_ID : int,UE_ID : int,frame : int,subframe : int,energy : int,threshold
 
+#MAC logs
+ID = ENB_MAC_UE_DL_SDU
+    DESC = MAC downlink SDU for an UE coming from RLC to MAC
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,lcid : int,length
+ID = ENB_MAC_UE_UL_SCHEDULE
+    DESC = MAC uplink UE scheduling decision
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,mcs : int,first_rb : int,nb_rb : int,TBS
+ID = ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION
+    DESC = MAC uplink UE scheduling retransmission decision
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,mcs : int,first_rb : int,nb_rb : int,round
+ID = ENB_MAC_UE_UL_PDU
+    DESC = MAC uplink UE received PDU
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,sdu_length : int,num_ce : int,num_sdu
+ID = ENB_MAC_UE_UL_SDU
+    DESC = MAC uplink UE received SDU
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,lcid : int,length
+ID = ENB_MAC_UE_UL_CE
+    DESC = MAC uplink UE received control element
+    GROUP = ALL:MAC:ENB
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,ce
+
+#RLC logs
+ID = ENB_RLC_DL
+    DESC = RLC downlink data
+    GROUP = ALL:RLC:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+ID = ENB_RLC_UL
+    DESC = RLC uplink data
+    GROUP = ALL:RLC:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+ID = ENB_RLC_MAC_DL
+    DESC = RLC downlink data
+    GROUP = ALL:RLC:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+ID = ENB_RLC_MAC_UL
+    DESC = RLC uplink data
+    GROUP = ALL:RLC:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+
+#PDCP logs
+ID = ENB_PDCP_UL
+    DESC = PDCP uplink data
+    GROUP = ALL:PDCP:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+ID = ENB_PDCP_DL
+    DESC = PDCP uplink data
+    GROUP = ALL:PDCP:ENB
+    FORMAT = int,eNB_ID : int,rnti : int,rb_id : int,length
+
 #RRC logs
 ID = ENB_RRC_CONNECTION_SETUP_COMPLETE
     DESC = RRC connection setup complete
