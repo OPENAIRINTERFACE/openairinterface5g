@@ -1272,9 +1272,10 @@ void rx_prach(PHY_VARS_eNB *eNB,
     //send prachF to RCC
     return;
   }
-  else if (eNB->node_function == NGFI_RCC_IF4) {
+  // in case of RCC and prach received rx_thread wakes up prach
+  //else if (eNB->node_function == NGFI_RCC_IF4) {
     //wait for prachF from RRU and continue with PRACH processing
-  }
+  //}
 
 
 
