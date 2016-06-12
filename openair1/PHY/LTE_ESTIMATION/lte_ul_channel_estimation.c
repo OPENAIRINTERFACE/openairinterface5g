@@ -53,6 +53,7 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 #define SCALE 0x3FFF
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
+				  eNB_rxtx_proc_t *proc,
                                   uint8_t eNB_id,
                                   uint8_t UE_id,
                                   unsigned char l,
@@ -67,8 +68,8 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int32_t **ul_ch_estimates_0=  pusch_vars->drs_ch_estimates_0[eNB_id];
   int32_t **ul_ch_estimates_1=  pusch_vars->drs_ch_estimates_1[eNB_id];
   int32_t **rxdataF_ext=  pusch_vars->rxdataF_ext[eNB_id];
-  int subframe = eNB->proc.subframe_rx;
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,eNB->proc.frame_rx,subframe);
+  int subframe = proc->subframe_rx;
+  uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
   int16_t *ru2 = ru_90;

@@ -45,8 +45,9 @@ DIO_s8  DIO_LinearToALaw(DIO_s16 sample)
      };
 
      DIO_s32 sign, exponent, mantissa; 
-     DIO_s8 compandedValue; 
-	 sample = (sample ==-32768) ? -32767 : sample;
+     DIO_s8 compandedValue;
+
+     sample = (sample ==-32768) ? -32767 : sample;
      sign = ((~sample) >> 8) & 0x80; 
      if (!sign) 
           sample = (short)-sample; 
@@ -123,3 +124,16 @@ DIO_s32 DIO_IIRavgPower2FR (DIO_s32 prevAvg, DIO_u8 windowLenInBits, DIO_s16 new
 	iirAvg = (((prevAvg<<windowLenInBits)-prevAvg) + (DIO_I2FR(newSample,radix)))>>windowLenInBits;
 	return iirAvg;
 }
+
+
+#ifdef MAIN
+
+int main(int argc, char* argv[])
+{
+
+  
+  
+  return 0;
+}
+
+#endif

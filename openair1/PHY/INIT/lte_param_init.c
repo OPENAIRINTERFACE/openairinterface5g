@@ -28,10 +28,11 @@ void lte_param_init(unsigned char N_tx,
   LTE_DL_FRAME_PARMS *frame_parms;
   int i;
 
-
   printf("Start lte_param_init\n");
   eNB = malloc(sizeof(PHY_VARS_eNB));
   UE = malloc(sizeof(PHY_VARS_UE));
+  memset((void*)eNB,0,sizeof(PHY_VARS_eNB));
+  memset((void*)UE,0,sizeof(PHY_VARS_UE));
   //PHY_config = malloc(sizeof(PHY_CONFIG));
   mac_xface = malloc(sizeof(MAC_xface));
 

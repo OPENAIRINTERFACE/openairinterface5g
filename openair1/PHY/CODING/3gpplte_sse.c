@@ -233,7 +233,7 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
     loop++;
 #endif
 
-  
+
   for (i=0; i<loop ; i++ ) {
     // int cur_byte=i<<3; 
     // for (b=0;b<8;b++) 
@@ -438,11 +438,13 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   uint8_t *systematic2_ptr=(uint8_t *) output;
 #endif
 #ifndef __AVX2__
-  int input_length_words=n>>1;
+  int input_length_words=1+((n-1)>>1);
 #else
-  int input_length_words=n>>2;
+  int input_length_words=1+((n-1)>>2);
 #endif
+
   for ( i=0; i<  input_length_words ; i ++ ) {
+
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifndef __AVX2__
@@ -571,6 +573,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
 
 
   unsigned char systematic2[768] __attribute__((aligned(32)));
+
   interleave_compact_byte(base_interleaver,input,systematic2,input_length_bytes);
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -584,7 +587,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
   for ( state0=state1=i=0 ; i<input_length_bytes; i++ ) {
     cur_s1=input[i];
     cur_s2=systematic2[i];
-      
+
     for ( code_rate=0; code_rate<3; code_rate++) {
 #if defined(__x86_64__) || defined(__i386__)
       /*
@@ -592,6 +595,7 @@ void threegpplte_turbo_encoder(unsigned char *input,
        _mm_add_pi8(all_treillis[state0][cur_s1].parity1_64[code_rate],
 	 all_treillis[state1][cur_s2].parity2_64[code_rate]));
 	*/
+
       *ptr_output++ = _mm_add_pi8(all_treillis[state0][cur_s1].systematic_andp1_64[code_rate],
 				  all_treillis[state1][cur_s2].parity2_64[code_rate]);
 	
