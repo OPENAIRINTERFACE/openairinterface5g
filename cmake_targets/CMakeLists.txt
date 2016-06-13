@@ -1652,8 +1652,8 @@ add_executable(lte-softmodem-nos1
   ${OPENAIR_TARGETS}/SIMU/USER/init_lte.c
   ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
-  #${OPENAIR2_DIR}/RRC/NAS/nas_config.c # enable if you want rrc to mount ip interface
-  #${OPENAIR2_DIR}/RRC/NAS/rb_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
+  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
