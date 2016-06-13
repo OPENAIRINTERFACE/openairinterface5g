@@ -213,7 +213,7 @@ install_gnutls_from_source(){
 
 check_install_usrp_uhd_driver(){
         #first we remove old installation
-        $SUDO apt-get remove uhd libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         #The new USRP repository
