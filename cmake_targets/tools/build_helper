@@ -67,7 +67,33 @@ echo_warning() { cecho "$*" $yellow       ;}
 echo_success() { cecho "$*" $green        ;}
 echo_info()    { cecho "$*" $blue         ;}
 
+########################
+# distribution helpers #
+########################
 
+# This function return a string to identify the distribution we are running
+# If we can't check the distribution, it returns "Unknown"
+# This function return always true as exit code by design
+# Examples:
+#   Ubuntu16.04
+#   Debian8.5
+get_distribution_release() {
+    local distributor
+    if distributor=$(lsb_release -si 2>/dev/null) ; then
+        echo $distributor$(lsb_release -sr)
+    else
+        echo Unknown
+    fi
+}
+
+check_supported_distribution() {
+    local distribution=$(get_distribution_release)
+    case "$distribution" in
+        "Ubuntu16.04") return 0 ;;
+        "Ubuntu14.04") return 0 ;;
+    esac
+    return 1
+}
 
 ###########################
 # Cleaners
@@ -231,6 +257,10 @@ check_install_additional_tools (){
 }
 
 check_install_oai_software() {
+    if ! check_supported_distribution; then
+        echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
+        exit 1
+    fi
     $SUDO apt-get update
     $SUDO apt-get install -y \
 	autoconf  \
