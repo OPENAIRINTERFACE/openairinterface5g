@@ -312,7 +312,6 @@ check_install_oai_software() {
 	libidn11-dev \
 	libmysqlclient-dev  \
 	liboctave-dev \
-	libpgm-5.1 \
 	libpgm-dev \
 	libpython2.7-dev \
 	libsctp1  \
