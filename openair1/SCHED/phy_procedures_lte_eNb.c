@@ -2498,7 +2498,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   eNB_proc_t *proc = &eNB->proc;
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
-  int symbol_number, symbol_mask, symbol_mask_full, prach_rx;
+  int symbol_number, symbol_mask, symbol_mask_full, prach_rx, packet_type;
 
   if (subframe==9) { 
     subframe=0;
@@ -2580,23 +2580,23 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 	      // get frame/subframe information from IF4 interface
 	      // timed loop (200 us)
 	
-        symbol_mask = 0;
-        symbol_mask_full = (1<<fp->symbols_per_tti)-1;
-        if (is_prach_subframe(fp,frame,subframe)>0)
-          prach_rx = 0;
-        else
-          prach_rx = 1;
+        //symbol_mask = 0;
+        //symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+        //if (is_prach_subframe(fp,frame,subframe)>0)
+          //prach_rx = 0;
+        //else
+          //prach_rx = 1;
           
-        do {
-				  recv_IF4(eNB, proc, &packet_type, &symbol_number);
-				  if (is_prach_subframe(fp,frame,subframe)>0 && packet_type == PRACH) {
-					  // wake up prach_rx
-					  prach_rx = 1;
-					}
-					if (packet_type == PULFFT)
-					  symbol_mask = symbol_mask | (1<<symbol_number);
+        //do {
+				  //recv_IF4(eNB, proc, &packet_type, &symbol_number);
+				  //if (is_prach_subframe(fp,frame,subframe)>0 && packet_type == PRACH) {
+					  //// wake up prach_rx
+					  //prach_rx = 1;
+					//}
+					//if (packet_type == IF4_PULFFT)
+					  //symbol_mask = symbol_mask | (1<<symbol_number);
 					
-				} while( (symbol_mask != symbol_mask_full) || (prach_rx == 0));    
+				//} while( (symbol_mask != symbol_mask_full) || (prach_rx == 0));    
 					 
 
 	      //recv_IF4(eNB,subframe<<1);

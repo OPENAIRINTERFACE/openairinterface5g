@@ -227,7 +227,7 @@ int                             otg_enabled;
 
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-
+eNB_func_t node_function=eNodeB_3GPP;
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -381,6 +381,9 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
+  printf("  --RCC run using NGFI RCC node function\n");
+  printf("  --RRU run using NGFI RRU node function\n");
+  printf("  --eNB run using 3GPP eNB node function\n");   
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -667,7 +670,10 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
-    LONG_OPTION_PHYTEST
+    LONG_OPTION_PHYTEST,
+    LONG_OPTION_RCC,
+    LONG_OPTION_RRU,
+    LONG_OPTION_ENB
   };
 
   static const struct option long_options[] = {
@@ -686,6 +692,9 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+    {"RCC", no_argument, NULL, LONG_OPTION_RCC},
+    {"RRU", no_argument, NULL, LONG_OPTION_RRU},
+    {"eNB", no_argument, NULL, LONG_OPTION_ENB},
     {NULL, 0, NULL, 0}
   };
 
@@ -771,6 +780,18 @@ static void get_options (int argc, char **argv)
       
     case LONG_OPTION_PHYTEST:
       phy_test = 1;
+      break;
+
+    case LONG_OPTION_RCC:
+      node_function = NGFI_RCC_IF4;
+      break;
+
+    case LONG_OPTION_RRU:
+      node_function = NGFI_RRU_IF4;
+      break;
+
+    case LONG_OPTION_ENB:
+      node_function = eNodeB_3GPP;
       break;
       
     case 'A':
@@ -993,7 +1014,7 @@ static void get_options (int argc, char **argv)
 	
 	if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
 	  local_remote_radio = BBU_REMOTE_RADIO_HEAD;
-	  eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
+      eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
 	  memset(eth_params, 0, sizeof(eth_params_t));
 	  
 	  eth_params->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
@@ -1120,7 +1141,6 @@ int main( int argc, char **argv )
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-  eNB_func_t node_function=eNodeB_3GPP;
 
 #if defined (XFORMS)
   int ret;
@@ -1458,13 +1478,20 @@ int main( int argc, char **argv )
     else //FDD
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-
+    
     if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
       openair0_cfg[card].remote_addr    = eth_params->remote_addr;
       openair0_cfg[card].remote_port    = eth_params->remote_port;
       openair0_cfg[card].my_addr        = eth_params->my_addr;
       openair0_cfg[card].my_port        = eth_params->my_port;    
-    }
+    } 
+    
+    //if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4) {
+      //openair0_cfg[card].remote_addr    = eth_params->remote_addr;
+      //openair0_cfg[card].remote_port    = eth_params->remote_port;
+      //openair0_cfg[card].my_addr        = eth_params->my_addr;
+      //openair0_cfg[card].my_port        = eth_params->my_port;    
+    //}
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
@@ -1562,35 +1589,68 @@ int main( int argc, char **argv )
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
   openair0_cfg[0].log_level = glog_level;
-
+  
+  // Legacy BBU - RRH init  
+  //int returns=-1;
+  ///* BBU can have either a local or a remote radio head */  
+  //if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
+    //if (mode!=loop_through_memory) {
+      //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
+      //printf("openair0_device_init returns %d\n",returns);
+      //if (returns<0) {
+	//printf("Exiting, cannot initialize device\n");
+	//exit(-1);
+      //}
+    //}
+    //else if (mode==loop_through_memory) {    
+    //}
+  //}  else { //remote radio head active - load library of transport protocol and initiate it 
+    //if (mode!=loop_through_memory) {
+      //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
+      //printf("openair0_transport_init returns %d\n",returns);
+      //if (returns<0) { 
+	//printf("Exiting, cannot initialize transport protocol\n");
+	//exit(-1);
+      //}
+    //}
+    //else if (mode==loop_through_memory) {    
+    //}
+  //}   
+  
+  //printf("Done\n");
+  
   int returns=-1;
-  /* BBU can have either a local or a remote radio head */  
-  if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
+  
+  // Load RF device and initialize
+  if (node_function == eNodeB_3GPP || node_function == NGFI_RRU_IF4) { 
     if (mode!=loop_through_memory) {
       returns=openair0_device_load(&openair0, &openair0_cfg[0]);
       printf("openair0_device_init returns %d\n",returns);
       if (returns<0) {
-	printf("Exiting, cannot initialize device\n");
-	exit(-1);
+	      printf("Exiting, cannot initialize device\n");
+	      exit(-1);
       }
     }
     else if (mode==loop_through_memory) {    
     }
-  }  else { //remote radio head active - load library of transport protocol and initiate it 
+  }  
+  
+  // Load transport protocol and initialize
+  if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4){ 
     if (mode!=loop_through_memory) {
       returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
       printf("openair0_transport_init returns %d\n",returns);
       if (returns<0) { 
-	printf("Exiting, cannot initialize transport protocol\n");
-	exit(-1);
+	      printf("Exiting, cannot initialize transport protocol\n");
+	      exit(-1);
       }
     }
     else if (mode==loop_through_memory) {    
     }
   }   
-  
-  printf("Done\n");
 
+  printf("Done\n");
+  
   mac_xface = malloc(sizeof(MAC_xface));
 
   int eMBMS_active=0;
