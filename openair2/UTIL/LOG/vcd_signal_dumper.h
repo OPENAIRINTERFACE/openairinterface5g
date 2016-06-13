@@ -375,6 +375,16 @@ void vcd_signal_dumper_dump_function_by_name(vcd_signal_dump_functions  function
 
 extern int ouput_vcd;
 
+#if T_TRACER
+
+#define VCD_SIGNAL_DUMPER_INIT(x)         /* nothing */
+#define VCD_SIGNAL_DUMPER_CLOSE()         /* nothing */
+#define VCD_SIGNAL_DUMPER_CREATE_HEADER() /* nothing */
+#define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(var, val) T_VCD_VARIABLE(var, val)
+#define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(var, val) T_VCD_FUNCTION(var, val)
+
+#else /* T_TRACER */
+
 #if defined(ENABLE_VCD)
    #define VCD_SIGNAL_DUMPER_INIT(aRgUmEnT)                   vcd_signal_dumper_init(aRgUmEnT)
    #define VCD_SIGNAL_DUMPER_CLOSE()                          vcd_signal_dumper_close()
@@ -388,6 +398,8 @@ extern int ouput_vcd;
    #define VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(vAr1,vAr2)
    #define VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(vAr1,vAr2)
 #endif
+
+#endif /* T_TRACER */
 
 #endif /* !defined (VCD_SIGNAL_DUMPER_H_) */
 

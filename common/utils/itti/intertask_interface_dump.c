@@ -64,6 +64,10 @@
 #include "vcd_signal_dumper.h"
 #endif
 
+#if T_TRACER
+#include "T.h"
+#endif
+
 static const int itti_dump_debug = 0; // 0x8 | 0x4 | 0x2;
 
 #ifdef RTAI
