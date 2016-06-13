@@ -278,6 +278,10 @@ function main() {
             T_TRACER="True"
             echo_info "Enabling the T tracer"
             shift 1;;
+       --disable-hardware-dependency)
+            echo_info "Disabling hardware dependency for compiling software"
+            DISABLE_HARDWARE_DEPENDENCY="True"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -387,10 +391,16 @@ function main() {
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
+      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+        install_usrp_uhd_driver
+      fi
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
+      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+        flash_firmware_bladerf
+      fi
     fi
   fi
 

@@ -229,7 +229,10 @@ check_install_bladerf_driver(){
 	$SUDO apt-get install -y bladerf libbladerf-dev
 	$SUDO apt-get install -y bladerf-firmware-fx3
 	$SUDO apt-get install -y bladerf-fpga-hostedx40	
-	$SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img	
+}
+
+flash_firmware_bladerf() {
+	$SUDO bladeRF-cli --flash-firmware /usr/share/Nuand/bladeRF/bladeRF_fw.img
 }
 
 check_install_additional_tools (){
