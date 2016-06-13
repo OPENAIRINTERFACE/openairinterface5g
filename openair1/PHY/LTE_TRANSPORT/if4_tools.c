@@ -45,6 +45,7 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #endif
 
+// Get device information
 void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
 	int frame = proc->frame_tx;
 	int subframe = proc->subframe_tx;
@@ -73,8 +74,15 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
       // Update information in generated packet
       dl_packet->frame_status.sym_num = i; 
 			
-      // Write the packet(s) to the fronthaul 
-
+      // Write the packet(s) to the fronthaul
+      //if ((bytes_sent = dev->eth_dev.trx_write_func (&dev->eth_dev,
+			//			                                         timestamp_rx,
+			//			                                         rx_eNB,
+			//			                                         spp_eth,
+			//			                                         dev->eth_dev.openair0_cfg->rx_num_channels,
+      //                                               0)) < 0) {
+      //  perror("RCC : ETHERNET write");
+      //}    
     }
   }else {
     IF4_ul_packet_t *ul_packet = (IF4_ul_packet_t*)malloc(sizeof_IF4_ul_packet_t);
@@ -102,20 +110,38 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
 
 void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
 
-  // Read packet(s) from the fronthaul
-  
-  // Apply reverse processing - decompression
-  
-  // Generate and return the OFDM symbols (txdataF)
-
   // Caller: RRU - DL *** handle RCC case - UL and PRACH *** 
-	  
+
+  if (eNB->node_function == NGFI_RRU_IF4) {
+  
+  
+  
+    for(i=0; i<fp->symbols_per_tti; i++) {  
+      // Read packet(s) from the fronthaul    
+      if (dev->eth_dev.trx_read_func (&dev->eth_dev,
+                                      timestamp_rx,
+                                      rx_eNB,
+                                      spp_eth,
+                                      dev->eth_dev.openair0_cfg->rx_num_channels
+                                      ) < 0) {
+        perror("RRU : ETHERNET read");
+      }
+      
+      // Apply reverse processing - decompression
+      // txAlawtolinear( Datablock )
+      
+      // Generate and return the OFDM symbols (txdataF)
+      txDataF 
+    }
+  }else {
+    
+  }  
 }
 
 void gen_IF4_dl_packet(IF4_dl_packet_t *dl_packet, eNB_rxtx_proc_t *proc) {      
   // Set Type and Sub-Type
   dl_packet->type = 0x080A; 
-  dl_packet->sub_type = 0x0020;
+  dl_packet->sub_type = IF4_PDLFFT;
 
   // Leave reserved as it is 
   dl_packet->rsvd = 0;
@@ -135,7 +161,7 @@ void gen_IF4_dl_packet(IF4_dl_packet_t *dl_packet, eNB_rxtx_proc_t *proc) {
 void gen_IF4_ul_packet(IF4_ul_packet_t *ul_packet, eNB_rxtx_proc_t *proc) {  
   // Set Type and Sub-Type
   ul_packet->type = 0x080A; 
-  ul_packet->sub_type = 0x0019;
+  ul_packet->sub_type = IF4_PULFFT;
 
   // Leave reserved as it is 
   ul_packet->rsvd = 0;
@@ -159,7 +185,7 @@ void gen_IF4_ul_packet(IF4_ul_packet_t *ul_packet, eNB_rxtx_proc_t *proc) {
 void gen_IF4_prach_packet(IF4_prach_packet_t *prach_packet, eNB_rxtx_proc_t *proc) {
   // Set Type and Sub-Type
   prach_packet->type = 0x080A; 
-  prach_packet->sub_type = 0x0021;
+  prach_packet->sub_type = IF4_PRACH;
 
   // Leave reserved as it is 
   prach_packet->rsvd = 0;

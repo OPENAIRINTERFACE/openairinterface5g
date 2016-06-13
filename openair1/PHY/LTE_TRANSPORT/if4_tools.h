@@ -38,6 +38,10 @@
 * \warning
 */
 
+#define IF4_PULFFT 0x0019 
+#define IF4_PDLFFT 0x0020
+#define IF4_PRACH 0x0021
+
 /// IF4 Frame Status (32 bits)
 struct IF4_frame_status {
   /// Antenna Numbers
@@ -175,4 +179,4 @@ void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
 
 void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
 
-void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
+void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, int*, int*);
