@@ -231,8 +231,10 @@ install_usrp_uhd_driver() {
 }
 
 check_install_bladerf_driver(){
-	$SUDO add-apt-repository -y ppa:bladerf/bladerf
-	$SUDO apt-get update
+	if [ "$(get_distribution_release)" == "Ubuntu14.04" ] ; then
+		$SUDO add-apt-repository -y ppa:bladerf/bladerf
+		$SUDO apt-get update
+	fi
 	$SUDO apt-get install -y bladerf libbladerf-dev
 	$SUDO apt-get install -y bladerf-firmware-fx3
 	$SUDO apt-get install -y bladerf-fpga-hostedx40	
