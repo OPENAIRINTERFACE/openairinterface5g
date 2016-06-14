@@ -62,7 +62,7 @@ def find_open_port():
    while True:
      if os.path.exists(serial_port) == True:
        return serial_port
-     for port in range(2,100):
+     for port in range(0,100):
         serial_port_tmp = '/dev/ttyUSB'+str(port)
         if os.path.exists(serial_port_tmp) == True:
            print 'New Serial Port : ' + serial_port_tmp
@@ -206,6 +206,7 @@ def reset_ue():
   os.system(cmd + " ; sleep 15" )
   cmd = "sudo sh -c \"echo 1 > " + usb_dir + "/authorized\""
   os.system(cmd + " ; sleep 30" )
+  find_open_port()
   stop_ue()
 
 i=1
