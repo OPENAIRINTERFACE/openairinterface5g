@@ -159,7 +159,7 @@ uint16_t extract_crc(uint8_t *dci,uint8_t dci_len)
   //  dci[(dci_len>>3)+1] = 0;
   //  dci[(dci_len>>3)+2] = 0;
   return((uint16_t)crc16);
-
+  
 }
 
 

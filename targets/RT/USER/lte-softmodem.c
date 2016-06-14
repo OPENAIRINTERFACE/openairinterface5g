@@ -147,7 +147,6 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 
 
 
-
 #ifdef XFORMS
 static pthread_t                forms_thread; //xforms
 #endif
@@ -630,11 +629,6 @@ void *l2l1_task(void *arg)
   return NULL;
 }
 #endif
-
-
-
-
-
 
 
 
@@ -1539,7 +1533,7 @@ int main( int argc, char **argv )
 
   }
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
 
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   
@@ -1805,7 +1799,6 @@ int main( int argc, char **argv )
 #endif
 
   rt_sleep_ns(10*100000000ULL);
-
 
 
 

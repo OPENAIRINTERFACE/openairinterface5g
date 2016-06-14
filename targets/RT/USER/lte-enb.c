@@ -312,8 +312,9 @@ static void* eNB_thread_rxtx( void* param )
 
   MSC_START_USE();
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
+
   unsigned int flags = 0;
   uint64_t runtime  = 850000 ;  
   uint64_t deadline = 1   *  1000000 ; // each tx thread will finish within 1ms
@@ -554,7 +555,7 @@ static void* eNB_thread_rxtx( void* param )
     }
 
     stop_meas( &softmodem_stats_rxtx_sf );
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
       if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime){
 	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
@@ -625,7 +626,7 @@ static void* eNB_thread_rx_common( void* param )
 
   MSC_START_USE();
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 870000 ;
@@ -722,7 +723,7 @@ static void* eNB_thread_rx_common( void* param )
 	 sparam.sched_priority, cpu_affinity);
   
   
-#endif // LOWLATENCY
+#endif // DEADLINE_SCHEDULER
 
  mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -802,13 +803,13 @@ static void* eNB_thread_rx_common( void* param )
    }       
    
    stop_meas( &softmodem_stats_rxtx_sf );
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
    if (opp_enabled){
      if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime){
        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
      }
    }
-#endif // LOWLATENCY  
+#endif // DEADLINE_SCHEDULER  
    print_meas_now(&softmodem_stats_rx_sf,"eNB_RX_SF", rx_time_file);
    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
    
@@ -843,7 +844,7 @@ static void* eNB_thread_prach( void* param )
   MSC_START_USE();
 
     
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 870000 ;
@@ -940,7 +941,7 @@ static void* eNB_thread_prach( void* param )
 	 sparam.sched_priority, cpu_affinity);
   
   
-#endif // LOWLATENCY
+#endif // DEADLINE_SCHEDULER
 
  mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1012,7 +1013,7 @@ void init_eNB_proc(void)
     
     proc = &eNB->proc;
     proc_rxtx = proc->proc_rxtx;
-#ifndef LOWLATENCY 
+#ifndef DEADLINE_SCHEDULER 
     /*  
 	pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
 	if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
@@ -1053,7 +1054,7 @@ void init_eNB_proc(void)
     pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
     pthread_cond_init( &proc->cond_prach, NULL);
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
     pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
     pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
     pthread_create( &proc->pthread_rx, &proc->attr_rx, eNB_thread_rx_common, &eNB->proc );

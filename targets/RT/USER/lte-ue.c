@@ -226,7 +226,7 @@ static void *UE_thread_synch(void *arg)
   printf("UE_thread_sync in with PHY_vars_UE %p\n",arg);
   printf("waiting for sync (UE_thread_synch) \n");
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
   int policy, s, j;
   struct sched_param sparam;
   char cpu_affinity[1024];
@@ -666,7 +666,8 @@ static void *UE_thread_tx(void *arg)
 
   UE->instance_cnt_tx=-1;
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
+
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -873,7 +874,9 @@ static void *UE_thread_rx(void *arg)
 
   UE->instance_cnt_rx=-1;
 
-#ifdef LOWLATENCY
+
+#ifdef DEADLINE_SCHEDULER
+
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -1179,7 +1182,8 @@ void *UE_thread(void *arg)
   MessageDef *message_p;
 #endif
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
+
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -1532,7 +1536,6 @@ void *UE_thread(void *arg)
 
   return &UE_thread_retval;
 }
-
 
 
 

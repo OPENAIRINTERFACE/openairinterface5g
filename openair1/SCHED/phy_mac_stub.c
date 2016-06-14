@@ -583,7 +583,6 @@ void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 void fill_dci_emos(DCI_PDU *DCI_pdu, uint8_t subframe, PHY_VARS_eNB *eNB)
 {
 
-
   //uint8_t cooperation_flag = eNB->cooperation_flag;
   uint8_t transmission_mode = eNB->transmission_mode[0];
 
