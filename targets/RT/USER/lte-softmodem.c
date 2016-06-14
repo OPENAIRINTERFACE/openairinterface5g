@@ -1009,39 +1009,38 @@ static void get_options (int argc, char **argv)
       AssertFatal (MAX_NUM_CCs == enb_properties->properties[i]->nb_cc,
                    "lte-softmodem compiled with MAX_NUM_CCs=%d, but only %d CCs configured for eNB %d!",
                    MAX_NUM_CCs, enb_properties->properties[i]->nb_cc, i);
+      eth_params = (eth_params_t*)malloc(enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
+      memset(eth_params, 0, enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
 
       for (j=0; j<enb_properties->properties[i]->nb_rrh_gw; j++) {
-	
-	if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
-	  local_remote_radio = BBU_REMOTE_RADIO_HEAD;
-      eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
-	  memset(eth_params, 0, sizeof(eth_params_t));
-	  
-	  eth_params->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
-	  eth_params->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
-	  eth_params->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
-	  eth_params->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
-	  eth_params->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
-	  eth_params->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
-	  eth_params->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
-	  eth_params->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
-	  if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
-	     eth_params->rf_preference          = EXMIMO_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
-	    eth_params->rf_preference          = USRP_B200_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
-	   eth_params->rf_preference          = USRP_X300_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
-	    eth_params->rf_preference          = BLADERF_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
-	    //eth_params->rf_preference          = LMSSDR_DEV;
-	  } else {
-	    eth_params->rf_preference          = 0;
-	  } 
-	} else {
-	  local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
-	}
+        	
+        if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
+          local_remote_radio = BBU_REMOTE_RADIO_HEAD;
+          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
+          (eth_params+j)->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
+          (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
+          (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
+          (eth_params+j)->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
+          (eth_params+j)->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
+          (eth_params+j)->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
+          (eth_params+j)->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
+          (eth_params+j)->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
+          if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
+            (eth_params+j)->rf_preference          = EXMIMO_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
+            (eth_params+j)->rf_preference          = USRP_B200_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
+            (eth_params+j)->rf_preference          = USRP_X300_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
+            (eth_params+j)->rf_preference          = BLADERF_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
+            //(eth_params+j)->rf_preference          = LMSSDR_DEV;
+          } else {
+            (eth_params+j)->rf_preference          = 0;
+          } 
+        } else {
+          local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
+        }
 	
       }
 
