@@ -38,6 +38,8 @@
 * \warning
 */
 
+/// Macro for IF4 packet type
+#define IF4_PACKET_TYPE 0x080A 
 #define IF4_PULFFT 0x0019 
 #define IF4_PDLFFT 0x0020
 #define IF4_PRACH 0x0021
@@ -179,4 +181,4 @@ void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
 
 void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
 
-void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, int*, int*);
+void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t*, uint32_t*);
