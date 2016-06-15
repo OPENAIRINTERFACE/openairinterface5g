@@ -300,7 +300,6 @@ check_install_oai_software() {
 	iptables-dev \
 	libatlas-base-dev \
 	libatlas-dev \
-	libblas3gf \
 	libblas-dev \
 	libconfig8-dev \
 	libffi-dev \
