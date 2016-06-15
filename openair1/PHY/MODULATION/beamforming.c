@@ -46,14 +46,12 @@ Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 069
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-
-// ue_spec_beamforming: perform beamforming for data in transmission_mode TM7-TM10
-int ue_spec_beamforming(int32_t **txdataF,
-	                int32_t **txdataF_BF,
-                        LTE_DL_FRAME_PARMS *frame_parms,
-	                int32_t ***ue_spec_bf_weights,
-                        int slot,
-                        int symbol)
+int beam_precoding(int32_t **txdataF,
+	           int32_t **txdataF_BF,
+                   LTE_DL_FRAME_PARMS *frame_parms,
+	           int32_t ***beam_weights,
+                   int slot,
+                   int symbol)
 {
   uint8_t p,aa;
   uint16_t re=0;
@@ -66,41 +64,54 @@ int ue_spec_beamforming(int32_t **txdataF,
     memset(txdataF_BF[aa],0,4*(frame_parms->ofdm_symbol_size));
 
   for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+    for (p=0; p<2; p++) {
+      if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) {
+        for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
+          ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[0][aa][re])[0])>>15);
+
+          //printf("beamforming.c:txdata[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
+          //       p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
+          //       ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
+          //       ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
+          //       p,aa,re,
+          //       ((int16_t*)&beam_weights[p][aa][re])[0],((int16_t*)&beam_weights[p][aa][re])[1],
+          //       aa,re,
+          //       ((int16_t*)&txdataF_BF[aa][re])[0],
+          //       ((int16_t*)&txdataF_BF[aa][re])[1]);
+        }
+      
+      } 
+    }
     if (txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually using TM7 
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-        ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                              *((int16_t*)&ue_spec_bf_weights[0][aa][re])[0])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                              *((int16_t*)&ue_spec_bf_weights[0][aa][re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                              *((int16_t*)&ue_spec_bf_weights[0][aa][re])[1])>>15);
-        ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                              *((int16_t*)&ue_spec_bf_weights[0][aa][re])[0])>>15);
+        ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[5][aa][re])[0])>>15);
+        ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[5][aa][re])[1])>>15);
+        ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[5][aa][re])[1])>>15);
+        ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[5][aa][re])[0])>>15);
+       // printf("beamforming.c:txdata[%d][%d]=%d+j%d, beam_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
+       //        p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
+       //        ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
+       //        ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
+       //        p,aa,re,
+       //        ((int16_t*)&beam_weights[p][aa][re])[0],((int16_t*)&beam_weights[p][aa][re])[1],
+       //        aa,re,
+       //        ((int16_t*)&txdataF_BF[aa][re])[0],
+       //        ((int16_t*)&txdataF_BF[aa][re])[1]);
 
-/*        printf("beamforming.c:txdataF[5][%d]=%d+j%d, ue_bf_weights[0][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
-               slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
-               ((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
-               ((int16_t*)&txdataF[5][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
-               aa,re,
-               ((int16_t*)&ue_spec_bf_weights[0][aa][re])[0],((int16_t*)&ue_spec_bf_weights[0][aa][re])[1],
-               aa,re,
-               ((int16_t*)&txdataF_BF[aa][re])[0],
-               ((int16_t*)&txdataF_BF[aa][re])[1]);  */
       }
     }
 
     if (txdataF[7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually using TM8-10
-      for (p=0;p<8;p++) {
-        if (txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually allocated
+      for (p=7;p<15;p++) {
+        if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually allocated
           for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-            ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                                  *((int16_t*)&ue_spec_bf_weights[p][aa][re])[0])>>15);
-            ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                                  *((int16_t*)&ue_spec_bf_weights[p][aa][re])[1])>>15);
-            ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                                  *((int16_t*)&ue_spec_bf_weights[p][aa][re])[1])>>15);
-            ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p+7][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                                  *((int16_t*)&ue_spec_bf_weights[p][aa][re])[0])>>15);
+            ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
+            ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+            ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]*((int16_t*)&beam_weights[p][aa][re])[1])>>15);
+            ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]*((int16_t*)&beam_weights[p][aa][re])[0])>>15);
           }
         }
       }
@@ -108,107 +119,3 @@ int ue_spec_beamforming(int32_t **txdataF,
   }
 }
 
-// cell_spec_beamforming: performed for all common data
-int cell_spec_beamforming(int32_t **txdataF,
-	                  int32_t **txdataF_BF,
-                          LTE_DL_FRAME_PARMS *frame_parms,
-	                  int32_t ***cell_spec_bf_weights,
-                          int slot,
-                          int symbol)
-{
-  uint8_t p,aa;
-  uint16_t re=0;
-  int slot_offset_F;
-
-  slot_offset_F = slot*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);
-  
-  // clear txdata_BF[aa][re] for each call of cell_spec_beamforming
-  for(aa=0;aa<frame_parms->nb_antennas_tx;aa++)
-    memset(txdataF_BF[aa],0,4*(frame_parms->ofdm_symbol_size));
-
-  for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
-    for (p=0;p<frame_parms->nb_antenna_ports_eNB;p++) {
-      if (txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re]!=0) { //that means this RE is actually allocated
-        for (aa=0;aa<frame_parms->nb_antennas_tx;aa++) {
-        
-          ((int16_t*)&txdataF_BF[aa][re])[0] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                                *((int16_t*)&cell_spec_bf_weights[p][aa][re])[0])>>15);
-          ((int16_t*)&txdataF_BF[aa][re])[0] -= (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                                *((int16_t*)&cell_spec_bf_weights[p][aa][re])[1])>>15);
-          ((int16_t*)&txdataF_BF[aa][re])[1] = (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0]
-                                                *((int16_t*)&cell_spec_bf_weights[p][aa][re])[1])>>15);
-          ((int16_t*)&txdataF_BF[aa][re])[1] += (int16_t)((((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1]
-                                                *((int16_t*)&cell_spec_bf_weights[p][aa][re])[0])>>15);
-         // printf("beamforming.c:txdata[%d][%d]=%d+j%d, cell_bf_weights[%d][%d][%d]=%d+j%d,txdata_BF[%d][%d]=%d+j%d\n",
-         //        p,slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re,
-         //        ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[0],
-         //        ((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size+re])[1],
-         //        p,aa,re,
-         //        ((int16_t*)&cell_spec_bf_weights[p][aa][re])[0],((int16_t*)&cell_spec_bf_weights[p][aa][re])[1],
-         //        aa,re,
-         //        ((int16_t*)&txdataF_BF[aa][re])[0],
-         //        ((int16_t*)&txdataF_BF[aa][re])[1]);
-        }
-      }
-    }
-  }
-}
-
-
-
-
-/*
-int ue_spec_beamforming(int32_t **txdataF,
-	                int32_t **txdataF_BF,
-                        LTE_DL_FRAME_PARMS *frame_parms,
-                        LTE_eNB_DLSCH_t *dlsch0,
-                        LTE_eNB_DLSCH_t *dlsch1,
-                        int symbol)
-{
-  uint8_t p,aa;
-  uint16_t re=0;
-
-  uint8_t harq_pid = dlsch0->current_harq_pid;
-  LTE_DL_eNB_HARQ_t *dlsch0_harq = dlsch0->harq_processes[harq_pid];
-  LTE_DL_eNB_HARQ_t *dlsch1_harq; //= dlsch1->harq_processes[harq_pid];
-  MIMO_mode_t mimo_mode = dlsch0_harq->mimo_mode;
-  int first_layer0        = dlsch0_harq->first_layer;
-  int Nlayers0            = dlsch0_harq->Nlayers;
-
-  // Fill these in later for TM8-10
-  int Nlayers1;
-  int first_layer1;
-
-  if (dlsch1_harq) {
-    Nlayers1       = dlsch1_harq->Nlayers;
-    first_layer1   = dlsch1_harq->first_layer;
-  }
- 
-  //temp
-  if(mimo_mode==TM7){
-    first_layer0 = 5;
-    Nlayers0=1;
-  }
-  
-  for (re=0;re<N_RB_DL*12;re++) {
-    //for (p=5,7..14) // this depends on the mimo_mode, but also the used ports for each UE
-    for (p=first_layer0;p<first_layer0+Nlayers0;p++) {
-      if (txdataF[p][re+symbol*N_RB_DL*12]!=0) { //that means this RE is actually allocated
-        for (aa=0;aa<frame_aprms->nb_antennas_tx;aa++) {
-          txdataF_BF[aa][re] += txdataF[p][re]*dlsch0->uespec_bf_weights[p][aa][re];
-        } 
-      } 
-    }
-
-    if(dlsch1_harq) {
-      for (p=first_layer1;p<first_layer1+Nlayers1;p++) {
-        if (txdataF[p][re+symbol*N_RB_DL*12]!=0) { //that means this RE is actually allocated
-          for (aa=0;aa<frame_aprms->nb_antennas_tx;aa++) {
-            txdataF_BF[aa][re] += txdataF[p][re]*dlsch1->uespec_bf_weights[p][aa][re];
-          } 
-        } 
-      }
-    }
-
-  }
-} */

@@ -1610,7 +1610,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
     phy_vars_eNB->dlsch_eNB_ra->active = 0;
   }
 
-  // Now scan UE specific DLSCH
+    // Now scan UE specific DLSCH
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
   {
     if ((phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0])&&
@@ -1779,6 +1779,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->active = 0;
 
       //mac_xface->macphy_exit("first dlsch transmitted\n");
+
     }
 
     else if ((phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0])&&
@@ -1791,6 +1792,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
       //LOG_D(PHY,"[eNB %d] DCI: Clearing subframe_tx for subframe %d, UE %d\n",phy_vars_eNB->Mod_id,subframe,UE_id);
 #endif
     }
+
   }
 
 
@@ -1811,10 +1813,11 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   }
 
 
-
 #ifdef EMOS
   phy_procedures_emos_eNB_TX(subframe, phy_vars_eNB);
 #endif
+
+  //cell-specific beamforming
 
 #if !(defined(EXMIMO) || defined(OAI_USRP) || defined (CPRIGW))
 
@@ -1822,19 +1825,19 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
   {
     start_meas(&phy_vars_eNB->ofdm_mod_stats);
     
-    do_OFDM_mod_l(phy_vars_eNB->lte_eNB_common_vars,
+    //do_OFDM_mod (without l) ?
+
+    do_OFDM_mod_l(&phy_vars_eNB->lte_eNB_common_vars,
                   0,
                   subframe<<1,
                   &phy_vars_eNB->lte_frame_parms,
-                  num_pdcch_symbols,
-                  phy_vars_eNB->transmission_mode[(uint8_t)UE_id]); 
+                  num_pdcch_symbols);
                   
-    do_OFDM_mod_l(phy_vars_eNB->lte_eNB_common_vars,
+    do_OFDM_mod_l(&phy_vars_eNB->lte_eNB_common_vars,
                   0,
                   1+(subframe<<1),
                   &phy_vars_eNB->lte_frame_parms,
-                  num_pdcch_symbols,
-                  phy_vars_eNB->transmission_mode[(uint8_t)UE_id]); 
+                  num_pdcch_symbols);
 
     stop_meas(&phy_vars_eNB->ofdm_mod_stats);
   }

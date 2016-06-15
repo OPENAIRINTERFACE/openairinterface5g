@@ -277,10 +277,11 @@ void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t 
 }
 
 // OFDM modulation for each symbol
-void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms, uint8_t num_pdcch_symbols, unsigned char transmission_mode)
+void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms, uint8_t num_pdcch_symbols)
 {
 
   int aa, l, slot_offset, slot_offset_F;
+  int8_t UE_id=0;
   mod_sym_t **txdataF = eNB_common_vars->txdataF[eNB_id];
   mod_sym_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
   int32_t **txdata = eNB_common_vars->txdata[eNB_id];
@@ -292,13 +293,8 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
   for (l=0; l<frame_parms->symbols_per_tti>>1; l++) {
   
     //printf("do_OFDM_mod_l, slot=%d, l=%d, NUMBER_OF_OFDM_CARRIERS=%d,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES=%d\n",next_slot, l,NUMBER_OF_OFDM_CARRIERS,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-    if (l<num_pdcch_symbols && next_slot&1 == 0)
-      cell_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->cell_spec_bf_weights[eNB_id],next_slot,l);
-    else
-      if (transmission_mode<7)
-        cell_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->cell_spec_bf_weights[eNB_id],next_slot,l);
-      else 
-        ue_spec_beamforming(txdataF,txdataF_BF,frame_parms,eNB_common_vars->ue_spec_bf_weights[eNB_id],next_slot,l);
+
+    beam_precoding(txdataF,txdataF_BF,frame_parms,eNB_common_vars->beam_weights[eNB_id],next_slot,l);
 
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
 
@@ -331,4 +327,3 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
   }
 
 }
-/** @} */

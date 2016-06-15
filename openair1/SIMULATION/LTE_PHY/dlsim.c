@@ -643,7 +643,7 @@ int main(int argc, char **argv)
 
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
-  cell_spec_bf_weights = PHY_vars_eNB->lte_eNB_common_vars.cell_spec_bf_weights[0][0];
+  cell_spec_bf_weights = PHY_vars_eNB->lte_eNB_common_vars.beam_weights[0][0];
   for(aa=0;aa<n_tx_phy;aa++) {
     for(re=0;re<frame_parms->ofdm_symbol_size;re++) {
       if (n_tx_phy==1 || n_tx_phy==2)
@@ -655,7 +655,7 @@ int main(int argc, char **argv)
       else if (n_tx_phy==64)
         cell_spec_bf_weights[aa][re] = 0x00007fff>>4;
     }
-  }
+  } 
 
   if (transmission_mode==7){
     lte_gold_ue_spec_port5(PHY_vars_eNB->lte_gold_uespec_port5_table[0],Nid_cell,n_rnti);
@@ -2813,15 +2813,13 @@ PMI_FEEDBACK:
                           eNB_id,
                           (subframe*2),
                           &PHY_vars_eNB->lte_frame_parms,
-                          num_pdcch_symbols,
-                          transmission_mode);
+                          num_pdcch_symbols);
 
             do_OFDM_mod_l(&PHY_vars_eNB->lte_eNB_common_vars,
                           eNB_id,
                           (subframe*2)+1,
                           &PHY_vars_eNB->lte_frame_parms,
-                          num_pdcch_symbols,
-                          transmission_mode);
+                          num_pdcch_symbols);
 
             stop_meas(&PHY_vars_eNB->ofdm_mod_stats);
             stop_meas(&PHY_vars_eNB->phy_proc_tx);

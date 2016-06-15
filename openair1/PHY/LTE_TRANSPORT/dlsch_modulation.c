@@ -1446,7 +1446,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
       // mapping ue specific beamforming weights from UE specified DLSCH structure to common space
       for (aa=0;aa<frame_parms->nb_antennas_tx;aa++){
-        memcpy(phy_vars_eNB->lte_eNB_common_vars.ue_spec_bf_weights[0][0][aa],dlsch0->ue_spec_bf_weights[0][aa],frame_parms->ofdm_symbol_size*sizeof(int32_t));
+        memcpy(phy_vars_eNB->lte_eNB_common_vars.beam_weights[0][5][aa],dlsch0->ue_spec_bf_weights[0][aa],frame_parms->ofdm_symbol_size*sizeof(int32_t));
       }
  
     }
