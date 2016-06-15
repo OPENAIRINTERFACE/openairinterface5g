@@ -257,6 +257,7 @@ check_install_additional_tools (){
 }
 
 check_install_oai_software() {
+    local specific_packages=""
     if ! check_supported_distribution; then
         echo_error "Your distribution $(get_distribution_release) is not supported by oai !"
         exit 1
@@ -265,11 +266,17 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "Ubuntu14.04")
+            specific_packages="libtasn1-3-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
+            ;;
+        "Ubuntu16.04")
+            specific_packages="libtasn1-6-dev"
+            ;;
     esac
     $SUDO apt-get install -y \
+    $specific_packages \
 	autoconf  \
 	automake  \
 	bison  \
@@ -310,7 +317,6 @@ check_install_oai_software() {
 	libsctp1  \
 	libsctp-dev  \
 	libssl-dev  \
-	libtasn1-3-dev  \
 	libtool  \
 	libusb-1.0-0-dev \
 	libxml2 \
