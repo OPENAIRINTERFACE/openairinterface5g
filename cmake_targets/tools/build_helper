@@ -263,7 +263,12 @@ check_install_oai_software() {
     fi
     $SUDO apt-get update
     $SUDO apt install -y software-properties-common
-    # Now, we can add new repository here if needed
+    case "$(get_distribution_release)" in
+        "Ubuntu14.04")
+            # For iperf3
+            $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
+            $SUDO apt-get update
+    esac
     $SUDO apt-get install -y \
 	autoconf  \
 	automake  \
