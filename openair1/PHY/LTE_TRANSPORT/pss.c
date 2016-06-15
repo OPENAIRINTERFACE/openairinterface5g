@@ -47,7 +47,7 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 
-int generate_pss(mod_sym_t **txdataF,
+int generate_pss(int32_t **txdataF,
                  short amp,
                  LTE_DL_FRAME_PARMS *frame_parms,
                  unsigned short symbol,

@@ -39,8 +39,6 @@
 */
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #ifdef DEBUG_UCI_TOOLS
 #include "PHY/vars.h"
 #endif

@@ -201,9 +201,11 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_list->eNB_UE_stats[CC_id][UE_id].avg_overhead_bytes
                       );
         
-	len += sprintf(&buffer[len],"[MAC] UE %d (ULSCH), Status %s, RNTI %x : rx power (normalized %d,  target %d), MCS (pre %d, post %d), RB (rx %d, retx %d, total %d), Current TBS %d \n",
+
+	len += sprintf(&buffer[len],"[MAC] UE %d (ULSCH), Status %s, Failute timer %d, RNTI %x : rx power (normalized %d,  target %d), MCS (pre %d, post %d), RB (rx %d, retx %d, total %d), Current TBS %d \n",
                        UE_id,
                        map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
+		       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer,
                        UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
 		       UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power,
 		       UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power,

@@ -63,11 +63,17 @@
 #include "mex.h"
 #endif
 
-
-#define print_shorts(s,x) printf("%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
-
 //#define DEBUG_LOGMAP
 
+#ifdef DEBUG_LOGMAP
+#define print_shorts(s,x) fprintf(fdsse4,"%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
+#endif
+
+#undef __AVX2__
+
+#ifdef DEBUG_LOGMAP
+FILE *fdsse4;
+#endif
 
 typedef int16_t llr_t; // internal decoder LLR data is 16-bit fixed
 typedef int16_t channel_t;
@@ -99,7 +105,7 @@ void log_map16(llr_t* systematic,
 {
 
 #ifdef DEBUG_LOGMAP
-  msg("log_map, frame_length %d\n",frame_length);
+  fprintf(fdsse4,"log_map, frame_length %d\n",frame_length);
 #endif
 
   start_meas(gamma_stats) ;
@@ -135,22 +141,35 @@ void compute_gamma16(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity
 #endif
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
+  fprintf(fdsse4,"compute_gamma (sse_16bit), %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
 #endif
 
+#ifndef __AVX2__
   K1=frame_length>>3;
+#else
+  if ((frame_length&15) > 0)
+    K1=(frame_length+1)>>4;
+  else
+    K1=frame_length>>4;
+#endif
 
   for (k=0; k<K1; k++) {
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef __AVX2__
     m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k],y_parity128[k]),1);
     m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k],y_parity128[k]),1);
+#else
+    ((__m256i*)m11_128)[k] = _mm256_srai_epi16(_mm256_adds_epi16(((__m256i*)systematic128)[k],((__m256i*)y_parity128)[k]),1);
+    //    ((__m256i*)m10_128)[k] = _mm256_srai_epi16(_mm256_subs_epi16(((__m256i*)y_parity128)[k],((__m256i*)systematic128)[k]),1);
+    ((__m256i*)m10_128)[k] = _mm256_srai_epi16(_mm256_subs_epi16(((__m256i*)systematic128)[k],((__m256i*)y_parity128)[k]),1);
+#endif
 #elif defined(__arm__)
     m11_128[k] = vhaddq_s16(systematic128[k],y_parity128[k]);
     m10_128[k] = vhsubq_s16(systematic128[k],y_parity128[k]);
 #endif
 
 #ifdef DEBUG_LOGMAP
-    printf("Loop index k, m11,m10\n");
+    fprintf(fdsse4,"Loop index k %d\n", k);
     print_shorts("sys",(int16_t*)&systematic128[k]);
     print_shorts("yp",(int16_t*)&y_parity128[k]);
     print_shorts("m11",(int16_t*)&m11_128[k]);
@@ -158,13 +177,27 @@ void compute_gamma16(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity
 #endif
   }
 
+  k=frame_length>>3;
   // Termination
 #if defined(__x86_64__) || defined(__i386__)
   m11_128[k] = _mm_srai_epi16(_mm_adds_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+  //#ifndef __AVX2__
+#if 1
   m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(systematic128[k+term_flag],y_parity128[k]),1);
+#else
+  m10_128[k] = _mm_srai_epi16(_mm_subs_epi16(y_parity128[k],systematic128[k+term_flag]),1);
+#endif
 #elif defined(__arm__)
   m11_128[k] = vhaddq_s16(systematic128[k+term_flag],y_parity128[k]);
   m10_128[k] = vhsubq_s16(systematic128[k+term_flag],y_parity128[k]);
+#endif
+
+#ifdef DEBUG_LOGMAP
+fprintf(fdsse4,"Loop index k %d (term flag %d)\n", k,term_flag);
+print_shorts("sys",(int16_t*)&systematic128[k]);
+    print_shorts("yp",(int16_t*)&y_parity128[k]);
+    print_shorts("m11",(int16_t*)&m11_128[k]);
+    print_shorts("m10",(int16_t*)&m10_128[k]);
 #endif
 }
 
@@ -174,11 +207,21 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 {
   int k,l,l2,K1,rerun_flag=0;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
-  __m128i a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
+  __m128i *alpha128=(__m128i *)alpha,*alpha_ptr,*m11p,*m10p;
+  //#ifndef __AVX2__
+#if 1
+  __m128i a0,a1,a2,a3,a4,a5,a6,a7;
   __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   __m128i new0,new1,new2,new3,new4,new5,new6,new7;
   __m128i alpha_max;
+#else
+  __m256i *alpha256=(__m256i *)alpha,*alpha_ptr256,m11,m10;
+  __m256i a01,a23,a45,a67,a02,a13,a64,a75;
+  __m256i m_b01,m_b23,m_b45,m_b67,new01,new23,new45,new67;
+  __m256i m11m10_256;
+  __m256i alpha_max;
+#endif
+
 #elif defined(__arm__)
   int16x8_t *alpha128=(int16x8_t *)alpha,*alpha_ptr;
   int16x8_t a0,a1,a2,a3,a4,a5,a6,a7,*m11p,*m10p;
@@ -188,10 +231,16 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #endif
   l2 = L>>3;
   K1 = (frame_length>>3);
-
+#ifdef DEBUG_LOGMAP
+  fprintf(fdsse4,"compute_alpha (sse_16bit)\n");
+#endif
   for (l=K1;; l=l2,rerun_flag=1) {
 #if defined(__x86_64__) || defined(__i386__)
     alpha128 = (__m128i *)alpha;
+    //#ifdef __AVX2__
+#if 0
+    alpha256 = (__m256i *)alpha;
+#endif
 #elif defined(__arm__)
     alpha128 = (int16x8_t *)alpha;
 #endif
@@ -218,7 +267,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha128[7] = vdupq_n_s16(-MAX/2);
 #endif
 #ifdef DEBUG_LOGMAP
-      printf("Initial alpha\n");
+      fprintf(fdsse4,"Initial alpha\n");
       print_shorts("a0",(int16_t*)&alpha128[0]);
       print_shorts("a1",(int16_t*)&alpha128[1]);
       print_shorts("a2",(int16_t*)&alpha128[2]);
@@ -258,7 +307,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha[48] = -MAX/2;
       alpha[56] = -MAX/2;
 #ifdef DEBUG_LOGMAP
-      printf("Second run\n");
+      fprintf(fdsse4,"Second run\n");
       print_shorts("a0",(int16_t*)&alpha128[0]);
       print_shorts("a1",(int16_t*)&alpha128[1]);
       print_shorts("a2",(int16_t*)&alpha128[2]);
@@ -272,6 +321,11 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
     }
 
     alpha_ptr = &alpha128[0];
+    //#ifdef __AVX2__
+#if 0
+    alpha_ptr256 = &alpha256[0];
+#endif
+
 #if defined(__x86_64__) || defined(__i386__)
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
@@ -284,6 +338,8 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
          k++) {
 
 #if defined(__x86_64__) || defined(__i386__)
+      //#ifndef __AVX2__
+#if 1
       a1=_mm_load_si128(&alpha_ptr[1]);
       a3=_mm_load_si128(&alpha_ptr[3]);
       a5=_mm_load_si128(&alpha_ptr[5]);
@@ -328,6 +384,37 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha_max = _mm_max_epi16(alpha_max,a5);
       alpha_max = _mm_max_epi16(alpha_max,a6);
       alpha_max = _mm_max_epi16(alpha_max,a7);
+#else
+      a02=_mm256_load_si256(&alpha_ptr256[0]);
+      a13=_mm256_load_si256(&alpha_ptr256[1]);
+      a64=_mm256_load_si256(&alpha_ptr256[2]);
+      a75=_mm256_load_si256(&alpha_ptr256[3]);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,*m11p,0);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,*m10p,1);
+
+
+      m_b01 = _mm256_adds_epi16(a13,m11m10_256); //negative m10
+      m_b23 = _mm256_subs_epi16(a75,m11m10_256); //negative m10
+      m_b45 = _mm256_subs_epi16(a13,m11m10_256); //negative m10
+      m_b67 = _mm256_adds_epi16(a75,m11m10_256); //negative m10
+
+      new01 = _mm256_subs_epi16(a02,m11m10_256);  //negative m10
+      new23 = _mm256_adds_epi16(a64,m11m10_256);  //negative m10
+      new45 = _mm256_adds_epi16(a02,m11m10_256);  //negative m10
+      new67 = _mm256_subs_epi16(a64,m11m10_256);  //negative m10
+
+      a01   = _mm256_max_epi16(m_b01,new01);
+      a23   = _mm256_max_epi16(m_b23,new23);
+      a45   = _mm256_max_epi16(m_b45,new45);
+      a67   = _mm256_max_epi16(m_b67,new67);
+
+      alpha_max = _mm256_max_epi16(a01,a23);
+      alpha_max = _mm256_max_epi16(alpha_max,a45);
+      alpha_max = _mm256_max_epi16(alpha_max,a67);
+      alpha_max = _mm256_max_epi16(alpha_max,_mm256_permutevar8x32_epi32(alpha_max,_mm256_set_epi32(3,2,1,0,7,6,5,4)));
+      
+      
+#endif
 #elif defined(__arm__)
       m_b0 = vqaddq_s16(alpha_ptr[1],*m11p);  // m11
       m_b4 = vqsubq_s16(alpha_ptr[1],*m11p);  // m00=-m11
@@ -367,9 +454,15 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #endif
 
       alpha_ptr+=8;
+      //#ifdef __AVX2__
+#if 0
+      alpha_ptr256+=4;
+#endif
       m11p++;
       m10p++;
 #if defined(__x86_64__) || defined(__i386__)
+      //#ifndef __AVX2__
+#if 1
       alpha_ptr[0] = _mm_subs_epi16(a0,alpha_max);
       alpha_ptr[1] = _mm_subs_epi16(a1,alpha_max);
       alpha_ptr[2] = _mm_subs_epi16(a2,alpha_max);
@@ -378,6 +471,18 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       alpha_ptr[5] = _mm_subs_epi16(a5,alpha_max);
       alpha_ptr[6] = _mm_subs_epi16(a6,alpha_max);
       alpha_ptr[7] = _mm_subs_epi16(a7,alpha_max);
+#else
+
+      a01   = _mm256_subs_epi16(a01,alpha_max);
+      a23   = _mm256_subs_epi16(a23,alpha_max);
+      a45   = _mm256_subs_epi16(a45,alpha_max);
+      a67   = _mm256_subs_epi16(a67,alpha_max);
+
+      alpha_ptr256[0] = _mm256_permute2x128_si256(a01,a23,0x20);  //a02
+      alpha_ptr256[1] = _mm256_permute2x128_si256(a01,a23,0x13);  //a13
+      alpha_ptr256[2] = _mm256_permute2x128_si256(a45,a67,0x02);  //a64
+      alpha_ptr256[3] = _mm256_permute2x128_si256(a45,a67,0x31);  //a75
+#endif
 #elif defined(__arm__)
       alpha_ptr[0] = vqsubq_s16(a0,alpha_max);
       alpha_ptr[1] = vqsubq_s16(a1,alpha_max);
@@ -390,7 +495,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #endif
 
 #ifdef DEBUG_LOGMAP
-      printf("Loop index %d, mb\n",k);
+      fprintf(fdsse4,"Loop index %d\n",k);
       print_shorts("mb0",(int16_t*)&m_b0);
       print_shorts("mb1",(int16_t*)&m_b1);
       print_shorts("mb2",(int16_t*)&m_b2);
@@ -400,7 +505,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       print_shorts("mb6",(int16_t*)&m_b6);
       print_shorts("mb7",(int16_t*)&m_b7);
 
-      printf("Loop index %d, new\n",k);
+      fprintf(fdsse4,"Loop index %d, new\n",k);
       print_shorts("new0",(int16_t*)&new0);
       print_shorts("new1",(int16_t*)&new1);
       print_shorts("new2",(int16_t*)&new2);
@@ -410,7 +515,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       print_shorts("new6",(int16_t*)&new6);
       print_shorts("new7",(int16_t*)&new7);
 
-      printf("Loop index %d, after max\n",k);
+      fprintf(fdsse4,"Loop index %d, after max\n",k);
       print_shorts("a0",(int16_t*)&a0);
       print_shorts("a1",(int16_t*)&a1);
       print_shorts("a2",(int16_t*)&a2);
@@ -420,7 +525,7 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
       print_shorts("a6",(int16_t*)&a6);
       print_shorts("a7",(int16_t*)&a7);
 
-      printf("Loop index %d\n",k);
+      fprintf(fdsse4,"Loop index %d\n",k);
       print_shorts("a0",(int16_t*)&alpha_ptr[0]);
       print_shorts("a1",(int16_t*)&alpha_ptr[1]);
       print_shorts("a2",(int16_t*)&alpha_ptr[2]);
@@ -463,25 +568,33 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
   llr_t beta0,beta1;
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_beta, %p,%p,%p,%p,framelength %d,F %d\n",
-      beta,m_11,m_10,alpha,frame_length,F);
+  fprintf(fdsse4,"compute_beta, %p,%p,%p,%p,framelength %d,F %d\n",
+	  beta,m_11,m_10,alpha,frame_length,F);
 #endif
 
 
   // termination for beta initialization
 
-  //  printf("beta init: offset8 %d\n",offset8_flag);
+  //  fprintf(fdsse4,"beta init: offset8 %d\n",offset8_flag);
   m11=(int16_t)m_11[2+frame_length];
+  //#ifndef __AVX2__
+#if 1
   m10=(int16_t)m_10[2+frame_length];
-
-  //  printf("m11,m10 %d,%d\n",m11,m10);
+#else
+  m10=-(int16_t)m_10[2+frame_length];
+#endif
+#ifdef DEBUG_LOGMAP
+  fprintf(fdsse4,"m11,m10 %d,%d\n",m11,m10);
+#endif
 
   beta0 = -m11;//M0T_TERM;
   beta1 = m11;//M1T_TERM;
   m11=(int16_t)m_11[1+frame_length];
   m10=(int16_t)m_10[1+frame_length];
 
-  //  printf("m11,m10 %d,%d\n",m11,m10);
+#ifdef DEBUG_LOGMAP
+  fprintf(fdsse4,"m11,m10 %d,%d\n",m11,m10);
+#endif
 
   beta0_2 = beta0-m11;//+M0T_TERM;
   beta1_2 = beta0+m11;//+M1T_TERM;
@@ -489,8 +602,9 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
   beta3_2 = beta1-m10;//+M3T_TERM;
   m11=(int16_t)m_11[frame_length];
   m10=(int16_t)m_10[frame_length];
-  //  printf("m11,m10 %d,%d (%p)\n",m11,m10,m_11+frame_length);
-
+#ifdef DEBUG_LOGMAP
+  fprintf(fdsse4,"m11,m10 %d,%d\n",m11,m10);
+#endif
   beta0_16 = beta0_2-m11;//+M0T_TERM;
   beta1_16 = beta0_2+m11;//+M1T_TERM;
   beta2_16 = beta1_2+m10;//+M2T_TERM;
@@ -536,6 +650,17 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       beta_ptr[5] = alpha128[5+(frame_length)];
       beta_ptr[6] = alpha128[6+(frame_length)];
       beta_ptr[7] = alpha128[7+(frame_length)];
+#ifdef DEBUG_LOGMAP
+      fprintf(fdsse4,"beta init \n");
+      print_shorts("b0",(int16_t*)&beta_ptr[0]);
+      print_shorts("b1",(int16_t*)&beta_ptr[1]);
+      print_shorts("b2",(int16_t*)&beta_ptr[2]);
+      print_shorts("b3",(int16_t*)&beta_ptr[3]);
+      print_shorts("b4",(int16_t*)&beta_ptr[4]);
+      print_shorts("b5",(int16_t*)&beta_ptr[5]);
+      print_shorts("b6",(int16_t*)&beta_ptr[6]);
+      print_shorts("b7",(int16_t*)&beta_ptr[7]);
+#endif
     } else {
 #if defined(__x86_64__) || defined(__i386__)
       beta128 = (__m128i*)&beta[0];
@@ -558,6 +683,17 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       beta_ptr[5] = (int16x8_t)vshrq_n_s64((int64x2_t)beta128[5],16);   beta_ptr[5] = vsetq_lane_s16(beta[43],beta_ptr[5],4);
       beta_ptr[6] = (int16x8_t)vshrq_n_s64((int64x2_t)beta128[6],16);   beta_ptr[6] = vsetq_lane_s16(beta[51],beta_ptr[6],4);
       beta_ptr[7] = (int16x8_t)vshrq_n_s64((int64x2_t)beta128[7],16);   beta_ptr[7] = vsetq_lane_s16(beta[59],beta_ptr[7],4);
+#endif
+#ifdef DEBUG_LOGMAP
+      fprintf(fdsse4,"beta init (second run) \n");
+      print_shorts("b0",(int16_t*)&beta_ptr[0]);
+      print_shorts("b1",(int16_t*)&beta_ptr[1]);
+      print_shorts("b2",(int16_t*)&beta_ptr[2]);
+      print_shorts("b3",(int16_t*)&beta_ptr[3]);
+      print_shorts("b4",(int16_t*)&beta_ptr[4]);
+      print_shorts("b5",(int16_t*)&beta_ptr[5]);
+      print_shorts("b6",(int16_t*)&beta_ptr[6]);
+      print_shorts("b7",(int16_t*)&beta_ptr[7]);
 #endif
     }
 
@@ -582,6 +718,17 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
     beta_ptr[7] = vsetq_lane_s16(beta7_16,beta_ptr[7],7);
 #endif
 
+#ifdef DEBUG_LOGMAP
+      fprintf(fdsse4,"beta init (after insert) \n");
+      print_shorts("b0",(int16_t*)&beta_ptr[0]);
+      print_shorts("b1",(int16_t*)&beta_ptr[1]);
+      print_shorts("b2",(int16_t*)&beta_ptr[2]);
+      print_shorts("b3",(int16_t*)&beta_ptr[3]);
+      print_shorts("b4",(int16_t*)&beta_ptr[4]);
+      print_shorts("b5",(int16_t*)&beta_ptr[5]);
+      print_shorts("b6",(int16_t*)&beta_ptr[6]);
+      print_shorts("b7",(int16_t*)&beta_ptr[7]);
+#endif
     int loopval=((rerun_flag==0)?0:((frame_length-L)>>3));
 
     for (k=(frame_length>>3)-1; k>=loopval; k--) {
@@ -589,6 +736,9 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       m11_128=((__m128i*)m_11)[k];
       m10_128=((__m128i*)m_10)[k];
 
+
+      //#ifndef __AVX2__
+#if 1
       m_b0 = _mm_adds_epi16(beta_ptr[4],m11_128);  //m11
       m_b1 = _mm_subs_epi16(beta_ptr[4],m11_128);  //m00
       m_b2 = _mm_subs_epi16(beta_ptr[5],m10_128);  //m01
@@ -597,6 +747,7 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       m_b5 = _mm_subs_epi16(beta_ptr[6],m10_128);  //m01
       m_b6 = _mm_subs_epi16(beta_ptr[7],m11_128);  //m00
       m_b7 = _mm_adds_epi16(beta_ptr[7],m11_128);  //m11
+
 
       new0 = _mm_subs_epi16(beta_ptr[0],m11_128);  //m00
       new1 = _mm_adds_epi16(beta_ptr[0],m11_128);  //m11
@@ -607,8 +758,29 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       new6 = _mm_adds_epi16(beta_ptr[3],m11_128);  //m11
       new7 = _mm_subs_epi16(beta_ptr[3],m11_128);  //m00
 
+#else
+      b01=_mm256_load_si256(&((_m256i*)beta_ptr)[0]);
+      b23=_mm256_load_si256(&((_m256i*)beta_ptr)[1]);
+      b45=_mm256_load_si256(&((_m256i*)beta_ptr)[2]);
+      b67=_mm256_load_si256(&((_m256i*)beta_ptr)[3]);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,m11_128,0);
+      m11m10_256 = _mm256_insertf128_si256(m11m10_256,m10_128,1);
+
+
+      m_b02 = _mm256_adds_epi16(b45,m11m10_256); //negative m10
+      m_b13 = _mm256_subs_epi16(b45,m11m10_256); //negative m10
+      m_b64 = _mm256_subs_epi16(b67,m11m10_256); //negative m10
+      m_b75 = _mm256_adds_epi16(b67,m11m10_256); //negative m10
+      new02 = _mm256_subs_epi16(b01,m11m10_256);  //negative m10
+      new13 = _mm256_adds_epi16(b01,m11m10_256);  //negative m10
+      new64 = _mm256_adds_epi16(b23,m11m10_256);  //negative m10
+      new75 = _mm256_subs_epi16(b24,m11m10_256);  //negative m10
+#endif
+
       beta_ptr-=8;
 
+      //#ifndef __AVX2__
+#if 1
       beta_ptr[0] = _mm_max_epi16(m_b0,new0);
       beta_ptr[1] = _mm_max_epi16(m_b1,new1);
       beta_ptr[2] = _mm_max_epi16(m_b2,new2);
@@ -634,6 +806,28 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       beta_ptr[5] = _mm_subs_epi16(beta_ptr[5],beta_max);
       beta_ptr[6] = _mm_subs_epi16(beta_ptr[6],beta_max);
       beta_ptr[7] = _mm_subs_epi16(beta_ptr[7],beta_max);
+#else
+      b02   = _mm256_max_epi16(m_b02,new02);
+      b13   = _mm256_max_epi16(m_b13,new13);
+      b64   = _mm256_max_epi16(m_b64,new64);
+      b75   = _mm256_max_epi16(m_b75,new75);
+      
+      beta_max = _mm256_max_epi16(b02,b13);
+      beta_max = _mm256_max_epi16(beta_max,b64);
+      beta_max = _mm256_max_epi16(beta_max,b75);
+      beta_max = _mm256_max_epi16(beta_max,_mm256_permutevar8x32_epi32(betaa_max,_mm256_set_epi32(3,2,1,0,7,6,5,4)));
+
+      b02   = _mm256_subs_epi16(b02,beta_max);
+      b13   = _mm256_subs_epi16(b13,beta_max);
+      b64   = _mm256_subs_epi16(b64,beta_max);
+      b75   = _mm256_subs_epi16(b75,beta_max);
+
+      ((_m256i*)beta_ptr)[0]) = _mm256_permute2x128_si256(b02,b13,0x02);  //b01
+      ((_m256i*)beta_ptr)[1]) = _mm256_permute2x128_si256(b02,b13,0x31);  //b23
+      ((_m256i*)beta_ptr)[2]) = _mm256_permute2x128_si256(b64,b75,0x13);  //b45
+      ((_m256i*)beta_ptr)[3]) = _mm256_permute2x128_si256(b64,b75,0x20);  //b67
+#endif
+
 #elif defined(__arm__)
       m11_128=((int16x8_t*)m_11)[k];
       m10_128=((int16x8_t*)m_10)[k];
@@ -684,6 +878,18 @@ void compute_beta16(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sh
       beta_ptr[7] = vqsubq_s16(beta_ptr[7],beta_max);
 #endif
 
+#ifdef DEBUG_LOGMAP
+      fprintf(fdsse4,"Loop index %d, mb\n",k);
+      fprintf(fdsse4,"beta init (after max)\n");
+      print_shorts("b0",(int16_t*)&beta_ptr[0]);
+      print_shorts("b1",(int16_t*)&beta_ptr[1]);
+      print_shorts("b2",(int16_t*)&beta_ptr[2]);
+      print_shorts("b3",(int16_t*)&beta_ptr[3]);
+      print_shorts("b4",(int16_t*)&beta_ptr[4]);
+      print_shorts("b5",(int16_t*)&beta_ptr[5]);
+      print_shorts("b6",(int16_t*)&beta_ptr[6]);
+      print_shorts("b7",(int16_t*)&beta_ptr[7]);
+#endif
 
     }
 
@@ -721,7 +927,7 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
   //
 
 #ifdef DEBUG_LOGMAP
-  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
+  fprintf(fdsse4,"compute_ext (sse_16bit), %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
 #endif
 
   alpha_ptr = alpha128;
@@ -736,7 +942,7 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
     ext_128        = (__m128i*)&ext[k<<3];
 
     /*
-      printf("EXT %03d\n",k);
+      fprintf(fdsse4,"EXT %03d\n",k);
       print_shorts("a0:",&alpha_ptr[0]);
       print_shorts("a1:",&alpha_ptr[1]);
       print_shorts("a2:",&alpha_ptr[2]);
@@ -754,6 +960,9 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
       print_shorts("b6:",&beta_ptr[6]);
       print_shorts("b7:",&beta_ptr[7]);
     */
+
+    //#ifndef __AVX2__
+#if 1
     m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
     m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
     m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
@@ -770,6 +979,32 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
     m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
     m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
     m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
+#else
+
+
+    m00_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[0]); //ALPHA_BETA_1m00;
+    m10_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
+    m11_1 = _mm_adds_epi16(alpha_ptr[0],beta_ptr[4]); //ALPHA_BETA_1m11;
+    m01_1 = _mm_adds_epi16(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
+
+    m11_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[0]); //ALPHA_BETA_2m11;
+    m01_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[1]); //ALPHA_BETA_2m01;
+    m00_2 = _mm_adds_epi16(alpha_ptr[1],beta_ptr[4]); //ALPHA_BETA_2m00;
+    m10_2 = _mm_adds_epi16(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
+
+    m11_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[3]); //ALPHA_BETA_3m11;
+    m01_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[2]); //ALPHA_BETA_3m01;
+    m00_3 = _mm_adds_epi16(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
+    m10_3 = _mm_adds_epi16(alpha_ptr[4],beta_ptr[6]); //ALPHA_BETA_3m10;
+
+    m00_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
+    m10_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[2]); //ALPHA_BETA_4m10;
+    m11_4 = _mm_adds_epi16(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
+    m01_4 = _mm_adds_epi16(alpha_ptr[5],beta_ptr[6]); //ALPHA_BETA_4m01;
+
+
+#endif
+
     /*
       print_shorts("m11_1:",&m11_1);
       print_shorts("m11_2:",&m11_2);
@@ -816,15 +1051,15 @@ void compute_ext16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, 
     //      print_shorts("m10_1:",&m10_1);
 
     *ext_128 = _mm_subs_epi16(m10_1,m01_1);
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"ext %p\n",ext_128);
+    print_shorts("ext:",(int16_t*)ext_128);
+    print_shorts("m11:",(int16_t*)m11_128);
+    print_shorts("m10:",(int16_t*)m10_128);
+    print_shorts("m10_1:",(int16_t*)&m10_1);
+    print_shorts("m01_1:",(int16_t*)&m01_1);
+#endif
 
-    /*
-      print_shorts("ext:",ext_128);
-      print_shorts("m11:",m11_128);
-      print_shorts("m10:",m10_128);
-      print_shorts("m10_1:",&m10_1);
-      print_shorts("m01_1:",&m01_1);
-      print_shorts("syst:",systematic_128);
-    */
 #elif defined(__arm__)
     m11_128        = (int16x8_t*)&m_11[k<<3];
     m10_128        = (int16x8_t*)&m_10[k<<3];
@@ -927,7 +1162,7 @@ void init_td16()
         //      j-=(n-1);
 
         pi2tab16[ind][i]  = j;
-        //    printf("pi2[%d] = %d\n",i,j);
+        //    fprintf(fdsse4,"pi2[%d] = %d\n",i,j);
       }
     }
 
@@ -964,19 +1199,19 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       n is the size in bits of the coded block, with the tail */
 
 
-  llr_t systematic0[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic1[n+16] __attribute__ ((aligned(16)));
-  llr_t systematic2[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity1[n+16] __attribute__ ((aligned(16)));
-  llr_t yparity2[n+16] __attribute__ ((aligned(16)));
+  llr_t systematic0[n+16] __attribute__ ((aligned(32)));
+  llr_t systematic1[n+16] __attribute__ ((aligned(32)));
+  llr_t systematic2[n+16] __attribute__ ((aligned(32)));
+  llr_t yparity1[n+16] __attribute__ ((aligned(32)));
+  llr_t yparity2[n+16] __attribute__ ((aligned(32)));
 
-  llr_t ext[n+128] __attribute__((aligned(16)));
-  llr_t ext2[n+128] __attribute__((aligned(16)));
+  llr_t ext[n+128] __attribute__((aligned(32)));
+  llr_t ext2[n+128] __attribute__((aligned(32)));
 
-  llr_t alpha[(n+16)*8] __attribute__ ((aligned(16)));
-  llr_t beta[(n+16)*8] __attribute__ ((aligned(16)));
-  llr_t m11[n+16] __attribute__ ((aligned(16)));
-  llr_t m10[n+16] __attribute__ ((aligned(16)));
+  llr_t alpha[(n+16)*8] __attribute__ ((aligned(32)));
+  llr_t beta[(n+16)*8] __attribute__ ((aligned(32)));
+  llr_t m11[n+32] __attribute__ ((aligned(32)));
+  llr_t m10[n+32] __attribute__ ((aligned(32)));
 
 
   int *pi2_p,*pi4_p,*pi5_p,*pi6_p;
@@ -989,7 +1224,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *yp128;
   __m128i tmp, zeros=_mm_setzero_si128();
-  register __m128i tmpe;
+  __m128i tmpe;
 #elif defined(__arm__)
   int16x8_t *yp128;
 //  int16x8_t tmp128[(n+8)>>3];
@@ -1000,10 +1235,18 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
 #endif
   int offset8_flag=0;
 
+#ifdef DEBUG_LOGMAP
+  fdsse4 = fopen("dump_sse4.txt","w");
+
+
+  printf("tc sse4_16 (y) %p\n",y);
+#endif
+
   if (crc_type > 3) {
-    msg("Illegal crc length!\n");
+    printf("Illegal crc length!\n");
     return 255;
   }
+
 
 
   start_meas(init_stats);
@@ -1013,7 +1256,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
   for (iind=0; iind < 188 && f1f2mat[iind].nb_bits != n; iind++);
 
   if ( iind == 188 ) {
-    msg("Illegal frame length!\n");
+    printf("Illegal frame length!\n");
     return 255;
   }
 
@@ -1059,62 +1302,74 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
 
 #if defined(__x86_64__) || defined(__i386__)
     tmpe = _mm_load_si128(yp128);
+    //    fprintf(fdsse4,"yp128 %p\n",yp128);
+    //    print_shorts("tmpe",(int16_t *)&tmpe);
 
     s[j]   = _mm_extract_epi16(tmpe,0);
     yp1[j] = _mm_extract_epi16(tmpe,1);
     yp2[j] = _mm_extract_epi16(tmpe,2);
-    //        printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init0: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[1];
 
     s[j]   = _mm_extract_epi16(tmpe,3);
     yp1[j] = _mm_extract_epi16(tmpe,4);
     yp2[j] = _mm_extract_epi16(tmpe,5);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init1: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[2];
 
     s[j]   = _mm_extract_epi16(tmpe,6);
     yp1[j] = _mm_extract_epi16(tmpe,7);
     tmpe = _mm_load_si128(&yp128[1]);
     yp2[j] = _mm_extract_epi16(tmpe,0);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init2: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[3];
 
     s[j]   = _mm_extract_epi16(tmpe,1);
     yp1[j] = _mm_extract_epi16(tmpe,2);
     yp2[j] = _mm_extract_epi16(tmpe,3);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init3: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[4];
 
     s[j]   = _mm_extract_epi16(tmpe,4);
     yp1[j] = _mm_extract_epi16(tmpe,5);
     yp2[j] = _mm_extract_epi16(tmpe,6);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init4: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[5];
 
     s[j]   = _mm_extract_epi16(tmpe,7);
     tmpe = _mm_load_si128(&yp128[2]);
     yp1[j] = _mm_extract_epi16(tmpe,0);
     yp2[j] = _mm_extract_epi16(tmpe,1);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init5: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
 
     j=pi2_p[6];
 
     s[j]   = _mm_extract_epi16(tmpe,2);
     yp1[j] = _mm_extract_epi16(tmpe,3);
     yp2[j] = _mm_extract_epi16(tmpe,4);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
-
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init6: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
     j=pi2_p[7];
 
     s[j]   = _mm_extract_epi16(tmpe,5);
     yp1[j] = _mm_extract_epi16(tmpe,6);
     yp2[j] = _mm_extract_epi16(tmpe,7);
-    //    printf("init: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#ifdef DEBUG_LOGMAP
+    fprintf(fdsse4,"init7: j %d, s[j] %d yp1[j] %d yp2[j] %d\n",j,s[j],yp1[j],yp2[j]);
+#endif
 
 #elif defined(__arm__)
     s[j]   = vgetq_lane_s16(yp128[0],0);
@@ -1172,7 +1427,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
     yp1[i] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
+    fprintf(fdsse4,"Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
 #endif //DEBUG_LOGMAP
   }
 
@@ -1184,12 +1439,12 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
     yp2[i-8] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 2 (%d): %d %d\n",i-3,s[i],yp2[i-8]);
+    fprintf(fdsse4,"Term 2 (%d): %d %d\n",i-3,s[i],yp2[i-8]);
 #endif //DEBUG_LOGMAP
   }
 
 #ifdef DEBUG_LOGMAP
-  msg("\n");
+  fprintf(fdsse4,"\n");
 #endif //DEBUG_LOGMAP
 
   stop_meas(init_stats);
@@ -1201,7 +1456,7 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
   while (iteration_cnt++ < max_iterations) {
 
 #ifdef DEBUG_LOGMAP
-    printf("\n*******************ITERATION %d (n %d), ext %p\n\n",iteration_cnt,n,ext);
+    fprintf(fdsse4,"\n*******************ITERATION %d (n %d), ext %p\n\n",iteration_cnt,n,ext);
 #endif //DEBUG_LOGMAP
 
     start_meas(intl1_stats);
@@ -1209,24 +1464,29 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
     pi4_p=pi4tab16[iind];
 
     for (i=0; i<(n>>3); i++) { // steady-state portion
+
 #if defined(__x86_64__) || defined(__i386__)
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],0);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],1);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],2);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],3);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],4);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],5);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],6);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],((llr_t*)ext)[*pi4_p++],7);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],0);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],1);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],2);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],3);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],4);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],5);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],6);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi16(((__m128i *)systematic2)[i],ext[*pi4_p++],7);
+
 #elif defined(__arm__)
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],0);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],1);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],2);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],3);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],4);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],5);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],6);
-      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(((llr_t*)ext)[*pi4_p++],((int16x8_t*)systematic2)[i],7);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],0);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],1);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],2);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],3);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],4);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],5);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],6);
+      ((int16x8_t*)systematic2)[i]=vsetq_lane_s16(ext[*pi4_p++],((int16x8_t*)systematic2)[i],7);
+#endif
+#ifdef DEBUG_LOGMAP
+      print_shorts("syst2",(int16_t*)&((__m128i *)systematic2)[i]);
 #endif
     }
 
@@ -1262,6 +1522,9 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
         tmp=vsetq_lane_s16(ext2[*pi5_p++],tmp,7);
 	((int16x8_t *)systematic1)[i] = vqaddq_s16(vqsubq_s16(tmp,((int16x8_t*)ext)[i]),((int16x8_t *)systematic0)[i]);
 #endif
+#ifdef DEBUG_LOGMAP
+	print_shorts("syst1",(int16_t*)&((__m128i *)systematic1)[i]);
+#endif
     }
 
     if (iteration_cnt>1) {
@@ -1278,6 +1541,9 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
         tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],2);
         tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],1);
         tmp=_mm_insert_epi16(tmp, ((llr_t*)ext2)[*pi6_p++],0);
+#ifdef DEBUG_LOGMAP
+	print_shorts("tmp",(int16_t*)&tmp);
+#endif
         tmp=_mm_cmpgt_epi8(_mm_packs_epi16(tmp,zeros),zeros);
         decoded_bytes[i]=(unsigned char)_mm_movemask_epi8(tmp);
 #elif defined(__arm__)
@@ -1297,6 +1563,10 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
 	uint64x2_t Mask   = vpaddlq_u32(vpaddlq_u16(vandq_u16(vcgtq_s16(tmp,zeros), Powers)));
         uint64x1_t Mask64 = vget_high_u64(Mask)+vget_low_u64(Mask);
         decoded_bytes[i] = (uint8_t)Mask64;
+#endif
+#ifdef DEBUG_LOGMAP
+	print_shorts("tmp",(int16_t*)&tmp);
+	fprintf(fdsse4,"decoded_bytes[%d] %x\n",i,decoded_bytes[i]);
 #endif
       }
     }
@@ -1344,6 +1614,9 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       }
 
       stop_meas(intl2_stats);
+#ifdef DEBUG_LOGMAP
+      fprintf(fdsse4,"oldcrc %x, crc %x\n",oldcrc,crc);
+#endif
 
       if ((crc == oldcrc) && (crc!=0)) {
         return(iteration_cnt);
@@ -1374,8 +1647,12 @@ unsigned char phy_threegpplte_turbo_decoder16(short *y,
       }
     }
   }
+	
+  //  fprintf(fdsse4,"crc %x, oldcrc %x\n",crc,oldcrc);
 
-  //  printf("crc %x, oldcrc %x\n",crc,oldcrc);
+#ifdef DEBUG_LOGMAP
+      fclose(fdsse4);
+#endif
 
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();

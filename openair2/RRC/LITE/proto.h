@@ -38,21 +38,23 @@
  *  @{
  */
 
+#include "RRC/LITE/defs.h"
+
 //main.c
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,uint8_t HO_enabled);
 #if defined(ENABLE_ITTI)
 char
-openair_rrc_lite_eNB_configuration(
+openair_rrc_eNB_configuration(
   const module_id_t enb_mod_idP,
   RrcConfigurationReq* configuration
 );
 #endif
-char openair_rrc_lite_eNB_init(
+char openair_rrc_eNB_init(
   const module_id_t module_idP);
 
-char openair_rrc_lite_ue_init(
+char openair_rrc_ue_init(
   const module_id_t module_idP,
   const uint8_t CH_IDX);
 void rrc_config_buffer(SRB_INFO *srb_info, uint8_t Lchan_type, uint8_t Role);
@@ -281,7 +283,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 
 //L2_interface.c
 int8_t
-mac_rrc_lite_data_req(
+mac_rrc_data_req(
   const module_id_t Mod_idP,
   const int         CC_id,
   const frame_t     frameP,
@@ -294,7 +296,7 @@ mac_rrc_lite_data_req(
 );
 
 int8_t
-mac_rrc_lite_data_ind(
+mac_rrc_data_ind(
   const module_id_t     module_idP,
   const int         CC_id,
   const frame_t         frameP,
@@ -310,8 +312,20 @@ mac_rrc_lite_data_ind(
 
 void mac_sync_ind( module_id_t Mod_instP, uint8_t status);
 
+void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP, 
+			    const int CC_id, 
+			    const frame_t frameP,
+			    const sub_frame_t subframeP,
+			    const rnti_t rnti);
+
+void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
+			    const int CC_id, 
+			    const frame_t frameP,
+			    const sub_frame_t subframeP,
+			    const rnti_t rnti);
+
 uint8_t
-rrc_lite_data_req(
+rrc_data_req(
   const protocol_ctxt_t*   const ctxt_pP,
   const rb_id_t                  rb_idP,
   const mui_t                    muiP,
@@ -322,16 +336,16 @@ rrc_lite_data_req(
 );
 
 void
-rrc_lite_data_ind(
+rrc_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
   const rb_id_t                Srb_id,
   const sdu_size_t             sdu_sizeP,
   const uint8_t*   const       buffer_pP
 );
 
-void rrc_lite_in_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_index);
+void rrc_in_sync_ind(module_id_t module_idP, frame_t frameP, uint16_t eNB_index);
 
-void rrc_lite_out_of_sync_ind(module_id_t module_idP, frame_t frameP, unsigned short eNB_index);
+void rrc_out_of_sync_ind(module_id_t module_idP, frame_t frameP, unsigned short eNB_index);
 
 int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, const uint8_t* const Sdu, const uint8_t Sdu_len, const uint8_t mbsfn_sync_area );
 
@@ -356,13 +370,13 @@ ue_measurement_report_triggering(
 );
 
 int
-mac_eNB_get_rrc_lite_status(
+mac_eNB_get_rrc_status(
   const module_id_t Mod_idP,
   const rnti_t      rntiP
 );
 
 int
-mac_UE_get_rrc_lite_status(
+mac_UE_get_rrc_status(
   const module_id_t Mod_idP,
   const uint8_t     indexP
 );
@@ -427,10 +441,8 @@ rrc_eNB_free_mem_UE_context(
 
 void
 rrc_eNB_free_UE(
-  const module_id_t enb_mod_idP,
-  const rnti_t      rntiP,
-  const frame_t     frameP,
-  const sub_frame_t subframeP
+		const module_id_t enb_mod_idP,
+		const struct rrc_eNB_ue_context_s*         const ue_context_pP
 );
 
 long binary_search_int(int elements[], long numElem, int value);

@@ -796,7 +796,8 @@ INPUT                  = $(OPENAIR1_DIR)/PHY/defs.h \
                          $(OPENAIR_TARGETS)/ARCH/COMMON/common_lib.h \
                          $(OPENAIR_TARGETS)/ARCH/USRP/USERSPACE/LIB/usrp_lib.cpp \
                          $(OPENAIR_TARGETS)/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.c \
-                         $(OPENAIR_TARGETS)/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.h
+                         $(OPENAIR_TARGETS)/ARCH/BLADERF/USERSPACE/LIB/bladerf_lib.h \
+                         $(OPENAIR_TARGETS)/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

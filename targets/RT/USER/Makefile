@@ -8,14 +8,14 @@ include $(OPENAIR_TARGETS)/Makefile.common
 
 KERNEL_VERSION:=$(shell echo `uname -r | cut -d. -f-2`)
 KERNEL_TYPE:=$(shell echo `uname -r | cut -d. -f-3 | cut -d- -f3`)
-LOWLATENCY_KERNEL:=$(shell if [ $(KERNEL_TYPE) = "lowlatency" ]; then echo "1" ; else echo "0" ; fi)
+DEADLINE_SCHEDULER_KERNEL:=$(shell if [ $(KERNEL_TYPE) = "lowlatency" ]; then echo "1" ; else echo "0" ; fi)
 
 include $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc
 
 ifdef EXMIMO
-#ifdef LOWLATENCY # this ifdef is to be removed after the debugging
-ifeq ($(LOWLATENCY_KERNEL),1)
-CFLAGS+=-DLOWLATENCY
+#ifdef DEADLINE_SCHEDULER # this ifdef is to be removed after the debugging
+ifeq ($(DEADLINE_SCHEDULER_KERNEL),1)
+CFLAGS+=-DDEADLINE_SCHEDULER
 endif 
 #endif 
 endif
@@ -431,7 +431,7 @@ show:
 	@echo IS_REL10 is $(IS_REL10)
 	@echo openssl $(OPENSSL_FOUND) 
 	@echo nettle $(NETTLE_FOUND)
-	@echo lowlatency kernel: $(LOWLATENCY_KERNEL)
+	@echo lowlatency kernel: $(DEADLINE_SCHEDULER_KERNEL)
 
 beautiful:
 	astyle --style=gnu -s2 $(SRC)

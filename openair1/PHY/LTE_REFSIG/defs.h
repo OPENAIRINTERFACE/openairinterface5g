@@ -73,7 +73,7 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
 
 
 int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
-                     mod_sym_t *output,
+                     int32_t *output,
                      short amp,
                      unsigned char Ns,
                      unsigned char l,
@@ -89,7 +89,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *phy_vars_eNB,
 */
 int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
                    uint8_t UE_id,
-                   mod_sym_t *output,
+                   int32_t *output,
                    short amp,
                    uint8_t Ns,
                    uint8_t p,
@@ -102,7 +102,7 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 @param Ns Slot number (0..19)
 @param l symbol (0,1,2)
 */
-int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
+int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
                  short amp,
                  int subframe,
                  unsigned char l);
@@ -148,7 +148,7 @@ void free_ul_ref_sigs(void);
 @sub_frame_offset  Offset of this subframe in units of subframes
 */
 
-int lte_generate_srs(mod_sym_t **txdataF,
+int lte_generate_srs(int32_t **txdataF,
                      short amp,
                      LTE_DL_FRAME_PARMS *frame_parms,
                      unsigned int sub_frame_offset);

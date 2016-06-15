@@ -48,7 +48,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
@@ -105,7 +104,7 @@ uint64_t DLSCH_alloc_pdu_1[2];
 #define CCCH_RB_ALLOC computeRIV(PHY_vars_eNB->lte_frame_parms.N_RB_UL,0,2)
 //#define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 //#define DLSCH_RB_ALLOC 0x0001
-void do_OFDM_mod_l(mod_sym_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   int aa, slot_offset, slot_offset_F;
@@ -2114,7 +2113,6 @@ n(tikz_fname,"w");
       initialize(&time_vector_rx_demod);
       struct list time_vector_rx_dec;
       initialize(&time_vector_rx_dec);
-
       
       for (trials = 0;trials<n_frames;trials++) {
 	//  printf("Trial %d\n",trials);

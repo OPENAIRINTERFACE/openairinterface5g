@@ -329,6 +329,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
       for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
         avgs = cmax(avgs,avg[(aatx<<1)+aarx]);
     //  avgs = cmax(avgs,avg[(aarx<<1)+aatx]);
+
      lte_ue_pdsch_vars[eNB_id]->log2_maxh = (log2_approx(avgs)/2); //+ interf_unaw_shift_tm1_mcs[dlsch0_harq->mcs];
    // printf("TM4 I-A log2_maxh0 = %d\n", lte_ue_pdsch_vars[eNB_id]->log2_maxh);
       }

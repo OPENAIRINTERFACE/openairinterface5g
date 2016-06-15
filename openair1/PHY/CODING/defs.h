@@ -303,6 +303,10 @@ void ccodedot11_init(void);
 \brief This function initializes the trellis structure for decoding an 802.11 convolutional code.*/
 void ccodedot11_init_inv(void);
 
+/*!\fn void teillis_table_init(void)
+\brief This function initializes the trellis structure for 3GPP LTE Turbo code.*/
+void treillis_table_init(void);
+
 /*\fn void threegpplte_turbo_encoder(uint8_t *input,uint16_t input_length_bytes,uint8_t *output,uint8_t F,uint16_t interleaver_f1,uint16_t interleaver_f2)
 \brief This function implements a rate 1/3 8-state parralel concatenated turbo code (3GPP-LTE).
 @param input Pointer to input buffer
@@ -353,6 +357,8 @@ void ccodedab_init(void);
 \brief This function initializes the trellis structure for decoding an DAB convolutional code (first 3 bits).*/
 void ccodedab_init_inv(void);
 
+
+
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
 void crcTableInit (void);
@@ -365,6 +371,17 @@ void init_td8 (void);
 /*!\fn void init_td16(void)
 \brief This function initializes the tables for 16-bit LLR Turbo decoder.*/
 void init_td16 (void);
+
+#ifdef __AVX2__
+/*!\fn void init_td8(void)
+\brief This function initializes the tables for 8-bit LLR Turbo decoder (AVX2).*/
+void init_td8avx2 (void);
+
+
+/*!\fn void init_td16(void)
+\brief This function initializes the tables for 16-bit LLR Turbo decoder (AVX2).*/
+void init_td16avx2 (void);
+#endif
 
 /*!\fn uint32_t crc24a(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('a' variant for overall transport block)
@@ -482,6 +499,24 @@ uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
                                         time_stats_t *ext_stats,
                                         time_stats_t *intl1_stats,
                                         time_stats_t *intl2_stats);
+
+uint8_t phy_threegpplte_turbo_decoder16avx2(int16_t *y,
+					    int16_t *y2,
+					    uint8_t *decoded_bytes,
+					    uint8_t *decoded_bytes2,
+					    uint16_t n,
+					    uint16_t interleaver_f1,
+					    uint16_t interleaver_f2,
+					    uint8_t max_iterations,
+					    uint8_t crc_type,
+					    uint8_t F,
+					    time_stats_t *init_stats,
+					    time_stats_t *alpha_stats,
+					    time_stats_t *beta_stats,
+					    time_stats_t *gamma_stats,
+					    time_stats_t *ext_stats,
+					    time_stats_t *intl1_stats,
+					    time_stats_t *intl2_stats);
 
 /*!
 \brief This routine performs max-logmap detection for the 3GPP turbo code (with termination).  It is optimized for SIMD processing and 8-bit
