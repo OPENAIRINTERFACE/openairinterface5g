@@ -256,7 +256,7 @@ int main(int argc, char **argv)
  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
   uint8_t Kmimo;
 
-  mod_sym_t **sic_buffer;
+  int32_t **sic_buffer;
   int8_t cw_to_decode_interf;
   int8_t cw_to_decode_interf_free;
   int8_t  cw_non_sic;
@@ -1029,9 +1029,9 @@ n(tikz_fname,"w");
   }
 
 
-  sic_buffer = (mod_sym_t **) malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*) );
+  sic_buffer = (int32_t **) malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t *) );
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    sic_buffer[i] = malloc16_clear(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+    sic_buffer[i] = malloc16_clear(FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
   }
 
   if (input_fd==NULL) {
@@ -2119,7 +2119,7 @@ n(tikz_fname,"w");
 	fflush(stdout);
 	round=0;
 	for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-	memset(sic_buffer[i], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+	memset(sic_buffer[i], 0, FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 	}
 	//if (trials%100==0)
 	eNB2UE[0]->first_run = 1;
@@ -2148,7 +2148,7 @@ n(tikz_fname,"w");
 	
 	  //  printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
 	  for (aa=0; aa<PHY_vars_eNB->lte_frame_parms.nb_antennas_tx;aa++) {
-	    memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+	    memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 	  }
 	
 	  if (input_fd==NULL) {

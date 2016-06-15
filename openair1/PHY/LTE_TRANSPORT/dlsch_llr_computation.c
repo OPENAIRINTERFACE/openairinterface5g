@@ -686,15 +686,15 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
-                       int32_t **rxdataF_comp,
-		       mod_sym_t **sic_buffer,  //Q15
-		       int32_t **rho_i,
-                       short *dlsch_llr,
-		       uint8_t num_pdcch_symbols,
-                       uint16_t nb_rb,
-		       uint8_t subframe,
-		       uint32_t rb_alloc,
-		       LTE_UE_DLSCH_t *dlsch0)
+                           int32_t **rxdataF_comp,
+		                       int32_t **sic_buffer,  //Q15
+		                       int32_t **rho_i,
+                           short *dlsch_llr,
+		                       uint8_t num_pdcch_symbols,
+                           uint16_t nb_rb,
+		                       uint8_t subframe,
+		                       uint32_t rb_alloc,
+		                       LTE_UE_DLSCH_t *dlsch0)
 {
 
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
@@ -929,16 +929,16 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
-			  mod_sym_t **sic_buffer,  //Q15
-		          int32_t **rho_i,
-			  int16_t *dlsch_llr,
-			  uint8_t num_pdcch_symbols,
-			  int32_t **dl_ch_mag,
-			  uint16_t nb_rb,
-			  uint8_t subframe,
-			  uint32_t rb_alloc,
-			  LTE_UE_DLSCH_t *dlsch0
- 			)
+			                    int32_t **sic_buffer,  //Q15
+		                      int32_t **rho_i,
+			                    int16_t *dlsch_llr,
+			                    uint8_t num_pdcch_symbols,
+			                    int32_t **dl_ch_mag,
+			                    uint16_t nb_rb,
+			                    uint8_t subframe,
+			                    uint32_t rb_alloc,
+			                    LTE_UE_DLSCH_t *dlsch0
+ 			                   )
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
@@ -1183,18 +1183,18 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 //#if 0
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
-                          int32_t **rxdataF_comp,
-			  mod_sym_t **sic_buffer,  //Q15
-		          int32_t **rho_i,
-			  int16_t *dlsch_llr,
-			  uint8_t num_pdcch_symbols,
-			  int32_t **dl_ch_mag,
-			  int32_t **dl_ch_magb,
-			  uint16_t nb_rb,
-			  uint8_t subframe,
-			  uint32_t rb_alloc,
-			  LTE_UE_DLSCH_t *dlsch0
- 			)
+                         int32_t **rxdataF_comp,
+			                   int32_t **sic_buffer,  //Q15
+		                     int32_t **rho_i,
+			                   int16_t *dlsch_llr,
+			                   uint8_t num_pdcch_symbols,
+			                   int32_t **dl_ch_mag,
+			                   int32_t **dl_ch_magb,
+			                   uint16_t nb_rb,
+			                   uint8_t subframe,
+			                   uint32_t rb_alloc,
+			                   LTE_UE_DLSCH_t *dlsch0
+ 			                  )
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];

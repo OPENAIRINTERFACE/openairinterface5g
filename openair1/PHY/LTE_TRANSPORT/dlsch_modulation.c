@@ -1611,16 +1611,15 @@ int dlsch_modulation(int32_t **txdataF,
   return (re_allocated);
 }
 
-<<<<<<< HEAD
 
-int dlsch_modulation_SIC(mod_sym_t **sic_buffer,
-                     int16_t amp,
-                     uint32_t subframe_offset,
-                     LTE_DL_FRAME_PARMS *frame_parms,
-                     uint8_t num_pdcch_symbols,
-                     LTE_eNB_DLSCH_t *dlsch0,
-                     LTE_eNB_DLSCH_t *dlsch1,
-		     int G)
+int dlsch_modulation_SIC(int32_t **sic_buffer,
+                         int16_t amp,
+                         uint32_t subframe_offset,
+                         LTE_DL_FRAME_PARMS *frame_parms,
+                         uint8_t num_pdcch_symbols,
+                         LTE_eNB_DLSCH_t *dlsch0,
+                         LTE_eNB_DLSCH_t *dlsch1,
+		                     int G)
 {
 
   uint8_t nsymb;
