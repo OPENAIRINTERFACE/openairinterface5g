@@ -38,6 +38,8 @@
 * \warning
 */
 
+#include <stdint.h>
+
 /// Macro for IF4 packet type
 #define IF4_PACKET_TYPE 0x080A 
 #define IF4_PULFFT 0x0019 
@@ -105,7 +107,7 @@ struct IF4_dl_packet {
   /// Frame Status
   IF4_frame_status_t frame_status;
   /// Data Blocks
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs; 
 };
@@ -143,7 +145,7 @@ struct IF4_ul_packet {
   /// Gain 7
   IF4_gain_t gain7;
   /// Data Blocks
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };
@@ -165,7 +167,7 @@ struct IF4_prach_packet {
   /// LTE Prach Configuration
   IF4_lte_prach_conf_t prach_conf;
   /// Prach Data Block (one antenna)
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };

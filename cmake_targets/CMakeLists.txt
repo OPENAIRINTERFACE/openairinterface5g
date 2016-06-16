@@ -138,7 +138,7 @@ else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
     endif()
     if (CPUINFO MATCHES "sse4_1")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1 -mavx2")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1")
     endif()
     if (CPUINFO MATCHES "ssse3")
       set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
@@ -959,6 +959,7 @@ add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 	  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/rar_tools.c
 	  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/print_stats.c
 	  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/initial_sync.c
+      ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/if4_tools.c
 	  ${OPENAIR1_DIR}/PHY/MODULATION/ofdm_mod.c
 	  ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep.c
 	  ${OPENAIR1_DIR}/PHY/MODULATION/slot_fep_mbsfn.c
