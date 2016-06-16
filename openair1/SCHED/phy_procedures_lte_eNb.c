@@ -73,7 +73,8 @@ void exit_fun(const char* s);
 
 extern int exit_openair;
 
-extern openair0_device openair0;
+// Fix per CC openair rf/if device update
+// extern openair0_device openair0;
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(32)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(32)));
@@ -2522,7 +2523,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 	  rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
 
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-	rxs = openair0.trx_read_func(&openair0,
+	rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
 				     &proc->timestamp_rx,
 				     rxp,
 				     fp->samples_per_tti,

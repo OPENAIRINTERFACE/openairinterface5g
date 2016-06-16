@@ -120,8 +120,8 @@ struct timing_info_t {
   unsigned int n_samples;
 } timing_info;
 
-
-extern openair0_device openair0;
+// Fix per CC openair rf/if device update
+// extern openair0_device openair0;
 
 #if defined(ENABLE_ITTI)
 extern volatile int             start_eNB;
@@ -524,7 +524,7 @@ static void* eNB_thread_rxtx( void* param )
       for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
 	txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
       // if symb_written < spp ==> error 
-      openair0.trx_write_func(&openair0,
+      PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
 			      (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
 			      txp,
 			      PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
@@ -741,8 +741,19 @@ static void* eNB_thread_rx_common( void* param )
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
-  if (openair0.trx_start_func(&openair0) != 0 ) 
-    LOG_E(HW,"Could not start the device\n");
+  
+  // Start RF device for this CC
+  if (eNB->node_function == eNodeB_3GPP || eNB->node_function == NGFI_RRU_IF4) {
+    if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
+      LOG_E(HW,"Could not start the RF device\n");
+  }
+    
+  // Start IF device for this CC
+  if (eNB->node_function == NGFI_RCC_IF4 || eNB->node_function == NGFI_RRU_IF4) {
+    if (eNB->ifdevice.trx_start_func(&eNB->ifdevice) != 0 ) 
+      LOG_E(HW,"Could not start the IF device\n");
+  }
+
  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
  while (!oai_exit) {
    

@@ -280,6 +280,9 @@ eth_params_t *eth_params;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+// Change to openair_global to handle UE
+openair0_device openair0;
+
 double cpuf;
 
 char uecap_xer[1024],uecap_xer_in=0;
@@ -1592,11 +1595,11 @@ int main( int argc, char **argv )
   }
   
   /* device host type is set*/
-  //openair0.host_type = BBU_HOST;
+  openair0.host_type = BBU_HOST;
   /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
-  //openair0.type = NONE_DEV;
+  openair0.type = NONE_DEV;
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
-  //openair0.transp_type = NONE_TP;
+  openair0.transp_type = NONE_TP;
   //openair0_cfg[0].log_level = glog_level;
   
   // Legacy BBU - RRH init  
@@ -1661,6 +1664,7 @@ int main( int argc, char **argv )
       else if (mode==loop_through_memory) {    
       }    
     }
+  }
 
   printf("Done initializing RF and IF devices\n");
   
