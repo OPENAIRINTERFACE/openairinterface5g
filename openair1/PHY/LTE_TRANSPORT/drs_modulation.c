@@ -63,7 +63,7 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
 
   uint8_t cyclic_shift,cyclic_shift0,cyclic_shift1;
   LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->lte_frame_parms;
-  mod_sym_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[ant];
+  int32_t *txdataF = phy_vars_ue->lte_ue_common_vars.txdataF[ant];
   uint32_t u,v,alpha_ind;
   uint32_t u0=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
   uint32_t u1=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
@@ -147,13 +147,13 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
         if (cyclic_shift == 0) {
           for (k=0; k<12; k++) {
             if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-              txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+              txdataF[symbol_offset+re_offset] = (int32_t) 1;
             else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-              txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+              txdataF[symbol_offset+re_offset] = (int32_t) 2;
             else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-              txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+              txdataF[symbol_offset+re_offset] = (int32_t) 3;
             else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-              txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+              txdataF[symbol_offset+re_offset] = (int32_t) 4;
 
             re_offset++;
             drs_offset++;
@@ -165,22 +165,22 @@ int generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
           for (k=0; k<12; k++) {
             if(k%2 == 0) {
               if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+                txdataF[symbol_offset+re_offset] = (int32_t) 4;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+                txdataF[symbol_offset+re_offset] = (int32_t) 3;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+                txdataF[symbol_offset+re_offset] = (int32_t) 2;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+                txdataF[symbol_offset+re_offset] = (int32_t) 1;
             } else {
               if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 1;
+                txdataF[symbol_offset+re_offset] = (int32_t) 1;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] >= 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 2;
+                txdataF[symbol_offset+re_offset] = (int32_t) 2;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] >= 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 3;
+                txdataF[symbol_offset+re_offset] = (int32_t) 3;
               else if ((ul_ref_sigs[u][v][Msc_RS_idx][drs_offset<<1] < 0) && (ul_ref_sigs[u][v][Msc_RS_idx][(drs_offset<<1)+1] < 0))
-                txdataF[symbol_offset+re_offset] = (mod_sym_t) 4;
+                txdataF[symbol_offset+re_offset] = (int32_t) 4;
             }
 
             re_offset++;

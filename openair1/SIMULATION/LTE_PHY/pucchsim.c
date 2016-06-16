@@ -34,10 +34,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
-#ifdef IFFT_FPGA
-#include "PHY/LTE_REFSIG/mod_table.h"
-#endif
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -67,9 +63,6 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   //mod_sym_t **txdataF;
-#ifdef IFFT_FPGA
-  int **txdataF2;
-#endif
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double ricean_factor=0.0000005,iqim=0.0;
@@ -338,23 +331,7 @@ int main(int argc, char **argv)
   frame_parms = &PHY_vars_eNB->lte_frame_parms;
 
 
-#ifdef IFFT_FPGA
-  txdata    = (int **)malloc16(2*sizeof(int*));
-  txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-
-  bzero(txdata[0],FRAME_LENGTH_BYTES);
-  bzero(txdata[1],FRAME_LENGTH_BYTES);
-
-  txdataF2    = (int **)malloc16(2*sizeof(int*));
-  txdataF2[0] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
-  txdataF2[1] = (int *)malloc16(FRAME_LENGTH_BYTES_NO_PREFIX);
-
-  bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
-  bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
-#else
   txdata = PHY_vars_eNB->lte_eNB_common_vars.txdata[eNB_id];
-#endif
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -420,27 +397,6 @@ int main(int argc, char **argv)
                  &pucch_payload,
                  AMP, //amp,
                  subframe); //subframe
-#ifdef IFFT_FPGA_UE
-  tx_lev=0;
-
-  for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-
-    if (frame_parms->Ncp == 1)
-      PHY_ofdm_mod(txdataF2[aa],        // input
-                   txdata[aa],         // output
-                   frame_parms->ofdm_symbol_size,
-                   2*nsymb,                 // number of symbols
-                   frame_parms->nb_prefix_samples,               // number of prefix samples
-                   CYCLIC_PREFIX);
-    else
-      normal_prefix_mod(txdataF2[aa],txdata[aa],2*nsymb,frame_parms);
-  }
-
-  tx_lev += signal_energy(&txdata[aa][OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES],
-                          OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
-
-#else
-
   write_output("txsigF0.m","txsF0", &PHY_vars_UE->lte_ue_common_vars.txdataF[0][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*nsymb,1,1);
 
   tx_lev = 0;
@@ -472,7 +428,6 @@ int main(int argc, char **argv)
                             OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
   }
 
-#endif
 
 
   write_output("txsig0.m","txs0", txdata[0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
@@ -610,6 +565,7 @@ int main(int argc, char **argv)
                         n2_pucch,
                         0, //shortened_format,
                         &pucch_payload_rx, //payload,
+                        0 /* frame not defined, let's pass 0 */,
                         subframe,
                         pucch1_thres);
 
@@ -654,15 +610,6 @@ int main(int argc, char **argv)
     write_output("rxsigF0.m","rxsF0", &PHY_vars_eNB->lte_eNB_common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   }
 
-
-#ifdef IFFT_FPGA
-  free(txdataF2[0]);
-  free(txdataF2[1]);
-  free(txdataF2);
-  free(txdata[0]);
-  free(txdata[1]);
-  free(txdata);
-#endif
 
   for (i=0; i<2; i++) {
     free(s_re[i]);

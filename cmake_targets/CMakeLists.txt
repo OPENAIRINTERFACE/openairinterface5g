@@ -238,6 +238,7 @@ add_boolean_option(TEST_OMG            False "???")
 add_boolean_option(DEBUG_OMG           False "???")
 add_boolean_option(XFORMS              False "This adds the possibility to see the signal oscilloscope")
 add_boolean_option(PRINT_STATS         False "This adds the possibility to see the status")
+add_boolean_option(T_TRACER            False "Activate the T tracer, a debugging/monitoring framework" )
 
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
@@ -260,7 +261,8 @@ endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
 if (${RTAI})
-  set(LOWLATENCY False)
+  set(DEADLINE_SCHEDULER False)
+  set(CPU_AFFINITY False)
   add_definitions("-DENABLE_RTAI_CLOCK")
   add_definitions("-DCONFIG_RTAI_LXRT_INLINE")
   include_directories ("/usr/realtime/include")
@@ -564,7 +566,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_BLADERF")
   LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
 
   set(option_HW_lib "bladeRF -rdynamic -ldl")
- #set(LOWLATENCY False)
 
 elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   include_directories("${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB")
@@ -577,7 +578,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_LMSSDR")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/lms7002m")
   LINK_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}/Si5351C")
   set(HW_SOURCE ${HW_SOURCE} ${OPENAIR_TARGETS}/ARCH/LMSSDR/USERSPACE/LIB/lms_lib.cpp)
-  set(LOWLATENCY False)
   set(option_HW_lib "-lLMS_SDR -lLMS7002M -lSi5351C -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "CPRIGW")
@@ -606,7 +606,8 @@ endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
-Message("LOWLATENCY flag  is ${LOWLATENCY}")
+Message("DEADLINE_SCHEDULER flag  is ${DEADLINE_SCHEDULER}")
+Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -619,7 +620,8 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
-add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
 add_boolean_option(OAISIM False "specific to oaisim")
@@ -996,6 +998,7 @@ set(PHY_SRC
   ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_8bit.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_sse_16bit.c
+  ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder_avx2_16bit.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
@@ -1098,8 +1101,8 @@ set (ENB_APP_SRC
 add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
-  ${ENB_APP_SRC}
-  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+  ${ENB_APP_SRC})
+#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
 # L3 Libs
 ##########################
@@ -1557,6 +1560,36 @@ endif (${XFORMS})
 
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
+#include T directory even if the T is off because T macros are in the code
+#no matter what
+include_directories("${OPENAIR_DIR}/common/utils/T")
+
+if (${T_TRACER})
+  set(T_SOURCE
+      ${OPENAIR_DIR}/common/utils/T/T.c
+      ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
+  set (T_LIB "rt")
+endif (${T_TRACER})
+
+#Some files in the T directory are generated.
+#This rule and the following deal with it.
+add_custom_command (
+  OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
+  COMMAND make
+  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
+  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
+  )
+
+#This rule is specifically needed to generate T files
+#before anything else in a project that uses the T.
+#See below, there are some 'add_dependencies' showing that.
+#Basically we create a custom target and we make other
+#targets depend on it. That forces cmake to generate
+#T files before anything else.
+add_custom_target (
+  generate_T
+  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_IDs.h
+)
 
 # Hack on a test of asn1c version (already dirty)
 add_definitions(-DASN1_MINIMUM_VERSION=924)
@@ -1589,6 +1622,7 @@ add_executable(lte-softmodem
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
   )
 
 target_link_libraries (lte-softmodem
@@ -1601,6 +1635,7 @@ target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp ${option_HW_lib} ${option_TP_lib} ${XFORMS_LIBRARIES} ) 
 target_link_libraries (lte-softmodem ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
+target_link_libraries (lte-softmodem ${T_LIB})
 
 # lte-softmodem-nos1 is both eNB and UE implementation
 ###################################################
@@ -1625,6 +1660,7 @@ add_executable(lte-softmodem-nos1
   ${RTAI_SOURCE}
   ${XFORMS_SOURCE}
   ${XFORMS_SOURCE_SOFTMODEM}
+  ${T_SOURCE}
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
@@ -1635,6 +1671,7 @@ target_link_libraries (lte-softmodem-nos1 ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES}  ${option_HW_lib}  ${option_TP_lib} ${XFORMS_LIBRARIES} )
 target_link_libraries (lte-softmodem-nos1 ${LIBBOOST_LIBRARIES})
 target_link_libraries (lte-softmodem-nos1  ${LIB_LMS_LIBRARIES})
+target_link_libraries (lte-softmodem ${T_LIB})
 
 # rrh
 ################################
@@ -1647,6 +1684,7 @@ add_executable(rrh_gw
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c		
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
+  ${T_SOURCE}
   )
 target_include_directories(rrh_gw PRIVATE  ${OPENAIR_DIR}/common/utils/itti)
 target_link_libraries(rrh_gw
@@ -1656,6 +1694,7 @@ target_link_libraries(rrh_gw
 target_link_libraries (rrh_gw rt pthread m )
 target_link_libraries (rrh_gw  ${option_HW_lib} ${option_TP_lib} ${LIBBOOST_LIBRARIES} )
 target_link_libraries (rrh_gw ${LIB_LMS_LIBRARIES})
+target_link_libraries (rrh_gw ${T_LIB})
 
 Message("-- option_HW_lib=${option_HW_lib}")
 Message("-- HW_SOURCE=${HW_SOURCE}")
@@ -1721,6 +1760,7 @@ add_executable(oaisim
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   ${XFORMS_SOURCE}
+  ${T_SOURCE}
 )
 
 
@@ -1735,6 +1775,7 @@ target_link_libraries (oaisim pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LI
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim forms)
+target_link_libraries (oaisim ${T_LIB})
 
 
 
@@ -1760,6 +1801,7 @@ add_executable(oaisim_nos1
   ${HW_SOURCE}
   ${TRANSPORT_SOURCE}  
   ${XFORMS_SOURCE}
+  ${T_SOURCE}
 )
 target_include_directories(oaisim_nos1 PUBLIC  ${OPENAIR_TARGETS}/SIMU/USER)
 target_link_libraries (oaisim_nos1
@@ -1772,7 +1814,7 @@ target_link_libraries (oaisim_nos1 pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYP
   ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${OPENPGM_LIBRARIES})
 #Force link with forms, regardless XFORMS option
 target_link_libraries (oaisim_nos1 forms)
-
+target_link_libraries (oaisim_nos1 ${T_LIB})
 
 # Unitary tests for each piece of L1: example, mbmssim is MBMS L1 simulator
 #####################################
@@ -1782,10 +1824,11 @@ foreach(myExe dlsim ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syn
     ${OPENAIR_BIN_DIR}/messages_xml.h
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
     ${XFORMS_SOURCE}
+    ${T_SOURCE}
     )
   target_link_libraries (${myExe}
     -Wl,--start-group SIMU UTIL SCHED_LIB PHY LFDS ${ITTI_LIB} -Wl,--end-group
-    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES}
+    pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
     )
 endforeach(myExe)
 
@@ -1850,8 +1893,23 @@ endforeach(myExe)
 #../targets/TEST/PDCP/test_pdcp.c
 #../targets/TEST/PDCP/with_rlc/test_pdcp_rlc.c
 
-
-
+#ensure that the T header files are generated before targets depending on them
+if (${T_TRACER})
+  add_dependencies(lte-softmodem generate_T)
+  add_dependencies(lte-softmodem-nos1 generate_T)
+  add_dependencies(rrh_gw generate_T)
+  add_dependencies(oaisim generate_T)
+  add_dependencies(oaisim_nos1 generate_T)
+  add_dependencies(dlsim generate_T)
+  add_dependencies(ulsim generate_T)
+  add_dependencies(pbchsim generate_T)
+  add_dependencies(scansim generate_T)
+  add_dependencies(mbmssim generate_T)
+  add_dependencies(pdcchsim generate_T)
+  add_dependencies(pucchsim generate_T)
+  add_dependencies(prachsim generate_T)
+  add_dependencies(syncsim generate_T)
+endif (${T_TRACER})
 
 ##################################################
 # Generated specific cases is not regular code
@@ -2013,38 +2071,4 @@ endforeach(file)
 ADD_CUSTOM_TARGET(oarf
    DEPENDS ${OCT_FILES}
 )
- 
-#CMAKE INSTALL and CPACK
 
-#INSTALL(PROGRAMS lte-softmodem ${OPENAIR_DIR}/targets DESTINATION bin)
-#INSTALL(PROGRAMS oaisim ${OPENAIR_DIR}/targets DESTINATION bin)
-
-
-#SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OpenAirInterface")
-#SET(CPACK_PACKAGE_VENDOR "Eurecom")
-#SET(CPACK_PACKAGE_DESCRIPTION_FILE "${OPENAIR_DIR}/README.txt")
-#SET(CPACK_RESOURCE_FILE_LICENSE "${OPENAIR_DIR}/COPYING")
-#SET(CPACK_PACKAGE_VERSION_MAJOR "1")
-#SET(CPACK_PACKAGE_VERSION_MINOR "1")
-#SET(CPACK_PACKAGE_VERSION_PATCH "1")
-
-#SET(CPACK_PACKAGE_INSTALL_DIRECTORY "CMake ${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
-#SET(CPACK_STRIP_FILES "${OPENAIR_TARGETS}/bin")
-#SET(CPACK_SOURCE_STRIP_FILES "")
-
-##debian specific 
-#SET(CPACK_DEBIAN_PACKAGE_NAME "OAI") 
-#SET(CPACK_DEBIAN_PACKAGE_VERSION "${CMake_VERSION_MAJOR}.${CMake_VERSION_MINOR}")
-##dpkg --print-architecture (do not use i686
-#SET(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
-
-#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.3.1-6), libgcc1 (>= 1:3.4.2-12)")
-#SET(CPACK_DEBIAN_PACKAGE_DEPENDS "libpthread.so.0  libm.so.6 libconfig.so.9 librt.so.1 libcrypt.so.1 libcrypto.so.1.0.0  libnettle.so.4 libsctp.so.1 libc.so.6")
-#SET(CPACK_DEBIAN_PACKAGE_MAINTAINER "EURECOM-OSA")
-
-#SET(CPACK_PACKAGE_EXECUTABLES "lte-softmodem" "mme_gw.Rel10" "openair-hss")
-
-#SET(CPACK_DEBIAN_PACKAGE_DESCRIPTION "OpenAirInterface")
-#SET(CPACK_DEBIAN_PACKAGE_Section "Beta-Release")
-
-#INCLUDE(CPack)

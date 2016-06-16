@@ -39,7 +39,7 @@
 //extern unsigned int lte_gold_table[10][3][42];
 //#define DEBUG_DL_MBSFN
 
-int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
+int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
                  short amp,
                  int subframe,
                  unsigned char l)
@@ -47,7 +47,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, mod_sym_t *output,
 
   unsigned int mprime,mprime_dword,mprime_qpsk_symb,m;
   unsigned short k=0,a;
-  mod_sym_t qpsk[4];
+  int32_t qpsk[4];
 
   a = (amp*ONE_OVER_SQRT2_Q15)>>15;
   ((short *)&qpsk[0])[0] = a;

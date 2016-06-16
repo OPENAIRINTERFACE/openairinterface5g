@@ -40,7 +40,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/extern.h"
 #include "oaisim_config.h"
 
 #ifdef OPENAIR2

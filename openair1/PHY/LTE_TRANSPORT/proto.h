@@ -54,7 +54,7 @@
 */
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
-void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch, uint8_t abstraction_flag);
+void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch);
 
 /** \fn new_eNB_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at eNB
@@ -85,13 +85,13 @@ void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch);
 LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch, uint8_t abstraction_flag);
+void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
 
 void free_ue_ulsch(LTE_UE_ULSCH_t *ulsch);
 
-LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t Mdlharq,uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
+LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
-LTE_UE_ULSCH_t *new_ue_ulsch(uint8_t Mdlharq, unsigned char N_RB_UL, uint8_t abstraction_flag);
+LTE_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
 
 /** \fn dlsch_encoding(uint8_t *input_buffer,
     LTE_DL_FRAME_PARMS *frame_parms,
@@ -133,7 +133,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 
 // Functions below implement 36-211
 
-/** \fn allocate_REs_in_RB(mod_sym_t **txdataF,
+/** \fn allocate_REs_in_RB(int32_t **txdataF,
     uint32_t *jj,
     uint32_t *jj2,
     uint16_t re_offset,
@@ -169,7 +169,7 @@ void dlsch_encoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 */
 
 int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
-                           mod_sym_t **txdataF,
+                           int32_t **txdataF,
                            uint32_t *jj,
                            uint32_t *jj2,
                            uint16_t re_offset,
@@ -186,7 +186,7 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
                            uint8_t skip_half);
 
 
-/** \fn int32_t dlsch_modulation(mod_sym_t **txdataF,
+/** \fn int32_t dlsch_modulation(int32_t **txdataF,
     int16_t amp,
     uint32_t sub_frame_offset,
     LTE_DL_FRAME_PARMS *frame_parms,
@@ -203,7 +203,7 @@ int32_t allocate_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
     @param dlsch1 Pointer to Transport Block 0 DLSCH descriptor for this allocation
 
 */
-int32_t dlsch_modulation(mod_sym_t **txdataF,
+int32_t dlsch_modulation(int32_t **txdataF,
                          int16_t amp,
                          uint32_t sub_frame_offset,
                          LTE_DL_FRAME_PARMS *frame_parms,
@@ -218,7 +218,7 @@ int32_t dlsch_modulation(mod_sym_t **txdataF,
   @param frame_parms Pointer to frame descriptor
   @param dlsch Pointer to DLSCH descriptor for this allocation
 */
-int mch_modulation(mod_sym_t **txdataF,
+int mch_modulation(int32_t **txdataF,
                    int16_t amp,
                    uint32_t subframe_offset,
                    LTE_DL_FRAME_PARMS *frame_parms,
@@ -279,7 +279,7 @@ void dump_mch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_co
     @param N Number of sub-frames to generate
 */
 void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      int16_t amp,
                      uint16_t N);
 
@@ -292,17 +292,17 @@ void generate_pilots(PHY_VARS_eNB *phy_vars_eNB,
    @param first_pilot_only (0 no)
 */
 int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
-                             mod_sym_t **txdataF,
+                             int32_t **txdataF,
                              int16_t amp,
                              uint16_t slot,
                              int first_pilot_only);
 
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
-                             mod_sym_t **txdataF,
+                             int32_t **txdataF,
                              int16_t amp,
                              uint16_t subframe);
 
-int32_t generate_pss(mod_sym_t **txdataF,
+int32_t generate_pss(int32_t **txdataF,
                      int16_t amp,
                      LTE_DL_FRAME_PARMS *frame_parms,
                      uint16_t l,
@@ -310,14 +310,14 @@ int32_t generate_pss(mod_sym_t **txdataF,
 
 int32_t generate_pss_emul(PHY_VARS_eNB *phy_vars_eNB,uint8_t sect_id);
 
-int32_t generate_sss(mod_sym_t **txdataF,
+int32_t generate_sss(int32_t **txdataF,
                      short amp,
                      LTE_DL_FRAME_PARMS *frame_parms,
                      unsigned short symbol,
                      unsigned short slot_offset);
 
 int32_t generate_pbch(LTE_eNB_PBCH *eNB_pbch,
-                      mod_sym_t **txdataF,
+                      int32_t **txdataF,
                       int32_t amp,
                       LTE_DL_FRAME_PARMS *frame_parms,
                       uint8_t *pbch_pdu,
@@ -1148,7 +1148,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                          uint32_t n_rnti,
                          int16_t amp,
                          LTE_DL_FRAME_PARMS *frame_parms,
-                         mod_sym_t **txdataF,
+                         int32_t **txdataF,
                          uint32_t sub_frame_offset);
 
 uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
@@ -1341,7 +1341,7 @@ void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
 int32_t compareints (const void * a, const void * b);
 
 
-void ulsch_modulation(mod_sym_t **txdataF,
+void ulsch_modulation(int32_t **txdataF,
                       int16_t amp,
                       frame_t frame,
                       uint32_t subframe,
@@ -1450,7 +1450,7 @@ void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 void generate_pcfich(uint8_t num_pdcch_symbols,
                      int16_t amp,
                      LTE_DL_FRAME_PARMS *frame_parms,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      uint8_t subframe);
 
 uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
@@ -1609,7 +1609,7 @@ uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int sub
 
 uint8_t get_num_pdcch_symbols(uint8_t num_dci,DCI_ALLOC_t *dci_alloc,LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
-void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
+void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi);
 
 void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                         uint8_t subframe,
@@ -1638,7 +1638,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7]);
 
-void generate_pucch(mod_sym_t **txdataF,
+void generate_pucch(int32_t **txdataF,
                     LTE_DL_FRAME_PARMS *frame_parms,
                     uint8_t ncs_cell[20][7],
                     PUCCH_FMT_t fmt,
@@ -1665,6 +1665,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint16_t n2_pucch,
 		  uint8_t shortened_format,
 		  uint8_t *payload,
+		  int     frame,
 		  uint8_t subframe,
 		  uint8_t pucch1_thres);
 

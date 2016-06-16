@@ -30,7 +30,7 @@
 #define __PHY_EXTERN_H__
 
 #include "PHY/defs.h"
-
+#include "PHY_INTERFACE/defs.h"
 
 extern  char* namepointer_chMag ;
 extern char* namepointer_log2;
@@ -39,10 +39,7 @@ extern  char fmageren_name2[512];
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-#ifdef OPENAIR_LTE
 #include "PHY/LTE_TRANSPORT/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SIMULATION/ETH_TRANSPORT/extern.h"
 
 extern unsigned int DAQ_MBOX;
@@ -56,6 +53,7 @@ extern PHY_VARS_eNB ***PHY_vars_eNB_g;
 extern PHY_VARS_RN **PHY_vars_RN_g;
 extern LTE_DL_FRAME_PARMS *lte_frame_parms_g;
 
+extern MAC_xface *mac_xface;
 
 
 extern short primary_synch0[144];
@@ -78,7 +76,6 @@ extern char mode_string[4][20];
 
 #include "PHY/LTE_TRANSPORT/extern.h"
 
-#endif
 
 #ifndef OPENAIR2
 extern unsigned char NB_eNB_INST;
