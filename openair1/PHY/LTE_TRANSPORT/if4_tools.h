@@ -181,6 +181,6 @@ void gen_IF4_ul_packet(IF4_ul_packet_t*, eNB_rxtx_proc_t*);
 
 void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
 
-void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
+void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t);
 
 void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t*, uint32_t*);

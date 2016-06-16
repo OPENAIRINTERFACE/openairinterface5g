@@ -483,7 +483,7 @@ static void* eNB_thread_rxtx( void* param ) {
       } else {
 
         /// **** recv_IF4 of txdataF from RCC **** ///        
-        //recv_IF4( eNB, proc, packet_type, symbol_number);        
+        //recv_IF4(eNB, proc, packet_type, symbol_number);        
         
       }
     }

@@ -45,11 +45,11 @@
 #include "PHY/TOOLS/ALAW/alaw_lut.h"
 
 // Get device information
-void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
-	LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-	int32_t **txdataF = eNB->common_vars.txdataF[0];
+void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  int32_t **txdataF = eNB->common_vars.txdataF[0];
   
-	uint16_t symbol_id, element_id;
+  uint16_t symbol_id, element_id;
   uint16_t db_fulllength = 12*fp->N_RB_DL;
   uint16_t db_halflength = db_fulllength>>1;
   int slotoffsetF = (proc->subframe_tx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
@@ -58,7 +58,7 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
   int16_t *data_block = (int16_t*)malloc(db_fulllength*sizeof(int16_t));  
 
   // Caller: RCC - DL *** handle RRU case - UL and PRACH *** 
-  if (eNB->node_function == NGFI_RCC_IF4) {
+  if (packet_type == IF4_PDLFFT) {
     IF4_dl_packet_t *dl_packet = (IF4_dl_packet_t*)malloc(sizeof_IF4_dl_packet_t);
     gen_IF4_dl_packet(dl_packet, proc);
 		
@@ -93,7 +93,7 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
     }
-  }else {
+  } else if (packet_type == IF4_PULFFT) {
     IF4_ul_packet_t *ul_packet = (IF4_ul_packet_t*)malloc(sizeof_IF4_ul_packet_t);
     gen_IF4_ul_packet(ul_packet, proc);
 		
@@ -101,7 +101,7 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
 
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {			
 
-      // Do compression of the two parts and generate data blocks	- rxdataF		
+      // Do compression of the two parts and generate data blocks - rxdataF		
       for (element_id=0; element_id<db_halflength; element_id++) {
         data_block[element_id]  = lin2alaw[ (rxdataF[0][blockoffsetF+element_id] & 0xffff) + 32768 ];          
         data_block[element_id] |= lin2alaw[ (rxdataF[0][blockoffsetF+element_id]>>16) + 32768 ]<<8;  
@@ -118,19 +118,23 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
     }		
-	}
-  		    
+  } else if (packet_type == IF4_PRACH) {
+       
+       
+  } else {    
+    AssertFatal(1==0, "send_IF4 - Unknown packet_type %x", packet_type);     
+  }
+  
+  return;  		    
 }
 
 void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, uint32_t *symbol_number) {
 
-  // Caller: RRU - DL *** handle RCC case - UL and PRACH *** 
-  if (eNB->node_function == NGFI_RRU_IF4) {
-  
-    printf("\n Recv IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
-  
+  *packet_type = 0;
+  int16_t *data_block=NULL;
+   
+  // Read packet(s) from the fronthaul    
 //    for(i=0; i<fp->symbols_per_tti; i++) {  
-      // Read packet(s) from the fronthaul    
 //      if (dev->eth_dev.trx_read_func (&dev->eth_dev,
 //                                      timestamp_rx,
 //                                    rx_eNB,
@@ -139,16 +143,27 @@ void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, u
 //                                      ) < 0) {
 //        perror("RRU : ETHERNET read");
 //      }
+//  printf("\n Recv IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
+
+  //*packet_type = ;  
+  
+  if (*packet_type == IF4_PDLFFT) {
       
       // Apply reverse processing - decompression
       // txAlawtolinear( Datablock )
       
       // Generate and return the OFDM symbols (txdataF)
-      //txDataF 
-    //}
-  }else {
+      // txDataF 
     
-  }  
+  } else if (*packet_type == IF4_PULFFT) {
+    
+  } else if (*packet_type == IF4_PRACH) {
+       
+  } else {
+    AssertFatal(1==0, "recv_IF4 - Unknown packet_type %x", *packet_type);            
+  }
+
+  return;   
 }
 
 void gen_IF4_dl_packet(IF4_dl_packet_t *dl_packet, eNB_rxtx_proc_t *proc) {      
