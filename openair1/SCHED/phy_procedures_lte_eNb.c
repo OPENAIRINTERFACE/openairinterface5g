@@ -1430,24 +1430,6 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
-  // Clean up split point *** RRU only function to recv and do_OFDM_mod ***  
-  if (eNB->node_function == eNodeB_3GPP) {
-    // Add above to IF4 split
-    // do_OFDM_mod
-    
-  }else if (eNB->node_function == NGFI_RCC_IF4) {
-	  //send_IF4(eNB,subframe<<1);
-	  //send_IF4(eNB,(subframe<<1)+1);
-    
-  }else if (eNB->node_function == NGFI_RRU_IF4) { // => acquisition from RCC (IF4)
-  	// get frame/subframe information from IF4 interface
-
-	  //recv_IF4(eNB,subframe<<1);
-	  //recv_IF4(eNB,1+(subframe<<1));
-    
-    //do_OFDM_mod   
-  }
-  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
   stop_meas(&eNB->phy_proc_tx);
   
@@ -2572,12 +2554,14 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
 	if (eNB->node_function == NGFI_RRU_IF4) {
-	  //send_IF4(eNB,subframe<<1);
-	  //send_IF4(eNB,(subframe<<1)+1);
+    /// **** send_IF4 of rxdataF to RCC **** ///
+    /// Handle routing to prach thread for sending prach
 	}
 
       }
-      else if (eNB->node_function == NGFI_RCC_IF4) { // => acquisition from RRU (IF4)
+      else if (eNB->node_function == NGFI_RCC_IF4) {
+        /// **** recv_IF4 of rxdataF from RRU **** ///
+        /// **** recv_IF4 of prachF from RRU **** ///
 	      // get frame/subframe information from IF4 interface
 	      // timed loop (200 us)
 	
@@ -2598,11 +2582,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 					  //symbol_mask = symbol_mask | (1<<symbol_number);
 					
 				//} while( (symbol_mask != symbol_mask_full) || (prach_rx == 0));    
-					 
-
-	      //recv_IF4(eNB,subframe<<1);
-	      //recv_IF4(eNB,1+(subframe<<1));
-	
+					 	
 	    // Tobi aka mr monaco: ETH
 	
 	    

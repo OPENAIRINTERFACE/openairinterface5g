@@ -1635,7 +1635,7 @@ int main( int argc, char **argv )
     
   // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
-  if (node_function == eNodeB_3GPP || node_function == NGFI_RRU_IF4) { 
+  if (node_function != NGFI_RCC_IF4) { 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]);
@@ -1651,7 +1651,7 @@ int main( int argc, char **argv )
   }  
   
   // Load transport protocol and initialize
-  if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4){ 
+  if (node_function != eNodeB_3GPP){ 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));

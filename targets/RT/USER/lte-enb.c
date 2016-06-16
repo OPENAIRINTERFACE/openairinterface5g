@@ -68,6 +68,8 @@
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
+#include "PHY/LTE_TRANSPORT/if4_tools.h"
+
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
 #include "LAYER2/MAC/extern.h"
@@ -494,50 +496,61 @@ static void* eNB_thread_rxtx( void* param )
 	  exit_fun("nothing to add");
 	  break;
 	}
+      } else {
+
+        /// **** recv_IF4 of txdataF from RCC **** ///        
+        //recv_IF4( eNB, proc, packet_type, symbol_number);        
+        
       }
     }
 
-    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RCC_IF4) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
-      do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
-    /*
-      short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti];
-      int i;
-      for (i=0;i<PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti*2;i+=8) {
-      txdata[i] = 2047;
-      txdata[i+1] = 0;
-      txdata[i+2] = 0;
-      txdata[i+3] = 2047;
-      txdata[i+4] = -2047;
-      txdata[i+5] = 0;
-      txdata[i+6] = 0;
-      txdata[i+7] = -2047;      }
-    */
+  // eNodeB_3GPP and RRU create txdata and write to RF device
+  if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RCC_IF4) {
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
+    do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
+  /*
+    short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti];
+    int i;
+    for (i=0;i<PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti*2;i+=8) {
+    txdata[i] = 2047;
+    txdata[i+1] = 0;
+    txdata[i+2] = 0;
+    txdata[i+3] = 2047;
+    txdata[i+4] = -2047;
+    txdata[i+5] = 0;
+    txdata[i+6] = 0;
+    txdata[i+7] = -2047;      }
+  */
 
 
-      // Transmit TX buffer based on timestamp from RX
+    // Transmit TX buffer based on timestamp from RX
+  
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+    // prepare tx buffer pointers
+    int i;
+    for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
+  txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
+    // if symb_written < spp ==> error 
+    PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
+          (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
+          txp,
+          PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
+          PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
+          1);
     
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-      // prepare tx buffer pointers
-      int i;
-      for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
-	txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
-      // if symb_written < spp ==> error 
-      PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
-			      (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
-			      txp,
-			      PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
-			      PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
-			      1);
-      
 
-	
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
 
-    }
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+
+  } else {  // RCC sends the txdataF using send_IF4 function
+
+    /// **** send_IF4 of txdataF to RRU **** ///    
+    //send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc);
+    
+  }
 
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB TX proc\n");
@@ -743,13 +756,13 @@ static void* eNB_thread_rx_common( void* param )
 #endif 
   
   // Start RF device for this CC
-  if (eNB->node_function == eNodeB_3GPP || eNB->node_function == NGFI_RRU_IF4) {
+  if (eNB->node_function != NGFI_RCC_IF4) {
     if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
       LOG_E(HW,"Could not start the RF device\n");
   }
     
   // Start IF device for this CC
-  if (eNB->node_function == NGFI_RCC_IF4 || eNB->node_function == NGFI_RRU_IF4) {
+  if (eNB->node_function != eNodeB_3GPP) {
     if (eNB->ifdevice.trx_start_func(&eNB->ifdevice) != 0 ) 
       LOG_E(HW,"Could not start the IF device\n");
   }
@@ -769,7 +782,7 @@ static void* eNB_thread_rx_common( void* param )
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
      // this spawns the prach inside and updates the frame and subframe counters
      phy_procedures_eNB_common_RX(eNB, 0);
-
+     
      
      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
    }

@@ -38,16 +38,11 @@
 * \warning
 */
 
-#ifndef USER_MODE
-#include "if4_tools.h"
 #include <stdint.h>
-#else
-#include <stdint.h>
-#include "PHY/defs.h"
 
+#include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/TOOLS/ALAW/alaw_lut.h"
-#endif
 
 // Get device information
 void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
@@ -70,6 +65,8 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
     dl_packet->data_block = data_block;
 
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {
+      
+      printf("\n Send IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
 
       // Do compression of the two parts and generate data blocks			
       for (element_id=0; element_id<db_halflength; element_id++) {
@@ -84,14 +81,14 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
       dl_packet->frame_status.sym_num = symbol_id; 
 			
       // Write the packet(s) to the fronthaul
-      //if ((bytes_sent = dev->eth_dev.trx_write_func (&dev->eth_dev,
-			//			                                         timestamp_rx,
-			//			                                         rx_eNB,
-			//			                                         spp_eth,
-			//			                                         dev->eth_dev.openair0_cfg->rx_num_channels,
-      //                                               0)) < 0) {
-      //  perror("RCC : ETHERNET write");
-      //}
+    //  if ((bytes_sent = eNB->ifdevice.trx_write_func(&eNB->ifdevice,
+    //                                                (proc->timestamp_tx-eNB->ifdevice.openair0_cfg.tx_sample_advance),
+    //  			                                         dl_packet,
+    //  			                                         eNB->frame_parms.samples_per_tti,
+    //  			                                         eNB->frame_parms.nb_antennas_tx,
+    //                                                 0)) < 0) {
+    //    perror("RCC : ETHERNET write");
+    //}
       
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
@@ -104,10 +101,10 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc) {
 
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {			
 
-      // Do compression of the two parts and generate data blocks			
+      // Do compression of the two parts and generate data blocks	- rxdataF		
       for (element_id=0; element_id<db_halflength; element_id++) {
-        data_block[element_id]  = lin2alaw[ (txdataF[0][blockoffsetF+element_id] & 0xffff) + 32768 ];          
-        data_block[element_id] |= lin2alaw[ (txdataF[0][blockoffsetF+element_id]>>16) + 32768 ]<<8;  
+        data_block[element_id]  = lin2alaw[ (rxdataF[0][blockoffsetF+element_id] & 0xffff) + 32768 ];          
+        data_block[element_id] |= lin2alaw[ (rxdataF[0][blockoffsetF+element_id]>>16) + 32768 ]<<8;  
         
         data_block[element_id+db_halflength]  = lin2alaw[ (txdataF[0][slotoffsetF+element_id] & 0xffff) + 32768 ];     
         data_block[element_id+db_halflength] |= lin2alaw[ (txdataF[0][slotoffsetF+element_id]>>16) + 32768 ]<<8;  
@@ -129,6 +126,8 @@ void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, u
 
   // Caller: RRU - DL *** handle RCC case - UL and PRACH *** 
   if (eNB->node_function == NGFI_RRU_IF4) {
+  
+    printf("\n Recv IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
   
 //    for(i=0; i<fp->symbols_per_tti; i++) {  
       // Read packet(s) from the fronthaul    
