@@ -152,8 +152,6 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 static pthread_t                forms_thread; //xforms
 #endif
 
-openair0_device openair0;
-
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 
@@ -1580,14 +1578,26 @@ int main( int argc, char **argv )
   }
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
-
-  /* device host type is set*/
-  openair0.host_type = BBU_HOST;
-  /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
-  openair0.type = NONE_DEV;
-  /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
-  openair0.transp_type = NONE_TP;
+  
   openair0_cfg[0].log_level = glog_level;
+  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+    PHY_vars_eNB_g[0][CC_id]->rfdevice.type = NONE_DEV;
+    PHY_vars_eNB_g[0][CC_id]->rfdevice.transp_type = NONE_TP;
+       
+    PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
+    PHY_vars_eNB_g[0][CC_id]->ifdevice.type = NONE_DEV;
+    PHY_vars_eNB_g[0][CC_id]->ifdevice.transp_type = NONE_TP;
+  }
+  
+  /* device host type is set*/
+  //openair0.host_type = BBU_HOST;
+  /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
+  //openair0.type = NONE_DEV;
+  /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
+  //openair0.transp_type = NONE_TP;
+  //openair0_cfg[0].log_level = glog_level;
   
   // Legacy BBU - RRH init  
   //int returns=-1;
@@ -1619,36 +1629,40 @@ int main( int argc, char **argv )
   //printf("Done\n");
   
   int returns=-1;
-  
+    
+  // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
   if (node_function == eNodeB_3GPP || node_function == NGFI_RRU_IF4) { 
-    if (mode!=loop_through_memory) {
-      returns=openair0_device_load(&openair0, &openair0_cfg[0]);
-      printf("openair0_device_init returns %d\n",returns);
-      if (returns<0) {
-	      printf("Exiting, cannot initialize device\n");
-	      exit(-1);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+      if (mode!=loop_through_memory) {
+        returns=openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]);
+        printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
+        if (returns<0) {
+	        printf("Exiting, cannot initialize device\n");
+	        exit(-1);
+        }
       }
-    }
-    else if (mode==loop_through_memory) {    
+      else if (mode==loop_through_memory) {    
+      }    
     }
   }  
   
   // Load transport protocol and initialize
   if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4){ 
-    if (mode!=loop_through_memory) {
-      returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
-      printf("openair0_transport_init returns %d\n",returns);
-      if (returns<0) { 
-	      printf("Exiting, cannot initialize transport protocol\n");
-	      exit(-1);
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+      if (mode!=loop_through_memory) {
+        returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",returns,CC_id);
+        if (returns<0) {
+	        printf("Exiting, cannot initialize transport protocol\n");
+	        exit(-1);
+        }
       }
+      else if (mode==loop_through_memory) {    
+      }    
     }
-    else if (mode==loop_through_memory) {    
-    }
-  }   
 
-  printf("Done\n");
+  printf("Done initializing RF and IF devices\n");
   
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -1819,7 +1833,7 @@ int main( int argc, char **argv )
 
 
 
-
+// *** Handle per CC_id openair0
 #ifndef USRP_DEBUG
   if ((UE_flag==1) && (mode!=loop_through_memory))
     if (openair0.trx_start_func(&openair0) != 0 ) 
@@ -1889,7 +1903,7 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
-
+  // *** Handle per CC_id openair0
   openair0.trx_end_func(&openair0);
 
   if (ouput_vcd)
