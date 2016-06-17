@@ -1436,7 +1436,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                              1,
                              num_pdcch_symbols,phy_vars_eNB->proc[sched_subframe].frame_tx,
 			     subframe,
-			     (phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id])),
+			     0),
                        0,
                        subframe<<1);
 
@@ -1444,7 +1444,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
 
       start_meas(&phy_vars_eNB->dlsch_modulation_stats);
       //      for (sect_id=0;sect_id<number_of_cards;sect_id++)
-      re_allocated = dlsch_modulation(&phy_vars_eNB,
+      re_allocated = dlsch_modulation(phy_vars_eNB,
                                       phy_vars_eNB->lte_eNB_common_vars.txdataF[0],
                                       AMP,
                                       subframe,
