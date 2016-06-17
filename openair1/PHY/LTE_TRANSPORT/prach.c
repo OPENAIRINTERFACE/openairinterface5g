@@ -1269,7 +1269,11 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 
   if (eNB->node_function == NGFI_RRU_IF4) {
-    /// **** send_IF4 of prachF to RCC **** ///
+    /// **** send_IF4 of prachF to RCC **** ///    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+    // send_IF4();
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
+
     return;
   }
   
@@ -1277,7 +1281,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
   //else if (eNB->node_function == NGFI_RCC_IF4) {
   //  wait for prachF from RRU and continue with PRACH processing
   //}
-
 
   // here onwards is for eNodeB_3GPP or NGFI_RCC_IF4
 

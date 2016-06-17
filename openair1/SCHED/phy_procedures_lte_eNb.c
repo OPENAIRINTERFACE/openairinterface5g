@@ -61,6 +61,8 @@
 #include "assertions.h"
 #include "msc.h"
 
+#include <time.h>
+
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
 #endif
@@ -2488,7 +2490,11 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   uint16_t packet_type;
   uint32_t symbol_number;
   uint32_t symbol_mask, symbol_mask_full;
-
+  
+  struct timespec time_req, time_rem;  
+  time_req.tv_sec = 0;
+  time_req.tv_nsec = 300000;
+  
   if (subframe==9) { 
     subframe=0;
     frame++;
@@ -2564,6 +2570,11 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, frame, subframe)<=0) {
 
 			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
+        
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+        // send_IF4();
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
+        
       }
 
       /// **** send_IF4 of prach to RCC **** /// done in prach thread (below)
@@ -2608,9 +2619,13 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       prach_rx = 0;
 
       // Block from loop while testing
-      symbol_mask = symbol_mask_full;   
+      symbol_mask = symbol_mask_full;
+      nanosleep(&time_req, &time_rem);
+         
       do {
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
         //recv_IF4(eNB, proc, &packet_type, &symbol_number);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {
           symbol_mask = symbol_mask | (1<<symbol_number);     
