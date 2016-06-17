@@ -204,7 +204,6 @@ LTE_eNB_DLSCH_t *new_eNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_
     
     for (i=0; i<4; i++) {
       dlsch->ue_spec_bf_weights[i] = (int32_t **)malloc16(nb_antennas_tx*sizeof(int32_t*));
-      dlsch->ue_spec_bf_weights[i] = (int32_t **)malloc16(nb_antennas_tx*sizeof(int32_t*));
 
       for (aa=0; aa<nb_antennas_tx; aa++) {
         dlsch->ue_spec_bf_weights[i][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));

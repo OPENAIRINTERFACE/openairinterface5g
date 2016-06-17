@@ -46,7 +46,7 @@ Address      : Eurecom, Campus SophiaTech, 450 Route des Chappes, CS 50193 - 069
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
-//#define DEBUG_DLSCH_MODULATION
+#define DEBUG_DLSCH_MODULATION
 
 //#define is_not_pilot(pilots,re,nushift,use2ndpilots) ((pilots==0) || ((re!=nushift) && (re!=nushift+6)&&((re!=nushift+3)||(use2ndpilots==1))&&((re!=nushift+9)||(use2ndpilots==1)))?1:0)
 
@@ -387,8 +387,8 @@ break;
 
             *jj=*jj+1;
 
-            ((int16_t *)&txdataF[aa][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
-            ((int16_t *)&txdataF[aa][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
+            ((int16_t *)&txdataF[0][tti_offset])[0]=qam_table_s0[qam64_table_offset_re];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_re])>>15);
+            ((int16_t *)&txdataF[0][tti_offset])[1]=qam_table_s0[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
             break;
 
@@ -1457,7 +1457,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe_offset*nsymb));
 
     //memset(&txdataF[aa][symbol_offset],0,frame_parms->ofdm_symbol_size<<2);
-    //printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
+    // printf("symbol_offset %d,subframe offset %d : pilots %d\n",symbol_offset,subframe_offset,pilots);
     for (rb=0; rb<frame_parms->N_RB_DL; rb++) {
 
       if (rb < 32)
@@ -1618,7 +1618,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
         qam_table_s1 = NULL;
 
       if (rb_alloc_ind > 0) {
-        // printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
+        //printf("Allocated rb %d/symbol %d, skip_half %d, subframe_offset %d, symbol_offset %d, re_offset %d, jj %d\n",rb,l,skip_half,subframe_offset,symbol_offset,re_offset,jj);
         allocate_REs_in_RB(phy_vars_eNB,
                            txdataF,
                            &jj,
@@ -1660,7 +1660,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset));
+  msg("generate_dlsch : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch0_harq->nb_rb,dlsch0_harq->rb_alloc,mod_order0,Nl0,2,0,subframe_offset,1/*transmission mode*/));
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_MODULATION, VCD_FUNCTION_OUT);
@@ -1759,7 +1759,7 @@ int mch_modulation(mod_sym_t **txdataF,
 
 
 #ifdef DEBUG_DLSCH_MODULATION
-  msg("generate_dlsch(MCH) : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->rb_alloc,mod_order,1,2,0,subframe_offset));
+  msg("generate_dlsch(MCH) : jj = %d,re_allocated = %d (G %d)\n",jj,re_allocated,get_G(frame_parms,dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->rb_alloc,mod_order,1,2,0,subframe_offset,1/*transmission mode*/));
 #endif
 
   return (re_allocated);
