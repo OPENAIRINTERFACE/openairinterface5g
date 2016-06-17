@@ -229,7 +229,7 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
                    uint8_t N_RB_DL,
                    uint16_t Nid_cell,
                    uint8_t cooperation_flag,uint8_t transmission_mode,uint8_t abstraction_flag,
-                   int nb_antennas_rx, uint8_t eMBMS_active_state)
+                   int nb_antennas_rx, int nb_antennas_tx, uint8_t eMBMS_active_state)
 {
 
   uint8_t eNB_id,UE_id,RN_id,CC_id;
@@ -252,10 +252,10 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
     (frame_parms[CC_id])->Ncp                = extended_prefix_flag;
     (frame_parms[CC_id])->Nid_cell           = Nid_cell;
     (frame_parms[CC_id])->nushift            = (Nid_cell%6);
-    (frame_parms[CC_id])->nb_antennas_tx     = (transmission_mode == 1) ? 1 : 2;
+    (frame_parms[CC_id])->nb_antennas_tx     = nb_antennas_tx;
+    (frame_parms[CC_id])->nb_antennas_rx     = nb_antennas_rx;
     (frame_parms[CC_id])->nb_antenna_ports_eNB = (transmission_mode == 1 || transmission_mode == 7) ? 1 : 2;
-    (frame_parms[CC_id])->nb_antennas_rx     = (transmission_mode == 1) ? 1 : 2;
-    (frame_parms[CC_id])->mode1_flag = (transmission_mode == 1) ? 1 : 0;
+    (frame_parms[CC_id])->mode1_flag           = (frame_parms[CC_id])->nb_antenna_ports_eNB==1 ? 1 : 0;
 
     init_frame_parms(frame_parms[CC_id],1);
 

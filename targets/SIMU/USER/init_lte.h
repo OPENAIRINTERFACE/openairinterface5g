@@ -57,4 +57,5 @@ void init_lte_vars(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs],
                    uint8_t transmission_mode,
                    uint8_t abstraction_flag,
                    int nb_antennas_rx,
+                   int nb_antennas_tx,
                    uint8_t eMBMS_active_state);
