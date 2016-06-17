@@ -33,9 +33,6 @@ typedef struct {
   pthread_mutex_t lock;
 } enb_data;
 
-#define DEFAULT_REMOTE_IP "127.0.0.1"
-#define DEFAULT_REMOTE_PORT 2021
-
 void is_on_changed(void *_d)
 {
   enb_data *d = _d;

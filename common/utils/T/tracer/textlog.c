@@ -14,9 +14,6 @@
 #include "event_selector.h"
 #include "config.h"
 
-#define DEFAULT_REMOTE_IP "127.0.0.1"
-#define DEFAULT_REMOTE_PORT 2021
-
 typedef struct {
   int socket;
   int *is_on;
