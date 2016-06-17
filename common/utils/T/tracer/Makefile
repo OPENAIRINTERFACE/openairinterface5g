@@ -5,10 +5,13 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 LIBS=-lX11 -lm -lpng -lXft
 
-all: record textlog enb vcd
+all: record replay textlog enb vcd
 
 record: utils.o record.o database.o config.o
 	$(CC) $(CFLAGS) -o record $^ $(LIBS)
+
+replay: utils.o replay.o
+	$(CC) $(CFLAGS) -o replay $^ $(LIBS)
 
 textlog: utils.o textlog.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
@@ -43,7 +46,7 @@ filter/filter.a:
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -f *.o core tracer_remote textlog enb vcd record
+	rm -f *.o core tracer_remote textlog enb vcd record replay
 	cd gui && make clean
 	cd view && make clean
 	cd logger && make clean
