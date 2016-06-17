@@ -2607,9 +2607,11 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       symbol_mask_full = (1<<fp->symbols_per_tti)-1;
       prach_rx = 0;
 
+      // Block from loop while testing
+      symbol_mask = symbol_mask_full;   
       do {
         //recv_IF4(eNB, proc, &packet_type, &symbol_number);
-        
+
         if (packet_type == IF4_PULFFT) {
           symbol_mask = symbol_mask | (1<<symbol_number);     
                        
