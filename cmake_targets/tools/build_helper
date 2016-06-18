@@ -213,7 +213,7 @@ install_gnutls_from_source(){
 
 check_install_usrp_uhd_driver(){
         #first we remove old installation
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove uhd libuhd-dev libuhd003 uhd-host -y
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         #The new USRP repository
@@ -267,7 +267,11 @@ check_install_additional_tools (){
 	ctags \
         ntpdate \
         iperf3 \
-        android-tools-adb
+        android-tools-adb \
+	wvdial \
+        python-numpy \
+        sshpass \
+        libxslt1-dev
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
@@ -363,12 +367,7 @@ check_install_oai_software() {
 	xmlstarlet \
 	python-pip \
 	pydb \
-	wget \
-	wvdial \
-        python-numpy \
-        sshpass \
-        libxslt1-dev \
-        android-tools-adb
+	wget
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
@@ -394,6 +393,7 @@ install_asn1c_from_source(){
     ./configure
     make -j`nproc`
     $SUDO make install
+    cd -
     ) > $asn1_install_log 2>&1
 }
 

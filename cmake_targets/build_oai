@@ -60,6 +60,7 @@ RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
 T_TRACER="False"
+DISABLE_HARDWARE_DEPENDENCY="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -132,6 +133,8 @@ Options
    Disables CPU Affinity between UHD/TX/RX Threads (Valid only when deadline scheduler is disabled). By defaulT, CPU Affinity is enabled when not using deadline scheduler. It is enabled only with >2 CPUs. For eNB, CPU_0-> Device library (UHD), CPU_1->TX Threads, CPU_2...CPU_MAX->Rx Threads. For UE, CPU_0->Device Library(UHD), CPU_1..CPU_MAX -> All the UE threads
 --T-tracer
    Enables the T tracer.
+--disable-hardware-dependency
+   Disable HW dependency during installation
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
