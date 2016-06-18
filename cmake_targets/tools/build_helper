@@ -328,14 +328,12 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c-r1516
-    mkdir -p /tmp/asn1c-r1516
-    cd /tmp/asn1c-r1516
-    rm -rf /tmp/asn1c-r1516/*
-    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 > /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 >> /tmp/log_compile_asn1c
+    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516
+    cd /tmp/asn1c-r1516 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 
+    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 
     ./configure
     make -j`nproc`
     $SUDO make install
