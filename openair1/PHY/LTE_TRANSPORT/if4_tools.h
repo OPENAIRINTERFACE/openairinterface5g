@@ -38,6 +38,10 @@
 * \warning
 */
 
+#include <stdint.h>
+
+/// Macro for IF4 packet type
+#define IF4_PACKET_TYPE 0x080A 
 #define IF4_PULFFT 0x0019 
 #define IF4_PDLFFT 0x0020
 #define IF4_PRACH 0x0021
@@ -103,7 +107,7 @@ struct IF4_dl_packet {
   /// Frame Status
   IF4_frame_status_t frame_status;
   /// Data Blocks
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs; 
 };
@@ -141,7 +145,7 @@ struct IF4_ul_packet {
   /// Gain 7
   IF4_gain_t gain7;
   /// Data Blocks
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };
@@ -163,7 +167,7 @@ struct IF4_prach_packet {
   /// LTE Prach Configuration
   IF4_lte_prach_conf_t prach_conf;
   /// Prach Data Block (one antenna)
-  uint16_t *data_block;
+  int16_t *data_block;
   /// Frame Check Sequence
   uint32_t fcs;
 };
@@ -177,6 +181,6 @@ void gen_IF4_ul_packet(IF4_ul_packet_t*, eNB_rxtx_proc_t*);
 
 void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
 
-void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*);
+void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t);
 
-void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, int*, int*);
+void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t*, uint32_t*);

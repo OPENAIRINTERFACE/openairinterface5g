@@ -139,6 +139,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
+#include "targets/ARCH/COMMON/common_lib.h"
+
 #define NUM_DCI_MAX 32
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
@@ -456,6 +458,11 @@ typedef struct PHY_VARS_eNB_s {
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
+  
+  /// RF and Interface devices per CC
+  openair0_device rfdevice; 
+  openair0_device ifdevice;
+  // *** Handle spatially distributed MIMO antenna ports   
 
 } PHY_VARS_eNB;
 
