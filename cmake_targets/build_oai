@@ -692,7 +692,9 @@ function main() {
 	      
 	      #add exmimo compilation
 	      #TODO EXMIMO library support
-	     
+	      compilations \
+		  $build_dir oai_exmimodevif \
+		  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_USRP" ] ; then
 	      if [ -d "/usr/include/uhd" ] ; then

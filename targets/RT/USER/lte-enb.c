@@ -129,7 +129,7 @@ extern volatile int             start_UE;
 #endif
 extern volatile int                    oai_exit;
 
-extern openair0_config_t openair0_cfg[MAX_CARDS];
+extern openair0_config_t *openair0_cfg;
 
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
@@ -1174,11 +1174,9 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 {
 
   int i, CC_id;
-#ifndef EXMIMO
+
   uint16_t N_TA_offset = 0;
-#else
-  int j;
-#endif
+
   LTE_DL_FRAME_PARMS *frame_parms;
 
 
@@ -1191,8 +1189,6 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       return(-1);
     }
 
-#ifndef EXMIMO
-
     if (frame_parms->frame_type == TDD) {
       if (frame_parms->N_RB_DL == 100)
         N_TA_offset = 624;
@@ -1202,8 +1198,9 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
         N_TA_offset = 624/4;
     }
 
-#endif
 
+
+    /*
     // replace RX signal buffers with mmaped HW versions
 #ifdef EXMIMO
     openair0_cfg[CC_id].tx_num_channels = 0;
@@ -1253,7 +1250,9 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       }
     }
 
-#else // not EXMIMO
+#else // not EXMIMO 
+    */
+
     rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
     txdata = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
 
@@ -1275,7 +1274,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 
     }
 
-#endif
+
   }
 
   return(0);
