@@ -159,7 +159,7 @@ int main(int n, char **v)
     char *name, *desc;
     database_get_generic_description(database, i, &name, &desc);
     textlog = new_textlog(h, database, name, desc);
-//        "ENB_UL_CHANNEL_ESTIMATE",
+//        "ENB_PHY_UL_CHANNEL_ESTIMATE",
 //        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
     logger_add_view(textlog, out);
     free(name);
