@@ -226,7 +226,22 @@ check_install_additional_tools (){
 	valgrind  \
 	vlan	  \
 	ctags \
-        ntpdate
+        ntpdate \
+        iperf3 \
+        android-tools-adb
+
+    $SUDO pip install paramiko
+    $SUDO pip install pyroute2
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+
+    echo "Installing Netinterfaces packge...."
+    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
+    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
+    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
+    cd /tmp/netifaces-0.10.4
+    $SUDO python setup.py install
+    cd -
 }
 
 check_install_oai_software() {
@@ -293,8 +308,7 @@ check_install_oai_software() {
         python-numpy \
         sshpass \
         libxslt1-dev \
-        android-tools-adb \
-        iperf3
+        android-tools-adb
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
@@ -303,11 +317,7 @@ check_install_oai_software() {
     install_nettle_from_source
     install_gnutls_from_source
 
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2
     install_asn1c_from_source
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
