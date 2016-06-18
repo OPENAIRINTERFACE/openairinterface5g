@@ -1,18 +1,18 @@
 <testCaseList>
 
-<MachineList>mozart calisson stevens nano amerique</MachineList>
+<MachineList>mozart tique stevens nano amerique</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
  <GitOAI5GRepoBranch>develop</GitOAI5GRepoBranch>
  <GitOpenair-cnRepoBranch>develop</GitOpenair-cnRepoBranch>
- <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim configure_cots* wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone</CleanUpOldProgs>	
+ <CleanUpOldProgs>oaisim oaisim_nos1 lte-softmodem lte-softmodem-nos1 mme_gw run_epc auth_request run_hss oai_hss mme spgw hss hss_sim configure_cots* wvdial  iperf iperf_script iperf_script_phone ping tshark rrh_gw iperf3 iperf3_script iperf3_script_phone pppd</CleanUpOldProgs>	
  <CleanUpAluLteBox>sudo -S -E /opt/ltebox/tools/stop_ltebox</CleanUpAluLteBox>
 <ExmimoRfStop>$OPENAIR_DIR/cmake_targets/build_oai -w EXMIMO -c; sudo -S -E $OPENAIR_DIR/cmake_targets/tools/stop_exmimo2; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_bandrich_ue.py --reset-ue; sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_huaweiE398_ue.py --reset-ue;  sudo -E $OPENAIR_DIR/cmake_targets/autotests/tools/configure_cots_sony_experia_m4_ue.py --stop-ue; uname -a; sudo -E dmesg</ExmimoRfStop>
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>010141 0102+ 010304 010305 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015602 015605 015702 015705 015802 015805 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505 025502 025505</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
- <MachineListGeneric>mozart calisson stevens nano amerique</MachineListGeneric>
+ <MachineListGeneric>mozart tique stevens nano amerique</MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
@@ -874,7 +874,7 @@
   <testCase id="015500" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>tique</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -891,10 +891,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.147/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.147/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
@@ -966,10 +966,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.147/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.147/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
@@ -1097,7 +1097,7 @@
   <testCase id="015503" >
     <class>lte-softmodem</class>
     <desc></desc>
-    <eNB>calisson</eNB>
+    <eNB>tique</eNB>
     <UE>stevens</UE>
     <EPC>amerique</EPC>
     <TimeOut_cmd>390</TimeOut_cmd>
@@ -1114,10 +1114,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.147/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.147/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
@@ -1187,10 +1187,10 @@
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  frame_type \"FDD\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_rx  1
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  nb_antennas_tx 1
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.82/24\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth5\"
-                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.82/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1_MME       \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1_MME          \"192.168.12.147/24\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_INTERFACE_NAME_FOR_S1U          \"eth1\"
+                     targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_IPV4_ADDRESS_FOR_S1U           \"192.168.12.147/24\"
                      targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.usrpb210.conf  ENB_PORT_FOR_S1U                     2152</eNB_config_file>
     <eNB_compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</eNB_compile_prog>
     <eNB_compile_prog_args>--eNB -w USRP -x -c </eNB_compile_prog_args>
