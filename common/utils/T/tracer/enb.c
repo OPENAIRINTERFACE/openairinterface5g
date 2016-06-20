@@ -132,7 +132,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
    */
   framelog_set_skip(input_signal_log, 10);
   input_signal_view = new_view_xy(7680*10, 10,
-      g, input_signal_plot, new_color(g, "#0c0c72"));
+      g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
 
   /* downlink/uplink UE DCIs */
