@@ -93,7 +93,7 @@ struct IF4_lte_prach_conf {
 typedef struct IF4_lte_prach_conf IF4_lte_prach_conf_t;
 #define sizeof_IF4_lte_prach_conf_t 4
 
-struct IF4_dl_packet {
+struct IF4_dl_header {
   /// Destination Address
   
   /// Source Address
@@ -107,15 +107,15 @@ struct IF4_dl_packet {
   /// Frame Status
   IF4_frame_status_t frame_status;
   /// Data Blocks
-  int16_t *data_block;
+
   /// Frame Check Sequence
-  uint32_t fcs; 
+
 };
 
-typedef struct IF4_dl_packet IF4_dl_packet_t;
-#define sizeof_IF4_dl_packet_t 18 
+typedef struct IF4_dl_header IF4_dl_header_t;
+#define sizeof_IF4_dl_header_t 12 
 
-struct IF4_ul_packet {
+struct IF4_ul_header {
   /// Destination Address
   
   /// Source Address
@@ -145,15 +145,15 @@ struct IF4_ul_packet {
   /// Gain 7
   IF4_gain_t gain7;
   /// Data Blocks
-  int16_t *data_block;
+
   /// Frame Check Sequence
-  uint32_t fcs;
+
 };
 
-typedef struct IF4_ul_packet IF4_ul_packet_t;
-#define sizeof_IF4_ul_packet_t 34 
+typedef struct IF4_ul_header IF4_ul_header_t;
+#define sizeof_IF4_ul_header_t 28 
 
-struct IF4_prach_packet {
+struct IF4_prach_header {
   /// Destination Address 
   
   /// Source Address
@@ -167,19 +167,19 @@ struct IF4_prach_packet {
   /// LTE Prach Configuration
   IF4_lte_prach_conf_t prach_conf;
   /// Prach Data Block (one antenna)
-  int16_t *data_block;
+
   /// Frame Check Sequence
-  uint32_t fcs;
+
 };
 
-typedef struct IF4_prach_packet IF4_prach_packet_t;
-#define sizeof_IF4_prach_packet_t 18
+typedef struct IF4_prach_header IF4_prach_header_t;
+#define sizeof_IF4_prach_header_t 12
 
-void gen_IF4_dl_packet(IF4_dl_packet_t*, eNB_rxtx_proc_t*);
+void gen_IF4_dl_header(IF4_dl_header_t*, eNB_rxtx_proc_t*);
 
-void gen_IF4_ul_packet(IF4_ul_packet_t*, eNB_rxtx_proc_t*);
+void gen_IF4_ul_header(IF4_ul_header_t*, eNB_rxtx_proc_t*);
 
-void gen_IF4_prach_packet(IF4_prach_packet_t*, eNB_rxtx_proc_t*);
+void gen_IF4_prach_header(IF4_prach_header_t*, eNB_rxtx_proc_t*);
 
 void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t);
 
