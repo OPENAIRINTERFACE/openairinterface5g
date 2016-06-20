@@ -140,7 +140,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
   //sendto_flag|=flags;
 
   eth->tx_nsamps=nsamps;
-
+  
   for (i=0;i<cc;i++) {	
     /* buff[i] points to the position in tx buffer where the payload to be sent is
        buff2 points to the position in tx buffer where the packet header will be placed */
@@ -196,6 +196,48 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
   }
   return (bytes_sent-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES)>>2;
 }
+
+
+
+int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  int nblocks = nsamps;  
+  int bytes_sent = 0;
+  
+  eth_state_t *eth = (eth_state_t*)device->priv;
+  int Mod_id = device->Mod_id;  
+  
+  ssize_t packet_size;
+  
+  if (flags == IF4_PDLFFT) {
+    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF4_PULFFT) {
+    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);    
+  } else {
+    packet_size = RAW_IF4_PRACH_SIZE_BYTES(nblocks);
+  }
+  
+  eth->tx_nsamps = nblocks;
+  
+  memcpy(buff[0], (void*)&eh, MAC_HEADER_SIZE_BYTES);	
+         
+  bytes_sent = send(eth->sockfd[Mod_id],
+                    buff[0], 
+                    packet_size,
+                    0);
+  
+  if (bytes_sent == -1) {
+    eth->num_tx_errors++;
+    perror("ETHERNET WRITE: ");
+    exit(-1);
+  } else {
+    eth->tx_actual_nsamps = bytes_sent>>1;
+    eth->tx_count++;
+  }
+  
+  return (bytes_sent-MAC_HEADER_SIZE_BYTES);  	  
+}
+
 
 
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
@@ -256,7 +298,55 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
   return (bytes_received-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES)>>2;
 }
 
- 
+
+
+int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
+
+  int bytes_received=0;
+  int i=0;
+  eth_state_t *eth = (eth_state_t*)device->priv;
+  int Mod_id = device->Mod_id;
+  int rcvfrom_flag =0;
+  
+  eth->rx_nsamps=nsamps;
+
+      /* buff[i] points to the position in rx buffer where the payload to be received will be placed
+	 buff2 points to the position in rx buffer where the packet header will be placed */
+      void *buff2 = (void*)(buff[i]-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES); 
+      
+      /* we don't want to ovewrite with the header info the previous rx buffer data so we store it*/
+      struct ether_header temp =  *(struct ether_header *)buff2;
+      int32_t temp0 = *(int32_t *)(buff2 + MAC_HEADER_SIZE_BYTES);
+      openair0_timestamp  temp1 = *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));
+      
+      bytes_received=0;
+      
+      while(bytes_received < RAW_PACKET_SIZE_BYTES(nsamps)) {
+	bytes_received +=recv(eth->sockfd[Mod_id],
+			      buff2,
+			      RAW_PACKET_SIZE_BYTES(nsamps),
+			      rcvfrom_flag);
+	
+	if (bytes_received ==-1) {
+	  eth->num_rx_errors++;
+	  perror("ETHERNET READ: ");
+	  exit(-1);	
+	} else {
+	  /* store the timestamp value from packet's header */
+	  *timestamp =  *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));  
+	  eth->rx_actual_nsamps=bytes_received>>2;   
+	  eth->rx_count++;
+	}
+      }
+      
+     /* tx buffer values restored */  
+      *(struct ether_header *)buff2 = temp;
+      *(int32_t *)(buff2 + MAC_HEADER_SIZE_BYTES) = temp0;
+      *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)) = temp1;
+
+  return (bytes_received-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES)>>2;
+}
+
 
 
 int eth_set_dev_conf_raw(openair0_device *device) {

@@ -54,6 +54,8 @@
 
 #define ETH_RAW_MODE        1
 #define ETH_UDP_MODE        0
+#define ETH_RAW_IF4_MODE    3
+#define ETH_UDP_IF4_MODE    2
 
 #define TX_FLAG	        1
 #define RX_FLAG 	0
@@ -65,6 +67,10 @@
 #define UDP_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
 #define RAW_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
 
+#define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (2*scaled_nblocks)
+#define RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define RAW_IF4_PULFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_ul_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define RAW_IF4_PRACH_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_prach_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 
 /*!\brief opaque ethernet data structure */
 typedef struct {
@@ -212,6 +218,8 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value);
 int eth_socket_init_udp(openair0_device *device);
 int trx_eth_write_udp(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+//int trx_eth_write_udp_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+//int trx_eth_read_udp_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_udp(openair0_device *device);
 
 /*! \fn static int eth_set_dev_conf_udp(openair0_device *device)
@@ -226,6 +234,8 @@ int eth_set_dev_conf_udp(openair0_device *device);
 int eth_socket_init_raw(openair0_device *device);
 int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+//int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+//int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
 

@@ -313,8 +313,14 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
 
   if (eth_params->transp_preference == 1) {
     eth->flags = ETH_RAW_MODE;
-  } else {
+  } else if (eth_params->transp_preference == 0) {
     eth->flags = ETH_UDP_MODE;
+  } else if (eth_params->transp_preference == 3) {
+    eth->flags = ETH_RAW_IF4_MODE;
+  } else if (eth_params->transp_preference == 2) {
+    eth->flags = ETH_UDP_IF4_MODE;
+  } else {
+    AssertFatal(0==4, "transport_init: Unknown transport preference %d", eth_params->transp_preference);
   }
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
@@ -330,14 +336,21 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->trx_set_freq_func = trx_eth_set_freq;
   device->trx_set_gains_func = trx_eth_set_gains;
 
-  if ((eth->flags & ETH_RAW_MODE) != 0 ) {
+  /// handle if4 eth read and write functions
+  if (eth->flags == ETH_RAW_MODE) {
     device->trx_write_func   = trx_eth_write_raw;
     device->trx_read_func    = trx_eth_read_raw;     
-  } else {
+  } else if (eth->flags == ETH_UDP_MODE) {
     device->trx_write_func   = trx_eth_write_udp;
     device->trx_read_func    = trx_eth_read_udp;     
+  } else if (eth->flags == ETH_RAW_IF4_MODE) {
+    device->trx_write_func   = trx_eth_write_raw_IF4;
+    device->trx_read_func    = trx_eth_read_raw_IF4;     
+  } else {
+    device->trx_write_func   = trx_eth_write_udp_IF4;
+    device->trx_read_func    = trx_eth_read_udp_IF4;     
   }
-
+    
   eth->if_name[device->Mod_id] = eth_params->local_if_name;
   device->priv = eth;
  	
