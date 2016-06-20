@@ -92,7 +92,8 @@ void usage(void)
   printf(
 "options:\n"
 "    -i <input file>           this option is mandatory\n"
-"    -p <port>                 wait connection on given port (default %d)\n",
+"    -p <port>                 wait connection on given port (default %d)\n"
+"    -w                        user must press a key after each sent event\n",
   DEFAULT_REMOTE_PORT
   );
   exit(1);
@@ -108,6 +109,7 @@ int main(int n, char **v)
   int socket;
   FILE *in;
   int do_send;
+  int do_wait = 0;
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();
@@ -115,6 +117,7 @@ int main(int n, char **v)
       { if (i > n-2) usage(); input_filename = v[++i]; continue; }
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-w")) { do_wait = 1; continue; }
     usage();
   }
 
@@ -169,6 +172,8 @@ int main(int n, char **v)
     if (do_send)
       if (socket_send(socket, v, vpos) != 0)
         { printf("ERROR: socket writing failed\n"); abort(); }
+
+    if (do_send && do_wait) getchar();
   }
 
   fclose(in);
