@@ -260,6 +260,7 @@ endif (${ENABLE_ITTI})
 
 add_boolean_option(RTAI False "Use RTAI")
 
+
 #############################
 # ASN.1 grammar C code generation & dependancies
 ################################
@@ -493,7 +494,7 @@ include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
 #set (option_HWEXMIMOLIB_lib "-l ")
 set(HWLIB_EXMIMO_SOURCE 
   ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
+#  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c
   )
 add_library(oai_exmimodevif MODULE ${HWLIB_EXMIMO_SOURCE} )
 
@@ -534,8 +535,8 @@ if (${RF_BOARD} STREQUAL "EXMIMO")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/")
   include_directories ("${OPENAIR_TARGETS}/ARCH/EXMIMO/DEFS/")
   set(HW_SOURCE ${HW_SOURCE}
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
+    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c)
+#    ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/gain_control.c)
   set(option_HW_lib "-rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_USRP")
@@ -596,7 +597,7 @@ endif (${TRANSP_PRO} STREQUAL "ETHERNET")
 
 include_directories ("${OPENAIR_TARGETS}/ARCH/COMMON")
 
-Message("LOWLATENCY flag  is ${LOWLATENCY}")
+Message("DEADLINE_SCHEDULER flag  is ${DEADLINE_SCHEDULER}")
 Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
@@ -610,7 +611,7 @@ add_boolean_option(RRC_DEFAULT_RAB_IS_AM False "set the RLC mode to AM for the d
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
 add_boolean_option(DISABLE_USE_NAS False "???")
-add_boolean_option(LOWLATENCY True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
+add_boolean_option(DEADLINE_SCHEDULER True "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
 add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_ADDRESS_FIX False "specific to oaisim: for nasmesh driver")
 add_boolean_option(NAS_NETLINK False "???? Must be True to compile nasmesh driver without rtai")
@@ -1478,9 +1479,9 @@ add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 	${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/pgm_link.c
 	)
 
-	add_library(OPENAIR0_LIB
-	  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
-	)
+#	add_library(OPENAIR0_LIB
+#	  ${OPENAIR_TARGETS}/ARCH/EXMIMO/USERSPACE/LIB/openair0_lib.c
+#	)
 
 	# System packages that are required
 	# We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/

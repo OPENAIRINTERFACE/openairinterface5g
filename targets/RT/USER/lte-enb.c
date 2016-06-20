@@ -127,7 +127,7 @@ extern volatile int             start_UE;
 #endif
 extern volatile int                    oai_exit;
 
-extern openair0_config_t openair0_cfg[MAX_CARDS];
+extern openair0_config_t *openair0_cfg;
 
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
@@ -307,8 +307,9 @@ static void* eNB_thread_rxtx( void* param ) {
 
   MSC_START_USE();
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
+
   unsigned int flags = 0;
   uint64_t runtime  = 850000 ;  
   uint64_t deadline = 1   *  1000000 ; // each tx thread will finish within 1ms
@@ -556,11 +557,10 @@ static void* eNB_thread_rxtx( void* param ) {
 
     stop_meas( &softmodem_stats_rxtx_sf );
 
-#ifdef LOWLATENCY
-    if (opp_enabled) {
-      if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
-      }
+#ifdef DEADLINE_SCHEDULER
+    if (opp_enabled){
+      if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime){
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_TX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
     }
 #endif 
 
@@ -623,7 +623,7 @@ static void* eNB_thread_rx_common( void* param ) {
 
   MSC_START_USE();
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 870000 ;
@@ -710,8 +710,10 @@ static void* eNB_thread_rx_common( void* param ) {
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
 	 "???",
 	 sparam.sched_priority, cpu_affinity);
-    
-#endif // LOWLATENCY
+  
+  
+#endif // DEADLINE_SCHEDULER
+
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -797,16 +799,18 @@ static void* eNB_thread_rx_common( void* param ) {
       break;
     }       
    
-    stop_meas( &softmodem_stats_rxtx_sf );
 
-#ifdef LOWLATENCY
+    stop_meas( &softmodem_stats_rxtx_sf );
+#ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
       if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime){
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
       }
     }
-#endif // LOWLATENCY  
-
+#endif // DEADLINE_SCHEDULER  
+    print_meas_now(&softmodem_stats_rx_sf,"eNB_RX_SF", rx_time_file);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
+    
     print_meas_now(&softmodem_stats_rx_sf,"eNB_RX_SF", rx_time_file);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
   }
@@ -835,7 +839,7 @@ static void* eNB_thread_prach( void* param ) {
 
   MSC_START_USE();
     
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   uint64_t runtime  = 870000 ;
@@ -922,8 +926,8 @@ static void* eNB_thread_prach( void* param ) {
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :
 	 "???",
 	 sparam.sched_priority, cpu_affinity);
-    
-#endif // LOWLATENCY
+  
+#endif // DEADLINE_SCHEDULER
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -990,7 +994,7 @@ void init_eNB_proc(void) {
 
     proc = &eNB->proc;
     proc_rxtx = proc->proc_rxtx;
-#ifndef LOWLATENCY 
+#ifndef DEADLINE_SCHEDULER 
     /*  
 	pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
 	if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
@@ -1031,7 +1035,7 @@ void init_eNB_proc(void) {
     pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
     pthread_cond_init( &proc->cond_prach, NULL);
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
     pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
     pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
     pthread_create( &proc->pthread_rx, &proc->attr_rx, eNB_thread_rx_common, &eNB->proc );
@@ -1148,11 +1152,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
 
   int i, CC_id;
 
-#ifndef EXMIMO
   uint16_t N_TA_offset = 0;
-#else
-  int j;
-#endif
 
   LTE_DL_FRAME_PARMS *frame_parms;
 
@@ -1164,17 +1164,17 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       printf("phy_vars_eNB[%d] not initialized\n", CC_id);
       return(-1);
     }
-#ifndef EXMIMO
-  if (frame_parms->frame_type == TDD) {
-    if (frame_parms->N_RB_DL == 100)
-      N_TA_offset = 624;
-    else if (frame_parms->N_RB_DL == 50)
-      N_TA_offset = 624/2;
-    else if (frame_parms->N_RB_DL == 25)
-      N_TA_offset = 624/4;
-  }
-#endif
 
+    if (frame_parms->frame_type == TDD) {
+      if (frame_parms->N_RB_DL == 100)
+        N_TA_offset = 624;
+      else if (frame_parms->N_RB_DL == 50)
+        N_TA_offset = 624/2;
+      else if (frame_parms->N_RB_DL == 25)
+        N_TA_offset = 624/4;
+    }
+
+    /*
     // replace RX signal buffers with mmaped HW versions
 #ifdef EXMIMO
     openair0_cfg[CC_id].tx_num_channels = 0;
@@ -1224,7 +1224,9 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       }
     }
 
-#else // not EXMIMO
+#else // not EXMIMO 
+    */
+
     rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
     txdata = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
 
@@ -1243,7 +1245,7 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       memset(txdata[i],0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
       printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
     }
-#endif
+
 
   }
 

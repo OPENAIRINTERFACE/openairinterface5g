@@ -293,7 +293,8 @@ check_install_oai_software() {
         python-numpy \
         sshpass \
         libxslt1-dev \
-        android-tools-adb
+        android-tools-adb \
+        iperf3
 
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     

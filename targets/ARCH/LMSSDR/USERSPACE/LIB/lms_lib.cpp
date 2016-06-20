@@ -49,6 +49,9 @@
 
 #include <cmath>
 
+/** @addtogroup _LMSSDR_PHY_RF_INTERFACE_
+ * @{
+ */
 
 ///define for parameter enumeration if prefix might be needed
 #define LMS7param(id) id
@@ -69,6 +72,15 @@ extern "C"
 int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format);
 }
 
+/*! \brief Called to send samples to the LMSSDR RF target
+      \param device pointer to the device structure specific to the RF hardware target
+      \param timestamp The timestamp at whicch the first sample MUST be sent 
+      \param buff Buffer which holds the samples
+      \param nsamps number of samples to be sent
+      \param antenna_id index of the antenna
+      \param flags Ignored for the moment
+      \returns 0 on success
+*/ 
 int trx_lms_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int antenna_id, int flags) {
   
  LMS_TRxWrite((int16_t*)buff[0], nsamps,0, timestamp);
@@ -76,7 +88,17 @@ int trx_lms_write(openair0_device *device, openair0_timestamp timestamp, void **
  return nsamps;
 }
 
-
+/*! \brief Receive samples from hardware.
+ * Read \ref nsamps samples from each channel to buffers. buff[0] is the array for
+ * the first channel. *ptimestamp is the time at which the first sample
+ * was received.
+ * \param device the hardware to use
+ * \param[out] ptimestamp the time at which the first sample was received.
+ * \param[out] buff An array of pointers to buffers for received samples. The buffers must be large enough to hold the number of samples \ref nsamps.
+ * \param nsamps Number of samples. One sample is 2 byte I + 2 byte Q => 4 byte.
+ * \param antenna_id  Index of antenna port
+ * \returns number of samples read
+*/
 int trx_lms_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int antenna_id) {
     
   uint64_t timestamp;
@@ -87,6 +109,11 @@ int trx_lms_read(openair0_device *device, openair0_timestamp *ptimestamp, void *
 
   return ret;   
 }
+
+/*! \brief set RX gain offset from calibration table
+ * \param openair0_cfg RF frontend parameters set by application
+ * \param chain_index RF chain ID
+ */
 void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
 
   int i=0;
@@ -107,469 +134,12 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
   }
   
 }
-/*
-void calibrate_rf(openair0_device *device) {
 
-  openair0_timestamp ptimestamp;
-  int16_t *calib_buffp,*calib_tx_buffp;
-  int16_t calib_buff[2*RXDCLENGTH];
-  int16_t calib_tx_buff[2*RXDCLENGTH];
-  int i,j;
-  int8_t offI,offQ,offIold,offQold,offInew,offQnew,offphase,offphaseold,offphasenew,offgain,offgainold,offgainnew;
-  int32_t meanI,meanQ,meanIold,meanQold;
-  int cnt=0,loop;
-  liblms7_status opStatus;
-  int16_t dcoffi;
-  int16_t dcoffq;
-  int16_t dccorri;
-  int16_t dccorrq;
-    const int16_t firCoefs[] =
-    {
-        -2531,
-        -517,
-        2708,
-        188,
-        -3059,
-        216,
-        3569,
-        -770,
-        -4199,
-        1541,
-        4886,
-        -2577,
-        -5552,
-        3909,
-        6108,
-        -5537,
-        -6457,
-        7440,
-        6507,
-        -9566,
-        -6174,
-        11845,
-        5391,
-        -14179,
-        -4110,
-        16457,
-        2310,
-        -18561,
-        0,
-        20369,
-        -2780,
-        -21752,
-        5963,
-        22610,
-        -9456,
-        -22859,
-        13127,
-        22444,
-        -16854,
-        -21319,
-        20489,
-        19492,
-        -23883,
-        -17002,
-        26881,
-        13902,
-        -29372,
-        -10313,
-        31226,
-        6345,
-        -32380,
-        -2141,
-        32767,
-        -2141,
-        -32380,
-        6345,
-        31226,
-        -10313,
-        -29372,
-        13902,
-        26881,
-        -17002,
-        -23883,
-        19492,
-        20489,
-        -21319,
-        -16854,
-        22444,
-        13127,
-        -22859,
-        -9456,
-        22610,
-        5963,
-        -21752,
-        -2780,
-        20369,
-        0,
-        -18561,
-        2310,
-        16457,
-        -4110,
-        -14179,
-        5391,
-        11845,
-        -6174,
-        -9566,
-        6507,
-        7440,
-        -6457,
-        -5537,
-        6108,
-        3909,
-        -5552,
-        -2577,
-        4886,
-        1541,
-        -4199,
-        -770,
-        3569,
-        216,
-        -3059,
-        188,
-        2708,
-        -517,
-        -2531
-    };
-
-  j=0;
-  for (i=0;i<RXDCLENGTH;i++) {
-    calib_tx_buff[j++] = cos_fsover8[i&7];
-    calib_tx_buff[j++] = cos_fsover8[(i+6)&7];  // sin
-  }
-  calib_buffp = &calib_buff[0];
-  calib_tx_buffp = &calib_tx_buff[0];
-
-  lms7->BackupAllRegisters();
-  uint8_t ch = (uint8_t)lms7->Get_SPI_Reg_bits(LMS7param(MAC));
-  //Stage 1
-  uint8_t sel_band1_trf = (uint8_t)lms7->Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-  uint8_t sel_band2_trf = (uint8_t)lms7->Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
-  {
-    uint16_t requiredRegs[] = { 0x0400, 0x040A, 0x010D, 0x040C };
-    uint16_t requiredMask[] = { 0x6000, 0x3007, 0x0040, 0x00FF }; //CAPSEL, AGC_MODE, AGC_AVG, EN_DCOFF, Bypasses
-    uint16_t requiredValue[] = { 0x0000, 0x1007, 0x0040, 0x00BD };
-    
-    lms7->Modify_SPI_Reg_mask(requiredRegs, requiredMask, requiredValue, 0, 3);
-  }
-
-  //  opStatus = lms7->SetFrequencySX(LMS7002M::Rx, device->openair0_cfg[0].tx_freq[0]/1e6,30.72);
-  // put TX on fs/4
-  opStatus = lms7->CalibrateRxSetup(device->openair0_cfg[0].sample_rate/1e6);
-  if (opStatus != LIBLMS7_SUCCESS) {
-    printf("Cannot calibrate for %f MHz\n",device->openair0_cfg[0].sample_rate/1e6);
-    exit(-1);
-  }
-    // fill TX buffer with fs/8 complex sinusoid
-  offIold=offQold=64;
-  lms7->SetRxDCOFF(offIold,offQold);
-  LMS_RxStart();  
-  for (i=0;i<NUMBUFF;i++)
-    trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-
-  for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
-    meanIold+=calib_buff[j++];
-    meanQold+=calib_buff[j++];
-  }
-  meanIold/=RXDCLENGTH;
-  meanQold/=RXDCLENGTH;
-  printf("[LMS] RX DC: (%d,%d) => (%d,%d)\n",offIold,offQold,meanIold,meanQold);
-
-  offI=offQ=-64;
-  lms7->SetRxDCOFF(offI,offQ);
-
-  for (i=0;i<NUMBUFF;i++)
-    trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-
-  for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-    meanI+=calib_buff[j++];
-    meanQ+=calib_buff[j++];
-  }
-  meanI/=RXDCLENGTH;
-  meanQ/=RXDCLENGTH;
-  printf("[LMS] RX DC: (%d,%d) => (%d,%d)\n",offI,offQ,meanI,meanQ);
-
-  while (cnt++ < 7) {
-
-    offInew=(offIold+offI)>>1;
-    offQnew=(offQold+offQ)>>1;
-
-    if (meanI*meanI < meanIold*meanIold) {
-      meanIold = meanI;
-      offIold = offI;
-      printf("[LMS] *** RX DC: offI %d => %d\n",offIold,meanI);
-    }
-    if (meanQ*meanQ < meanQold*meanQold) {
-      meanQold = meanQ;
-      offQold = offQ;
-      printf("[LMS] *** RX DC: offQ %d => %d\n",offQold,meanQ);
-    }
-    offI = offInew;
-    offQ = offQnew;
-
-    lms7->SetRxDCOFF(offI,offQ);
-
-    for (i=0;i<NUMBUFF;i++)
-      trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-
-    for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-      meanI+=calib_buff[j++];
-      meanQ+=calib_buff[j++];
-    }
-    meanI/=RXDCLENGTH;
-    meanQ/=RXDCLENGTH;
-    printf("[LMS] RX DC: (%d,%d) => (%d,%d)\n",offI,offQ,meanI,meanQ);
-  }
-
-  if (meanI*meanI < meanIold*meanIold) {
-    meanIold = meanI;
-    offIold = offI;
-    printf("[LMS] *** RX DC: offI %d => %d\n",offIold,meanI);
-  }
-  if (meanQ*meanQ < meanQold*meanQold) {
-    meanQold = meanQ;
-    offQold = offQ;
-    printf("[LMS] *** RX DC: offQ %d => %d\n",offQold,meanQ);
-  }
-  
-  printf("[LMS] RX DC: (%d,%d) => (%d,%d)\n",offIold,offQold,meanIold,meanQold);
-  
-  lms7->SetRxDCOFF(offIold,offQold);
-
-  dcoffi = offIold;
-  dcoffq = offQold;
-
-  lms7->Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-  lms7->Modify_SPI_Reg_bits(LMS7param(AGC_MODE_RXTSP), 1);
-  lms7->Modify_SPI_Reg_bits(LMS7param(CAPSEL), 0);
-
-  // TX LO leakage
-  offQold=offIold=127;
-  lms7->SPI_write(0x0204,(((int16_t)offIold)<<7)|offQold);
-
-  {
-    uint16_t requiredRegs[] = { 0x0400, 0x040A, 0x010D, 0x040C };
-    uint16_t requiredMask[] = { 0x6000, 0x3007, 0x0040, 0x00FF }; //CAPSEL, AGC_MODE, AGC_AVG, EN_DCOFF, Bypasses
-    uint16_t requiredValue[] = { 0x0000, 0x1007, 0x0040, 0x00BD };
-    
-    lms7->Modify_SPI_Reg_mask(requiredRegs, requiredMask, requiredValue, 0, 3);
-  }
-  sel_band1_trf = (uint8_t)lms7->Get_SPI_Reg_bits(LMS7param(SEL_BAND1_TRF));
-  sel_band2_trf = (uint8_t)lms7->Get_SPI_Reg_bits(LMS7param(SEL_BAND2_TRF));
-  //B
-  lms7->Modify_SPI_Reg_bits(0x0100, 0, 0, 1); //EN_G_TRF 1
-  if (sel_band1_trf == 1)
-    {
-      lms7->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_1_RFE), 0); //PD_RLOOPB_1_RFE 0
-      lms7->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB1_RFE), 0); //EN_INSHSW_LB1 0
-    }
-  if (sel_band2_trf == 1)
-    {
-      lms7->Modify_SPI_Reg_bits(LMS7param(PD_RLOOPB_2_RFE), 0); //PD_RLOOPB_2_RFE 0
-      lms7->Modify_SPI_Reg_bits(LMS7param(EN_INSHSW_LB2_RFE), 0); // EN_INSHSW_LB2 0
-    }
-  //  FixRXSaturation();
-  
-  lms7->Modify_SPI_Reg_bits(LMS7param(GFIR3_BYP_RXTSP), 0); //GFIR3_BYP 0
-  lms7->Modify_SPI_Reg_bits(LMS7param(HBD_OVR_RXTSP), 2);
-  lms7->Modify_SPI_Reg_bits(LMS7param(GFIR3_L_RXTSP), 7);
-  lms7->Modify_SPI_Reg_bits(LMS7param(GFIR3_N_RXTSP), 7);
-  
-  lms7->SetGFIRCoefficients(LMS7002M::Rx, 2, firCoefs, sizeof(firCoefs) / sizeof(int16_t));
-    
-  for (i=0;i<NUMBUFF;i++) {
-    trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_lms_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
-  }
-
-  write_output("calibrx.m","rxs",calib_buffp,RXDCLENGTH,1,1);
-  exit(-1);
-  for (meanIold=meanQold=i=j=0;i<RXDCLENGTH;i++) {
-    switch (i&3) {
-    case 0:
-      meanIold+=calib_buff[j++];
-      break;
-    case 1:
-      meanQold+=calib_buff[j++];
-      break;
-    case 2:
-      meanIold-=calib_buff[j++];
-      break;
-    case 3:
-      meanQold-=calib_buff[j++];
-      break;
-    }
-  }
-  //  meanIold/=RXDCLENGTH;
-  //  meanQold/=RXDCLENGTH;
-  printf("[LMS] TX DC (offI): %d => (%d,%d)\n",offIold,meanIold,meanQold);
-
-  offI=-128;
-  lms7->SPI_write(0x0204,(((int16_t)offI)<<7)|offQold);
-
-  for (i=0;i<NUMBUFF;i++) {
-    trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_lms_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
-  }
-
-  for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-    switch (i&3) {
-    case 0:
-      meanI+=calib_buff[j++];
-      break;
-    case 1:
-      meanQ+=calib_buff[j++];
-      break;
-    case 2:
-      meanI-=calib_buff[j++];
-      break;
-    case 3:
-      meanQ-=calib_buff[j++];
-      break;
-    }
-  }
-  //  meanI/=RXDCLENGTH;
-  //  meanQ/=RXDCLENGTH;
-  printf("[LMS] TX DC (offI): %d => (%d,%d)\n",offI,meanI,meanQ);
-  cnt = 0;
-  while (cnt++ < 8) {
-
-    offInew=(offIold+offI)>>1;
-    if (meanI*meanI+meanQ*meanQ < meanIold*meanIold +meanQold*meanQold) {
-      printf("[LMS] TX DC (offI): ([%d,%d]) => %d : %d\n",offIold,offI,offInew,meanI*meanI+meanQ*meanQ);
-      meanIold = meanI;
-      meanQold = meanQ;
-      offIold = offI;
-    }
-    offI = offInew;
-    lms7->SPI_write(0x0204,(((int16_t)offI)<<7)|offQold);
-
-    for (i=0;i<NUMBUFF;i++) {
-      trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_lms_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
-    }
-
-    for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-      switch (i&3) {
-      case 0:
-	meanI+=calib_buff[j++];
-	break;
-      case 1:
-	meanQ+=calib_buff[j++];
-	break;
-      case 2:
-	meanI-=calib_buff[j++];
-	break;
-      case 3:
-	meanQ-=calib_buff[j++];
-	break;
-      }
-    }
-    //    meanI/=RXDCLENGTH;
-    //   meanQ/=RXDCLENGTH;
-    //    printf("[LMS] TX DC (offI): %d => (%d,%d)\n",offI,meanI,meanQ);
-  }
-
-
-  if (meanI*meanI+meanQ*meanQ < meanIold*meanIold +meanQold*meanQold) {
-    printf("[LMS] TX DC (offI): ([%d,%d]) => %d : %d\n",offIold,offI,offInew,meanI*meanI+meanQ*meanQ);
-    meanIold = meanI;
-    meanQold = meanQ;
-    offIold = offI;
-  }
-  offQ=-128;
-  lms7->SPI_write(0x0204,(((int16_t)offIold)<<7)|offQ);
-
-  for (i=0;i<NUMBUFF;i++) {
-    trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-    trx_lms_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
-  }
-
-  for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-    switch (i&3) {
-    case 0:
-      meanI+=calib_buff[j++];
-      break;
-    case 1:
-      meanQ+=calib_buff[j++];
-      break;
-    case 2:
-      meanI-=calib_buff[j++];
-      break;
-    case 3:
-      meanQ-=calib_buff[j++];
-      break;
-    }
-  }
-  //  meanI/=RXDCLENGTH;
-  //  meanQ/=RXDCLENGTH;
-  printf("[LMS] TX DC (offQ): %d => (%d,%d)\n",offQ,meanI,meanQ);
-
-  cnt=0;
-  while (cnt++ < 8) {
-
-    offQnew=(offQold+offQ)>>1;
-    if (meanI*meanI+meanQ*meanQ < meanIold*meanIold +meanQold*meanQold) {
-      printf("[LMS] TX DC (offQ): ([%d,%d]) => %d : %d\n",offQold,offQ,offQnew,meanI*meanI+meanQ*meanQ);
-
-      meanIold = meanI;
-      meanQold = meanQ;
-      offQold = offQ;
-    }
-    offQ = offQnew;
-    lms7->SPI_write(0x0204,(((int16_t)offIold)<<7)|offQ);
-
-
-    for (i=0;i<NUMBUFF;i++) {
-      trx_lms_read(device, &ptimestamp, (void **)&calib_buffp, RXDCLENGTH, 0);
-      trx_lms_write(device,ptimestamp+5*RXDCLENGTH, (void **)&calib_tx_buffp, RXDCLENGTH, 0, 0);
-    }
-
-    for (meanI=meanQ=i=j=0;i<RXDCLENGTH;i++) {
-      switch (i&3) {
-      case 0:
-	meanI+=calib_buff[j++];
-	break;
-      case 1:
-	meanQ+=calib_buff[j++];
-	break;
-      case 2:
-	meanI-=calib_buff[j++];
-	break;
-      case 3:
-	meanQ-=calib_buff[j++];
-	break;
-      }
-    }
-    //    meanI/=RXDCLENGTH;
-    //   meanQ/=RXDCLENGTH;
-    //    printf("[LMS] TX DC (offQ): %d => (%d,%d)\n",offQ,meanI,meanQ);
-  }
-
-  LMS_RxStop();
-
-  printf("[LMS] TX DC: (%d,%d) => (%d,%d)\n",offIold,offQold,meanIold,meanQold);
-
-  dccorri = offIold;
-  dccorrq = offQold;
-  
-  
-  lms7->RestoreAllRegisters();
-  lms7->Modify_SPI_Reg_bits(LMS7param(MAC), ch);
-
-  lms7->Modify_SPI_Reg_bits(LMS7param(DCOFFI_RFE), dcoffi);
-  lms7->Modify_SPI_Reg_bits(LMS7param(DCOFFQ_RFE), dcoffq);
-  lms7->Modify_SPI_Reg_bits(LMS7param(DCCORRI_TXTSP), dccorri);
-  lms7->Modify_SPI_Reg_bits(LMS7param(DCCORRQ_TXTSP), dccorrq);
-  //  lms7->Modify_SPI_Reg_bits(LMS7param(GCORRI_TXTSP), gcorri);
-  //  lms7->Modify_SPI_Reg_bits(LMS7param(GCORRQ_TXTSP), gcorrq);
-  //  lms7->Modify_SPI_Reg_bits(LMS7param(IQCORR_TXTSP), iqcorr);
-  
-  //  lms7->Modify_SPI_Reg_bits(LMS7param(DC_BYP_TXTSP), 0); //DC_BYP
-  lms7->Modify_SPI_Reg_bits(0x0208, 1, 0, 0); //GC_BYP PH_BYP
-  
-}
-*/
+/*! \brief Set Gains (TX/RX) on LMSSDR
+ * \param device the hardware to use
+ * \param openair0_cfg openair0 Config structure
+ * \returns 0 in success 
+ */
 
 int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) {
 
@@ -589,6 +159,10 @@ int trx_lms_set_gains(openair0_device* device, openair0_config_t *openair0_cfg) 
   return(0);
 }
 
+/*! \brief Start LMSSDR
+ * \param device the hardware to use 
+ * \returns 0 on success
+ */
 int trx_lms_start(openair0_device *device){
  
 
@@ -746,7 +320,10 @@ int trx_lms_start(openair0_device *device){
   return 0;
 }
 
-
+/*! \brief Stop LMSSDR
+ * \param card Index of the RF card to use 
+ * \returns 0 on success
+ */
 int trx_lms_stop(int card) {
   /*
   LMS_DeviceClose(usbport);
@@ -756,6 +333,12 @@ int trx_lms_stop(int card) {
   */
 }
 
+/*! \brief Set frequencies (TX/RX)
+ * \param device the hardware to use
+ * \param openair0_cfg openair0 Config structure (ignored. It is there to comply with RF common API)
+ * \param exmimo_dump_config (ignored)
+ * \returns 0 in success 
+ */
 int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
   //Control port must be connected 
    
@@ -768,6 +351,7 @@ int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,in
 }
 
 // 31 = 19 dB => 105 dB total gain @ 2.6 GHz
+/*! \brief calibration table for LMSSDR */
 rx_gain_calib_table_t calib_table_sodera[] = {
   {3500000000.0,70.0},
   {2660000000.0,80.0},
@@ -780,33 +364,30 @@ rx_gain_calib_table_t calib_table_sodera[] = {
 
 
 
-
-
+/*! \brief Get LMSSDR Statistics
+ * \param device the hardware to use
+ * \returns 0 in success 
+ */
 int trx_lms_get_stats(openair0_device* device) {
 
   return(0);
 
 }
 
+/*! \brief Reset LMSSDR Statistics
+ * \param device the hardware to use
+ * \returns 0 in success 
+ */
 int trx_lms_reset_stats(openair0_device* device) {
 
   return(0);
 
 }
 
-int openair0_set_gains(openair0_device* device, 
-		       openair0_config_t *openair0_cfg) {
 
-  return(0);
-}
-
-int openair0_set_frequencies(openair0_device* device, openair0_config_t *openair0_cfg, int dummy) {
-
-  return(0);
-}
-
-
-
+/*! \brief Terminate operation of the LMSSDR transceiver -- free all associated resources 
+ * \param device the hardware to use
+ */
 void trx_lms_end(openair0_device *device) {
 
 
@@ -877,3 +458,4 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg){
   return 0;
 }
 }
+/*@}*/

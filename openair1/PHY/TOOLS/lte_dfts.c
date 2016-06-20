@@ -6817,6 +6817,7 @@ void dft60(int16_t *x,int16_t *y,unsigned char scale)
 
     for (i=0; i<60; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
+      printf("y[%d] = (%d,%d)\n",i,((int16_t*)&y128[i])[0],((int16_t*)&y128[i])[1]);
     }
   }
 
@@ -18553,6 +18554,7 @@ int main(int argc, char**argv)
   simd_q15_t x[4096],y[4096],tw0,tw1,tw2,tw3;
 #endif
   int i;
+  simd_q15_t *x128=x,*y128=y;
 
   set_taus_seed(0);
   opp_enabled = 1;
@@ -18592,17 +18594,22 @@ int main(int argc, char**argv)
     ((int16_t *)&tw3)[5] = 0;
     ((int16_t *)&tw3)[6] = 32767;
     ((int16_t *)&tw3)[7] = 0;
-
+ */
     for (i=0;i<300;i++) {
 #if defined(__x86_64__) || defined(__i386__)
+#ifndef __AVX2__
       x[i] = _mm_set1_epi32(taus());
       x[i] = _mm_srai_epi16(x[i],4);
+#else
+      x[i] = _mm256_set1_epi32(taus());
+      x[i] = _mm256_srai_epi16(x[i],4);
+#endif
 #elif defined(__arm__)
       x[i] = (int16x8_t)vdupq_n_s32(taus());
       x[i] = vshrq_n_s16(x[i],4);
 #endif
     }
-
+      /*
     bfly2_tw1(x,x+1,y,y+1);
     printf("(%d,%d) (%d,%d) => (%d,%d) (%d,%d)\n",((int16_t*)&x[0])[0],((int16_t*)&x[0])[1],((int16_t*)&x[1])[0],((int16_t*)&x[1])[1],((int16_t*)&y[0])[0],((int16_t*)&y[0])[1],((int16_t*)&y[1])[0],((int16_t*)&y[1])[1]);
     printf("(%d,%d) (%d,%d) => (%d,%d) (%d,%d)\n",((int16_t*)&x[0])[0],((int16_t*)&x[0])[1],((int16_t*)&x[1])[0],((int16_t*)&x[1])[1],((int16_t*)&y[0])[2],((int16_t*)&y[0])[3],((int16_t*)&y[1])[2],((int16_t*)&y[1])[3]);
@@ -18743,27 +18750,27 @@ int main(int argc, char**argv)
     for (i=0;i<48;i++)
       printf("%d,%d,",((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
     printf("\n");
-
+ */
     dft60((int16_t *)x,(int16_t *)y,1);
     printf("\n\n60-point\n");
     printf("X: ");
     for (i=0;i<60;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<60;i++)
-      printf("%d,%d,",((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    
     dft72((int16_t *)x,(int16_t *)y,1);
     printf("\n\n72-point\n");
     printf("X: ");
     for (i=0;i<72;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<72;i++)
-      printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d: %d,%d\n",i,((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    /*
     dft96((int16_t *)x,(int16_t *)y,1);
     printf("\n\n96-point\n");
     printf("X: ");
@@ -18783,17 +18790,17 @@ int main(int argc, char**argv)
     for (i=0;i<108;i++)
       printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
     printf("\n");
-
+    */
     dft120((int16_t *)x,(int16_t *)y,1);
     printf("\n\n120-point\n");
     printf("X: ");
     for (i=0;i<120;i++)
-      printf("%d,%d,",((int16_t*)(&x[i]))[0],((int16_t *)(&x[i]))[1]);
+      printf("%d,%d,",((int16_t*)(&x128[i]))[0],((int16_t *)(&x128[i]))[1]);
     printf("\nY:");
     for (i=0;i<120;i++)
-      printf("%d: %d,%d\n",i,((int16_t*)(&y[i]))[0],((int16_t *)(&y[i]))[1]);
+      printf("%d: %d,%d\n",i,((int16_t*)(&y128[i]))[0],((int16_t *)(&y128[i]))[1]);
     printf("\n");
-
+    /*
     dft144((int16_t *)x,(int16_t *)y,1);
     printf("\n\n144-point\n");
     printf("X: ");

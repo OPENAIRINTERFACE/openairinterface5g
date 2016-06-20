@@ -608,8 +608,9 @@ l2l1_task (void *args_p)
   start_meas (&oaisim_stats);
 
   for (frame = 0;
-       (l2l1_state != L2L1_TERMINATED)
-       && (frame < oai_emulation.info.n_frames);
+       (l2l1_state != L2L1_TERMINATED) &&
+	 ((oai_emulation.info.n_frames_flag == 0) ||
+	  (frame < oai_emulation.info.n_frames));
        frame++) {
 
 #if defined(ENABLE_ITTI)
@@ -671,12 +672,6 @@ l2l1_task (void *args_p)
     //oai_emulation.info.time_ms += 1;
     oai_emulation.info.time_s += 0.01; // emu time in s, each frame lasts for 10 ms // JNote: TODO check the coherency of the time and frame (I corrected it to 10 (instead of 0.01)
 
-    // if n_frames not set by the user or is greater than max num frame then set adjust the frame counter
-    if ((oai_emulation.info.n_frames_flag == 0)
-        || (oai_emulation.info.n_frames >= 0xffff)) {
-      frame %= (oai_emulation.info.n_frames - 1);
-    }
-
     update_omg (frame); // frequency is defined in the omg_global params configurable by the user
 
     update_omg_ocm ();
@@ -708,7 +703,7 @@ l2l1_task (void *args_p)
       wait_for_slot_isr ();
 
 #if defined(ENABLE_ITTI)
-      itti_update_lte_time(frame, slot);
+      itti_update_lte_time(frame % MAX_FRAME_NUMBER, slot);
 #endif
 
       last_slot = (slot - 1) % 20;
@@ -748,7 +743,7 @@ l2l1_task (void *args_p)
               LOG_D(EMU,
                     "PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
                     eNB_inst,
-                    frame,
+                    frame % MAX_FRAME_NUMBER,
                     slot,
                     PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_tx,
                     PHY_vars_eNB_g[eNB_inst][0]->proc[slot >> 1].subframe_rx,
@@ -823,27 +818,27 @@ l2l1_task (void *args_p)
             {
               LOG_D(EMU,
                     "PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                    UE_inst, frame, slot, next_slot >> 1,
+                    UE_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,
                     last_slot >> 1);
 
               if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0]
                   != NOT_SYNCHED) {
                 if (frame > 0) {
-                  PHY_vars_UE_g[UE_inst][0]->frame_rx = frame;
+                  PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
                   PHY_vars_UE_g[UE_inst][0]->slot_rx =  last_slot;
                   PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
 
                   if (next_slot > 1)
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame;
+                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
                   else
-                    PHY_vars_UE_g[UE_inst][0]->frame_tx = frame + 1;
+                    PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame + 1) % MAX_FRAME_NUMBER;
 
 #ifdef OPENAIR2
                   //Application
                   update_otg_UE (UE_inst, oai_emulation.info.time_ms);
 
                   //Access layer
-		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame, next_slot);
+		  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, next_slot);
                   pdcp_run (&ctxt);
 #endif
 
@@ -895,7 +890,7 @@ l2l1_task (void *args_p)
 
               if(last_slot==2 && frame%10==0) {
                 if (UE_stats_th[UE_inst]) {
-                  fprintf(UE_stats_th[UE_inst],"%d %d\n",frame, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
+                  fprintf(UE_stats_th[UE_inst],"%d %d\n",frame % MAX_FRAME_NUMBER, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
                 }
               }
 
@@ -929,7 +924,7 @@ l2l1_task (void *args_p)
             exit(-1);
           }
 
-          PHY_vars_RN_g[RN_id]->frame = frame;
+          PHY_vars_RN_g[RN_id]->frame = frame % MAX_FRAME_NUMBER;
 
           if ( oai_emulation.info.frame_type == 0) {
             // RN == UE
@@ -937,12 +932,12 @@ l2l1_task (void *args_p)
               if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0] != NOT_SYNCHED) {
                 LOG_D(EMU,"[RN %d] PHY procedures UE %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
                       RN_id, UE_inst, frame, slot, next_slot >> 1,last_slot>>1);
-                PHY_vars_UE_g[UE_inst][0]->frame_rx = frame;
+                PHY_vars_UE_g[UE_inst][0]->frame_rx = frame % MAX_FRAME_NUMBER;
                 PHY_vars_UE_g[UE_inst][0]->slot_rx = last_slot;
                 PHY_vars_UE_g[UE_inst][0]->slot_tx = next_slot;
 
-                if (next_slot>1) PHY_vars_UE_g[UE_inst][0]->frame_tx = frame;
-                else PHY_vars_UE_g[UE_inst][0]->frame_tx = frame+1;
+                if (next_slot>1) PHY_vars_UE_g[UE_inst][0]->frame_tx = frame % MAX_FRAME_NUMBER;
+                else PHY_vars_UE_g[UE_inst][0]->frame_tx = (frame+1) % MAX_FRAME_NUMBER;
 
                 phy_procedures_UE_lte (PHY_vars_UE_g[UE_inst][0], 0, abstraction_flag,normal_txrx,
                                        r_type, PHY_vars_RN_g[RN_id]);
@@ -953,7 +948,7 @@ l2l1_task (void *args_p)
 
             // RN == eNB
             LOG_D(EMU,"[RN %d] PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d)\n",
-                  RN_id, eNB_inst, frame, slot, next_slot >> 1,last_slot>>1);
+                  RN_id, eNB_inst, frame % MAX_FRAME_NUMBER, slot, next_slot >> 1,last_slot>>1);
             phy_procedures_eNB_lte(slot>>1, PHY_vars_eNB_g[eNB_inst], abstraction_flag,
                                    r_type, PHY_vars_RN_g[RN_id]);
           } else {
@@ -963,7 +958,7 @@ l2l1_task (void *args_p)
         }
 
 #endif
-        emu_transport (frame, last_slot, next_slot, direction,
+        emu_transport (frame % MAX_FRAME_NUMBER, last_slot, next_slot, direction,
                        oai_emulation.info.frame_type[0], ethernet_flag);
 
         if ((direction == SF_DL)
@@ -1009,7 +1004,7 @@ l2l1_task (void *args_p)
                        enb_data, ue_data, next_slot,
                        abstraction_flag,
                        &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                       frame, CC_id);
+                       frame % MAX_FRAME_NUMBER, CC_id);
           }
 
           stop_meas (&ul_chan_stats);
@@ -1078,7 +1073,7 @@ l2l1_task (void *args_p)
                          next_slot,
                          abstraction_flag,
                          &PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
-                         frame, CC_id);
+                         frame % MAX_FRAME_NUMBER, CC_id);
             }
 
             stop_meas (&ul_chan_stats);
@@ -1095,7 +1090,7 @@ l2l1_task (void *args_p)
           }
         }
 
-        if ((last_slot == 1) && (frame == 0) && (abstraction_flag == 0)
+        if ((last_slot == 1) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
             && (oai_emulation.info.n_frames == 1)) {
 
           write_output ("dlchan0.m",
@@ -1143,40 +1138,40 @@ l2l1_task (void *args_p)
         &&(Channel_Flag==0)
 #endif
        ) {
-      sprintf (fname, "UEtxsig%d.m", frame);
-      sprintf (vname, "txs%d", frame);
+      sprintf (fname, "UEtxsig%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_UE_g[0][0]->lte_ue_common_vars.txdata[0],
                     PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
                     * 10,
                     1, 1);
-      sprintf (fname, "eNBtxsig%d.m", frame);
-      sprintf (vname, "txs%d", frame);
+      sprintf (fname, "eNBtxsig%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "txs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdata[0][0],
                     PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
                     * 10,
                     1, 1);
-      sprintf (fname, "eNBtxsigF%d.m", frame);
-      sprintf (vname, "txsF%d", frame);
+      sprintf (fname, "eNBtxsigF%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "txsF%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.txdataF[0][0],
                     PHY_vars_eNB_g[0][0]->lte_frame_parms.symbols_per_tti
                     * PHY_vars_eNB_g[0][0]->lte_frame_parms.ofdm_symbol_size,
                     1, 1);
-      sprintf (fname, "UErxsig%d.m", frame);
-      sprintf (vname, "rxs%d", frame);
+      sprintf (fname, "UErxsig%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_UE_g[0][0]->lte_ue_common_vars.rxdata[0],
                     PHY_vars_UE_g[0][0]->lte_frame_parms.samples_per_tti
                     * 10,
                     1, 1);
-      sprintf (fname, "eNBrxsig%d.m", frame);
-      sprintf (vname, "rxs%d", frame);
+      sprintf (fname, "eNBrxsig%d.m", frame % MAX_FRAME_NUMBER);
+      sprintf (vname, "rxs%d", frame % MAX_FRAME_NUMBER);
       write_output (fname,
                     vname,
                     PHY_vars_eNB_g[0][0]->lte_eNB_common_vars.rxdata[0][0],
@@ -1209,7 +1204,7 @@ l2l1_task (void *args_p)
 #ifdef SMBV
 
     // Rohde&Schwarz SMBV100A vector signal generator
-    if ((frame == config_frames[0]) || (frame == config_frames[1]) || (frame == config_frames[2]) || (frame == config_frames[3])) {
+    if ((frame % MAX_FRAME_NUMBER == config_frames[0]) || (frame % MAX_FRAME_NUMBER == config_frames[1]) || (frame % MAX_FRAME_NUMBER == config_frames[2]) || (frame % MAX_FRAME_NUMBER == config_frames[3])) {
       smbv_frame_cnt++;
     }
 
@@ -1269,7 +1264,7 @@ main (int argc, char **argv)
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
   //default parameters
-  oai_emulation.info.n_frames = 0xffff; //1024;          //10;
+  oai_emulation.info.n_frames = MAX_FRAME_NUMBER; //1024;          //10;
   oai_emulation.info.n_frames_flag = 0; //fixme
   snr_dB = 30;
 
