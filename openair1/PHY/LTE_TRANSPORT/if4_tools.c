@@ -45,9 +45,8 @@
 #include "PHY/TOOLS/ALAW/alaw_lut.h"
 
 // --- Careful to handle buffer memory --- RAW/UDP modes --- PRACH variables and data
-void send_IF4(PHY_VARS_eNB *eNB, uint16_t packet_type) {
+void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  eNB_proc_t *proc = &eNB->proc;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
   int16_t *prachF = eNB->prach_vars.prachF;  
@@ -169,9 +168,8 @@ void send_IF4(PHY_VARS_eNB *eNB, uint16_t packet_type) {
   return;  		    
 }
 
-void recv_IF4(PHY_VARS_eNB *eNB, uint16_t *packet_type, uint32_t *symbol_number) {
+void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, uint32_t *symbol_number) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  eNB_proc_t *proc = &eNB->proc;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
 
@@ -251,7 +249,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, uint16_t *packet_type, uint32_t *symbol_number)
   return;   
 }
 
-void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_proc_t *proc) {      
+void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_rxtx_proc_t *proc) {      
   // Set Type and Sub-Type
   dl_packet->type = IF4_PACKET_TYPE; 
   dl_packet->sub_type = IF4_PDLFFT;
@@ -271,7 +269,7 @@ void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_proc_t *proc) {
 
 }
 
-void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, eNB_proc_t *proc) {  
+void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, eNB_rxtx_proc_t *proc) {  
   // Set Type and Sub-Type
   ul_packet->type = IF4_PACKET_TYPE; 
   ul_packet->sub_type = IF4_PULFFT;

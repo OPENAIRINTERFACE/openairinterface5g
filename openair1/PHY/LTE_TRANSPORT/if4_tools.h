@@ -175,12 +175,12 @@ struct IF4_prach_header {
 typedef struct IF4_prach_header IF4_prach_header_t;
 #define sizeof_IF4_prach_header_t 12
 
-void gen_IF4_dl_header(IF4_dl_header_t*, eNB_proc_t*);
+void gen_IF4_dl_header(IF4_dl_header_t*, eNB_rxtx_proc_t*);
 
-void gen_IF4_ul_header(IF4_ul_header_t*, eNB_proc_t*);
+void gen_IF4_ul_header(IF4_ul_header_t*, eNB_rxtx_proc_t*);
 
 void gen_IF4_prach_header(IF4_prach_header_t*, eNB_proc_t*);
 
-void send_IF4(PHY_VARS_eNB*, uint16_t);
+void send_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t);
 
-void recv_IF4(PHY_VARS_eNB*, uint16_t*, uint32_t*);
+void recv_IF4(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint16_t*, uint32_t*);
