@@ -96,7 +96,7 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
       			                                         1,
       			                                         1,
                                                      0)) < 0) {
-        perror("RCC : ETHERNET write");
+        perror("ETHERNET write");
       }
       
       slotoffsetF  += fp->ofdm_symbol_size;
@@ -142,35 +142,78 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
 }
 
 void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, uint32_t *symbol_number) {
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  int32_t **txdataF = eNB->common_vars.txdataF[0];
+  int32_t **rxdataF = eNB->common_vars.rxdataF[0];
+
+  uint16_t element_id;
+  uint16_t db_halflength; 
+  int slotoffsetF, blockoffsetF; 
 
   *packet_type = 0;
-  //int16_t *data_block=NULL;
+  void *rxbuffer=NULL;
+  int16_t *data_block=NULL;
    
   // Read packet(s) from the fronthaul    
-//    for(i=0; i<fp->symbols_per_tti; i++) {  
-//      if (dev->eth_dev.trx_read_func (&dev->eth_dev,
-//                                      timestamp_rx,
-//                                    rx_eNB,
-//                                      spp_eth,
-//                                      dev->eth_dev.openair0_cfg->rx_num_channels
-//                                      ) < 0) {
-//        perror("RRU : ETHERNET read");
-//      }
-//  printf("\n Recv IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
+  if (eNB->ifdevice.trx_read_func (&eNB->ifdevice,
+                                  symbol_number,
+                                  rxbuffer,
+                                  fp->symbols_per_tti,
+                                  eNB->ifdevice.openair0_cfg->rx_num_channels
+                                  ) < 0) {
+    perror("ETHERNET read");
+  }
 
-  //*packet_type = ;  
+  packet_type = (uint16_t*) (rxbuffer+2);  
   
   if (*packet_type == IF4_PDLFFT) {
+    data_block = (int16_t*) (rxbuffer+sizeof_IF4_dl_header_t);
       
-      // Apply reverse processing - decompression
-      // txAlawtolinear( Datablock )
-      
-      // Generate and return the OFDM symbols (txdataF)
-      // txDataF 
+    db_halflength = (12*fp->N_RB_DL)>>1;
     
+    // Calculate from received packet
+    slotoffsetF = (proc->subframe_tx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
+    
+    data_block = (int16_t*)malloc(db_halflength*sizeof(int16_t));
+
+    // Do decompression of the two parts and generate data blocks			
+    for (element_id=0; element_id<db_halflength; element_id++) {
+      txdataF[0][blockoffsetF+element_id]  = alaw2lin[ (data_block[element_id] & 0xff) ];
+      txdataF[0][blockoffsetF+element_id] |= alaw2lin[ (data_block[element_id]>>8) ]<<16;
+
+      txdataF[0][slotoffsetF+element_id]  = alaw2lin[ (data_block[element_id+db_halflength] & 0xff) ];
+      txdataF[0][slotoffsetF+element_id] |= alaw2lin[ (data_block[element_id+db_halflength]>>8) ]<<16;
+    }
+		
+    // Find and return symbol_number		 		
+    *symbol_number = 0;      
+        
   } else if (*packet_type == IF4_PULFFT) {
+    data_block = (int16_t*) (rxbuffer+sizeof_IF4_ul_header_t);
+      
+    db_halflength = (12*fp->N_RB_UL)>>1;
+    
+    // Calculate from received packet
+    slotoffsetF = (proc->subframe_rx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
+    
+    data_block = (int16_t*)malloc(db_halflength*sizeof(int16_t));
+
+    // Do decompression of the two parts and generate data blocks			
+    for (element_id=0; element_id<db_halflength; element_id++) {
+      rxdataF[0][blockoffsetF+element_id]  = alaw2lin[ (data_block[element_id] & 0xff) ];
+      rxdataF[0][blockoffsetF+element_id] |= alaw2lin[ (data_block[element_id]>>8) ]<<16;
+
+      rxdataF[0][slotoffsetF+element_id]  = alaw2lin[ (data_block[element_id+db_halflength] & 0xff) ];
+      rxdataF[0][slotoffsetF+element_id] |= alaw2lin[ (data_block[element_id+db_halflength]>>8) ]<<16;
+    }
+		
+    // Find and return symbol_number		 		
+    *symbol_number = 0;      
     
   } else if (*packet_type == IF4_PRACH) {
+    data_block = (int16_t*) (rxbuffer+sizeof_IF4_prach_header_t);
        
   } else {
     AssertFatal(1==0, "recv_IF4 - Unknown packet_type %x", *packet_type);            
