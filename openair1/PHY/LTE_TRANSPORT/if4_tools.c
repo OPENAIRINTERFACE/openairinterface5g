@@ -44,38 +44,34 @@
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/TOOLS/ALAW/alaw_lut.h"
 
-// Get device information
-void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
+// --- Careful to handle buffer memory --- RAW/UDP modes --- PRACH variables and data
+void send_IF4(PHY_VARS_eNB *eNB, uint16_t packet_type) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc = &eNB->proc;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
-  
-  IF4_dl_header_t *dl_header=NULL;
-  IF4_ul_header_t *ul_header=NULL;
-  IF4_prach_header_t *prach_header=NULL;   
-  
+  int16_t *prachF = eNB->prach_vars.prachF;  
+      
   uint16_t symbol_id, element_id;
-  uint16_t db_halflength; 
+  uint16_t db_fulllength, db_halflength; 
   int slotoffsetF, blockoffsetF; 
 
+  void *tx_buffer=NULL;
   int16_t *data_block=NULL;
-//  int16_t *txbuffer = (int16_t*)malloc(db_halflength*sizeof(int16_t));
 
   if (packet_type == IF4_PDLFFT) {
-    dl_header = (IF4_dl_header_t*)malloc(sizeof_IF4_dl_header_t);
-    gen_IF4_dl_header(dl_header, proc);
-		
-    db_halflength = (12*fp->N_RB_DL)>>1;
+    db_fulllength = 12*fp->N_RB_DL;
+    db_halflength = (db_fulllength)>>1;
     slotoffsetF = (proc->subframe_tx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
-    
-    printf("Problem here - db_half %d\n", db_halflength);
-    data_block = (int16_t*)malloc(db_halflength*sizeof(int16_t));
 
+    tx_buffer = malloc(/*SIZE_OF_MAC_BYTES +*/ sizeof_IF4_dl_header_t + db_fulllength*sizeof(int16_t));
+    IF4_dl_header_t *dl_header = (IF4_dl_header_t *)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/);
+    data_block = (int16_t*)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/ + sizeof_IF4_dl_header_t);
+
+    gen_IF4_dl_header(dl_header, proc);
+		    
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {
-      
-      printf("\n Send IF4 for frame %d, subframe %d and symbol %d\n", proc->frame_tx, proc->subframe_tx, symbol_id);
-
       // Do compression of the two parts and generate data blocks			
       for (element_id=0; element_id<db_halflength; element_id++) {
         data_block[element_id]  = lin2alaw[ (txdataF[0][blockoffsetF+element_id] & 0xffff) + 32768 ];          
@@ -88,32 +84,32 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
       // Update information in generated packet
       dl_header->frame_status.sym_num = symbol_id; 
 			
-      printf("\n Not even here !!\n");
-      // Write the packet(s) to the fronthaul
+      // Write the packet to the fronthaul
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                                     symbol_id,
-      			                                         &data_block,
-      			                                         1,
-      			                                         1,
-                                                     0)) < 0) {
-        perror("ETHERNET write");
+                                        symbol_id,
+                                        tx_buffer,
+                                        db_fulllength,
+      			                            1,
+                                        IF4_PDLFFT)) < 0) {
+        perror("ETHERNET write for IF4_PDLFFT\n");
       }
       
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
     }
   } else if (packet_type == IF4_PULFFT) {
-    ul_header = (IF4_ul_header_t*)malloc(sizeof_IF4_ul_header_t);
-    gen_IF4_ul_header(ul_header, proc);
-
-    db_halflength = (12*fp->N_RB_UL)>>1;
+    db_fulllength = 12*fp->N_RB_UL;
+    db_halflength = (db_fulllength)>>1;
     slotoffsetF = (proc->subframe_rx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
-		
-    data_block = (int16_t*)malloc(db_halflength*sizeof(int16_t));
+
+    tx_buffer = malloc(/*SIZE_OF_MAC_BYTES +*/ sizeof_IF4_dl_header_t + db_fulllength*sizeof(int16_t));
+    IF4_ul_header_t *ul_header = (IF4_ul_header_t *)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/);
+    data_block = (int16_t*)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/ + sizeof_IF4_ul_header_t);
+
+    gen_IF4_ul_header(ul_header, proc);
 
     for (symbol_id=0; symbol_id<fp->symbols_per_tti; symbol_id++) {			
-
       // Do compression of the two parts and generate data blocks - rxdataF		
       for (element_id=0; element_id<db_halflength; element_id++) {
         data_block[element_id]  = lin2alaw[ (rxdataF[0][blockoffsetF+element_id] & 0xffff) + 32768 ];          
@@ -127,22 +123,55 @@ void send_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t packet_type) {
       ul_header->frame_status.sym_num = symbol_id; 
 			
       // Write the packet(s) to the fronthaul 
+      if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
+                                        symbol_id,
+                                        tx_buffer,
+                                        db_fulllength,
+      			                            1,
+                                        IF4_PULFFT)) < 0) {
+        perror("ETHERNET write for IF4_PULFFT\n");
+      }
 
       slotoffsetF  += fp->ofdm_symbol_size;
       blockoffsetF += fp->ofdm_symbol_size;    
     }		
   } else if (packet_type == IF4_PRACH) {
-       
-       
+    // FIX: hard coded prach samples length
+    db_fulllength = 839;
+    slotoffsetF = (proc->subframe_tx)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+
+    tx_buffer = malloc(/*SIZE_OF_MAC_BYTES +*/ sizeof_IF4_prach_header_t + db_fulllength*sizeof(int16_t));
+    IF4_prach_header_t *prach_header = (IF4_prach_header_t *)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/);
+    data_block = (int16_t*)(tx_buffer /*+ MAC_HEADER_SIZE_BYTES*/ + sizeof_IF4_prach_header_t);
+
+    gen_IF4_prach_header(prach_header, proc);
+		    
+    // Do compression and generate data blocks			
+    for (element_id=0; element_id<db_fulllength; element_id++) {
+      data_block[element_id]  = lin2alaw[ (prachF[blockoffsetF+element_id] & 0xffff) + 32768 ];          
+      data_block[element_id] |= lin2alaw[ (prachF[blockoffsetF+element_id]>>16) + 32768 ]<<8;  
+    }
+              
+    // Write the packet to the fronthaul
+    if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
+                                      symbol_id,
+                                      tx_buffer,
+                                      db_fulllength,
+                                      1,
+                                      IF4_PRACH)) < 0) {
+      perror("ETHERNET write for IF4_PRACH\n");
+    }      
   } else {    
     AssertFatal(1==0, "send_IF4 - Unknown packet_type %x", packet_type);     
   }
   
+  free(tx_buffer);
   return;  		    
 }
 
-void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, uint32_t *symbol_number) {
+void recv_IF4(PHY_VARS_eNB *eNB, uint16_t *packet_type, uint32_t *symbol_number) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc = &eNB->proc;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
 
@@ -151,23 +180,22 @@ void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, u
   int slotoffsetF, blockoffsetF; 
 
   *packet_type = 0;
-  void *rxbuffer=NULL;
+  void *rx_buffer=NULL;
   int16_t *data_block=NULL;
    
   // Read packet(s) from the fronthaul    
-  if (eNB->ifdevice.trx_read_func (&eNB->ifdevice,
+  if (eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   symbol_number,
-                                  rxbuffer,
-                                  fp->symbols_per_tti,
-                                  eNB->ifdevice.openair0_cfg->rx_num_channels
-                                  ) < 0) {
+                                  rx_buffer,
+                                  0,
+                                  0) < 0) {
     perror("ETHERNET read");
   }
 
-  packet_type = (uint16_t*) (rxbuffer+2);  
+  packet_type = (uint16_t*) (rx_buffer+2);  
   
   if (*packet_type == IF4_PDLFFT) {
-    data_block = (int16_t*) (rxbuffer+sizeof_IF4_dl_header_t);
+    data_block = (int16_t*) (rx_buffer+sizeof_IF4_dl_header_t);
       
     db_halflength = (12*fp->N_RB_DL)>>1;
     
@@ -190,7 +218,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, u
     *symbol_number = 0;      
         
   } else if (*packet_type == IF4_PULFFT) {
-    data_block = (int16_t*) (rxbuffer+sizeof_IF4_ul_header_t);
+    data_block = (int16_t*) (rx_buffer+sizeof_IF4_ul_header_t);
       
     db_halflength = (12*fp->N_RB_UL)>>1;
     
@@ -213,16 +241,17 @@ void recv_IF4(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc, uint16_t *packet_type, u
     *symbol_number = 0;      
     
   } else if (*packet_type == IF4_PRACH) {
-    data_block = (int16_t*) (rxbuffer+sizeof_IF4_prach_header_t);
+    data_block = (int16_t*) (rx_buffer+sizeof_IF4_prach_header_t);
        
   } else {
     AssertFatal(1==0, "recv_IF4 - Unknown packet_type %x", *packet_type);            
   }
-
+  
+  free(rx_buffer);
   return;   
 }
 
-void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_rxtx_proc_t *proc) {      
+void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_proc_t *proc) {      
   // Set Type and Sub-Type
   dl_packet->type = IF4_PACKET_TYPE; 
   dl_packet->sub_type = IF4_PDLFFT;
@@ -242,7 +271,7 @@ void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, eNB_rxtx_proc_t *proc) {
 
 }
 
-void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, eNB_rxtx_proc_t *proc) {  
+void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, eNB_proc_t *proc) {  
   // Set Type and Sub-Type
   ul_packet->type = IF4_PACKET_TYPE; 
   ul_packet->sub_type = IF4_PULFFT;
@@ -266,7 +295,7 @@ void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, eNB_rxtx_proc_t *proc) {
 
 }
 
-void gen_IF4_prach_header(IF4_prach_header_t *prach_packet, eNB_rxtx_proc_t *proc) {
+void gen_IF4_prach_header(IF4_prach_header_t *prach_packet, eNB_proc_t *proc) {
   // Set Type and Sub-Type
   prach_packet->type = IF4_PACKET_TYPE; 
   prach_packet->sub_type = IF4_PRACH;
