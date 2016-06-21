@@ -56,7 +56,6 @@
 #define RX_FLAG 	0
 
 #include "if_defs.h"
-#define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))
 #define APP_HEADER_SIZE_BYTES (sizeof(int32_t) + sizeof(openair0_timestamp))
 
 /*!\brief opaque ethernet data structure */
@@ -113,6 +112,8 @@ typedef struct {
   uint64_t tx_count; 
   /*!\brief number of packets received */
   uint64_t rx_count;
+
+  struct ether_header eh; 
 
 } eth_state_t;
 

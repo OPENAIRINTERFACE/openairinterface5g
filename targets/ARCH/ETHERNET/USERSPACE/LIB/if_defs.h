@@ -38,6 +38,8 @@
 * \warning
 */
 
+#include <netinet/ether.h>
+
 // ETH transport preference modes
 #define ETH_UDP_MODE        0
 #define ETH_RAW_MODE        1
@@ -45,6 +47,7 @@
 #define ETH_RAW_IF4_MODE    3
 
 // Time domain RRH packet sizes
+#define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))
 #define MAX_PACKET_SEQ_NUM(spp,spf) (spf/spp)
 #define PAYLOAD_SIZE_BYTES(nsamps) (nsamps<<2)
 #define UDP_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
