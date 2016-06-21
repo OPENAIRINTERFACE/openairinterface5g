@@ -121,6 +121,27 @@ extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openai
 extern void fill_ue_band_info(void);
 extern void init_UE(int);
 
+struct timing_info_t {
+  //unsigned int frame, hw_slot, last_slot, next_slot;
+  RTIME time_min, time_max, time_avg, time_last, time_now;
+  //unsigned int mbox0, mbox1, mbox2, mbox_target;
+  unsigned int n_samples;
+} timing_info;
+
+uint8_t  abstraction_flag=0;
+
+openair0_config_t openair0_cfg[MAX_CARDS];
+
+int32_t **rxdata;
+int32_t **txdata;
+int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+
+uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
+uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
+double cpuf;
+
+void fill_ue_band_info(void);
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
@@ -1395,7 +1416,12 @@ int main( int argc, char **argv )
 #endif
 
   int CC_id;
+<<<<<<< 3fdcf5b676124652c36f1b343370d6f94b246f5c
   uint8_t  abstraction_flag=0;
+=======
+  uint16_t Nid_cell = 0;
+  uint8_t  cooperation_flag=0;
+>>>>>>> openair2: fix abstraction mode for oaisim with MME
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
 
 #if defined (XFORMS)
