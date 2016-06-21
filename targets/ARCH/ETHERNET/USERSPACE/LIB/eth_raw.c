@@ -52,6 +52,7 @@
 #include "common_lib.h"
 #include "ethernet_lib.h"
 #include "if_defs.h"
+#include "openair1/PHY/LTE_TRANSPORT/if4_tools.h"
 
 #define DEBUG 0
 
@@ -214,7 +215,7 @@ int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp,
   } else if (flags == IF4_PULFFT) {
     packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);    
   } else {
-    packet_size = RAW_IF4_PRACH_SIZE_BYTES(nblocks);
+    packet_size = RAW_IF4_PRACH_SIZE_BYTES;
   }
   
   eth->tx_nsamps = nblocks;
@@ -302,49 +303,66 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 
 int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
 
+  int nblocks = nsamps;  
   int bytes_received=0;
-  int i=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
-  int rcvfrom_flag =0;
   
-  eth->rx_nsamps=nsamps;
-
-      /* buff[i] points to the position in rx buffer where the payload to be received will be placed
-	 buff2 points to the position in rx buffer where the packet header will be placed */
-      void *buff2 = (void*)(buff[i]-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES); 
-      
-      /* we don't want to ovewrite with the header info the previous rx buffer data so we store it*/
-      struct ether_header temp =  *(struct ether_header *)buff2;
-      int32_t temp0 = *(int32_t *)(buff2 + MAC_HEADER_SIZE_BYTES);
-      openair0_timestamp  temp1 = *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));
-      
-      bytes_received=0;
-      
-      while(bytes_received < RAW_PACKET_SIZE_BYTES(nsamps)) {
-	bytes_received +=recv(eth->sockfd[Mod_id],
-			      buff2,
-			      RAW_PACKET_SIZE_BYTES(nsamps),
-			      rcvfrom_flag);
-	
+  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t;
+    
+  void *test_buffer = (void*)malloc(packet_size);
+  void *rx_buffer=NULL;
+  IF4_dl_header_t *test_header = (IF4_dl_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
+  
+  bytes_received = recv(eth->sockfd[Mod_id],
+                        test_buffer,
+                        packet_size,
+                        0);                        
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
 	  perror("ETHERNET READ: ");
 	  exit(-1);	
-	} else {
-	  /* store the timestamp value from packet's header */
-	  *timestamp =  *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t));  
-	  eth->rx_actual_nsamps=bytes_received>>2;   
-	  eth->rx_count++;
-	}
-      }
-      
-     /* tx buffer values restored */  
-      *(struct ether_header *)buff2 = temp;
-      *(int32_t *)(buff2 + MAC_HEADER_SIZE_BYTES) = temp0;
-      *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)) = temp1;
+  }
+  
+  *timestamp = test_header->sub_type; 
+  
+  if (test_header->sub_type == IF4_PDLFFT) {
+    buff[0] = (void*)malloc(RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) - MAC_HEADER_SIZE_BYTES);
+    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) - packet_size;     
+        
+  } else if (test_header->sub_type == IF4_PULFFT) {
+    buff[0] = (void*)malloc(RAW_IF4_PULFFT_SIZE_BYTES(nblocks) - MAC_HEADER_SIZE_BYTES);
+    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks) - packet_size;     
+        
+  } else {
+    buff[0] = (void*)malloc(RAW_IF4_PRACH_SIZE_BYTES - MAC_HEADER_SIZE_BYTES);
+    packet_size = RAW_IF4_PRACH_SIZE_BYTES - packet_size;                 
+  }
 
-  return (bytes_received-APP_HEADER_SIZE_BYTES-MAC_HEADER_SIZE_BYTES)>>2;
+  memcpy(buff[0], test_header, sizeof_IF4_dl_header_t);    
+  rx_buffer = (void*)(buff[0]+sizeof_IF4_dl_header_t);
+  
+  bytes_received = 0;
+  
+  while(bytes_received < packet_size) {
+    bytes_received += recv(eth->sockfd[Mod_id],
+                           rx_buffer,
+                           packet_size-bytes_received,
+                           0);
+	  if (bytes_received ==-1) {
+	    eth->num_rx_errors++;
+	    perror("ETHERNET READ: ");
+	    exit(-1);	
+    } else {
+      eth->rx_actual_nsamps = bytes_received>>1;   
+      eth->rx_count++;
+    }
+  }
+
+  eth->rx_nsamps = nsamps;
+  
+  free(test_buffer);
+  return (bytes_received-MAC_HEADER_SIZE_BYTES)>>1;
 }
 
 

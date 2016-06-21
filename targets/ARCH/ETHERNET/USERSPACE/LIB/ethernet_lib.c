@@ -320,7 +320,8 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   } else if (eth_params->transp_preference == 2) {
     eth->flags = ETH_UDP_IF4_MODE;
   } else {
-    AssertFatal(0==4, "transport_init: Unknown transport preference %d", eth_params->transp_preference);
+    printf("transport_init: Unknown transport preference %d - default to RAW", eth_params->transp_preference);
+    eth->flags = ETH_RAW_MODE;
   }
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
@@ -346,16 +347,16 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     device->trx_write_func   = trx_eth_write_raw_IF4;
     device->trx_read_func    = trx_eth_read_raw_IF4;     
   } else {
-    device->trx_write_func   = trx_eth_write_udp_IF4;
-    device->trx_read_func    = trx_eth_read_udp_IF4;     
+    //device->trx_write_func   = trx_eth_write_udp_IF4;
+    //device->trx_read_func    = trx_eth_read_udp_IF4;     
   }
     
   eth->if_name[device->Mod_id] = eth_params->local_if_name;
   device->priv = eth;
  	
   /* device specific */
-  openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
-  openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   openair0_cfg[0].iq_txshift = eth_params->iq_txshift;// shift
   openair0_cfg[0].tx_sample_advance = eth_params->tx_sample_advance;
