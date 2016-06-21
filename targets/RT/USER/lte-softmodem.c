@@ -1911,8 +1911,12 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
-  // *** Handle per CC_id openair0
+  // *** Handle per CC_id openair0 
   openair0.trx_end_func(&openair0);
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
+    PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  }
 
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();

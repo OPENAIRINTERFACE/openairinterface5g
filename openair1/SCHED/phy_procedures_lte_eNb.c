@@ -2572,7 +2572,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
         
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-        // send_IF4();
+        //send_IF4(eNB, frame, subframe, IF4_PULFFT);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
         
       }
@@ -2624,7 +2624,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
          
       do {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
-        //recv_IF4(eNB, proc, &packet_type, &symbol_number);
+        //recv_IF4(eNB, frame, subframe, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {

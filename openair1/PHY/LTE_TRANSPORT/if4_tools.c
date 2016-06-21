@@ -89,7 +89,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
       // Write the packet to the fronthaul
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                         symbol_id,
-                                        tx_buffer,
+                                        &tx_buffer,
                                         db_fulllength,
       			                            1,
                                         IF4_PDLFFT)) < 0) {
@@ -127,7 +127,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
       // Write the packet(s) to the fronthaul 
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                         (int64_t) symbol_id,
-                                        tx_buffer,
+                                        &tx_buffer,
                                         db_fulllength,
       			                            1,
                                         IF4_PULFFT)) < 0) {
@@ -157,7 +157,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
     // Write the packet to the fronthaul
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                       (int64_t) symbol_id,
-                                      tx_buffer,
+                                      &tx_buffer,
                                       db_fulllength,
                                       1,
                                       IF4_PRACH)) < 0) {
