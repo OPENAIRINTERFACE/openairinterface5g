@@ -65,6 +65,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "../../ARCH/COMMON/common_lib.h"
+#include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -1016,7 +1017,17 @@ static void get_options (int argc, char **argv)
           (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
           (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
           (eth_params+j)->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-          (eth_params+j)->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
+          
+          if (enb_properties->properties[i]->rrh_gw_config[j].raw == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+          } else {
+            (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
+          }
+          
           (eth_params+j)->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
           (eth_params+j)->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
           (eth_params+j)->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;

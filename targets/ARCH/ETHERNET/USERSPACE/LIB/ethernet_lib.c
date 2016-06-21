@@ -51,7 +51,7 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-
+#include "if_defs.h"
 
 int num_devices_eth = 0;
 struct sockaddr_in dest_addr[MAX_INST];
@@ -336,7 +336,6 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->trx_set_freq_func = trx_eth_set_freq;
   device->trx_set_gains_func = trx_eth_set_gains;
 
-  /// handle if4 eth read and write functions
   if (eth->flags == ETH_RAW_MODE) {
     device->trx_write_func   = trx_eth_write_raw;
     device->trx_read_func    = trx_eth_read_raw;     

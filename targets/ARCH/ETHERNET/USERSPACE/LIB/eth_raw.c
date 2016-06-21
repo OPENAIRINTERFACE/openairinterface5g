@@ -51,6 +51,7 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
+#include "if_defs.h"
 
 #define DEBUG 0
 

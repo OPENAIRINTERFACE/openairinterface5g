@@ -2242,6 +2242,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
             } else if (strcmp(tr_preference, "raw") == 0) {
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
+            } else if (strcmp(tr_preference, "udpif4") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udpif4 = 1; 
+            } else if (strcmp(tr_preference, "rawif4") == 0) {
+              enb_properties.properties[enb_properties_index]->rrh_gw_config[j].rawif4 = 1;
             } else {//if (strcmp(preference, "no") == 0) 
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].udp = 1;
               enb_properties.properties[enb_properties_index]->rrh_gw_config[j].raw = 1;
