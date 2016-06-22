@@ -45,6 +45,8 @@
 //#define DEBUG_ULSCH
 #include "PHY/sse_intrin.h"
 
+#include "T.h"
+
 //extern char* namepointer_chMag ;
 //eren
 //extern int **ulchmag_eren;
@@ -1615,7 +1617,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   rx_power_correction = 1;
 
   if (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb == 0) {
-    LOG_E(PHY,"PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti,harq_pid);
+    LOG_E(PHY,"PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
     return;
   }
 
@@ -1837,7 +1839,13 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 #endif
 
 
+
   llrp = (int16_t*)&pusch_vars->llr[0];
+
+  T(T_ENB_PHY_PUSCH_IQ, T_INT(eNB_id), T_INT(UE_id), T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx),
+    T_INT(subframe), T_INT(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb),
+    T_BUFFER(eNB_pusch_vars->rxdataF_comp[eNB_id][0],
+             2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
 
   for (l=0; l<frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active; l++) {
 
