@@ -113,6 +113,9 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   widget *text;
   view *textview;
   int i;
+  widget *w;
+  view *v;
+  logger *l;
 
   main_window = new_toplevel_window(g, 1200, 900, "eNB tracer");
   top_container = new_container(g, VERTICAL);
@@ -134,6 +137,36 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   input_signal_view = new_view_xy(7680*10, 10,
       g, input_signal_plot, new_color(g, "#0c0c72"), XY_LOOP_MODE);
   logger_add_view(input_signal_log, input_signal_view);
+
+  /* UE 0 PUSCH IQ data */
+  w = new_xy_plot(g, 55, 55, "PUSCH IQ", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
+  l = new_iqlog(h, database, "ENB_PHY_PUSCH_IQ", "nb_rb",
+      "N_RB_UL", "symbols_per_tti", "pusch_comp");
+  v = new_view_xy(100*12*14,10,g,w,new_color(g,"#000"),XY_FORCED_MODE);
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
+        filter_int(0)
+      ));
+
+  /* UE 0 estimated UL channel */
+  w = new_xy_plot(g, 256*2, 55, "UL estimated channel", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 512*10, -10, 80);
+  l = new_framelog(h, database,
+      "ENB_PHY_UL_CHANNEL_ESTIMATE", "subframe", "chest_t");
+  //framelog_set_skip(input_signal_log, 10);
+  framelog_set_update_only_at_sf9(l, 0);
+  v = new_view_xy(512*10, 10, g, w, new_color(g, "#0c0c72"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
+        filter_int(0)
+      ));
 
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
@@ -445,6 +478,7 @@ int main(int n, char **v)
   }
 
   on_off(database, "ENB_PHY_INPUT_SIGNAL", is_on, 1);
+  on_off(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", is_on, 1);
   on_off(database, "ENB_PHY_DL_TICK", is_on, 1);
   on_off(database, "ENB_PHY_DLSCH_UE_DCI", is_on, 1);
   on_off(database, "ENB_PHY_DLSCH_UE_ACK", is_on, 1);
@@ -455,6 +489,7 @@ int main(int n, char **v)
   on_off(database, "ENB_PHY_ULSCH_UE_ACK", is_on, 1);
   on_off(database, "ENB_PHY_ULSCH_UE_NACK", is_on, 1);
   on_off(database, "ENB_MASTER_TICK", is_on, 1);
+  on_off(database, "ENB_PHY_PUSCH_IQ", is_on, 1);
 
   on_off(database, "LEGACY_RRC_INFO", is_on, 1);
   on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
