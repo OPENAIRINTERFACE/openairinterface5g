@@ -127,7 +127,7 @@ extern volatile int             start_UE;
 #endif
 extern volatile int                    oai_exit;
 
-extern openair0_config_t *openair0_cfg;
+extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;
@@ -920,7 +920,7 @@ static void* eNB_thread_prach( void* param ) {
     exit_fun("Error getting thread priority");
   }
 
-  LOG_I(HW, "[SCHED][eNB] PRACH thread started on CPU %d TID %ld, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),
+  LOG_I(HW, "[SCHED][eNB] PRACH thread started on CPU %d TID %ld, IC %d, sched_policy = %s, priority = %d, CPU Affinity = %s\n", sched_getcpu(),gettid(),proc->instance_cnt_prach,
 	 (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
 	 (policy == SCHED_RR)    ? "SCHED_RR" :
 	 (policy == SCHED_OTHER) ? "SCHED_OTHER" :

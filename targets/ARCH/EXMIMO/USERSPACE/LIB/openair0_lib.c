@@ -283,7 +283,7 @@ static void *watchdog_thread(void *arg) {
 
   volatile unsigned int *daq_mbox = openair0_daq_cnt();
   unsigned int mbox,diff;
-
+  int first_acquisition;
   
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
@@ -351,8 +351,6 @@ static void *watchdog_thread(void *arg) {
 	cpu_affinity );
 
 
-
-
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
   exm->watchdog_exit = 0;
@@ -387,6 +385,8 @@ static void *watchdog_thread(void *arg) {
     printf("Unknown sampling rate %f, exiting \n",cfg->sample_rate);
     exm->watchdog_exit=1;
   }
+
+  first_acquisition=1;
   // main loop to keep up with DMA transfers from exmimo2
   while ((!oai_exit) && (!exm->watchdog_exit)) {
 
@@ -394,6 +394,7 @@ static void *watchdog_thread(void *arg) {
 
       // grab time from MBOX
       mbox = daq_mbox[0];
+
       if (mbox<exm->last_mbox) { // wrap-around
 	diff = 150 + mbox - exm->last_mbox;
       }
@@ -405,13 +406,25 @@ static void *watchdog_thread(void *arg) {
       pthread_mutex_lock(&exm->watchdog_mutex);
       exm->ts += (diff*exm->samples_per_frame/150) ; 
 
-      if (diff > 10)  // we're too late so exit
+      if (first_acquisition==1) //set last read to a closest subframe boundary
+         exm->last_ts_rx = (exm->ts/(exm->samples_per_frame/10))*(exm->samples_per_frame/10);
+
+      if ((diff > 16)&&(first_acquisition==0))  {// we're too late so exit
 	exm->watchdog_exit = 1;
+        printf("exiting, too late to keep up\n");
+      }
+      first_acquisition=0;
+
+      if (diff == 0) {
+	exm->watchdog_exit = 1;
+        printf("exiting, HW stopped\n");
+      }
 
       if (exm->ts - exm->last_ts_rx > exm->samples_per_frame) {
 	exm->watchdog_exit = 1;
 	printf("RX Overflow, exiting\n");
       }
+      //      printf("ts %lu, last_ts_rx %lu, mbox %d, diff %d\n",exm->ts, exm->last_ts_rx,mbox,diff);
       pthread_mutex_unlock(&exm->watchdog_mutex);
     }
 
@@ -444,6 +457,7 @@ int trx_exmimo_start(openair0_device *device) {
 
   exmimo_state_t *exm=device->priv;
 
+  printf("Starting ...\n");
   openair0_start_rt_acquisition(0);
   exm->daq_state = running;  
 
@@ -460,7 +474,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
   exmimo_state_t *exm=device->priv;
   openair0_config_t *cfg=&device->openair0_cfg[0];
   openair0_timestamp ts,diff;
-  int i;
+  //  int i;
 
   pthread_mutex_lock(&exm->watchdog_mutex);
   ts = exm->ts;
@@ -469,25 +483,35 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
 
     diff = exm->last_ts_rx+nsamps - ts; // difference in samples between current timestamp and last RX received sample
     // go to sleep until we should have enough samples (1024 for a bit more)
+#ifdef DEBUG_EXMIMO
+    printf("Reading %d samples, ts %lu, last_ts_rx %lu (%lu) => sleeping %u us\n",nsamps,ts,exm->last_ts_rx,exm->last_ts_rx+nsamps,
+	   (unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
+#endif
     usleep((unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
+#ifdef DEBUG_EXMIMO
+    printf("back\n");
+#endif
     // get new timestamp, in case we have to sleep again
     pthread_mutex_lock(&exm->watchdog_mutex);
     ts = exm->ts;
     pthread_mutex_unlock(&exm->watchdog_mutex);
   }
 
+  /*
   if (cfg->mmapped_dma == 0) {  // if buff is not the dma buffer, do a memcpy, otherwise do nothing
     for (i=0;i<cc;i++) {
+
       memcpy(buff[i],
 	     openair0_exmimo_pci[0].adc_head[i]+(exm->last_ts_rx % exm->samples_per_frame),
 	     nsamps*sizeof(int));
+
     }
-  }
+    }*/
   
   *ptimestamp=exm->last_ts_rx;
   exm->last_ts_rx += nsamps;
 
-  return(0);
+  return(nsamps);
 }
 
 void trx_exmimo_end(openair0_device *device) {
@@ -591,6 +615,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->trx_set_gains_func   = trx_exmimo_set_gains;
   device->openair0_cfg = openair0_cfg;
   device->priv = (void *)exm;
+
+  openair0_config(openair0_cfg,0);
 
   create_watchdog(device);
 

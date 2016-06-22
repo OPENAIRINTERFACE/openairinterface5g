@@ -2534,11 +2534,11 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         proc->first_rx = 0;
 			}
 
-      //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
+      //      printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, frame );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, subframe );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
 
       if (rxs != fp->samples_per_tti)
         exit_fun( "problem receiving samples" );
@@ -2547,27 +2547,27 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
       // now do common RX processing for first slot in subframe
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
-      remove_7_5_kHz(eNB,subframe<<1);
-      remove_7_5_kHz(eNB,1+(subframe<<1));
+      remove_7_5_kHz(eNB,proc->subframe_rx<<1);
+      remove_7_5_kHz(eNB,1+(proc->subframe_rx<<1));
       for (l=0; l<fp->symbols_per_tti/2; l++) {
         slot_fep_ul(fp,
                     &eNB->common_vars,
                     l,
-                    subframe<<1,
+                    proc->subframe_rx<<1,
                     0,
                     0
                     );
         slot_fep_ul(fp,
                     &eNB->common_vars,
                     l,
-                    1+(subframe<<1),
+                    1+(proc->subframe_rx<<1),
                     0,
                     0
                     );
       }
     	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
-      if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, frame, subframe)<=0) {
+      if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)<=0) {
 
 			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
         
@@ -2579,7 +2579,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
       /// **** send_IF4 of prach to RCC **** /// done in prach thread (below)
       // check if we have to detect PRACH first
-      if (is_prach_subframe(fp,frame,subframe)>0) {
+      if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) {
         // wake up thread for PRACH RX
         if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
@@ -2589,8 +2589,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 		
         int cnt_prach = ++proc->instance_cnt_prach;
         // set timing for prach thread
-        proc->frame_prach = frame;
-        proc->subframe_prach = subframe;
+        proc->frame_prach = proc->frame_rx;
+        proc->subframe_prach = proc->subframe_rx;
 
         pthread_mutex_unlock( &proc->mutex_prach );
 		
@@ -2602,7 +2602,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
             return;
           }
         } else {
-          LOG_W( PHY,"[eNB] Frame %d, eNB PRACH thread busy!!\n", frame);
+          LOG_W( PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,cnt_prach);
           exit_fun( "PRACH thread busy" );
           return;
         }
@@ -2642,8 +2642,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 		
           int cnt_prach = ++proc->instance_cnt_prach;
           // set timing for prach thread
-          proc->frame_prach = frame;
-          proc->subframe_prach = subframe;
+          proc->frame_prach = proc->frame_rx;
+          proc->subframe_prach = proc->subframe_rx;
 
           pthread_mutex_unlock( &proc->mutex_prach );
 		
