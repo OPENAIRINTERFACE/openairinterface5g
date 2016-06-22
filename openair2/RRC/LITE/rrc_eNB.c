@@ -1219,7 +1219,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     case 1: // 100ms, 10^-2, p2, GBR
     case 2: // 150ms, 10^-3, p4, GBR
     case 3: // 50ms, 10^-3, p3, GBR
+    case 4:  // 300ms, 10^-6, p5 
     case 7: // 100ms, 10^-3, p7, GBR
+    case 9: // 300ms, 10^-6, p9
     case 65: // 75ms, 10^-2, p0.7, mission critical voice, GBR
     case 66: // 100ms, 10^-2, p2, non-mission critical  voice , GBR
       // RLC 
@@ -1237,11 +1239,9 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
        * type: non-realtime data with low packer error rate
        * action: swtich to RLC AM
        */
-    case 4:  // 300ms, 10^-6, p5 
     case 5:  // 100ms, 10^-6, p1 , IMS signaling 
     case 6:  // 300ms, 10^-6, p6 
     case 8: // 300ms, 10^-6, p8 
-    case 9: // 300ms, 10^-6, p9
     case 69: // 60ms, 10^-6, p0.5, mission critical delay sensitive data, Lowest Priority 
     case 70: // 200ms, 10^-6, p5.5, mision critical data 
       // RLC
@@ -1273,7 +1273,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
     DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
 
-    if (ue_context_pP->ue_context.e_rab[i].param.qos.qci < 10 )
+    if (ue_context_pP->ue_context.e_rab[i].param.qos.qci < 9 )
       DRB_ul_SpecificParameters->priority = qci_to_priority[ue_context_pP->ue_context.e_rab[i].param.qos.qci-1] + 3; 
     // ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level;
     else 
