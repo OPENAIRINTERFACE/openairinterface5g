@@ -303,14 +303,15 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 
 int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
 
+  // Read nblocks info from packet itself
   int nblocks = nsamps;  
   int bytes_received=0;
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t;
-    
+  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t;    
   void *test_buffer = (void*)malloc(packet_size);
+  
   void *rx_buffer=NULL;
   IF4_dl_header_t *test_header = (IF4_dl_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
   
@@ -339,7 +340,7 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
     packet_size = RAW_IF4_PRACH_SIZE_BYTES - packet_size;                 
   }
 
-  memcpy(buff[0], test_header, sizeof_IF4_dl_header_t);    
+  memcpy(buff[0], test_header, sizeof_IF4_dl_header_t);
   rx_buffer = (void*)(buff[0]+sizeof_IF4_dl_header_t);
   
   bytes_received = 0;

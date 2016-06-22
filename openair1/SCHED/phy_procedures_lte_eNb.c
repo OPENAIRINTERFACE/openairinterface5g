@@ -2604,9 +2604,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, frame, subframe)<=0) {
 
 			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
-        
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-        //send_IF4(eNB, frame, subframe, IF4_PULFFT);
+        send_IF4(eNB, frame, subframe, IF4_PULFFT);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
         
       }

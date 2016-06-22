@@ -56,7 +56,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
       
   uint16_t symbol_id, element_id;
   uint16_t db_fulllength, db_halflength; 
-  int slotoffsetF, blockoffsetF; 
+  int slotoffsetF=0, blockoffsetF=0; 
 
   void *tx_buffer=NULL;
   int16_t *data_block=NULL;
@@ -105,7 +105,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t + db_fulllength*sizeof(int16_t));
+    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_ul_header_t + db_fulllength*sizeof(int16_t));
     IF4_ul_header_t *ul_header = (IF4_ul_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
     data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_ul_header_t);
 
@@ -126,7 +126,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
 			
       // Write the packet(s) to the fronthaul 
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                        (int64_t) symbol_id,
+                                        symbol_id,
                                         &tx_buffer,
                                         db_fulllength,
       			                            1,
@@ -156,7 +156,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
               
     // Write the packet to the fronthaul
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                      (int64_t) symbol_id,
+                                      symbol_id,
                                       &tx_buffer,
                                       db_fulllength,
                                       1,
@@ -172,7 +172,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
 }
 
 
-void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type, uint32_t *symbol_number) {
+void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type, uint32_t *symbol_number, uint16_t expected_packet) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
@@ -182,30 +182,31 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF, blockoffsetF; 
   
-  *packet_type = 0;
-  
+  if (expected_packet == IF4_PDLFFT) {
+    db_fulllength = = (12*fp->N_RB_DL); 
+  } else {
+    db_fulllength = = (12*fp->N_RB_UL);     
+  }  
+  db_halflength = db_fulllength>>1;
+
   int64_t *ret_type=(int64_t*)malloc(sizeof(int64_t)); 
   void *rx_buffer=NULL;
-  void **buff=NULL;
   int16_t *data_block=NULL;
    
   // Read packet(s) from the fronthaul    
   if (eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   ret_type,
-                                  buff,
-                                  0,
+                                  &rx_buffer,
+                                  db_fulllength,
                                   0) < 0) {
     perror("ETHERNET read");
   }
   
   *packet_type = *ret_type;
-  rx_buffer = buff[0];
   
   if (*packet_type == IF4_PDLFFT) {
     data_block = (int16_t*) (rx_buffer+sizeof_IF4_dl_header_t);
-      
-    db_halflength = (12*fp->N_RB_DL)>>1;
-    
+          
     // Calculate from received packet
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
@@ -224,9 +225,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
         
   } else if (*packet_type == IF4_PULFFT) {
     data_block = (int16_t*) (rx_buffer+sizeof_IF4_ul_header_t);
-      
-    db_halflength = (12*fp->N_RB_UL)>>1;
-    
+          
     // Calculate from received packet
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
