@@ -51,6 +51,9 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
+
+#include "T.h"
+
 #include "rt_wrapper.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -65,6 +68,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "../../ARCH/COMMON/common_lib.h"
+#include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -401,8 +405,13 @@ void help (void) {
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n"RESET);    
-
+  printf("  -x Set the transmission mode, valid options: 1 \n");
+#if T_TRACER
+  printf("  --T_port [port]    use given port\n");
+  printf("  --T_nowait         don't wait for tracer, start immediately\n");
+#endif
+  printf(RESET);
+  fflush(stdout);
 }
 
 void exit_fun(const char* s)
@@ -669,6 +678,11 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_RCC,
     LONG_OPTION_RRU,
     LONG_OPTION_ENB
+#if T_TRACER
+    ,
+    LONG_OPTION_T_PORT,
+    LONG_OPTION_T_NOWAIT,
+#endif
   };
 
   static const struct option long_options[] = {
@@ -690,6 +704,10 @@ static void get_options (int argc, char **argv)
     {"RCC", no_argument, NULL, LONG_OPTION_RCC},
     {"RRU", no_argument, NULL, LONG_OPTION_RRU},
     {"eNB", no_argument, NULL, LONG_OPTION_ENB},
+#if T_TRACER
+    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
+    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+#endif
     {NULL, 0, NULL, 0}
   };
 
@@ -789,6 +807,21 @@ static void get_options (int argc, char **argv)
       node_function = eNodeB_3GPP;
       break;
       
+#if T_TRACER
+    case LONG_OPTION_T_PORT: {
+      extern int T_port;
+      if (optarg == NULL) abort();  /* should not happen */
+      T_port = atoi(optarg);
+      break;
+    }
+
+    case LONG_OPTION_T_NOWAIT: {
+      extern int T_wait;
+      T_wait = 0;
+      break;
+    }
+#endif
+
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -1016,7 +1049,17 @@ static void get_options (int argc, char **argv)
           (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
           (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
           (eth_params+j)->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-          (eth_params+j)->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
+          
+          if (enb_properties->properties[i]->rrh_gw_config[j].raw == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+          } else {
+            (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
+          }
+          
           (eth_params+j)->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
           (eth_params+j)->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
           (eth_params+j)->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
@@ -1124,6 +1167,11 @@ static void get_options (int argc, char **argv)
   }
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+#endif
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -1187,6 +1235,10 @@ int main( int argc, char **argv )
   else
     openair0_cfg[0].configFilename = rf_config_file;
   
+#if T_TRACER
+  T_init(T_port, T_wait);
+#endif
+
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
 
@@ -1900,8 +1952,12 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
-  // *** Handle per CC_id openair0
+  // *** Handle per CC_id openair0 
   openair0.trx_end_func(&openair0);
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
+    PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  }
 
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();

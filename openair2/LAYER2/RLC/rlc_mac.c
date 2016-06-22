@@ -221,6 +221,11 @@ tbs_size_t mac_rlc_data_req(
     ;
   }
 
+#if T_TRACER
+  if (enb_flagP)
+    T(T_ENB_RLC_MAC_DL, T_INT(module_idP), T_INT(rntiP), T_INT(channel_idP), T_INT(ret_tb_size));
+#endif
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_MAC_RLC_DATA_REQ,VCD_FUNCTION_OUT);
   return ret_tb_size;
 }
@@ -276,6 +281,10 @@ void mac_rlc_data_ind     (
 
 #endif
 
+#if T_TRACER
+  if (enb_flagP)
+    T(T_ENB_RLC_MAC_UL, T_INT(module_idP), T_INT(rntiP), T_INT(channel_idP), T_INT(tb_sizeP));
+#endif
 
   if (MBMS_flagP) {
     if (BOOL_NOT(enb_flagP)) {

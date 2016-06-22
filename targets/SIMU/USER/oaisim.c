@@ -113,6 +113,8 @@ char smbv_ip[16];
 # include "create_tasks.h"
 #endif
 
+#include "T.h"
+
 /*
  DCI0_5MHz_TDD0_t          UL_alloc_pdu;
  DCI1A_5MHz_TDD_1_6_t      CCCH_alloc_pdu;
@@ -245,6 +247,10 @@ help (void)
   printf ("-Y Set the global log verbosity (none, low, medium, high, full) \n");
   printf ("-z Set the cooperation flag (0 for no cooperation, 1 for delay diversity and 2 for distributed alamouti\n");
   printf ("-Z Reserved\n");
+#if T_TRACER
+  printf ("--T_port [port]    use given port\n");
+  printf ("--T_nowait         don't wait for tracer, start immediately\n");
+#endif
 }
 
 pthread_t log_thread;
@@ -739,7 +745,8 @@ l2l1_task (void *args_p)
                  + oai_emulation.info.nb_enb_local));
              eNB_inst++) {
           if (oai_emulation.info.cli_start_enb[eNB_inst] != 0) {
-            if ((slot & 1) == 0)
+            if ((slot & 1) == 0) {
+              T(T_ENB_MASTER_TICK, T_INT(eNB_inst), T_INT(frame % 1024), T_INT(slot/2));
               LOG_D(EMU,
                     "PHY procedures eNB %d for frame %d, slot %d (subframe TX %d, RX %d) TDD %d/%d Nid_cell %d\n",
                     eNB_inst,
@@ -750,6 +757,7 @@ l2l1_task (void *args_p)
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.frame_type,
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.tdd_config,
                     PHY_vars_eNB_g[eNB_inst][0]->lte_frame_parms.Nid_cell);
+            }
 
 #ifdef OPENAIR2
                         //Application: traffic gen
@@ -1247,6 +1255,11 @@ l2l1_task (void *args_p)
   return NULL;
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+#endif
+
 /*------------------------------------------------------------------------------*/
 int
 main (int argc, char **argv)
@@ -1263,6 +1276,7 @@ main (int argc, char **argv)
   int node_id;
   int port,Process_Flag=0,wgt,Channel_Flag=0,temp;
 #endif
+
   //default parameters
   oai_emulation.info.n_frames = MAX_FRAME_NUMBER; //1024;          //10;
   oai_emulation.info.n_frames_flag = 0; //fixme
@@ -1278,6 +1292,10 @@ main (int argc, char **argv)
 
   // get command-line options
   get_simulation_options (argc, argv); //Command-line options
+
+#if T_TRACER
+  T_init(T_port, T_wait);
+#endif
 
   // Initialize VCD LOG module
   VCD_SIGNAL_DUMPER_INIT (oai_emulation.info.vcd_file);

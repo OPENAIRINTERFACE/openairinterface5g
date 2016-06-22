@@ -1271,7 +1271,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   if (eNB->node_function == NGFI_RRU_IF4) {
     /// **** send_IF4 of prachF to RCC **** ///    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-    // send_IF4();
+    //send_IF4(eNB, frame, subframe, IF4_PRACH);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
 
     return;

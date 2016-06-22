@@ -486,7 +486,7 @@ static void* eNB_thread_rxtx( void* param ) {
         /// **** recv_IF4 of txdataF from RCC **** ///     
         
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
-        //recv_IF4(eNB, proc, packet_type, symbol_number);        
+        //recv_IF4(eNB, frame, subframe, packet_type, symbol_number);        
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
       }
@@ -536,7 +536,7 @@ static void* eNB_thread_rxtx( void* param ) {
       /// **** send_IF4 of txdataF to RRU **** /// 
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-      //send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc, 0);
+      send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );
 
     }
@@ -1275,7 +1275,7 @@ void print_opp_meas(void) {
     print_meas(&softmodem_stats_rx_sf,"[eNB][total_phy_proc_rx]",NULL,NULL);
   }
 }
-
+ 
 
 void init_eNB(eNB_func_t node_function) {
 
