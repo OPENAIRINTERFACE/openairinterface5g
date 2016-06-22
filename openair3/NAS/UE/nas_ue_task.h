@@ -22,8 +22,7 @@
 #ifndef NAS_UE_TASK_H_
 #define NAS_UE_TASK_H_
 
-// FIXME There is multiple definition of NUMBER_OF_UE_MAX
-#include "defs.h"
+#include "openairinterface5g_limits.h"
 #include "user_defs.h"
 
 // XXX simple array container for multiple users

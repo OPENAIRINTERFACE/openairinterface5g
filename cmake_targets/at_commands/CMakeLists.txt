@@ -452,6 +452,7 @@ set(esm_SRC
 )
 
 set(esm_HDR
+    ${OPENAIR_TARGETS}/COMMON/openairinterface5g_limits.h
     ${OPENAIR_NAS_DIR}/UE/ESM/esm_main.h
     ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextAccept.h
     ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG/ActivateDedicatedEpsBearerContextReject.h
@@ -491,6 +492,7 @@ target_include_directories(esm PRIVATE
                      ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USER 
                      ${OPENAIR_NAS_DIR}/UE/ESM
+                     ${OPENAIR_TARGETS}/COMMON
                      ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG
                      ${OPENAIR_NAS_DIR}/UE/ESM/SAP
                      ${OPENAIR_NAS_DIR}/COMMON/IES
@@ -673,6 +675,7 @@ target_include_directories(ies PRIVATE
 # EXECUTABLE at_nas_ue
 ################################################################################
 include_directories( 
+                     ${OPENAIR_TARGETS}/COMMON
                      ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/common/utils/msc 
