@@ -212,6 +212,11 @@ void get_simulation_options(int argc, char *argv[])
 
     LONG_OPTION_PHYTEST,
     LONG_OPTION_XFORMS,
+
+#if T_TRACER
+    LONG_OPTION_T_PORT,
+    LONG_OPTION_T_NOWAIT,
+#endif
   };
 
   static struct option long_options[] = {
@@ -245,6 +250,11 @@ void get_simulation_options(int argc, char *argv[])
 
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {"xforms",                 no_argument,       0, LONG_OPTION_XFORMS},
+
+#if T_TRACER
+    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
+    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+#endif
 
     {NULL, 0, NULL, 0}
   };
@@ -412,6 +422,21 @@ void get_simulation_options(int argc, char *argv[])
     case LONG_OPTION_XFORMS:
       xforms=1;
       break;
+
+#if T_TRACER
+    case LONG_OPTION_T_PORT: {
+      extern int T_port;
+      if (optarg == NULL) abort();  /* should not happen */
+      T_port = atoi(optarg);
+      break;
+    }
+
+    case LONG_OPTION_T_NOWAIT: {
+      extern int T_wait;
+      T_wait = 0;
+      break;
+    }
+#endif
 
     case 'a':
       abstraction_flag = 1;

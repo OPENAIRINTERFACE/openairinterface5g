@@ -1667,6 +1667,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint16_t n2_pucch,
 		  uint8_t shortened_format,
 		  uint8_t *payload,
+		  int     frame,
 		  uint8_t subframe,
 		  uint8_t pucch1_thres);
 
