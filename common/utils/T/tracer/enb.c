@@ -114,7 +114,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   view *textview;
   int i;
 
-  main_window = new_toplevel_window(g, 800, 600, "eNB tracer");
+  main_window = new_toplevel_window(g, 1200, 900, "eNB tracer");
   top_container = new_container(g, VERTICAL);
   widget_add_child(g, main_window, top_container, -1);
 
