@@ -20,6 +20,8 @@ logger *new_iqlog(void *event_handler, void *database,
 void framelog_set_skip(logger *_this, int skip_delay);
 void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9);
 
+void textlog_dump_buffer(logger *_this, int dump_buffer);
+
 #include "view/view.h"
 
 void logger_add_view(logger *l, view *v);
