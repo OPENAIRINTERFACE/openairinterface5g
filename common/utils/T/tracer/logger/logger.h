@@ -15,6 +15,7 @@ logger *new_ticklog(void *event_handler, void *database,
     char *event_name, char *frame_name, char *subframe_name);
 
 void framelog_set_skip(logger *_this, int skip_delay);
+void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9);
 
 #include "view/view.h"
 
