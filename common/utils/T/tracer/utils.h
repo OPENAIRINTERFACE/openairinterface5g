@@ -44,6 +44,7 @@ void PUTC(OBUF *o, char c);
 void PUTS(OBUF *o, char *s);
 void PUTS_CLEAN(OBUF *o, char *s);
 void PUTI(OBUF *o, int i);
+void PUTX2(OBUF *o, int i);
 void PUTUL(OBUF *o, unsigned long i);
 
 #endif /* _UTILS_H_ */
