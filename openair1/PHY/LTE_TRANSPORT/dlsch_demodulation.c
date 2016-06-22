@@ -100,7 +100,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
   int avgs, rb;
   LTE_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
   
-  uint8_t beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]<7?0:phy_vars_ue->transmission_mode[eNB_id];
+  uint8_t beamforming_mode;
   uint32_t *rballoc;
 
   switch (type) {
@@ -108,12 +108,14 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id];
     dlsch_ue          = &phy_vars_ue->dlsch_ue_SI[eNB_id];
     dlsch0_harq       = dlsch_ue[0]->harq_processes[harq_pid];
+    beamforming_mode  = 0;
     break;
 
   case RA_PDSCH:
     lte_ue_pdsch_vars = &phy_vars_ue->lte_ue_pdsch_vars_ra[eNB_id];
     dlsch_ue          = &phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch0_harq       = dlsch_ue[0]->harq_processes[harq_pid];
+    beamforming_mode  = 0;
     break;
 
   case PDSCH:
@@ -121,6 +123,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
     dlsch_ue          = phy_vars_ue->dlsch_ue[eNB_id];
     dlsch0_harq       = dlsch_ue[0]->harq_processes[harq_pid];
     dlsch1_harq       = dlsch_ue[1]->harq_processes[harq_pid];
+    beamforming_mode = phy_vars_ue->transmission_mode[eNB_id]<7?0:phy_vars_ue->transmission_mode[eNB_id];
     break;
 
   default:
@@ -204,7 +207,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
                                        phy_vars_ue->high_speed_flag,
                                        frame_parms);
     }
-  } else if (beamforming_mode==0) {// if n_tx>1
+  } else if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
     nb_rb = dlsch_extract_rbs_single(lte_ue_common_vars->rxdataF,
                                      lte_ue_common_vars->dl_ch_estimates[eNB_id],
                                      lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
@@ -243,7 +246,7 @@ int rx_pdsch(PHY_VARS_UE *phy_vars_ue,
 					 phy_vars_ue->high_speed_flag,
                                          frame_parms);
     }
-  } else if (beamforming_mode==7) { //else n_tx>1
+  } else if (beamforming_mode==7) { //else if beamforming_mode == 7
     nb_rb = dlsch_extract_rbs_TM7(lte_ue_common_vars->rxdataF,
                                   lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates,
                                   lte_ue_pdsch_vars[eNB_id]->rxdataF_ext,
