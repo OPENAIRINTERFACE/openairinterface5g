@@ -55,3 +55,4 @@ clean:
 	cd view && make clean
 	cd logger && make clean
 	cd filter && make clean
+	cd hacks && make clean
