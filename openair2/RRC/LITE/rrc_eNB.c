@@ -63,6 +63,8 @@
 #include "platform_types.h"
 #include "msc.h"
 
+#include "T.h"
+
 //#ifdef Rel10
 #include "MeasResults.h"
 //#endif
@@ -858,6 +860,9 @@ rrc_eNB_process_RRCConnectionSetupComplete(
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing RRCConnectionSetupComplete from UE\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
+  T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #if defined(ENABLE_USE_MME)
 
   if (EPC_MODE_ENABLED == 1) {
@@ -887,6 +892,9 @@ rrc_eNB_generate_SecurityModeCommand(
 {
   uint8_t                             buffer[100];
   uint8_t                             size;
+
+  T(T_ENB_RRC_SECURITY_MODE_COMMAND, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   size = do_SecurityModeCommand(
            ctxt_pP,
@@ -952,6 +960,9 @@ rrc_eNB_generate_UECapabilityEnquiry(
   uint8_t                             buffer[100];
   uint8_t                             size;
 
+  T(T_ENB_RRC_UE_CAPABILITY_ENQUIRY, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   size = do_UECapabilityEnquiry(
            ctxt_pP,
            buffer,
@@ -1004,6 +1015,9 @@ rrc_eNB_generate_RRCConnectionReject(
   int                                 cnt;
 #endif
 
+  T(T_ENB_RRC_CONNECTION_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReject(ctxt_pP->module_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
@@ -1047,6 +1061,9 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
   int                                 cnt;
 #endif
 
+  T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
                           (uint8_t*) eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.Payload);
@@ -1088,6 +1105,9 @@ rrc_eNB_generate_RRCConnectionRelease(
 
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size;
+
+  T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   memset(buffer, 0, RRC_BUF_SIZE);
 
@@ -1216,6 +1236,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   }
 
 #endif
+
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   // Configure SRB2
   /// SRB2
   SRB2_config = CALLOC(1, sizeof(*SRB2_config));
@@ -1843,6 +1867,9 @@ rrc_eNB_process_MeasurementReport(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   LOG_I(RRC, "[eNB %d] Frame %d: Process Measurement Report From UE %x (Measurement Id %d)\n",
         ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rnti, (int)measResults2->measId);
@@ -1911,6 +1938,9 @@ rrc_eNB_generate_HandoverPreparationInformation(
      struct PhysicalConfigDedicated  **physicalConfigDedicated = &eNB_rrc_inst[enb_mod_idP].physicalConfigDedicated[ue_mod_idP];
      RadioResourceConfigDedicated_t *radioResourceConfigDedicated = CALLOC(1,sizeof(RadioResourceConfigDedicated_t));
    */
+
+  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   handoverInfo->as_config.antennaInfoCommon.antennaPortsCount = 0;    //Not used 0- but check value
   handoverInfo->as_config.sourceDl_CarrierFreq = 36090;   //Verify!
@@ -2002,6 +2032,9 @@ rrc_eNB_process_handoverPreparationInformation(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   LOG_I(RRC,
         "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending RRCConnectionReconfiguration to UE %d \n",
@@ -2077,6 +2110,9 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 )
 //-----------------------------------------------------------------------------
 {
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size;
@@ -3033,6 +3069,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   DRB_ToAddModList_t*                 DRB_configList = ue_context_pP->ue_context.DRB_configList;
   //SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
 
+  T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #if defined(ENABLE_SECURITY)
 
   /* Derive the keys from kenb */
@@ -3292,6 +3331,9 @@ rrc_eNB_generate_RRCConnectionSetup(
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
   int                                 cnt;
+
+  T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   SRB_configList = &ue_context_pP->ue_context.SRB_configList;
   eNB_rrc_inst[ctxt_pP->module_id].carrier[CC_id].Srb0.Tx_buffer.payload_size =
@@ -3567,6 +3609,9 @@ rrc_eNB_decode_ccch(
   uint64_t                                      random_value = 0;
   int                                           stmsi_received = 0;
 
+  T(T_ENB_RRC_UL_CCCH_DATA_IN, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   //memset(ul_ccch_msg,0,sizeof(UL_CCCH_Message_t));
 
   LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n",
@@ -3637,6 +3682,9 @@ rrc_eNB_decode_ccch(
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentRequest:
+      T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Reestablishement Request\n");
 
@@ -3679,6 +3727,9 @@ rrc_eNB_decode_ccch(
       break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
+      T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Request\n");
 
@@ -3914,6 +3965,9 @@ rrc_eNB_decode_dcch(
   int i;
   struct rrc_eNB_ue_context_s*        ue_context_p = NULL;
 
+  T(T_ENB_RRC_UL_DCCH_DATA_IN, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
   if ((Srb_id != 1) && (Srb_id != 2)) {
     LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received message on SRB%d, should not have ...\n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
@@ -4061,6 +4115,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
+      T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Connection Reestablishment Complete\n");
 
@@ -4135,6 +4192,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_securityModeComplete:
+      T(T_ENB_RRC_SECURITY_MODE_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
 
@@ -4177,6 +4237,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_securityModeFailure:
+      T(T_ENB_RRC_SECURITY_MODE_FAILURE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Failure\n");
 
@@ -4214,6 +4277,9 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
+      T(T_ENB_RRC_UE_CAPABILITY_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UECapablility Information \n");
 
@@ -4276,9 +4342,15 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
+      T(T_ENB_RRC_UL_HANDOVER_PREPARATION_TRANSFER, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+      T(T_ENB_RRC_UL_INFORMATION_TRANSFER, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC UL Information Transfer \n");
 
@@ -4312,27 +4384,48 @@ rrc_eNB_decode_dcch(
       break;
 
     case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
+      T(T_ENB_RRC_COUNTER_CHECK_RESPONSE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
 #ifdef Rel10
 
     case UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
+      T(T_ENB_RRC_UE_INFORMATION_RESPONSE_R9, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_proximityIndication_r9:
+      T(T_ENB_RRC_PROXIMITY_INDICATION_R9, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
+      T(T_ENB_RRC_RECONFIGURATION_COMPLETE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
+      T(T_ENB_RRC_MBMS_COUNTING_RESPONSE_R10, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 
     case UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
+      T(T_ENB_RRC_INTER_FREQ_RSTD_MEASUREMENT_INDICATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       break;
 #endif
 
     default:
+      T(T_ENB_RRC_UNKNOW_MESSAGE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
+        T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
+
       LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Unknown message %s:%u\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             __FILE__, __LINE__);

@@ -438,10 +438,10 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   uint8_t *systematic2_ptr=(uint8_t *) output;
 #endif
 #ifndef __AVX2__
-  int input_length_words=n>>1;
+  int input_length_words=1+((n-1)>>1);
 #else
-  int input_length_words=n>>2;
-#endif
+  int input_length_words=1+((n-1)>>2);
+#endif 
   for ( i=0; i<  input_length_words ; i ++ ) {
 
 #if defined(__x86_64__) || defined(__i386__)
