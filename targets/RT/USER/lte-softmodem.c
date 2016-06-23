@@ -416,11 +416,20 @@ void help (void) {
 
 void exit_fun(const char* s)
 {
+  int CC_id;
+
   if (s != NULL) {
     printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
   }
 
   oai_exit = 1;
+  
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  }
 
 #if defined(ENABLE_ITTI)
   sleep(1); //allow lte-softmodem threads to exit first
@@ -1563,8 +1572,16 @@ int main( int argc, char **argv )
 
     for (i=0; i<4; i++) {
 
-      openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
-      openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      if (i<openair0_cfg[card].tx_num_channels)
+	openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+      else
+	openair0_cfg[card].tx_freq[i]=0.0;
+
+      if (i<openair0_cfg[card].rx_num_channels)
+	openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      else
+	openair0_cfg[card].rx_freq[i]=0.0;
+
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
@@ -1952,11 +1969,15 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
-  // *** Handle per CC_id openair0 
-  openair0.trx_end_func(&openair0);
+  // *** Handle per CC_id openair0
+  if (UE_flag==1)
+    openair0.trx_end_func(&openair0);
+
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
-    PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
+    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
   }
 
   if (ouput_vcd)

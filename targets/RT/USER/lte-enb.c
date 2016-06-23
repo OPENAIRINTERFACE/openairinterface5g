@@ -337,6 +337,10 @@ static void* eNB_thread_rxtx( void* param ) {
   struct sched_param sparam;
   char cpu_affinity[1024];
   cpu_set_t cpuset;
+  struct timespec wait;
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
 
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
@@ -402,7 +406,7 @@ static void* eNB_thread_rxtx( void* param ) {
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-    if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
+    if (pthread_mutex_timedlock(&proc->mutex_rxtx,&wait) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB RXn-TXnp4\n");
       exit_fun("nothing to add");
       break;
@@ -442,7 +446,7 @@ static void* eNB_thread_rxtx( void* param ) {
        * (may be relaxed in the future for performance reasons)
        */
       
-      if (pthread_mutex_lock(&sync_phy_proc.mutex_phy_proc_tx) != 0) {
+      if (pthread_mutex_timedlock(&sync_phy_proc.mutex_phy_proc_tx,&wait) != 0) {
         LOG_E(PHY, "[SCHED][eNB] error locking PHY proc mutex for eNB TX\n");
         exit_fun("nothing to add");
         break;
@@ -569,9 +573,9 @@ static void* eNB_thread_rxtx( void* param ) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-#ifdef DEBUG_THREADS
-  printf( "Exiting eNB thread TX\n");
-#endif
+
+  printf( "Exiting eNB thread RXn_TXnp4\n");
+
 
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
@@ -613,6 +617,10 @@ static void* eNB_thread_rx_common( void* param ) {
   FILE  *rx_time_file = NULL;
   char rx_time_name[101];
   //int i;
+  struct timespec wait;
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
 
   if (opp_enabled == 1) {
     snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf", "eNB");
@@ -766,7 +774,7 @@ static void* eNB_thread_rx_common( void* param ) {
 
     // wake up TX for subframe n+4
     // lock the TX mutex and make sure the thread is ready
-    if (pthread_mutex_lock(&proc_rxtx->mutex_rxtx) != 0) {
+    if (pthread_mutex_timedlock(&proc_rxtx->mutex_rxtx,&wait) != 0) {
       LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX thread %d (IC %d)\n", proc_rxtx->instance_cnt_rxtx );
       exit_fun( "error locking mutex_rxtx" );
       break;
@@ -815,9 +823,9 @@ static void* eNB_thread_rx_common( void* param ) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
   }
  
-#ifdef DEBUG_THREADS
-  printf( "Exiting eNB thread RXn-TXnp4\n");
-#endif
+
+  printf( "Exiting eNB thread rx_common\n");
+
  
   eNB_thread_rx_status = 0;
   return &eNB_thread_rx_status;
@@ -832,8 +840,16 @@ static void* eNB_thread_rx_common( void* param ) {
 static void* eNB_thread_prach( void* param ) {
   static int eNB_thread_prach_status;
 
+ 
+
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB= PHY_vars_eNB_g[0][proc->CC_id];
+
+  struct timespec wait;
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
   // set default return value
   eNB_thread_prach_status = 0;
 
@@ -935,7 +951,7 @@ static void* eNB_thread_prach( void* param ) {
     
     if (oai_exit) break;
         
-    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
+    if (pthread_mutex_timedlock(&proc->mutex_prach,&wait) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH\n");
       exit_fun( "error locking mutex" );
       break;
@@ -957,7 +973,7 @@ static void* eNB_thread_prach( void* param ) {
     prach_procedures(eNB,0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
     
-    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
+    if (pthread_mutex_timedlock(&proc->mutex_prach,&wait) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH proc %d\n");
       exit_fun( "error locking mutex" );
       break;
@@ -972,9 +988,9 @@ static void* eNB_thread_prach( void* param ) {
     } 
   }
 
-#ifdef DEBUG_THREADS
+
   printf( "Exiting eNB thread PRACH\n");
-#endif
+
 
   eNB_thread_prach_status = 0;
   return &eNB_thread_prach_status;
@@ -1083,16 +1099,17 @@ void kill_eNB_proc(void) {
     
     proc_rxtx[0].instance_cnt_rxtx = 0; // FIXME data race!
     proc_rxtx[1].instance_cnt_rxtx = 0; // FIXME data race!
+    proc->instance_cnt_prach = 0;
     pthread_cond_signal( &proc_rxtx[0].cond_rxtx );    
-    pthread_cond_signal( &proc_rxtx[0].cond_rxtx );
+    pthread_cond_signal( &proc_rxtx[1].cond_rxtx );
+    pthread_cond_signal( &proc->cond_prach );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
-    
-#ifdef DEBUG_THREADS
-    printf( "Joining eNB TX CC_id %d thread\n", CC_id);
-#endif
+
+    pthread_join( proc->pthread_rx, (void**)&status );    
+
 
     int result,i;
-    for (i=0;i<1;i++) {
+    for (i=0;i<2;i++) {
       pthread_join( proc_rxtx[i].pthread_rxtx, (void**)&status );
     
 #ifdef DEBUG_THREADS
@@ -1151,6 +1168,7 @@ void kill_eNB_proc(void) {
 int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]) {
 
   int i, CC_id;
+  int j;
 
   uint16_t N_TA_offset = 0;
 
@@ -1174,76 +1192,60 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
         N_TA_offset = 624/4;
     }
 
-    /*
+ 
+
+    if (openair0_cfg[CC_id].mmapped_dma == 1) {
     // replace RX signal buffers with mmaped HW versions
-#ifdef EXMIMO
-    openair0_cfg[CC_id].tx_num_channels = 0;
-    openair0_cfg[CC_id].rx_num_channels = 0;
-
-    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      printf("Mapping eNB CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i],rf_map[CC_id].card,rf_map[CC_id].chain+i);
-      free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-      phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].adc_head[rf_map[CC_id].chain+i];
-
-      if (openair0_cfg[rf_map[CC_id].card].rx_freq[rf_map[CC_id].chain+i]) {
-        printf("Error with rf_map! A channel has already been allocated!\n");
-        return(-1);
-      } else {
-        openair0_cfg[rf_map[CC_id].card].rx_freq[rf_map[CC_id].chain+i] = downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].rx_gain[rf_map[CC_id].chain+i] = rx_gain[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].rx_num_channels++;
+      
+      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	printf("Mapping eNB CC_id %d, rx_ant %d\n",CC_id,i);
+	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
+	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = openair0_cfg[CC_id].rxbase[i];
+	
+	
+	
+	printf("rxdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
+	
+	for (j=0; j<16; j++) {
+	  printf("rxbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j]);
+	  phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j] = 16-j;
+	}
       }
-
-      printf("rxdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-
-      for (j=0; j<16; j++) {
-        printf("rxbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j]);
-        phy_vars_eNB[CC_id]->common_vars.rxdata[0][i][j] = 16-j;
-      }
-    }
-
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      printf("Mapping eNB CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n",CC_id,i,downlink_frequency[CC_id][i],rf_map[CC_id].card,rf_map[CC_id].chain+i);
-      free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-      phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = (int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].dac_head[rf_map[CC_id].chain+i];
-
-      if (openair0_cfg[rf_map[CC_id].card].tx_freq[rf_map[CC_id].chain+i]) {
-        printf("Error with rf_map! A channel has already been allocated!\n");
-        return(-1);
-      } else {
-        openair0_cfg[rf_map[CC_id].card].tx_freq[rf_map[CC_id].chain+i] = downlink_frequency[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].tx_gain[rf_map[CC_id].chain+i] = tx_gain[CC_id][i];
-        openair0_cfg[rf_map[CC_id].card].tx_num_channels++;
-      }
-
-      printf("txdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-
-      for (j=0; j<16; j++) {
-        printf("txbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.txdata[0][i][j]);
-        phy_vars_eNB[CC_id]->common_vars.txdata[0][i][j] = 16-j;
+      
+      for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+	printf("Mapping eNB CC_id %d, tx_ant %d\n",CC_id,i);
+	free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
+	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = openair0_cfg[CC_id].txbase[i];//(int32_t*) openair0_exmimo_pci[rf_map[CC_id].card].dac_head[rf_map[CC_id].chain+i];
+	
+	printf("txdata[%d] @ %p\n",i,phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
+	
+	for (j=0; j<16; j++) {
+	  printf("txbuffer %d: %x\n",j,phy_vars_eNB[CC_id]->common_vars.txdata[0][i][j]);
+	  phy_vars_eNB[CC_id]->common_vars.txdata[0][i][j] = 16-j;
+	}
       }
     }
+    else {  // not memory-mapped DMA 
+    
 
-#else // not EXMIMO 
-    */
-
-    rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
-    txdata = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-
-    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-      free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-      rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
-      phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
-      memset(rxdata[i], 0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
-      printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->common_vars.rxdata[0][i],rxdata[i],N_TA_offset);      
-    }
-
-    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-      free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-      txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
-      phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = txdata[i];
-      memset(txdata[i],0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
-      printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
+      rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
+      txdata = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+      
+      for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
+	rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
+	memset(rxdata[i], 0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
+	printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->common_vars.rxdata[0][i],rxdata[i],N_TA_offset);      
+      }
+      
+      for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+	free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
+	txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = txdata[i];
+	memset(txdata[i],0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
+	printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
+      }
     }
   }
 

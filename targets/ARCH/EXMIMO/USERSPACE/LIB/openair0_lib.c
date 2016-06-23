@@ -64,7 +64,10 @@
 
 #include <pthread.h>
 
+
 #define max(a,b) ((a)>(b) ? (a) : (b))
+
+
 exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS]; // contains userspace pointers for each card
 
 char *bigshm_top[MAX_CARDS] = INIT_ZEROS;
@@ -90,6 +93,7 @@ extern volatile int                    oai_exit;
 
 void kill_watchdog(openair0_device *);
 void create_watchdog(openair0_device *);
+void rt_sleep(struct timespec *,long );
 
 unsigned int log2_int( unsigned int x )
 {
@@ -272,6 +276,20 @@ int openair0_stop_without_reset(int card)
 #define MY_RF_MODE      (RXEN + TXEN + TXLPFNORM + TXLPFEN + TXLPF25 + RXLPFNORM + RXLPFEN + RXLPF25 + LNA1ON +LNAMax + RFBBNORM + DMAMODE_RX + DMAMODE_TX)
 #define RF_MODE_BASE    (LNA1ON + RFBBNORM)
 
+void rt_sleep(struct timespec *ts,long tv_nsec) {
+
+  clock_gettime(CLOCK_MONOTONIC, ts);
+
+  ts->tv_nsec += tv_nsec;
+
+  if (ts->tv_nsec>=1000000000L) {
+    ts->tv_nsec -= 1000000000L;
+    ts->tv_sec++;
+  }
+
+  clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, ts, NULL);
+
+}
 static void *watchdog_thread(void *arg) {
 
   int policy, s, j;
@@ -284,7 +302,12 @@ static void *watchdog_thread(void *arg) {
   volatile unsigned int *daq_mbox = openair0_daq_cnt();
   unsigned int mbox,diff;
   int first_acquisition;
-  
+  struct timespec sleep_time,wait;
+
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
   /* CPU 1 is reserved for all TX threads */
@@ -388,6 +411,8 @@ static void *watchdog_thread(void *arg) {
 
   first_acquisition=1;
   // main loop to keep up with DMA transfers from exmimo2
+
+  int cnt_diff0=0;
   while ((!oai_exit) && (!exm->watchdog_exit)) {
 
     if (exm->daq_state == running) {
@@ -403,7 +428,7 @@ static void *watchdog_thread(void *arg) {
       }
       exm->last_mbox = mbox;
 
-      pthread_mutex_lock(&exm->watchdog_mutex);
+      pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
       exm->ts += (diff*exm->samples_per_frame/150) ; 
 
       if (first_acquisition==1) //set last read to a closest subframe boundary
@@ -416,9 +441,14 @@ static void *watchdog_thread(void *arg) {
       first_acquisition=0;
 
       if (diff == 0) {
-	exm->watchdog_exit = 1;
-        printf("exiting, HW stopped\n");
+	cnt_diff0++;
+	if (cnt_diff0 == 10) {
+	  exm->watchdog_exit = 1;
+	  printf("exiting, HW stopped\n");
+	}
       }
+      else
+	cnt_diff0=0;
 
       if (exm->ts - exm->last_ts_rx > exm->samples_per_frame) {
 	exm->watchdog_exit = 1;
@@ -427,12 +457,11 @@ static void *watchdog_thread(void *arg) {
       //      printf("ts %lu, last_ts_rx %lu, mbox %d, diff %d\n",exm->ts, exm->last_ts_rx,mbox,diff);
       pthread_mutex_unlock(&exm->watchdog_mutex);
     }
-
-
-    usleep(500);  // sleep for 500us
+    rt_sleep(&sleep_time,250000L);
   }
   
   oai_exit=1;
+  printf("Exiting watchdog\n");
   return NULL;
 }
 
@@ -473,13 +502,23 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
 
   exmimo_state_t *exm=device->priv;
   openair0_config_t *cfg=&device->openair0_cfg[0];
-  openair0_timestamp ts,diff;
+  openair0_timestamp old_ts=0,ts,diff;
+  struct timespec sleep_time;
+  unsigned long tv_nsec;
   //  int i;
+  struct timespec wait;
 
-  pthread_mutex_lock(&exm->watchdog_mutex);
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  if (exm->watchdog_exit == 1)
+    return(0);
+
+  pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
   ts = exm->ts;
   pthread_mutex_unlock(&exm->watchdog_mutex);
-  while (ts < exm->last_ts_rx + nsamps) {
+  while ((ts < exm->last_ts_rx + nsamps) && 
+	 (exm->watchdog_exit==0)) {
 
     diff = exm->last_ts_rx+nsamps - ts; // difference in samples between current timestamp and last RX received sample
     // go to sleep until we should have enough samples (1024 for a bit more)
@@ -487,14 +526,21 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     printf("Reading %d samples, ts %lu, last_ts_rx %lu (%lu) => sleeping %u us\n",nsamps,ts,exm->last_ts_rx,exm->last_ts_rx+nsamps,
 	   (unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
 #endif
-    usleep((unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
+    tv_nsec=(unsigned long)((double)(diff+3840)*1e9/cfg->sample_rate);
+    //    tv_nsec = 500000L;
+    old_ts = ts;
+    rt_sleep(&sleep_time,tv_nsec);
 #ifdef DEBUG_EXMIMO
     printf("back\n");
 #endif
     // get new timestamp, in case we have to sleep again
-    pthread_mutex_lock(&exm->watchdog_mutex);
+    pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
     ts = exm->ts;
     pthread_mutex_unlock(&exm->watchdog_mutex);
+    if (old_ts == ts) {
+      printf("ts stopped, returning\n");
+      return(0);
+    }
   }
 
   /*
@@ -510,6 +556,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
   
   *ptimestamp=exm->last_ts_rx;
   exm->last_ts_rx += nsamps;
+
 
   return(nsamps);
 }
@@ -659,6 +706,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
     /* device specific */
     openair0_cfg[card].iq_txshift = 4;//shift
     openair0_cfg[card].iq_rxrescale = 15;//rescale iqs
+    openair0_cfg[card].mmapped_dma = 1;
 
     if (openair0_cfg[card].sample_rate==30.72e6) {
       resampling_factor = 0;
@@ -690,6 +738,10 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 #endif
 
     for (ant=0; ant<4; ant++) {
+
+      openair0_cfg[card].rxbase[ant] = (int32_t*)openair0_exmimo_pci[card].adc_head[ant];
+      openair0_cfg[card].txbase[ant] = (int32_t*)openair0_exmimo_pci[card].dac_head[ant];
+
       if (openair0_cfg[card].rx_freq[ant] || openair0_cfg[card].tx_freq[ant]) {
 	ACTIVE_RF += (1<<ant)<<5;
         p_exmimo_config->rf.rf_mode[ant] = RF_MODE_BASE;
@@ -697,14 +749,14 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 	printf("card %d, antenna %d, autocal %d\n",card,ant,openair0_cfg[card].autocal[ant]);
       }
 
-      if (openair0_cfg[card].tx_freq[ant]) {
+      if (openair0_cfg[card].tx_freq[ant]>0) {
         p_exmimo_config->rf.rf_mode[ant] += (TXEN + DMAMODE_TX + TXLPFNORM + TXLPFEN + tx_filter);
         p_exmimo_config->rf.rf_freq_tx[ant] = (unsigned int)openair0_cfg[card].tx_freq[ant];
         p_exmimo_config->rf.tx_gain[ant][0] = (unsigned int)openair0_cfg[card].tx_gain[ant];
-
+        printf("openair0 : programming card %d TX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
       }
 
-      if (openair0_cfg[card].rx_freq[ant]) {
+      if (openair0_cfg[card].rx_freq[ant]>0) {
         p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX + RXLPFNORM + RXLPFEN + rx_filter);
 
         p_exmimo_config->rf.rf_freq_rx[ant] = (unsigned int)openair0_cfg[card].rx_freq[ant];
@@ -786,13 +838,14 @@ int openair0_reconfig(openair0_config_t *openair0_cfg)
       if (openair0_cfg[card].tx_freq[ant]) {
         p_exmimo_config->rf.rf_freq_tx[ant] = (unsigned int)openair0_cfg[card].tx_freq[ant];
         p_exmimo_config->rf.tx_gain[ant][0] = (unsigned int)openair0_cfg[card].tx_gain[ant];
-        //printf("openair0 : programming TX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
+        printf("openair0 : programming TX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
       }
+
 
       if (openair0_cfg[card].rx_freq[ant]) {
         p_exmimo_config->rf.rf_freq_rx[ant] = (unsigned int)openair0_cfg[card].rx_freq[ant];
         p_exmimo_config->rf.rx_gain[ant][0] = (unsigned int)openair0_cfg[card].rx_gain[ant];
-        //printf("openair0 : programming RX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
+        printf("openair0 : programming RX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
 
         switch (openair0_cfg[card].rxg_mode[ant]) {
         default:

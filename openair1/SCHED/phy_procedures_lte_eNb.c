@@ -2562,8 +2562,14 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
 
       if (proc->first_rx == 0) {
-        AssertFatal(proc->subframe_rx == subframe, "Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)",proc->subframe_rx,subframe);
-        AssertFatal(proc->frame_rx == frame, "Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)",proc->frame_rx,frame);
+        if (proc->subframe_rx != subframe){
+	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+	  exit_fun("Exiting");
+	}
+        if (proc->frame_rx != frame) {
+	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+	  exit_fun("Exiting");
+	}
       } else {
         proc->first_rx = 0;
 			}

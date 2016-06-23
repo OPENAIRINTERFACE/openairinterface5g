@@ -158,6 +158,10 @@ typedef struct {
   int rx_num_channels;
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
+  //! \brief RX base addresses for mmapped_dma
+  int32_t* rxbase[4];
+  //! \brief TX base addresses for mmapped_dma
+  int32_t* txbase[4];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
   double rx_freq[4];
