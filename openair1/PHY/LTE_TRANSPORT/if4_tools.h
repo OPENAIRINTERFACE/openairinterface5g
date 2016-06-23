@@ -182,6 +182,6 @@ void gen_IF4_ul_header(IF4_ul_header_t*, int, int);
 
 void gen_IF4_prach_header(IF4_prach_header_t*, int, int);
 
-void send_IF4(PHY_VARS_eNB*, int, int, uint16_t);
+void send_IF4(PHY_VARS_eNB*, int, int, uint16_t, int);
 
-void recv_IF4(PHY_VARS_eNB*, int, int, uint16_t*, uint32_t*);
+void recv_IF4(PHY_VARS_eNB*, int, int, uint16_t*, uint32_t*, uint16_t);

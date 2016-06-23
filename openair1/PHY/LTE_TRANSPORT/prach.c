@@ -41,6 +41,7 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 //#include "prach.h"
+#include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -1269,18 +1270,25 @@ void rx_prach(PHY_VARS_eNB *eNB,
   }
 
   if (eNB->node_function == NGFI_RRU_IF4) {
-    /// **** send_IF4 of prachF to RCC **** ///    
+    k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+    
+    if (k<0) {
+      k+=(eNB->frame_parms.ofdm_symbol_size);
+    }
+
+    k*=12;
+    k+=13; 
+    k*=2;
+    
+    /// **** send_IF4 of rxsigF to RCC **** ///    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-    //send_IF4(eNB, frame, subframe, IF4_PRACH);
+    send_IF4(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4_PRACH, k);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
 
     return;
   }
   
   // in case of RCC and prach received rx_thread wakes up prach
-  //else if (eNB->node_function == NGFI_RCC_IF4) {
-  //  wait for prachF from RRU and continue with PRACH processing
-  //}
 
   // here onwards is for eNodeB_3GPP or NGFI_RCC_IF4
 

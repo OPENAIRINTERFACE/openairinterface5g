@@ -48,13 +48,13 @@
 
 
 // --- Careful to handle buffer memory --- RAW/UDP modes --- PRACH variables and data
-void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) {
+void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, int k) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
-  int16_t *prachF = eNB->prach_vars.prachF;  
+  int16_t **rxsigF = eNB->prach_vars.rxsigF;  
       
-  uint16_t symbol_id, element_id;
+  uint16_t symbol_id=0, element_id=0;
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
 
@@ -139,8 +139,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
     }		
   } else if (packet_type == IF4_PRACH) {
     // FIX: hard coded prach samples length
-    db_fulllength = 839;
-    slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    db_fulllength = 839*2;
 
     tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_prach_header_t + db_fulllength*sizeof(int16_t));
     IF4_prach_header_t *prach_header = (IF4_prach_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
@@ -148,11 +147,14 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type) 
 
     gen_IF4_prach_header(prach_header, frame, subframe);
 		    
-    // Do compression and generate data blocks			
-    for (element_id=0; element_id<db_fulllength; element_id++) {
-      data_block[element_id]  = lin2alaw[ (prachF[blockoffsetF+element_id] & 0xffff) + 32768 ];          
-      data_block[element_id] |= lin2alaw[ (prachF[blockoffsetF+element_id]>>16) + 32768 ]<<8;  
-    }
+    // Generate uncompressed data blocks
+    memcpy(data_block, (rxsigF[0]+k), db_fulllength*sizeof(int16_t));
+    			
+    //for (element_id=0; element_id<db_fulllength; element_id++) {
+    //  data_block[element_id]  = rxsigF[0][prachoffsetF];          
+    //  data_block[element_id] |= rxsigF[0][prachoffsetF+1]<<16;
+    //  prachoffsetF += 2;  
+    //}
               
     // Write the packet to the fronthaul
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
@@ -176,16 +178,16 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
-  int16_t *prachF = eNB->prach_vars.prachF;  
+  int16_t **rxsigF = eNB->prach_vars.rxsigF;  
 
   uint16_t element_id;
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF, blockoffsetF; 
   
   if (expected_packet == IF4_PDLFFT) {
-    db_fulllength = = (12*fp->N_RB_DL); 
+    db_fulllength = (12*fp->N_RB_DL); 
   } else {
-    db_fulllength = = (12*fp->N_RB_UL);     
+    db_fulllength = (12*fp->N_RB_UL);     
   }  
   db_halflength = db_fulllength>>1;
 
