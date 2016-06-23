@@ -509,7 +509,9 @@ int main(int n, char **v)
   view_add_log(eg.macview, "ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION",
       h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_PDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_PDU_WITH_DATA", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_SDU", h, database, is_on);
+  view_add_log(eg.macview, "ENB_MAC_UE_UL_SDU_WITH_DATA", h, database, is_on);
   view_add_log(eg.macview, "ENB_MAC_UE_UL_CE", h, database, is_on);
 
   view_add_log(eg.rlcview, "ENB_RLC_DL", h, database, is_on);
@@ -576,6 +578,10 @@ int main(int n, char **v)
       h, database, is_on);
   view_add_log(eg.rrcview, "ENB_RRC_UNKNOW_MESSAGE",
       h, database, is_on);
+
+  /* deactivate those two by default, they are a bit heavy */
+  on_off(database, "ENB_MAC_UE_UL_SDU_WITH_DATA", is_on, 0);
+  on_off(database, "ENB_MAC_UE_UL_PDU_WITH_DATA", is_on, 0);
 
   for (i = 0; i < on_off_n; i++)
     on_off(database, on_off_name[i], is_on, on_off_action[i]);
