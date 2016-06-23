@@ -654,8 +654,8 @@ extern "C" {
   }
 
   /* device specific */
-  openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
-  openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait = 1;//manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait_slotcount = 1; //manage when TX processing is triggered
   openair0_cfg[0].iq_txshift = 4;//shift
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   

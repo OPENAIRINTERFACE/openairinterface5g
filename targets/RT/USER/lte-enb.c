@@ -487,10 +487,9 @@ static void* eNB_thread_rxtx( void* param ) {
 	}
       } else {
 
-        /// **** recv_IF4 of txdataF from RCC **** ///     
-        
+        /// **** recv_IF4 of txdataF from RCC **** ///             
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
-        //recv_IF4(eNB, frame, subframe, packet_type, symbol_number);        
+        //recv_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, packet_type, symbol_number);        
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
       }
@@ -537,10 +536,9 @@ static void* eNB_thread_rxtx( void* param ) {
 
     } else { 
 	 
-      /// **** send_IF4 of txdataF to RRU **** /// 
-      
+      /// **** send_IF4 of txdataF to RRU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-      send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT);
+      send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT, 0);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );
 
     }
