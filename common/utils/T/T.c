@@ -1,5 +1,4 @@
 #include "T.h"
-#include "T_messages.txt.h"
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -113,8 +112,6 @@ void T_init(int remote_port, int wait_for_tracer)
   int socket_pair[2];
   int s;
   int T_shm_fd;
-  unsigned char *buf;
-  int len;
   int child1, child2;
 
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair))
@@ -153,29 +150,4 @@ void T_init(int remote_port, int wait_for_tracer)
   close(T_shm_fd);
 
   new_thread(T_receive_thread, NULL);
-
-  /* trace T_message.txt
-   * Send several messages -1 with content followed by message -2.
-   * We can't use the T macro directly, events -1 and -2 are special.
-   */
-  buf = T_messages_txt;
-  len = T_messages_txt_len;
-  while (len) {
-    int send_size = len;
-    if (send_size > T_PAYLOAD_MAXSIZE - sizeof(int))
-      send_size = T_PAYLOAD_MAXSIZE - sizeof(int);
-    do {
-      T_LOCAL_DATA
-      T_HEADER(T_ID(-1));
-      T_PUT_buffer(1, ((T_buffer){addr:(buf), length:(len)}));
-      T_COMMIT();
-    } while (0);
-    buf += send_size;
-    len -= send_size;
-  }
-  do {
-    T_LOCAL_DATA
-    T_HEADER(T_ID(-2));
-    T_COMMIT();
-  } while (0);
 }

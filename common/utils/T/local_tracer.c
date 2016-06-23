@@ -11,6 +11,8 @@
 #include <inttypes.h>
 #include <signal.h>
 
+#include "T.h"
+#include "T_messages.txt.h"
 #include "T_defs.h"
 #include "T_IDs.h"
 
@@ -83,6 +85,38 @@ static int get_connection(char *addr, int port)
   printf("connected\n");
 
   return t;
+}
+
+static void forward(void *_forwarder, char *buf, int size);
+
+void send_T_messages_txt(void *forwarder)
+{
+  char buf[T_BUFFER_MAX];
+  char *T_LOCAL_buf = buf;
+  int T_LOCAL_size;
+  unsigned char *src;
+  int src_len;
+
+  /* trace T_message.txt
+   * Send several messages -1 with content followed by message -2.
+   */
+  src = T_messages_txt;
+  src_len = T_messages_txt_len;
+  while (src_len) {
+    int send_size = src_len;
+    if (send_size > T_PAYLOAD_MAXSIZE - sizeof(int))
+      send_size = T_PAYLOAD_MAXSIZE - sizeof(int);
+    /* TODO: be careful, we use internal T stuff, to rewrite? */
+    T_LOCAL_size = 0;
+    T_HEADER(T_ID(-1));
+    T_PUT_buffer(1, ((T_buffer){addr:(src), length:(send_size)}));
+    forward(forwarder, buf, T_LOCAL_size);
+    src += send_size;
+    src_len -= send_size;
+  }
+  T_LOCAL_size = 0;
+  T_HEADER(T_ID(-2));
+  forward(forwarder, buf, T_LOCAL_size);
 }
 
 /****************************************************************************/
@@ -213,6 +247,7 @@ dead:
 
   close(f->socket_remote);
   f->socket_remote = get_connection("0.0.0.0", f->remote_port);
+  send_T_messages_txt(f);
   goto again;
 
   return NULL;
@@ -237,6 +272,7 @@ static void *forwarder(int port, int s)
 
   f->remote_port = port;
   f->socket_remote = get_connection("0.0.0.0", port);
+  send_T_messages_txt(f);
 
   new_thread(data_sender, f);
   new_thread(forward_remote_messages, f);
