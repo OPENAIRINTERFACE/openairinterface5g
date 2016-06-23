@@ -84,7 +84,8 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
       }
 				 		
       // Update information in generated packet
-      dl_header->frame_status.sym_num = symbol_id; 
+      dl_header->frame_status &= ~(0x000f<<26);
+      dl_header->frame_status |= (symbol_id&0x000f)<<26; 
 			
       // Write the packet to the fronthaul
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
@@ -122,7 +123,8 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
       }
        			
       // Update information in generated packet
-      ul_header->frame_status.sym_num = symbol_id; 
+      ul_header->frame_status &= ~(0x000f<<26);
+      ul_header->frame_status |= (symbol_id&0x000f)<<26; 
 			
       // Write the packet(s) to the fronthaul 
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
@@ -174,7 +176,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
 }
 
 
-void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type, uint32_t *symbol_number, uint16_t expected_packet) {
+void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type, uint32_t *symbol_number) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
@@ -182,9 +184,9 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
 
   uint16_t element_id;
   uint16_t db_fulllength, db_halflength; 
-  int slotoffsetF, blockoffsetF; 
+  int slotoffsetF=0, blockoffsetF=0; 
   
-  if (expected_packet == IF4_PDLFFT) {
+  if (eNB->node_function == NGFI_RRU_IF4) {
     db_fulllength = (12*fp->N_RB_DL); 
   } else {
     db_fulllength = (12*fp->N_RB_UL);     
@@ -194,6 +196,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   int64_t *ret_type=(int64_t*)malloc(sizeof(int64_t)); 
   void *rx_buffer=NULL;
   int16_t *data_block=NULL;
+  
    
   // Read packet(s) from the fronthaul    
   if (eNB->ifdevice.trx_read_func(&eNB->ifdevice,
@@ -204,7 +207,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     perror("ETHERNET read");
   }
   
-  *packet_type = *ret_type;
+  *packet_type = (uint16_t) *ret_type;
   
   if (*packet_type == IF4_PDLFFT) {
     data_block = (int16_t*) (rx_buffer+sizeof_IF4_dl_header_t);
@@ -223,7 +226,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((IF4_dl_header_t*)(rx_buffer))->frame_status.sym_num;      
+    *symbol_number = ((((IF4_dl_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
         
   } else if (*packet_type == IF4_PULFFT) {
     data_block = (int16_t*) (rx_buffer+sizeof_IF4_ul_header_t);
@@ -242,12 +245,16 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((IF4_ul_header_t*)(rx_buffer))->frame_status.sym_num;      
+    *symbol_number = ((((IF4_ul_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
     
   } else if (*packet_type == IF4_PRACH) {
     data_block = (int16_t*) (rx_buffer+sizeof_IF4_prach_header_t);
     
-    db_fulllength = 839;  // hard coded 
+    // FIX: hard coded prach samples length
+    db_fulllength = 839*2;
+		    
+    // Generate uncompressed data blocks
+    memcpy((rxsigF[0]+slotoffsetF), data_block, db_fulllength*sizeof(int16_t));
        
   } else {
     AssertFatal(1==0, "recv_IF4 - Unknown packet_type %x", *packet_type);            
@@ -263,18 +270,13 @@ void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, int frame, int subframe) {
   dl_packet->type = IF4_PACKET_TYPE; 
   dl_packet->sub_type = IF4_PDLFFT;
 
-  // Leave reserved as it is 
+  // Reset frame status 
   dl_packet->rsvd = 0;
   
   // Set frame status
-  dl_packet->frame_status.ant_num = 0;
-  dl_packet->frame_status.ant_start = 0;
-  dl_packet->frame_status.rf_num = frame;
-  dl_packet->frame_status.sf_num = subframe;
-  dl_packet->frame_status.sym_num = 0;
-  dl_packet->frame_status.rsvd = 0;
-
-  // Set frame check sequence
+  dl_packet->frame_status = 0;
+  dl_packet->frame_status |= (frame&0xffff)<<6;
+  dl_packet->frame_status |= (subframe&0x000f)<<22;
 
 }
 
@@ -288,19 +290,20 @@ void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, int frame, int subframe) {
   ul_packet->rsvd = 0;
   
   // Set frame status
-  ul_packet->frame_status.ant_num = 0;
-  ul_packet->frame_status.ant_start = 0;
-  ul_packet->frame_status.rf_num = frame;
-  ul_packet->frame_status.sf_num = subframe;
-  ul_packet->frame_status.sym_num = 0;
-  ul_packet->frame_status.rsvd = 0;
+  ul_packet->frame_status = 0;
+  ul_packet->frame_status |= (frame&0xffff)<<6;
+  ul_packet->frame_status |= (subframe&0x000f)<<22;
     
   // Set antenna specific gain *** set other antenna gain ***
-  ul_packet->gain0.exponent = 0;
-  ul_packet->gain0.rsvd = 0;
-    
-  // Set frame check sequence
-
+  ul_packet->gain0 = 0;
+  ul_packet->gain1 = 0;
+  ul_packet->gain2 = 0;
+  ul_packet->gain3 = 0;
+  ul_packet->gain4 = 0;
+  ul_packet->gain5 = 0;
+  ul_packet->gain6 = 0;
+  ul_packet->gain7 = 0;
+      
 }
 
 
@@ -313,12 +316,8 @@ void gen_IF4_prach_header(IF4_prach_header_t *prach_packet, int frame, int subfr
   prach_packet->rsvd = 0;
   
   // Set LTE Prach configuration
-  prach_packet->prach_conf.rsvd = 0;
-  prach_packet->prach_conf.ant = 0;
-  prach_packet->prach_conf.rf_num = frame;
-  prach_packet->prach_conf.sf_num = subframe;
-  prach_packet->prach_conf.exponent = 0;  
+  prach_packet->prach_conf = 0;
+  prach_packet->prach_conf |= (frame&0xffff)<<6;
+  prach_packet->prach_conf |= (subframe&0x000f)<<22;
         
-  // Set frame check sequence
-
 } 

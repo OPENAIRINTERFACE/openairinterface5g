@@ -47,6 +47,10 @@
 #define IF4_PDLFFT 0x0020
 #define IF4_PRACH 0x0021
 
+/* 
+
+Bit-field reference
+
 /// IF4 Frame Status (32 bits)
 struct IF4_frame_status {
   /// Antenna Numbers
@@ -63,9 +67,6 @@ struct IF4_frame_status {
   uint32_t rsvd:2;    
 };
 
-typedef struct IF4_frame_status IF4_frame_status_t;
-#define sizeof_IF4_frame_status_t 4 
-
 /// IF4 Antenna Gain (16 bits)
 struct IF4_gain {
   /// Reserved 
@@ -73,9 +74,6 @@ struct IF4_gain {
   /// FFT Exponent Output
   uint16_t exponent:6;  
 };  
-
-typedef struct IF4_gain IF4_gain_t;
-#define sizeof_IF_gain_t 2
 
 /// IF4 LTE PRACH Configuration (32 bits)
 struct IF4_lte_prach_conf {
@@ -91,8 +89,7 @@ struct IF4_lte_prach_conf {
   uint32_t exponent:6;  
 };
 
-typedef struct IF4_lte_prach_conf IF4_lte_prach_conf_t;
-#define sizeof_IF4_lte_prach_conf_t 4
+*/
 
 struct IF4_dl_header {
   /// Destination Address
@@ -106,7 +103,7 @@ struct IF4_dl_header {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  IF4_frame_status_t frame_status;
+  uint32_t frame_status;
   /// Data Blocks
 
   /// Frame Check Sequence
@@ -128,23 +125,23 @@ struct IF4_ul_header {
   /// Reserved
   uint32_t rsvd;
   /// Frame Status
-  IF4_frame_status_t frame_status;
+  uint32_t frame_status;
   /// Gain 0
-  IF4_gain_t gain0;
+  uint16_t gain0;
   /// Gain 1
-  IF4_gain_t gain1;
+  uint16_t gain1;
   /// Gain 2
-  IF4_gain_t gain2;
+  uint16_t gain2;
   /// Gain 3
-  IF4_gain_t gain3;
+  uint16_t gain3;
   /// Gain 4
-  IF4_gain_t gain4;
+  uint16_t gain4;
   /// Gain 5
-  IF4_gain_t gain5;
+  uint16_t gain5;
   /// Gain 6
-  IF4_gain_t gain6;
+  uint16_t gain6;
   /// Gain 7
-  IF4_gain_t gain7;
+  uint16_t gain7;
   /// Data Blocks
 
   /// Frame Check Sequence
@@ -166,7 +163,7 @@ struct IF4_prach_header {
   /// Reserved
   uint32_t rsvd;
   /// LTE Prach Configuration
-  IF4_lte_prach_conf_t prach_conf;
+  uint32_t prach_conf;
   /// Prach Data Block (one antenna)
 
   /// Frame Check Sequence
@@ -184,4 +181,4 @@ void gen_IF4_prach_header(IF4_prach_header_t*, int, int);
 
 void send_IF4(PHY_VARS_eNB*, int, int, uint16_t, int);
 
-void recv_IF4(PHY_VARS_eNB*, int, int, uint16_t*, uint32_t*, uint16_t);
+void recv_IF4(PHY_VARS_eNB*, int, int, uint16_t*, uint32_t*);
