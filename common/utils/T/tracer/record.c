@@ -30,9 +30,13 @@ void usage(void)
 
 volatile int run = 1;
 
+static int socket = -1;
+
 void force_stop(int x)
 {
   printf("\ngently quit...\n");
+  close(socket);
+  socket = -1;
   run = 0;
 }
 
@@ -47,7 +51,6 @@ int main(int n, char **v)
   char **on_off_name;
   int *on_off_action;
   int on_off_n = 0;
-  int socket;
   int *is_on;
   int number_of_events;
   int i;
@@ -55,11 +58,6 @@ int main(int n, char **v)
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
-
-  /* exit on ctrl+c and ctrl+z */
-  if (signal(SIGQUIT, force_stop) == SIG_ERR) abort();
-  if (signal(SIGINT, force_stop) == SIG_ERR) abort();
-  if (signal(SIGTSTP, force_stop) == SIG_ERR) abort();
 
   on_off_name = malloc(n * sizeof(char *)); if (on_off_name == NULL) abort();
   on_off_action = malloc(n * sizeof(int)); if (on_off_action == NULL) abort();
@@ -118,6 +116,11 @@ int main(int n, char **v)
     perror(output_filename);
     exit(1);
   }
+
+  /* exit on ctrl+c and ctrl+z */
+  if (signal(SIGQUIT, force_stop) == SIG_ERR) abort();
+  if (signal(SIGINT, force_stop) == SIG_ERR) abort();
+  if (signal(SIGTSTP, force_stop) == SIG_ERR) abort();
 
   /* read messages */
   while (run) {
