@@ -377,6 +377,8 @@ extern int ouput_vcd;
 
 #if T_TRACER
 
+#include "T.h"
+
 #define VCD_SIGNAL_DUMPER_INIT(x)         /* nothing */
 #define VCD_SIGNAL_DUMPER_CLOSE()         /* nothing */
 #define VCD_SIGNAL_DUMPER_CREATE_HEADER() /* nothing */
