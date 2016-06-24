@@ -312,13 +312,12 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t;    
   void *test_buffer = (void*)malloc(packet_size);
   
-  void *rx_buffer=NULL;
   IF4_header_t *test_header = (IF4_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
   
   bytes_received = recv(eth->sockfd[Mod_id],
                         test_buffer,
                         packet_size,
-                        0);                        
+                        MSG_PEEK);                        
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
 	  perror("ETHERNET READ: ");
@@ -328,29 +327,22 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   *timestamp = test_header->sub_type; 
   
   if (test_header->sub_type == IF4_PDLFFT) {
-    buff[0] = (void*)malloc(RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) - MAC_HEADER_SIZE_BYTES);
-    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) - packet_size;     
-        
+    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);             
   } else if (test_header->sub_type == IF4_PULFFT) {
-    buff[0] = (void*)malloc(RAW_IF4_PULFFT_SIZE_BYTES(nblocks) - MAC_HEADER_SIZE_BYTES);
-    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks) - packet_size;     
-        
+    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);             
   } else {
-    buff[0] = (void*)malloc(RAW_IF4_PRACH_SIZE_BYTES - MAC_HEADER_SIZE_BYTES);
-    packet_size = RAW_IF4_PRACH_SIZE_BYTES - packet_size;
-    printf(" Came for prach\n");                 
+    packet_size = RAW_IF4_PRACH_SIZE_BYTES;
   }
-
-  memcpy(buff[0], test_header, sizeof_IF4_header_t);
-  rx_buffer = (void*)(buff[0]+sizeof_IF4_header_t);
+    
+  buff[0] = (void*)malloc(packet_size);
   
   bytes_received = 0;
   
   while(bytes_received < packet_size) {
-    bytes_received += recv(eth->sockfd[Mod_id],
-                           rx_buffer,
-                           packet_size-bytes_received,
-                           0);
+    bytes_received = recv(eth->sockfd[Mod_id],
+                          buff[0],
+                          packet_size,
+                          0);
 	  if (bytes_received ==-1) {
 	    eth->num_rx_errors++;
 	    perror("ETHERNET READ: ");
@@ -361,10 +353,9 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
     }
   }
 
-  eth->rx_nsamps = nsamps;
-  
+  eth->rx_nsamps = nsamps;  
   free(test_buffer);
-  return (bytes_received-MAC_HEADER_SIZE_BYTES)>>1;
+  return(bytes_received);
 }
 
 

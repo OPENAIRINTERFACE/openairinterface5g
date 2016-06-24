@@ -193,22 +193,21 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   }  
   db_halflength = db_fulllength>>1;
 
-  int64_t *ret_type=(int64_t*)malloc(sizeof(int64_t)); 
   void *rx_buffer=NULL;
+  IF4_header_t *packet_header=NULL;
   int16_t *data_block=NULL;
-  
-   
+     
   // Read packet(s) from the fronthaul    
   if (eNB->ifdevice.trx_read_func(&eNB->ifdevice,
-                                  ret_type,
+                                  (int64_t*) packet_type,
                                   &rx_buffer,
                                   db_fulllength,
                                   0) < 0) {
     perror("ETHERNET read");
   }
   
-  *packet_type = (uint16_t) *ret_type;
-  data_block = (int16_t*) (rx_buffer+sizeof_IF4_header_t);
+  packet_header = (IF4_header_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES);
+  data_block = (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4_header_t);
   
   if (*packet_type == IF4_PDLFFT) {          
     // Calculate from received packet
@@ -225,7 +224,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((((IF4_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
+    *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
         
   } else if (*packet_type == IF4_PULFFT) {         
     // Calculate from received packet
@@ -242,7 +241,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((((IF4_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
+    *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
     
   } else if (*packet_type == IF4_PRACH) {    
     // FIX: hard coded prach samples length
