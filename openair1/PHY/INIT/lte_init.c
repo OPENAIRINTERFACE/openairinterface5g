@@ -663,6 +663,39 @@ void phy_config_dedicated_eNB(uint8_t Mod_id,
   if (physicalConfigDedicated) {
     phy_vars_eNB->physicalConfigDedicated[UE_id] = physicalConfigDedicated;
     LOG_I(PHY,"phy_config_dedicated_eNB: physicalConfigDedicated=%p\n",physicalConfigDedicated);
+
+    if (physicalConfigDedicated->antennaInfo) {
+      switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
+      case AntennaInfoDedicated__transmissionMode_tm1:
+	phy_vars_eNB->transmission_mode[UE_id] = 1;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm2:
+	phy_vars_eNB->transmission_mode[UE_id] = 2;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm3:
+	phy_vars_eNB->transmission_mode[UE_id] = 3;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm4:
+	phy_vars_eNB->transmission_mode[UE_id] = 4;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm5:
+	phy_vars_eNB->transmission_mode[UE_id] = 5;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm6:
+	phy_vars_eNB->transmission_mode[UE_id] = 6;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm7:
+	phy_vars_eNB->transmission_mode[UE_id] = 7;
+        lte_gold_ue_spec_port5(phy_vars_eNB->lte_gold_uespec_port5_table[0],phy_vars_eNB->lte_frame_parms.Nid_cell,rnti);
+	break;
+      default:
+	LOG_E(PHY,"Unknown transmission mode!\n");
+	break;
+      } 
+    } else {
+      LOG_D(PHY,"[eNB %d] Frame %d: Received NULL radioResourceConfigDedicated->antennaInfo from eNB %d\n",Mod_id, phy_vars_eNB->proc[8].frame_tx,UE_id);
+    }
+
   } else {
     LOG_E(PHY,"[eNB %d] Frame %d: Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id, phy_vars_eNB->proc[8].frame_tx,UE_id);
     return;
@@ -825,6 +858,35 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t CH_index,
       phy_vars_ue->transmission_mode[CH_index] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
       LOG_D(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[CH_index]);
       LOG_D(PHY,"\n");
+      switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
+      case AntennaInfoDedicated__transmissionMode_tm1:
+	phy_vars_ue->transmission_mode[CH_index] = 1;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm2:
+	phy_vars_ue->transmission_mode[CH_index] = 2;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm3:
+	phy_vars_ue->transmission_mode[CH_index] = 3;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm4:
+	phy_vars_ue->transmission_mode[CH_index] = 4;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm5:
+	phy_vars_ue->transmission_mode[CH_index] = 5;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm6:
+	phy_vars_ue->transmission_mode[CH_index] = 6;
+	break;
+      case AntennaInfoDedicated__transmissionMode_tm7:
+	phy_vars_ue->transmission_mode[CH_index] = 7;
+        lte_gold_ue_spec_port5(phy_vars_ue->lte_gold_uespec_port5_table, phy_vars_ue->lte_frame_parms.Nid_cell, phy_vars_ue->lte_ue_pdcch_vars[CH_index]->crnti);
+	break;
+      default:
+	LOG_E(PHY,"Unknown transmission mode!\n");
+	break;
+      } 
+    } else {
+      LOG_D(PHY,"[UE %d] Frame %d: Received NULL physicalConfigDedicated->antennaInfo from eNB %d\n",Mod_id, phy_vars_ue->frame_rx,CH_index);
     }
 
     if (physicalConfigDedicated->schedulingRequestConfig) {
