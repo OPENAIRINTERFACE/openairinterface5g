@@ -2522,7 +2522,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   int prach_rx;
 
   uint16_t packet_type;
-  uint32_t symbol_number;
+  uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
   
   struct timespec time_req, time_rem;  
@@ -2649,21 +2649,22 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     
     } else if (eNB->node_function == NGFI_RCC_IF4) {
       /// **** recv_IF4 of rxdataF from RRU **** ///
-      /// **** recv_IF4 of prachF from RRU **** ///
+      /// **** recv_IF4 of rxsigF from RRU **** ///
       // get frame/subframe information from IF4 interface
       // timed loop (200 us)
-
+       
+      symbol_number = 0;
       symbol_mask = 0;
       symbol_mask_full = (1<<fp->symbols_per_tti)-1;
       prach_rx = 0;
 
       // Block from loop while testing
-      symbol_mask = symbol_mask_full;
-      nanosleep(&time_req, &time_rem);
+      //symbol_mask = symbol_mask_full;
+      //nanosleep(&time_req, &time_rem);
          
       do {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
-        //recv_IF4(eNB, frame, subframe, &packet_type, &symbol_number);
+        recv_IF4(eNB, proc->frame_rx, proc->subframe_rx, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {

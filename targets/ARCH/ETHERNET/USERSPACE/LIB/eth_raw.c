@@ -309,11 +309,11 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t;    
+  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t;    
   void *test_buffer = (void*)malloc(packet_size);
   
   void *rx_buffer=NULL;
-  IF4_dl_header_t *test_header = (IF4_dl_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
+  IF4_header_t *test_header = (IF4_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
   
   bytes_received = recv(eth->sockfd[Mod_id],
                         test_buffer,
@@ -324,7 +324,7 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
 	  perror("ETHERNET READ: ");
 	  exit(-1);	
   }
-  
+ 
   *timestamp = test_header->sub_type; 
   
   if (test_header->sub_type == IF4_PDLFFT) {
@@ -337,11 +337,12 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
         
   } else {
     buff[0] = (void*)malloc(RAW_IF4_PRACH_SIZE_BYTES - MAC_HEADER_SIZE_BYTES);
-    packet_size = RAW_IF4_PRACH_SIZE_BYTES - packet_size;                 
+    packet_size = RAW_IF4_PRACH_SIZE_BYTES - packet_size;
+    printf(" Came for prach\n");                 
   }
 
-  memcpy(buff[0], test_header, sizeof_IF4_dl_header_t);
-  rx_buffer = (void*)(buff[0]+sizeof_IF4_dl_header_t);
+  memcpy(buff[0], test_header, sizeof_IF4_header_t);
+  rx_buffer = (void*)(buff[0]+sizeof_IF4_header_t);
   
   bytes_received = 0;
   

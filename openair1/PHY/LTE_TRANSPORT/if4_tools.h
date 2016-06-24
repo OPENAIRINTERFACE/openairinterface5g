@@ -47,55 +47,7 @@
 #define IF4_PDLFFT 0x0020
 #define IF4_PRACH 0x0021
 
-/* 
-
-Bit-field reference
-
-/// IF4 Frame Status (32 bits)
-struct IF4_frame_status {
-  /// Antenna Numbers
-  uint32_t ant_num:3;
-  /// Antenna Start
-  uint32_t ant_start:3;
-  /// Radio Frame Number
-  uint32_t rf_num:16;
-  /// Sub-frame Number
-  uint32_t sf_num:4;
-  /// Symbol Number
-  uint32_t sym_num:4;
-  /// Reserved
-  uint32_t rsvd:2;    
-};
-
-/// IF4 Antenna Gain (16 bits)
-struct IF4_gain {
-  /// Reserved 
-  uint16_t rsvd:10;
-  /// FFT Exponent Output
-  uint16_t exponent:6;  
-};  
-
-/// IF4 LTE PRACH Configuration (32 bits)
-struct IF4_lte_prach_conf {
-  /// Reserved
-  uint32_t rsvd:3;
-  /// Antenna Indication
-  uint32_t ant:3;
-  /// Radio Frame Number
-  uint32_t rf_num:16;
-  /// Sub-frame Number
-  uint32_t sf_num:4;
-  /// FFT Exponent Output
-  uint32_t exponent:6;  
-};
-
-*/
-
-struct IF4_dl_header {
-  /// Destination Address
-  
-  /// Source Address
-  
+struct IF4_header {  
   /// Type
   uint16_t type; 
   /// Sub-Type
@@ -104,80 +56,17 @@ struct IF4_dl_header {
   uint32_t rsvd;
   /// Frame Status
   uint32_t frame_status;
-  /// Data Blocks
-
-  /// Frame Check Sequence
 
 };
 
-typedef struct IF4_dl_header IF4_dl_header_t;
-#define sizeof_IF4_dl_header_t 12 
+typedef struct IF4_header IF4_header_t;
+#define sizeof_IF4_header_t 12 
 
-struct IF4_ul_header {
-  /// Destination Address
-  
-  /// Source Address
-  
-  /// Type
-  uint16_t type;
-  /// Sub-Type
-  uint16_t sub_type;
-  /// Reserved
-  uint32_t rsvd;
-  /// Frame Status
-  uint32_t frame_status;
-  /// Gain 0
-  uint16_t gain0;
-  /// Gain 1
-  uint16_t gain1;
-  /// Gain 2
-  uint16_t gain2;
-  /// Gain 3
-  uint16_t gain3;
-  /// Gain 4
-  uint16_t gain4;
-  /// Gain 5
-  uint16_t gain5;
-  /// Gain 6
-  uint16_t gain6;
-  /// Gain 7
-  uint16_t gain7;
-  /// Data Blocks
+void gen_IF4_dl_header(IF4_header_t*, int, int);
 
-  /// Frame Check Sequence
+void gen_IF4_ul_header(IF4_header_t*, int, int);
 
-};
-
-typedef struct IF4_ul_header IF4_ul_header_t;
-#define sizeof_IF4_ul_header_t 28 
-
-struct IF4_prach_header {
-  /// Destination Address 
-  
-  /// Source Address
-  
-  /// Type
-  uint16_t type;
-  /// Sub-Type
-  uint16_t sub_type;
-  /// Reserved
-  uint32_t rsvd;
-  /// LTE Prach Configuration
-  uint32_t prach_conf;
-  /// Prach Data Block (one antenna)
-
-  /// Frame Check Sequence
-
-};
-
-typedef struct IF4_prach_header IF4_prach_header_t;
-#define sizeof_IF4_prach_header_t 12
-
-void gen_IF4_dl_header(IF4_dl_header_t*, int, int);
-
-void gen_IF4_ul_header(IF4_ul_header_t*, int, int);
-
-void gen_IF4_prach_header(IF4_prach_header_t*, int, int);
+void gen_IF4_prach_header(IF4_header_t*, int, int);
 
 void send_IF4(PHY_VARS_eNB*, int, int, uint16_t, int);
 

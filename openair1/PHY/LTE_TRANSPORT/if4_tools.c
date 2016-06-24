@@ -67,9 +67,9 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t + db_fulllength*sizeof(int16_t));
-    IF4_dl_header_t *dl_header = (IF4_dl_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
-    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_dl_header_t);
+    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(int16_t));
+    IF4_header_t *dl_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
+    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
     gen_IF4_dl_header(dl_header, frame, subframe);
 		    
@@ -106,9 +106,9 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_ul_header_t + db_fulllength*sizeof(int16_t));
-    IF4_ul_header_t *ul_header = (IF4_ul_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
-    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_ul_header_t);
+    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(int16_t));
+    IF4_header_t *ul_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
+    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
     gen_IF4_ul_header(ul_header, frame, subframe);
 
@@ -143,9 +143,9 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_prach_header_t + db_fulllength*sizeof(int16_t));
-    IF4_prach_header_t *prach_header = (IF4_prach_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
-    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_prach_header_t);
+    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(int16_t));
+    IF4_header_t *prach_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
+    data_block = (int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
     gen_IF4_prach_header(prach_header, frame, subframe);
 		    
@@ -208,10 +208,9 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   }
   
   *packet_type = (uint16_t) *ret_type;
+  data_block = (int16_t*) (rx_buffer+sizeof_IF4_header_t);
   
-  if (*packet_type == IF4_PDLFFT) {
-    data_block = (int16_t*) (rx_buffer+sizeof_IF4_dl_header_t);
-          
+  if (*packet_type == IF4_PDLFFT) {          
     // Calculate from received packet
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
@@ -226,11 +225,9 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((((IF4_dl_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
+    *symbol_number = ((((IF4_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
         
-  } else if (*packet_type == IF4_PULFFT) {
-    data_block = (int16_t*) (rx_buffer+sizeof_IF4_ul_header_t);
-          
+  } else if (*packet_type == IF4_PULFFT) {         
     // Calculate from received packet
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
@@ -245,11 +242,9 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
     }
 		
     // Find and return symbol_number		 		
-    *symbol_number = ((((IF4_ul_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
+    *symbol_number = ((((IF4_header_t*)(rx_buffer))->frame_status)>>26)&0x000f;         
     
-  } else if (*packet_type == IF4_PRACH) {
-    data_block = (int16_t*) (rx_buffer+sizeof_IF4_prach_header_t);
-    
+  } else if (*packet_type == IF4_PRACH) {    
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
 		    
@@ -265,7 +260,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
 }
 
 
-void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, int frame, int subframe) {      
+void gen_IF4_dl_header(IF4_header_t *dl_packet, int frame, int subframe) {      
   // Set Type and Sub-Type
   dl_packet->type = IF4_PACKET_TYPE; 
   dl_packet->sub_type = IF4_PDLFFT;
@@ -281,7 +276,7 @@ void gen_IF4_dl_header(IF4_dl_header_t *dl_packet, int frame, int subframe) {
 }
 
 
-void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, int frame, int subframe) {  
+void gen_IF4_ul_header(IF4_header_t *ul_packet, int frame, int subframe) {  
   // Set Type and Sub-Type
   ul_packet->type = IF4_PACKET_TYPE; 
   ul_packet->sub_type = IF4_PULFFT;
@@ -294,20 +289,10 @@ void gen_IF4_ul_header(IF4_ul_header_t *ul_packet, int frame, int subframe) {
   ul_packet->frame_status |= (frame&0xffff)<<6;
   ul_packet->frame_status |= (subframe&0x000f)<<22;
     
-  // Set antenna specific gain *** set other antenna gain ***
-  ul_packet->gain0 = 0;
-  ul_packet->gain1 = 0;
-  ul_packet->gain2 = 0;
-  ul_packet->gain3 = 0;
-  ul_packet->gain4 = 0;
-  ul_packet->gain5 = 0;
-  ul_packet->gain6 = 0;
-  ul_packet->gain7 = 0;
-      
 }
 
 
-void gen_IF4_prach_header(IF4_prach_header_t *prach_packet, int frame, int subframe) {
+void gen_IF4_prach_header(IF4_header_t *prach_packet, int frame, int subframe) {
   // Set Type and Sub-Type
   prach_packet->type = IF4_PACKET_TYPE; 
   prach_packet->sub_type = IF4_PRACH;
@@ -316,8 +301,8 @@ void gen_IF4_prach_header(IF4_prach_header_t *prach_packet, int frame, int subfr
   prach_packet->rsvd = 0;
   
   // Set LTE Prach configuration
-  prach_packet->prach_conf = 0;
-  prach_packet->prach_conf |= (frame&0xffff)<<6;
-  prach_packet->prach_conf |= (subframe&0x000f)<<22;
+  prach_packet->frame_status = 0;
+  prach_packet->frame_status |= (frame&0xffff)<<6;
+  prach_packet->frame_status |= (subframe&0x000f)<<22;
         
 } 
