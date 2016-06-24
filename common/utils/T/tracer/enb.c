@@ -470,9 +470,10 @@ int main(int n, char **v)
     logger *textlog;
     char *name, *desc;
     database_get_generic_description(database, i, &name, &desc);
-    if (strncmp(name, "LEGACY_", 7) != 0) continue;
-    textlog = new_textlog(h, database, name, desc);
-    logger_add_view(textlog, eg.legacy);
+    if (!strncmp(name, "LEGACY_", 7)) {
+      textlog = new_textlog(h, database, name, desc);
+      logger_add_view(textlog, eg.legacy);
+    }
     free(name);
     free(desc);
   }
