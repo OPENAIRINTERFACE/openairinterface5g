@@ -95,6 +95,18 @@ check_supported_distribution() {
     return 1
 }
 
+##################
+# Error handlers #
+##################
+
+handler_EXIT() {
+	local exit_code=$?
+    [ "$exit_code" -eq 0 ] || echo_error "build have failed"
+	exit $exit_code
+}
+
+trap handler_EXIT EXIT
+
 ###########################
 # Cleaners
 ###########################
