@@ -271,8 +271,7 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-        sshpass \
-        libxslt1-dev
+    sshpass
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
@@ -356,6 +355,7 @@ check_install_oai_software() {
 	libusb-1.0-0-dev \
 	libxml2 \
 	libxml2-dev  \
+	libxslt1-dev \
 	linux-headers-`uname -r` \
 	mscgen  \
 	octave \
