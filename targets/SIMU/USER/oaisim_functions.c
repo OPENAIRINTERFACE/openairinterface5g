@@ -173,10 +173,11 @@ extern time_stats_t ul_chan_stats;
 
 extern int xforms;
 
+const Enb_properties_array_t *enb_properties;
+
 void get_simulation_options(int argc, char *argv[])
 {
   int                           option;
-  const Enb_properties_array_t *enb_properties;
   char  *conf_config_file_name = NULL;
 
   enum long_option_e {
@@ -714,6 +715,7 @@ void get_simulation_options(int argc, char *argv[])
       break;
 
     case 'x':
+      /*
       oai_emulation.info.transmission_mode[0] = atoi (optarg);
 
       if ((oai_emulation.info.transmission_mode[0] != 1) &&  (oai_emulation.info.transmission_mode[0] != 2) && (oai_emulation.info.transmission_mode[0] != 3)
@@ -721,6 +723,9 @@ void get_simulation_options(int argc, char *argv[])
         printf("Unsupported transmission mode %d\n",oai_emulation.info.transmission_mode[0]);
         exit(-1);
       }
+      */
+      printf("Option -x deprecated. Please set transmission mode in eNB config file\n");
+      exit(-1);
 
       break;
 
@@ -956,8 +961,19 @@ void init_openair1(void)
 
   // change the nb_connected_eNB
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    init_lte_vars (&frame_parms[CC_id], oai_emulation.info.frame_type[CC_id], oai_emulation.info.tdd_config[CC_id], oai_emulation.info.tdd_config_S[CC_id],oai_emulation.info.extended_prefix_flag[CC_id],
-                   oai_emulation.info.N_RB_DL[CC_id], Nid_cell, cooperation_flag, oai_emulation.info.transmission_mode[CC_id], abstraction_flag,nb_antennas_rx, oai_emulation.info.eMBMS_active_state);
+    init_lte_vars (&frame_parms[CC_id], 
+		   oai_emulation.info.frame_type[CC_id], 
+		   oai_emulation.info.tdd_config[CC_id], 
+		   oai_emulation.info.tdd_config_S[CC_id],
+		   oai_emulation.info.extended_prefix_flag[CC_id],
+                   oai_emulation.info.N_RB_DL[CC_id], 
+		   Nid_cell, 
+		   cooperation_flag, 
+		   enb_properties->properties[0]->nb_antenna_ports[CC_id], 
+		   abstraction_flag,
+		   enb_properties->properties[0]->nb_antennas_tx[CC_id],
+		   enb_properties->properties[0]->nb_antennas_tx[CC_id], 
+		   oai_emulation.info.eMBMS_active_state);
   }
 
   for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
