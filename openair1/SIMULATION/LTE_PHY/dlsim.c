@@ -1149,10 +1149,11 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             transmission_mode<7?0:transmission_mode);
 
-          if (transmission_mode == 7)
-	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mimo_mode = TM7; //Xiwen: to check about harq_pid
+          /*if (transmission_mode == 7)
+	    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mimo_mode = TM7; //Xiwen: to check about harq_pid*/
 
           num_dci++;
           num_ue_spec_dci++;
@@ -1292,7 +1293,8 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             0);
 
           num_common_dci++;
           num_dci++;
@@ -1459,7 +1461,8 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             0);
 
           num_dci++;
           num_ue_spec_dci++;
@@ -1599,7 +1602,8 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             0);
 
           num_common_dci++;
           num_dci++;
@@ -1767,7 +1771,8 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             0);
 
           num_dci++;
           num_ue_spec_dci++;
@@ -1907,7 +1912,8 @@ int main(int argc, char **argv)
                                              SI_RNTI,
                                              0,
                                              P_RNTI,
-                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                             PHY_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                             0);
 
           num_common_dci++;
           num_dci++;
@@ -1936,7 +1942,8 @@ int main(int argc, char **argv)
                                            SI_RNTI,
                                            0,
                                            P_RNTI,
-                                           PHY_vars_eNB->eNB_UE_stats[k].DL_pmi_single);
+                                           PHY_vars_eNB->eNB_UE_stats[k].DL_pmi_single,
+                                           0);
 
         dump_dci(&PHY_vars_eNB->lte_frame_parms,&dci_alloc[num_dci]);
         num_ue_spec_dci++;
@@ -3226,7 +3233,8 @@ PMI_FEEDBACK:
                                                            PHY_vars_UE->pdsch_config_dedicated,
                                                            SI_RNTI,
                                                            0,
-                                                           P_RNTI)==0)) {
+                                                           P_RNTI==0,
+                                                           transmission_mode<7?0:transmission_mode))) {
                       //dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
                       coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->nb_rb,
@@ -3237,8 +3245,8 @@ PMI_FEEDBACK:
                                                       0,
 						      subframe,
 						      (transmission_mode<7?0:transmission_mode));
-          	    if (transmission_mode==7 && common_flag==0)
-       	    	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->mimo_mode = TM7; 
+          	    /*if (transmission_mode==7 && common_flag==0)
+       	    	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->mimo_mode = TM7; */
 
                       /*
                       rate = (double)dlsch_tbs25[get_I_TBS(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs)][PHY_vars_UE->dlsch_ue[0][0]->nb_rb-1]/(coded_bits_per_codeword);
@@ -3289,9 +3297,10 @@ PMI_FEEDBACK:
                                                       PHY_vars_UE->pdsch_config_dedicated,
                                                       SI_RNTI,
                                                       0,
-                                                      P_RNTI);
-          	    if(transmission_mode==7 && common_flag==0)
-       	    	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->mimo_mode = TM7; 
+                                                      P_RNTI,
+                                                      transmission_mode<7?0:transmission_mode);
+          	    /*if(transmission_mode==7 && common_flag==0)
+       	    	      PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->mimo_mode = TM7;*/ 
                     break;
 
                   case 3:
@@ -3306,7 +3315,8 @@ PMI_FEEDBACK:
                                                       PHY_vars_UE->pdsch_config_dedicated,
                                                       SI_RNTI,
                                                       0,
-                                                      P_RNTI);
+                                                      P_RNTI,
+                                                      0);
                     //        printf("Rate: TM3 (after) round %d (%d) first_tx %d\n",round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->round,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[0]->first_tx);
                     break;
 
@@ -3321,7 +3331,8 @@ PMI_FEEDBACK:
                                                       PHY_vars_UE->pdsch_config_dedicated,
                                                       SI_RNTI,
                                                       0,
-                                                      P_RNTI);
+                                                      P_RNTI,
+                                                      0);
                     break;
 
                   case 5:
@@ -3336,7 +3347,8 @@ PMI_FEEDBACK:
                                                       PHY_vars_UE->pdsch_config_dedicated,
                                                       SI_RNTI,
                                                       0,
-                                                      P_RNTI);
+                                                      P_RNTI,
+                                                      0);
                     break;
 
                   }

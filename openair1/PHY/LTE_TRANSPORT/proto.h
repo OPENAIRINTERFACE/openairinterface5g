@@ -1424,7 +1424,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
-                                      uint16_t p_rnti);
+                                      uint16_t p_rnti,
+                                      uint8_t beamforming_mode);
 
 int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint8_t subframe,
@@ -1437,7 +1438,8 @@ int32_t generate_eNB_dlsch_params_from_dci(int frame,
     uint16_t si_rnti,
     uint16_t ra_rnti,
     uint16_t p_rnti,
-    uint16_t DL_pmi_single);
+    uint16_t DL_pmi_single,
+    uint8_t beamforming_mode);
 
 int32_t generate_eNB_ulsch_params_from_rar(uint8_t *rar_pdu,
     frame_t frame,

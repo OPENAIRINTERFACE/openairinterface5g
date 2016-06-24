@@ -1094,7 +1094,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                          SI_RNTI,
                                          0,
                                          P_RNTI,
-                                         phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                         phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                         0);
 
 
       phy_vars_eNB->dlsch_eNB_SI->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
@@ -1129,7 +1130,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                          SI_RNTI,
                                          DCI_pdu->dci_alloc[i].rnti,
                                          P_RNTI,
-                                         phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single);
+                                         phy_vars_eNB->eNB_UE_stats[0].DL_pmi_single,
+                                         0); 
 
       //    mac_xface->macphy_exit("Transmitted RAR, exiting\n");
 
@@ -1187,7 +1189,8 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                            SI_RNTI,
                                            0,
                                            P_RNTI,
-                                           phy_vars_eNB->eNB_UE_stats[(uint8_t)UE_id].DL_pmi_single);
+                                           phy_vars_eNB->eNB_UE_stats[(uint8_t)UE_id].DL_pmi_single,
+                                           phy_vars_eNB->transmission_mode[(uint8_t)UE_id]>7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id]);
         LOG_D(PHY,"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d subframe %d: Generated dlsch params\n",
               phy_vars_eNB->Mod_id,DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->current_harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
 

@@ -132,7 +132,7 @@ void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t
                                   phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
                                   phy_vars_ue->frame_rx,
 				  subframe,
-				  phy_vars_ue->transmission_mode[eNB_id]);
+                                  phy_vars_ue->transmission_mode[eNB_id]);
 
   write_output("rxsigF0.m","rxsF0", phy_vars_ue->lte_ue_common_vars.rxdataF[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,2,1);
   write_output("rxsigF0_ext.m","rxsF0_ext", phy_vars_ue->lte_ue_pdsch_vars[0]->rxdataF_ext[0],2*nsymb*phy_vars_ue->lte_frame_parms.ofdm_symbol_size,1,1);
@@ -2143,7 +2143,8 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 					     phy_vars_ue->pdsch_config_dedicated,
 					     SI_RNTI,
 					     0,
-					     P_RNTI)==0)) {
+					     P_RNTI,
+                                             phy_vars_ue->transmission_mode[eNB_id]>7?0:phy_vars_ue->transmission_mode[eNB_id])==0)) {
 
 #ifdef DIAG_PHY
 	
@@ -2211,7 +2212,8 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
                                             phy_vars_ue->pdsch_config_dedicated,
                                             SI_RNTI,
                                             0,
-                                            P_RNTI)==0) {
+                                            P_RNTI,
+                                            0)==0) {
 
         phy_vars_ue->dlsch_SI_received[eNB_id]++;
  
@@ -2255,7 +2257,8 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
                                             phy_vars_ue->pdsch_config_dedicated,
                                             SI_RNTI,
                                             phy_vars_ue->prach_resources[eNB_id]->ra_RNTI,
-                                            P_RNTI)==0) {
+                                            P_RNTI,
+                                            0)==0) {
 
         phy_vars_ue->dlsch_ra_received[eNB_id]++;
 
@@ -2790,7 +2793,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                     phy_vars_ue->lte_ue_pdcch_vars[eNB_id]->num_pdcch_symbols,
                     frame_rx,
 		    subframe_prev,
-		    phy_vars_ue->transmission_mode[eNB_id]);
+		    0);
 
 #ifdef DEBUG_PHY_PROC
             LOG_D(PHY,"Decoding DLSCH_SI : rb_alloc %x : nb_rb %d G %d TBS %d, num_pdcch_sym %d\n",phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[0],
@@ -2853,8 +2856,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
 		  phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[2],
                   phy_vars_ue->dlsch_ue_SI[eNB_id]->harq_processes[0]->rb_alloc_even[3]);
 #endif
- 
-	    //	      dump_dlsch_SI(phy_vars_ue,eNB_id,subframe_prev);
+            //        dump_dlsch_SI(phy_vars_ue,eNB_id,subframe_prev); 
             VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
             stop_meas(&phy_vars_ue->phy_proc_rx);
 	    return(-1);

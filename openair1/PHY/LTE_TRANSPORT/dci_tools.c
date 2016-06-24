@@ -872,7 +872,8 @@ int generate_eNB_dlsch_params_from_dci(int frame,
                                        uint16_t si_rnti,
                                        uint16_t ra_rnti,
                                        uint16_t p_rnti,
-                                       uint16_t DL_pmi_single)
+                                       uint16_t DL_pmi_single,
+				       uint8_t beamforming_mode)
 {
 
   uint8_t harq_pid = UINT8_MAX;
@@ -1244,7 +1245,13 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     dlsch0_harq->Nl          = 1;
     //    dlsch[0]->layer_index = 0;
-    dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    if (beamforming_mode == 0)
+      dlsch0_harq->mimo_mode = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    else if (beamforming_mode == 7)
+      dlsch0_harq->mimo_mode = TM7;
+    else
+      LOG_E(PHY,"Invalid beamforming mode %dL\n", beamforming_mode);
+      
     dlsch0_harq->dl_power_off = 1;
     /*
       if (dlsch[0]->harq_processes[harq_pid]->first_tx == 1) {
@@ -3854,7 +3861,8 @@ int generate_ue_dlsch_params_from_dci(int frame,
                                       PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                                       uint16_t si_rnti,
                                       uint16_t ra_rnti,
-                                      uint16_t p_rnti)
+                                      uint16_t p_rnti,
+                                      uint8_t beamforming_mode)
 {
 
   uint8_t harq_pid=0;
@@ -4171,6 +4179,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch0_harq->rvidx = rv;
     dlsch0_harq->Nl = 1;
     //    dlsch[0]->layer_index = 0;
+
     dlsch0_harq->mimo_mode = frame_parms->mode1_flag == 1 ?SISO : ALAMOUTI;
     dlsch0_harq->dl_power_off = 1; //no power offset
 
@@ -4521,7 +4530,13 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     dlsch[0]->rnti = rnti;
 
-    dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    if (beamforming_mode == 0)
+      dlsch0_harq->mimo_mode   = (frame_parms->mode1_flag == 1) ? SISO : ALAMOUTI;
+    else if (beamforming_mode == 7)
+      dlsch0_harq->mimo_mode   = TM7;
+    else
+      LOG_E(PHY,"Not supported beamforming mode %d\n",beamforming_mode);
+       
 
     dlsch0 = dlsch[0];
 
