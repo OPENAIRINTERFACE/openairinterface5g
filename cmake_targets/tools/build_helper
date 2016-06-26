@@ -95,6 +95,18 @@ check_supported_distribution() {
     return 1
 }
 
+##################
+# Error handlers #
+##################
+
+handler_EXIT() {
+	local exit_code=$?
+    [ "$exit_code" -eq 0 ] || echo_error "build have failed"
+	exit $exit_code
+}
+
+trap handler_EXIT EXIT
+
 ###########################
 # Cleaners
 ###########################
@@ -136,6 +148,7 @@ clean_all_files() {
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
   echo_info "Log file for compilation written in: $dlog/$2.$REL.txt"
+  set +e
   {
     rm -f $3
     if [ "$VERBOSE_COMPILE" == "1" ]; then
@@ -145,12 +158,14 @@ compilations() {
     fi
 
   } > $dlog/$2.$REL.txt 2>&1
+  set -e
   echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
   if [ -s $3 ] ; then
      cp $3 $4
      echo_success "$2 compiled"
   else
      echo_error "$2 compilation failed"
+     exit 1
   fi
 }
 
@@ -213,7 +228,8 @@ install_gnutls_from_source(){
 
 check_install_usrp_uhd_driver(){
         #first we remove old installation
-        $SUDO apt-get remove uhd libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove -y uhd || true
+        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
         #The new USRP repository
@@ -270,8 +286,7 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-        sshpass \
-        libxslt1-dev
+    sshpass
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
@@ -355,6 +370,7 @@ check_install_oai_software() {
 	libusb-1.0-0-dev \
 	libxml2 \
 	libxml2-dev  \
+	libxslt1-dev \
 	linux-headers-`uname -r` \
 	mscgen  \
 	octave \
