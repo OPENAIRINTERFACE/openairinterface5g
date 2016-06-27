@@ -500,12 +500,13 @@ static void* eNB_thread_rxtx( void* param ) {
       }
     }
 
-    // eNodeB_3GPP and RRU create txdata and write to RF device
+    // eNodeB_3GPP, _BBU and RRU create txdata
     if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RCC_IF4) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
       do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
-  
+    }
+
       /*
         short *txdata = (short*)&PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdata[0][0][proc->subframe_tx*PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.samples_per_tti];
         int i;
@@ -518,8 +519,12 @@ static void* eNB_thread_rxtx( void* param ) {
         txdata[i+5] = 0;
         txdata[i+6] = 0;
         txdata[i+7] = -2047;      }
-      */
+      */      
+          
 
+    // eNodeB_3GPP, RRU write to RF device    
+    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP ||
+        PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) {
       // Transmit TX buffer based on timestamp from RX  
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
       // prepare tx buffer pointers
@@ -539,13 +544,15 @@ static void* eNB_thread_rxtx( void* param ) {
  
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
 
+    } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
+      /// **** trx_write_func to IF device **** ///       
+      
+      
     } else { 
-	 
       /// **** send_IF4 of txdataF to RRU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
       send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT, 0);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );
-
     }
 
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
@@ -744,7 +751,7 @@ static void* eNB_thread_rx_common( void* param ) {
 #endif 
   
   // Start RF device for this CC
-  if (eNB->node_function != NGFI_RCC_IF4) {
+  if (eNB->node_function == eNodeB_3GPP || eNB->node_function == NGFI_RRU_IF4) {
     if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
       LOG_E(HW,"Could not start the RF device\n");
   }

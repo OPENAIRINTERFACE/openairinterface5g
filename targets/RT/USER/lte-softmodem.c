@@ -686,7 +686,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_PHYTEST,
     LONG_OPTION_RCC,
     LONG_OPTION_RRU,
-    LONG_OPTION_ENB
+    LONG_OPTION_ENB,
+    LONG_OPTION_ENB_BBU
 #if T_TRACER
     ,
     LONG_OPTION_T_PORT,
@@ -713,6 +714,7 @@ static void get_options (int argc, char **argv)
     {"RCC", no_argument, NULL, LONG_OPTION_RCC},
     {"RRU", no_argument, NULL, LONG_OPTION_RRU},
     {"eNB", no_argument, NULL, LONG_OPTION_ENB},
+    {"BBU", no_argument, NULL, LONG_OPTION_ENB_BBU},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -814,6 +816,10 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_ENB:
       node_function = eNodeB_3GPP;
+      break;
+
+    case LONG_OPTION_ENB_BBU:
+      node_function = eNodeB_3GPP_BBU;
       break;
       
 #if T_TRACER
@@ -1694,7 +1700,7 @@ int main( int argc, char **argv )
     
   // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
-  if (node_function != NGFI_RCC_IF4) { 
+  if (node_function == NGFI_RRU_IF4 || node_function == eNodeB_3GPP) { 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]);
@@ -1710,7 +1716,7 @@ int main( int argc, char **argv )
   }  
   
   // Load transport protocol and initialize
-  if (node_function != eNodeB_3GPP){ 
+  if (node_function != eNodeB_3GPP) { 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));

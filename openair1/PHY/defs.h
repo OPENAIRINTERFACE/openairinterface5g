@@ -157,10 +157,11 @@ enum transmission_access_mode {
   SCHEDULED_ACCESS,
   CBA_ACCESS};
 
-typedef enum  {
-  eNodeB_3GPP=0,  // classical eNodeB function
-  NGFI_RRU_IF4,   // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
-  NGFI_RCC_IF4    // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
+typedef enum {
+  eNodeB_3GPP=0,    // classical eNodeB function
+  eNodeB_3GPP_BBU,  // classical eNodeB function with transport interface
+  NGFI_RRU_IF4,     // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
+  NGFI_RCC_IF4,     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
 } eNB_func_t;
   
 typedef struct UE_SCAN_INFO_s {
