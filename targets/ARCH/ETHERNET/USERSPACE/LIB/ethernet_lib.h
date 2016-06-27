@@ -226,6 +226,7 @@ int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp,
 int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
-
+int eth_get_dev_conf_raw_IF4(openair0_device *device);
+int eth_set_dev_conf_raw_IF4(openair0_device *device);
 
 #endif

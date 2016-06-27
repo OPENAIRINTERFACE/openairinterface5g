@@ -63,7 +63,7 @@ int trx_eth_start(openair0_device *device) {
   eth_state_t *eth = (eth_state_t*)device->priv;
   
   /* initialize socket */
-  if ((eth->flags & ETH_RAW_MODE) != 0 ) {     
+  if (eth->flags == ETH_RAW_MODE) {     
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
     if (device->host_type == BBU_HOST) {
@@ -73,6 +73,21 @@ int trx_eth_start(openair0_device *device) {
     }
     /* adjust MTU wrt number of samples per packet */
     if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+
+  } else if (eth->flags == ETH_RAW_IF4_MODE) {
+    if (eth_socket_init_raw(device)!=0)   return -1;
+    /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
+    if (device->host_type == BBU_HOST) {
+      if(eth_set_dev_conf_raw_IF4(device)!=0)  return -1;
+    } else {
+      if(eth_get_dev_conf_raw_IF4(device)!=0)  return -1;
+    }
+    /* adjust MTU wrt number of samples per packet */
+    if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    
+  } else if (eth->flags == ETH_UDP_IF4_MODE) {
+    
+  
   } else {
     if (eth_socket_init_udp(device)!=0)   return -1; 
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/

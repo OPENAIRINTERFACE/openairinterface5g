@@ -1541,13 +1541,6 @@ int main( int argc, char **argv )
       openair0_cfg[card].my_port        = eth_params->my_port;    
     } 
     
-    //if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4) {
-      //openair0_cfg[card].remote_addr    = eth_params->remote_addr;
-      //openair0_cfg[card].remote_port    = eth_params->remote_port;
-      //openair0_cfg[card].my_addr        = eth_params->my_addr;
-      //openair0_cfg[card].my_port        = eth_params->my_port;    
-    //}
-
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
@@ -1648,11 +1641,17 @@ int main( int argc, char **argv )
   openair0_cfg[0].log_level = glog_level;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+    if (node_function == NGFI_RRU_IF4) {
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
+    } else {
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
+    }
+  
     PHY_vars_eNB_g[0][CC_id]->rfdevice.type = NONE_DEV;
     PHY_vars_eNB_g[0][CC_id]->rfdevice.transp_type = NONE_TP;
        
-    PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
     PHY_vars_eNB_g[0][CC_id]->ifdevice.type = NONE_DEV;
     PHY_vars_eNB_g[0][CC_id]->ifdevice.transp_type = NONE_TP;
   }
@@ -1663,7 +1662,6 @@ int main( int argc, char **argv )
   openair0.type = NONE_DEV;
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
-  //openair0_cfg[0].log_level = glog_level;
   
   // Legacy BBU - RRH init  
   //int returns=-1;
@@ -1691,9 +1689,7 @@ int main( int argc, char **argv )
     //else if (mode==loop_through_memory) {    
     //}
   //}   
-  
-  //printf("Done\n");
-  
+    
   int returns=-1;
     
   // Handle spatially distributed MIMO antenna ports   
