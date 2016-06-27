@@ -670,6 +670,13 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   return(0);
 }
 
+unsigned int             rxg_max[4] =    {128,128,128,126};
+unsigned int             rxg_med[4] =    {122,123,123,120};
+unsigned int             rxg_byp[4] =    {116,117,116,116};
+unsigned int             nf_max[4] =    {7,9,16,12};
+unsigned int             nf_med[4] =    {12,13,22,17};
+unsigned int             nf_byp[4] =    {15,20,29,23};
+
 int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 {
   int ret;
@@ -760,21 +767,42 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
         p_exmimo_config->rf.rf_mode[ant] += (RXEN + DMAMODE_RX + RXLPFNORM + RXLPFEN + rx_filter);
 
         p_exmimo_config->rf.rf_freq_rx[ant] = (unsigned int)openair0_cfg[card].rx_freq[ant];
-        p_exmimo_config->rf.rx_gain[ant][0] = (unsigned int)openair0_cfg[card].rx_gain[ant];
+
         printf("openair0 : programming card %d RX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
 
         switch (openair0_cfg[card].rxg_mode[ant]) {
         default:
         case max_gain:
           p_exmimo_config->rf.rf_mode[ant] += LNAMax;
+	  if (rxg_max[ant] >= (int)openair0_cfg[card].rx_gain[ant]) {
+	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_max[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
+	  }
+	  else {
+	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_max[ant]);
+	    exit(-1);
+	  }
           break;
 
         case med_gain:
           p_exmimo_config->rf.rf_mode[ant] += LNAMed;
+	  if (rxg_med[ant] >= (int)openair0_cfg[card].rx_gain[ant]) {
+	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_med[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
+	  }
+	  else {
+	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_med[ant]);
+	    exit(-1);
+	  }
           break;
 
         case byp_gain:
           p_exmimo_config->rf.rf_mode[ant] += LNAByp;
+	  if (rxg_byp[ant] >= (int)openair0_cfg[card].rx_gain[ant]) {
+	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_byp[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
+	  }
+	  else {
+	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_byp[ant]);
+	    exit(-1);
+	  }
           break;
         }
       } else {
