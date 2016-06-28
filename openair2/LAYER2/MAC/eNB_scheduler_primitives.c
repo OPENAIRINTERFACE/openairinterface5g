@@ -320,7 +320,6 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      //if (prev==UE_list->head)
       if (i==UE_list->head) {
         UE_list->head = UE_list->next[i];
       } else {
@@ -345,7 +344,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      if (prev==UE_list->head_ul) {
+      if (i==UE_list->head_ul) {
         UE_list->head_ul = UE_list->next_ul[i];
       } else {
         UE_list->next_ul[prev] = UE_list->next_ul[i];
