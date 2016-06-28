@@ -749,6 +749,12 @@ static void* eNB_thread_rx_common( void* param ) {
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
+
+  // Start IF device for this CC
+  if (eNB->node_function != eNodeB_3GPP) {
+    if (eNB->ifdevice.trx_start_func(&eNB->ifdevice) != 0 ) 
+      LOG_E(HW,"Could not start the IF device\n");
+  }
   
   // Start RF device for this CC
   if (eNB->node_function == eNodeB_3GPP || eNB->node_function == NGFI_RRU_IF4) {
@@ -756,12 +762,6 @@ static void* eNB_thread_rx_common( void* param ) {
       LOG_E(HW,"Could not start the RF device\n");
   }
     
-  // Start IF device for this CC
-  if (eNB->node_function != eNodeB_3GPP) {
-    if (eNB->ifdevice.trx_start_func(&eNB->ifdevice) != 0 ) 
-      LOG_E(HW,"Could not start the IF device\n");
-  }
-
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX, 0 );
