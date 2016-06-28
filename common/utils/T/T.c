@@ -107,7 +107,7 @@ static void monitor_and_kill(int child1, int child2)
   exit(0);
 }
 
-void T_init(int remote_port, int wait_for_tracer)
+void T_init(int remote_port, int wait_for_tracer, int dont_fork)
 {
   int socket_pair[2];
   int s;
@@ -117,7 +117,7 @@ void T_init(int remote_port, int wait_for_tracer)
   if (socketpair(AF_UNIX, SOCK_STREAM, 0, socket_pair))
     { perror("socketpair"); abort(); }
 
-  /* child1 runs the local tracer and child2 runs the tracee */
+  /* child1 runs the local tracer and child2 (or main) runs the tracee */
 
   child1 = fork(); if (child1 == -1) abort();
   if (child1 == 0) {
@@ -127,10 +127,12 @@ void T_init(int remote_port, int wait_for_tracer)
   }
   close(socket_pair[0]);
 
-  child2 = fork(); if (child2 == -1) abort();
-  if (child2 != 0) {
-    close(socket_pair[1]);
-    monitor_and_kill(child1, child2);
+  if (dont_fork == 0) {
+    child2 = fork(); if (child2 == -1) abort();
+    if (child2 != 0) {
+      close(socket_pair[1]);
+      monitor_and_kill(child1, child2);
+    }
   }
 
   s = socket_pair[1];

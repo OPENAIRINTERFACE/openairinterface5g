@@ -250,6 +250,7 @@ help (void)
 #if T_TRACER
   printf ("--T_port [port]    use given port\n");
   printf ("--T_nowait         don't wait for tracer, start immediately\n");
+  printf ("--T_dont_fork      to ease debugging with gdb\n");
 #endif
 }
 
@@ -1258,6 +1259,7 @@ l2l1_task (void *args_p)
 #if T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
+int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
 /*------------------------------------------------------------------------------*/
@@ -1294,7 +1296,7 @@ main (int argc, char **argv)
   get_simulation_options (argc, argv); //Command-line options
 
 #if T_TRACER
-  T_init(T_port, T_wait);
+  T_init(T_port, T_wait, T_dont_fork);
 #endif
 
   // Initialize VCD LOG module
