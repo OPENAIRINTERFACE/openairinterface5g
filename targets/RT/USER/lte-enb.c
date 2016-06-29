@@ -493,10 +493,11 @@ static void* eNB_thread_rxtx( void* param ) {
         /// **** recv_IF4 of txdataF from RCC **** ///             
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );  
         while (symbol_number < PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti-1) { 
-          recv_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, &packet_type, &symbol_number);
+          recv_IF4(PHY_vars_eNB_g[0][proc->CC_id], &proc->frame_tx, &proc->subframe_tx, &packet_type, &symbol_number);
         }
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
+        // Check the recv frame/subframe
       }
     }
 

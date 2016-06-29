@@ -176,7 +176,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
 }
 
 
-void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type, uint32_t *symbol_number) {
+void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_type, uint32_t *symbol_number) {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
@@ -208,10 +208,13 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   
   packet_header = (IF4_header_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES);
   data_block = (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4_header_t);
+
+  *frame = ((packet_header->frame_status)>>6)&0xffff;
+  *subframe = ((packet_header->frame_status)>>22)&0x000f; 
   
   if (*packet_type == IF4_PDLFFT) {          
     // Calculate from received packet
-    slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     
     // Do decompression of the two parts and generate txdataF			
@@ -228,7 +231,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
         
   } else if (*packet_type == IF4_PULFFT) {         
     // Calculate from received packet
-    slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     
     // Do decompression of the two parts and generate rxdataF
@@ -246,7 +249,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t *packet_type,
   } else if (*packet_type == IF4_PRACH) {    
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
-		    
+		
     // Generate uncompressed data blocks
     memcpy((rxsigF[0]+slotoffsetF), data_block, db_fulllength*sizeof(int16_t));
        
