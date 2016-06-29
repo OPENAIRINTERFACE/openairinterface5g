@@ -565,6 +565,7 @@ int main(int argc, char **argv)
                         n2_pucch,
                         0, //shortened_format,
                         &pucch_payload_rx, //payload,
+                        0 /* frame not defined, let's pass 0 */,
                         subframe,
                         pucch1_thres);
 

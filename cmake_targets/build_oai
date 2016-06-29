@@ -45,8 +45,8 @@ MSC_GEN="False"
 XFORMS="True"
 PRINT_STATS="False"
 VCD_TIMING="False"
-LOWLATENCY_FLAG_USER="False"
-FORCE_LOWLATENCY_FLAG_USER=""
+DEADLINE_SCHEDULER_FLAG_USER="False"
+FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="True" #Only valid when lowlatecy flag is set to False
 REL="Rel10"
 HW="None"
@@ -58,6 +58,7 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
+T_TRACER="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -125,9 +126,11 @@ Options
 --disable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x).
 --enable-deadline
-   Disables deadline scheduler of Linux kernel (>=3.14.x). 
+   Enable deadline scheduler of Linux kernel (>=3.14.x). 
 --disable-cpu-affinity
    Disables CPU Affinity between UHD/TX/RX Threads (Valid only when deadline scheduler is disabled). By defaulT, CPU Affinity is enabled when not using deadline scheduler. It is enabled only with >2 CPUs. For eNB, CPU_0-> Device library (UHD), CPU_1->TX Threads, CPU_2...CPU_MAX->Rx Threads. For UE, CPU_0->Device Library(UHD), CPU_1..CPU_MAX -> All the UE threads
+--T-tracer
+   Enables the T tracer.
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -259,16 +262,20 @@ function main() {
             echo_info "Will build doxygen support"
             shift;;     
        --disable-deadline)
-            FORCE_LOWLATENCY_FLAG_USER="False"
+            FORCE_DEADLINE_SCHEDULER_FLAG_USER="False"
             echo_info "Disabling the usage of deadline scheduler"
             shift 1;;
        --enable-deadline)
-            FORCE_LOWLATENCY_FLAG_USER="True"
+            FORCE_DEADLINE_SCHEDULER_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
        --disable-cpu-affinity)
             CPU_AFFINITY_FLAG_USER="False"
             echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
+            shift 1;;
+       --T-tracer)
+            T_TRACER="True"
+            echo_info "Enabling the T tracer"
             shift 1;;
         -h | --help)
             print_help
@@ -314,33 +321,33 @@ function main() {
   #By default: USRP: disable, 
   #By default: BLADERF: enable,
   #By default: EXMIMO: enable
-  if [ "$FORCE_LOWLATENCY_FLAG_USER" = "" ]; then
+  if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
      if [ "$HW" = "EXMIMO" ] ; then 
-        LOWLATENCY_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "ETHERNET" ] ; then 
-        LOWLATENCY_FLAG_USER="True"
+        DEADLINE_SCHEDULER_FLAG_USER="True"
      elif [ "$HW" = "OAI_USRP" ] ; then 
-        LOWLATENCY_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
-        LOWLATENCY_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_LMSSDR" ] ; then 
-        LOWLATENCY_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "None" ] ; then 
-        LOWLATENCY_FLAG_USER="False"
+        DEADLINE_SCHEDULER_FLAG_USER="False"
      else 
         echo_error "Unknown HW type $HW. Exiting now..."
         exit 
      fi
   else
-     LOWLATENCY_FLAG_USER=$FORCE_LOWLATENCY_FLAG_USER
+     DEADLINE_SCHEDULER_FLAG_USER=$FORCE_DEADLINE_SCHEDULER_FLAG_USER
   fi
 
   #Disable CPU Affinity for deadline scheduler
-  if [ "$LOWLATENCY_FLAG_USER" = "True" ] ; then 
+  if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
      CPU_AFFINITY_FLAG_USER="False"
   fi
 
-  echo_info "Flags for Deadline scheduler: $LOWLATENCY_FLAG_USER"
+  echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
   echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
   ############################################
@@ -432,8 +439,9 @@ function main() {
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file
     echo "set ( TRANSP_PRO \"${TP}\")"             >>  $cmake_file
     echo "set(PACKAGE_NAME \"${lte_exec}\")"       >>  $cmake_file
-    echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+    echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
     echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"      >>$cmake_file
+    echo "set ( T_TRACER $T_TRACER )"              >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     cd  $DIR/$lte_build_dir/build
     cmake ..
@@ -567,6 +575,7 @@ function main() {
     echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( T_TRACER $T_TRACER )"          >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
     mkdir -p $DIR/$oaisim_build_dir/build
@@ -632,6 +641,7 @@ function main() {
     echo "set(XFORMS $XFORMS )" >>  $cmake_file
     echo "set(RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
     echo "set(ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
+    echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
     #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
     #mkdir -p $DIR/oaisim_mme_build_oai/build
@@ -660,8 +670,9 @@ function main() {
      echo "set(RF_BOARD \"${HW}\")"               >>  $cmake_file
      echo "set(TRANSP_PRO \"${TP}\")"             >>  $cmake_file
      echo 'set(PACKAGE_NAME "\"rrh_gw\"")'        >>  $cmake_file
-     echo "set (LOWLATENCY \"${LOWLATENCY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set (DEADLINE_SCHEDULER \"${DEADLINE_SCHEDULER_FLAG_USER}\" )"    >>$cmake_file
      echo "set (CPU_AFFINITY \"${CPU_AFFINITY_FLAG_USER}\" )"    >>$cmake_file
+     echo "set ( T_TRACER $T_TRACER )"            >>  $cmake_file
      echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file    
      cd $DIR/$rrh_build_dir/build
      cmake ..

@@ -108,8 +108,6 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     DCI_pdu[CC_id] = &eNB_mac_inst[module_idP].common_channels[CC_id].DCI_pdu;
-    DCI_pdu[CC_id]->nCCE=0;
-    DCI_pdu[CC_id]->num_pdcch_symbols=1;
     mbsfn_status[CC_id]=0;
     // clear vrb_map
     memset(eNB_mac_inst[module_idP].common_channels[CC_id].vrb_map,0,100);
@@ -661,7 +659,28 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP,uint8_t cooperation_flag, 
   for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
     allocate_CCEs(module_idP,CC_id,subframeP,0);
 
+  /*
+  int dummy=0;
+  for (i=0;
+       i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
+       i++)
+    if (DCI_pdu[CC_id]->dci_alloc[i].rnti==2)
+      dummy=1;
+	
+  if (dummy==1)
+    for (i=0;
+	 i<DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci;
+	 i++)
+      LOG_I(MAC,"Frame %d, subframe %d: DCI %d/%d, format %d, rnti %x, NCCE %d(num_pdcch_symb %d)\n",
+	    frameP,subframeP,i,DCI_pdu[CC_id]->Num_common_dci+DCI_pdu[CC_id]->Num_ue_spec_dci,
+	    DCI_pdu[CC_id]->dci_alloc[i].format,
+	    DCI_pdu[CC_id]->dci_alloc[i].rnti,
+	    DCI_pdu[CC_id]->dci_alloc[i].firstCCE,
+	    DCI_pdu[CC_id]->num_pdcch_symbols);
+
+
   LOG_D(MAC,"frameP %d, subframeP %d\n",frameP,subframeP);
+  */
 
   stop_meas(&eNB_mac_inst[module_idP].eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_OUT);

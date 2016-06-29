@@ -212,7 +212,7 @@ static void *UE_thread_synch(void *arg)
   printf("UE_thread_sync in with PHY_vars_UE %p\n",arg);
   printf("waiting for sync (UE_thread_synch) \n");
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
   int policy, s, j;
   struct sched_param sparam;
   char cpu_affinity[1024];
@@ -701,7 +701,7 @@ static void *UE_thread_tx(void *arg)
   LOG_D(HW,"Started UE TX thread (id %p)\n",task);
 #else
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -920,7 +920,7 @@ static void *UE_thread_rx(void *arg)
   LOG_D(HW,"Started UE RX thread (id %p)\n",task);
 #else
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -1237,7 +1237,7 @@ void *UE_thread(void *arg)
 
 #else
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
 
@@ -1616,7 +1616,7 @@ void *UE_thread(void *arg)
 
   int wait_sync_cnt = 0;
   int first_synch = 1;
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
   unsigned int flags = 0;
   //  unsigned long mask = 1; // processor 0
@@ -1640,7 +1640,7 @@ void *UE_thread(void *arg)
 #endif
 
 
-#ifdef LOWLATENCY
+#ifdef DEADLINE_SCHEDULER
   attr.size = sizeof(attr);
   attr.sched_flags = 0;
   attr.sched_nice = 0;

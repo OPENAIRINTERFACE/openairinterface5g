@@ -69,7 +69,7 @@
 #define print_shorts(s,x) fprintf(fdsse4,"%s %d,%d,%d,%d,%d,%d,%d,%d\n",s,(x)[0],(x)[1],(x)[2],(x)[3],(x)[4],(x)[5],(x)[6],(x)[7])
 #endif
 
-
+#undef __AVX2__
 
 #ifdef DEBUG_LOGMAP
 FILE *fdsse4;
