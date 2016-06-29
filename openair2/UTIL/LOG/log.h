@@ -147,26 +147,40 @@ extern "C" {
 
 // debugging macros
 #ifdef USER_MODE
-#define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
-#define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
-#define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
-#define LOG_E(c, x...) logIt(c, LOG_ERR, x)
-#define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
-#define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
-#define LOG_I(c, x...) logIt(c, LOG_INFO, x)
-#define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
-#define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
-#define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
-#else
-#define LOG_G(c, x...) printk(x)
-#define LOG_A(c, x...) printk(x)
-#define LOG_C(c, x...) printk(x)
-#define LOG_E(c, x...) printk(x)
-#define LOG_W(c, x...) printk(x)
-#define LOG_N(c, x...) printk(x)
-#define LOG_I(c, x...) printk(x)
-#define LOG_D(c, x...) printk(x)
-#define LOG_T(c, x...) printk(x)
+#  if T_TRACER
+#    include "T.h"
+#    define LOG_I(c, x...) T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))
+#    define LOG_W(c, x...) T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x))
+#    define LOG_E(c, x...) T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))
+#    define LOG_D(c, x...) T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))
+#    define LOG_T(c, x...) T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))
+#    define LOG_G(c, x...) /* */
+#    define LOG_A(c, x...) /* */
+#    define LOG_C(c, x...) /* */
+#    define LOG_N(c, x...) /* */
+#    define LOG_F(c, x...) /* */
+#  else /* T_TRACER */
+#    define LOG_G(c, x...) logIt(c, LOG_EMERG, x)
+#    define LOG_A(c, x...) logIt(c, LOG_ALERT, x)
+#    define LOG_C(c, x...) logIt(c, LOG_CRIT,  x)
+#    define LOG_E(c, x...) logIt(c, LOG_ERR, x)
+#    define LOG_W(c, x...) logIt(c, LOG_WARNING, x)
+#    define LOG_N(c, x...) logIt(c, LOG_NOTICE, x)
+#    define LOG_I(c, x...) logIt(c, LOG_INFO, x)
+#    define LOG_D(c, x...) logIt(c, LOG_DEBUG, x)
+#    define LOG_F(c, x...) logIt(c, LOG_FILE, x)  // log to a file, useful for the MSC chart generation
+#    define LOG_T(c, x...) logIt(c, LOG_TRACE, x)
+#  endif /* T_TRACER */
+#else /* USER_MODE */
+#  define LOG_G(c, x...) printk(x)
+#  define LOG_A(c, x...) printk(x)
+#  define LOG_C(c, x...) printk(x)
+#  define LOG_E(c, x...) printk(x)
+#  define LOG_W(c, x...) printk(x)
+#  define LOG_N(c, x...) printk(x)
+#  define LOG_I(c, x...) printk(x)
+#  define LOG_D(c, x...) printk(x)
+#  define LOG_T(c, x...) printk(x)
 #endif
 /* @}*/
 

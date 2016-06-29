@@ -1,19 +1,27 @@
-OpenAirInterface is under GNU GPLv3 license. The full GNU General Public License is included in this distribution in the file called "COPYING".
+OpenAirInterface is under OpenAirInterface Software Alliance license.
+├── http://www.openairinterface.org/?page_id=101
+├── http://www.openairinterface.org/?page_id=698
 
-The OpenAirInterface (OAI) software is composed of six different parts: 
+The OpenAirInterface (OAI) software is composed of the following parts: 
 
-openair1: 3GPP LTE Rel-8 PHY layer + PHY RF simulation
-
-openair2: 3GPP LTE Rel-9 RLC/MAC/PDCP/RRC implementations, eNB application, X2AP. Note that for RLC, the following versions are userL UM_v9.3.0, TM_v9.3.0, and AM_v9.3.0. For PDCP, PDCP_v10.1.0 is used. For RRC, only LITE is used.
-
-openair3: 3GPP LTE Rel9 and 10 MME/NAS, S+P-GW, HSS, S1AP (ENB and MME).
-
-common: some common OAI utilities, other tools can be found at openair2/UTILS
-
-targets: scripts to compile and lauch different system targets (simulation, emulation and real-time platforms, user-space tools for these platforms (tbd)) 
-
-see README files in these subdirectories for more information
-
-see also https://twiki.eurecom.fr/twiki/bin/view/OpenAirInterface/WebHome
-
-
+openairinterface5g
+├── cmake_targets: build utilities to compile (simulation, emulation and real-time platforms), and generated build files
+├── common : some common OAI utilities, other tools can be found at openair2/UTILS
+├── COPYING
+├── maketags : script to generate emacs tags
+├── openair1 : 3GPP LTE Rel-10 PHY layer + PHY RF simulation and a subset of Rel 12 Features.
+├── openair2 :3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
+    ├── LAYER2/RLC/ with the following subdirectories: UM_v9.3.0, TM_v9.3.0, and AM_v9.3.0. 
+    ├── LAYER2/PDCP/PDCP_v10.1.0. 
+    ├── RRC/LITE
+    ├── PHY_INTERFACE
+    ├── X2AP
+    ├── ENB_APP 
+├── openair3: 3GPP LTE Rel10 for S1AP, NAS GTPV1-U for both ENB and UE.
+    ├── GTPV1-U
+    ├── NAS 
+    ├── S1AP
+    ├── SCTP
+    ├── SECU
+    ├── UDP
+└── targets: top level wrapper for unitary simulation for PHY channels, system-level emulation (eNB-UE with and without S1), and realtime eNB and UE and RRH GW.

@@ -43,7 +43,8 @@ def kill_processes(name):
      cmd = 'sudo adb -s ' + device_id +' shell "ps |grep ' + name + '"' 
      status, out = commands.getstatusoutput(cmd)
      if status != 0:
-       print "Error execting command to kill process " + name
+       print "Error executing command to kill process " + name
+       print "Error =" + out
        sys.exit(1)
      print "Out = " + out
      if out=='':
@@ -51,7 +52,7 @@ def kill_processes(name):
      out_arr = out.split()
      pid_to_kill = out_arr[1]
      print "Now killing process ID " + pid_to_kill + " on Phone" 
-     cmd = 'sudo adb -s ' + device_id +' shell "kill ' + pid_to_kill + '"' 
+     cmd = 'sudo adb -s ' + device_id +' shell "kill -9 ' + pid_to_kill + '"' 
      status, out = commands.getstatusoutput(cmd)
      if status != 0:
        print "Error execting command to kill process " + name
@@ -62,6 +63,7 @@ def start_ue () :
    #print 'Enter your commands below.\r\nInsert "exit" to leave the application.'
    print 'Killing old iperf/ping sessions'
    kill_processes('iperf')
+   kill_processes('iperf3')
    kill_processes('ping')
    print "Turning off airplane mode"
    os.system('sudo -E adb devices')
@@ -93,6 +95,7 @@ def stop_ue():
    os.system('sudo adb -s ' + device_id + ' shell \"settings put global airplane_mode_on 1; am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true\" ')
    print "Killing iperf/ping sessions"
    kill_processes('iperf')
+   kill_processes('iperf3')
    kill_processes('ping')
    
 i=1

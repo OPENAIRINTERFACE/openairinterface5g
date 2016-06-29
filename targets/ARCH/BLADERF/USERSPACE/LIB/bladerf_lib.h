@@ -106,6 +106,27 @@ typedef struct {
 /*
  * func prototypes 
  */
+/*! \brief BladeRF Init function (not used at the moment)
+ * \param device RF frontend parameters set by application
+ */
+int trx_brf_init(openair0_device *device);
 
+/*! \brief get current timestamp
+ *\param device the hardware to use 
+ *\param module the bladeRf module
+ */
+openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module module);
+
+/*! \brief Get BladeRF log level
+ * \param log_level log level
+ * \returns log level of BLADERF device
+ */
+int get_brf_log_level(int log_level);
+
+/*! \brief bladeRF error report 
+ * \param status 
+ * \returns 0 on success
+ */
 int brf_error(int status);
+
 /*@}*/
