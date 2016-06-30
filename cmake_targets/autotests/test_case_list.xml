@@ -155,6 +155,25 @@
      <nruns>1</nruns>
      </testCase> 
 
+     <testCase id="010114" >
+     <class>compilation</class>
+     <desc>Build lte_softmodem_noS1.LMSSDR.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w LMSSDR -r Rel10 --noS1  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/lte-softmodem-nos1
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/rb_tool
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/CMakeFiles/nasmesh/nasmesh.ko
+                       $OPENAIR_DIR/cmake_targets/lte_noS1_build_oai/build/liboai_lmssdrdevif.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>lte-softmodem_noS1.LMSSDR.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
 
 
      <testCase id="010120" >
@@ -230,6 +249,24 @@
      <tags>lte-softmodem.ETHERNET.Rel10</tags>
      <nruns>1</nruns>
      </testCase> 
+
+     <testCase id="010124" >
+     <class>compilation</class>
+     <desc>Build lte_softmodem.LMSSDR.Rel10</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--eNB -w LMSSDR -r Rel10   -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/lte_build_oai/build/lte-softmodem
+                       $OPENAIR_DIR/cmake_targets/lte_build_oai/build/liboai_lmssdrdevif.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>lte-softmodem.LMSSDR.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
 
      <testCase id="010130" >
      <class>compilation</class>
@@ -308,7 +345,7 @@
 
      <testCase id="010142" >
      <class>compilation</class>
-     <desc>Build RRH Gateway</desc>
+     <desc>Build RRH Gateway for BladeRF (RF) nad Ethernet (transport)</desc>
      <pre_compile_prog></pre_compile_prog>
      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
      <compile_prog_args>--RRH -w BLADERF -t ETHERNET  -c </compile_prog_args>
@@ -325,6 +362,24 @@
      <nruns>1</nruns>
      </testCase>
 
+    <testCase id="010143" >
+     <class>compilation</class>
+     <desc>Build RRH Gateway for LMSSDR (RF) and Ethernet (transport)</desc>
+     <pre_compile_prog></pre_compile_prog>
+     <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+     <compile_prog_args>--RRH -w LMSSDR -t ETHERNET  -c </compile_prog_args>
+     <compile_prog_out>$OPENAIR_DIR/cmake_targets/rrh_gw/build/rrh_gw
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_lmssdrdevif.so
+                       $OPENAIR_DIR/cmake_targets/rrh_gw/build/liboai_eth_transpro.so</compile_prog_out>
+     <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+     <pre_exec_args></pre_exec_args>
+     <main_exec></main_exec>
+     <main_exec_args></main_exec_args>
+     <search_expr_true></search_expr_true>
+     <search_expr_false></search_expr_false>
+     <tags>RRH.LMSSDR.Rel10</tags>
+     <nruns>1</nruns>
+     </testCase>
 
    <testCase id="010200">
       <class>execution</class>
