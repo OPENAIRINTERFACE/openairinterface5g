@@ -40,6 +40,7 @@ Description NAS procedure functions triggered by the user
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "emm_main.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/

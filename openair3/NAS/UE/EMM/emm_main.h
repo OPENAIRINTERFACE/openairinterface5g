@@ -50,6 +50,15 @@ Description Defines the EPS Mobility Management procedure call manager,
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
 
+/*
+ * User notification callback, executed whenever a change of data with
+ * respect of network information (e.g. network registration and/or
+ * location change, new PLMN becomes available) is notified by the
+ * EPS Mobility Management sublayer
+ */
+typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
+    const char*, size_t);
+
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/
