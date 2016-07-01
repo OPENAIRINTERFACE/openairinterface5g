@@ -147,7 +147,6 @@ clean_all_files() {
 
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
-  echo_info "Log file for compilation written in: $dlog/$2.$REL.txt"
   set +e
   {
     rm -f $3
