@@ -69,6 +69,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
+#include "PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
 
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
@@ -547,7 +548,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** trx_write_func to IF device **** ///       
-      
+   //   send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, 0);
       
     } else { 
       /// **** send_IF4 of txdataF to RRU **** ///       
@@ -624,10 +625,11 @@ static void* eNB_thread_rx_common( void* param ) {
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-
+  
+  uint8_t seqno=0;
   FILE  *rx_time_file = NULL;
   char rx_time_name[101];
-  //int i;
+  int i;
   struct timespec wait;
 
   wait.tv_sec=0;
@@ -762,7 +764,15 @@ static void* eNB_thread_rx_common( void* param ) {
     if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
       LOG_E(HW,"Could not start the RF device\n");
   }
-    
+
+  //  proc->proc_rxtx[0].timestamp_tx = 0;
+  //  seqno = send_IF5(eNB, &proc->proc_rxtx[0], 0); 
+  
+ // for (i=0; i<1000;i++) {
+ //   seqno = send_IF5(eNB, &proc->proc_rxtx[0], seqno); 
+ //   proc->proc_rxtx[0].timestamp_tx += 7680*2;
+ // }
+      
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RX, 0 );

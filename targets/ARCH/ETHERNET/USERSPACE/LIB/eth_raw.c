@@ -53,6 +53,7 @@
 #include "ethernet_lib.h"
 #include "if_defs.h"
 #include "openair1/PHY/LTE_TRANSPORT/if4_tools.h"
+#include "openair1/PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
 
 #define DEBUG 0
 
@@ -123,8 +124,11 @@ int eth_socket_init_raw(openair0_device *device) {
  /* Construct the Ethernet header */ 
  ether_aton_r(local_mac, (struct ether_addr *)(&(eth->eh.ether_shost)));
  ether_aton_r(remote_mac, (struct ether_addr *)(&(eth->eh.ether_dhost)));
- eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
-
+// if (((*) device->priv)->flags == ETH_RAW_IF5_MOBIPASS) {
+   eth->eh.ether_type = htons(0xbffe);
+// } else {
+//   eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
+// } 
  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
  
  return 0;
@@ -214,6 +218,8 @@ int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp,
     packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4_PULFFT) {
     packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF5_MOBIPASS) {
+    packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
     packet_size = RAW_IF4_PRACH_SIZE_BYTES;
   }

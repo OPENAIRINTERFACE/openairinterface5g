@@ -88,6 +88,17 @@ int trx_eth_start(openair0_device *device) {
   } else if (eth->flags == ETH_UDP_IF4_MODE) {
     
   
+  } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
+    if (eth_socket_init_raw(device)!=0)   return -1;
+    /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
+    //if (device->host_type == BBU_HOST) {
+      //if(eth_set_dev_conf_raw_IF4(device)!=0)  return -1;
+    //} else {
+      //if(eth_get_dev_conf_raw_IF4(device)!=0)  return -1;
+//
+    /* adjust MTU wrt number of samples per packet */
+   // if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+
   } else {
     if (eth_socket_init_udp(device)!=0)   return -1; 
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -334,6 +345,8 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     eth->flags = ETH_RAW_IF4_MODE;
   } else if (eth_params->transp_preference == 2) {
     eth->flags = ETH_UDP_IF4_MODE;
+  } else if (eth_params->transp_preference == 4) {
+    eth->flags = ETH_RAW_IF5_MOBIPASS;
   } else {
     printf("transport_init: Unknown transport preference %d - default to RAW", eth_params->transp_preference);
     eth->flags = ETH_RAW_MODE;
@@ -359,6 +372,9 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     device->trx_write_func   = trx_eth_write_udp;
     device->trx_read_func    = trx_eth_read_udp;     
   } else if (eth->flags == ETH_RAW_IF4_MODE) {
+    device->trx_write_func   = trx_eth_write_raw_IF4;
+    device->trx_read_func    = trx_eth_read_raw_IF4;     
+  } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     device->trx_write_func   = trx_eth_write_raw_IF4;
     device->trx_read_func    = trx_eth_read_raw_IF4;     
   } else {

@@ -1071,6 +1071,8 @@ static void get_options (int argc, char **argv)
             (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
           } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
             (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif5_mobipass == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_IF5_MOBIPASS;             
           } else {
             (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
           }
