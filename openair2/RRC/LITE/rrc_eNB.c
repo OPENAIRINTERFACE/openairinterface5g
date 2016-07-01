@@ -1133,8 +1133,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   int                                 i;
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
-  //eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
-  //struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
+  eNB_RRC_INST*                       rrc_inst = &eNB_rrc_inst[ctxt_pP->module_id];
+  struct PhysicalConfigDedicated**    physicalConfigDedicated = &ue_context_pP->ue_context.physicalConfigDedicated;
 
   struct SRB_ToAddMod                *SRB2_config                      = NULL;
   struct SRB_ToAddMod__rlc_Config    *SRB2_rlc_config                  = NULL;
@@ -1359,6 +1359,14 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
   mac_MainConfig->ext1->sr_ProhibitTimer_r9 = sr_ProhibitTimer_r9;
   //sps_RA_ConfigList_rlola = NULL;
 #endif
+
+  //change the transmission mode for the primary component carrier
+  //TODO: change TM for secondary CC in SCelltoaddmodlist
+  if (*physicalConfigDedicated)
+    if ((*physicalConfigDedicated)->antennaInfo) {
+      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration->ue_TransmissionMode[0];
+      LOG_D(RRC,"Setting transmission mode to %d+1\n",rrc_inst->configuration->ue_TransmissionMode[0]);
+    }
 
   // Measurement ID list
   MeasId_list = CALLOC(1, sizeof(*MeasId_list));
@@ -1672,10 +1680,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
                                          (DRB_ToAddModList_t*)*DRB_configList,
                                          (DRB_ToReleaseList_t*)NULL,  // DRB2_list,
                                          (struct SPS_Config*)NULL,    // *sps_Config,
-#ifdef EXMIMO_IOT
-                                         NULL, NULL, NULL, NULL,NULL,
-#else
                                          (struct PhysicalConfigDedicated*)*physicalConfigDedicated,
+#ifdef EXMIMO_IOT
+                                         NULL, NULL, NULL,NULL,
+#else
                                          (MeasObjectToAddModList_t*)MeasObj_list,
                                          (ReportConfigToAddModList_t*)ReportConfig_list,
                                          (QuantityConfig_t*)quantityConfig,
@@ -3449,6 +3457,7 @@ openair_rrc_lite_eNB_init(
   eNB_rrc_inst[ctxt.module_id].initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   eNB_rrc_inst[ctxt.module_id].s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
 
+  eNB_rrc_inst[ctxt.module_id].configuration = configuration;
 
   /// System Information INIT
 
