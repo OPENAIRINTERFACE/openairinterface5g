@@ -1886,6 +1886,9 @@ oai_shutdown (void)
   for (int i = 0; i < NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++)
     if (oai_emulation.info.oai_ifup[i] == 1) {
       char interfaceName[8];
+      char command_line[100];
+      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
+      system(command_line);
       snprintf (interfaceName, sizeof(interfaceName), "oai%d", i);
       bringInterfaceUp (interfaceName, 0);
     }

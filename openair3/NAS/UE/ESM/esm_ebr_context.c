@@ -98,7 +98,7 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_context_create(
-  esm_data_t *esm_data,
+  esm_data_t *esm_data, int ueid,
   int pid, int ebi, int is_default,
   const network_qos_t *qos, const network_tft_t *tft)
 {
@@ -206,7 +206,7 @@ int esm_ebr_context_create(
            char          *netmask      = NULL;
            char           broadcast[INET_ADDRSTRLEN];
            struct in_addr in_addr;
-           char           command_line[128];
+           char           command_line[500];
            int            res;
 
            switch (pdn->type) {
@@ -272,11 +272,17 @@ int esm_ebr_context_create(
              }
 
              res = sprintf(command_line,
-                           "ifconfig oip1 %s netmask %s broadcast %s",
-                           ipv4_addr, netmask, broadcast);
-             (void)res; /* avoid gcc warning "set but not used" */
-             //                            AssertFatal((res > 0) && (res < 128),
-             //                                    "error in system command line");
+                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ip rule add from %s/32 table %d && "
+                           "ip rule add to %s/32 table %d && "
+                           "ip route add default dev oip%d table %d",
+                           ueid + 1, ipv4_addr, netmask, broadcast,
+                           ipv4_addr, ueid + 201,
+                           ipv4_addr, ueid + 201,
+                           ueid + 1, ueid + 201);
+             if ( res<0 ) {
+                LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
+             }
              LOG_TRACE(INFO, "ESM-PROC  - executing %s ",
                        command_line);
 

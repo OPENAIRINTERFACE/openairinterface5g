@@ -165,7 +165,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
       *esm_cause = ESM_CAUSE_SYNTACTICAL_ERROR_IN_PACKET_FILTER;
     } else {
       /* Create new dedicated EPS bearer context */
-      default_ebi = esm_ebr_context_create(esm_data, pid, ebi, FALSE, qos, tft);
+      default_ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, FALSE, qos, tft);
 
       if (default_ebi != ESM_EBI_UNASSIGNED) {
         /* Dedicated EPS bearer contextx successfully created */

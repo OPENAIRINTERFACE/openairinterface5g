@@ -127,7 +127,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /* Create new default EPS bearer context */
-    ebi = esm_ebr_context_create(esm_data, pid, ebi, TRUE, qos, NULL);
+    ebi = esm_ebr_context_create(esm_data, user->ueid, pid, ebi, TRUE, qos, NULL);
 
     if (ebi != ESM_EBI_UNASSIGNED) {
       /* Default EPS bearer contextx successfully created */
