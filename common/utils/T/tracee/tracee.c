@@ -6,7 +6,7 @@
 int main(void)
 {
   int frame = 0;
-  T_connect_to_tracer("127.0.0.1", 2020);
+  T_init(2021, 1, 0);
   while (1) {
     getchar();
     T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(0), T_INT(0), T_INT(frame), T_INT(0), T_INT(0), T_INT(0));

@@ -13,8 +13,14 @@ logger *new_ttilog(void *event_handler, void *database,
 logger *new_timelog(void *event_handler, void *database, char *event_name);
 logger *new_ticklog(void *event_handler, void *database,
     char *event_name, char *frame_name, char *subframe_name);
+logger *new_iqlog(void *event_handler, void *database,
+    char *event_name, char *nb_rb, char *N_RB_UL, char *symbols_per_tti,
+    char *buffer_varname);
 
 void framelog_set_skip(logger *_this, int skip_delay);
+void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9);
+
+void textlog_dump_buffer(logger *_this, int dump_buffer);
 
 #include "view/view.h"
 

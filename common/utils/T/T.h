@@ -562,7 +562,7 @@ extern T_cache_t *T_cache;
 
 extern int *T_active;
 
-void T_init(int remote_port, int wait_for_tracer);
+void T_init(int remote_port, int wait_for_tracer, int dont_fork);
 
 #else /* T_TRACER */
 

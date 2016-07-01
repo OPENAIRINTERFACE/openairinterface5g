@@ -20,6 +20,9 @@ list *list_append(list *l, void *data);
 /* socket                                                                   */
 /****************************************************************************/
 
+#define DEFAULT_REMOTE_IP "127.0.0.1"
+#define DEFAULT_REMOTE_PORT 2021
+
 /* socket_send: return 0 if okay, -1 on error */
 int socket_send(int socket, void *buffer, int size);
 int get_connection(char *addr, int port);
@@ -41,6 +44,7 @@ void PUTC(OBUF *o, char c);
 void PUTS(OBUF *o, char *s);
 void PUTS_CLEAN(OBUF *o, char *s);
 void PUTI(OBUF *o, int i);
+void PUTX2(OBUF *o, int i);
 void PUTUL(OBUF *o, unsigned long i);
 
 #endif /* _UTILS_H_ */

@@ -14,6 +14,7 @@ struct xy {
   float refresh_rate;
   pthread_mutex_t lock;
   int length;
+  int max_length;      /* used in XY_FORCED_MODE */
   float *x;
   float *y;
   int insert_point;
@@ -39,7 +40,7 @@ static void clear(view *this)
   /* TODO */
 }
 
-static void append(view *_this, float *x, float *y, int length)
+static void append_loop(view *_this, float *x, float *y, int length)
 {
   struct xy *this = (struct xy *)_this;
   int i;
@@ -57,6 +58,25 @@ static void append(view *_this, float *x, float *y, int length)
   }
 
   this->insert_point = ip;
+
+  if (pthread_mutex_unlock(&this->lock)) abort();
+}
+
+static void append_forced(view *_this, float *x, float *y, int length)
+{
+  struct xy *this = (struct xy *)_this;
+
+  if (length > this->max_length) {
+    printf("%s:%d:%s: bad length (%d), max allowed is %d\n",
+        __FILE__, __LINE__, __FUNCTION__, length, this->max_length);
+    abort();
+  }
+
+  if (pthread_mutex_lock(&this->lock)) abort();
+
+  memcpy(this->x, x, length * sizeof(float));
+  memcpy(this->y, y, length * sizeof(float));
+  this->length = length;
 
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
@@ -89,24 +109,35 @@ static void set(view *_this, char *name, ...)
 }
 
 view *new_view_xy(int length, float refresh_rate, gui *g, widget *w,
-    int color)
+    int color, enum xy_mode mode)
 {
   struct xy *ret = calloc(1, sizeof(struct xy));
   if (ret == NULL) abort();
 
   ret->common.clear = clear;
-  ret->common.append = (void (*)(view *, ...))append;
-  ret->common.set = set;
+
+  switch (mode) {
+  case XY_LOOP_MODE:
+    ret->common.append = (void (*)(view *, ...))append_loop;
+    ret->common.set = set;
+    ret->length = length;
+    ret->insert_point = 0;
+    break;
+  case XY_FORCED_MODE:
+    ret->common.append = (void (*)(view *, ...))append_forced;
+    ret->common.set = NULL;
+    ret->length = 0;
+    ret->max_length = length;
+    break;
+  }
 
   ret->refresh_rate = refresh_rate;
   ret->g = g;
   ret->w = w;
   ret->plot = xy_plot_new_plot(g, w, color);
 
-  ret->length = length;
   ret->x = calloc(length, sizeof(float)); if (ret->x == NULL) abort();
   ret->y = calloc(length, sizeof(float)); if (ret->y == NULL) abort();
-  ret->insert_point = 0;
 
   if (pthread_mutex_init(&ret->lock, NULL)) abort();
 

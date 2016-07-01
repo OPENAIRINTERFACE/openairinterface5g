@@ -14,9 +14,6 @@
 #include "event_selector.h"
 #include "config.h"
 
-#define DEFAULT_REMOTE_IP "127.0.0.1"
-#define DEFAULT_REMOTE_PORT 2021
-
 typedef struct {
   int socket;
   int *is_on;
@@ -55,6 +52,7 @@ void usage(void)
 "                              note: you may pass several -on/-off/-ON/-OFF,\n"
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
+"    -full                     also dump buffers' content\n"
 "    -ip <host>                connect to given IP address (default %s)\n"
 "    -p <port>                 connect to given port (default %d)\n"
 "    -x                        GUI output\n"
@@ -93,6 +91,7 @@ int main(int n, char **v)
   view *out;
   int gui_active = 1;
   textlog_data textlog_data;
+  int full = 0;
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
@@ -118,6 +117,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-x")) { gui_mode = 1; continue; }
     if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
     if (!strcmp(v[i], "-no-gui")) { gui_active = 0; continue; }
+    if (!strcmp(v[i], "-full")) { full = 1; continue; }
     usage();
   }
 
@@ -162,6 +162,7 @@ int main(int n, char **v)
 //        "ENB_PHY_UL_CHANNEL_ESTIMATE",
 //        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
     logger_add_view(textlog, out);
+    if (full) textlog_dump_buffer(textlog, 1);
     free(name);
     free(desc);
   }
