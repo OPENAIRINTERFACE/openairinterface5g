@@ -55,7 +55,7 @@ extern int mac_get_rrc_status(uint8_t Mod_id,uint8_t eNB_flag,uint8_t index);
 extern openair0_config_t openair0_cfg[];
 #endif
 
-int dump_ue_stats(PHY_VARS_UE *ue, char* buffer, int length, runmode_t mode, int input_level_dBm)
+int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length, runmode_t mode, int input_level_dBm)
 {
 
   uint8_t eNB=0;
@@ -78,7 +78,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, char* buffer, int length, runmode_t mode, int
     /*
     len += sprintf(&buffer[len],
                    "[UE PROC] Frame count: %d\neNB0 RSSI %d dBm/RE (%d dB, %d dB)\neNB1 RSSI %d dBm/RE (%d dB, %d dB)neNB2 RSSI %d dBm/RE (%d dB, %d dB)\nN0 %d dBm/RE, %f dBm/%dPRB (%d dB, %d dB)\n",
-                   ue->frame_rx,
+                   proc->frame_rx,
                    ue->measurements.rx_rssi_dBm[0],
                    ue->measurements.rx_power_dB[0][0],
                    ue->measurements.rx_power_dB[0][1],
@@ -535,7 +535,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, char* buffer, int length, runmode_t mode, int
 
   } else {
     len += sprintf(&buffer[len], "[UE PROC] Frame count: %d, RSSI %3.2f dB (%d dB, %d dB), N0 %3.2f dB (%d dB, %d dB)\n",
-                   ue->frame_rx,
+                   proc->frame_rx,
                    10*log10(ue->measurements.rssi),
                    ue->measurements.rx_power_dB[0][0],
                    ue->measurements.rx_power_dB[0][1],
