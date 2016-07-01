@@ -1190,7 +1190,7 @@ void phy_procedures_eNB_TX(unsigned char sched_subframe,PHY_VARS_eNB *phy_vars_e
                                            0,
                                            P_RNTI,
                                            phy_vars_eNB->eNB_UE_stats[(uint8_t)UE_id].DL_pmi_single,
-                                           phy_vars_eNB->transmission_mode[(uint8_t)UE_id]>7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id]);
+                                           phy_vars_eNB->transmission_mode[(uint8_t)UE_id]<7?0:phy_vars_eNB->transmission_mode[(uint8_t)UE_id]);
         LOG_D(PHY,"[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d subframe %d: Generated dlsch params\n",
               phy_vars_eNB->Mod_id,DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->current_harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
 

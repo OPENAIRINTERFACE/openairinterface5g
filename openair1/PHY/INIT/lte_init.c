@@ -1338,7 +1338,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       // TX vars
       eNB_common_vars->txdata[eNB_id]  = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
       eNB_common_vars->txdataF[eNB_id] = (mod_sym_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(mod_sym_t*));
-      eNB_common_vars->txdataF_BF[eNB_id] = (mod_sym_t ***)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t**));
+      eNB_common_vars->txdataF_BF[eNB_id] = (mod_sym_t **)malloc16(frame_parms->nb_antennas_tx*sizeof(mod_sym_t*));
 
       for (i=0; i<14; i++) {
         eNB_common_vars->txdataF[eNB_id][i] = (mod_sym_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t) );
@@ -1350,7 +1350,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
       }
 
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-        eNB_common_vars->txdataF_BF[eNB_id][i] = (mod_sym_t*)malloc16_clear( OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(mod_sym_t*) );
+        eNB_common_vars->txdataF_BF[eNB_id][i] = (mod_sym_t*)malloc16_clear( OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(mod_sym_t) );
 #ifdef USER_MODE
         eNB_common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
 #else  // USER_MODE

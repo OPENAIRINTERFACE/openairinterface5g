@@ -239,9 +239,9 @@ typedef struct {
 
 typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
-  uint32_t *txdataF[8];
+  int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  uint32_t **ue_spec_bf_weights[4]; 
+  int32_t **ue_spec_bf_weights[4]; 
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing

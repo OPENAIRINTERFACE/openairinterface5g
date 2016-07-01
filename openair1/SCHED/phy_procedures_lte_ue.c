@@ -2144,7 +2144,7 @@ int lte_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *phy_vars_ue,uint8_t abst
 					     SI_RNTI,
 					     0,
 					     P_RNTI,
-                                             phy_vars_ue->transmission_mode[eNB_id]>7?0:phy_vars_ue->transmission_mode[eNB_id])==0)) {
+                                             (phy_vars_ue->transmission_mode[eNB_id]<7)?0:phy_vars_ue->transmission_mode[eNB_id])==0)) {
 
 #ifdef DIAG_PHY
 	
