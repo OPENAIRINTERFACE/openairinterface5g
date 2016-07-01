@@ -25,20 +25,20 @@
 # include "nas_ue_task.h"
 # include "UTIL/LOG/log.h"
 
-# include "nas_user.h"
+# include "user_defs.h"
 # include "user_api.h"
 # include "nas_parser.h"
 # include "nas_proc.h"
 # include "msc.h"
+
+#include "nas_user.h"
 
 # define NAS_UE_AUTOSTART 1
 
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 
-static int user_fd;
-
-static int nas_ue_process_events(struct epoll_event *events, int nb_events)
+static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, int nb_events)
 {
   int event;
   int exit_loop = FALSE;
@@ -48,8 +48,8 @@ static int nas_ue_process_events(struct epoll_event *events, int nb_events)
   for (event = 0; event < nb_events; event++) {
     if (events[event].events != 0) {
       /* If the event has not been yet been processed (not an itti message) */
-      if (events[event].data.fd == user_fd) {
-        exit_loop = nas_user_receive_and_process(&user_fd, NULL);
+      if (events[event].data.fd == user->fd) {
+        exit_loop = nas_user_receive_and_process(&user->fd, NULL);
       } else {
         LOG_E(NAS, "[UE] Received an event from an unknown fd %d!\n", events[event].data.fd);
       }
@@ -68,6 +68,9 @@ void *nas_ue_task(void *args_p)
   instance_t            instance;
   unsigned int          Mod_id;
   int                   result;
+  nas_user_t user_value = {};
+  nas_user_t *user = &user_value;
+
 
   itti_mark_task_ready (TASK_NAS_UE);
   MSC_START_USE();
@@ -81,8 +84,8 @@ void *nas_ue_task(void *args_p)
         exit (EXIT_FAILURE);
       }
 
-      user_fd = user_api_get_fd ();
-      itti_subscribe_event_fd (TASK_NAS_UE, user_fd);
+      user->fd = user_api_get_fd ();
+      itti_subscribe_event_fd (TASK_NAS_UE, user->fd);
     }
 
     /* Initialize NAS user */
@@ -114,7 +117,7 @@ void *nas_ue_task(void *args_p)
           /* Send an activate modem command to NAS like UserProcess should do it */
           char *user_data = "at+cfun=1\r";
 
-          nas_user_receive_and_process (&user_fd, user_data);
+          nas_user_receive_and_process (&user->fd, user_data);
         }
 #endif
         break;
@@ -215,7 +218,7 @@ void *nas_ue_task(void *args_p)
     nb_events = itti_get_events(TASK_NAS_UE, &events);
 
     if ((nb_events > 0) && (events != NULL)) {
-      if (nas_ue_process_events(events, nb_events) == TRUE) {
+      if (nas_ue_process_events(user, events, nb_events) == TRUE) {
         LOG_E(NAS, "[UE] Received exit loop\n");
       }
     }
