@@ -139,6 +139,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/LTE_TRANSPORT/defs.h"
 #include <pthread.h>
 
+#include "targets/ARCH/COMMON/common_lib.h"
+
 #define NUM_DCI_MAX 32
 
 #define NUMBER_OF_eNB_SECTORS_MAX 3
@@ -247,8 +249,58 @@ typedef struct {
   eNB_rxtx_proc_t proc_rxtx[2];
 } eNB_proc_t;
 
-//! \brief Number of eNB TX and RX threads.
-//! This number must be equal to the number of LTE subframes (10). Each thread is responsible for a single subframe.
+
+/// Context data structure for RX/TX portion of subframe processing
+typedef struct {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// timestamp transmitted to HW
+  openair0_timestamp timestamp_tx;
+  /// subframe to act upon for transmission
+  int subframe_tx;
+  /// subframe to act upon for reception
+  int subframe_rx;
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception
+  int frame_rx;
+  /// \brief Instance count for RXn-TXnp4 processing thread.
+  /// \internal This variable is protected by \ref mutex_rxtx.
+  int instance_cnt_rxtx;
+  /// pthread structure for RXn-TXnp4 processing thread
+  pthread_t pthread_rxtx;
+  /// pthread attributes for RXn-TXnp4 processing thread
+  pthread_attr_t attr_rxtx;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_rxtx;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_rxtx;
+  /// scheduling parameters for RXn-TXnp4 thread
+  struct sched_param sched_param_rxtx;
+} UE_rxtx_proc_t;
+
+/// Context data structure for eNB subframe processing
+typedef struct {
+  /// Component Carrier index
+  uint8_t              CC_id;
+  /// Last RX timestamp
+  openair0_timestamp timestamp_rx;
+  /// \brief Instance count for synch thread.
+  /// \internal This variable is protected by \ref mutex_synch.
+  int instance_cnt_synch;
+  /// pthread attributes for prach processing thread
+  pthread_attr_t attr_synch;
+  /// scheduling parameters for synch thread
+  struct sched_param sched_param_synch;
+  /// pthread descriptor synch thread
+  pthread_t pthread_synch;
+  /// condition variable for UE synch thread;
+  pthread_cond_t cond_synch;
+  /// mutex for UE synch thread
+  pthread_mutex_t mutex_synch;
+  /// set of scheduling variables RXn-TXnp4 threads
+  UE_rxtx_proc_t proc_rxtx[2];
+} UE_proc_t;
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {
@@ -456,6 +508,11 @@ typedef struct PHY_VARS_eNB_s {
   SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
   SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
+  
+  /// RF and Interface devices per CC
+  openair0_device rfdevice; 
+  openair0_device ifdevice;
+  // *** Handle spatially distributed MIMO antenna ports   
 
 } PHY_VARS_eNB;
 

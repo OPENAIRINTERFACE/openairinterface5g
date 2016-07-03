@@ -329,7 +329,11 @@ const char* eurecomFunctionsNames[] = {
   "itti_dump_enqueue_message",
   "itti_dump_enqueue_message_malloc",
   "itti_relay_thread",
-  "test"
+  "test",
+  
+  /* IF4 signals */
+  "send_if4",
+  "recv_if4"
 };
 
 struct vcd_module_s vcd_modules[VCD_SIGNAL_DUMPER_MODULE_END] = {

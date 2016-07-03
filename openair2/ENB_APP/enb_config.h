@@ -86,6 +86,8 @@ typedef struct rrh_gw_config_s {
   char     *remote_address;
   uint16_t  local_port;
   uint16_t  remote_port;
+  uint8_t   udpif4;
+  uint8_t   rawif4;
   int tx_scheduling_advance;
   int tx_sample_advance;
   int iq_txshift;

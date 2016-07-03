@@ -668,7 +668,7 @@ int main(int argc, char **argv)
     if (eNB->frame_parms.frame_type == TDD) {
       ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
       ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -678,7 +678,7 @@ int main(int argc, char **argv)
     } else {
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -692,7 +692,7 @@ int main(int argc, char **argv)
     if (eNB->frame_parms.frame_type == TDD) {
       ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
       ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -702,7 +702,7 @@ int main(int argc, char **argv)
     } else {
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
+      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
       ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
@@ -754,16 +754,15 @@ int main(int argc, char **argv)
   eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
 
   
+  eNB_rxtx_proc_t *proc_rxtx = &eNB->proc.proc_rxtx[subframe&1];
+  proc_rxtx->frame_rx=1;
+  proc_rxtx->subframe_rx=subframe;
 
+  proc_rxtx->frame_tx=pdcch_alloc2ul_frame(&eNB->frame_parms,1,subframe);
+  proc_rxtx->subframe_tx=pdcch_alloc2ul_subframe(&eNB->frame_parms,subframe);
 
-  eNB->proc.frame_rx=1;
-  eNB->proc.subframe_rx=subframe;
-
-  eNB->proc.frame_tx=pdcch_alloc2ul_frame(&eNB->frame_parms,1,subframe);
-  eNB->proc.subframe_tx=pdcch_alloc2ul_subframe(&eNB->frame_parms,subframe);
-
-  UE->frame_tx = eNB->proc.frame_rx;
-  UE->frame_rx = eNB->proc.frame_tx;
+  UE->frame_tx = proc_rxtx->frame_rx;
+  UE->frame_rx = proc_rxtx->frame_tx;
 
   printf("Init UL hopping UE\n");
   init_ul_hopping(&UE->frame_parms);
@@ -773,11 +772,11 @@ int main(int argc, char **argv)
 
   UE->dlsch[0][0]->harq_ack[ul_subframe2pdcch_alloc_subframe(&eNB->frame_parms,subframe)].send_harq_status = 1;
 
-
-
+  UE->ulsch_Msg3_active[eNB_id] = 0;
+  UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
                                     14,
-                                    eNB->proc.subframe_tx,
+                                    proc_rxtx->subframe_tx,
                                     format0,
                                     UE,
                                     SI_RNTI,
@@ -789,7 +788,7 @@ int main(int argc, char **argv)
 
   //  printf("RIV %d\n",UL_alloc_pdu.rballoc);
 
-  generate_eNB_ulsch_params_from_dci(eNB,
+  generate_eNB_ulsch_params_from_dci(eNB,proc_rxtx,
 				     (void *)&UL_alloc_pdu,
                                      14,
                                      format0,
@@ -848,7 +847,7 @@ int main(int argc, char **argv)
 
       harq_pid = subframe2harq_pid(&UE->frame_parms,UE->frame_tx,subframe);
       input_buffer_length = UE->ulsch[0]->harq_processes[harq_pid]->TBS/8;
-      input_buffer = (unsigned char *)malloc(input_buffer_length+4);
+      input_buffer = (unsigned char *)memalign(32,input_buffer_length+64);
       //      printf("UL frame %d/subframe %d, harq_pid %d\n",UE->frame,subframe,harq_pid);
       if (input_fdUL == NULL) {
 
@@ -1230,7 +1229,7 @@ int main(int argc, char **argv)
 	  */
 
           start_meas(&eNB->ulsch_demodulation_stats);
-          rx_ulsch(eNB,
+          rx_ulsch(eNB,proc_rxtx,
                    0,  // this is the effective sector id
                    0,  // this is the UE_id
                    eNB->ulsch,
@@ -1253,7 +1252,7 @@ int main(int argc, char **argv)
 
           start_meas(&eNB->ulsch_decoding_stats);
 
-          ret= ulsch_decoding(eNB,
+          ret= ulsch_decoding(eNB,proc_rxtx,
                               0, // UE_id
                               control_only_flag,
                               1,  // Nbundled
@@ -1303,7 +1302,7 @@ int main(int argc, char **argv)
                 print_CQI(eNB->ulsch[0]->harq_processes[harq_pid]->o,
                           eNB->ulsch[0]->harq_processes[harq_pid]->uci_format,0,eNB->frame_parms.N_RB_DL);
 
-              dump_ulsch(eNB,0);
+              dump_ulsch(eNB,proc_rxtx,0);
               exit(-1);
             }
 
@@ -1332,7 +1331,7 @@ int main(int argc, char **argv)
                          eNB->ulsch[0]->harq_processes[harq_pid]->c[s][i]^UE->ulsch[0]->harq_processes[harq_pid]->c[s][i]);
               }
 
-              dump_ulsch(eNB,0);
+              dump_ulsch(eNB,proc_rxtx,0);
               exit(-1);
             }
 

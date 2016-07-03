@@ -49,14 +49,6 @@
 #include "SCHED/phy_procedures_emos.h"
 #endif
 
-#ifdef EXMIMO
-#ifdef DRIVER2013
-#include "openair0_lib.h"
-#include "gain_control.h"
-extern int card;
-#endif
-#endif
-
 #define DEBUG_PHY_PROC
 
 #ifndef PUCCH
@@ -90,19 +82,6 @@ extern int oai_exit;
 
 uint8_t ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
 uint8_t access_mode;
-
-#ifdef DLSCH_THREAD
-extern int dlsch_instance_cnt[8];
-extern int dlsch_subframe[8];
-extern pthread_mutex_t dlsch_mutex[8];
-/// Condition variable for dlsch thread
-extern pthread_cond_t dlsch_cond[8];
-extern int rx_pdsch_instance_cnt;
-extern int rx_pdsch_slot;
-extern pthread_mutex_t rx_pdsch_mutex;
-/// Condition variable for rx_pdsch thread
-extern pthread_cond_t rx_pdsch_cond;
-#endif
 
 DCI_ALLOC_t dci_alloc_rx[8];
 
@@ -2354,11 +2333,10 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
   uint8_t harq_pid = -1;
   int timing_advance;
   uint8_t pilot1,pilot2,pilot3;
-#ifndef DLSCH_THREAD
   uint8_t i_mod = 0;
   int eNB_id_i = 1;
   uint8_t dual_stream_UE = 0;
-#endif
+
   uint8_t *rar;
   int pmch_flag=0;
   uint8_t sync_area=255;
@@ -2482,46 +2460,13 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
       */
     }
 
-#ifdef DLSCH_THREAD
-    if (ue->dlsch[eNB_id][0]->active == 1)  {
-      // activate thread since Chest is now done for slot before slot_rx
-      if (l==0) {
-        LOG_I(PHY,"frame %d, slot_rx %d: Calling rx_pdsch_thread for harq_pid %d\n",frame_rx,slot_rx, ue->dlsch[eNB_id][0]->current_harq_pid);
-
-        if (pthread_mutex_lock (&rx_pdsch_mutex) != 0) {               // Signal MAC_PHY Scheduler
-          LOG_E(PHY,"[UE  %d] ERROR pthread_mutex_lock\n",ue->Mod_id);     // lock before accessing shared resource
-          VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-        } else {
-          rx_pdsch_instance_cnt++;
-          (slot_rx == 0) ? (rx_pdsch_slot = 19) : (rx_pdsch_slot = (slot_rx-1));
-          pthread_mutex_unlock (&rx_pdsch_mutex);
-
-          if (rx_pdsch_instance_cnt == 0) {
-            if (pthread_cond_signal(&rx_pdsch_cond) != 0) {
-              LOG_E(PHY,"[UE  %d] ERROR pthread_cond_signal for rx_pdsch_cond\n",ue->Mod_id);
-              VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-            }
-          } else {
-            LOG_W(PHY,"[UE  %d] Frame=%d, Slot=%d, RX_PDSCH thread for rx_pdsch_thread busy!!!\n",ue->Mod_id,frame_rx,slot_rx);
-            VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_OUT);
-          }
-        }
-
-        // trigger DLSCH decoding thread
-        if ((slot_rx%2)==1) // odd slots
-          ue->dlsch[eNB_id][0]->active = 0;
-      }
-    }
-
-#endif
-
     // process last DLSCH symbols + invoke decoding
     if (((slot_rx%2)==0) && (l==0)) {
       // Regular PDSCH
       LOG_D(PHY,"[UE %d] dlsch->active in subframe %d => %d\n",ue->Mod_id,subframe_prev,ue->dlsch[eNB_id][0]->active);
 
       if (ue->dlsch[eNB_id][0]->active == 1) {
-#ifndef DLSCH_THREAD //USER_MODE
+
         harq_pid = ue->dlsch[eNB_id][0]->current_harq_pid;
         LOG_D(PHY,"[UE %d] PDSCH active in subframe %d, harq_pid %d\n",ue->Mod_id,subframe_prev,harq_pid);
 
@@ -2684,7 +2629,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
         }
 
 #endif
-#endif //DLSCH_THREAD
+
       } else {
         //  printf("PDSCH inactive in subframe %d\n",subframe_rx-1);
         ue->dlsch[eNB_id][0]->harq_ack[subframe_prev].send_harq_status = 0;
@@ -3062,8 +3007,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
              m<pilot2;
              m++) {
 
-#ifndef DLSCH_THREAD
-
           if (ue->dlsch[eNB_id][0]->active == 1)  {
             harq_pid = ue->dlsch[eNB_id][0]->current_harq_pid;
             LOG_D(PHY,"[UE %d] PDSCH active in subframe %d (%d), harq_pid %d\n",ue->Mod_id,subframe_rx,slot_rx,harq_pid);
@@ -3094,7 +3037,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
                      ue->dlsch[eNB_id][0]->current_harq_pid);
           } // CRNTI active
 
-#endif
+
 
           if (ue->dlsch_SI[eNB_id]->active == 1)  {
             // process SI DLSCH in first slot
@@ -3132,7 +3075,6 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
 
         for (m=pilot2; m<pilot3; m++) {
 
-#ifndef DLSCH_THREAD
 
           if (ue->dlsch[eNB_id][0]->active == 1) {
             harq_pid = ue->dlsch[eNB_id][0]->current_harq_pid;
@@ -3161,7 +3103,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag
                      ue->dlsch[eNB_id][0]->current_harq_pid);
           } // CRNTI active
 
-#endif
+
 
           if(ue->dlsch_SI[eNB_id]->active == 1) {
             rx_pdsch(ue,
@@ -3458,11 +3400,6 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t abstraction_fl
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_LTE,1);
-#if defined(EXMIMO)
-#ifndef OAI_USRP
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DAQ_MBOX, *((volatile unsigned int *) openair0_exmimo_pci[0].rxcnt_ptr[0]));
-#endif
-#endif
   start_meas(&ue->phy_proc);
 #if defined(ENABLE_ITTI)
 

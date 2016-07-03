@@ -44,6 +44,8 @@
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
+#include "PHY/LTE_TRANSPORT/if4_tools.h"
+
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -56,8 +58,12 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
+#include "T.h"
+
 #include "assertions.h"
 #include "msc.h"
+
+#include <time.h>
 
 #if defined(ENABLE_ITTI)
 #   include "intertask_interface.h"
@@ -73,7 +79,8 @@ void exit_fun(const char* s);
 
 extern int exit_openair;
 
-extern openair0_device openair0;
+// Fix per CC openair rf/if device update
+// extern openair0_device openair0;
 
 unsigned char dlsch_input_buffer[2700] __attribute__ ((aligned(32)));
 int eNB_sync_buffer0[640*6] __attribute__ ((aligned(32)));
@@ -431,14 +438,18 @@ int QPSK2[4]= {AMP_OVER_2|(AMP_OVER_2<<16),AMP_OVER_2|((65536-AMP_OVER_2)<<16),(
 
 
 unsigned int taus(void);
+DCI_PDU DCI_pdu_tmp;
+
 
 void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,PHY_VARS_RN *rn, int abstraction_flag,relaying_type_t r_type) {
+
 
 #ifdef Rel10
   MCH_PDU *mch_pduP;
   MCH_PDU  mch_pdu;
   //  uint8_t sync_area=255;
 #endif
+
   int subframe = proc->subframe_tx;
 
   if (abstraction_flag==0) {
@@ -1030,9 +1041,20 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 #endif
 
 
+
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_DLSCH
         LOG_T(PHY,"eNB DLSCH SDU: \n");
+
+        T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+          T_INT(DCI_pdu->dci_alloc[i].rnti), T_INT(DCI_pdu->dci_alloc[i].format),
+          T_INT(phy_vars_eNB->dlsch_eNB[(int)UE_id][0]->current_harq_pid));
+
+        phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
+
+	LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",phy_vars_eNB->Mod_id,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe,
+	      DCI_pdu->dci_alloc[i].rnti,phy_vars_eNB->dlsch_eNB[(uint8_t)UE_id][0]->nCCE[subframe],DCI_pdu->dci_alloc[i].firstCCE);
+
 
         for (i=0; i<dlsch_harq->TBS>>3; i++)
           LOG_T(PHY,"%"PRIx8".",DLSCH_pdu[i]);
@@ -1090,6 +1112,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 	
         stop_meas(&eNB->dlsch_modulation_stats);
       }
+
 
 #ifdef PHY_ABSTRACTION
       else {
@@ -1412,7 +1435,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #endif
 
 #if !(defined(EXMIMO) || defined(OAI_USRP) || defined (CPRIGW))
-
+  
   if (abstraction_flag==0)
   {
     start_meas(&eNB->ofdm_mod_stats);
@@ -1431,8 +1454,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
   stop_meas(&eNB->phy_proc_tx);
-
-
+  
 }
 
 void process_Msg3(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id, uint8_t harq_pid)
@@ -1653,6 +1675,9 @@ void process_HARQ_feedback(uint8_t UE_id,
                   dlsch->rnti,dl_harq_pid[m],M,m,mp,dlsch_harq_proc->round);
 #endif
 
+            T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
+              T_INT(dl_harq_pid[m]));
+
             if (dlsch_harq_proc->round == 0)
               ue_stats->dlsch_NAK_round0++;
 
@@ -1686,6 +1711,10 @@ void process_HARQ_feedback(uint8_t UE_id,
             LOG_D(PHY,"[eNB %d][PDSCH %x/%d] ACK Received in round %d, resetting process\n",eNB->Mod_id,
                   dlsch->rnti,dl_harq_pid[m],dlsch_harq_proc->round);
 #endif
+
+            T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id), T_INT(dlsch->rnti),
+              T_INT(dl_harq_pid[m]));
+
             ue_stats->dlsch_ACK[dl_harq_pid[m]][dlsch_harq_proc->round]++;
 
             // Received ACK so set round to 0 and set dlsch_harq_pid IDLE
@@ -2021,6 +2050,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
     
       // Now ACK/NAK
       // First check subframe_tx flag for earlier subframes
+
     get_n1_pucch_eNB(eNB,
 		     proc,
 		     UE_id,
@@ -2069,6 +2099,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
       if (do_SR == 1) {
 	eNB->UE_stats[UE_id].sr_total++;
 
+
 	if (abstraction_flag == 0)
 	  metric0_SR = rx_pucch(eNB,
 				pucch_format1,
@@ -2077,6 +2108,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 				0, // n2_pucch
 				0, // shortened format, should be use_srs flag, later
 				&SR_payload,
+				frame,
 				subframe,
 				PUCCH1_THRES);
 	
@@ -2092,6 +2124,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 	}
 	
 #endif
+
 	
 	if (SR_payload == 1) {
 	  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n",eNB->Mod_id,
@@ -2137,6 +2170,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 			     0, //n2_pucch
 			     0, // shortened format
 			     pucch_payload0,
+			     frame,
 			     subframe,
 			     PUCCH1a_THRES);
 	  
@@ -2148,6 +2182,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 			     0, //n2_pucch
 			     0, // shortened format
 			     pucch_payload0,
+			     frame,
 			     subframe,
 			     PUCCH1a_THRES);
 	}
@@ -2207,6 +2242,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 				    0, //n2_pucch
 				    0, // shortened format
 				    pucch_payload0,
+                                    frame,
 				    subframe,
 				    PUCCH1a_THRES);
             else {
@@ -2238,6 +2274,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                    0, // n2_pucch
                                    0, // shortened format
                                    pucch_payload0,
+                                   frame,
                                    subframe,
                                    PUCCH1a_THRES);
               else {
@@ -2261,6 +2298,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                    0, //n2_pucch
                                    0, // shortened format
                                    pucch_payload1,
+                                   frame,
                                    subframe,
                                    PUCCH1a_THRES);
               else {
@@ -2471,7 +2509,6 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 }
 
 
-
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_flag) {
 
   int i,l;
@@ -2482,140 +2519,202 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
 
+  int prach_rx;
 
+  uint16_t packet_type;
+  uint32_t symbol_number=0;
+  uint32_t symbol_mask, symbol_mask_full;
+  
+  struct timespec time_req, time_rem;  
+  time_req.tv_sec = 0;
+  time_req.tv_nsec = 300000;
+  
   if (subframe==9) { 
     subframe=0;
     frame++;
     frame&=1023;
+  } else {
+		subframe++;
   }
-  else subframe++;
-
+  
   //  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_COMMON_RX,1);
   start_meas(&eNB->phy_proc_rx);
+
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
 
   if (abstraction_flag==0) { // grab signal in chunks of 500 us (1 slot)
-    
+		
+    if ((eNB->node_function == NGFI_RRU_IF4) || 
+	      (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF and front-end processing
 
-      if ((eNB->node_function == NGFI_RRU_IF4) || 
-	  (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF and front-end processing
-	for (i=0; i<fp->nb_antennas_rx; i++)
-	  rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
+	    for (i=0; i<fp->nb_antennas_rx; i++)
+	      rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
 
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-	rxs = openair0.trx_read_func(&openair0,
-				     &proc->timestamp_rx,
-				     rxp,
-				     fp->samples_per_tti,
-				     fp->nb_antennas_rx);
-	proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-	proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-	/*	printf("Frame %d, subframe %d : TS %lu => %d,%d (rxs %d)\n",
-		frame,subframe,proc->timestamp_rx,proc->frame_rx,proc->subframe_rx,rxs);*/
-	if (proc->first_rx == 0) {
-	  AssertFatal(proc->subframe_rx == subframe, "Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)",proc->subframe_rx,subframe);
-	  AssertFatal(proc->frame_rx == frame, "Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)",proc->frame_rx,frame);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
+      rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+			  	                              &proc->timestamp_rx,
+		  	 	                              rxp,
+				                                fp->samples_per_tti,
+				                                fp->nb_antennas_rx);
+      proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+      proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+
+      if (proc->first_rx == 0) {
+        if (proc->subframe_rx != subframe){
+	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+	  exit_fun("Exiting");
 	}
-	else
-	  proc->first_rx--;// = 0;
-
-	//	printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
-
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, frame );
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, subframe );
-
-
-	if (rxs != fp->samples_per_tti)
-	  exit_fun( "problem receiving samples" );
-	
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-
-	// now do common RX processing for first slot in subframe
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
-	remove_7_5_kHz(eNB,subframe<<1);
-	remove_7_5_kHz(eNB,1+(subframe<<1));
-	for (l=0; l<fp->symbols_per_tti/2; l++) {
-	  slot_fep_ul(fp,
-		      &eNB->common_vars,
-		      l,
-		      subframe<<1,
-		      0,
-		      0
-		      );
-	  slot_fep_ul(fp,
-		      &eNB->common_vars,
-		      l,
-		      1+(subframe<<1),
-		      0,
-		      0
-		      );
-	}
-    	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
-
-	if (eNB->node_function == NGFI_RRU_IF4) {
-	  //send_IF4(eNB,subframe<<1);
-	  //send_IF4(eNB,(subframe<<1)+1);
-	}
-
-      }
-      else if (eNB->node_function == NGFI_RCC_IF4) { // => acquisition from RRU (IF4)
-	// get frame/subframe information from IF4 interface
-
-	//recv_IF4(eNB,subframe<<1);
-	//recv_IF4(eNB,1+(subframe<<1));
-	
-	    // Tobi aka mr monaco: ETH
-	
-	    
-      }
-      else { // should not get here
-	AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
-      }
- 
-  
-    // check if we have to detect PRACH first
-    if (is_prach_subframe(fp,frame,subframe)>0) {
-      // wake up thread for PRACH RX
-      if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-	LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
-	exit_fun( "error locking mutex_prach" );
-	return;
-      }
-      
-      int cnt_prach = ++proc->instance_cnt_prach;
-      // set timing for prach thread
-      proc->frame_prach = frame;
-      proc->subframe_prach = subframe;
-
-      pthread_mutex_unlock( &proc->mutex_prach );
-      
-      if (cnt_prach == 0) {
-	// the thread was presumably waiting where it should and can now be woken up
-	if (pthread_cond_signal(&proc->cond_prach) != 0) {
-	  LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
-	  exit_fun( "ERROR pthread_cond_signal" );
-	  return;
+        if (proc->frame_rx != frame) {
+	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+	  exit_fun("Exiting");
 	}
       } else {
-	LOG_W( PHY,"[eNB] Frame %d, eNB PRACH thread busy!!\n", frame);
-	exit_fun( "PRACH thread busy" );
-	return;
+        proc->first_rx = 0;
+			}
+
+      //      printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
+
+      if (rxs != fp->samples_per_tti)
+        exit_fun( "problem receiving samples" );
+	
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+
+      // now do common RX processing for first slot in subframe
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
+      remove_7_5_kHz(eNB,proc->subframe_rx<<1);
+      remove_7_5_kHz(eNB,1+(proc->subframe_rx<<1));
+      for (l=0; l<fp->symbols_per_tti/2; l++) {
+        slot_fep_ul(fp,
+                    &eNB->common_vars,
+                    l,
+                    proc->subframe_rx<<1,
+                    0,
+                    0
+                    );
+        slot_fep_ul(fp,
+                    &eNB->common_vars,
+                    l,
+                    1+(proc->subframe_rx<<1),
+                    0,
+                    0
+                    );
+      }
+    	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
+
+      if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)<=0) {
+
+			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
+        send_IF4(eNB, frame, subframe, IF4_PULFFT, 0);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
+        
       }
 
+      /// **** send_IF4 of prach to RCC **** /// done in prach thread (below)
+      // check if we have to detect PRACH first
+      if (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0) {
+        // wake up thread for PRACH RX
+        if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
+          LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
+          exit_fun( "error locking mutex_prach" );
+          return;
+		    }
+		
+        int cnt_prach = ++proc->instance_cnt_prach;
+        // set timing for prach thread
+        proc->frame_prach = proc->frame_rx;
+        proc->subframe_prach = proc->subframe_rx;
 
+        pthread_mutex_unlock( &proc->mutex_prach );
+		
+        if (cnt_prach == 0) {
+          // the thread was presumably waiting where it should and can now be woken up
+          if (pthread_cond_signal(&proc->cond_prach) != 0) {
+            LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
+            exit_fun( "ERROR pthread_cond_signal" );
+            return;
+          }
+        } else {
+          LOG_W( PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,cnt_prach);
+          exit_fun( "PRACH thread busy" );
+          return;
+        }
+      }
+    
+    } else if (eNB->node_function == NGFI_RCC_IF4) {
+      /// **** recv_IF4 of rxdataF from RRU **** ///
+      /// **** recv_IF4 of rxsigF from RRU **** ///
+      // get frame/subframe information from IF4 interface
+      // timed loop (200 us)
+       
+      symbol_number = 0;
+      symbol_mask = 0;
+      symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+      prach_rx = 0;
+
+      // Block from loop while testing
+      //symbol_mask = symbol_mask_full;
+      //nanosleep(&time_req, &time_rem);
+         
+      do {
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
+        recv_IF4(eNB, proc->frame_rx, proc->subframe_rx, &packet_type, &symbol_number);
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
+
+        if (packet_type == IF4_PULFFT) {
+          symbol_mask = symbol_mask | (1<<symbol_number);     
+                       
+        } else if (is_prach_subframe(fp,frame,subframe)>0 && packet_type == PRACH) {
+          // wake up thread for PRACH RX
+          prach_rx = 1;
+
+          if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
+            LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
+            exit_fun( "error locking mutex_prach" );
+            return;
+		      }
+		
+          int cnt_prach = ++proc->instance_cnt_prach;
+          // set timing for prach thread
+          proc->frame_prach = proc->frame_rx;
+          proc->subframe_prach = proc->subframe_rx;
+
+          pthread_mutex_unlock( &proc->mutex_prach );
+		
+          if (cnt_prach == 0) {
+            // the thread was presumably waiting where it should and can now be woken up
+            if (pthread_cond_signal(&proc->cond_prach) != 0) {
+              LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
+              exit_fun( "ERROR pthread_cond_signal" );
+              return;
+            }
+          } else {
+            LOG_W( PHY,"[eNB] Frame %d, eNB PRACH thread busy!!\n", frame);
+            exit_fun( "PRACH thread busy" );
+            return;
+          }
+        }
+
+      } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
+
+      // Tobi aka mr monaco: ETH
+		  
+    } else { // should not get here
+      AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     }
-    
 
-    
-  }
-
-  else {  // grab transport channel information from network interface
+  } else { // grab transport channel information from network interface
 
   }
+
 }
+
 
 void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const uint8_t abstraction_flag,const relaying_type_t r_type)
 {
@@ -2638,6 +2737,11 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
 
+  T(T_ENB_PHY_UL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));
+
+  T(T_ENB_PHY_INPUT_SIGNAL, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
+    T_BUFFER(&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][0][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti],
+             phy_vars_eNB->lte_frame_parms.samples_per_tti * 4));
 
   eNB->rb_mask_ul[0]=0;
   eNB->rb_mask_ul[1]=0;
@@ -2826,6 +2930,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_MSG3,0);
 
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
+        T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
+          T_INT(harq_pid));
 
         eNB->UE_stats[i].ulsch_round_errors[harq_pid][eNB->ulsch[i]->harq_processes[harq_pid]->round]++;
         eNB->ulsch[i]->harq_processes[harq_pid]->phich_active = 1;
@@ -2929,6 +3035,12 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
         }
       }  // ulsch in error
       else {
+
+
+
+        T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(i), T_INT(phy_vars_eNB->ulsch_eNB[i]->rnti),
+          T_INT(harq_pid));
+
         if (eNB->ulsch[i]->Msg3_flag == 1) {
 	  LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d ULSCH received, setting round to 0, PHICH ACK\n",
 		eNB->Mod_id,harq_pid,

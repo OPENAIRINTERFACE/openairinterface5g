@@ -754,7 +754,7 @@ void ulsch_modulation(int32_t **txdataF,
     re_offset = re_offset0;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-    printf("ulsch_mod (OFDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    printf("ulsch_mod (SC-FDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
 

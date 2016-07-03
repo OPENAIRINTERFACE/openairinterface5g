@@ -51,6 +51,9 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
+
+#include "T.h"
+
 #include "rt_wrapper.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -65,6 +68,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "../../ARCH/COMMON/common_lib.h"
+#include "../../ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -147,12 +151,9 @@ int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 
 
 
-
 #ifdef XFORMS
 static pthread_t                forms_thread; //xforms
 #endif
-
-openair0_device openair0;
 
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
@@ -227,7 +228,7 @@ int                             otg_enabled;
 
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-
+eNB_func_t node_function=eNodeB_3GPP;
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
@@ -281,6 +282,9 @@ uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
 eth_params_t *eth_params;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
+
+// Change to openair_global to handle UE
+openair0_device openair0;
 
 double cpuf;
 
@@ -381,6 +385,9 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
+  printf("  --RCC run using NGFI RCC node function\n");
+  printf("  --RRU run using NGFI RRU node function\n");
+  printf("  --eNB run using 3GPP eNB node function\n");   
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -398,17 +405,31 @@ void help (void) {
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n"RESET);    
-
+  printf("  -x Set the transmission mode, valid options: 1 \n");
+#if T_TRACER
+  printf("  --T_port [port]    use given port\n");
+  printf("  --T_nowait         don't wait for tracer, start immediately\n");
+#endif
+  printf(RESET);
+  fflush(stdout);
 }
 
 void exit_fun(const char* s)
 {
+  int CC_id;
+
   if (s != NULL) {
     printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
   }
 
   oai_exit = 1;
+  
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);
+    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  }
 
 #if defined(ENABLE_ITTI)
   sleep(1); //allow lte-softmodem threads to exit first
@@ -631,11 +652,6 @@ void *l2l1_task(void *arg)
 
 
 
-
-
-
-
-
 static void get_options (int argc, char **argv)
 {
   int c;
@@ -667,7 +683,15 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
-    LONG_OPTION_PHYTEST
+    LONG_OPTION_PHYTEST,
+    LONG_OPTION_RCC,
+    LONG_OPTION_RRU,
+    LONG_OPTION_ENB
+#if T_TRACER
+    ,
+    LONG_OPTION_T_PORT,
+    LONG_OPTION_T_NOWAIT,
+#endif
   };
 
   static const struct option long_options[] = {
@@ -686,6 +710,13 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+    {"RCC", no_argument, NULL, LONG_OPTION_RCC},
+    {"RRU", no_argument, NULL, LONG_OPTION_RRU},
+    {"eNB", no_argument, NULL, LONG_OPTION_ENB},
+#if T_TRACER
+    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
+    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+#endif
     {NULL, 0, NULL, 0}
   };
 
@@ -772,7 +803,34 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_PHYTEST:
       phy_test = 1;
       break;
+
+    case LONG_OPTION_RCC:
+      node_function = NGFI_RCC_IF4;
+      break;
+
+    case LONG_OPTION_RRU:
+      node_function = NGFI_RRU_IF4;
+      break;
+
+    case LONG_OPTION_ENB:
+      node_function = eNodeB_3GPP;
+      break;
       
+#if T_TRACER
+    case LONG_OPTION_T_PORT: {
+      extern int T_port;
+      if (optarg == NULL) abort();  /* should not happen */
+      T_port = atoi(optarg);
+      break;
+    }
+
+    case LONG_OPTION_T_NOWAIT: {
+      extern int T_wait;
+      T_wait = 0;
+      break;
+    }
+#endif
+
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -988,39 +1046,48 @@ static void get_options (int argc, char **argv)
       AssertFatal (MAX_NUM_CCs == enb_properties->properties[i]->nb_cc,
                    "lte-softmodem compiled with MAX_NUM_CCs=%d, but only %d CCs configured for eNB %d!",
                    MAX_NUM_CCs, enb_properties->properties[i]->nb_cc, i);
+      eth_params = (eth_params_t*)malloc(enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
+      memset(eth_params, 0, enb_properties->properties[i]->nb_rrh_gw * sizeof(eth_params_t));
 
       for (j=0; j<enb_properties->properties[i]->nb_rrh_gw; j++) {
-	
-	if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
-	  local_remote_radio = BBU_REMOTE_RADIO_HEAD;
-	  eth_params = (eth_params_t*)malloc(sizeof(eth_params_t));
-	  memset(eth_params, 0, sizeof(eth_params_t));
-	  
-	  eth_params->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
-	  eth_params->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
-	  eth_params->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
-	  eth_params->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
-	  eth_params->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
-	  eth_params->transp_preference         = enb_properties->properties[i]->rrh_gw_config[j].raw;	 
-	  eth_params->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
-	  eth_params->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
-	  eth_params->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
-	  if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
-	     eth_params->rf_preference          = EXMIMO_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
-	    eth_params->rf_preference          = USRP_B200_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
-	   eth_params->rf_preference          = USRP_X300_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
-	    eth_params->rf_preference          = BLADERF_DEV;
-	  } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
-	    //eth_params->rf_preference          = LMSSDR_DEV;
-	  } else {
-	    eth_params->rf_preference          = 0;
-	  } 
-	} else {
-	  local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
-	}
+        	
+        if (enb_properties->properties[i]->rrh_gw_config[j].active == 1 ) {
+          local_remote_radio = BBU_REMOTE_RADIO_HEAD;
+          (eth_params+j)->local_if_name             = enb_properties->properties[i]->rrh_gw_if_name;
+          (eth_params+j)->my_addr                   = enb_properties->properties[i]->rrh_gw_config[j].local_address;
+          (eth_params+j)->my_port                   = enb_properties->properties[i]->rrh_gw_config[j].local_port;
+          (eth_params+j)->remote_addr               = enb_properties->properties[i]->rrh_gw_config[j].remote_address;
+          (eth_params+j)->remote_port               = enb_properties->properties[i]->rrh_gw_config[j].remote_port;
+          
+          if (enb_properties->properties[i]->rrh_gw_config[j].raw == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
+            (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+          } else {
+            (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
+          }
+          
+          (eth_params+j)->iq_txshift                = enb_properties->properties[i]->rrh_gw_config[j].iq_txshift;
+          (eth_params+j)->tx_sample_advance         = enb_properties->properties[i]->rrh_gw_config[j].tx_sample_advance;
+          (eth_params+j)->tx_scheduling_advance     = enb_properties->properties[i]->rrh_gw_config[j].tx_scheduling_advance;
+          if (enb_properties->properties[i]->rrh_gw_config[j].exmimo == 1) {
+            (eth_params+j)->rf_preference          = EXMIMO_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_b200 == 1) {
+            (eth_params+j)->rf_preference          = USRP_B200_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].usrp_x300 == 1) {
+            (eth_params+j)->rf_preference          = USRP_X300_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].bladerf == 1) {
+            (eth_params+j)->rf_preference          = BLADERF_DEV;
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].lmssdr == 1) {
+            //(eth_params+j)->rf_preference          = LMSSDR_DEV;
+          } else {
+            (eth_params+j)->rf_preference          = 0;
+          } 
+        } else {
+          local_remote_radio = BBU_LOCAL_RADIO_HEAD; 
+        }
 	
       }
 
@@ -1109,6 +1176,11 @@ static void get_options (int argc, char **argv)
   }
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+#endif
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -1120,7 +1192,6 @@ int main( int argc, char **argv )
   uint16_t Nid_cell = 0;
   uint8_t  cooperation_flag=0,  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
-  eNB_func_t node_function=eNodeB_3GPP;
 
 #if defined (XFORMS)
   int ret;
@@ -1173,6 +1244,10 @@ int main( int argc, char **argv )
   else
     openair0_cfg[0].configFilename = rf_config_file;
   
+#if T_TRACER
+  T_init(T_port, T_wait);
+#endif
+
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
 
@@ -1458,13 +1533,20 @@ int main( int argc, char **argv )
     else //FDD
       openair0_cfg[card].duplex_mode = duplex_mode_FDD;
 
-
+    
     if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
       openair0_cfg[card].remote_addr    = eth_params->remote_addr;
       openair0_cfg[card].remote_port    = eth_params->remote_port;
       openair0_cfg[card].my_addr        = eth_params->my_addr;
       openair0_cfg[card].my_port        = eth_params->my_port;    
-    }
+    } 
+    
+    //if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4) {
+      //openair0_cfg[card].remote_addr    = eth_params->remote_addr;
+      //openair0_cfg[card].remote_port    = eth_params->remote_port;
+      //openair0_cfg[card].my_addr        = eth_params->my_addr;
+      //openair0_cfg[card].my_port        = eth_params->my_port;    
+    //}
 
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
@@ -1490,8 +1572,16 @@ int main( int argc, char **argv )
 
     for (i=0; i<4; i++) {
 
-      openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
-      openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      if (i<openair0_cfg[card].tx_num_channels)
+	openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+      else
+	openair0_cfg[card].tx_freq[i]=0.0;
+
+      if (i<openair0_cfg[card].rx_num_channels)
+	openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      else
+	openair0_cfg[card].rx_freq[i]=0.0;
+
       printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
              card,i, openair0_cfg[card].tx_gain[i],
              openair0_cfg[card].rx_gain[i],
@@ -1513,7 +1603,7 @@ int main( int argc, char **argv )
 
   }
 
-#ifndef LOWLATENCY
+#ifndef DEADLINE_SCHEDULER
 
   /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
   
@@ -1554,6 +1644,20 @@ int main( int argc, char **argv )
   }
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
+  
+  openair0_cfg[0].log_level = glog_level;
+
+  if (UE_flag == 0) {
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.type = NONE_DEV;
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.transp_type = NONE_TP;
+      
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.type = NONE_DEV;
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.transp_type = NONE_TP;
+    }
+  }
 
   /* device host type is set*/
   openair0.host_type = BBU_HOST;
@@ -1561,36 +1665,77 @@ int main( int argc, char **argv )
   openair0.type = NONE_DEV;
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
-  openair0_cfg[0].log_level = glog_level;
-
-  int returns=-1;
-  /* BBU can have either a local or a remote radio head */  
-  if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
-    if (mode!=loop_through_memory) {
-      returns=openair0_device_load(&openair0, &openair0_cfg[0]);
-      printf("openair0_device_init returns %d\n",returns);
-      if (returns<0) {
-	printf("Exiting, cannot initialize device\n");
-	exit(-1);
-      }
-    }
-    else if (mode==loop_through_memory) {    
-    }
-  }  else { //remote radio head active - load library of transport protocol and initiate it 
-    if (mode!=loop_through_memory) {
-      returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
-      printf("openair0_transport_init returns %d\n",returns);
-      if (returns<0) { 
-	printf("Exiting, cannot initialize transport protocol\n");
-	exit(-1);
-      }
-    }
-    else if (mode==loop_through_memory) {    
-    }
-  }   
+  //openair0_cfg[0].log_level = glog_level;
   
-  printf("Done\n");
+  // Legacy BBU - RRH init  
+  //int returns=-1;
+  ///* BBU can have either a local or a remote radio head */  
+  //if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
+    //if (mode!=loop_through_memory) {
+      //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
+      //printf("openair0_device_init returns %d\n",returns);
+      //if (returns<0) {
+	//printf("Exiting, cannot initialize device\n");
+	//exit(-1);
+      //}
+    //}
+    //else if (mode==loop_through_memory) {    
+    //}
+  //}  else { //remote radio head active - load library of transport protocol and initiate it 
+    //if (mode!=loop_through_memory) {
+      //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
+      //printf("openair0_transport_init returns %d\n",returns);
+      //if (returns<0) { 
+	//printf("Exiting, cannot initialize transport protocol\n");
+	//exit(-1);
+      //}
+    //}
+    //else if (mode==loop_through_memory) {    
+    //}
+  //}   
+  
+  //printf("Done\n");
+  
+  int returns=-1;
+    
+  // Handle spatially distributed MIMO antenna ports   
+  // Load RF device and initialize
+  if ((UE_flag==1) || (node_function != NGFI_RCC_IF4)) { 
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+      if (mode!=loop_through_memory) {
+        returns= (UE_flag == 0) ? 
+	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :
+	openair0_device_load(&openair0, &openair0_cfg[0]);
 
+        printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
+        if (returns<0) {
+	        printf("Exiting, cannot initialize device\n");
+	        exit(-1);
+        }
+      }
+      else if (mode==loop_through_memory) {    
+      }    
+    }
+  }  
+  
+  // Load transport protocol and initialize
+  if ((UE_flag==0) && (node_function != eNodeB_3GPP)){ 
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+      if (mode!=loop_through_memory) {
+        returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",returns,CC_id);
+        if (returns<0) {
+	        printf("Exiting, cannot initialize transport protocol\n");
+	        exit(-1);
+        }
+      }
+      else if (mode==loop_through_memory) {    
+      }    
+    }
+  }
+
+  printf("Done initializing RF and IF devices\n");
+  
   mac_xface = malloc(sizeof(MAC_xface));
 
   int eMBMS_active=0;
@@ -1749,7 +1894,6 @@ int main( int argc, char **argv )
 
 
 
-
   // start the main thread
   if (UE_flag == 1) init_UE();
   else init_eNB(node_function);
@@ -1760,7 +1904,7 @@ int main( int argc, char **argv )
 
 
 
-
+// *** Handle per CC_id openair0
 #ifndef USRP_DEBUG
   if ((UE_flag==1) && (mode!=loop_through_memory))
     if (openair0.trx_start_func(&openair0) != 0 ) 
@@ -1830,8 +1974,16 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
+  // *** Handle per CC_id openair0
+  if (UE_flag==1)
+    openair0.trx_end_func(&openair0);
 
-  openair0.trx_end_func(&openair0);
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
+    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  }
 
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();

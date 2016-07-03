@@ -226,7 +226,25 @@ check_install_additional_tools (){
 	valgrind  \
 	vlan	  \
 	ctags \
-        ntpdate
+        ntpdate \
+        iperf3 \
+        android-tools-adb
+
+    $SUDO pip install paramiko
+    $SUDO pip install pyroute2
+    $SUDO rm -fr /opt/ssh
+    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+    
+    log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
+    echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
+    (
+    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
+    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
+    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
+    cd /tmp/netifaces-0.10.4
+    $SUDO python setup.py install
+    cd -
+    ) >& $log_netiface
 }
 
 check_install_oai_software() {
@@ -302,11 +320,7 @@ check_install_oai_software() {
     install_nettle_from_source
     install_gnutls_from_source
 
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2
     install_asn1c_from_source
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }
 
 install_asn1c_from_source(){
@@ -314,14 +328,12 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c-r1516
-    mkdir -p /tmp/asn1c-r1516
-    cd /tmp/asn1c-r1516
-    rm -rf /tmp/asn1c-r1516/*
-    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516 > /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 >> /tmp/log_compile_asn1c
-    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 >> /tmp/log_compile_asn1c
+    svn co https://github.com/vlm/asn1c/trunk  /tmp/asn1c-r1516 -r 1516
+    cd /tmp/asn1c-r1516 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch.p0 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_2.p0 
+    patch -p0 < $OPENAIR_DIR/openair2/RRC/LITE/MESSAGES/asn1c/asn1cpatch.p0 
+    patch -p0 < $OPENAIR_DIR/openair3/S1AP/MESSAGES/ASN1/asn1cpatch_3.p0 
     ./configure
     make -j`nproc`
     $SUDO make install

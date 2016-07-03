@@ -759,13 +759,14 @@ int main(int argc, char **argv)
 
 
 
+  eNB_rxtx_proc_t *proc_rxtx = &eNB->proc.proc_rxtx[subframe&1];
 
   eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
 
-  eNB->proc.frame_tx    = 0;
-  eNB->proc.subframe_tx = subframe;
+  proc_rxtx->frame_tx    = 0;
+  proc_rxtx->subframe_tx = subframe;
 
   if (input_fd==NULL) {
     msg("No input file, so starting TX\n");
@@ -932,7 +933,7 @@ int main(int argc, char **argv)
           if (n_frames==1)
             printf("generating PHICH\n");
 
-          harq_pid = phich_subframe_to_harq_pid(&eNB->frame_parms, eNB->proc.frame_tx, subframe);
+          harq_pid = phich_subframe_to_harq_pid(&eNB->frame_parms, proc_rxtx->frame_tx, subframe);
 
           phich_ACK = taus()&1;
           eNB->ulsch[0]->harq_processes[harq_pid]->phich_active = 1;
@@ -944,23 +945,23 @@ int main(int argc, char **argv)
           UE->ulsch[0]->harq_processes[harq_pid]->first_rb       = 0;
           UE->ulsch[0]->harq_processes[harq_pid]->n_DMRS         = 0;
 
-          generate_phich_top(eNB,AMP,0,0);
+          generate_phich_top(eNB,proc_rxtx,AMP,0,0);
           
           // generate 3 interfering PHICH
           if (num_phich_interf>0) {
             eNB->ulsch[0]->harq_processes[harq_pid]->first_rb = 4;
-            generate_phich_top(eNB,1024,0,0);
+            generate_phich_top(eNB,proc_rxtx,1024,0,0);
           }
 
           if (num_phich_interf>1) {
             eNB->ulsch[0]->harq_processes[harq_pid]->first_rb = 8;
             eNB->ulsch[0]->harq_processes[harq_pid]->n_DMRS = 1;
-            generate_phich_top(eNB,1024,0,0);
+            generate_phich_top(eNB,proc_rxtx,1024,0,0);
           }
           if (num_phich_interf>2) {
             eNB->ulsch[0]->harq_processes[harq_pid]->first_rb = 12;
             eNB->ulsch[0]->harq_processes[harq_pid]->n_DMRS = 1;
-            generate_phich_top(eNB,1024,0,0);
+            generate_phich_top(eNB,proc_rxtx,1024,0,0);
 
           }
 

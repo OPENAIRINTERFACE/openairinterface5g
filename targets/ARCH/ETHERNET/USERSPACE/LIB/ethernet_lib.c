@@ -51,7 +51,7 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-
+#include "if_defs.h"
 
 int num_devices_eth = 0;
 struct sockaddr_in dest_addr[MAX_INST];
@@ -313,8 +313,15 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
 
   if (eth_params->transp_preference == 1) {
     eth->flags = ETH_RAW_MODE;
-  } else {
+  } else if (eth_params->transp_preference == 0) {
     eth->flags = ETH_UDP_MODE;
+  } else if (eth_params->transp_preference == 3) {
+    eth->flags = ETH_RAW_IF4_MODE;
+  } else if (eth_params->transp_preference == 2) {
+    eth->flags = ETH_UDP_IF4_MODE;
+  } else {
+    printf("transport_init: Unknown transport preference %d - default to RAW", eth_params->transp_preference);
+    eth->flags = ETH_RAW_MODE;
   }
   
   printf("[ETHERNET]: Initializing openair0_device for %s ...\n", ((device->host_type == BBU_HOST) ? "BBU": "RRH"));
@@ -330,20 +337,26 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->trx_set_freq_func = trx_eth_set_freq;
   device->trx_set_gains_func = trx_eth_set_gains;
 
-  if ((eth->flags & ETH_RAW_MODE) != 0 ) {
+  if (eth->flags == ETH_RAW_MODE) {
     device->trx_write_func   = trx_eth_write_raw;
     device->trx_read_func    = trx_eth_read_raw;     
-  } else {
+  } else if (eth->flags == ETH_UDP_MODE) {
     device->trx_write_func   = trx_eth_write_udp;
     device->trx_read_func    = trx_eth_read_udp;     
+  } else if (eth->flags == ETH_RAW_IF4_MODE) {
+    device->trx_write_func   = trx_eth_write_raw_IF4;
+    device->trx_read_func    = trx_eth_read_raw_IF4;     
+  } else {
+    //device->trx_write_func   = trx_eth_write_udp_IF4;
+    //device->trx_read_func    = trx_eth_read_udp_IF4;     
   }
-
+    
   eth->if_name[device->Mod_id] = eth_params->local_if_name;
   device->priv = eth;
  	
   /* device specific */
-  openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
-  openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
+  //openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   openair0_cfg[0].iq_txshift = eth_params->iq_txshift;// shift
   openair0_cfg[0].tx_sample_advance = eth_params->tx_sample_advance;
