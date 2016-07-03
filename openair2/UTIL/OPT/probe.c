@@ -137,27 +137,15 @@ typedef guint8   gboolean;
 
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
-#ifdef JUMBO_FRAME
-static unsigned char g_frameBuffer[9000];
-#else
-static unsigned char g_frameBuffer[1600];
-#endif 
-//static unsigned char g_fileBuffer[1600];
-static unsigned int g_frameOffset;
+
 
 char in_ip[40];
 char in_path[100];
-static uint16_t in_port;
 FILE *file_fd = NULL;
 
 trace_mode_t opt_type = OPT_NONE;
 static radio_type_t radio_type;
 static unsigned int subframesSinceCaptureStart;
-// double  timing_perf[250];
-// clock_t timing_in[250];
-// clock_t timing_out[250];
-int test=0;
-int init_value=0;
 
 static int g_socksd = -1;/* UDP socket used for sending frames */
 static struct sockaddr_in g_serv_addr;
@@ -277,66 +265,73 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                       guint8 oob_event, guint8 oob_event_value,
                       uint8_t *pdu_buffer, unsigned int pdu_buffer_size)
 {
+  #ifdef JUMBO_FRAME
+     static unsigned char frameBuffer[9000];
+  #else
+     static unsigned char frameBuffer[1600];
+  #endif 
+  static unsigned int frameOffset;
+
   ssize_t bytesSent;
-  g_frameOffset = 0;
+  frameOffset = 0;
   uint16_t tmp16;
 
   /********************************************************************/
   /* Fixed start to each frame (allowing heuristic dissector to work) */
   /* Not NULL terminated */
-  memset(g_frameBuffer+g_frameOffset, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
+  memset(frameBuffer+frameOffset, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
 
-  memcpy(g_frameBuffer+g_frameOffset, MAC_LTE_START_STRING,
+  memcpy(frameBuffer+frameOffset, MAC_LTE_START_STRING,
          strlen(MAC_LTE_START_STRING));
-  g_frameOffset += strlen(MAC_LTE_START_STRING);
+  frameOffset += strlen(MAC_LTE_START_STRING);
 
   /******************************************************************************/
   /* Now write out fixed fields (the mandatory elements of struct mac_lte_info) */
-  g_frameBuffer[g_frameOffset++] = radioType;
-  g_frameBuffer[g_frameOffset++] = direction;
-  g_frameBuffer[g_frameOffset++] = rntiType;
+  frameBuffer[frameOffset++] = radioType;
+  frameBuffer[frameOffset++] = direction;
+  frameBuffer[frameOffset++] = rntiType;
 
   /*************************************/
   /* Now optional fields               */
 
   /* RNTI */
-  g_frameBuffer[g_frameOffset++] = MAC_LTE_RNTI_TAG;
+  frameBuffer[frameOffset++] = MAC_LTE_RNTI_TAG;
   tmp16 = htons(rnti);
-  memcpy(g_frameBuffer+g_frameOffset, &tmp16, 2);
-  g_frameOffset += 2;
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
 
   /* UEId */
-  g_frameBuffer[g_frameOffset++] = MAC_LTE_UEID_TAG;
+  frameBuffer[frameOffset++] = MAC_LTE_UEID_TAG;
   tmp16 = htons(ueid);
-  memcpy(g_frameBuffer+g_frameOffset, &tmp16, 2);
-  g_frameOffset += 2;
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
 
   /* Subframe number */
-  g_frameBuffer[g_frameOffset++] = MAC_LTE_SUBFRAME_TAG;
+  frameBuffer[frameOffset++] = MAC_LTE_SUBFRAME_TAG;
   tmp16 = htons(subframeNumber); // frame counter : this will give an expert info as wireshark expects SF and not F
-  memcpy(g_frameBuffer+g_frameOffset, &tmp16, 2);
-  g_frameOffset += 2;
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
 
-  g_frameBuffer[g_frameOffset++] = MAC_LTE_CRC_STATUS_TAG;
-  g_frameBuffer[g_frameOffset++] = crcStatus;
+  frameBuffer[frameOffset++] = MAC_LTE_CRC_STATUS_TAG;
+  frameBuffer[frameOffset++] = crcStatus;
   
 #ifdef WIRESHARK_DEV
-  g_frameOffset += 2;
+  frameOffset += 2;
   tmp16 = htons(subframeNumber); // subframe
-  memcpy(g_frameBuffer+g_frameOffset, &tmp16, 2);
-  g_frameOffset += 2;
+  memcpy(frameBuffer+frameOffset, &tmp16, 2);
+  frameOffset += 2;
 #endif
 
   /***********************************************************/
   /* For these optional fields, no need to encode if value is default */
   if (!isPredefinedData) {
-    g_frameBuffer[g_frameOffset++] = MAC_LTE_PREDEFINED_DATA_TAG;
-    g_frameBuffer[g_frameOffset++] = isPredefinedData;
+    frameBuffer[frameOffset++] = MAC_LTE_PREDEFINED_DATA_TAG;
+    frameBuffer[frameOffset++] = isPredefinedData;
   }
 
   if (retx != 0) {
-    g_frameBuffer[g_frameOffset++] = MAC_LTE_RETX_TAG;
-    g_frameBuffer[g_frameOffset++] = retx;
+    frameBuffer[frameOffset++] = MAC_LTE_RETX_TAG;
+    frameBuffer[frameOffset++] = retx;
   }
 
 #ifdef WIRESHARK_DEV
@@ -347,19 +342,19 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     switch (oob_event) {
     case ltemac_send_preamble :
       LOG_D(OPT,"oob event %d %d\n",ltemac_send_preamble );
-      //g_frameBuffer[g_frameOffset++]=0;
-      //g_frameBuffer[g_frameOffset++]=0;
-      //g_frameBuffer[g_frameOffset++]=0;
-      g_frameBuffer[g_frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
-      g_frameBuffer[g_frameOffset++]=ltemac_send_preamble;
-      g_frameBuffer[g_frameOffset++]=rnti; // is the preamble
-      g_frameBuffer[g_frameOffset++]=oob_event_value;
+      //frameBuffer[frameOffset++]=0;
+      //frameBuffer[frameOffset++]=0;
+      //frameBuffer[frameOffset++]=0;
+      frameBuffer[frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
+      frameBuffer[frameOffset++]=ltemac_send_preamble;
+      frameBuffer[frameOffset++]=rnti; // is the preamble
+      frameBuffer[frameOffset++]=oob_event_value;
       break;
 
     case ltemac_send_sr:
-      g_frameBuffer[g_frameOffset++]=ltemac_send_sr;
-      g_frameOffset+=2;
-      g_frameBuffer[g_frameOffset++]=oob_event_value;
+      frameBuffer[frameOffset++]=ltemac_send_sr;
+      frameOffset+=2;
+      frameBuffer[frameOffset++]=oob_event_value;
       break;
 
     case ltemac_sr_failure:
@@ -372,23 +367,23 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 #endif
   /***************************************/
   /* Now write the MAC PDU               */
-  g_frameBuffer[g_frameOffset++] = MAC_LTE_PAYLOAD_TAG;
+  frameBuffer[frameOffset++] = MAC_LTE_PAYLOAD_TAG;
   
   /* Append actual PDU  */
-  //memcpy(g_frameBuffer+g_frameOffset, g_PDUBuffer, g_PDUOffset);
-  //g_frameOffset += g_PDUOffset;
+  //memcpy(frameBuffer+frameOffset, g_PDUBuffer, g_PDUOffset);
+  //frameOffset += g_PDUOffset;
   if (pdu_buffer != NULL) {
-    memcpy(g_frameBuffer+g_frameOffset, (void*)pdu_buffer, pdu_buffer_size);
-    g_frameOffset += pdu_buffer_size;
+    memcpy(frameBuffer+frameOffset, (void*)pdu_buffer, pdu_buffer_size);
+    frameOffset += pdu_buffer_size;
   }
 
   /* Send out the data over the UDP socket */
-  bytesSent = sendto(g_socksd, g_frameBuffer, g_frameOffset, 0,
+  bytesSent = sendto(g_socksd, frameBuffer, frameOffset, 0,
                      (const struct sockaddr *)&g_serv_addr, sizeof(g_serv_addr));
 
-  if (bytesSent != g_frameOffset) {
+  if (bytesSent != frameOffset) {
     LOG_W(OPT, "sendto() failed (not a thread-safe func)- expected %d bytes, got %d (errno=%d)\n",
-          g_frameOffset, bytesSent, errno);
+          frameOffset, bytesSent, errno);
     //exit(1);
   }
 }
@@ -509,6 +504,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
 /*---------------------------------------------------*/
 int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p)
 {
+  uint16_t in_port;
   subframesSinceCaptureStart = 0;
 
   if (path != NULL) {
@@ -612,37 +608,4 @@ void terminate_opt(void)
     break;
   }
 }
-/*
-double *timing_analyzer(int index, int direction ){
-//
-int i;
-if (direction==0)// in
-{
-    timing_in[index]=clock();
-    //if(timing_out[index+100]>timing_in[index+100]);
-    //timing_perf[index+100] +=(double)((double)(timing_out[index+100]-timing_in[index+100])/(double)CLOCKS_PER_SEC);
-}
-else
-{
-    timing_out[index]=clock();
-    if(index==5)timing_perf[index]=0;
-    timing_perf[index] +=(double)((double)(timing_out[index]-timing_in[index])/(((double)CLOCKS_PER_SEC)/1000000));
 
-    //LOG_I(OPT,"timing_analyser index %d =%f\n",index,timing_perf[index]);
-    init_value++;
-    if(init_value==500)
-    {
-        for(i=0;i<6;i++)
-        {
-            LOG_I(OPT,"timing_analyser index %d =%f\n",i,timing_perf[i]);
-        }
-        init_value=0;
-    }
-
-    return(&timing_perf[0]);
-
-}
-
-}
-
-*/
