@@ -1128,6 +1128,8 @@ rrc_eNB_generate_RRCConnectionRelease(
 	       PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
+uint8_t qci_to_priority[9]={2,4,3,5,1,6,7,8,9};
+
 // TBD: this directive can be remived if we create a similar e_rab_param_t structure in RRC context
 #if defined(ENABLE_ITTI) 
 //-----------------------------------------------------------------------------
@@ -1158,9 +1160,11 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
   struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList = NULL;
   DedicatedInfoNAS_t                 *dedicatedInfoNas                 = NULL;
+  /* for no gcc warnings */
+  (void)dedicatedInfoNas;
 
-  long                               *logicalchannelgroup, *logicalchannelgroup_drb;
-  int drb_identity_index=0;//, nas_sequence_flag = 0;
+  long  *logicalchannelgroup_drb;
+  int drb_identity_index=0;
 
   uint8_t xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);   //Transaction_id,
   DRB_configList2=&ue_context_pP->ue_context.DRB_configList2[xid];
@@ -1168,7 +1172,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     free(*DRB_configList2);
   }
   //*DRB_configList = CALLOC(1, sizeof(*DRB_configList));
-  *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
+  *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2)); 
+  /* Initialize NAS list */
   dedicatedInfoNASList = CALLOC(1, sizeof(struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList));
 
   int e_rab_done=0;
@@ -1187,7 +1192,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 
     DRB_config->eps_BearerIdentity = CALLOC(1, sizeof(long));
     // allowed value 5..15, value : x+4
-    *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id + 4;  
+    *(DRB_config->eps_BearerIdentity) = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;//+ 4; // especial case generation  
 
     DRB_config->drb_Identity =  1 + drb_identity_index + e_rab_done;// + i ;// (DRB_Identity_t) ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
     // 1 + drb_identiy_index;  
@@ -1205,12 +1210,18 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_pdcp_config->rlc_AM = NULL;
     DRB_pdcp_config->rlc_UM = NULL;
 
+
     switch (ue_context_pP->ue_context.e_rab[i].param.qos.qci){
-    case 1: // RLC _UM 
-    case 2:
-    case 3:
-    case 4: 
-    case 5:
+      /*
+       * type: realtime data with medium packer error rate
+       * action: swtich to RLC UM
+       */
+    case 1: // 100ms, 10^-2, p2, GBR
+    case 2: // 150ms, 10^-3, p4, GBR
+    case 3: // 50ms, 10^-3, p3, GBR
+    case 7: // 100ms, 10^-3, p7, GBR
+    case 65: // 75ms, 10^-2, p0.7, mission critical voice, GBR
+    case 66: // 100ms, 10^-2, p2, non-mission critical  voice , GBR
       // RLC 
       DRB_rlc_config->present = RLC_Config_PR_um_Bi_Directional;
       DRB_rlc_config->choice.um_Bi_Directional.ul_UM_RLC.sn_FieldLength = SN_FieldLength_size10;
@@ -1221,11 +1232,18 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
       DRB_pdcp_config->rlc_UM = PDCP_rlc_UM;
       PDCP_rlc_UM->pdcp_SN_Size = PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits;
       break;
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-    default: 
+      
+      /*
+       * type: non-realtime data with low packer error rate
+       * action: swtich to RLC AM
+       */
+    case 4:  // 300ms, 10^-6, p5 
+    case 5:  // 100ms, 10^-6, p1 , IMS signaling 
+    case 6:  // 300ms, 10^-6, p6 
+    case 8: // 300ms, 10^-6, p8 
+    case 9: // 300ms, 10^-6, p9
+    case 69: // 60ms, 10^-6, p0.5, mission critical delay sensitive data, Lowest Priority 
+    case 70: // 200ms, 10^-6, p5.5, mision critical data 
       // RLC
        DRB_rlc_config->present = RLC_Config_PR_am;
        DRB_rlc_config->choice.am.ul_AM_RLC.t_PollRetransmit = T_PollRetransmit_ms50;
@@ -1240,8 +1258,12 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
        DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
        PDCP_rlc_AM->statusReportRequired = FALSE;
        
-      //LOG_I(RRC,"not supported qci %d\n", ue_context_pP->ue_context.e_rab[i].param.qos.qci);
-      break;
+       break;
+    default :
+      LOG_E(RRC,"not supported qci %d\n", ue_context_pP->ue_context.e_rab[i].param.qos.qci);
+      ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_FAILED; 
+      ue_context_pP->ue_context.e_rab[i].xid = xid;
+      continue;
     }
 
     DRB_pdcp_config->headerCompression.present = PDCP_Config__headerCompression_PR_notUsed;
@@ -1251,10 +1273,14 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
     DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
     DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
 
-    DRB_ul_SpecificParameters->priority = ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level;
-    // TO DO
-    DRB_ul_SpecificParameters->prioritisedBitRate =
-      LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+    if (ue_context_pP->ue_context.e_rab[i].param.qos.qci < 10 )
+      DRB_ul_SpecificParameters->priority = qci_to_priority[ue_context_pP->ue_context.e_rab[i].param.qos.qci-1] + 3; 
+    // ue_context_pP->ue_context.e_rab[i].param.qos.allocation_retention_priority.priority_level;
+    else 
+      DRB_ul_SpecificParameters->priority= 4;
+
+    DRB_ul_SpecificParameters->prioritisedBitRate = LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8;
+      //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
     DRB_ul_SpecificParameters->bucketSizeDuration =
       LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
     
@@ -1275,7 +1301,10 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 	  *DRB_ul_SpecificParameters->logicalChannelGroup	  
 	  );
 
-    //if (nas_sequence_flag == 0)
+    e_rab_done++;
+    ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
+    ue_context_pP->ue_context.e_rab[i].xid = xid;
+    
     {
       if (ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer != NULL) {
 	dedicatedInfoNas = CALLOC(1, sizeof(DedicatedInfoNAS_t));
@@ -1284,29 +1313,32 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 			     (char*)ue_context_pP->ue_context.e_rab[i].param.nas_pdu.buffer,
 			     ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length);
 	ASN_SEQUENCE_ADD(&dedicatedInfoNASList->list, dedicatedInfoNas);
-	//	nas_sequence_flag = 1;
+	LOG_I(RRC,"add NAS info with size %d (rab id %d)\n",ue_context_pP->ue_context.e_rab[i].param.nas_pdu.length, i);
       } 
+      else {
+	LOG_W(RRC,"Not received activate dedicated EPS bearer context request\n");
+      }
       /* TODO parameters yet to process ... */
       {
 	//      ue_context_pP->ue_context.e_rab[i].param.qos;
 	//      ue_context_pP->ue_context.e_rab[i].param.sgw_addr;
 	//      ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
       }
-      
-      /* If list is empty free the list and reset the address */
-      if (dedicatedInfoNASList != NULL) {
-	if (dedicatedInfoNASList->list.count == 0) {
-	  free(dedicatedInfoNASList);
-	  dedicatedInfoNASList = NULL;
-	}				
-      }
     }
-    e_rab_done++;
-    ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE; 
-    ue_context_pP->ue_context.e_rab[i].xid = xid;
     
   }
-  
+
+  /* If list is empty free the list and reset the address */
+  if (dedicatedInfoNASList != NULL) {
+    if (dedicatedInfoNASList->list.count == 0) {
+      free(dedicatedInfoNASList);
+      dedicatedInfoNASList = NULL;
+      LOG_W(RRC,"dedlicated NAS list is empty, free the list and reset the address\n");
+    }				
+  } else {
+    LOG_W(RRC,"dedlicated NAS list is empty\n");
+  }
+
   memset(buffer, 0, RRC_BUF_SIZE);
 
    size = do_RRCConnectionReconfiguration(ctxt_pP,
@@ -1323,6 +1355,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
+ 
 
 #ifdef RRC_MSG_PRINT
   LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
@@ -1346,7 +1379,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 #endif
 
  LOG_I(RRC,
-        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
+        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCConnectionReconfiguration (bytes %d, UE RNTI %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
 
   LOG_D(RRC,
@@ -1496,7 +1529,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 
   SRB2_ul_SpecificParameters = CALLOC(1, sizeof(*SRB2_ul_SpecificParameters));
 
-  SRB2_ul_SpecificParameters->priority = 1;
+  SRB2_ul_SpecificParameters->priority = 3; // let some priority for SRB1 and dedicated DRBs
   SRB2_ul_SpecificParameters->prioritisedBitRate =
     LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
   SRB2_ul_SpecificParameters->bucketSizeDuration =
@@ -1591,9 +1624,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   DRB_ul_SpecificParameters = CALLOC(1, sizeof(*DRB_ul_SpecificParameters));
   DRB_lchan_config->ul_SpecificParameters = DRB_ul_SpecificParameters;
 
-  DRB_ul_SpecificParameters->priority = 2;    // lower priority than srb1, srb2
-  DRB_ul_SpecificParameters->prioritisedBitRate =
-    LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
+  DRB_ul_SpecificParameters->priority = 12;    // lower priority than srb1, srb2 and other dedicated bearer
+  DRB_ul_SpecificParameters->prioritisedBitRate =LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_kBps8 ;
+    //LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity;
   DRB_ul_SpecificParameters->bucketSizeDuration =
     LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50;
 
