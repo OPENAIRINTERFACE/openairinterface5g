@@ -40,6 +40,7 @@ Description NAS procedure call manager
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "user_defs.h"
 #include "emm_main.h"
 #include "esm_ebr.h"
 
@@ -59,7 +60,7 @@ Description NAS procedure call manager
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void nas_proc_initialize(emm_indication_callback_t emm_cb,
+void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
                          esm_indication_callback_t esm_cb, const char *imei);
 
 void nas_proc_cleanup(void);
@@ -70,14 +71,14 @@ void nas_proc_cleanup(void);
  * --------------------------------------------------------------------------
  */
 
-int nas_proc_enable_s1_mode(void);
-int nas_proc_disable_s1_mode(void);
-int nas_proc_get_eps(int *stat);
+int nas_proc_enable_s1_mode(nas_user_t *user);
+int nas_proc_disable_s1_mode(nas_user_t *user);
+int nas_proc_get_eps(nas_user_t *user, int *stat);
 
 int nas_proc_get_imsi(char *imsi_str);
 int nas_proc_get_msisdn(char *msisdn_str, int *ton_npi);
 
-int nas_proc_get_signal_quality(int *rsrq, int *rsrp);
+int nas_proc_get_signal_quality(nas_user_t *user, int *rsrq, int *rsrp);
 
 int nas_proc_register(int mode, int format, const network_plmn_t *oper, int AcT);
 int nas_proc_deregister(void);
@@ -110,7 +111,7 @@ int nas_proc_activate_pdn(int cid);
  * --------------------------------------------------------------------------
  */
 
-int nas_proc_cell_info(int found, tac_t tac, ci_t ci, AcT_t rat, uint8_t rsrp,
+int nas_proc_cell_info(nas_user_t *user, int found, tac_t tac, ci_t ci, AcT_t rat, uint8_t rsrp,
                        uint8_t rsrq);
 
 int nas_proc_establish_cnf(const Byte_t *data, uint32_t len);

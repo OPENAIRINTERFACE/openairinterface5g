@@ -38,6 +38,7 @@ Description NAS procedure call manager
 
 #include "nas_proc.h"
 #include "nas_log.h"
+#include "nas_user.h"
 
 #include "emm_main.h"
 #include "emm_sap.h"
@@ -62,17 +63,6 @@ Description NAS procedure call manager
 #define NAS_PROC_RSRQ_UNKNOWN   255
 #define NAS_PROC_RSRP_UNKNOWN   255
 
-/*
- * Local NAS data
- */
-static struct {
-  /* EPS capibility status */
-  int EPS_capability_status;
-  /* Reference signal received quality    */
-  int rsrq;
-  /* Reference signal received power      */
-  int rsrp;
-} _nas_proc_data;
 
 static int _nas_proc_activate(int cid, int apply_to_all);
 static int _nas_proc_deactivate(int cid, int apply_to_all);
@@ -97,15 +87,15 @@ static int _nas_proc_deactivate(int cid, int apply_to_all);
  **      Others:    _nas_proc_data                             **
  **                                                                        **
  ***************************************************************************/
-void nas_proc_initialize(emm_indication_callback_t emm_cb,
+void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
                          esm_indication_callback_t esm_cb, const char *imei)
 {
   LOG_FUNC_IN;
 
   /* Initialize local NAS data */
-  _nas_proc_data.EPS_capability_status = FALSE;
-  _nas_proc_data.rsrq = NAS_PROC_RSRQ_UNKNOWN;
-  _nas_proc_data.rsrp = NAS_PROC_RSRP_UNKNOWN;
+  user->proc.EPS_capability_status = FALSE;
+  user->proc.rsrq = NAS_PROC_RSRQ_UNKNOWN;
+  user->proc.rsrp = NAS_PROC_RSRP_UNKNOWN;
 
   /* Initialize the EMM procedure manager */
   emm_main_initialize(emm_cb, imei);
@@ -131,7 +121,7 @@ void nas_proc_initialize(emm_indication_callback_t emm_cb,
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void nas_proc_cleanup(void)
+void nas_proc_cleanup()
 {
   LOG_FUNC_IN;
 
@@ -172,7 +162,7 @@ void nas_proc_cleanup(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_enable_s1_mode(void)
+int nas_proc_enable_s1_mode(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -183,7 +173,7 @@ int nas_proc_enable_s1_mode(void)
    * Notify the EMM procedure call manager that EPS capability
    * of the UE is enabled
    */
-  _nas_proc_data.EPS_capability_status = TRUE;
+  user->proc.EPS_capability_status = TRUE;
   emm_sap.primitive = EMMREG_S1_ENABLED;
   rc = emm_sap_send(&emm_sap);
 
@@ -205,7 +195,7 @@ int nas_proc_enable_s1_mode(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_disable_s1_mode(void)
+int nas_proc_disable_s1_mode(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -216,7 +206,7 @@ int nas_proc_disable_s1_mode(void)
    * Notify the EMM procedure call manager that EPS capability
    * of the UE is disabled
    */
-  _nas_proc_data.EPS_capability_status = FALSE;
+  user->proc.EPS_capability_status = FALSE;
   emm_sap.primitive = EMMREG_S1_DISABLED;
   rc = emm_sap_send(&emm_sap);
 
@@ -238,11 +228,11 @@ int nas_proc_disable_s1_mode(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_eps(int *stat)
+int nas_proc_get_eps(nas_user_t *user, int *stat)
 {
   LOG_FUNC_IN;
 
-  *stat = _nas_proc_data.EPS_capability_status;
+  *stat = user->proc.EPS_capability_status;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -358,12 +348,12 @@ int nas_proc_get_msisdn(char *msisdn_str, int *ton_npi)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_signal_quality(int *rsrq, int *rsrp)
+int nas_proc_get_signal_quality(nas_user_t *user, int *rsrq, int *rsrp)
 {
   LOG_FUNC_IN;
 
-  *rsrq = _nas_proc_data.rsrq;
-  *rsrp = _nas_proc_data.rsrp;
+  *rsrq = user->proc.rsrq;
+  *rsrp = user->proc.rsrp;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -426,7 +416,7 @@ int nas_proc_register(int mode, int format, const network_plmn_t *oper, int AcT)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_deregister(void)
+int nas_proc_deregister()
 {
   LOG_FUNC_IN;
 
@@ -604,7 +594,7 @@ int nas_proc_detach(int switch_off)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_attach(void)
+int nas_proc_attach()
 {
   LOG_FUNC_IN;
 
@@ -636,7 +626,7 @@ int nas_proc_attach(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_attach_status(void)
+int nas_proc_get_attach_status()
 {
   LOG_FUNC_IN;
 
@@ -659,7 +649,7 @@ int nas_proc_get_attach_status(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_range(void)
+int nas_proc_get_pdn_range()
 {
   LOG_FUNC_IN;
 
@@ -1021,7 +1011,7 @@ int nas_proc_activate_pdn(int cid)
  **      Others:    _nas_proc_data                             **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_cell_info(int found, tac_t tac, ci_t ci, AcT_t AcT,
+int nas_proc_cell_info(nas_user_t *user, int found, tac_t tac, ci_t ci, AcT_t AcT,
                        uint8_t rsrq, uint8_t rsrp)
 {
   LOG_FUNC_IN;
@@ -1030,8 +1020,8 @@ int nas_proc_cell_info(int found, tac_t tac, ci_t ci, AcT_t AcT,
   int rc;
 
   /* Store LTE signal strength/quality measurement data */
-  _nas_proc_data.rsrq = rsrq;
-  _nas_proc_data.rsrp = rsrp;
+  user->proc.rsrq = rsrq;
+  user->proc.rsrp = rsrp;
 
   /*
    * Notify the EMM procedure call manager that cell information
@@ -1103,7 +1093,7 @@ int nas_proc_establish_cnf(const Byte_t *data, uint32_t len)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_establish_rej(void)
+int nas_proc_establish_rej()
 {
   LOG_FUNC_IN;
 
@@ -1170,7 +1160,7 @@ int nas_proc_release_ind(int cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_ul_transfer_cnf(void)
+int nas_proc_ul_transfer_cnf()
 {
   LOG_FUNC_IN;
 
@@ -1207,7 +1197,7 @@ int nas_proc_ul_transfer_cnf(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_ul_transfer_rej(void)
+int nas_proc_ul_transfer_rej()
 {
   LOG_FUNC_IN;
 

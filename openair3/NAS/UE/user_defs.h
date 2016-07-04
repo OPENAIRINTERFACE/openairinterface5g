@@ -45,7 +45,11 @@ Description NAS type definition to manage a user equipment
 #ifndef __USER_DEFS_H__
 #define __USER_DEFS_H__
 
+#include "nas_proc_defs.h"
+
 typedef struct {
+  int fd;
+  proc_data_t proc;
 } nas_user_t;
 
 #endif

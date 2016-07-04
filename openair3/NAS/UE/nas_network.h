@@ -40,6 +40,8 @@ Description NAS procedure functions triggered by the network
 #ifndef __NAS_NETWORK_H__
 #define __NAS_NETWORK_H__
 
+#include "user_defs.h"
+
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
@@ -61,7 +63,7 @@ void nas_network_initialize(void);
 
 void nas_network_cleanup(void);
 
-int nas_network_process_data(int command_id, const void *data);
+int nas_network_process_data(nas_user_t *user, int command_id, const void *data);
 
 const void *nas_network_get_data(void);
 

@@ -43,6 +43,7 @@ Description NAS procedure functions triggered by the network
 
 #include "as_message.h"
 #include "nas_proc.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -118,7 +119,7 @@ void nas_network_cleanup(void)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_network_process_data(int msg_id, const void *data)
+int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 {
   LOG_FUNC_IN;
 
@@ -142,7 +143,7 @@ int nas_network_process_data(int msg_id, const void *data)
     /* Received cell information confirm */
     const cell_info_cnf_t *info = &msg->msg.cell_info_cnf;
     int cell_found = (info->errCode == AS_SUCCESS);
-    rc = nas_proc_cell_info(cell_found, info->tac,
+    rc = nas_proc_cell_info(user, cell_found, info->tac,
                             info->cellID, info->rat,
                             info->rsrp, info->rsrq);
     break;

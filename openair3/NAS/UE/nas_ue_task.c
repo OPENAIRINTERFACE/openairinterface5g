@@ -49,7 +49,7 @@ static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, i
     if (events[event].events != 0) {
       /* If the event has not been yet been processed (not an itti message) */
       if (events[event].data.fd == user->fd) {
-        exit_loop = nas_user_receive_and_process(&user->fd, NULL);
+        exit_loop = nas_user_receive_and_process(user, NULL);
       } else {
         LOG_E(NAS, "[UE] Received an event from an unknown fd %d!\n", events[event].data.fd);
       }
@@ -89,7 +89,7 @@ void *nas_ue_task(void *args_p)
     }
 
     /* Initialize NAS user */
-    nas_user_initialize (&user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
+    nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
   }
 
   /* Set UE activation state */
@@ -117,7 +117,7 @@ void *nas_ue_task(void *args_p)
           /* Send an activate modem command to NAS like UserProcess should do it */
           char *user_data = "at+cfun=1\r";
 
-          nas_user_receive_and_process (&user->fd, user_data);
+          nas_user_receive_and_process (user, user_data);
         }
 #endif
         break;
@@ -137,7 +137,7 @@ void *nas_ue_task(void *args_p)
         {
           int cell_found = (NAS_CELL_SELECTION_CNF (msg_p).errCode == AS_SUCCESS);
 
-          nas_proc_cell_info (cell_found, NAS_CELL_SELECTION_CNF (msg_p).tac,
+          nas_proc_cell_info (user, cell_found, NAS_CELL_SELECTION_CNF (msg_p).tac,
                               NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).rat,
                               NAS_CELL_SELECTION_CNF (msg_p).rsrq, NAS_CELL_SELECTION_CNF (msg_p).rsrp);
         }
