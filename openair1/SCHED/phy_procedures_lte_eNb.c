@@ -2524,6 +2524,10 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
+
+  struct timespec time_req, time_rem;  
+  time_req.tv_sec = 0;
+  time_req.tv_nsec = 900000;
     
   if (subframe==9) { 
     subframe=0;
@@ -2583,7 +2587,16 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
     } else if(eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
       /// **** trx_read_func from IF device **** ///
-    
+      nanosleep(&time_req, &time_rem);
+      
+      proc->timestamp_rx += fp->samples_per_tti;
+      
+      proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+      proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
     }
 
 

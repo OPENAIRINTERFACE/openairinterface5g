@@ -38,7 +38,6 @@
 * \warning
 */
 
-#include <stdint.h>
 #include "PHY/defs.h"
 
 /// Macro for IF4 packet type
@@ -57,7 +56,7 @@ struct IF4_header {
   /// Frame Status
   uint32_t frame_status;
 
-};
+} __attribute__ ((__packed__));
 
 typedef struct IF4_header IF4_header_t;
 #define sizeof_IF4_header_t 12 

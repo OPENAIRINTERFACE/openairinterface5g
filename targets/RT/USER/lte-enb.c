@@ -302,6 +302,8 @@ static void* eNB_thread_rxtx( void* param ) {
   uint16_t packet_type;
   uint32_t symbol_number=0;
   
+  uint8_t seqno=0;
+  
   if (opp_enabled == 1) {
     snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf", "eNB");
     tx_time_file = fopen(tx_time_name,"w");
@@ -548,8 +550,8 @@ static void* eNB_thread_rxtx( void* param ) {
 
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** trx_write_func to IF device **** ///       
-   //   send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, 0);
-      
+      send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, &seqno);
+
     } else { 
       /// **** send_IF4 of txdataF to RRU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
@@ -626,10 +628,8 @@ static void* eNB_thread_rx_common( void* param ) {
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   
-  uint8_t seqno=0;
   FILE  *rx_time_file = NULL;
   char rx_time_name[101];
-  int i;
   struct timespec wait;
 
   wait.tv_sec=0;
@@ -764,14 +764,6 @@ static void* eNB_thread_rx_common( void* param ) {
     if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
       LOG_E(HW,"Could not start the RF device\n");
   }
-
-  //  proc->proc_rxtx[0].timestamp_tx = 0;
-  //  seqno = send_IF5(eNB, &proc->proc_rxtx[0], 0); 
-  
- // for (i=0; i<1000;i++) {
- //   seqno = send_IF5(eNB, &proc->proc_rxtx[0], seqno); 
- //   proc->proc_rxtx[0].timestamp_tx += 7680*2;
- // }
       
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {

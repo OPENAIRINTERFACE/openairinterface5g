@@ -38,8 +38,6 @@
 * \warning
 */
 
-#include <stdint.h>
-
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/TOOLS/ALAW/alaw_lut.h"
