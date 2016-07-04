@@ -1218,6 +1218,12 @@ main (int argc, char **argv)
   //Default values if not changed by the user in get_simulation_options();
   pdcp_period = 1;
   omg_period = 1;
+  //Clean ip rule table
+  for(int i =0; i<NUMBER_OF_UE_MAX; i++){
+      char command_line[100];
+      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
+      system(command_line);
+  }
   // start thread for log gen
   log_thread_init ();
 
@@ -1886,9 +1892,6 @@ oai_shutdown (void)
   for (int i = 0; i < NUMBER_OF_eNB_MAX + NUMBER_OF_UE_MAX; i++)
     if (oai_emulation.info.oai_ifup[i] == 1) {
       char interfaceName[8];
-      char command_line[100];
-      sprintf(command_line, "while ip rule del table %d; do true; done",i+201);
-      system(command_line);
       snprintf (interfaceName, sizeof(interfaceName), "oai%d", i);
       bringInterfaceUp (interfaceName, 0);
     }
