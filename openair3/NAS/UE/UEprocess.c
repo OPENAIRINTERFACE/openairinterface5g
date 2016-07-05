@@ -408,7 +408,9 @@ static void _nas_clean(int usr_fd, int net_fd)
   LOG_FUNC_IN;
 
   LOG_TRACE (INFO, "UE-MAIN   - Perform EMM and ESM cleanup");
-  nas_network_cleanup ();
+  // FIXME nas_network_cleanup depends on nas_user_t
+  // Why this program should interfere like that with oaisim ?
+  //nas_network_cleanup ();
 
   LOG_TRACE (INFO, "UE-MAIN   - "
              "Closing user connection %d and network connection %d",

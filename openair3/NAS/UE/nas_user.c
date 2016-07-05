@@ -1168,7 +1168,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
     if (ret_code != RETURNerror) {
       if (mode == AT_COPS_DEREG) {
         /* Force an attempt to deregister from the network */
-        ret_code = nas_proc_deregister();
+        ret_code = nas_proc_deregister(user);
 
         if (ret_code != RETURNok) {
           LOG_TRACE(ERROR, "USR-MAIN  - Network deregistration failed");
@@ -1178,7 +1178,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
       } else if (mode != AT_COPS_FORMAT) {
         /* Force an attempt to automatically/manualy select
          * and register the GSM/UMTS/EPS network operator */
-        ret_code = nas_proc_register(mode, format,
+        ret_code = nas_proc_register(user, mode, format,
                                      &data->command.cops.plmn, AcT);
 
         if (ret_code != RETURNok) {
@@ -1198,7 +1198,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
      */
 
     /* Get the current network registration data */
-    ret_code = nas_proc_get_reg_data(&mode,
+    ret_code = nas_proc_get_reg_data(user, &mode,
                                      &oper_is_selected, read_format,
                                      &cops->get.plmn, &cops->get.AcT);
 
@@ -1236,7 +1236,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
      * Test command returns a set of parameters, each representing
      * an operator present in the network.
      */
-    cops->tst.size = nas_proc_get_oper_list(&cops->tst.data);
+    cops->tst.size = nas_proc_get_oper_list(user, &cops->tst.data);
     break;
 
   default:
@@ -1308,9 +1308,9 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
       ret_code = RETURNerror;
 
       if (data->command.cgatt.state == AT_CGATT_ATTACHED) {
-        ret_code = nas_proc_attach();
+        ret_code = nas_proc_attach(user);
       } else if (data->command.cgatt.state == AT_CGATT_DETACHED) {
-        ret_code = nas_proc_detach(FALSE);
+        ret_code = nas_proc_detach(user, FALSE);
       }
 
       if (ret_code != RETURNok) {
@@ -1328,7 +1328,7 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
     /*
      * Read command returns the current EPS service state.
      */
-    if (nas_proc_get_attach_status() != TRUE) {
+    if (nas_proc_get_attach_status(user) != TRUE) {
       cgatt->state = AT_CGATT_DETACHED;
     } else {
       cgatt->state = AT_CGATT_ATTACHED;
@@ -1474,7 +1474,7 @@ static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
     case AT_CREG_OFF:
     case AT_CREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&creg->stat);
+      ret_code = nas_proc_get_reg_status(user, &creg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
@@ -1623,7 +1623,7 @@ static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
     case AT_CGREG_OFF:
     case AT_CGREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&cgreg->stat);
+      ret_code = nas_proc_get_reg_status(user, &cgreg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
@@ -1776,7 +1776,7 @@ static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
     switch (n) {
     case AT_CEREG_BOTH:
       /* Get EPS location information  */
-      ret_code = nas_proc_get_loc_info(cereg->tac, cereg->ci,
+      ret_code = nas_proc_get_loc_info(user, cereg->tac, cereg->ci,
                                        &cereg->AcT);
 
       if (ret_code != RETURNok) {
@@ -1799,7 +1799,7 @@ static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
     case AT_CEREG_OFF:
     case AT_CEREG_ON:
       /* Get network registration status */
-      ret_code = nas_proc_get_reg_status(&cereg->stat);
+      ret_code = nas_proc_get_reg_status(user, &cereg->stat);
 
       if (ret_code != RETURNok) {
         LOG_TRACE(ERROR, "USR-MAIN  - Failed to get registration status");
@@ -2022,10 +2022,10 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
     if (reset_pdn) {
       /* A special form of the set command, +CGDCONT=<cid> causes
        * the values for context number <cid> to become undefined */
-      ret_code = nas_proc_reset_pdn(cid);
+      ret_code = nas_proc_reset_pdn(user, cid);
     } else {
       /* Define a new PDN connection */
-      ret_code = nas_proc_set_pdn(cid, pdn_type, apn,
+      ret_code = nas_proc_set_pdn(user, cid, pdn_type, apn,
                                   ipv4_addr_allocation, emergency,
                                   p_cscf, im_cn_signalling);
     }
@@ -2043,7 +2043,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
      * Read command returns the current settings for each
      * defined PDN connection/default EPS bearer context
      */
-    cgdcont->n_pdns = nas_proc_get_pdn_param(cgdcont->cid,
+    cgdcont->n_pdns = nas_proc_get_pdn_param(user, cgdcont->cid,
                       cgdcont->PDP_type,
                       cgdcont->APN,
                       AT_CGDCONT_RESP_SIZE);
@@ -2061,7 +2061,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
      */
   {
     /* Get the maximum value of a PDN context identifier */
-    int cid_max = nas_proc_get_pdn_range();
+    int cid_max = nas_proc_get_pdn_range(user);
 
     if (cid_max > AT_CGDCONT_RESP_SIZE) {
       /* The range is defined by the user interface */
@@ -2164,9 +2164,9 @@ static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
     ret_code = RETURNerror;
 
     if (state == AT_CGACT_DEACTIVATED) {
-      ret_code = nas_proc_deactivate_pdn(cid);
+      ret_code = nas_proc_deactivate_pdn(user, cid);
     } else if (state == AT_CGACT_ACTIVATED) {
-      ret_code = nas_proc_activate_pdn(cid);
+      ret_code = nas_proc_activate_pdn(user, cid);
     }
 
     if (ret_code != RETURNok) {
@@ -2184,7 +2184,7 @@ static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
      * The read command returns the current activation states for
      * all the defined PDN/EPS bearer contexts
      */
-    cgact->n_pdns = nas_proc_get_pdn_status(cgact->cid, cgact->state,
+    cgact->n_pdns = nas_proc_get_pdn_status(user, cgact->cid, cgact->state,
                                             AT_CGACT_RESP_SIZE);
 
     if (cgact->n_pdns == 0) {
@@ -2517,7 +2517,7 @@ static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
     /*
      * Get the PDP addresses
      */
-    cgpaddr->n_pdns = nas_proc_get_pdn_addr(cid, cgpaddr->cid,
+    cgpaddr->n_pdns = nas_proc_get_pdn_addr(user, cid, cgpaddr->cid,
                                             cgpaddr->PDP_addr_1,
                                             cgpaddr->PDP_addr_2,
                                             AT_CGPADDR_RESP_SIZE);
@@ -2533,7 +2533,7 @@ static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
     /*
      * The test command returns a list of defined <cid>s.
      */
-    cgpaddr->n_pdns = nas_proc_get_pdn_addr(cid, cgpaddr->cid,
+    cgpaddr->n_pdns = nas_proc_get_pdn_addr(user, cid, cgpaddr->cid,
                                             cgpaddr->PDP_addr_1,
                                             cgpaddr->PDP_addr_2,
                                             AT_CGPADDR_RESP_SIZE);

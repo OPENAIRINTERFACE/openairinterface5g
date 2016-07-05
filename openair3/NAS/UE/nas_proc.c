@@ -64,8 +64,8 @@ Description NAS procedure call manager
 #define NAS_PROC_RSRP_UNKNOWN   255
 
 
-static int _nas_proc_activate(int cid, int apply_to_all);
-static int _nas_proc_deactivate(int cid, int apply_to_all);
+static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all);
+static int _nas_proc_deactivate(nas_user_t *user, int cid, int apply_to_all);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -121,12 +121,12 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void nas_proc_cleanup()
+void nas_proc_cleanup(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
   /* Detach the UE from the EPS network */
-  int rc = nas_proc_detach(TRUE);
+  int rc = nas_proc_detach(user, TRUE);
 
   if (rc != RETURNok) {
     LOG_TRACE(ERROR, "NAS-PROC  - Failed to detach from the network");
@@ -377,7 +377,7 @@ int nas_proc_get_signal_quality(nas_user_t *user, int *rsrq, int *rsrp)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_register(int mode, int format, const network_plmn_t *oper, int AcT)
+int nas_proc_register(nas_user_t *user, int mode, int format, const network_plmn_t *oper, int AcT)
 {
   LOG_FUNC_IN;
 
@@ -416,7 +416,7 @@ int nas_proc_register(int mode, int format, const network_plmn_t *oper, int AcT)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_deregister()
+int nas_proc_deregister(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -446,7 +446,7 @@ int nas_proc_deregister()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_reg_data(int *mode, int *selected, int format,
+int nas_proc_get_reg_data(nas_user_t *user, int *mode, int *selected, int format,
                           network_plmn_t *oper, int *AcT)
 {
   LOG_FUNC_IN;
@@ -485,7 +485,7 @@ int nas_proc_get_reg_data(int *mode, int *selected, int format,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_oper_list(const char **oper_list)
+int nas_proc_get_oper_list(nas_user_t *user, const char **oper_list)
 {
   LOG_FUNC_IN;
 
@@ -510,7 +510,7 @@ int nas_proc_get_oper_list(const char **oper_list)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_reg_status(int *stat)
+int nas_proc_get_reg_status(nas_user_t *user, int *stat)
 {
   LOG_FUNC_IN;
 
@@ -538,7 +538,7 @@ int nas_proc_get_reg_status(int *stat)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_loc_info(char *tac, char *ci, int *AcT)
+int nas_proc_get_loc_info(nas_user_t *user, char *tac, char *ci, int *AcT)
 {
   LOG_FUNC_IN;
 
@@ -563,7 +563,7 @@ int nas_proc_get_loc_info(char *tac, char *ci, int *AcT)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_detach(int switch_off)
+int nas_proc_detach(nas_user_t *user, int switch_off)
 {
   LOG_FUNC_IN;
 
@@ -594,7 +594,7 @@ int nas_proc_detach(int switch_off)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_attach()
+int nas_proc_attach(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -626,7 +626,7 @@ int nas_proc_attach()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_attach_status()
+int nas_proc_get_attach_status(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -649,7 +649,7 @@ int nas_proc_get_attach_status()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_range()
+int nas_proc_get_pdn_range(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -674,7 +674,7 @@ int nas_proc_get_pdn_range()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_status(int *cids, int *states, int n_pdn_max)
+int nas_proc_get_pdn_status(nas_user_t *user, int *cids, int *states, int n_pdn_max)
 {
   LOG_FUNC_IN;
 
@@ -718,7 +718,7 @@ int nas_proc_get_pdn_status(int *cids, int *states, int n_pdn_max)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_param(int *cids, int *types, const char **apns,
+int nas_proc_get_pdn_param(nas_user_t *user, int *cids, int *types, const char **apns,
                            int n_pdn_max)
 {
   LOG_FUNC_IN;
@@ -770,7 +770,7 @@ int nas_proc_get_pdn_param(int *cids, int *types, const char **apns,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_addr(int cid, int *cids, const char **addr1,
+int nas_proc_get_pdn_addr(nas_user_t *user, int cid, int *cids, const char **addr1,
                           const char **addr2, int n_pdn_max)
 {
   LOG_FUNC_IN;
@@ -833,7 +833,7 @@ int nas_proc_get_pdn_addr(int cid, int *cids, const char **addr1,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_set_pdn(int cid, int type, const char *apn, int ipv4_addr,
+int nas_proc_set_pdn(nas_user_t *user, int cid, int type, const char *apn, int ipv4_addr,
                      int emergency, int p_cscf, int im_cn_signal)
 {
   LOG_FUNC_IN;
@@ -871,7 +871,7 @@ int nas_proc_set_pdn(int cid, int type, const char *apn, int ipv4_addr,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_reset_pdn(int cid)
+int nas_proc_reset_pdn(nas_user_t *user, int cid)
 {
   LOG_FUNC_IN;
 
@@ -905,7 +905,7 @@ int nas_proc_reset_pdn(int cid)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_deactivate_pdn(int cid)
+int nas_proc_deactivate_pdn(nas_user_t *user, int cid)
 {
   LOG_FUNC_IN;
 
@@ -913,7 +913,7 @@ int nas_proc_deactivate_pdn(int cid)
 
   if (cid > 0) {
     /* Deactivate only the specified PDN context */
-    rc = _nas_proc_deactivate(cid, FALSE);
+    rc = _nas_proc_deactivate(user, cid, FALSE);
   } else {
     /* Do not deactivate the PDN connection established during initial
      * network attachment (identifier 1) */
@@ -921,7 +921,7 @@ int nas_proc_deactivate_pdn(int cid)
 
     /* Deactivate all active PDN contexts */
     while ((rc != RETURNerror) && (cid < esm_main_get_nb_pdns_max()+1)) {
-      rc = _nas_proc_deactivate(cid++, TRUE);
+      rc = _nas_proc_deactivate(user, cid++, TRUE);
     }
   }
 
@@ -944,7 +944,7 @@ int nas_proc_deactivate_pdn(int cid)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_activate_pdn(int cid)
+int nas_proc_activate_pdn(nas_user_t *user, int cid)
 {
   LOG_FUNC_IN;
 
@@ -956,7 +956,7 @@ int nas_proc_activate_pdn(int cid)
      * procedure prior to attempt to request any PDN connectivity
      */
     LOG_TRACE(WARNING, "NAS-PROC  - UE is not attached to the network");
-    rc = nas_proc_attach();
+    rc = nas_proc_attach(user);
   } else if (emm_main_is_emergency()) {
     /* The UE is attached for emergency bearer services; It shall not
      * request a PDN connection to any other PDN */
@@ -967,13 +967,13 @@ int nas_proc_activate_pdn(int cid)
   if (rc != RETURNerror) {
     if (cid > 0) {
       /* Activate only the specified PDN context */
-      rc = _nas_proc_activate(cid, FALSE);
+      rc = _nas_proc_activate(user, cid, FALSE);
     } else {
       cid = 1;
 
       /* Activate all defined PDN contexts */
       while ((rc != RETURNerror) && (cid < esm_main_get_nb_pdns_max()+1)) {
-        rc = _nas_proc_activate(cid++, TRUE);
+        rc = _nas_proc_activate(user, cid++, TRUE);
       }
     }
   }
@@ -1056,7 +1056,7 @@ int nas_proc_cell_info(nas_user_t *user, int found, tac_t tac, ci_t ci, AcT_t Ac
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_establish_cnf(const Byte_t *data, uint32_t len)
+int nas_proc_establish_cnf(nas_user_t *user, const Byte_t *data, uint32_t len)
 {
   LOG_FUNC_IN;
 
@@ -1093,7 +1093,7 @@ int nas_proc_establish_cnf(const Byte_t *data, uint32_t len)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_establish_rej()
+int nas_proc_establish_rej(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -1126,7 +1126,7 @@ int nas_proc_establish_rej()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_release_ind(int cause)
+int nas_proc_release_ind(nas_user_t *user, int cause)
 {
   LOG_FUNC_IN;
 
@@ -1160,7 +1160,7 @@ int nas_proc_release_ind(int cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_ul_transfer_cnf()
+int nas_proc_ul_transfer_cnf(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -1197,7 +1197,7 @@ int nas_proc_ul_transfer_cnf()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_ul_transfer_rej()
+int nas_proc_ul_transfer_rej(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -1234,7 +1234,7 @@ int nas_proc_ul_transfer_rej()
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_dl_transfer_ind(const Byte_t *data, uint32_t len)
+int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
 {
   LOG_FUNC_IN;
 
@@ -1281,7 +1281,7 @@ int nas_proc_dl_transfer_ind(const Byte_t *data, uint32_t len)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _nas_proc_activate(int cid, int apply_to_all)
+static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
 {
   LOG_FUNC_IN;
 
@@ -1354,7 +1354,7 @@ static int _nas_proc_activate(int cid, int apply_to_all)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _nas_proc_deactivate(int cid, int apply_to_all)
+static int _nas_proc_deactivate(nas_user_t *user, int cid, int apply_to_all)
 {
   LOG_FUNC_IN;
 
