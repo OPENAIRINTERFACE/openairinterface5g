@@ -505,11 +505,8 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
-      if (transmission_mode>1 && transmission_mode<7){
+      if (transmission_mode>1 && transmission_mode<7) {
         n_tx_port = 2;
-        n_tx_phy = n_tx_port;
-      } else if (transmission_mode==7){
-        n_tx_port = 1;
       }
 
       break;
@@ -521,14 +518,10 @@ int main(int argc, char **argv)
         if(n_tx_phy==1) {
           msg("n_tx_phy must be >1 for transmission_mode %d\n",transmission_mode);
           exit(-1);
-        } else if (n_tx_phy!=n_tx_port) { // to be changed 
-          msg("For transmission mode TM2-TM6, physical antenna number should be the same as antenna port number.\n");
-	  exit(-1);
-        }
+        } 
       }
 
       if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=8 && n_tx_phy!=16 && n_tx_phy!=64 && n_tx_phy!=128)) {
-     // if (transmission_mode==7 && (n_tx_phy!=1 && n_tx_phy!=2 && n_tx_phy!=4 && n_tx_phy!=16 && n_tx_phy!=64)) {
         msg("Physical number of antennas not supported for TM7.\n");
         exit(-1);
       }
@@ -616,8 +609,6 @@ int main(int argc, char **argv)
   } else
     NB_RB = 4;
 
-  /*if ((transmission_mode > 1) && (n_tx != 2))
-    printf("n_tx must be >1 for transmission_mode %d\n",transmission_mode);*/
 
   if (xforms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
@@ -673,15 +664,6 @@ int main(int argc, char **argv)
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
-  /*
-    txdataF    = (int **)malloc16(2*sizeof(int*));
-    txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-
-    txdata    = (int **)malloc16(2*sizeof(int*));
-    txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
 
   s_re = malloc(n_tx_phy*sizeof(double*));
   s_im = malloc(n_tx_phy*sizeof(double*));

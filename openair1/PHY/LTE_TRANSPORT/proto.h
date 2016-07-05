@@ -306,10 +306,9 @@ int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
                              int16_t amp,
                              uint16_t subframe);
 
-<<<<<<< HEAD
 void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t UE_id,
-                             mod_sym_t **txdataF,
+                             int32_t **txdataF,
                              int16_t amp,
                              uint16_t Ntti,
 		             uint8_t beamforming_mode);

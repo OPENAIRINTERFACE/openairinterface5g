@@ -296,8 +296,8 @@ void do_OFDM_mod_l(LTE_eNB_COMMON *eNB_common_vars, int eNB_id, uint16_t next_sl
 
   int aa, l, slot_offset, slot_offset_F;
   int8_t UE_id=0;
-  mod_sym_t **txdataF = eNB_common_vars->txdataF[eNB_id];
-  mod_sym_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
+  int32_t **txdataF = eNB_common_vars->txdataF[eNB_id];
+  int32_t **txdataF_BF = eNB_common_vars->txdataF_BF[eNB_id];
   int32_t **txdata = eNB_common_vars->txdata[eNB_id];
 
   //slot_offset_F = (next_slot)*(frame_parms->ofdm_symbol_size)*((frame_parms->Ncp==1) ? 6 : 7);

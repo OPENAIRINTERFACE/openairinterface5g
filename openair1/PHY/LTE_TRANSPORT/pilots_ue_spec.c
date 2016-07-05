@@ -42,7 +42,7 @@
 
 void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
                      uint8_t UE_id,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      int16_t amp,
                      uint16_t Ntti,
 		     uint8_t beamforming_mode)
@@ -127,7 +127,7 @@ void generate_ue_spec_pilots(PHY_VARS_eNB *phy_vars_eNB,
 }
 
 /*int generate_ue_spec_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
-                         mod_sym_t **txdataF,
+                         int32_t **txdataF,
                          int16_t amp,
                          uint16_t slot,
                          int first_pilot_only)

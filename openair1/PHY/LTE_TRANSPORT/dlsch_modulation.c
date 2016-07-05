@@ -232,7 +232,7 @@ int allocate_REs_in_RB(PHY_VARS_eNB *phy_vars_eNB,
   int s=1;
         
   int mprime2 = mprime,ind,ind_dword,ind_qpsk_symb;
-  mod_sym_t qpsk[4];
+  int32_t qpsk[4];
 
   gain_lin_QPSK = (int16_t)((amp*ONE_OVER_SQRT2_Q15)>>15);
   //  if (mimo_mode == LARGE_CDD) gain_lin_QPSK>>=1;
