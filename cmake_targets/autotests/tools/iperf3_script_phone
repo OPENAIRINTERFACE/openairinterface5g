@@ -32,7 +32,7 @@
 
 #arg1 timeout to wait before running the script
 #arg2 interface
-#arg3 iperf arguments
+#arg3 iperf3 arguments
 
 args=($*)
 timeout=${args[0]}
@@ -43,7 +43,7 @@ iperf3_args=(${args[@]:2})
 echo "args =  ${args[@]}"
 echo "timeout = $timeout"
 echo "device_id = $device_id"
-echo "iperf_args = ${iperf_args[@]}"
+echo "iperf3_args = ${iperf3_args[@]}"
 
 sleep $timeout
 
@@ -58,6 +58,6 @@ while true ; do
   fi
 done
 
-echo "Starting iperf now..."
+echo "Starting iperf3 now..."
 
-sudo adb -s $device_id shell /data/local/tmp/iperf3 ${iperf_args[@]}
+sudo adb -s $device_id shell /data/local/tmp/iperf3 ${iperf3_args[@]}

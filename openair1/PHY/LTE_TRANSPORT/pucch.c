@@ -44,6 +44,8 @@
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
+#include "T.h"
+
 //uint8_t ncs_cell[20][7];
 //#define DEBUG_PUCCH_TX
 //#define DEBUG_PUCCH_RX
@@ -440,6 +442,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 		  uint16_t n2_pucch,
 		  uint8_t shortened_format,
 		  uint8_t *payload,
+		  int     frame,
 		  uint8_t subframe,
 		  uint8_t pucch1_thres)
 {
@@ -796,6 +799,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
     phy_vars_eNB->pucch1_stats_thres[UE_id][(subframe<<10)+phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]] = sigma2_dB+pucch1_thres;
     phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe]+1)&1023;
 
+    T(T_ENB_PHY_PUCCH_1_ENERGY, T_INT(phy_vars_eNB->Mod_id), T_INT(UE_id), T_INT(frame), T_INT(subframe),
+      T_INT(stat_max), T_INT(sigma2_dB+pucch1_thres));
+
     /*
     if (phy_vars_eNB->pucch1_stats_cnt[UE_id][subframe] == 0) {
       write_output("pucch_debug.m","pucch_energy",
@@ -1037,6 +1043,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
 	phy_vars_eNB->pucch1ab_stats[UE_id][(subframe<<11) + 1+2*(phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe])] = (stat_im);
 	phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe] = (phy_vars_eNB->pucch1ab_stats_cnt[UE_id][subframe]+1)&1023;
 
+      /* frame not available here - set to -1 for the moment */
+      T(T_ENB_PHY_PUCCH_1AB_IQ, T_INT(phy_vars_eNB->Mod_id), T_INT(UE_id), T_INT(-1), T_INT(subframe), T_INT(stat_re), T_INT(stat_im));
 
 	  
       *payload = (stat_re<0) ? 1 : 0;

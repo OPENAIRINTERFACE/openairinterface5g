@@ -46,6 +46,8 @@
 #include "ARCH/CBMIMO1/DEVICE_DRIVER/extern.h"
 #endif
 
+#include "T.h"
+
 //#define DEBUG_PHICH 1
 
 //extern unsigned short pcfich_reg[4];
@@ -1504,6 +1506,8 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
         if ((ulsch_eNB[UE_id]->harq_processes[harq_pid]->dci_alloc == 0) &&
             (ulsch_eNB[UE_id]->harq_processes[harq_pid]->rar_alloc == 0) ) {
           if (ulsch_eNB[UE_id]->harq_processes[harq_pid]->phich_ACK==0 ) {
+            T(T_ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION, T_INT(phy_vars_eNB->Mod_id), T_INT(phy_vars_eNB->proc[sched_subframe].frame_tx),
+              T_INT(subframe), T_INT(UE_id), T_INT(ulsch_eNB[UE_id]->rnti), T_INT(harq_pid));
             LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d, subframe %d : PHICH NACK / (no format0 DCI) Setting subframe_scheduling_flag\n",
                   phy_vars_eNB->Mod_id,harq_pid,phy_vars_eNB->proc[sched_subframe].frame_tx,subframe);
             ulsch_eNB[UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;

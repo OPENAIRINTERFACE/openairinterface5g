@@ -58,6 +58,10 @@
 # include "vcd_signal_dumper.h"
 #endif
 
+#if T_TRACER
+#include "T.h"
+#endif
+
 /* Includes "intertask_interface_init.h" to check prototype coherence, but
  * disable threads and messages information generation.
  */
