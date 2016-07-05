@@ -94,7 +94,8 @@ typedef struct {
 
   /// Indicate Scheduling Request from UE
   void (*SR_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
-
+  /// Indicate UL Failure to eNodeB MAC
+  void (*UL_failure_indication)(module_id_t Mod_id,int CC_id,frame_t frameP,rnti_t rnti,sub_frame_t subframe);
   /// Configure Common PHY parameters from SIB1
   void (*phy_config_sib1_eNB)(module_id_t Mod_id,int CC_id,
                               TDD_Config_t *tdd_config,
@@ -133,7 +134,7 @@ typedef struct {
   /// get delta mcs for fast UL AMC
   int16_t (*estimate_ue_tx_power)(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs);
 
-
+  int (*mac_phy_remove_ue)(module_id_t Mod_idP,rnti_t rntiP);
   /// UE functions
 
   /// reset the ue phy

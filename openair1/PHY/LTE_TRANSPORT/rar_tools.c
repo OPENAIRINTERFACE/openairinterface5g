@@ -40,12 +40,8 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
-#ifdef OPENAIR2
 #include "LAYER2/MAC/defs.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
-#endif
 
 #include "assertions.h"
 
@@ -81,7 +77,7 @@ int generate_eNB_ulsch_params_from_rar(unsigned char *rar_pdu,
   uint16_t *RIV2nb_rb_LUT, *RIV2first_rb_LUT;
   uint16_t RIV_max;
 
-  LOG_I(PHY,"[eNB][RAPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
+  LOG_D(PHY,"[eNB][RAPROC] generate_eNB_ulsch_params_from_rar: subframe %d (harq_pid %d)\n",subframe,harq_pid);
 
   switch (frame_parms->N_RB_DL) {
   case 6:

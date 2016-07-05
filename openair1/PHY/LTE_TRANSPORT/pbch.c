@@ -61,7 +61,7 @@
 #define PBCH_A 24
 
 int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
-                            mod_sym_t **txdataF,
+                            int32_t **txdataF,
                             uint32_t *jj,
                             uint16_t re_offset,
                             uint32_t symbol_offset,
@@ -160,7 +160,7 @@ int allocate_pbch_REs_in_RB(LTE_DL_FRAME_PARMS *frame_parms,
 
 //uint8_t pbch_d[96+(3*(16+PBCH_A))], pbch_w[3*3*(16+PBCH_A)],pbch_e[1920];  //one bit per byte
 int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
-                  mod_sym_t **txdataF,
+                  int32_t **txdataF,
                   int amp,
                   LTE_DL_FRAME_PARMS *frame_parms,
                   uint8_t *pbch_pdu,

@@ -272,12 +272,12 @@ uint32_t Y;
 //#define Mquad (Msymb/4)
 
 static uint32_t bitrev_cc_dci[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16,8,24,4,20,12,28,2,18,10,26,6,22,14,30};
-static mod_sym_t wtemp[2][Msymb];
+static int32_t wtemp[2][Msymb];
 
-void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,mod_sym_t **z, mod_sym_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi)
+void pdcch_interleaving(LTE_DL_FRAME_PARMS *frame_parms,int32_t **z, int32_t **wbar,uint8_t n_symbols_pdcch,uint8_t mi)
 {
 
-  mod_sym_t *wptr,*wptr2,*zptr;
+  int32_t *wptr,*wptr2,*zptr;
   uint32_t Mquad = get_nquad(n_symbols_pdcch,frame_parms,mi);
   uint32_t RCC = (Mquad>>5), ND;
   uint32_t row,col,Kpi,index;
@@ -2027,7 +2027,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                          uint32_t n_rnti,
                          int16_t amp,
                          LTE_DL_FRAME_PARMS *frame_parms,
-                         mod_sym_t **txdataF,
+                         int32_t **txdataF,
                          uint32_t subframe)
 {
 
@@ -2038,10 +2038,10 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
   int16_t re_offset;
   uint8_t mi = get_mi(frame_parms,subframe);
   static uint8_t e[DCI_BITS_MAX];
-  static mod_sym_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
+  static int32_t yseq0[Msymb],yseq1[Msymb],wbar0[Msymb],wbar1[Msymb];
 
-  mod_sym_t *y[2];
-  mod_sym_t *wbar[2];
+  int32_t *y[2];
+  int32_t *wbar[2];
 
   int nushiftmod3 = frame_parms->nushift%3;
 

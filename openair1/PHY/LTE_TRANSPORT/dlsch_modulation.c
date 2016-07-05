@@ -163,7 +163,7 @@ void layer1prec2A(int32_t *antenna0_sample, int32_t *antenna1_sample, uint8_t pr
 }
 
 int allocate_REs_in_RB(PHY_VARS_eNB *phy_vars_eNB,
-                       mod_sym_t **txdataF,
+                       int32_t **txdataF,
                        uint32_t *jj,
                        uint32_t *jj2,
                        uint16_t re_offset,
@@ -1122,7 +1122,7 @@ break;
 return(0);
 }
 
-int allocate_REs_in_RB_MCH(mod_sym_t **txdataF,
+int allocate_REs_in_RB_MCH(int32_t **txdataF,
                            uint32_t *jj,
                             uint16_t re_offset,
                             uint32_t symbol_offset,
@@ -1312,7 +1312,7 @@ uint8_t get_pmi(uint8_t N_RB_DL,LTE_DL_eNB_HARQ_t *dlsch_harq,uint16_t rb)
 
 
 int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      int16_t amp,
                      uint32_t subframe_offset,
                      uint8_t num_pdcch_symbols,
@@ -1668,7 +1668,7 @@ int dlsch_modulation(PHY_VARS_eNB* phy_vars_eNB,
   return (re_allocated);
 }
 
-int mch_modulation(mod_sym_t **txdataF,
+int mch_modulation(int32_t **txdataF,
                    int16_t amp,
                    uint32_t subframe_offset,
                    LTE_DL_FRAME_PARMS *frame_parms,

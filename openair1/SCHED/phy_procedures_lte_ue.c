@@ -42,8 +42,6 @@
 #include "defs.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include "SCHED/defs.h"
 #include "SCHED/extern.h"
 
@@ -1374,7 +1372,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstra
 #endif
 
           if (abstraction_flag == 0) {
-            LOG_D(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
+            LOG_I(PHY,"[UE  %d][RAPROC] Frame %d, Subframe %d : Generating PRACH, preamble %d, TARGET_RECEIVED_POWER %d dBm, PRACH TDD Resource index %d, RA-RNTI %d\n",
                   Mod_id,
                   frame_tx,
                   subframe_tx,
@@ -2650,7 +2648,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                                  phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid],
                                  subframe_prev,
                                  harq_pid,
-                                 1,0);
+                                 1,phy_vars_ue->dlsch_ue[eNB_id][0]->harq_processes[harq_pid]->nb_rb>10 ? 1 : 0);
             stop_meas(&phy_vars_ue->dlsch_decoding_stats);
           }
 
@@ -3340,7 +3338,7 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
                                phy_vars_ue->dlsch_ue_MCH[0]->harq_processes[0],
                                subframe_prev,
                                0,
-                               0,0);
+                               0,1);
         } else { // abstraction
 #ifdef PHY_ABSTRACTION
           ret = dlsch_decoding_emul(phy_vars_ue,

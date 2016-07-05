@@ -48,7 +48,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
@@ -188,7 +187,7 @@ int main(int argc, char **argv)
   // void *data;
   // int ii;
   //  int bler;
-  double blerr[4],uncoded_ber;//,avg_ber;
+  double blerr[4],uncoded_ber,avg_ber;
   short *uncoded_ber_bit=NULL;
   uint8_t N_RB_DL=25,osf=1;
   frame_t frame_type = FDD;
@@ -2154,7 +2153,7 @@ PMI_FEEDBACK:
 
           //printf("Trial %d : Round %d, pmi_feedback %d \n",trials,round,pmi_feedback);
           for (aa=0; aa<NB_ANTENNA_PORTS_ENB; aa++) {
-            memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+            memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNB_id][aa][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
           }
 
           if (input_fd==NULL) {
@@ -3538,7 +3537,7 @@ PMI_FEEDBACK:
             PHY_vars_UE->dlsch_ue[0][cw]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw]->current_harq_pid]->G = coded_bits_per_codeword;
 
 
-            /*
+	                
             // calculate uncoded BLER
             uncoded_ber=0;
             for (i=0;i<coded_bits_per_codeword;i++)
@@ -3554,7 +3553,7 @@ PMI_FEEDBACK:
 
             if (n_frames==1)
               write_output("uncoded_ber_bit.m","uncoded_ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
-            */
+            
 
             start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);
             dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
@@ -3665,12 +3664,12 @@ PMI_FEEDBACK:
               }
 
               sprintf(fname,"rxsig0_r%d.m",round);
-              sprintf(vname,"rxs0_r%d.m",round);
+              sprintf(vname,"rxs0_r%d",round);
               write_output(fname,vname, &PHY_vars_UE->lte_ue_common_vars.rxdata[0][0],10*PHY_vars_UE->lte_frame_parms.samples_per_tti,1,1);
               sprintf(fname,"rxsigF0_r%d.m",round);
-              sprintf(vname,"rxs0F_r%d.m",round);
+              sprintf(vname,"rxs0F_r%d",round);
               write_output(fname,vname, &PHY_vars_UE->lte_ue_common_vars.rxdataF[0][0],2*PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,2,1);
-
+	     
               if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"rxsig1_r%d.m",round);
                 sprintf(vname,"rxs1_r%d.m",round);
@@ -3681,14 +3680,14 @@ PMI_FEEDBACK:
               }
 
               sprintf(fname,"dlsch00_r%d.m",round);
-              sprintf(vname,"dl00_r%d.m",round);
+              sprintf(vname,"dl00_r%d",round);
               write_output(fname,vname,
                            &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][0][0]),
                            PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
 
               if (PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) {
                 sprintf(fname,"dlsch01_r%d.m",round);
-                sprintf(vname,"dl01_r%d.m",round);
+                sprintf(vname,"dl01_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][1][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
@@ -3696,7 +3695,7 @@ PMI_FEEDBACK:
 
               if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1) {
                 sprintf(fname,"dlsch10_r%d.m",round);
-                sprintf(vname,"dl10_r%d.m",round);
+                sprintf(vname,"dl10_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][2][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
@@ -3704,7 +3703,7 @@ PMI_FEEDBACK:
 
               if ((PHY_vars_UE->lte_frame_parms.nb_antennas_rx>1) && (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)) {
                 sprintf(fname,"dlsch11_r%d.m",round);
-                sprintf(vname,"dl11_r%d.m",round);
+                sprintf(vname,"dl11_r%d",round);
                 write_output(fname,vname,
                              &(PHY_vars_UE->lte_ue_common_vars.dl_ch_estimates[eNB_id][3][0]),
                              PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb/2,1,1);
@@ -4235,7 +4234,7 @@ PMI_FEEDBACK:
         printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
       }
 
-      if (((double)errs[0]/(round_trials[0]))<1e-2)
+      if (((double)errs[0]/(round_trials[0]))<(10.0/n_frames))
         break;
     }// SNR
 

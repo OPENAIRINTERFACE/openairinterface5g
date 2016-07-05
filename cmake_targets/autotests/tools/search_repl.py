@@ -54,9 +54,9 @@ file.close()
 if keyword == 'mme_ip_address':
    replacement_text = keyword + ' =  ( { ' + replacement_text + ' } ) ; '
    string = re.sub(r"mme_ip_address\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
-elif keyword == 'IPV4_LIST':
+elif keyword == 'IPV4_LIST' or keyword=='GUMMEI_LIST' or keyword == 'TAI_LIST':
    replacement_text = keyword + ' =  ( ' + replacement_text + '  ) ; '
-   string = re.sub(r"IPV4_LIST\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)
+   string = re.sub(r"%s\s*=\s*\(([^\$]+?)\)\s*;" % keyword, replacement_text, string, re.M)
 elif keyword == 'rrh_gw_config':
    replacement_text = keyword + ' =  ( { ' + replacement_text + ' } ) ; '
    string = re.sub(r"rrh_gw_config\s*=\s*\(([^\$]+?)\)\s*;", replacement_text, string, re.M)

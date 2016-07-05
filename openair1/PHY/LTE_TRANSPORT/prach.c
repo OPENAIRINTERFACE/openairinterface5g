@@ -608,7 +608,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
   uint8_t preamble_index     = phy_vars_ue->prach_resources[eNB_id]->ra_PreambleIndex;
   uint8_t tdd_mapindex       = phy_vars_ue->prach_resources[eNB_id]->ra_TDD_map_index;
   int16_t *prachF           = phy_vars_ue->lte_ue_prach_vars[eNB_id]->prachF;
-  static int16_t prach_tmp[45600*2] __attribute__((aligned(16)));
+  static int16_t prach_tmp[45600*2] __attribute__((aligned(32)));
   int16_t *prach            = prach_tmp;
   int16_t *prach2;
   int16_t amp               = phy_vars_ue->lte_ue_prach_vars[eNB_id]->amp;
@@ -898,7 +898,7 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
       memmove( prach, prach+512, Ncp<<2 );
       prach_len = 256+Ncp;
     } else {
-      idft1536(prachF,prach2);
+      idft1536(prachF,prach2,1);
       memmove( prach, prach+3072, Ncp<<2 );
       prach_len = 1536+Ncp;
 
@@ -1058,21 +1058,24 @@ int32_t generate_prach( PHY_VARS_UE *phy_vars_ue, uint8_t eNB_id, uint8_t subfra
 }
 //__m128i mmtmpX0,mmtmpX1,mmtmpX2,mmtmpX3;
 
-void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_energy_list, uint16_t *preamble_delay_list, uint16_t Nf, uint8_t tdd_mapindex)
+void rx_prach(PHY_VARS_eNB *phy_vars_eNB,
+	      uint8_t subframe,
+	      uint16_t *preamble_energy_list, 
+	      uint16_t *preamble_delay_list, 
+	      uint16_t Nf, 
+	      uint8_t tdd_mapindex)
 {
 
   int i;
-  lte_frame_type_t frame_type         = phy_vars_eNB->lte_frame_parms.frame_type;
+  lte_frame_type_t frame_type = phy_vars_eNB->lte_frame_parms.frame_type;
 
-  //uint8_t tdd_config         = phy_vars_eNB->lte_frame_parms.tdd_config;
-  uint16_t rootSequenceIndex = phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex;
-  uint8_t prach_ConfigIndex  = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
-  uint8_t Ncs_config         = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
-  uint8_t restricted_set     = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
-  //uint8_t n_ra_prboffset     = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
-  int16_t *prachF           = phy_vars_eNB->lte_eNB_prach_vars.prachF;
-  int16_t **rxsigF          = phy_vars_eNB->lte_eNB_prach_vars.rxsigF;
-  int16_t **prach_ifft      = phy_vars_eNB->lte_eNB_prach_vars.prach_ifft;
+  uint16_t rootSequenceIndex  = phy_vars_eNB->lte_frame_parms.prach_config_common.rootSequenceIndex;
+  uint8_t prach_ConfigIndex   = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
+  uint8_t Ncs_config          = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
+  uint8_t restricted_set      = phy_vars_eNB->lte_frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
+  int16_t *prachF             = phy_vars_eNB->lte_eNB_prach_vars.prachF;
+  int16_t **rxsigF            = phy_vars_eNB->lte_eNB_prach_vars.rxsigF;
+  int16_t **prach_ifft        = phy_vars_eNB->lte_eNB_prach_vars.prach_ifft;
   int16_t *prach[4];
   int16_t *prach2;
   uint8_t n_ra_prb;
@@ -1086,12 +1089,8 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
   uint16_t numshift=0;
   uint16_t *prach_root_sequence_map;
   uint8_t prach_fmt = get_prach_fmt(prach_ConfigIndex,frame_type);
-  //uint8_t Nsp=2;
-  //uint8_t f_ra,t1_ra;
   uint16_t N_ZC = (prach_fmt <4)?839:139;
   uint8_t not_found;
-  //  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_eNB->lte_frame_parms;
-  //  uint16_t subframe_offset;
   int k;
   uint16_t u;
   int16_t *Xu;
@@ -1107,7 +1106,6 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
 
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&phy_vars_eNB->lte_eNB_common_vars.rxdata[0][aa][subframe*phy_vars_eNB->lte_frame_parms.samples_per_tti-phy_vars_eNB->N_TA_offset];
-    //    remove_625_Hz(phy_vars_eNB,prach[aa]);
   }
 
   // First compute physical root sequence
@@ -1134,37 +1132,6 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
   n_ra_prb = get_prach_prb_offset(&(phy_vars_eNB->lte_frame_parms),tdd_mapindex,Nf);
   prach_root_sequence_map = (prach_fmt < 4) ? prach_root_sequence_map0_3 : prach_root_sequence_map4;
 
-  /*
-  // this code is now part of get_prach_prb_offset
-  if (frame_type == TDD) { // TDD
-    // adjust n_ra_prboffset for frequency multiplexing (p.36 36.211)
-
-    f_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[tdd_mapindex].f_ra;
-
-    if (prach_fmt < 4) {
-      if ((f_ra&1) == 0) {
-        n_ra_prb = n_ra_prboffset + 6*(f_ra>>1);
-      } else {
-        n_ra_prb = phy_vars_eNB->lte_frame_parms.N_RB_UL - 6 - n_ra_prboffset + 6*(f_ra>>1);
-      }
-
-    } else {
-      if ((tdd_config >2) && (tdd_config<6))
-        Nsp = 2;
-
-      t1_ra = tdd_preamble_map[prach_ConfigIndex][tdd_config].map[0].t1_ra;
-
-      if ((((Nf&1)*(2-Nsp)+t1_ra)&1) == 0) {
-        n_ra_prb = 6*f_ra;
-      } else {
-        n_ra_prb = phy_vars_eNB->lte_frame_parms.N_RB_UL - 6*(f_ra+1);
-      }
-
-    }
-  }
-  */
-
-  //    printf("NCS %d\n",NCS);
   // PDP is oversampled, e.g. 1024 sample instead of 839
   // Adapt the NCS (zero-correlation zones) with oversampling factor e.g. 1024/839
   NCS2 = (N_ZC==839) ? ((NCS<<10)/839) : ((NCS<<8)/139);
@@ -1216,9 +1183,6 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
     Ncp=(Ncp*3)>>2;
     break;
   }
-
-  //  nsymb = (frame_parms->Ncp==0) ? 14:12;
-  //  subframe_offset = (unsigned int)frame_parms->ofdm_symbol_size*subframe*nsymb;
 
   preamble_offset_old = 99;
 
@@ -1338,10 +1302,10 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,uint8_t subframe,uint16_t *preamble_ene
           if (prach_fmt == 4) {
             dft256(prach2,rxsigF[aa],1);
           } else {
-            dft1536(prach2,rxsigF[aa]);
+            dft1536(prach2,rxsigF[aa],1);
 
             if (prach_fmt>1)
-              dft1536(prach2+3072,rxsigF[aa]+3072);
+              dft1536(prach2+3072,rxsigF[aa]+3072,1);
           }
 
           break;

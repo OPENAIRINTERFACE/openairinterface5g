@@ -61,21 +61,18 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
 
       x2 = Ncp +
            (Nid_cell<<1) +
-           (((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
+	(((1+(Nid_cell<<1))*(1 + (((frame_parms->Ncp==0)?4:3)*l) + (7*(1+ns))))<<10); //cinit
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0
-      //      printf("cinit (ns %d, l %d) => %d\n",ns,l,x2);
       x1 = 1+ (1<<31);
       x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
       // skip first 50 double words (1600 bits)
-      //printf("n=0 : x1 %x, x2 %x\n",x1,x2);
       for (n=1; n<50; n++) {
         x1 = (x1>>1) ^ (x1>>4);
         x1 = x1 ^ (x1<<31) ^ (x1<<28);
         x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
         x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-        //  printf("x1 : %x, x2 : %x\n",x1,x2);
       }
 
       for (n=0; n<14; n++) {
@@ -84,7 +81,6 @@ void lte_gold(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_table[20][2][14]
         x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
         x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
         lte_gold_table[ns][l][n] = x1^x2;
-        //  printf("n=%d : c %x\n",n,x1^x2);
       }
 
     }

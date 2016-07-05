@@ -38,7 +38,6 @@
 * \warning
 */
 #include "PHY/defs.h"
-#include "MAC_INTERFACE/extern.h"
 
 //uint16_t pcfich_reg[4];
 //uint8_t pcfich_first_reg_idx = 0;
@@ -144,12 +143,12 @@ uint8_t pcfich_b[4][32]= {{0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1,0,1,1
 void generate_pcfich(uint8_t num_pdcch_symbols,
                      int16_t amp,
                      LTE_DL_FRAME_PARMS *frame_parms,
-                     mod_sym_t **txdataF,
+                     int32_t **txdataF,
                      uint8_t subframe)
 {
 
   uint8_t pcfich_bt[32],nsymb,pcfich_quad;
-  mod_sym_t pcfich_d[2][16];
+  int32_t pcfich_d[2][16];
   uint8_t i;
   uint32_t symbol_offset,m,re_offset,reg_offset;
   int16_t gain_lin_QPSK;

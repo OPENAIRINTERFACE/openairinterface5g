@@ -37,8 +37,6 @@
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
-#include "MAC_INTERFACE/defs.h"
-#include "MAC_INTERFACE/extern.h"
 #include <math.h>
 
 #ifdef OPENAIR2
@@ -52,8 +50,8 @@
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;
 int* sync_corr_ue2 = NULL;
-int sync_tmp[2048*4] __attribute__((aligned(16)));
-short syncF_tmp[2048*2] __attribute__((aligned(16)));
+int sync_tmp[2048*4] __attribute__((aligned(32)));
+short syncF_tmp[2048*2] __attribute__((aligned(32)));
 
 
 
@@ -172,12 +170,13 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp); /// complex output
+	     (short*)sync_tmp,
+	     1); /// complex output
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp, /// complex output
-	    1);
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   default:
     LOG_E(PHY,"Unsupported N_RB_DL %d\n",frame_parms->N_RB_DL);
@@ -219,8 +218,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp /// complex output
-	    );
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input
@@ -267,8 +266,8 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
     
   case 75:
     idft1536((short*)syncF_tmp,          /// complex input
-	    (short*)sync_tmp /// complex output
-	    );
+	     (short*)sync_tmp, /// complex output
+	     1);
     break;
   case 100:
     idft2048((short*)syncF_tmp,          /// complex input
@@ -346,6 +345,8 @@ static inline int abs32(int x)
 int debug_cnt=0;
 #endif
 
+#define SHIFT 17
+
 int lte_sync_time(int **rxdata, ///rx data in time domain
                   LTE_DL_FRAME_PARMS *frame_parms,
                   int *eNB_id)
@@ -414,8 +415,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
 
-        result  = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
-        result2 = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
+        result  = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, SHIFT);
+        result2 = dot_product((short*)primary_synch0_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, SHIFT);
 
         ((short*)sync_corr_ue0)[2*n] += ((short*) &result)[0];
         ((short*)sync_corr_ue0)[2*n+1] += ((short*) &result)[1];
@@ -428,8 +429,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
       }
 
       for (ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
-        result = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
-        result2 = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
+        result = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, SHIFT);
+        result2 = dot_product((short*)primary_synch1_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, SHIFT);
         ((short*)sync_corr_ue1)[2*n] += ((short*) &result)[0];
         ((short*)sync_corr_ue1)[2*n+1] += ((short*) &result)[1];
         ((short*)sync_corr_ue1)[2*(length+n)] += ((short*) &result2)[0];
@@ -443,8 +444,8 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
       for (ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
 
-        result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
-        result2 = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, 15);
+        result = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, SHIFT);
+        result2 = dot_product((short*)primary_synch2_time, (short*) &(rxdata[ar][n+length]), frame_parms->ofdm_symbol_size, SHIFT);
         ((short*)sync_corr_ue2)[2*n] += ((short*) &result)[0];
         ((short*)sync_corr_ue2)[2*n+1] += ((short*) &result)[1];
         ((short*)sync_corr_ue2)[2*(length+n)] += ((short*) &result2)[0];
@@ -558,7 +559,7 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
       //calculate dot product of primary_synch0_time and rxdata[ar][n] (ar=0..nb_ant_rx) and store the sum in temp[n];
       for (ar=0; ar<frame_parms->nb_antennas_rx; ar++)  {
 
-        result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, 15);
+        result = dot_product((short*)primary_synch_time, (short*) &(rxdata[ar][n]), frame_parms->ofdm_symbol_size, SHIFT);
         //((short*)sync_corr)[2*n]   += ((short*) &result)[0];
         //((short*)sync_corr)[2*n+1] += ((short*) &result)[1];
         sync_corr_eNB[n] += abs32(result);

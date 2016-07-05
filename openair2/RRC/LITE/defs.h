@@ -357,6 +357,8 @@ typedef struct eNB_RRC_UE_s {
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
 #endif
+  uint32_t                           ul_failure_timer;
+  uint32_t                           ue_release_timer;
 } eNB_RRC_UE_t;
 
 typedef uid_t ue_uid_t;

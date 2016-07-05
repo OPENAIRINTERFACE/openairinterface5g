@@ -38,7 +38,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#include "MAC_INTERFACE/vars.h"
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
 #endif
@@ -132,7 +131,6 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=0,SNR,snr0=-2.0,snr1=0.0;
   uint8_t snr1set=0;
   double snr_step=1,input_snr_step=1;
-  //mod_sym_t **txdataF;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim = 0.0;
@@ -456,7 +454,7 @@ int main(int argc, char **argv)
       //if (trials%100==0)
       //eNB2UE[0]->first_run = 1;
       eNB2UE->first_run = 1;
-      memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(mod_sym_t));
+      memset(&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][0],0,FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 
       generate_mch(PHY_vars_eNB,sched_subframe,input_buffer,0);
 

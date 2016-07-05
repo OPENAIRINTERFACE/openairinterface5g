@@ -12,10 +12,12 @@ Obj.#   Case#   Test#	Description
 01      01      11      Build lte-softmodem_noS1.EXMIMO.Rel10
 01      01      12      Build lte-softmodem_noS1.BLADERF.Rel10
 01      01      13      Build lte-softmodem_noS1.ETHERNET.Rel10
+01      01      14      Build lte-softmodem_noS1.LMSSDR.Rel10
 01      01      20      Build lte-softmodem.USRP.Rel10
 01      01      21      Build lte-softmodem.EXMIMO.Rel10
 01      01      22      Build lte-softmodem.BLADERF.Rel10
 01      01      23      Build lte-softmodem.ETHERNET.Rel10
+01      01      24      Build lte-softmodem.LMSSDR.Rel10
 
 01      01      30      Build (dlsim.Rel10 + ulsim.Rel10 + pucchsim.Rel10 + prachsim.Rel10 + pdcchsim.Rel10 + pbchsim.Rel10 + mbmssim.Rel10
                         secu_knas_encrypt_eia1.Rel10 secu_kenb.Rel10 aes128_ctr_encrypt.Rel10 aes128_ctr_decrypt.Rel10 secu_knas_encrypt_eea2.Rel10
@@ -24,7 +26,7 @@ Obj.#   Case#   Test#	Description
 01      01      40      Build RRH Gateway for USRP (Rel 10)
 01      01      41      Build RRH Gateway for EXMIMO  (Rel 10)
 01      01      42      Build RRH Gateway for BLADERF  (Rel 10)
-
+01      01      43      Build RRH Gateway for LMSSDR (Rel 10)
 
 
 01      02              Run OAISIM-NOS1 Rel10 (TDD + 5MHz/10MHz/20MHz + TM 1,2), and check the operation

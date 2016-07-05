@@ -355,7 +355,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
     fl_set_xyplot_ybounds(form->pucch_comp,-5000,5000);
     fl_set_xyplot_xbounds(form->pucch_comp,-5000,5000);
 
-    fl_set_xyplot_ybounds(form->pucch_comp1,20,80);
+    fl_set_xyplot_ybounds(form->pucch_comp1,0,80);
   }
 
 

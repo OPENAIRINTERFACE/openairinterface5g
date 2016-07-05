@@ -73,7 +73,7 @@ int ulsch_abstraction(double* sinr_dB,uint8_t TM, uint8_t mcs,uint16_t nb_rb, ui
 
 void calc_path_loss(node_desc_t* node_tx, node_desc_t* node_rx, channel_desc_t *ch_desc, Environment_System_Config env_desc, double **SF);
 
-void do_OFDM_mod(mod_sym_t **txdataF, int32_t **txdata, frame_t frame, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
+void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, frame_t frame, uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 
 void reset_opp_meas(void);
 void print_opp_meas(void);
