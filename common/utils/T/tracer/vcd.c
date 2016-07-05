@@ -40,9 +40,6 @@ no_connection:
   if (pthread_mutex_unlock(&d->lock)) abort();
 }
 
-#define DEFAULT_REMOTE_IP "127.0.0.1"
-#define DEFAULT_REMOTE_PORT 2021
-
 void usage(void)
 {
   printf(

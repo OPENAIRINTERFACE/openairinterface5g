@@ -312,13 +312,13 @@ def SSHSessionWrapper(machine, username, key_file, password, logdir_remote, logd
 # \parm programList list of programs that must be terminated before execution of any test case 
 # \param CleanUpAluLteBox program to terminate AlU Bell Labs LTE Box
 # \param ExmimoRfStop String to stop EXMIMO card (specified in test_case_list.xml)
-def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
+def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
   cmd = 'killall -9 -q -r ' + programList
   result = oai.send(cmd, True)
   print "Killing old programs..." + result
   programArray = programList.split()
   programListJoin = '|'.join(programArray)
-  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
+  cmd = " ( date ;echo \"Starting cleaning old programs.. \" ; dmesg|tail ; echo \"Current disk space.. \" ; df -h )>& " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   result=oai.send_recv(cmd)
   cmd = cleanupOldProgramsScript + ' ' + '\''+programListJoin+'\''
   #result = oai.send_recv(cmd)
@@ -326,8 +326,14 @@ def cleanOldPrograms(oai, programList, CleanUpAluLteBox, ExmimoRfStop):
   result = oai.send_expect_false(cmd, 'Match found', False)
   print "Looking for old programs..." + result
   res=oai.send_recv(CleanUpAluLteBox, True)
-  cmd  = "( " + ExmimoRfStop + " ) >> $HOME/.oai_test_setup_cleanup.log.`hostname` ; sync "
+  cmd= " echo \"Starting EXmimoRF Stop... \"  >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync ";
+  oai.send_recv(cmd)
+  cmd  = "( " + "cd " + logdirOAI5GRepo + " ; source oaienv ;  "  +  ExmimoRfStop + " ) >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync "
+  print "cleanoldprograms cmd = " + cmd
   res=oai.send_recv(cmd, False, timeout=600)
+  cmd= " echo \"Stopping EXmimoRF Stop... \" >> " + logdir + "/oai_test_setup_cleanup.log.`hostname` 2>&1  ; sync ";
+  oai.send_recv(cmd)
+
   #res = oai.send_recv(ExmimoRfStop, False)
   cmd = " ( date ;echo \"Finished cleaning old programs.. \" ; dmesg | tail)>> $HOME/.oai_test_setup_cleanup.log.`hostname` 2>&1 ; sync"
   res=oai.send_recv(cmd)
@@ -934,9 +940,9 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        t.join()
     #Now we get the log files from remote machines on the local machine
     if RRHMachine != '':
-       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC, oai_RRH] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)
+       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC, oai_RRH] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop, [logdir_eNB, logdir_UE, logdir_EPC, logdir_RRH], logdirOAI5GRepo)
     else:
-       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop)       
+       cleanOldProgramsAllMachines([oai_eNB, oai_UE, oai_EPC] , oldprogramList, CleanUpAluLteBox, ExmimoRfStop, [logdir_eNB, logdir_UE, logdir_EPC], logdirOAI5GRepo)       
     logfile_UE_stop_script_out = logdir_UE + '/UE_stop_script_out' + '_' + str(run) + '_.log'
     logfile_UE_stop_script = logdir_local_testcase + '/UE_stop_script' + '_' + str(run) + '_.log'
 
@@ -1065,7 +1071,7 @@ def search_test_case_group(testcasename, testcasegroup, test_case_exclude):
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
 class oaiCleanOldProgramThread (threading.Thread):
-    def __init__(self, threadID, threadname, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop):
+    def __init__(self, threadID, threadname, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, logdir, logdirOAI5GRepo):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.threadname = threadname
@@ -1073,9 +1079,11 @@ class oaiCleanOldProgramThread (threading.Thread):
         self.CleanUpOldProgs = CleanUpOldProgs
         self.CleanUpAluLteBox = CleanUpAluLteBox
         self.ExmimoRfStop = ExmimoRfStop
+        self.logdir = logdir
+        self.logdirOAI5GRepo = logdirOAI5GRepo
     def run(self):
         try:
-          cleanOldPrograms(self.oai, self.CleanUpOldProgs, self.CleanUpAluLteBox, self.ExmimoRfStop)
+          cleanOldPrograms(self.oai, self.CleanUpOldProgs, self.CleanUpAluLteBox, self.ExmimoRfStop, self.logdir, self.logdirOAI5GRepo)
         except Exception, e:
            error=''
            error = error + ' In class oaiCleanOldProgramThread, function: ' + sys._getframe().f_code.co_name + ': *** Caught exception: '  + str(e.__class__) + " : " + str( e)
@@ -1090,15 +1098,20 @@ class oaiCleanOldProgramThread (threading.Thread):
 # \param CleanUpOldProgs list of programs which must be terminated before running a test case (specified in test_case_list.xml)
 # \param CleanupAluLteBox string that contains commands to stop ALU Bell Labs LTEBox (specified in test_case_list.xml)
 # \param ExmimoRfStop command to stop EXMIMO Card
-def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop):
+def cleanOldProgramsAllMachines(oai_list, CleanOldProgs, CleanUpAluLteBox, ExmimoRfStop, logdir_list, logdirOAI5GRepo):
    threadId=0
    threadList=[]
+   index=0
+   if len(oai_list)!=len(logdir_list) :
+       logdir_list=[logdir[0]]*len(oai_list)
+
    for oai in oai_list:
       threadName="cleanup_thread_"+str(threadId)
-      thread=oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+      thread=oaiCleanOldProgramThread(threadId, threadName, oai, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, logdir_list[index],logdirOAI5GRepo)
       threadList.append(thread)
       thread.start()
       threadId = threadId + 1
+      index = index+1
    for t in threadList:
       t.join()
 
@@ -1360,7 +1373,7 @@ if localshell == 0:
            print "Sudo permissions..." + result
            
            print '\nCleaning Older running programs : ' + CleanUpOldProgs
-           cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+           cleanOldPrograms(oai_list[index], CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME', '/tmp')
 
            #result = oai_list[index].send('mount ' + NFSResultsDir, True)
            #print "Mounting NFS Share " + NFSResultsDir + "..." + result
@@ -1489,7 +1502,7 @@ if (out != '') :
   print "Exiting now..."
   sys.exit(1)
 
-cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop)
+cleanOldProgramsAllMachines(oai_list, CleanUpOldProgs, CleanUpAluLteBox, ExmimoRfStop, '$HOME' , logdirOAI5GRepo)
 if cleanUpRemoteMachines == True:
   sys.exit(0)
 
