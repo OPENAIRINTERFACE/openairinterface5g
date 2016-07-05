@@ -40,7 +40,7 @@
 
 #include "PHY/defs.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "PHY/TOOLS/ALAW/alaw_lut.h"
+#include "PHY/TOOLS/alaw_lut.h"
 
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
