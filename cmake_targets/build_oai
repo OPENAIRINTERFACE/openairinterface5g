@@ -296,9 +296,6 @@ function main() {
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	  echo_fatal "Define a local radio head (e.g. -w EXMIMO) or a transport protocol (e.g. -t ETHERNET) to communicate with a remote radio head!"
       fi
-      if [ "$HW" != "None" -a  "$TP" != "None" ] ; then
-	  echo_fatal "Currently eNB  can not support simultaniously local and remote radio heads!!"
-      fi      
       if [ "$HW" = "None" ] ; then 
 	  echo_info "No radio head has been selected (HW set to $HW)"	
       fi
