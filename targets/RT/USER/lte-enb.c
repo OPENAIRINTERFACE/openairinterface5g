@@ -69,7 +69,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
-#include "PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
+#include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #include "PHY/extern.h"
 #include "SCHED/extern.h"
@@ -549,7 +549,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** trx_write_func to IF device **** ///       
-      send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, &seqno);
+      send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, &seqno, IF5_RRH_GW);
 
     } else { 
       /// **** send_IF4 of txdataF to RRU **** ///       

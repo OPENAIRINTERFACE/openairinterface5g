@@ -27,7 +27,7 @@
 
  *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/if5_mobipass_tools.h
+/*! \file PHY/LTE_TRANSPORT/if5_tools.h
 * \brief 
 * \author S. Sandeep Kumar, Raymond Knopp
 * \date 2016
@@ -41,6 +41,7 @@
 #include <stdint.h>
 #include "PHY/defs.h"
 
+#define IF5_RRH_GW 0x0022
 #define IF5_MOBIPASS 0xbffe
 
 struct IF5_mobipass_header {  
@@ -62,4 +63,6 @@ struct IF5_mobipass_header {
 typedef struct IF5_mobipass_header IF5_mobipass_header_t;
 #define sizeof_IF5_mobipass_header_t 14
 
-void send_IF5(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint8_t*);
+void send_IF5(PHY_VARS_eNB*, eNB_rxtx_proc_t*, uint8_t*, uint16_t);
+
+void recv_IF5(PHY_VARS_eNB*, eNB_proc_t*, uint16_t);
