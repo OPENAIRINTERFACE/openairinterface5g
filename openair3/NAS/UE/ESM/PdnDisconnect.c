@@ -73,7 +73,7 @@ Description Defines the PDN disconnect ESM procedure executed by the
 /*
  * PDN disconnection handlers
  */
-static int _pdn_disconnect_get_default_ebi(int pti);
+static int _pdn_disconnect_get_default_ebi(esm_data_t *esm_data, int pti);
 
 /*
  * Timer handlers
@@ -114,7 +114,7 @@ static void *_pdn_disconnect_t3492_handler(void *);
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect(int cid, unsigned int *pti, unsigned int *ebi)
+int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, unsigned int *ebi)
 {
   LOG_FUNC_IN;
 
@@ -122,21 +122,21 @@ int esm_proc_pdn_disconnect(int cid, unsigned int *pti, unsigned int *ebi)
   int pid = cid - 1;
 
   if (pid < ESM_DATA_PDN_MAX) {
-    if (pid != _esm_data.pdn[pid].pid) {
+    if (pid != esm_data->pdn[pid].pid) {
       LOG_TRACE(WARNING, "ESM-PROC  - PDN connection identifier %d is "
                 "not valid", pid);
-    } else if (_esm_data.pdn[pid].data == NULL) {
+    } else if (esm_data->pdn[pid].data == NULL) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection %d has not been "
                 "allocated", pid);
-    } else if (!_esm_data.pdn[pid].is_active) {
+    } else if (!esm_data->pdn[pid].is_active) {
       LOG_TRACE(WARNING, "ESM-PROC  - PDN connection is not active");
     } else {
       /* Get the procedure transaction identity assigned to the PDN
        * connection to be released */
-      *pti = _esm_data.pdn[pid].data->pti;
+      *pti = esm_data->pdn[pid].data->pti;
       /* Get the EPS bearer identity of the default bearer associated
        * with the PDN to disconnect from */
-      *ebi = _esm_data.pdn[pid].data->bearer[0]->ebi;
+      *ebi = esm_data->pdn[pid].data->bearer[0]->ebi;
       rc = RETURNok;
     }
   }
@@ -284,7 +284,7 @@ int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause)
+int esm_proc_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
 
@@ -313,7 +313,7 @@ int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause)
     } else if (*esm_cause != ESM_CAUSE_LAST_PDN_DISCONNECTION_NOT_ALLOWED) {
       /* Get the identity of the default EPS bearer context allocated to
        * the PDN connection entry assigned to this procedure transaction */
-      int ebi = _pdn_disconnect_get_default_ebi(pti);
+      int ebi = _pdn_disconnect_get_default_ebi(esm_data, pti);
 
       if (ebi < 0) {
         LOG_TRACE(ERROR, "ESM-PROC  - No default EPS bearer found");
@@ -382,7 +382,8 @@ int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause)
 static void *_pdn_disconnect_t3492_handler(void *args)
 {
   LOG_FUNC_IN;
-
+  // FIXME check callback call
+  esm_data_t *esm_data = args;;
   int rc;
 
   /* Get retransmission timer parameters data */
@@ -431,7 +432,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
         /* Get the identity of the default EPS bearer context
          * allocated to the PDN connection entry assigned to
          * this procedure transaction */
-        int ebi = _pdn_disconnect_get_default_ebi(data->pti);
+        int ebi = _pdn_disconnect_get_default_ebi(esm_data, data->pti);
 
         if (ebi < 0) {
           LOG_TRACE(ERROR, "ESM-PROC  - No default EPS bearer found");
@@ -479,22 +480,22 @@ static void *_pdn_disconnect_t3492_handler(void *args)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _pdn_disconnect_get_default_ebi(int pti)
+static int _pdn_disconnect_get_default_ebi(esm_data_t *esm_data, int pti)
 {
   int ebi = -1;
   int i;
 
   for (i = 0; i < ESM_DATA_PDN_MAX; i++) {
-    if ( (_esm_data.pdn[i].pid != -1) && _esm_data.pdn[i].data ) {
-      if (_esm_data.pdn[i].data->pti != pti) {
+    if ( (esm_data->pdn[i].pid != -1) && esm_data->pdn[i].data ) {
+      if (esm_data->pdn[i].data->pti != pti) {
         continue;
       }
 
       /* PDN entry found */
-      if (_esm_data.pdn[i].data->bearer[0] != NULL) {
+      if (esm_data->pdn[i].data->bearer[0] != NULL) {
         /* Get the EPS bearer identity of the default EPS bearer
          * context associated to the PDN connection */
-        ebi = _esm_data.pdn[i].data->bearer[0]->ebi;
+        ebi = esm_data->pdn[i].data->bearer[0]->ebi;
       }
 
       break;

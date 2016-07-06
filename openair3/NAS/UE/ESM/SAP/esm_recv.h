@@ -88,23 +88,23 @@ int esm_recv_status(int pti, int ebi, const esm_status_msg *msg);
  * Transaction related messages
  * ----------------------------
  */
-int esm_recv_pdn_connectivity_reject(int pti, int ebi,
+int esm_recv_pdn_connectivity_reject(esm_data_t *esm_data, int pti, int ebi,
                                      const pdn_connectivity_reject_msg *msg);
 
-int esm_recv_pdn_disconnect_reject(int pti, int ebi,
+int esm_recv_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int ebi,
                                    const pdn_disconnect_reject_msg *msg);
 
 /*
  * Messages related to EPS bearer contexts
  * ---------------------------------------
  */
-int esm_recv_activate_default_eps_bearer_context_request(int pti, int ebi,
+int esm_recv_activate_default_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
     const activate_default_eps_bearer_context_request_msg *msg);
 
-int esm_recv_activate_dedicated_eps_bearer_context_request(int pti, int ebi,
+int esm_recv_activate_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
     const activate_dedicated_eps_bearer_context_request_msg *msg);
 
-int esm_recv_deactivate_eps_bearer_context_request(int pti, int ebi,
+int esm_recv_deactivate_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
     const deactivate_eps_bearer_context_request_msg *msg);
 
 

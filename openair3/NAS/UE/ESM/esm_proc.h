@@ -121,12 +121,12 @@ int esm_proc_status(int is_standalone, int pti, OctetString *msg,
  *          PDN connectivity procedure
  * --------------------------------------------------------------------------
  */
-int esm_proc_pdn_connectivity(int cid, int to_define,
+int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int to_define,
                               esm_proc_pdn_type_t pdn_type, const OctetString *apn, int is_emergency,
                               unsigned int *pti);
 int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
                                       OctetString *msg, int sent_by_ue);
-int esm_proc_pdn_connectivity_accept(int pti, esm_proc_pdn_type_t pdn_type,
+int esm_proc_pdn_connectivity_accept(esm_data_t *esm_data, int pti, esm_proc_pdn_type_t pdn_type,
                                      const OctetString *pdn_address, const OctetString *apn, int *esm_cause);
 int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause);
 int esm_proc_pdn_connectivity_complete(void);
@@ -138,12 +138,12 @@ int esm_proc_pdn_connectivity_failure(int is_pending);
  *              PDN disconnect procedure
  * --------------------------------------------------------------------------
  */
-int esm_proc_pdn_disconnect(int cid, unsigned int *pti, unsigned int *ebi);
+int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, unsigned int *ebi);
 int esm_proc_pdn_disconnect_request(int is_standalone, int pti,
                                     OctetString *msg, int sent_by_ue);
 
 int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause);
-int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause);
+int esm_proc_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int *esm_cause);
 
 /*
  * --------------------------------------------------------------------------
@@ -151,10 +151,10 @@ int esm_proc_pdn_disconnect_reject(int pti, int *esm_cause);
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_default_eps_bearer_context_request(int pid, int ebi,
+int esm_proc_default_eps_bearer_context_request(esm_data_t *esm_data, int pid, int ebi,
     const esm_proc_qos_t *esm_qos, int *esm_cause);
 int esm_proc_default_eps_bearer_context_complete(void);
-int esm_proc_default_eps_bearer_context_failure(void);
+int esm_proc_default_eps_bearer_context_failure(esm_data_t *esm_data);
 
 int esm_proc_default_eps_bearer_context_accept(int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);
@@ -167,7 +167,7 @@ int esm_proc_default_eps_bearer_context_reject(int is_standalone, int ebi,
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
+int esm_proc_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int ebi, int default_ebi,
     const esm_proc_qos_t *qos, const esm_proc_tft_t *tft, int *esm_cause);
 
 int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
@@ -181,9 +181,9 @@ int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
  * --------------------------------------------------------------------------
  */
 
-int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi, int *pid,
+int esm_proc_eps_bearer_context_deactivate(esm_data_t *esm_data, int is_local, int ebi, int *pid,
     int *bid);
-int esm_proc_eps_bearer_context_deactivate_request(int ebi, int *esm_cause);
+int esm_proc_eps_bearer_context_deactivate_request(esm_data_t *esm_data, int ebi, int *esm_cause);
 
 int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
     OctetString *msg, int ue_triggered);

@@ -194,7 +194,7 @@ typedef esm_data_context_t esm_data_t;
  * ESM internal data (used within ESM only)
  * ----------------------------------------
  */
-esm_data_t _esm_data;
+extern esm_data_t *_esm_data;
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/

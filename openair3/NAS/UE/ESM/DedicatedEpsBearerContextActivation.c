@@ -104,7 +104,7 @@ Description Defines the dedicated EPS bearer context activation ESM
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
+int esm_proc_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int ebi, int default_ebi,
     const esm_proc_qos_t *qos,
     const esm_proc_tft_t *tft,
     int *esm_cause)
@@ -117,7 +117,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
             "requested by the network (ebi=%d)", ebi);
 
   /* Get the PDN connection the dedicated EPS bearer is linked to */
-  int pid = esm_ebr_context_get_pid(default_ebi);
+  int pid = esm_ebr_context_get_pid(esm_data, default_ebi);
 
   if (pid < 0) {
     /* 3GPP TS 24.301, section 6.4.2.5, abnormal case c
@@ -141,7 +141,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested dedicated EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(esm_data, TRUE, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -155,7 +155,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /* Check syntactical errors in packet filters */
-    rc = esm_ebr_context_check_tft(pid, ebi, tft,
+    rc = esm_ebr_context_check_tft(esm_data, pid, ebi, tft,
                                    ESM_EBR_CONTEXT_TFT_CREATE);
 
     if (rc != RETURNok) {
@@ -165,7 +165,7 @@ int esm_proc_dedicated_eps_bearer_context_request(int ebi, int default_ebi,
       *esm_cause = ESM_CAUSE_SYNTACTICAL_ERROR_IN_PACKET_FILTER;
     } else {
       /* Create new dedicated EPS bearer context */
-      default_ebi = esm_ebr_context_create(pid, ebi, FALSE, qos, tft);
+      default_ebi = esm_ebr_context_create(esm_data, pid, ebi, FALSE, qos, tft);
 
       if (default_ebi != ESM_EBI_UNASSIGNED) {
         /* Dedicated EPS bearer contextx successfully created */

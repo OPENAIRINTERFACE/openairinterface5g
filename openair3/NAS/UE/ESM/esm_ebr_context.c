@@ -100,7 +100,7 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_context_create(
-
+  esm_data_t *esm_data,
   int pid, int ebi, int is_default,
   const network_qos_t *qos, const network_tft_t *tft)
 {
@@ -111,7 +111,7 @@ int esm_ebr_context_create(
 
   LOG_FUNC_IN;
 
-  esm_ctx = &_esm_data;
+  esm_ctx = esm_data;
 
   bid = ESM_DATA_EPS_BEARER_MAX;
 
@@ -331,7 +331,7 @@ int esm_ebr_context_create(
  **                                                                        **
  ***************************************************************************/
 int esm_ebr_context_release(
-
+  esm_data_t *esm_data,
   int ebi, int *pid, int *bid)
 {
   int found = FALSE;
@@ -342,7 +342,7 @@ int esm_ebr_context_release(
 
   LOG_FUNC_IN;
 
-  esm_ctx = &_esm_data;
+  esm_ctx = esm_data;
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /*
@@ -533,22 +533,22 @@ int esm_ebr_context_release(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_get_pid(int ebi)
+int esm_ebr_context_get_pid(esm_data_t *esm_data, int ebi)
 {
   LOG_FUNC_IN;
 
   int pid;
 
   for (pid = 0; pid < ESM_DATA_PDN_MAX; pid++) {
-    if (_esm_data.pdn[pid].data == NULL) {
+    if (esm_data->pdn[pid].data == NULL) {
       continue;
     }
 
-    if (_esm_data.pdn[pid].data->bearer[0] == NULL) {
+    if (esm_data->pdn[pid].data->bearer[0] == NULL) {
       continue;
     }
 
-    if (_esm_data.pdn[pid].data->bearer[0]->ebi == ebi) {
+    if (esm_data->pdn[pid].data->bearer[0]->ebi == ebi) {
       break;
     }
   }
@@ -583,7 +583,7 @@ int esm_ebr_context_get_pid(int ebi)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_check_tft(int pid, int ebi,
+int esm_ebr_context_check_tft(esm_data_t *esm_data, int pid, int ebi,
                               const network_tft_t *tft,
                               esm_ebr_context_tft_t operation)
 {
@@ -593,14 +593,14 @@ int esm_ebr_context_check_tft(int pid, int ebi,
   int i;
 
   if (pid < ESM_DATA_PDN_MAX) {
-    if (pid != _esm_data.pdn[pid].pid) {
+    if (pid != esm_data->pdn[pid].pid) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection identifier %d "
                 "is not valid", pid);
-    } else if (_esm_data.pdn[pid].data == NULL) {
+    } else if (esm_data->pdn[pid].data == NULL) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection %d has not been "
                 "allocated", pid);
     } else if (operation == ESM_EBR_CONTEXT_TFT_CREATE) {
-      esm_pdn_t *pdn = _esm_data.pdn[pid].data;
+      esm_pdn_t *pdn = esm_data->pdn[pid].data;
 
       /* For each EPS bearer context associated to the PDN connection */
       for (i = 0; i < pdn->n_bearers; i++) {

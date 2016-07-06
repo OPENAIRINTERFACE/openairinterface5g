@@ -104,7 +104,7 @@ static struct {
  **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_default_eps_bearer_context_request(int pid, int ebi,
+int esm_proc_default_eps_bearer_context_request(esm_data_t *esm_data, int pid, int ebi,
     const esm_proc_qos_t *qos,
     int *esm_cause)
 {
@@ -126,7 +126,7 @@ int esm_proc_default_eps_bearer_context_request(int pid, int ebi,
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested default EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(esm_data, TRUE, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -140,7 +140,7 @@ int esm_proc_default_eps_bearer_context_request(int pid, int ebi,
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /* Create new default EPS bearer context */
-    ebi = esm_ebr_context_create(pid, ebi, TRUE, qos, NULL);
+    ebi = esm_ebr_context_create(esm_data, pid, ebi, TRUE, qos, NULL);
 
     if (ebi != ESM_EBI_UNASSIGNED) {
       /* Default EPS bearer contextx successfully created */
@@ -346,7 +346,7 @@ int esm_proc_default_eps_bearer_context_complete(void)
  **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_default_eps_bearer_context_failure(void)
+int esm_proc_default_eps_bearer_context_failure(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
@@ -357,7 +357,7 @@ int esm_proc_default_eps_bearer_context_failure(void)
             "ESM-PROC  - Default EPS bearer context activation failure");
 
   /* Release the default EPS bearer context and enter state INACTIVE */
-  int rc = esm_proc_eps_bearer_context_deactivate(TRUE, ebi, &pid, &bid);
+  int rc = esm_proc_eps_bearer_context_deactivate(esm_data, TRUE, ebi, &pid, &bid);
 
   if (rc != RETURNerror) {
     /* Reset default EPS bearer context internal data */

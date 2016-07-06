@@ -74,7 +74,7 @@ Description Defines the EPS bearer context deactivation ESM procedure
  * in the UE
  * --------------------------------------------------------------------------
  */
-static int _eps_bearer_release(int ebi, int *pid, int *bid);
+static int _eps_bearer_release(esm_data_t *esm_data, int ebi, int *pid, int *bid);
 
 
 /****************************************************************************/
@@ -112,7 +112,7 @@ static int _eps_bearer_release(int ebi, int *pid, int *bid);
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi,
+int esm_proc_eps_bearer_context_deactivate(esm_data_t *esm_data, int is_local, int ebi,
     int *pid, int *bid)
 {
   LOG_FUNC_IN;
@@ -123,14 +123,14 @@ int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi,
   if (is_local) {
     if (ebi != ESM_SAP_ALL_EBI) {
       /* Locally release the EPS bearer context */
-      rc = _eps_bearer_release(ebi, pid, bid);
+      rc = _eps_bearer_release(esm_data, ebi, pid, bid);
     } else {
       /* Locally release all the EPS bearer contexts */
       *bid = 0;
 
       for (*pid = 0; *pid < ESM_DATA_PDN_MAX; (*pid)++) {
-        if (_esm_data.pdn[*pid].data) {
-          rc = _eps_bearer_release(ESM_EBI_UNASSIGNED, pid, bid);
+        if (esm_data->pdn[*pid].data) {
+          rc = _eps_bearer_release(esm_data, ESM_EBI_UNASSIGNED, pid, bid);
 
           if (rc != RETURNok) {
             break;
@@ -146,17 +146,17 @@ int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi,
             ebi);
 
   if (*pid < ESM_DATA_PDN_MAX) {
-    if (_esm_data.pdn[*pid].pid != *pid) {
+    if (esm_data->pdn[*pid].pid != *pid) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection identifier %d "
                 "is not valid", *pid);
-    } else if (_esm_data.pdn[*pid].data == NULL) {
+    } else if (esm_data->pdn[*pid].data == NULL) {
       LOG_TRACE(ERROR, "ESM-PROC  - PDN connection %d has not been "
                 "allocated", *pid);
-    } else if (!_esm_data.pdn[*pid].is_active) {
+    } else if (!esm_data->pdn[*pid].is_active) {
       LOG_TRACE(WARNING, "ESM-PROC  - PDN connection %d is not active",
                 *pid);
     } else {
-      esm_pdn_t *pdn = _esm_data.pdn[*pid].data;
+      esm_pdn_t *pdn = esm_data->pdn[*pid].data;
 
       for (i = 0; i < pdn->n_bearers; i++) {
         if (pdn->bearer[i]->ebi != ebi) {
@@ -189,7 +189,7 @@ int esm_proc_eps_bearer_context_deactivate(int is_local, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate_request(int ebi, int *esm_cause)
+int esm_proc_eps_bearer_context_deactivate_request(esm_data_t *esm_data, int ebi, int *esm_cause)
 {
   LOG_FUNC_IN;
 
@@ -200,7 +200,7 @@ int esm_proc_eps_bearer_context_deactivate_request(int ebi, int *esm_cause)
             "requested by the network (ebi=%d)", ebi);
 
   /* Release the EPS bearer context entry */
-  if (esm_ebr_context_release(ebi, &pid, &bid) == ESM_EBI_UNASSIGNED) {
+  if (esm_ebr_context_release(esm_data, ebi, &pid, &bid) == ESM_EBI_UNASSIGNED) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");
     *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     LOG_FUNC_RETURN (RETURNerror);
@@ -222,7 +222,7 @@ int esm_proc_eps_bearer_context_deactivate_request(int ebi, int *esm_cause)
                 "connection reactivation");
 
       /* Get PDN context parameters */
-      rc = esm_main_get_pdn(pid + 1, &esm_sap.data.pdn_connect.pdn_type,
+      rc = esm_main_get_pdn(esm_data, pid + 1, &esm_sap.data.pdn_connect.pdn_type,
                             &esm_sap.data.pdn_connect.apn,
                             &esm_sap.data.pdn_connect.is_emergency,
                             &active);
@@ -352,14 +352,14 @@ int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _eps_bearer_release(int ebi, int *pid, int *bid)
+static int _eps_bearer_release(esm_data_t *esm_data, int ebi, int *pid, int *bid)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
   /* Release the EPS bearer context entry */
-  ebi = esm_ebr_context_release(ebi, pid, bid);
+  ebi = esm_ebr_context_release(esm_data, ebi, pid, bid);
 
   if (ebi == ESM_EBI_UNASSIGNED) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");
