@@ -506,7 +506,7 @@ static void* eNB_thread_rxtx( void* param ) {
       } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF5) {
         /// **** recv_IF5 of txdata from BBU **** ///       
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
-        //recv_IF5();
+        recv_IF5(PHY_vars_eNB_g[0][proc->CC_id], &proc->timestamp_tx, proc->subframe_tx, IF5_RRH_GW_DL);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
 
       }
@@ -562,7 +562,7 @@ static void* eNB_thread_rxtx( void* param ) {
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** send_IF5 of txdata to RRH **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
-      send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, &seqno, IF5_RRH_GW);
+      send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
 
     } else { 

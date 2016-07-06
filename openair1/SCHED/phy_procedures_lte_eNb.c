@@ -45,6 +45,7 @@
 #include "SCHED/extern.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
+#include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -2521,6 +2522,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
   int prach_rx;
 
+  uint8_t seqno=0;
+
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
@@ -2607,7 +2610,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     if (eNB->node_function == NGFI_RRU_IF5) {
       /// **** send_IF5 of rxdata to BBU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
-      //send_IF5(eNB, proc, );
+      send_IF5(eNB, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
       
     }
