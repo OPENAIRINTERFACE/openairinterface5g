@@ -385,9 +385,11 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  --RCC run using NGFI RCC node function\n");
-  printf("  --RRU run using NGFI RRU node function\n");
+  printf("  --RCC run using NGFI RCC node function IF4 split\n");
+  printf("  --RRU run using NGFI RRU node function  IF4 split\n");
   printf("  --eNB run using 3GPP eNB node function\n");   
+  printf("  --BBU run using 3GPP eNB node function with IF5 split\n");   
+  printf("  --RRH run using RRH node function with IF5 split\n");   
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -687,7 +689,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_RCC,
     LONG_OPTION_RRU,
     LONG_OPTION_ENB,
-    LONG_OPTION_ENB_BBU
+    LONG_OPTION_ENB_BBU,
+    LONG_OPTION_RRH
 #if T_TRACER
     ,
     LONG_OPTION_T_PORT,
@@ -715,6 +718,7 @@ static void get_options (int argc, char **argv)
     {"RRU", no_argument, NULL, LONG_OPTION_RRU},
     {"eNB", no_argument, NULL, LONG_OPTION_ENB},
     {"BBU", no_argument, NULL, LONG_OPTION_ENB_BBU},
+    {"RRH", no_argument, NULL, LONG_OPTION_RRH},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -820,6 +824,10 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_ENB_BBU:
       node_function = eNodeB_3GPP_BBU;
+      break;
+
+    case LONG_OPTION_RRH:
+      node_function = NGFI_RRU_IF5;
       break;
       
 #if T_TRACER
@@ -1649,7 +1657,7 @@ int main( int argc, char **argv )
   openair0_cfg[0].log_level = glog_level;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (node_function == NGFI_RRU_IF4) {
+    if (node_function == NGFI_RRU_IF4 || node_function == NGFI_RRU_IF5) {
       PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
       PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
     } else {
@@ -1670,39 +1678,12 @@ int main( int argc, char **argv )
   openair0.type = NONE_DEV;
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
-  
-  // Legacy BBU - RRH init  
-  //int returns=-1;
-  ///* BBU can have either a local or a remote radio head */  
-  //if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
-    //if (mode!=loop_through_memory) {
-      //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
-      //printf("openair0_device_init returns %d\n",returns);
-      //if (returns<0) {
-	//printf("Exiting, cannot initialize device\n");
-	//exit(-1);
-      //}
-    //}
-    //else if (mode==loop_through_memory) {    
-    //}
-  //}  else { //remote radio head active - load library of transport protocol and initiate it 
-    //if (mode!=loop_through_memory) {
-      //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
-      //printf("openair0_transport_init returns %d\n",returns);
-      //if (returns<0) { 
-	//printf("Exiting, cannot initialize transport protocol\n");
-	//exit(-1);
-      //}
-    //}
-    //else if (mode==loop_through_memory) {    
-    //}
-  //}   
-    
+      
   int returns=-1;
     
   // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
-  if (node_function == NGFI_RRU_IF4 || node_function == eNodeB_3GPP) { 
+  if (node_function == NGFI_RRU_IF5 || node_function == NGFI_RRU_IF4 || node_function == eNodeB_3GPP) { 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]);

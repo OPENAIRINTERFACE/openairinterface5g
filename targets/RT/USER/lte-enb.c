@@ -436,7 +436,9 @@ static void* eNB_thread_rxtx( void* param ) {
     if (oai_exit) break;
 
     // UE-specific RX processing for subframe n
-    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RRU_IF4) {
+    if ((PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RCC_IF4)) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
       // this is the ue-specific processing for the subframe and can be multi-threaded later
       phy_procedures_eNB_uespec_RX(PHY_vars_eNB_g[0][proc->CC_id], proc, 0, no_relay );
@@ -474,7 +476,9 @@ static void* eNB_thread_rxtx( void* param ) {
       
       if (oai_exit) break;
       
-      if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RRU_IF4) { 
+      if ((PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP) ||
+          (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) ||
+          (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RCC_IF4)) { 
         phy_procedures_eNB_TX(PHY_vars_eNB_g[0][proc->CC_id], proc, 0, no_relay, NULL );
 
         /* we're done, let the next one proceed */
@@ -491,8 +495,7 @@ static void* eNB_thread_rxtx( void* param ) {
           exit_fun("nothing to add");
           break;
 	}
-      } else {
-
+      } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) {
         /// **** recv_IF4 of txdataF from RCC **** ///             
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );  
         do { 
@@ -500,11 +503,19 @@ static void* eNB_thread_rxtx( void* param ) {
         } while (symbol_number < PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti-1); 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
+      } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF5) {
+        /// **** recv_IF5 of txdata from BBU **** ///       
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
+        //recv_IF5();
+        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
+
       }
     }
 
     // eNodeB_3GPP, _BBU and RRU create txdata
-    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function != NGFI_RCC_IF4) {
+    if ((PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4)) {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 1 );
       do_OFDM_mod_rt( proc->subframe_tx, PHY_vars_eNB_g[0][proc->CC_id] );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_SFGEN , 0 );
@@ -526,8 +537,9 @@ static void* eNB_thread_rxtx( void* param ) {
           
 
     // eNodeB_3GPP, RRU write to RF device    
-    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP ||
-        PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) {
+    if ((PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) ||
+        (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF5)) {
       // Transmit TX buffer based on timestamp from RX  
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
       // prepare tx buffer pointers
@@ -548,14 +560,17 @@ static void* eNB_thread_rxtx( void* param ) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
 
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
-      /// **** trx_write_func to IF device **** ///       
+      /// **** send_IF5 of txdata to RRH **** ///       
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
       send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc, &seqno, IF5_RRH_GW);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
 
     } else { 
       /// **** send_IF4 of txdataF to RRU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
       send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT, 0);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );
+
     }
 
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
@@ -759,7 +774,9 @@ static void* eNB_thread_rx_common( void* param ) {
   }
   
   // Start RF device for this CC
-  if (eNB->node_function == eNodeB_3GPP || eNB->node_function == NGFI_RRU_IF4) {
+  if ((eNB->node_function == eNodeB_3GPP) || 
+      (eNB->node_function == NGFI_RRU_IF4) || 
+      (eNB->node_function == NGFI_RRU_IF5)) {
     if (eNB->rfdevice.trx_start_func(&eNB->rfdevice) != 0 ) 
       LOG_E(HW,"Could not start the RF device\n");
   }
