@@ -21,6 +21,7 @@ struct framelog {
                          */
   int skip_current;     /* internal data for the skip mechanism */
   int skip_on;          /* internal data for the skip mechanism */
+  int update_only_at_sf9;
 };
 
 static void _event(void *p, event e)
@@ -76,7 +77,7 @@ static void _event(void *p, event e)
     l->buffer[subframe * nsamples + i] = 10*log10(1.0+(float)(I*I+Q*Q));
   }
 
-  if (subframe == 9)
+  if (l->update_only_at_sf9 == 0 || subframe == 9)
     for (i = 0; i < l->common.vsize; i++)
       l->common.v[i]->append(l->common.v[i], l->x, l->buffer, l->blength);
 }
@@ -90,6 +91,8 @@ logger *new_framelog(event_handler *h, void *database,
   int i;
 
   ret = calloc(1, sizeof(struct framelog)); if (ret == NULL) abort();
+
+  ret->update_only_at_sf9 = 1;
 
   ret->common.event_name = strdup(event_name);
   if (ret->common.event_name == NULL) abort();
@@ -143,4 +146,10 @@ void framelog_set_skip(logger *_this, int skip_delay)
   l->skip_delay = skip_delay;
   l->skip_current = 0;
   l->skip_on = 0;
+}
+
+void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9)
+{
+  struct framelog *l = _this;
+  l->update_only_at_sf9 = update_only_at_sf9;
 }

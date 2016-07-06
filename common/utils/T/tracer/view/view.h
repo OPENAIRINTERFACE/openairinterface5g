@@ -11,10 +11,12 @@ typedef struct view {
   void (*set)(struct view *this, char *name, ...);
 } view;
 
+enum xy_mode { XY_LOOP_MODE, XY_FORCED_MODE };
+
 view *new_view_stdout(void);
 view *new_view_textlist(int maxsize, float refresh_rate, gui *g, widget *w);
 view *new_view_xy(int length, float refresh_rate, gui *g, widget *w,
-    int color);
+    int color, enum xy_mode mode);
 view *new_view_tti(float refresh_rate, gui *g, widget *w,
     int color);
 view *new_view_time(int number_of_seconds, float refresh_rate,

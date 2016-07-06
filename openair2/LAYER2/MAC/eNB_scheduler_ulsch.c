@@ -130,6 +130,8 @@ void rx_sdu(
 
   T(T_ENB_MAC_UE_UL_PDU, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
     T_INT(harq_pidP), T_INT(sdu_lenP), T_INT(num_ce), T_INT(num_sdu));
+  T(T_ENB_MAC_UE_UL_PDU_WITH_DATA, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
+    T_INT(harq_pidP), T_INT(sdu_lenP), T_INT(num_ce), T_INT(num_sdu), T_BUFFER(sduP, sdu_lenP));
 
   eNB->eNB_stats[CC_idP].ulsch_bytes_rx=sdu_lenP;
   eNB->eNB_stats[CC_idP].total_ulsch_bytes_rx+=sdu_lenP;
@@ -313,6 +315,8 @@ void rx_sdu(
 
     T(T_ENB_MAC_UE_UL_SDU, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
       T_INT(rx_lcids[i]), T_INT(rx_lengths[i]));
+    T(T_ENB_MAC_UE_UL_SDU_WITH_DATA, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
+      T_INT(rx_lcids[i]), T_INT(rx_lengths[i]), T_BUFFER(payload_ptr, rx_lengths[i]));
 
     switch (rx_lcids[i]) {
     case CCCH :
@@ -862,6 +866,11 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
             rballoc = mac_xface->computeRIV(frame_parms->N_RB_UL,
                                             first_rb[CC_id],
                                             rb_table[rb_table_index]);
+
+            T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
+              T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
+              T_INT(TBS));
+
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
             // increment for next UE allocation
             first_rb[CC_id]+=rb_table[rb_table_index];
@@ -876,7 +885,7 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 		    module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
 		    first_rb[CC_id],rb_table[rb_table_index],
 		    rb_table_index,TBS,harq_pid);
-	    
+
 	    // adjust total UL buffer status by TBS, wait for UL sdus to do final update
 	    LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,TBS);
 	    if (UE_template->ul_total_buffer > TBS)
@@ -1100,9 +1109,9 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
 	    
           }
 	  else {
-            T(T_ENB_MAC_UE_UL_SCHEDULE, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
+            T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
               T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(TBS));
+              T_INT(round));
 
             LOG_D(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled (PHICH) UE %d (mcs %d, first rb %d, nb_rb %d, rb_table_index %d, TBS %d, harq_pid %d,round %d)\n",
                   module_idP,harq_pid,rnti,CC_id,frameP,subframeP,UE_id,mcs,
@@ -1119,10 +1128,6 @@ void schedule_ulsch_rnti(module_id_t   module_idP,
               mcs = rvidx_tab[round&3] + 28; //not correct for round==4!
 
             }
-
-            T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
-              T_INT(subframeP), T_INT(harq_pid), T_INT(mcs), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-              T_INT(round));
 
             LOG_I(MAC,"[eNB %d][PUSCH %d/%x] CC_id %d Frame %d subframeP %d Scheduled UE retransmission (mcs %d, first rb %d, nb_rb %d, harq_pid %d, round %d)\n",
                   module_idP,UE_id,rnti,CC_id,frameP,subframeP,mcs,
