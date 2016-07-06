@@ -694,6 +694,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                            uint16_t nb_rb,
 		                       uint8_t subframe,
 		                       uint32_t rb_alloc,
+                           uint16_t mod_order_0,
 		                       LTE_UE_DLSCH_t *dlsch0)
 {
 
@@ -718,12 +719,19 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) //pilots=1
-      amp_tmp=dlsch0->sqrt_rho_b;                                   
-    else //pilots=0
-      amp_tmp=dlsch0->sqrt_rho_a;
+
+ 
+
+      if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) //pilots=1
+        amp_tmp=dlsch0->sqrt_rho_b;                                   
+      else //pilots=0
+        amp_tmp=dlsch0->sqrt_rho_a;
+
+        if (mod_order_0==6) 
+         amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
     
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,rb_alloc,2,subframe,symbol);
+    
+    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,2,subframe,symbol);
 
   // printf("amp_tmp=%d\n", amp_tmp);
     
@@ -741,10 +749,10 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     len_acc+=len; //accumulated length; this is done because in sic_buffer we have only data symbols
  
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					amp_tmp,
-				        (int16_t *)rho_amp_x0, //this is in Q13
-				        1,
-				        len);	
+					                             amp_tmp,
+				                               (int16_t *)rho_amp_x0, //this is in Q13
+				                               1,
+				                               len);
     
      
  //   printf ("Got x0*rho_a\n");
@@ -768,10 +776,10 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
    
     
     sub_cpx_vector16((int16_t *)rxF,
-		     (int16_t *)rho_rho_amp_x0,
-		    (int16_t *)clean_x1,
-		     //(int16_t *)rxF,
-		     len*2); 
+		                 (int16_t *)rho_rho_amp_x0,
+		                 //(int16_t *)clean_x1,
+		                 (int16_t *)rxF,
+		                 len*2); 
 
   //  write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
    // write_output("clean_x1.m","x1", clean_x1,len,1,1);
@@ -789,7 +797,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
  
     //this is for QPSK only!!!
     for (i=0; i<len*2; i++) {
-      *llr16 =clean_x1[i];//(int16_t *)rxF[i]; //clean_x1[i];//(int16_t *)rxF[i];//clean_x1[i]; //(int16_t *)rxF[i];//; //rxF[i];
+      *llr16 =rxF[i]; //clean_x1[i];//(int16_t *)rxF[i];//clean_x1[i]; //(int16_t *)rxF[i];//; //rxF[i];
       //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
       llr16++;
     }
@@ -937,6 +945,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 			                    uint16_t nb_rb,
 			                    uint8_t subframe,
 			                    uint32_t rb_alloc,
+                          uint16_t mod_order_0,
 			                    LTE_UE_DLSCH_t *dlsch0
  			                   )
 {
@@ -964,26 +973,32 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
     
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,rb_alloc,4,subframe,symbol); 
+    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,4,subframe,symbol); 
     
+  
       if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-	amp_tmp=dlsch0->sqrt_rho_b;   
-	if (frame_parms->mode1_flag==0)
-	  len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
-	else
-	  len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+
+        amp_tmp=dlsch0->sqrt_rho_b;   
+          if (frame_parms->mode1_flag==0)
+            len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+          else
+            len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
       } else {
-	amp_tmp=dlsch0->sqrt_rho_a;
-	len = nb_rb*12 - pbch_pss_sss_adjust;
+  
+        amp_tmp=dlsch0->sqrt_rho_a;
+        len = nb_rb*12 - pbch_pss_sss_adjust;
       }
+
+      if (mod_order_0==6) 
+        amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
   
     len_acc+=len;
   
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					amp_tmp,
-				        (int16_t *)rho_amp_x0, //this is in Q13
-				        1,
-				        len);
+					                             amp_tmp,
+				                               (int16_t *)rho_amp_x0, //this is in Q13
+				                               1,
+				                               len);
     
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
@@ -992,15 +1007,16 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                     13);
      
      sub_cpx_vector16((int16_t *)rxF,
-		     (int16_t *)rho_rho_amp_x0,
-		    // (int16_t *)clean_x1,
-		     (int16_t *)rxF,
-		     len*2); 
-  len_mod4 = len&3;
-  len>>=2;  // length in quad words (4 REs)
-  len+=(len_mod4==0 ? 0 : 1);
+		                  (int16_t *)rho_rho_amp_x0,
+		                  //(int16_t *)clean_x1,
+		                  (int16_t *)rxF,
+		                  len*2); 
 
-  for (i=0; i<len; i++) {
+    len_mod4 = len&3;
+    len>>=2;  // length in quad words (4 REs)
+    len+=(len_mod4==0 ? 0 : 1);
+
+    for (i=0; i<len; i++) {
 
 
     __m128i *x1 = (__m128i*)rxF;//clean_x1;
@@ -1193,6 +1209,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 			                   uint16_t nb_rb,
 			                   uint8_t subframe,
 			                   uint32_t rb_alloc,
+                         uint16_t mod_order_0,
 			                   LTE_UE_DLSCH_t *dlsch0
  			                  )
 {
@@ -1207,7 +1224,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   uint16_t *sic_data;
   uint16_t pbch_pss_sss_adjust;
   unsigned char len_mod4=0;
-  int16_t *llr2;
+  uint16_t *llr2;
   __m128i *ch_mag,*ch_magb;
   
  nsymb = (frame_parms->Ncp==0) ? 14:12;
@@ -1221,26 +1238,31 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
  
     symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-    pbch_pss_sss_adjust=adjust_G2(frame_parms,rb_alloc,6,subframe,symbol); 
+    pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol); 
     
       if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-	amp_tmp=dlsch0->sqrt_rho_b;   
-	if (frame_parms->mode1_flag==0)
-	  len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
-	else
-	  len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+
+	      amp_tmp = dlsch0->sqrt_rho_b;
+	        if (frame_parms->mode1_flag==0)
+	          len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+	        else
+	          len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
       } else {
-	amp_tmp=dlsch0->sqrt_rho_a;
-	len = nb_rb*12 - pbch_pss_sss_adjust;
+
+	        amp_tmp = dlsch0->sqrt_rho_a;
+	        len = nb_rb*12 - pbch_pss_sss_adjust;
       }
+
+      if (mod_order_0==6) 
+        amp_tmp=amp_tmp<<1; // to compensate for >> 1 shift in modulation
   
     len_acc+=len;
   
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					amp_tmp,
-				        (int16_t *)rho_amp_x0, //this is in Q13
-				        1,
-				        len);
+					                              amp_tmp,
+				                                (int16_t *)rho_amp_x0, //this is in Q13
+				                                1,
+				                                len);
     
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
@@ -1249,10 +1271,10 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
      
      sub_cpx_vector16((int16_t *)rxF,
-		     (int16_t *)rho_rho_amp_x0,
-		    // (int16_t *)clean_x1,
-		     (int16_t *)rxF,
-		     len*2);
+		                  (int16_t *)rho_rho_amp_x0,
+		                  //(int16_t *)clean_x1,
+		                  (int16_t *)rxF,
+		                  len*2);
 
   llr2 = llr32;
   llr32 += (len*6);

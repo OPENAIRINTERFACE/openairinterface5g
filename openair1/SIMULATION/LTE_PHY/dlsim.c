@@ -3675,85 +3675,92 @@ n(tikz_fname,"w");
 	    PHY_vars_UE->dlsch_eNB[eNB_id]->active                   = PHY_vars_UE->dlsch_ue[eNB_id][0]->active;
 	    PHY_vars_UE->dlsch_eNB[eNB_id]->rnti                     = PHY_vars_UE->dlsch_ue[eNB_id][0]->rnti;
 	    PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid         = PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid;
-	    dlsch_encoding(input_buffer0[0], //PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
-			   &PHY_vars_UE->lte_frame_parms,
-			   num_pdcch_symbols,
-			   PHY_vars_UE->dlsch_eNB[eNB_id],
-			   0,
-			   subframe,
-			   &PHY_vars_UE->dlsch_rate_matching_stats,
-			   &PHY_vars_UE->dlsch_turbo_encoding_stats,
-			   &PHY_vars_UE->dlsch_interleaving_stats);
+	    
+      dlsch_encoding(input_buffer0[0], //PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
+			               &PHY_vars_UE->lte_frame_parms,
+			               num_pdcch_symbols,
+			               PHY_vars_UE->dlsch_eNB[eNB_id],
+			               0,
+			               subframe,
+			               &PHY_vars_UE->dlsch_rate_matching_stats,
+			               &PHY_vars_UE->dlsch_turbo_encoding_stats,
+			               &PHY_vars_UE->dlsch_interleaving_stats);
 	 
 	      
 	    coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
-					    PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
-					    PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->rb_alloc,
-					    get_Qm(PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->mcs),
-					    PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->Nl,
-					    num_pdcch_symbols,
-					    0,
-				            subframe);
+					                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
+					                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->rb_alloc,
+					                            get_Qm(PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->mcs),
+					                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->Nl,
+					                            num_pdcch_symbols,
+					                            0,
+				                              subframe);
 
 	    dlsch_scrambling(&PHY_vars_UE->lte_frame_parms,
-			     0,
-			     PHY_vars_UE->dlsch_eNB[eNB_id],
-			     coded_bits_per_codeword,
-			     0,
-			     subframe<<1);
+			                 0,
+			                 PHY_vars_UE->dlsch_eNB[eNB_id],
+			                 coded_bits_per_codeword,
+			                 0,
+			                 subframe<<1);
 
 	    re_allocated = dlsch_modulation_SIC(sic_buffer,
-					        AMP,
-					        subframe,
-					        &PHY_vars_UE->lte_frame_parms,
-					        num_pdcch_symbols,
-						&PHY_vars_UE->dlsch_eNB[0][0],
-					        NULL,
-					        coded_bits_per_codeword);
+					                                subframe,
+					                                &PHY_vars_UE->lte_frame_parms,
+					                                num_pdcch_symbols,
+						                              &PHY_vars_UE->dlsch_eNB[0][0],
+					                                NULL,
+					                                coded_bits_per_codeword);
 	      
 	   // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
 	   // write_output("rxdataF_comp1.m","rxF_comp1", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
 	   // write_output("rxdataF_rho.m","rho", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
 
 	    switch  (get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)){
-	      case 2:
-		dlsch_qpsk_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-			       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-			       sic_buffer,
-		               PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                               PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-		               num_pdcch_symbols,
-                               dlsch0_eNB_harq->nb_rb,
-                               subframe,
-			       dlsch0_eNB_harq->rb_alloc[0], 
-		               PHY_vars_UE->dlsch_ue[eNB_id][0]);
+	      
+        case 2:
+
+		      dlsch_qpsk_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+			                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			                       sic_buffer,
+		                         PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                             PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+		                         num_pdcch_symbols,
+                             dlsch0_eNB_harq->nb_rb,
+                             subframe,
+			                       dlsch0_eNB_harq->rb_alloc[0],
+                             get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs), 
+		                         PHY_vars_UE->dlsch_ue[eNB_id][0]);
 	      break;
+
 	      case 4:
-		dlsch_16qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-                          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-			  sic_buffer,
-		          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-			  num_pdcch_symbols,
-			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
-			  dlsch0_eNB_harq->nb_rb,
-			  subframe,
-			  dlsch0_eNB_harq->rb_alloc[0],
-			  PHY_vars_UE->dlsch_ue[eNB_id][0]);
+
+		      dlsch_16qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                              PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			                        sic_buffer,
+		                          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+			                        num_pdcch_symbols,
+			                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+			                        dlsch0_eNB_harq->nb_rb,
+			                        subframe,
+			                        dlsch0_eNB_harq->rb_alloc[0],
+                              get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+			                        PHY_vars_UE->dlsch_ue[eNB_id][0]);
 	      break;
 	      case 6:
-		dlsch_64qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-                          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-			  sic_buffer,
-		          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-			  num_pdcch_symbols,
-			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
-			  PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
-			  dlsch0_eNB_harq->nb_rb,
-			  subframe,
-			  dlsch0_eNB_harq->rb_alloc[0],
-			  PHY_vars_UE->dlsch_ue[eNB_id][0]);
+		      dlsch_64qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                              PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			                        sic_buffer,
+		                          PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+			                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+			                        num_pdcch_symbols,
+			                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+			                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
+			                        dlsch0_eNB_harq->nb_rb,
+			                        subframe,
+			                        dlsch0_eNB_harq->rb_alloc[0],
+                              get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+			                        PHY_vars_UE->dlsch_ue[eNB_id][0]);
 	      break;
 	        }// round
 	

@@ -212,7 +212,6 @@ int32_t dlsch_modulation(int32_t **txdataF,
                          LTE_eNB_DLSCH_t *dlsch1);
 
 int32_t dlsch_modulation_SIC(int32_t **sic_buffer,
-                         int16_t amp,
                          uint32_t sub_frame_offset,
                          LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t num_pdcch_symbols,
@@ -728,6 +727,7 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                        uint16_t nb_rb,
                        uint8_t subframe,
 		                   uint32_t rb_alloc,
+                       uint16_t mod_order_0,
 		                   LTE_UE_DLSCH_t *dlsch0);
 
 void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
@@ -761,6 +761,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 			                    uint16_t nb_rb,
 			                    uint8_t subframe,
 			                    uint32_t rb_alloc,
+                          uint16_t mod_order_0,
 			                    LTE_UE_DLSCH_t *dlsch0);
 
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
@@ -774,6 +775,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 			                   uint16_t nb_rb,
 			                   uint8_t subframe,
 			                   uint32_t rb_alloc,
+                         uint16_t mod_order_0,
 			                   LTE_UE_DLSCH_t *dlsch0);
 
 
