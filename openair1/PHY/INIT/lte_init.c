@@ -473,7 +473,7 @@ void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *phy_vars_eNB)
 
       if (physicalConfigDedicated->antennaInfo) {
         phy_vars_eNB->transmission_mode[UE_id] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-        LOG_D(PHY,"Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
+        LOG_D(PHY,"eNB:Transmission Mode %d\n",phy_vars_eNB->transmission_mode[UE_id]);
         LOG_D(PHY,"\n");
       }
 
@@ -845,7 +845,7 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t CH_index,
 
     if (physicalConfigDedicated->antennaInfo) {
       phy_vars_ue->transmission_mode[CH_index] = 1+(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode);
-      LOG_D(PHY,"Transmission Mode %d\n",phy_vars_ue->transmission_mode[CH_index]);
+      LOG_D(PHY,"UE:Transmission Mode %d\n",phy_vars_ue->transmission_mode[CH_index]);
       LOG_D(PHY,"\n");
       switch(physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode) {
       case AntennaInfoDedicated__transmissionMode_tm1:
