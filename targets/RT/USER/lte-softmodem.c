@@ -51,6 +51,9 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
+
+#include "T.h"
+
 #include "rt_wrapper.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
@@ -483,8 +486,14 @@ void help (void) {
   printf("  -U Set the lte softmodem as a UE\n");
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n"RESET);    
-
+  printf("  -x Set the transmission mode, valid options: 1 \n");
+#if T_TRACER
+  printf("  --T_port [port]    use given port\n");
+  printf("  --T_nowait         don't wait for tracer, start immediately\n");
+  printf("  --T_dont_fork      to ease debugging with gdb\n");
+#endif
+  printf(RESET);
+  fflush(stdout);
 }
 void exit_fun(const char* s)
 {
@@ -2177,6 +2186,8 @@ static void* eNB_thread( void* arg )
 #else
       int sf = hw_subframe;
 #endif
+      /* TODO: is it the right place for master tick? */
+      T(T_ENB_MASTER_TICK, T_INT(0), T_INT(frame % 1024), T_INT(sf));
       if (frame>50) {
 	for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 #ifdef EXMIMO
@@ -2317,7 +2328,13 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_MAXPOWER,
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
-    LONG_OPTION_PHYTEST
+    LONG_OPTION_PHYTEST,
+
+#if T_TRACER
+    LONG_OPTION_T_PORT,
+    LONG_OPTION_T_NOWAIT,
+    LONG_OPTION_T_DONT_FORK,
+#endif
   };
 
   static const struct option long_options[] = {
@@ -2336,6 +2353,13 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+
+#if T_TRACER
+    {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
+    {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+    {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
+#endif
+
     {NULL, 0, NULL, 0}
   };
 
@@ -2423,6 +2447,27 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
       
+#if T_TRACER
+    case LONG_OPTION_T_PORT: {
+      extern int T_port;
+      if (optarg == NULL) abort();  /* should not happen */
+      T_port = atoi(optarg);
+      break;
+    }
+
+    case LONG_OPTION_T_NOWAIT: {
+      extern int T_wait;
+      T_wait = 0;
+      break;
+    }
+
+    case LONG_OPTION_T_DONT_FORK: {
+      extern int T_dont_fork;
+      T_dont_fork = 1;
+      break;
+    }
+#endif
+
     case 'A':
       timing_advance = atoi (optarg);
       break;
@@ -2783,6 +2828,12 @@ static void get_options (int argc, char **argv)
   }
 }
 
+#if T_TRACER
+int T_wait = 1;       /* by default we wait for the tracer */
+int T_port = 2021;    /* default port to listen to to wait for the tracer */
+int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
+#endif
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -2852,6 +2903,10 @@ int main( int argc, char **argv )
   else
     openair0_cfg[0].configFilename = rf_config_file;
   
+#if T_TRACER
+  T_init(T_port, T_wait, T_dont_fork);
+#endif
+
   // initialize the log (see log.h for details)
   set_glog(glog_level, glog_verbosity);
 

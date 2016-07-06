@@ -65,6 +65,8 @@
 # include "intertask_interface.h"
 #endif
 
+#include "T.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 //#define DEBUG_eNB_SCHEDULER 1
 
@@ -835,6 +837,9 @@ schedule_ue_spec(
                                 DCCH,
                                 (char *)&dlsch_buffer[sdu_lengths[0]]);
 
+            T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+              T_INT(harq_pid), T_INT(DCCH), T_INT(sdu_lengths[0]));
+
             LOG_D(MAC,"[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",module_idP,CC_id,sdu_lengths[0]);
             sdu_length_total = sdu_lengths[0];
             sdu_lcids[0] = DCCH;
@@ -882,13 +887,25 @@ schedule_ue_spec(
                                        DCCH+1,
                                        (char *)&dlsch_buffer[sdu_lengths[num_sdus]]);
 
+            T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+              T_INT(harq_pid), T_INT(DCCH+1), T_INT(sdu_lengths[num_sdus]));
+
             sdu_lcids[num_sdus] = DCCH1;
             sdu_length_total += sdu_lengths[num_sdus];
             header_len_dcch += 2;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[DCCH1]+=1;
             UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[DCCH1]+=sdu_lengths[num_sdus];
-	    LOG_D(MAC,"[eNB %d] CC_id %d Got %d bytes for DCCH from RLC\n",module_idP,CC_id,sdu_lengths[num_sdus]);
 	    num_sdus++;
+#ifdef DEBUG_eNB_SCHEDULER
+            LOG_T(MAC,"[eNB %d][DCCH1] CC_id %d Got %d bytes :",module_idP,CC_id,sdu_lengths[num_sdus]);
+
+            for (j=0; j<sdu_lengths[num_sdus]; j++) {
+              LOG_T(MAC,"%x ",dlsch_buffer[j]);
+            }
+
+            LOG_T(MAC,"\n");
+#endif
+
 	  }
         }
 
