@@ -133,14 +133,14 @@ int lte_dl_ue_spec(PHY_VARS_eNB *phy_vars_eNB,
 
 
 int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
-                      mod_sym_t *output,
+                      int32_t *output,
                       unsigned char Ns,
                       unsigned char p, 
                       int lprime,
                       int SS_flag,
                       uint16_t nRB_PDSCH)
 {
-  mod_sym_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
+  int32_t qpsk[4],nqpsk[4],*qpsk_p,*output_p;
   int w,mprime,ind,l,ind_dword,ind_qpsk_symb,nPRB;
   short pamp;
 

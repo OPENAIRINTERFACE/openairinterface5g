@@ -139,7 +139,7 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *phy_vars_ue,
 @param nRB_PDSCH number of allocated PDSCH RBs
 */
 int lte_dl_ue_spec_rx(PHY_VARS_UE *phy_vars_ue,
-                      mod_sym_t *output,
+                      int32_t *output,
                       unsigned char Ns,
                       unsigned char p,
                       int lprime,
