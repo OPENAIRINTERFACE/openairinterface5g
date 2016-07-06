@@ -51,7 +51,6 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-#include "if_defs.h"
 
 int num_devices_eth = 0;
 struct sockaddr_in dest_addr[MAX_INST];

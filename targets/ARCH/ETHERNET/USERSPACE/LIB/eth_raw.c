@@ -51,9 +51,6 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-#include "if_defs.h"
-#include "openair1/PHY/LTE_TRANSPORT/if4_tools.h"
-#include "openair1/PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
 
 #define DEBUG 0
 

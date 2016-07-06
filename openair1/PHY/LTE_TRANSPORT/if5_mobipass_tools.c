@@ -39,7 +39,6 @@
 */
 
 #include "PHY/defs.h"
-#include "PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
 
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 
