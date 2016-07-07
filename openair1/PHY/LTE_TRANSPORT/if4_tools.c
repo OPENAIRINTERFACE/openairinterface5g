@@ -210,8 +210,11 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
   *subframe = ((packet_header->frame_status)>>22)&0x000f; 
   
   if (*packet_type == IF4_PDLFFT) {          
+    // Find and return symbol_number		 		
+    *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
+
     // Calculate from received packet
-    slotoffsetF = (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     
     // Do decompression of the two parts and generate txdataF			
@@ -222,13 +225,13 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
       txdataF[0][slotoffsetF+element_id]  = alaw2lin[ (data_block[element_id+db_halflength] & 0xff) ];
       txdataF[0][slotoffsetF+element_id] |= alaw2lin[ (data_block[element_id+db_halflength]>>8) ]<<16;
     }
-		
+		        
+  } else if (*packet_type == IF4_PULFFT) {         
     // Find and return symbol_number		 		
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
-        
-  } else if (*packet_type == IF4_PULFFT) {         
+
     // Calculate from received packet
-    slotoffsetF = (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
     
     // Do decompression of the two parts and generate rxdataF
@@ -240,9 +243,6 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
       rxdataF[0][slotoffsetF+element_id] |= alaw2lin[ (data_block[element_id+db_halflength]>>8) ]<<16;
     }
 		
-    // Find and return symbol_number		 		
-    *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
-    
   } else if (*packet_type == IF4_PRACH) {    
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
