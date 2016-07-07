@@ -687,15 +687,15 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                            int32_t **rxdataF_comp,
-		                       int32_t **sic_buffer,  //Q15
-		                       int32_t **rho_i,
+                           int32_t **sic_buffer,  //Q15
+                           int32_t **rho_i,
                            short *dlsch_llr,
-		                       uint8_t num_pdcch_symbols,
+                           uint8_t num_pdcch_symbols,
                            uint16_t nb_rb,
-		                       uint8_t subframe,
-		                       uint32_t rb_alloc,
+                           uint8_t subframe,
+                           uint32_t rb_alloc,
                            uint16_t mod_order_0,
-		                       LTE_UE_DLSCH_t *dlsch0)
+                           LTE_UE_DLSCH_t *dlsch0)
 {
 
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
@@ -749,10 +749,10 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     len_acc+=len; //accumulated length; this is done because in sic_buffer we have only data symbols
  
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					                             amp_tmp,
-				                               (int16_t *)rho_amp_x0, //this is in Q13
-				                               1,
-				                               len);
+                                       amp_tmp,
+                                       (int16_t *)rho_amp_x0, //this is in Q13
+                                       1,
+                                       len);
     
      
  //   printf ("Got x0*rho_a\n");
@@ -763,12 +763,12 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     len,
                     13);
   /*  write_output("rho_for_multipl.m","rho_for_multipl", rho_1,len,1,
-		 symbol==num_pdcch_symbols ? 15 :
-		 symbol==nsymb-1 ? 14 : 13); 
+     symbol==num_pdcch_symbols ? 15 :
+     symbol==nsymb-1 ? 14 : 13); 
 
     write_output("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
-		 symbol==num_pdcch_symbols ? 15 :
-		 symbol==nsymb-1 ? 14 : 13);
+     symbol==num_pdcch_symbols ? 15 :
+     symbol==nsymb-1 ? 14 : 13);
  //   printf ("Computed  rho*rho_a*x0\n");*/
   
     
@@ -776,21 +776,21 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
    
     
     sub_cpx_vector16((int16_t *)rxF,
-		                 (int16_t *)rho_rho_amp_x0,
-		                 //(int16_t *)clean_x1,
-		                 (int16_t *)rxF,
-		                 len*2); 
+                     (int16_t *)rho_rho_amp_x0,
+                     //(int16_t *)clean_x1,
+                     (int16_t *)rxF,
+                     len*2); 
 
   //  write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
    // write_output("clean_x1.m","x1", clean_x1,len,1,1);
   //  printf ("Interference removed \n");
       /*  write_output("clean_x1.m","x1", clean_x1,len,1,
-		 symbol==num_pdcch_symbols ? 15 :
-		 symbol==nsymb-1 ? 14 : 13);
-	
-	write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
-		 symbol==num_pdcch_symbols ? 15 :
-		 symbol==nsymb-1 ? 14 : 13);*/
+     symbol==num_pdcch_symbols ? 15 :
+     symbol==nsymb-1 ? 14 : 13);
+  
+  write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
+     symbol==num_pdcch_symbols ? 15 :
+     symbol==nsymb-1 ? 14 : 13);*/
 
   //  printf("dlsch_qpsk_llr_SIC: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
 
@@ -937,17 +937,17 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
 void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
-			                    int32_t **sic_buffer,  //Q15
-		                      int32_t **rho_i,
-			                    int16_t *dlsch_llr,
-			                    uint8_t num_pdcch_symbols,
-			                    int32_t **dl_ch_mag,
-			                    uint16_t nb_rb,
-			                    uint8_t subframe,
-			                    uint32_t rb_alloc,
+                          int32_t **sic_buffer,  //Q15
+                          int32_t **rho_i,
+                          int16_t *dlsch_llr,
+                          uint8_t num_pdcch_symbols,
+                          int32_t **dl_ch_mag,
+                          uint16_t nb_rb,
+                          uint8_t subframe,
+                          uint32_t rb_alloc,
                           uint16_t mod_order_0,
-			                    LTE_UE_DLSCH_t *dlsch0
- 			                   )
+                          LTE_UE_DLSCH_t *dlsch0
+                          )
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
@@ -995,10 +995,10 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
     len_acc+=len;
   
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					                             amp_tmp,
-				                               (int16_t *)rho_amp_x0, //this is in Q13
-				                               1,
-				                               len);
+                                       amp_tmp,
+                                       (int16_t *)rho_amp_x0, //this is in Q13
+                                       1,
+                                       len);
     
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
@@ -1007,10 +1007,10 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
                     13);
      
      sub_cpx_vector16((int16_t *)rxF,
-		                  (int16_t *)rho_rho_amp_x0,
-		                  //(int16_t *)clean_x1,
-		                  (int16_t *)rxF,
-		                  len*2); 
+                      (int16_t *)rho_rho_amp_x0,
+                      //(int16_t *)clean_x1,
+                      (int16_t *)rxF,
+                      len*2); 
 
     len_mod4 = len&3;
     len>>=2;  // length in quad words (4 REs)
@@ -1200,18 +1200,18 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 //#if 0
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
-			                   int32_t **sic_buffer,  //Q15
-		                     int32_t **rho_i,
-			                   int16_t *dlsch_llr,
-			                   uint8_t num_pdcch_symbols,
-			                   int32_t **dl_ch_mag,
-			                   int32_t **dl_ch_magb,
-			                   uint16_t nb_rb,
-			                   uint8_t subframe,
-			                   uint32_t rb_alloc,
+                         int32_t **sic_buffer,  //Q15
+                         int32_t **rho_i,
+                         int16_t *dlsch_llr,
+                         uint8_t num_pdcch_symbols,
+                         int32_t **dl_ch_mag,
+                         int32_t **dl_ch_magb,
+                         uint16_t nb_rb,
+                         uint8_t subframe,
+                         uint32_t rb_alloc,
                          uint16_t mod_order_0,
-			                   LTE_UE_DLSCH_t *dlsch0
- 			                  )
+                         LTE_UE_DLSCH_t *dlsch0
+                         )
 {
   int16_t rho_amp_x0[2*frame_parms->N_RB_DL*12];
   int16_t rho_rho_amp_x0[2*frame_parms->N_RB_DL*12];
@@ -1227,7 +1227,7 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
   uint16_t *llr2;
   __m128i *ch_mag,*ch_magb;
   
- nsymb = (frame_parms->Ncp==0) ? 14:12;
+  nsymb = (frame_parms->Ncp==0) ? 14:12;
 
   for (symbol=num_pdcch_symbols; symbol<nsymb; symbol++) {
     uint16_t *rxF = (uint16_t*)(&rxdataF_comp[0][((int16_t)symbol*frame_parms->N_RB_DL*12)]);
@@ -1240,17 +1240,17 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
 
     pbch_pss_sss_adjust=adjust_G2(frame_parms,&rb_alloc,6,subframe,symbol); 
     
-      if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
+    if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
 
-	      amp_tmp = dlsch0->sqrt_rho_b;
-	        if (frame_parms->mode1_flag==0)
-	          len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
-	        else
-	          len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
+      amp_tmp = dlsch0->sqrt_rho_b;
+          if (frame_parms->mode1_flag==0)
+            len = nb_rb*8 - (2*pbch_pss_sss_adjust/3);
+          else
+            len = nb_rb*10 - (5*pbch_pss_sss_adjust/6);
       } else {
 
-	        amp_tmp = dlsch0->sqrt_rho_a;
-	        len = nb_rb*12 - pbch_pss_sss_adjust;
+          amp_tmp = dlsch0->sqrt_rho_a;
+          len = nb_rb*12 - pbch_pss_sss_adjust;
       }
 
       if (mod_order_0==6) 
@@ -1259,10 +1259,10 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
     len_acc+=len;
   
     multadd_complex_vector_real_scalar((int16_t *)sic_data,
-					                              amp_tmp,
-				                                (int16_t *)rho_amp_x0, //this is in Q13
-				                                1,
-				                                len);
+                                        amp_tmp,
+                                        (int16_t *)rho_amp_x0, //this is in Q13
+                                        1,
+                                        len);
     
      mult_cpx_vector((int16_t *)rho_1, //Q15
                     (int16_t *)rho_amp_x0, //Q13
@@ -1271,10 +1271,10 @@ void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
      
      sub_cpx_vector16((int16_t *)rxF,
-		                  (int16_t *)rho_rho_amp_x0,
-		                  //(int16_t *)clean_x1,
-		                  (int16_t *)rxF,
-		                  len*2);
+                      (int16_t *)rho_rho_amp_x0,
+                      //(int16_t *)clean_x1,
+                      (int16_t *)rxF,
+                      len*2);
 
   llr2 = llr32;
   llr32 += (len*6);
@@ -1442,7 +1442,7 @@ void qpsk_qpsk(short *stream0_in,
                short *stream0_out,
                short *rho01,
                int length
-	       )
+         )
 {
 
   /*
@@ -1702,7 +1702,7 @@ void qpsk_qam16(int16_t *stream0_in,
                 int16_t *stream0_out,
                 int16_t *rho01,
                 int32_t length
-		)
+    )
 {
   /*
     This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are QPSK. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
@@ -1987,7 +1987,7 @@ void qpsk_qam64(short *stream0_in,
                 short *stream0_out,
                 short *rho01,
                 int length
-		)
+    )
 {
 
   /*
@@ -2239,7 +2239,7 @@ void qam16_qpsk(short *stream0_in,
                 short *stream0_out,
                 short *rho01,
                 int length
-		)
+    )
 {
 
   /*
@@ -2749,7 +2749,7 @@ void qam16_qam16(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-		 )
+     )
 {
 
   /*
@@ -3308,7 +3308,7 @@ void qam16_qam64(int16_t *stream0_in,
                  int16_t *stream0_out,
                  int16_t *rho01,
                  int32_t length
-		 )
+     )
 {
 
   /*
@@ -3984,7 +3984,7 @@ void qam64_qpsk(int16_t *stream0_in,
                 int16_t *stream0_out,
                 int16_t *rho01,
                 int32_t length
-		)
+    )
 {
 
   /*
@@ -5507,7 +5507,7 @@ void qam64_qam16(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-		 )
+     )
 {
 
   /*
@@ -7052,7 +7052,7 @@ void qam64_qam64(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length
-		 )
+     )
 {
 
   /*
