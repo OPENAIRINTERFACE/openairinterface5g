@@ -51,7 +51,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
                        struct complex** R_sqrt,
                        double Td,
                        double sampling_rate,
-		       double channel_bandwidth,
+                       double channel_bandwidth,
                        double ricean_factor,
                        double aoa,
                        double forgetting_factor,
@@ -81,7 +81,7 @@ void fill_channel_desc(channel_desc_t *chan_desc,
       chan_desc->delays[i] = ((double)i)*delta_tau;
   }
   else
-  chan_desc->delays         	 	= delays;
+  chan_desc->delays              = delays;
   chan_desc->Td               	        = Td;
   chan_desc->sampling_rate              = sampling_rate;
   chan_desc->channel_bandwidth          = channel_bandwidth;

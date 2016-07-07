@@ -476,7 +476,7 @@ int main(int argc, char **argv)
         break;
       case 'Q':
         channel_model=Rayleigh1_orth_eff_ch_TM4_prec_real; // for DUALSTREAM_UNIFORM_PRECODING1 when interf is precancelled
-      break;
+        break;
       case 'R':
         channel_model=Rayleigh1_orth_eff_ch_TM4_prec_imag; // for DUALSTREAM_UNIFORM_PRECODINGj when interf is precancelled
         break;
@@ -525,49 +525,49 @@ int main(int argc, char **argv)
       break;
     
       case 'R':
-      num_rounds=atoi(optarg);
-      break;
+        num_rounds=atoi(optarg);
+        break;
       case 'S':
-      subframe=atoi(optarg);
-      break;
+        subframe=atoi(optarg);
+        break;
       case 'T':
-      n_rnti=atoi(optarg);
-      break;  
+        n_rnti=atoi(optarg);
+        break;  
       case 'u':
-      rx_type = (RX_type_t) atoi(optarg);
-      if (rx_type<rx_standard || rx_type>rx_SIC_dual_stream) {
-        printf("Unsupported rx type %d\n",rx_type);
-        exit(-1);
-      }
-      break;
+        rx_type = (RX_type_t) atoi(optarg);
+        if (rx_type<rx_standard || rx_type>rx_SIC_dual_stream) {
+          printf("Unsupported rx type %d\n",rx_type);
+          exit(-1);
+        }
+        break;
       case 'v':
-      i_mod = atoi(optarg);
-      if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
-        msg("Wrong i_mod %d, should be 2,4 or 6\n",i_mod);
-        exit(-1);
-      }
-      break;
+        i_mod = atoi(optarg);
+        if (i_mod!=2 && i_mod!=4 && i_mod!=6) {
+          msg("Wrong i_mod %d, should be 2,4 or 6\n",i_mod);
+          exit(-1);
+        }
+        break;
       case 'P':
-      print_perf=1;
-      break;
+        print_perf=1;
+        break;
       case 'X':
-      xforms = 1;
-      break;
+        xforms = 1;
+        break;
       case 'Z':
-      dump_table=1;
-      break;
+        dump_table=1;
+        break;
       case 'Y':
-      perfect_ce=1;
-      break;
+        perfect_ce=1;
+        break;
       case 'V':
-      interf_unaw_shift0=atoi(optarg);
-      break;   
+        interf_unaw_shift0=atoi(optarg);
+        break;   
       case 'W':
-      interf_unaw_shift1=atoi(optarg);
-      break;
+        interf_unaw_shift1=atoi(optarg);
+        break;
       case 'J':
-      interf_unaw_shift=atoi(optarg);
-      break;
+        interf_unaw_shift=atoi(optarg);
+        break;
       case 'h':
       default:
       printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,3,5,6) -y TXant -z RXant -I trch_file\n",argv[0]);
@@ -721,14 +721,14 @@ int main(int argc, char **argv)
     sprintf(bler_fname,"bler_tx%d_rec%d_chan%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,rx_type,channel_model,n_rx,mcs1,mcs_i,rx_type,i_mod);
   else if (abstx == 1) 
     if (perfect_ce==1)
-   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_pce_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+   sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_pce_sh%d_pnort.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
     else
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_ab_sh%d_pnort.csv",transmission_mode,rx_type,channel_model, n_frames, n_rx,mcs1, mcs2,interf_unaw_shift );
   else //abstx=0
     if (perfect_ce==1)
-      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_pce_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
+      sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_pce_sh%d_pnort.csv",transmission_mode,rx_type,channel_model,n_frames, n_rx,mcs1, mcs2, interf_unaw_shift);
    else
-    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_pmnew.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
+    sprintf(bler_fname,"bler_tx%d_r%d_ch%d_%d_nrx%d_mcs%d_mcsi%d_sh%d_pnort.csv",transmission_mode,rx_type,channel_model,n_frames,n_rx,mcs1, mcs2, interf_unaw_shift);
   
   bler_fd = fopen(bler_fname,"w");
   if (bler_fd==NULL) {
@@ -764,9 +764,9 @@ int main(int argc, char **argv)
     
     else 
       if (perfect_ce==1)
-        sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_pce_sh%d_%d_pmnew.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+        sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_pce_sh%d_%d_pnort.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
       else
-        sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_sh%d_%d_pmnew.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
+        sprintf(csv_fname,"dout_tx%d_r%d_mcs%d_mcsi%d_ch%d_ns%d_R%d_sh%d_%d_pnort.m",transmission_mode,rx_type,mcs1,mcs2,channel_model,n_frames,num_rounds, interf_unaw_shift, n_ch_rlz);
 
     csv_fd = fopen(csv_fname,"w");
     fprintf(csv_fd,"data_all%d=[",mcs1);
@@ -3412,9 +3412,9 @@ n(tikz_fname,"w");
           if(abstx){
             if (trials==0 && round==0 && transmission_mode>=4){
               for (iii=0; iii<NB_RB; iii++){
-          //fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[iii]));
-          fprintf(csv_fd,"%x,",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
-          //printf("%x ",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
+                //fprintf(csv_fd, "%d, %d", (PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]),(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id_i]->pmi_ext[iii]));
+                fprintf(csv_fd,"%x,",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
+                //printf("%x ",(PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->pmi_ext[iii]));
               }
             }
           }
@@ -3430,17 +3430,17 @@ n(tikz_fname,"w");
           for (cw_non_sic=0; cw_non_sic<cw_to_decode_interf; cw_non_sic++){
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
             coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-                    PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->nb_rb,
-                    PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->rb_alloc,
-                    get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs),
-                    PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->Nl,
-                    num_pdcch_symbols,
-                    0,subframe);
+                                            PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->nb_rb,
+                                            PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->rb_alloc,
+                                            get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs),
+                                            PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->Nl,
+                                            num_pdcch_symbols,
+                                            0,subframe);
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->G = coded_bits_per_codeword;
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs);
             if (n_frames==2) {
               printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_non_sic,coded_bits_per_codeword,
-               PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->TBS);
+                     PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->TBS);
             
               // calculate uncoded BER
               uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
@@ -3454,12 +3454,12 @@ n(tikz_fname,"w");
               uncoded_ber=0;
               printf("trials=%d\n", trials);
               for (i=0;i<coded_bits_per_codeword;i++) 
-          if (PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic][i]<0)) {
-            uncoded_ber_bit[i] = 1;
-            uncoded_ber++;
-          }
-          else
-            uncoded_ber_bit[i] = 0;
+                if (PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic][i]<0)) {
+                  uncoded_ber_bit[i] = 1;
+                  uncoded_ber++;
+                }
+                else
+                  uncoded_ber_bit[i] = 0;
               
               uncoded_ber/=coded_bits_per_codeword;
               avg_ber += uncoded_ber;
@@ -3476,50 +3476,49 @@ n(tikz_fname,"w");
 
             start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
             dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-                   0,
-                   PHY_vars_UE->dlsch_ue[0][cw_non_sic],
-                   coded_bits_per_codeword,
-                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],
-                   cw_non_sic,
-                   subframe<<1);
+                               0,
+                               PHY_vars_UE->dlsch_ue[0][cw_non_sic],
+                               coded_bits_per_codeword,
+                               PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],
+                               cw_non_sic,
+                               subframe<<1);
             stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
 
             start_meas(&PHY_vars_UE->dlsch_decoding_stats);
             ret[cw_non_sic] = dlsch_decoding(PHY_vars_UE,
-               PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],     
-               &PHY_vars_UE->lte_frame_parms,
-               PHY_vars_UE->dlsch_ue[0][cw_non_sic],
-               PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid],
-               subframe,
-               PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid,
-               1,llr8_flag);
+                                             PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],     
+                                             &PHY_vars_UE->lte_frame_parms,
+                                             PHY_vars_UE->dlsch_ue[0][cw_non_sic],
+                                             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid],
+                                             subframe,
+                                             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid,
+                                             1,llr8_flag);
             stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
            
              
             if (ret[cw_non_sic] <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations ) { 
-
               if (cw_non_sic==0) {    
-          avg_iter[0] += ret[0];
-          iter_trials[0]++;
+                avg_iter[0] += ret[0];
+                iter_trials[0]++;
               }
               
               if (n_frames==2) {
-          printf("cw non sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",cw_non_sic,round,uncoded_ber);
-      #ifdef PRINT_BYTES
-          for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->C;s++) {
-            if (s<PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Cminus)
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Kminus;
-            else
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Kplus;
-            
-            Kr_bytes = Kr>>3;
-            
-            printf("Decoded_output (Segment %d):\n",s);
-            for (i=0;i<Kr_bytes;i++)
-              printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->c[s][i],
-               PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->c[s][i]);
-          }
-      #endif
+                printf("cw non sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",cw_non_sic,round,uncoded_ber);
+            #ifdef PRINT_BYTES
+                for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->C;s++) {
+                  if (s<PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Cminus)
+                    Kr = PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Kminus;
+                  else
+                    Kr = PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->Kplus;
+                  
+                  Kr_bytes = Kr>>3;
+                  
+                  printf("Decoded_output (Segment %d):\n",s);
+                  for (i=0;i<Kr_bytes;i++)
+                    printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->c[s][i],
+                           PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->c[s][i]);
+                }
+            #endif
               }
               
               PHY_vars_UE->total_TBS[eNB_id] =  PHY_vars_UE->total_TBS[eNB_id] + PHY_vars_UE->dlsch_ue[eNB_id][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][cw_non_sic]->current_harq_pid]->TBS;
@@ -3622,250 +3621,250 @@ n(tikz_fname,"w");
               
               }
               
-        if ((PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
-            (PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
-            rx_type==rx_SIC_dual_stream) {
-              remove("rho_rho_in_llr.m");
+              if ((PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
+                  (PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode <=DUALSTREAM_PUSCH_PRECODING) &&
+                  rx_type==rx_SIC_dual_stream) {
+                remove("rho_rho_in_llr.m");
           
          // for (round = 0 ; round < 1 ; round++) {
-            dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
-            dlsch0_eNB_harq = PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
-              
-            dlsch0_eNB_harq->mimo_mode    = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode;
-            dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
-            dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
-            dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
-            dlsch0_eNB_harq->rvidx        = dlsch0_ue_harq->rvidx;
-            dlsch0_eNB_harq->Nl           = dlsch0_ue_harq->Nl;
-            dlsch0_eNB_harq->round        = dlsch0_ue_harq->round;
-            dlsch0_eNB_harq->TBS          = dlsch0_ue_harq->TBS;
-            dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
-            dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
-              
-            PHY_vars_UE->dlsch_eNB[eNB_id]->active                   = PHY_vars_UE->dlsch_ue[eNB_id][0]->active;
-            PHY_vars_UE->dlsch_eNB[eNB_id]->rnti                     = PHY_vars_UE->dlsch_ue[eNB_id][0]->rnti;
-            PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid         = PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid;
-            
-            dlsch_encoding(input_buffer0[0], //PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
-                           &PHY_vars_UE->lte_frame_parms,
-                           num_pdcch_symbols,
-                           PHY_vars_UE->dlsch_eNB[eNB_id],
-                           0,
-                           subframe,
-                           &PHY_vars_UE->dlsch_rate_matching_stats,
-                           &PHY_vars_UE->dlsch_turbo_encoding_stats,
-                           &PHY_vars_UE->dlsch_interleaving_stats);
-         
-              
-            coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
-                                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
-                                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->rb_alloc,
-                                            get_Qm(PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->mcs),
-                                            PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->Nl,
-                                            num_pdcch_symbols,
-                                            0,
-                                            subframe);
-
-            dlsch_scrambling(&PHY_vars_UE->lte_frame_parms,
-                             0,
-                             PHY_vars_UE->dlsch_eNB[eNB_id],
-                             coded_bits_per_codeword,
-                             0,
-                             subframe<<1);
-
-            re_allocated = dlsch_modulation_SIC(sic_buffer,
-                                                subframe,
-                                                &PHY_vars_UE->lte_frame_parms,
-                                                num_pdcch_symbols,
-                                                &PHY_vars_UE->dlsch_eNB[0][0],
-                                                NULL,
-                                                coded_bits_per_codeword);
-              
-           // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
-           // write_output("rxdataF_comp1.m","rxF_comp1", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
-           // write_output("rxdataF_rho.m","rho", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
-
-            switch  (get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)){
-              
-              case 2:
-
-                dlsch_qpsk_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-                                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                   sic_buffer,
-                                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-                                   num_pdcch_symbols,
-                                   dlsch0_eNB_harq->nb_rb,
-                                   subframe,
-                                   dlsch0_eNB_harq->rb_alloc[0],
-                                   get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs), 
-                                   PHY_vars_UE->dlsch_ue[eNB_id][0]);
-              break;
-
-              case 4:
-
-                dlsch_16qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                    sic_buffer,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-                                    num_pdcch_symbols,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
-                                    dlsch0_eNB_harq->nb_rb,
-                                    subframe,
-                                    dlsch0_eNB_harq->rb_alloc[0],
-                                    get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-                                    PHY_vars_UE->dlsch_ue[eNB_id][0]);
-              break;
-              case 6:
-                dlsch_64qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                    sic_buffer,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
-                                    num_pdcch_symbols,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
-                                    PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
-                                    dlsch0_eNB_harq->nb_rb,
-                                    subframe,
-                                    dlsch0_eNB_harq->rb_alloc[0],
-                                    get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
-                                    PHY_vars_UE->dlsch_ue[eNB_id][0]);
-              break;
-                }// round
-        
-                //  write_output("rxdata_llr1.m","llr1", PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
-        
-            for (cw_sic=cw_to_decode_interf_free; cw_sic<cw_to_decode_interf_free+1;cw_sic++){
-              PHY_vars_UE->dlsch_ue[0][cw_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
-              coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-                      PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->nb_rb,
-                      PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->rb_alloc,
-                      get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs),
-                      PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->Nl,
-                      num_pdcch_symbols,
-                      0,
-                            subframe);
-              
-              PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->G = coded_bits_per_codeword;
-              PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs);
-            
-              if (n_frames==2) {
-                printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_sic,coded_bits_per_codeword,
-                  PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->TBS);
-          
-              // calculate uncoded BER
-                uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
-                AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
-                sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, cw_sic);
-                sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, cw_sic);
-                write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic],coded_bits_per_codeword,1,0);
-                sprintf(fname,"dlsch_cw%d_e.m", cw_sic);
-                sprintf(vname,"dlschcw%d_e", cw_sic);
-                write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
-                uncoded_ber=0;
-           printf("trials=%d\n", trials);
-                  for (i=0;i<coded_bits_per_codeword;i++) 
-              if (PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic][i]<0)) {
-                uncoded_ber_bit[i] = 1;
-                uncoded_ber++;
-              } else
-                uncoded_ber_bit[i] = 0;
-              
-               uncoded_ber/=coded_bits_per_codeword;
-               avg_ber += uncoded_ber;
-               sprintf(fname,"cw%d_uncoded_ber_bit.m", cw_sic);
-               sprintf(vname,"uncoded_ber_bit_cw%d", cw_sic);
-               write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword,1,0);
-               printf("cw %d, uncoded ber %f\n",cw_sic,uncoded_ber);     
-                     free(uncoded_ber_bit);
-               uncoded_ber_bit = NULL;  
-            }
-
-            start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
-            dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-                   0,
-                   PHY_vars_UE->dlsch_ue[0][cw_sic],
-                   coded_bits_per_codeword,
-                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],
-                   cw_sic,
-                   subframe<<1);
-            stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
-
-            start_meas(&PHY_vars_UE->dlsch_decoding_stats);
-            ret[1] = dlsch_decoding(PHY_vars_UE,
-               PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],     
-               &PHY_vars_UE->lte_frame_parms,
-               PHY_vars_UE->dlsch_ue[0][cw_sic],
-               PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid],
-               subframe,
-               PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid,
-               1,llr8_flag);
-            stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
-           
-             
-            if (ret[1] <= PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) {  //if (ret <= PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) 
-            
-          avg_iter[1] += ret[1];
-          iter_trials[1]++;
-              
-              
-              if (n_frames==2) {
-          printf("cw sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",cw_sic,round,uncoded_ber);
-      #ifdef PRINT_BYTES
-          for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->C;s++) {
-            if (s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Cminus)
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kminus;
-            else
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kplus;
-            
-            Kr_bytes = Kr>>3;
-            
-            printf("Decoded_output (Segment %d):\n",s);
-            for (i=0;i<Kr_bytes;i++)
-              printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i],
-               PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->c[s][i]);
-          }
-      #endif
-              }  
-              
-            }    
-              
-              
-            else {
-              errs[cw_sic][round]++;
-             // exit(0);
-              
-              if (cw_sic==1) {
-          avg_iter[1] += ret[1]-1;
-          iter_trials[1]++;
-              }
-              
-              if (n_frames==2) {
-          //if ((n_frames==1) || (SNR>=30)) {
-          printf("cw sic %d, round %d: DLSCH errors found, uncoded ber %f\n",cw_sic,round,uncoded_ber);
-      #ifdef PRINT_BYTES
-          for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->C;s++) {
-            if (s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Cminus)
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kminus;
-            else
-              Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kplus;
-            
-            Kr_bytes = Kr>>3;
-            
-            printf("Decoded_output (Segment %d):\n",s);
-            for (i=0;i<Kr_bytes;i++)
-              printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i],
-               PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->c[s][i]);
-          }
-      #endif
-              } //n_frames==1
-             // exit(0);
-            } //if (ret > PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) 
-          } //for (int cw_1=cw_to_decode_interf_free; cw_1<cw_to_decode_interf_free+1;cw_1++)
+                dlsch0_ue_harq = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
+                dlsch0_eNB_harq = PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid];
+                  
+                dlsch0_eNB_harq->mimo_mode    = PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->mimo_mode;
+                dlsch0_eNB_harq->rb_alloc[0]  = dlsch0_ue_harq->rb_alloc_even[0];
+                dlsch0_eNB_harq->nb_rb        = dlsch0_ue_harq->nb_rb;
+                dlsch0_eNB_harq->mcs          = dlsch0_ue_harq->mcs;
+                dlsch0_eNB_harq->rvidx        = dlsch0_ue_harq->rvidx;
+                dlsch0_eNB_harq->Nl           = dlsch0_ue_harq->Nl;
+                dlsch0_eNB_harq->round        = dlsch0_ue_harq->round;
+                dlsch0_eNB_harq->TBS          = dlsch0_ue_harq->TBS;
+                dlsch0_eNB_harq->dl_power_off = dlsch0_ue_harq->dl_power_off;
+                dlsch0_eNB_harq->status       = dlsch0_ue_harq->status;
+                  
+                PHY_vars_UE->dlsch_eNB[eNB_id]->active                   = PHY_vars_UE->dlsch_ue[eNB_id][0]->active;
+                PHY_vars_UE->dlsch_eNB[eNB_id]->rnti                     = PHY_vars_UE->dlsch_ue[eNB_id][0]->rnti;
+                PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid         = PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid;
                 
+                dlsch_encoding(input_buffer0[0], //PHY_vars_UE->dlsch_ue[eNB_id][0]->harq_processes[PHY_vars_UE->dlsch_ue[eNB_id][0]->current_harq_pid]->b,
+                               &PHY_vars_UE->lte_frame_parms,
+                               num_pdcch_symbols,
+                               PHY_vars_UE->dlsch_eNB[eNB_id],
+                               0,
+                               subframe,
+                               &PHY_vars_UE->dlsch_rate_matching_stats,
+                               &PHY_vars_UE->dlsch_turbo_encoding_stats,
+                               &PHY_vars_UE->dlsch_interleaving_stats);
+             
+                  
+                coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
+                                                PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
+                                                PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->rb_alloc,
+                                                get_Qm(PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->mcs),
+                                                PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->Nl,
+                                                num_pdcch_symbols,
+                                                0,
+                                                subframe);
+
+                dlsch_scrambling(&PHY_vars_UE->lte_frame_parms,
+                                 0,
+                                 PHY_vars_UE->dlsch_eNB[eNB_id],
+                                 coded_bits_per_codeword,
+                                 0,
+                                 subframe<<1);
+
+                re_allocated = dlsch_modulation_SIC(sic_buffer,
+                                                    subframe,
+                                                    &PHY_vars_UE->lte_frame_parms,
+                                                    num_pdcch_symbols,
+                                                    &PHY_vars_UE->dlsch_eNB[0][0],
+                                                    NULL,
+                                                    coded_bits_per_codeword);
+                  
+               // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
+               // write_output("rxdataF_comp1.m","rxF_comp1", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
+               // write_output("rxdataF_rho.m","rho", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
+
+                switch  (get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)){
+                  
+                  case 2:
+
+                    dlsch_qpsk_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                       sic_buffer,
+                                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+                                       num_pdcch_symbols,
+                                       dlsch0_eNB_harq->nb_rb,
+                                       subframe,
+                                       dlsch0_eNB_harq->rb_alloc[0],
+                                       get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs), 
+                                       PHY_vars_UE->dlsch_ue[eNB_id][0]);
+                  break;
+
+                  case 4:
+
+                    dlsch_16qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                        sic_buffer,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+                                        num_pdcch_symbols,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+                                        dlsch0_eNB_harq->nb_rb,
+                                        subframe,
+                                        dlsch0_eNB_harq->rb_alloc[0],
+                                        get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+                                        PHY_vars_UE->dlsch_ue[eNB_id][0]);
+                  break;
+                  case 6:
+                    dlsch_64qam_llr_SIC(&PHY_vars_UE->lte_frame_parms,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                        sic_buffer,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_rho_ext[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],
+                                        num_pdcch_symbols,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_mag1,
+                                        PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->dl_ch_magb1,
+                                        dlsch0_eNB_harq->nb_rb,
+                                        subframe,
+                                        dlsch0_eNB_harq->rb_alloc[0],
+                                        get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs),
+                                        PHY_vars_UE->dlsch_ue[eNB_id][0]);
+                  break;
+                    }// round
             
-        } //if SIC
+                    //  write_output("rxdata_llr1.m","llr1", PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[1],re_allocated*2,1,0);
+            
+                for (cw_sic=cw_to_decode_interf_free; cw_sic<cw_to_decode_interf_free+1;cw_sic++){
+                  PHY_vars_UE->dlsch_ue[0][cw_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
+                  coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                          PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->nb_rb,
+                          PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->rb_alloc,
+                          get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs),
+                          PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->Nl,
+                          num_pdcch_symbols,
+                          0,
+                                subframe);
+                  
+                  PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->G = coded_bits_per_codeword;
+                  PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs);
+                
+                  if (n_frames==2) {
+                    printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_sic,coded_bits_per_codeword,
+                      PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->TBS);
+              
+                  // calculate uncoded BER
+                    uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
+                    AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
+                    sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, cw_sic);
+                    sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, cw_sic);
+                    write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic],coded_bits_per_codeword,1,0);
+                    sprintf(fname,"dlsch_cw%d_e.m", cw_sic);
+                    sprintf(vname,"dlschcw%d_e", cw_sic);
+                    write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+                    uncoded_ber=0;
+               printf("trials=%d\n", trials);
+                      for (i=0;i<coded_bits_per_codeword;i++) 
+                  if (PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic][i]<0)) {
+                    uncoded_ber_bit[i] = 1;
+                    uncoded_ber++;
+                  } else
+                    uncoded_ber_bit[i] = 0;
+                  
+                   uncoded_ber/=coded_bits_per_codeword;
+                   avg_ber += uncoded_ber;
+                   sprintf(fname,"cw%d_uncoded_ber_bit.m", cw_sic);
+                   sprintf(vname,"uncoded_ber_bit_cw%d", cw_sic);
+                   write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword,1,0);
+                   printf("cw %d, uncoded ber %f\n",cw_sic,uncoded_ber);     
+                         free(uncoded_ber_bit);
+                   uncoded_ber_bit = NULL;  
+                }
+
+                start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
+                dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
+                       0,
+                       PHY_vars_UE->dlsch_ue[0][cw_sic],
+                       coded_bits_per_codeword,
+                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],
+                       cw_sic,
+                       subframe<<1);
+                stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
+
+                start_meas(&PHY_vars_UE->dlsch_decoding_stats);
+                ret[1] = dlsch_decoding(PHY_vars_UE,
+                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],     
+                   &PHY_vars_UE->lte_frame_parms,
+                   PHY_vars_UE->dlsch_ue[0][cw_sic],
+                   PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid],
+                   subframe,
+                   PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid,
+                   1,llr8_flag);
+                stop_meas(&PHY_vars_UE->dlsch_decoding_stats); 
+               
+                 
+                if (ret[1] <= PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) {  //if (ret <= PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) 
+                
+              avg_iter[1] += ret[1];
+              iter_trials[1]++;
+                  
+                  
+                  if (n_frames==2) {
+              printf("cw sic %d, round %d: No DLSCH errors found, uncoded ber %f\n",cw_sic,round,uncoded_ber);
+          #ifdef PRINT_BYTES
+              for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->C;s++) {
+                if (s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Cminus)
+                  Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kminus;
+                else
+                  Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kplus;
+                
+                Kr_bytes = Kr>>3;
+                
+                printf("Decoded_output (Segment %d):\n",s);
+                for (i=0;i<Kr_bytes;i++)
+                  printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i],
+                   PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->c[s][i]);
+              }
+          #endif
+                  }  
+                  
+                }    
+                  
+                  
+                else {
+                  errs[cw_sic][round]++;
+                 // exit(0);
+                  
+                  if (cw_sic==1) {
+              avg_iter[1] += ret[1]-1;
+              iter_trials[1]++;
+                  }
+                  
+                  if (n_frames==2) {
+              //if ((n_frames==1) || (SNR>=30)) {
+              printf("cw sic %d, round %d: DLSCH errors found, uncoded ber %f\n",cw_sic,round,uncoded_ber);
+          #ifdef PRINT_BYTES
+              for (s=0;s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->C;s++) {
+                if (s<PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Cminus)
+                  Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kminus;
+                else
+                  Kr = PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->Kplus;
+                
+                Kr_bytes = Kr>>3;
+                
+                printf("Decoded_output (Segment %d):\n",s);
+                for (i=0;i<Kr_bytes;i++)
+                  printf("%d : %x (%x)\n",i,PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i],
+                   PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[0]->c[s][i]^PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->c[s][i]);
+              }
+          #endif
+                  } //n_frames==1
+                 // exit(0);
+                } //if (ret > PHY_vars_UE->dlsch_ue[0][cw_sic]->max_turbo_iterations ) 
+              } //for (int cw_1=cw_to_decode_interf_free; cw_1<cw_to_decode_interf_free+1;cw_1++)
+                    
+                
+            } //if SIC
             
             
             } //if (ret <= PHY_vars_UE->dlsch_ue[0][cw_non_sic]->max_turbo_iterations )
