@@ -59,9 +59,12 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
+      for (i=0; i < fp->nb_antennas_tx; i++)
+        txp[i] += packet_id*spp_eth;
+    
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp - eNB->ifdevice.openair0_cfg->tx_sample_advance + packet_id*spp_eth),
-                                   (txp + packet_id*spp_eth),
+                                   txp,
                                    spp_eth,
                                    fp->nb_antennas_tx,
                                    0);
@@ -75,9 +78,12 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
+      for (i=0; i < fp->nb_antennas_rx; i++)
+        rxp[i] += packet_id*spp_eth;
+
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
-                                   (rxp + packet_id*spp_eth),
+                                   rxp,
                                    spp_eth,
                                    fp->nb_antennas_rx,
                                    0);
@@ -156,9 +162,12 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
+      for (i=0; i < fp->nb_antennas_tx; i++)
+        txp[i] += packet_id*spp_eth;
+
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
-                                  (txp + packet_id*spp_eth),
+                                  txp,
                                   spp_eth,
                                   fp->nb_antennas_tx);
     }
@@ -175,9 +184,12 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
       rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
+      for (i=0; i < fp->nb_antennas_tx; i++)
+        rxp[i] += packet_id*spp_eth;
+
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
-                                  (rxp + packet_id*spp_eth),
+                                  rxp,
                                   spp_eth,
                                   fp->nb_antennas_rx);
     }
