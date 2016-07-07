@@ -142,7 +142,7 @@ int main(int argc, char **argv)
 
   int s,Kr,Kr_bytes;
 
-  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate;
+  double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1,rate[2];
   double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
   unsigned char *input_buffer0[2],*input_buffer1[2];
   unsigned short input_buffer_length0,input_buffer_length1;
   unsigned int ret[2];
-  unsigned int coded_bits_per_codeword=0,nsymb,dci_cnt,tbs=0;
+  unsigned int coded_bits_per_codeword[2],nsymb,dci_cnt,tbs[2];
 
   unsigned int tx_lev=0,tx_lev_dB=0,trials,errs[2][4],round_trials[4]={0,0,0,0},dci_errors=0,dlsch_active=0,num_layers;
 
@@ -736,7 +736,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; dci_err\n");
+  fprintf(bler_fd,"SNR; MCS1; MCS2; TBS1; TBS2; rate 0; rate 1; err0_st1; err0_st2 trials0; err1_st1; err1_st2; trials1; err2_st1; err2_st2; trials2; err3_st1; err3_st2; trials3; throug 0; throug 1; sum throug; dci_err\n");
   if (test_perf != 0) {
     
     char hostname[1024];
@@ -2705,7 +2705,7 @@ n(tikz_fname,"w");
 
             for (k=0;k<n_users;k++) {
               for (int cw=0; cw<Kmimo; cw++) {
-                coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                coded_bits_per_codeword[cw] = get_G(&PHY_vars_eNB->lte_frame_parms,
                                                 PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->nb_rb,
                                                 PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->rb_alloc,
                                                 get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
@@ -2715,18 +2715,18 @@ n(tikz_fname,"w");
 
 
       #ifdef TBS_FIX   // This is for MESH operation!!!
-                tbs = (double)3*TBStable[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][cw]->nb_rb-1]/4;
+                tbs[cw] = (double)3*TBStable[get_I_TBS(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs)][PHY_vars_eNB->dlsch_eNB[k][cw]->nb_rb-1]/4;
       #else
-                tbs = PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->TBS;
+                tbs[cw] = PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->TBS;
       #endif
 
-                rate = (double)tbs/(double)coded_bits_per_codeword;
+                rate[cw] = (double)tbs[cw]/(double)coded_bits_per_codeword[cw];
               
                 if ((SNR==snr0) && (trials==0) && (round==0) && (pmi_feedback==0))
                   printf("User %d, cw %d: Rate = %f (%f bits/dim) (G %d, TBS %d, mod %d, pdcch_sym %d, ndi %d)\n",
-                         k,cw,rate,rate*get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
-                         coded_bits_per_codeword,
-                         tbs,
+                         k,cw,rate[cw],rate[cw]*get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
+                         coded_bits_per_codeword[cw],
+                         tbs[cw],
                          get_Qm(PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->mcs),
                          num_pdcch_symbols,
                          PHY_vars_eNB->dlsch_eNB[k][cw]->harq_processes[0]->round);
@@ -2789,7 +2789,7 @@ n(tikz_fname,"w");
                 dlsch_scrambling(&PHY_vars_eNB->lte_frame_parms,
                      0,
                      PHY_vars_eNB->dlsch_eNB[k][cw],
-                     coded_bits_per_codeword,
+                     coded_bits_per_codeword[cw],
                      cw,
                      subframe<<1);
                 stop_meas(&PHY_vars_eNB->dlsch_scrambling_stats);        
@@ -3230,7 +3230,7 @@ n(tikz_fname,"w");
                                                            0,
                                                            P_RNTI)==0)) {
                       dump_dci(&PHY_vars_UE->lte_frame_parms,&dci_alloc_rx[i]);
-                      coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+                      coded_bits_per_codeword[0]= get_G(&PHY_vars_eNB->lte_frame_parms,
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->nb_rb,
                                                       PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->rb_alloc_even,
                                                       get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
@@ -3242,7 +3242,7 @@ n(tikz_fname,"w");
                       rate = (double)dlsch_tbs25[get_I_TBS(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs)][PHY_vars_UE->dlsch_ue[0][0]->nb_rb-1]/(coded_bits_per_codeword);
                       rate*=get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs);
                       */
-                      printf("num_pdcch_symbols %d, G %d, TBS %d\n",PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,coded_bits_per_codeword,PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->TBS);
+                      printf("num_pdcch_symbols %d, G %d, TBS %d\n",PHY_vars_UE->lte_ue_pdcch_vars[0]->num_pdcch_symbols,coded_bits_per_codeword [0],PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->TBS);
 
                       dlsch_active = 1;
                     } else {
@@ -3429,31 +3429,31 @@ n(tikz_fname,"w");
             
           for (cw_non_sic=0; cw_non_sic<cw_to_decode_interf; cw_non_sic++){
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
-            coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
+            coded_bits_per_codeword[cw_non_sic] = get_G(&PHY_vars_eNB->lte_frame_parms,
                                             PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->nb_rb,
                                             PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->rb_alloc,
                                             get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs),
                                             PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->Nl,
                                             num_pdcch_symbols,
                                             0,subframe);
-            PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->G = coded_bits_per_codeword;
+            PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->G = coded_bits_per_codeword[cw_non_sic];
             PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->mcs);
             if (n_frames==2) {
-              printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_non_sic,coded_bits_per_codeword,
+              printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_non_sic,coded_bits_per_codeword[cw_non_sic],
                      PHY_vars_UE->dlsch_ue[0][cw_non_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_non_sic]->current_harq_pid]->TBS);
             
               // calculate uncoded BER
-              uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
+              uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword[cw_non_sic]);
               AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
               sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, cw_non_sic);
               sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, cw_non_sic);
-              write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic],coded_bits_per_codeword,1,0);
+              write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic],coded_bits_per_codeword[cw_non_sic],1,0);
               sprintf(fname,"dlsch_cw%d_e.m", cw_non_sic);
               sprintf(vname,"dlschcw%d_e", cw_non_sic);
-               write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+               write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e,coded_bits_per_codeword[cw_non_sic],1,4);
               uncoded_ber=0;
               printf("trials=%d\n", trials);
-              for (i=0;i<coded_bits_per_codeword;i++) 
+              for (i=0;i<coded_bits_per_codeword[cw_non_sic];i++) 
                 if (PHY_vars_eNB->dlsch_eNB[0][cw_non_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_non_sic][i]<0)) {
                   uncoded_ber_bit[i] = 1;
                   uncoded_ber++;
@@ -3461,11 +3461,11 @@ n(tikz_fname,"w");
                 else
                   uncoded_ber_bit[i] = 0;
               
-              uncoded_ber/=coded_bits_per_codeword;
+              uncoded_ber/=coded_bits_per_codeword[cw_non_sic];
               avg_ber += uncoded_ber;
               sprintf(fname,"cw%d_uncoded_ber_bit.m", cw_non_sic);
               sprintf(vname,"uncoded_ber_bit_cw%d", cw_non_sic);
-              write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword,1,0);
+              write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword[cw_non_sic],1,0);
               printf("cw %d, uncoded ber %f\n",cw_non_sic,uncoded_ber);
               
 
@@ -3478,7 +3478,7 @@ n(tikz_fname,"w");
             dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
                                0,
                                PHY_vars_UE->dlsch_ue[0][cw_non_sic],
-                               coded_bits_per_codeword,
+                               coded_bits_per_codeword[cw_non_sic],
                                PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_non_sic],
                                cw_non_sic,
                                subframe<<1);
@@ -3656,7 +3656,7 @@ n(tikz_fname,"w");
                                &PHY_vars_UE->dlsch_interleaving_stats);
              
                   
-                coded_bits_per_codeword = get_G(&PHY_vars_UE->lte_frame_parms,
+                coded_bits_per_codeword[cw_non_sic]= get_G(&PHY_vars_UE->lte_frame_parms,
                                                 PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->nb_rb,
                                                 PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->rb_alloc,
                                                 get_Qm(PHY_vars_UE->dlsch_eNB[eNB_id]->harq_processes[PHY_vars_UE->dlsch_eNB[eNB_id]->current_harq_pid]->mcs),
@@ -3668,7 +3668,7 @@ n(tikz_fname,"w");
                 dlsch_scrambling(&PHY_vars_UE->lte_frame_parms,
                                  0,
                                  PHY_vars_UE->dlsch_eNB[eNB_id],
-                                 coded_bits_per_codeword,
+                                 coded_bits_per_codeword[cw_non_sic],
                                  0,
                                  subframe<<1);
 
@@ -3678,7 +3678,7 @@ n(tikz_fname,"w");
                                                     num_pdcch_symbols,
                                                     &PHY_vars_UE->dlsch_eNB[0][0],
                                                     NULL,
-                                                    coded_bits_per_codeword);
+                                                    coded_bits_per_codeword[cw_non_sic]);
                   
                // write_output("sic_buffer.m","sic", *sic_buffer,re_allocated,1,1);
                // write_output("rxdataF_comp1.m","rxF_comp1", *PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->rxdataF_comp1[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid][round],14*12*25,1,1);
@@ -3737,45 +3737,45 @@ n(tikz_fname,"w");
             
                 for (cw_sic=cw_to_decode_interf_free; cw_sic<cw_to_decode_interf_free+1;cw_sic++){
                   PHY_vars_UE->dlsch_ue[0][cw_sic]->rnti = (common_flag==0) ? n_rnti: SI_RNTI;
-                  coded_bits_per_codeword = get_G(&PHY_vars_eNB->lte_frame_parms,
-                          PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->nb_rb,
-                          PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->rb_alloc,
+                  coded_bits_per_codeword[cw_sic]= get_G(&PHY_vars_eNB->lte_frame_parms,
+                                                         PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->nb_rb,
+                                                         PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->rb_alloc,
                           get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs),
                           PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->Nl,
                           num_pdcch_symbols,
                           0,
                                 subframe);
                   
-                  PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->G = coded_bits_per_codeword;
+                  PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->G = coded_bits_per_codeword[cw_sic];
                   PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->Qm = get_Qm(PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->mcs);
                 
                   if (n_frames==2) {
-                    printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_sic,coded_bits_per_codeword,
+                    printf("Kmimo=%d, cw=%d, G=%d, TBS=%d\n",Kmimo,cw_sic,coded_bits_per_codeword[cw_sic],
                       PHY_vars_UE->dlsch_ue[0][cw_sic]->harq_processes[PHY_vars_UE->dlsch_ue[0][cw_sic]->current_harq_pid]->TBS);
               
                   // calculate uncoded BER
-                    uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword);
+                    uncoded_ber_bit = (short*) malloc(sizeof(short)*coded_bits_per_codeword[cw_sic]);
                     AssertFatal(uncoded_ber_bit, "uncoded_ber_bit==NULL");
                     sprintf(fname,"dlsch%d_rxF_r%d_cw%d_llr.m",eNB_id,round, cw_sic);
                     sprintf(vname,"dl%d_r%d_cw%d_llr",eNB_id,round, cw_sic);
-                    write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic],coded_bits_per_codeword,1,0);
+                    write_output(fname,vname, PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic],coded_bits_per_codeword[cw_sic],1,0);
                     sprintf(fname,"dlsch_cw%d_e.m", cw_sic);
                     sprintf(vname,"dlschcw%d_e", cw_sic);
-                    write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
+                    write_output(fname, vname,PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e,coded_bits_per_codeword[cw_sic],1,4);
                     uncoded_ber=0;
                printf("trials=%d\n", trials);
-                      for (i=0;i<coded_bits_per_codeword;i++) 
+                      for (i=0;i<coded_bits_per_codeword[cw_sic];i++) 
                   if (PHY_vars_eNB->dlsch_eNB[0][cw_sic]->harq_processes[0]->e[i] != (PHY_vars_UE->lte_ue_pdsch_vars[0]->llr[cw_sic][i]<0)) {
                     uncoded_ber_bit[i] = 1;
                     uncoded_ber++;
                   } else
                     uncoded_ber_bit[i] = 0;
                   
-                   uncoded_ber/=coded_bits_per_codeword;
+                   uncoded_ber/=coded_bits_per_codeword[cw_sic];
                    avg_ber += uncoded_ber;
                    sprintf(fname,"cw%d_uncoded_ber_bit.m", cw_sic);
                    sprintf(vname,"uncoded_ber_bit_cw%d", cw_sic);
-                   write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword,1,0);
+                   write_output(fname, vname,uncoded_ber_bit,coded_bits_per_codeword[cw_sic],1,0);
                    printf("cw %d, uncoded ber %f\n",cw_sic,uncoded_ber);     
                          free(uncoded_ber_bit);
                    uncoded_ber_bit = NULL;  
@@ -3783,12 +3783,12 @@ n(tikz_fname,"w");
 
                 start_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
                 dlsch_unscrambling(&PHY_vars_UE->lte_frame_parms,
-                       0,
-                       PHY_vars_UE->dlsch_ue[0][cw_sic],
-                       coded_bits_per_codeword,
-                       PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],
-                       cw_sic,
-                       subframe<<1);
+                                   0,
+                                   PHY_vars_UE->dlsch_ue[0][cw_sic],
+                                   coded_bits_per_codeword[cw_sic],
+                                   PHY_vars_UE->lte_ue_pdsch_vars[eNB_id]->llr[cw_sic],
+                                   cw_sic,
+                                   subframe<<1);
                 stop_meas(&PHY_vars_UE->dlsch_unscrambling_stats);        
 
                 start_meas(&PHY_vars_UE->dlsch_decoding_stats);
@@ -3970,7 +3970,7 @@ n(tikz_fname,"w");
                PHY_vars_UE->lte_frame_parms.ofdm_symbol_size*nsymb,1,1);
             }
             //pdsch_vars
-            dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword,round,PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid);
+            dump_dlsch2(PHY_vars_UE,eNB_id,coded_bits_per_codeword[0],round,PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid);
             /*
               write_output("dlsch_e.m","e",PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->e,coded_bits_per_codeword,1,4);
               write_output("dlsch_ber_bit.m","ber_bit",uncoded_ber_bit,coded_bits_per_codeword,1,0);
@@ -4146,11 +4146,13 @@ n(tikz_fname,"w");
       effective_rate = ((double)(round_trials[0]-dci_errors)/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
 
       printf("\n**********************SNR = %f dB (tx_lev %f, sigma2_dB %f)**************************\n",
-       SNR,
-       (double)tx_lev_dB+10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)),
-       sigma2_dB);
+             SNR,
+             (double)tx_lev_dB+10*log10(PHY_vars_UE->lte_frame_parms.ofdm_symbol_size/(NB_RB*12)),
+              sigma2_dB);
       
-      printf("Errors (%d(%d)/%d %d(%d)/%d %d(%d)/%d %d(%d)/%d), Pe = (%e(%e),%e(%e),%e(%e),%e(%e)), dci_errors %d/%d, Pe = %e => effective rate %f  (%2.1f%%,%f, %f), normalized delay %f (%f)\n",
+      printf("Errors (%d(%d)/%d %d(%d)/%d %d(%d)/%d %d(%d)/%d), Pe = (%e(%e),%e(%e),%e(%e),%e(%e)),"
+              "dci_errors %d/%d, Pe = %e => effective rate %f  (%2.1f%%,%f, %f), normalized delay %f (%f), "
+              "throughput stream 0 = %f , throughput stream 1 = %f, system throughput = %f , rate 0 = %f , rate 1 = %f \n",
        errs[0][0],
        errs[1][0],
        round_trials[0],
@@ -4174,12 +4176,21 @@ n(tikz_fname,"w");
        dci_errors,
        round_trials[0],
        (double)dci_errors/(round_trials[0]),
-       rate*effective_rate,
+       rate[0]*effective_rate,
        100*effective_rate,
-       rate,
-       rate*get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
-       (1.0*(round_trials[0]-errs[0][0])+2.0*(round_trials[1]-errs[0][1])+3.0*(round_trials[2]-errs[0][2])+4.0*(round_trials[3]-errs[0][3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-       (1.0*(round_trials[0]-errs[0][0])+2.0*(round_trials[1]-errs[0][1])+3.0*(round_trials[2]-errs[0][2])+4.0*(round_trials[3]-errs[0][3]))/((double)round_trials[0]));
+       rate[0],
+       rate[0]*get_Qm(PHY_vars_UE->dlsch_ue[0][0]->harq_processes[PHY_vars_UE->dlsch_ue[0][0]->current_harq_pid]->mcs),
+       (1.0*(round_trials[0]-errs[0][0])+2.0*(round_trials[1]-errs[0][1])+3.0*(round_trials[2]-errs[0][2])+
+        4.0*(round_trials[3]-errs[0][3]))/((double)round_trials[0])/(double)PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
+       (1.0*(round_trials[0]-errs[0][0])+2.0*(round_trials[1]-errs[0][1])+3.0*(round_trials[2]-errs[0][2])
+        +4.0*(round_trials[3]-errs[0][3]))/((double)round_trials[0]),
+       rate[0]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0])),
+       rate[1]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)*(1-((double)errs[1][0]/(double)round_trials[0])),
+       rate[0]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0]))+
+       rate[1]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)*(1-((double)errs[1][0]/(double)round_trials[0])),
+       rate[0],
+       rate[1]);
+        
       
 
       if (print_perf==1) {
@@ -4285,43 +4296,49 @@ n(tikz_fname,"w");
                PHY_vars_UE->dlsch_tc_intl2_stats.trials);
       }
 
-            if ((transmission_mode != 3) && (transmission_mode != 4)) {
-  fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
-    SNR,
-    mcs1,
-    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-    rate,
-    errs[0][0],
-    round_trials[0],
-    errs[0][1],
-    round_trials[1],
-    errs[0][2],
-    round_trials[2],
-    errs[0][3],
-    round_trials[3],
-    dci_errors);
+      if ((transmission_mode != 3) && (transmission_mode != 4)) {
+        fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+                SNR,
+                mcs1,
+                PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
+                rate[0],
+                errs[0][0],
+                round_trials[0],
+                errs[0][1],
+                round_trials[1],
+                errs[0][2],
+                round_trials[2],
+                errs[0][3],
+                round_trials[3],
+                dci_errors);
       }
       else {
-  fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
-    SNR,
-    mcs1,mcs2,
-    PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-    PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->TBS,
-    rate,
-    errs[0][0],
-    errs[1][0],
-    round_trials[0],
-    errs[0][1],
-    errs[1][1],
-    round_trials[1],
-    errs[0][2],
-    errs[1][2],
-    round_trials[2],
-    errs[0][3],
-    errs[1][3],
-    round_trials[3],
-    dci_errors);
-      }
+        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%f;%f;%f;%d\n",
+                SNR,
+                mcs1,
+                mcs2,
+                PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
+                PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->TBS,
+                rate[0],
+                rate[1],
+                errs[0][0],
+                errs[1][0],
+                round_trials[0],
+                errs[0][1],
+                errs[1][1],
+                round_trials[1],
+                errs[0][2],
+                errs[1][2],
+                round_trials[2],
+                errs[0][3],
+                errs[1][3],
+                round_trials[3],
+                rate[0]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0])),
+                rate[1]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)*(1-((double)errs[1][0]/(double)round_trials[0])),
+                rate[0]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->mcs)*(1-((double)errs[0][0]/(double)round_trials[0]))+
+                rate[1]*get_Qm(PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->mcs)*(1-((double)errs[1][0]/(double)round_trials[0])),
+                dci_errors);
+            }
    
 
       if(abstx){ //ABSTRACTION
@@ -4382,7 +4399,7 @@ n(tikz_fname,"w");
       SNR,
       mcs1,
       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-      rate*effective_rate,
+      rate[0]*effective_rate,
       100*effective_rate,
       rate,
       (double)avg_iter[0]/iter_trials[0],
@@ -4427,7 +4444,7 @@ n(tikz_fname,"w");
       mcs1,mcs2,
       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
       PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->TBS,
-      rate*effective_rate,
+      rate[0]*effective_rate,
       100*effective_rate,
       rate,
       (double)avg_iter[0]/iter_trials[0],
@@ -4516,10 +4533,10 @@ n(tikz_fname,"w");
     PHY_vars_UE->dlsch_unscrambling_stats.trials,
     PHY_vars_UE->dlsch_decoding_stats.trials);
     */
-    printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
+    printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate[0]*effective_rate, 100*effective_rate, rate );
     break;
       } else if (test_perf !=0 ){
-  printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate*effective_rate, 100*effective_rate, rate);
+  printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate[0]*effective_rate, 100*effective_rate, rate);
       }
   if (abstx == 1) {
     if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
