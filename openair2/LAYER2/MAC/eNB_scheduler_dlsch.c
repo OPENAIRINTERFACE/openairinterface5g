@@ -945,7 +945,9 @@ schedule_ue_spec(
 						       MBMS_FLAG_NO,
 						       lcid,
 						       (char*)&dlsch_buffer[sdu_length_total]);
-	      
+	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
+              T_INT(harq_pid), T_INT(lcid), T_INT(sdu_lengths[num_sdus]));
+
 	      LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",module_idP,sdu_lengths[num_sdus],lcid);
 	      sdu_lcids[num_sdus] = lcid;
 	      sdu_length_total += sdu_lengths[num_sdus];
@@ -1096,7 +1098,7 @@ schedule_ue_spec(
                   "[eNB %d][DLSCH] Frame %d Generate header for UE_id %d on CC_id %d: sdu_length_total %d, num_sdus %d, sdu_lengths[0] %d, sdu_lcids[0] %d => payload offset %d,timing advance value : %d, padding %d,post_padding %d,(mcs %d, TBS %d, nb_rb %d),header_dcch %d, header_dtch %d\n",
                   module_idP,frameP, UE_id, CC_id, sdu_length_total,num_sdus,sdu_lengths[0],sdu_lcids[0],offset,
                   ue_sched_ctl->ta_update,padding,post_padding,mcs,TBS,nb_rb,header_len_dcch,header_len_dtch);
-          }
+	  }
           //#endif
 #ifdef DEBUG_eNB_SCHEDULER
           LOG_T(MAC,"[eNB %d] First 16 bytes of DLSCH : \n");
