@@ -4383,7 +4383,7 @@ n(tikz_fname,"w");
       SNR,
       mcs1,
       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
-      rate,
+      rate[0],
       errs[0][0],
       round_trials[0],
       errs[0][1],
@@ -4401,7 +4401,7 @@ n(tikz_fname,"w");
       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
       rate[0]*effective_rate,
       100*effective_rate,
-      rate,
+      rate[0],
       (double)avg_iter[0]/iter_trials[0],
       errs[0][0],
       round_trials[0],
@@ -4427,7 +4427,7 @@ n(tikz_fname,"w");
       mcs1,mcs2,
       PHY_vars_eNB->dlsch_eNB[0][0]->harq_processes[0]->TBS,
       PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->TBS,
-      rate,
+      rate[0],
       errs[0][0],
       round_trials[0],
       errs[0][1],
@@ -4446,7 +4446,7 @@ n(tikz_fname,"w");
       PHY_vars_eNB->dlsch_eNB[0][1]->harq_processes[0]->TBS,
       rate[0]*effective_rate,
       100*effective_rate,
-      rate,
+      rate[0],
       (double)avg_iter[0]/iter_trials[0],
       errs[0][0],
       round_trials[0],
@@ -4533,10 +4533,10 @@ n(tikz_fname,"w");
     PHY_vars_UE->dlsch_unscrambling_stats.trials,
     PHY_vars_UE->dlsch_decoding_stats.trials);
     */
-    printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate[0]*effective_rate, 100*effective_rate, rate );
+    printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate[0]*effective_rate, 100*effective_rate, rate[0]);
     break;
       } else if (test_perf !=0 ){
-  printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate[0]*effective_rate, 100*effective_rate, rate);
+  printf("[continue] effective rate : %f  (%2.1f%%,%f)): increase snr \n",rate[0]*effective_rate, 100*effective_rate, rate[0]);
       }
   if (abstx == 1) {
     if ((rx_type==rx_IC_dual_stream) || (rx_type==rx_standard)) {
