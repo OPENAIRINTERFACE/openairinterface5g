@@ -502,13 +502,6 @@ static void* eNB_thread_rxtx( void* param ) {
           recv_IF4(PHY_vars_eNB_g[0][proc->CC_id], &proc->frame_tx, &proc->subframe_tx, &packet_type, &symbol_number);
         } while (symbol_number < PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti-1); 
         
-        if (proc->subframe_tx == 0 && proc->frame_tx == 0) {
-          write_output("eNBtxsigF.m","txF",PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdataF[0][0], 
-          PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti * PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.ofdm_symbol_size,
-          1,1);        
-          exit(1);
-        }
-
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
       } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF5) {
@@ -579,13 +572,6 @@ static void* eNB_thread_rxtx( void* param ) {
       send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT, 0);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );
       
-      if (proc->subframe_tx == 0 && proc->frame_tx == 0) {
-        write_output("fr_bf_comp.m","txF",PHY_vars_eNB_g[0][proc->CC_id]->common_vars.txdataF[0][0],  
-        PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti * PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.ofdm_symbol_size,
-        1,1);
-        exit(1);
-      }
-
     }
 
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
