@@ -139,7 +139,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   logger_add_view(input_signal_log, input_signal_view);
 
   /* UE 0 PUSCH IQ data */
-  w = new_xy_plot(g, 55, 55, "PUSCH IQ", 50);
+  w = new_xy_plot(g, 55, 55, "PUSCH IQ [UE 0]", 50);
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, -1000, 1000, -1000, 1000);
   l = new_iqlog(h, database, "ENB_PHY_PUSCH_IQ", "nb_rb",
@@ -149,11 +149,10 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   logger_set_filter(l,
       filter_eq(
         filter_evarg(database, "ENB_PHY_PUSCH_IQ", "UE_ID"),
-        filter_int(0)
-      ));
+        filter_int(0)));
 
   /* UE 0 estimated UL channel */
-  w = new_xy_plot(g, 256*2, 55, "UL estimated channel", 50);
+  w = new_xy_plot(g, 280, 55, "UL estimated channel [UE 0]", 50);
   widget_add_child(g, line, w, -1);
   xy_plot_set_range(g, w, 0, 512*10, -10, 80);
   l = new_framelog(h, database,
@@ -165,12 +164,11 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
   logger_set_filter(l,
       filter_eq(
         filter_evarg(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
-        filter_int(0)
-      ));
+        filter_int(0)));
 
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
-      new_label(g,"DL/UL TICK/DCI/ACK/NACK "), -1);
+      new_label(g,"DL/UL TICK/DCI/ACK/NACK [all UEs]"), -1);
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   timeline_plot = new_timeline(g, 512, 8, 5);
@@ -220,7 +218,7 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
 
   /* harq processes' ticktime view */
   widget_add_child(g, top_container,
-      new_label(g,"DL/UL HARQ (x8) "), -1);
+      new_label(g,"DL/UL HARQ (x8) [UE 0]"), -1);
   line = new_container(g, HORIZONTAL);
   widget_add_child(g, top_container, line, -1);
   timeline_plot = new_timeline(g, 512, 2*8+2, 3);
