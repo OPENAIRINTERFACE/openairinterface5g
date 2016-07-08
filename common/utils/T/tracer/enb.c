@@ -166,6 +166,39 @@ static void enb_main_gui(enb_gui *e, gui *g, event_handler *h, void *database)
         filter_evarg(database, "ENB_PHY_UL_CHANNEL_ESTIMATE", "UE_ID"),
         filter_int(0)));
 
+  /* UE 0 PUCCH energy */
+  w = new_xy_plot(g, 128, 55, "PUCCH1 energy (SR) [UE 0]", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, 0, 1024*10, -10, 80);
+  l = new_ttilog(h, database,
+      "ENB_PHY_PUCCH_1_ENERGY", "frame", "subframe", "threshold", 0);
+  v = new_view_tti(10, g, w, new_color(g, "#ff0000"));
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_int(0)));
+  l = new_ttilog(h, database,
+      "ENB_PHY_PUCCH_1_ENERGY", "frame", "subframe", "energy", 1);
+  v = new_view_tti(10, g, w, new_color(g, "#0c0c72"));
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_PUCCH_1_ENERGY", "UE_ID"),
+        filter_int(0)));
+
+  /* UE 0 PUCCH IQ data */
+  w = new_xy_plot(g, 55, 55, "PUCCH IQ [UE 0]", 50);
+  widget_add_child(g, line, w, -1);
+  xy_plot_set_range(g, w, -100, 100, -100, 100);
+  l = new_iqdotlog(h, database, "ENB_PHY_PUCCH_1AB_IQ", "I", "Q");
+  v = new_view_xy(500, 10, g, w, new_color(g,"#000"), XY_LOOP_MODE);
+  logger_add_view(l, v);
+  logger_set_filter(l,
+      filter_eq(
+        filter_evarg(database, "ENB_PHY_PUCCH_1AB_IQ", "UE_ID"),
+        filter_int(0)));
+
   /* downlink/uplink UE DCIs */
   widget_add_child(g, top_container,
       new_label(g,"DL/UL TICK/DCI/ACK/NACK [all UEs]"), -1);
@@ -489,6 +522,8 @@ int main(int n, char **v)
   on_off(database, "ENB_PHY_ULSCH_UE_NACK", is_on, 1);
   on_off(database, "ENB_MASTER_TICK", is_on, 1);
   on_off(database, "ENB_PHY_PUSCH_IQ", is_on, 1);
+  on_off(database, "ENB_PHY_PUCCH_1_ENERGY", is_on, 1);
+  on_off(database, "ENB_PHY_PUCCH_1AB_IQ", is_on, 1);
 
   on_off(database, "LEGACY_RRC_INFO", is_on, 1);
   on_off(database, "LEGACY_RRC_ERROR", is_on, 1);
