@@ -258,13 +258,6 @@ typedef struct {
   uint8_t error_threshold;
   /// Pointers to 8 HARQ processes for the DLSCH
   LTE_DL_eNB_HARQ_t *harq_processes[8];
-  /// circular list of free harq PIDs (the oldest come first)
-  /// (10 is arbitrary value, must be > to max number of DL HARQ processes in LTE)
-  int harq_pid_freelist[10];
-  /// the head position of the free list (if list is free then head=tail)
-  int head_freelist;
-  /// the tail position of the free list
-  int tail_freelist;
   /// Number of soft channel bits
   uint32_t G;
   /// Codebook index for this dlsch (0,1,2,3)
