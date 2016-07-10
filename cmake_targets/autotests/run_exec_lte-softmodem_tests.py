@@ -1013,6 +1013,13 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       run_result=0
       run_result_string = ' RUN_'+str(run) + ' = FAIL(Assert)'
 
+    #If there is thread busy error, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"thread busy\" " + logdir_local_testcase + " | cat "
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if not cmd_out:
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(Thread_Busy)'
+
     run_result_string = run_result_string + tput_run_string
 
     test_result=test_result & run_result
