@@ -110,7 +110,7 @@ int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int
     int *esm_cause)
 {
   LOG_FUNC_IN;
-  esm_data_t *esm_data = _esm_data;
+  esm_data_t *esm_data = user->esm_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - Dedicated EPS bearer context activation "

@@ -104,7 +104,6 @@ static void *_pdn_disconnect_t3492_handler(void *);
  **      tifier                                                    **
  **                                                                        **
  ** Inputs:  cid:       PDN context identifier                     **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     pti:       Procedure transaction identity assigned to **
  **             the PDN connection to be released          **
@@ -287,7 +286,7 @@ int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
 int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
-  esm_data_t *esm_data = _esm_data;
+  esm_data_t *esm_data = user->esm_data;
   int rc;
 
   LOG_TRACE(WARNING, "ESM-PROC  - PDN disconnection rejected by the network "
@@ -383,7 +382,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
 {
   LOG_FUNC_IN;
   nas_user_t *user = args;
-  esm_data_t *esm_data = _esm_data;;
+  esm_data_t *esm_data = user->esm_data;;
   int rc;
 
   /* Get retransmission timer parameters data */
@@ -472,7 +471,6 @@ static void *_pdn_disconnect_t3492_handler(void *args)
  **      ven procedure transaction identity has been assigned      **
  **                                                                        **
  ** Inputs:  pti:       The procedure transaction identity         **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The EPS bearer identity of the default EPS **

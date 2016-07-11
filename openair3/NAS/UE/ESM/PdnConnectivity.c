@@ -131,7 +131,6 @@ static void *_pdn_connectivity_t3482_handler(void *);
  **             the new PDN connection or the released PDN **
  **             connection                                 **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
@@ -351,7 +350,7 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
                                      const OctetString *apn, int *esm_cause)
 {
   LOG_FUNC_IN;
-  esm_data_t *esm_data  = _esm_data;
+  esm_data_t *esm_data  = user->esm_data;
   int     rc;
   int     pid = RETURNerror;
   char    apn_first_char[4];
@@ -678,11 +677,9 @@ static void *_pdn_connectivity_t3482_handler(void *args)
  **      pdn_type:  PDN type (IPv4, IPv6, IPv4v6)              **
  **      is_emergency:  TRUE if the PDN connection has to be esta- **
  **             blished for emergency bearer services      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetString *apn,
@@ -762,7 +759,6 @@ static int _pdn_connectivity_create(esm_data_t *esm_data, int pid, const OctetSt
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetString *apn,
@@ -849,14 +845,12 @@ static int _pdn_connectivity_update(esm_data_t *esm_data, int pid, const OctetSt
  **                                                                        **
  ** Inputs:  pid:       Identifier of the PDN connection to be     **
  **             released                                   **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identity of the procedure transaction  **
  **             assigned to the PDN connection when suc-   **
  **             cessfully released;                        **
  **             UNASSIGNED value otherwise.                **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 static int _pdn_connectivity_delete(esm_data_t *esm_data, int pid)
@@ -912,7 +906,6 @@ static int _pdn_connectivity_delete(esm_data_t *esm_data, int pid)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
 static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti)
@@ -945,7 +938,6 @@ static int _pdn_connectivity_set_pti(esm_data_t *esm_data, int pid, int pti)
  **      for the specified APN                                     **
  **                                                                        **
  ** Inputs:  apn:       Access Point Name of the PDN connection    **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identifier of the PDN connection if    **
@@ -986,7 +978,6 @@ static int _pdn_connectivity_find_apn(esm_data_t *esm_data, const OctetString *a
  **                                                                        **
  ** Inputs:  apn:       Access Point Name of the PDN connection    **
  **      pdn_type:  PDN address type                           **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The identifier of the PDN connection if    **

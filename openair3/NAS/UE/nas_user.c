@@ -2043,7 +2043,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
      * Read command returns the current settings for each
      * defined PDN connection/default EPS bearer context
      */
-    cgdcont->n_pdns = nas_proc_get_pdn_param(_esm_data, cgdcont->cid,
+    cgdcont->n_pdns = nas_proc_get_pdn_param(user->esm_data, cgdcont->cid,
                       cgdcont->PDP_type,
                       cgdcont->APN,
                       AT_CGDCONT_RESP_SIZE);
@@ -2061,7 +2061,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
      */
   {
     /* Get the maximum value of a PDN context identifier */
-    int cid_max = nas_proc_get_pdn_range(_esm_data);
+    int cid_max = nas_proc_get_pdn_range(user->esm_data);
 
     if (cid_max > AT_CGDCONT_RESP_SIZE) {
       /* The range is defined by the user interface */
@@ -2184,7 +2184,7 @@ static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
      * The read command returns the current activation states for
      * all the defined PDN/EPS bearer contexts
      */
-    cgact->n_pdns = nas_proc_get_pdn_status(_esm_data, cgact->cid, cgact->state,
+    cgact->n_pdns = nas_proc_get_pdn_status(user->esm_data, cgact->cid, cgact->state,
                                             AT_CGACT_RESP_SIZE);
 
     if (cgact->n_pdns == 0) {

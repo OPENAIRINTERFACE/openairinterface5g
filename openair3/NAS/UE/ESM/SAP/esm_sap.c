@@ -147,8 +147,7 @@ void esm_sap_initialize(void)
 int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
 {
   LOG_FUNC_IN;
-  // FIXME
-  esm_data_t *esm_data = _esm_data;
+  esm_data_t *esm_data = user->esm_data;
 
   int rc = RETURNerror;
   int pid;

@@ -50,8 +50,6 @@ Description Defines the EPS Session Management procedure call manager,
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
 
-esm_data_t *_esm_data = NULL;
-
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
@@ -71,7 +69,6 @@ esm_data_t *_esm_data = NULL;
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ***************************************************************************/
 esm_data_t * esm_main_initialize(esm_indication_callback_t cb)
@@ -176,7 +173,6 @@ void esm_main_cleanup(esm_data_t *esm_data)
  **      a defined state at the same time                          **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The maximum number of PDN connections that **
@@ -198,7 +194,6 @@ int esm_main_get_nb_pdns_max(esm_data_t *esm_data)
  ** Description: Get the number of active PDN connections                  **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The number of active PDN connections       **
@@ -220,7 +215,6 @@ int esm_main_get_nb_pdns(esm_data_t *esm_data)
  **      vices is established                                      **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE if a PDN connection for emergency     **
@@ -242,7 +236,6 @@ int esm_main_has_emergency(esm_data_t *esm_data)
  ** Description: Get the status of the specified PDN connection            **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     state:     TRUE if the current state of the PDN con-  **
  **             nection is ACTIVE; FALSE otherwise.        **
@@ -288,7 +281,6 @@ int esm_main_get_pdn_status(esm_data_t *esm_data, int cid, int *state)
  ** Description: Get parameters defined for the specified PDN connection   **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     type:      PDN connection type (IPv4, IPv6, IPv4v6)   **
  **      apn:       Access Point logical Name in used          **
@@ -342,7 +334,6 @@ int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn,
  **      tion                                                      **
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
- **      Others:    esm_data->                                 **
  **                                                                        **
  ** Outputs:     ipv4adddr: IPv4 address                               **
  **      ipv6adddr: IPv6 address                               **

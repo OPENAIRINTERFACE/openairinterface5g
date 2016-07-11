@@ -46,10 +46,12 @@ Description NAS type definition to manage a user equipment
 #define __USER_DEFS_H__
 
 #include "nas_proc_defs.h"
+#include "esmData.h"
 
 typedef struct {
   int fd;
   proc_data_t proc;
+  esm_data_t *esm_data; // ESM internal data (used within ESM only)
 } nas_user_t;
 
 #endif

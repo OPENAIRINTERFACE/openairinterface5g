@@ -102,7 +102,6 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid);
  **             gnalling between the UE and the MME        **
  **      ebi:       EPS bearer identity of the EPS bearer con- **
  **             text to be deactivated                     **
- **      Others:    _esm_data                                  **
  **                                                                        **
  ** Outputs:     pid:       Identifier of the PDN connection the EPS   **
  **             bearer belongs to                          **
@@ -119,7 +118,7 @@ int esm_proc_eps_bearer_context_deactivate(nas_user_t *user, int is_local, int e
 
   int rc = RETURNerror;
   int i;
-  esm_data_t *esm_data = _esm_data;
+  esm_data_t *esm_data = user->esm_data;
   if (is_local) {
     if (ebi != ESM_SAP_ALL_EBI) {
       /* Locally release the EPS bearer context */
@@ -195,7 +194,7 @@ int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, in
 
   int pid, bid;
   int rc = RETURNok;
-  esm_data_t *esm_data = _esm_data;
+  esm_data_t *esm_data = user->esm_data;
 
   LOG_TRACE(INFO, "ESM-PROC  - EPS bearer context deactivation "
             "requested by the network (ebi=%d)", ebi);
