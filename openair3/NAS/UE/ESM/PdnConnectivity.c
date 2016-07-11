@@ -302,7 +302,7 @@ int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int p
 
     if (rc != RETURNerror) {
       /* Start T3482 retransmission timer */
-      rc = esm_pt_start_timer(pti, msg, T3482_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, pti, msg, T3482_DEFAULT_VALUE,
                               _pdn_connectivity_t3482_handler);
     }
   }
@@ -635,7 +635,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
 
     if (rc != RETURNerror) {
       /* Restart the timer T3482 */
-      rc = esm_pt_start_timer(data->pti, &data->msg, T3482_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, data->pti, &data->msg, T3482_DEFAULT_VALUE,
                               _pdn_connectivity_t3482_handler);
     }
   } else {

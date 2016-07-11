@@ -86,7 +86,7 @@ void esm_pt_initialize(void);
 int esm_pt_assign(void);
 int esm_pt_release(int pti);
 
-int esm_pt_start_timer(int pti, const OctetString *msg, long sec,
+int esm_pt_start_timer(nas_user_t *user, int pti, const OctetString *msg, long sec,
                        nas_timer_callback_t cb);
 int esm_pt_stop_timer(int pti);
 

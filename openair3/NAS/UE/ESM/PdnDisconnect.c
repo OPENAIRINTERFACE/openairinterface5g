@@ -191,7 +191,7 @@ int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti
 
     if (rc != RETURNerror) {
       /* Start T3482 retransmission timer */
-      rc = esm_pt_start_timer(pti, msg, T3492_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, pti, msg, T3492_DEFAULT_VALUE,
                               _pdn_disconnect_t3492_handler);
     }
   }
@@ -382,7 +382,6 @@ int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
 static void *_pdn_disconnect_t3492_handler(void *args)
 {
   LOG_FUNC_IN;
-  // FIXME check callback call
   nas_user_t *user = args;
   esm_data_t *esm_data = _esm_data;;
   int rc;
@@ -411,7 +410,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
 
     if (rc != RETURNerror) {
       /* Restart the timer T3492 */
-      rc = esm_pt_start_timer(data->pti, &data->msg, T3492_DEFAULT_VALUE,
+      rc = esm_pt_start_timer(user, data->pti, &data->msg, T3492_DEFAULT_VALUE,
                               _pdn_disconnect_t3492_handler);
     }
   } else {

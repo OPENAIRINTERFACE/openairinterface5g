@@ -264,7 +264,7 @@ int esm_pt_release(int pti)
  **      Others:    _esm_pt_data                               **
  **                                                                        **
  ***************************************************************************/
-int esm_pt_start_timer(int pti, const OctetString *msg,
+int esm_pt_start_timer(nas_user_t *user, int pti, const OctetString *msg,
                        long sec, nas_timer_callback_t cb)
 {
   LOG_FUNC_IN;
@@ -291,6 +291,7 @@ int esm_pt_start_timer(int pti, const OctetString *msg,
     ctx->args = (esm_pt_timer_data_t *)malloc(sizeof(esm_pt_timer_data_t));
 
     if (ctx->args) {
+      ctx->args->user = user;
       /* Set the EPS bearer identity */
       ctx->args->pti = pti;
       /* Reset the retransmission counter */
@@ -308,7 +309,6 @@ int esm_pt_start_timer(int pti, const OctetString *msg,
        * time interval */
       ctx->timer.id = nas_timer_start(sec, cb, ctx->args);
       ctx->timer.sec = sec;
-      // FIXME add user
     }
   }
 
