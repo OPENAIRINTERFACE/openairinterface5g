@@ -84,7 +84,7 @@ extern uint8_t usim_test;
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredNormalService(const emm_reg_t *evt)
+int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
@@ -112,11 +112,11 @@ int EmmDeregisteredNormalService(const emm_reg_t *evt)
      */
     if(usim_test == 0)
     {
-      rc = emm_proc_attach(EMM_ATTACH_TYPE_EPS);
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_EPS);
     }
     else
     {
-      rc = emm_proc_attach(EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
+      rc = emm_proc_attach(user, EMM_ATTACH_TYPE_IMSI); // CMW500 IMSI initial attach expected
     }
     break;
 

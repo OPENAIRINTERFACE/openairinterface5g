@@ -46,6 +46,7 @@ Description Defines the EMM Service Access Points at which the EPS
 #include "emm_reg.h"
 #include "emm_esm.h"
 #include "emm_as.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -73,13 +74,13 @@ Description Defines the EMM Service Access Points at which the EPS
  **      Others:    NONE                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_sap_initialize(void)
+void emm_sap_initialize(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
   emm_reg_initialize();
   emm_esm_initialize();
-  emm_as_initialize();
+  emm_as_initialize(user);
 
   LOG_FUNC_OUT;
 }
@@ -98,7 +99,7 @@ void emm_sap_initialize(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_sap_send(emm_sap_t *msg)
+int emm_sap_send(nas_user_t *user, emm_sap_t *msg)
 {
   int rc = RETURNerror;
 
@@ -116,12 +117,12 @@ int emm_sap_send(emm_sap_t *msg)
               (primitive < (emm_primitive_t)EMMESM_PRIMITIVE_MAX) ) {
     /* Forward to the EMMESM-SAP */
     msg->u.emm_esm.primitive = primitive;
-    rc = emm_esm_send(&msg->u.emm_esm);
+    rc = emm_esm_send(user, &msg->u.emm_esm);
   } else if ( (primitive > (emm_primitive_t)EMMAS_PRIMITIVE_MIN) &&
               (primitive < (emm_primitive_t)EMMAS_PRIMITIVE_MAX) ) {
     /* Forward to the EMMAS-SAP */
     msg->u.emm_as.primitive = primitive;
-    rc = emm_as_send(&msg->u.emm_as);
+    rc = emm_as_send(user, &msg->u.emm_as);
   }
   else {
     LOG_TRACE(WARNING, "EMM-SAP -   Out of range primitive (%d)", primitive);

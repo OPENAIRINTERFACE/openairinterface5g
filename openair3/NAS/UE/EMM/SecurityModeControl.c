@@ -145,7 +145,7 @@ static void _security_release(emm_security_context_t *ctx);
  **      Others:    None                                                   **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_security_mode_command(int native_ksi, int ksi,
+int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
                                    int seea, int seia, int reea, int reia, int imeisv_request)
 {
   LOG_FUNC_IN;
@@ -334,7 +334,7 @@ int emm_proc_security_mode_command(int native_ksi, int ksi,
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
                            _emm_data.security, security_context_is_new, TRUE);
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

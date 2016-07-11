@@ -74,7 +74,7 @@ Description Defines the EPS bearer context deactivation ESM procedure
  * in the UE
  * --------------------------------------------------------------------------
  */
-static int _eps_bearer_release(esm_data_t *esm_data, int ebi, int *pid, int *bid);
+static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid);
 
 
 /****************************************************************************/
@@ -112,25 +112,25 @@ static int _eps_bearer_release(esm_data_t *esm_data, int ebi, int *pid, int *bid
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate(esm_data_t *esm_data, int is_local, int ebi,
+int esm_proc_eps_bearer_context_deactivate(nas_user_t *user, int is_local, int ebi,
     int *pid, int *bid)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
   int i;
-
+  esm_data_t *esm_data = _esm_data;
   if (is_local) {
     if (ebi != ESM_SAP_ALL_EBI) {
       /* Locally release the EPS bearer context */
-      rc = _eps_bearer_release(esm_data, ebi, pid, bid);
+      rc = _eps_bearer_release(user, ebi, pid, bid);
     } else {
       /* Locally release all the EPS bearer contexts */
       *bid = 0;
 
       for (*pid = 0; *pid < ESM_DATA_PDN_MAX; (*pid)++) {
         if (esm_data->pdn[*pid].data) {
-          rc = _eps_bearer_release(esm_data, ESM_EBI_UNASSIGNED, pid, bid);
+          rc = _eps_bearer_release(user, ESM_EBI_UNASSIGNED, pid, bid);
 
           if (rc != RETURNok) {
             break;
@@ -189,18 +189,19 @@ int esm_proc_eps_bearer_context_deactivate(esm_data_t *esm_data, int is_local, i
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate_request(esm_data_t *esm_data, int ebi, int *esm_cause)
+int esm_proc_eps_bearer_context_deactivate_request(nas_user_t *user, int ebi, int *esm_cause)
 {
   LOG_FUNC_IN;
 
   int pid, bid;
   int rc = RETURNok;
+  esm_data_t *esm_data = _esm_data;
 
   LOG_TRACE(INFO, "ESM-PROC  - EPS bearer context deactivation "
             "requested by the network (ebi=%d)", ebi);
 
   /* Release the EPS bearer context entry */
-  if (esm_ebr_context_release(esm_data, ebi, &pid, &bid) == ESM_EBI_UNASSIGNED) {
+  if (esm_ebr_context_release(user, ebi, &pid, &bid) == ESM_EBI_UNASSIGNED) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");
     *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     LOG_FUNC_RETURN (RETURNerror);
@@ -243,7 +244,7 @@ int esm_proc_eps_bearer_context_deactivate_request(esm_data_t *esm_data, int ebi
         esm_sap.is_standalone = TRUE;
         esm_sap.data.pdn_connect.is_defined = TRUE;
         esm_sap.data.pdn_connect.cid = pid + 1;
-        rc = esm_sap_send(&esm_sap);
+        rc = esm_sap_send(user, &esm_sap);
       }
     }
   }
@@ -275,7 +276,7 @@ int esm_proc_eps_bearer_context_deactivate_request(esm_data_t *esm_data, int ebi
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
+int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered)
 {
   LOG_FUNC_IN;
@@ -293,7 +294,7 @@ int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
     emm_sap.u.emm_esm.ueid = 0;
     emm_sap.u.emm_esm.u.data.msg.length = msg->length;
     emm_sap.u.emm_esm.u.data.msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   if (rc != RETURNerror) {
@@ -352,14 +353,14 @@ int esm_proc_eps_bearer_context_deactivate_accept(int is_standalone, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _eps_bearer_release(esm_data_t *esm_data, int ebi, int *pid, int *bid)
+static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
 
   /* Release the EPS bearer context entry */
-  ebi = esm_ebr_context_release(esm_data, ebi, pid, bid);
+  ebi = esm_ebr_context_release(user, ebi, pid, bid);
 
   if (ebi == ESM_EBI_UNASSIGNED) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");

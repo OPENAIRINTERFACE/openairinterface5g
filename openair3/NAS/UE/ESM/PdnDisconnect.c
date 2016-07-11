@@ -168,7 +168,7 @@ int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, un
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect_request(int is_standalone, int pti,
+int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti,
                                     OctetString *msg, int sent_by_ue)
 {
   LOG_FUNC_IN;
@@ -187,7 +187,7 @@ int esm_proc_pdn_disconnect_request(int is_standalone, int pti,
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Start T3482 retransmission timer */
@@ -284,10 +284,10 @@ int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int *esm_cause)
+int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_data_t *esm_data = _esm_data;
   int rc;
 
   LOG_TRACE(WARNING, "ESM-PROC  - PDN disconnection rejected by the network "
@@ -331,7 +331,7 @@ int esm_proc_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int *esm_cause
       esm_sap.recv = NULL;
       esm_sap.send.length = 0;
       esm_sap.data.eps_bearer_context_deactivate.ebi = ebi;
-      rc = esm_sap_send(&esm_sap);
+      rc = esm_sap_send(user, &esm_sap);
 
       if (rc != RETURNok) {
         *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
@@ -383,7 +383,8 @@ static void *_pdn_disconnect_t3492_handler(void *args)
 {
   LOG_FUNC_IN;
   // FIXME check callback call
-  esm_data_t *esm_data = args;;
+  nas_user_t *user = args;
+  esm_data_t *esm_data = _esm_data;;
   int rc;
 
   /* Get retransmission timer parameters data */
@@ -406,7 +407,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = data->msg.length;
     emm_esm->msg.value = data->msg.value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Restart the timer T3492 */
@@ -449,7 +450,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
         esm_sap.recv = NULL;
         esm_sap.send.length = 0;
         esm_sap.data.eps_bearer_context_deactivate.ebi = ebi;
-        rc = esm_sap_send(&esm_sap);
+        rc = esm_sap_send(user, &esm_sap);
       }
     }
   }

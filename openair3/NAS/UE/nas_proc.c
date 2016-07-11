@@ -98,7 +98,7 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   user->proc.rsrp = NAS_PROC_RSRP_UNKNOWN;
 
   /* Initialize the EMM procedure manager */
-  emm_main_initialize(emm_cb, imei);
+  emm_main_initialize(user, emm_cb, imei);
 
   /* Initialize the ESM procedure manager */
   _esm_data = esm_main_initialize(esm_cb);
@@ -175,7 +175,7 @@ int nas_proc_enable_s1_mode(nas_user_t *user)
    */
   user->proc.EPS_capability_status = TRUE;
   emm_sap.primitive = EMMREG_S1_ENABLED;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -208,7 +208,7 @@ int nas_proc_disable_s1_mode(nas_user_t *user)
    */
   user->proc.EPS_capability_status = FALSE;
   emm_sap.primitive = EMMREG_S1_DISABLED;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -396,7 +396,7 @@ int nas_proc_register(nas_user_t *user, int mode, int format, const network_plmn
     emm_sap_t emm_sap;
     emm_sap.primitive = EMMREG_REGISTER_REQ;
     emm_sap.u.emm_reg.u.regist.index = index;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -574,7 +574,7 @@ int nas_proc_detach(nas_user_t *user, int switch_off)
     /* Initiate an Detach procedure */
     emm_sap.primitive = EMMREG_DETACH_INIT;
     emm_sap.u.emm_reg.u.detach.switch_off = switch_off;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -605,7 +605,7 @@ int nas_proc_attach(nas_user_t *user)
     /* Initiate an Attach procedure */
     emm_sap.primitive = EMMREG_ATTACH_INIT;
     emm_sap.u.emm_reg.u.attach.is_emergency = FALSE;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -852,7 +852,7 @@ int nas_proc_set_pdn(nas_user_t *user, int cid, int type, const char *apn, int i
    * Notify ESM that a new PDN context has to be defined for
    * the specified APN
    */
-  rc = esm_sap_send(&esm_sap);
+  rc = esm_sap_send(user, &esm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -885,7 +885,7 @@ int nas_proc_reset_pdn(nas_user_t *user, int cid)
   /*
    * Notify ESM that the specified PDN context has to be undefined
    */
-  rc = esm_sap_send(&esm_sap);
+  rc = esm_sap_send(user, &esm_sap);
   LOG_FUNC_RETURN (rc);
 }
 
@@ -1034,7 +1034,7 @@ int nas_proc_cell_info(nas_user_t *user, int found, tac_t tac, ci_t ci, AcT_t Ac
   emm_sap.u.emm_as.u.cell_info.tac = tac;
   emm_sap.u.emm_as.u.cell_info.cellID = ci;
 
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1071,7 +1071,7 @@ int nas_proc_establish_cnf(nas_user_t *user, const Byte_t *data, uint32_t len)
   emm_sap.primitive = EMMAS_ESTABLISH_CNF;
   emm_sap.u.emm_as.u.establish.NASmsg.length = len;
   emm_sap.u.emm_as.u.establish.NASmsg.value = (uint8_t *)data;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1106,7 +1106,7 @@ int nas_proc_establish_rej(nas_user_t *user)
    * from lower layers
    */
   emm_sap.primitive = EMMAS_ESTABLISH_REJ;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1139,7 +1139,7 @@ int nas_proc_release_ind(nas_user_t *user, int cause)
    */
   emm_sap.primitive = EMMAS_RELEASE_IND;
   emm_sap.u.emm_as.u.release.cause = cause;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1176,7 +1176,7 @@ int nas_proc_ul_transfer_cnf(nas_user_t *user)
   emm_sap.u.emm_as.u.data.ueid = 0;
   emm_sap.u.emm_as.u.data.delivered = TRUE;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1213,7 +1213,7 @@ int nas_proc_ul_transfer_rej(nas_user_t *user)
   emm_sap.u.emm_as.u.data.ueid = 0;
   emm_sap.u.emm_as.u.data.delivered = FALSE;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1251,7 +1251,7 @@ int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
     emm_sap.u.emm_as.u.data.delivered = TRUE;
     emm_sap.u.emm_as.u.data.NASmsg.length = len;
     emm_sap.u.emm_as.u.data.NASmsg.value = (uint8_t *)data;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -1332,7 +1332,7 @@ static int _nas_proc_activate(nas_user_t *user, int cid, int apply_to_all)
   esm_sap.is_standalone = TRUE;
   esm_sap.data.pdn_connect.is_defined = TRUE;
   esm_sap.data.pdn_connect.cid = cid;
-  rc = esm_sap_send(&esm_sap);
+  rc = esm_sap_send(user, &esm_sap);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1391,7 +1391,7 @@ static int _nas_proc_deactivate(nas_user_t *user, int cid, int apply_to_all)
     esm_sap_t esm_sap;
     esm_sap.primitive = ESM_PDN_DISCONNECT_REQ;
     esm_sap.data.pdn_disconnect.cid = cid;
-    rc = esm_sap_send(&esm_sap);
+    rc = esm_sap_send(user, &esm_sap);
   } else {
     /* For EPS, if an attempt is made to disconnect the last PDN
      * connection, then the MT responds with an error */

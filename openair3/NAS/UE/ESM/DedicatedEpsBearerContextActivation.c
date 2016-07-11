@@ -104,13 +104,13 @@ Description Defines the dedicated EPS bearer context activation ESM
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int ebi, int default_ebi,
+int esm_proc_dedicated_eps_bearer_context_request(nas_user_t *user, int ebi, int default_ebi,
     const esm_proc_qos_t *qos,
     const esm_proc_tft_t *tft,
     int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_data_t *esm_data = _esm_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - Dedicated EPS bearer context activation "
@@ -141,7 +141,7 @@ int esm_proc_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int ebi,
     int old_pid, old_bid;
     /* Locally deactivate the existing EPS bearer context and proceed
      * with the requested dedicated EPS bearer context activation */
-    rc = esm_proc_eps_bearer_context_deactivate(esm_data, TRUE, ebi,
+    rc = esm_proc_eps_bearer_context_deactivate(user, TRUE, ebi,
          &old_pid, &old_bid);
 
     if (rc != RETURNok) {
@@ -206,7 +206,7 @@ int esm_proc_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered)
 {
   LOG_FUNC_IN;
@@ -225,7 +225,7 @@ int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
   emm_sap.u.emm_esm.ueid = 0;
   emm_esm->msg.length = msg->length;
   emm_esm->msg.value = msg->value;
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
     /* Set the EPS bearer context state to ACTIVE */
@@ -266,7 +266,7 @@ int esm_proc_dedicated_eps_bearer_context_accept(int is_standalone, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
+int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, int is_standalone, int ebi,
     OctetString *msg, int ue_triggered)
 {
   LOG_FUNC_IN;
@@ -293,7 +293,7 @@ int esm_proc_dedicated_eps_bearer_context_reject(int is_standalone, int ebi,
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
   }
 
   LOG_FUNC_RETURN (rc);

@@ -82,7 +82,7 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
+int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
@@ -122,7 +122,7 @@ int EmmDeregisteredPlmnSearch(const emm_reg_t *evt)
     /*
      * Perform network selection procedure
      */
-    rc = emm_proc_plmn_selection(evt->u.regist.index);
+    rc = emm_proc_plmn_selection(user, evt->u.regist.index);
     break;
 
   case _EMMREG_REGISTER_REJ:

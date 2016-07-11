@@ -41,6 +41,7 @@ Description Defines the functions used to get information from the list
 #define __IDLEMODE_H__
 
 #include "commonDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -60,7 +61,7 @@ typedef int (*IdleMode_callback_t) (int);
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void IdleMode_initialize(IdleMode_callback_t cb);
+void IdleMode_initialize(nas_user_t *user, IdleMode_callback_t cb);
 
 int IdleMode_get_nb_plmns(void);
 int IdleMode_get_hplmn_index(void);

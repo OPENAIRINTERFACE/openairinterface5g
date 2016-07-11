@@ -99,19 +99,19 @@ static const char *_emm_as_primitive_str[] = {
  * Functions executed to process EMM procedures upon receiving
  * data from the network
  */
-static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
+static int _emm_as_recv(nas_user_t *user, unsigned int ueid, const char *msg, int len,
                         int *emm_cause);
 
-static int _emm_as_establish_cnf(const emm_as_establish_t *msg, int *emm_cause);
-static int _emm_as_establish_rej(void);
-static int _emm_as_release_ind(const emm_as_release_t *msg);
+static int _emm_as_establish_cnf(nas_user_t *user, const emm_as_establish_t *msg, int *emm_cause);
+static int _emm_as_establish_rej(nas_user_t *user);
+static int _emm_as_release_ind(nas_user_t *user, const emm_as_release_t *msg);
 static int _emm_as_page_ind(const emm_as_page_t *msg);
 
 
 static int _emm_as_cell_info_res(const emm_as_cell_info_t *msg);
 static int _emm_as_cell_info_ind(const emm_as_cell_info_t *msg);
 
-static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause);
+static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm_cause);
 
 /*
  * Functions executed to send data to the network when requested
@@ -133,7 +133,7 @@ static int _emm_as_encrypt(
   int length,
   emm_security_context_t *emm_security_context);
 
-static int _emm_as_send(const emm_as_t *msg);
+static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg);
 
 static int _emm_as_security_res(const emm_as_security_t *,
                                 ul_info_transfer_req_t *);
@@ -143,7 +143,7 @@ static int _emm_as_establish_req(const emm_as_establish_t *,
 
 static int _emm_as_cell_info_req(const emm_as_cell_info_t *, cell_info_req_t *);
 
-static int _emm_as_data_req(const emm_as_data_t *, ul_info_transfer_req_t *);
+static int _emm_as_data_req(const emm_as_data_t *msg, ul_info_transfer_req_t *);
 static int _emm_as_status_ind(const emm_as_status_t *, ul_info_transfer_req_t *);
 static int _emm_as_release_req(const emm_as_release_t *, nas_release_req_t *);
 
@@ -165,7 +165,7 @@ static int _emm_as_release_req(const emm_as_release_t *, nas_release_req_t *);
  **      Others:    NONE                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_as_initialize(void)
+void emm_as_initialize(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -188,7 +188,7 @@ void emm_as_initialize(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_as_send(const emm_as_t *msg)
+int emm_as_send(nas_user_t *user, const emm_as_t *msg)
 {
   LOG_FUNC_IN;
 
@@ -203,21 +203,21 @@ int emm_as_send(const emm_as_t *msg)
 
   switch (primitive) {
   case _EMMAS_DATA_IND:
-    rc = _emm_as_data_ind(&msg->u.data, &emm_cause);
+    rc = _emm_as_data_ind(user, &msg->u.data, &emm_cause);
     ueid = msg->u.data.ueid;
     break;
 
 
   case _EMMAS_ESTABLISH_CNF:
-    rc = _emm_as_establish_cnf(&msg->u.establish, &emm_cause);
+    rc = _emm_as_establish_cnf(user, &msg->u.establish, &emm_cause);
     break;
 
   case _EMMAS_ESTABLISH_REJ:
-    rc = _emm_as_establish_rej();
+    rc = _emm_as_establish_rej(user);
     break;
 
   case _EMMAS_RELEASE_IND:
-    rc = _emm_as_release_ind(&msg->u.release);
+    rc = _emm_as_release_ind(user, &msg->u.release);
     break;
 
   case _EMMAS_PAGE_IND:
@@ -234,7 +234,7 @@ int emm_as_send(const emm_as_t *msg)
 
   default:
     /* Other primitives are forwarded to the Access Stratum */
-    rc = _emm_as_send(msg);
+    rc = _emm_as_send(user, msg);
 
     if (rc != RETURNok) {
       LOG_TRACE(ERROR, "EMMAS-SAP - "
@@ -306,7 +306,7 @@ int emm_as_send(const emm_as_t *msg)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
+static int _emm_as_recv(nas_user_t *user, unsigned int ueid, const char *msg, int len,
                         int *emm_cause)
 {
   LOG_FUNC_IN;
@@ -342,30 +342,30 @@ static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
     break;
 
   case IDENTITY_REQUEST:
-    rc = emm_recv_identity_request(&emm_msg->identity_request,
+    rc = emm_recv_identity_request(user, &emm_msg->identity_request,
                                    emm_cause);
     break;
 
   case AUTHENTICATION_REQUEST:
-    rc = emm_recv_authentication_request(
+    rc = emm_recv_authentication_request(user,
            &emm_msg->authentication_request,
            emm_cause);
     break;
 
   case AUTHENTICATION_REJECT:
-    rc = emm_recv_authentication_reject(
+    rc = emm_recv_authentication_reject(user,
            &emm_msg->authentication_reject,
            emm_cause);
     break;
 
   case SECURITY_MODE_COMMAND:
-    rc = emm_recv_security_mode_command(
+    rc = emm_recv_security_mode_command(user,
            &emm_msg->security_mode_command,
            emm_cause);
     break;
 
   case DETACH_ACCEPT:
-    rc = emm_recv_detach_accept(&emm_msg->detach_accept, emm_cause);
+    rc = emm_recv_detach_accept(user, &emm_msg->detach_accept, emm_cause);
     break;
 
 
@@ -406,7 +406,7 @@ static int _emm_as_recv(unsigned int ueid, const char *msg, int len,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause)
+static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -443,23 +443,23 @@ static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause)
         } else if (header.protocol_discriminator ==
                    EPS_MOBILITY_MANAGEMENT_MESSAGE) {
           /* Process EMM data */
-          rc = _emm_as_recv(msg->ueid, plain_msg, bytes, emm_cause);
+          rc = _emm_as_recv(user, msg->ueid, plain_msg, bytes, emm_cause);
         } else if (header.protocol_discriminator ==
                    EPS_SESSION_MANAGEMENT_MESSAGE) {
           const OctetString data = {bytes, (uint8_t *)plain_msg};
           /* Foward ESM data to EPS session management */
-          rc = lowerlayer_data_ind(msg->ueid, &data);
+          rc = lowerlayer_data_ind(user, msg->ueid, &data);
         }
 
         free(plain_msg);
       }
     } else {
       /* Process successfull lower layer transfer indication */
-      rc = lowerlayer_success(msg->ueid);
+      rc = lowerlayer_success(user, msg->ueid);
     }
   } else {
     /* Process lower layer transmission failure of NAS message */
-    rc = lowerlayer_failure(msg->ueid);
+    rc = lowerlayer_failure(user, msg->ueid);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -482,7 +482,7 @@ static int _emm_as_data_ind(const emm_as_data_t *msg, int *emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
+static int _emm_as_establish_cnf(nas_user_t *user, const emm_as_establish_t *msg,
                                  int *emm_cause)
 {
   LOG_FUNC_IN;
@@ -494,11 +494,11 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
 
   if (msg->NASmsg.length > 0) {
     /* The NAS signalling connection is established */
-    (void) lowerlayer_establish();
+    (void) lowerlayer_establish(user);
   } else {
     /* The initial NAS message has been successfully delivered to
      * lower layers */
-    rc = lowerlayer_success(0);
+    rc = lowerlayer_success(user, 0);
     LOG_FUNC_RETURN (rc);
   }
 
@@ -523,11 +523,11 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
 
   switch (emm_msg->header.message_type) {
   case ATTACH_ACCEPT:
-    rc = emm_recv_attach_accept(&emm_msg->attach_accept, emm_cause);
+    rc = emm_recv_attach_accept(user, &emm_msg->attach_accept, emm_cause);
     break;
 
   case ATTACH_REJECT:
-    rc = emm_recv_attach_reject(&emm_msg->attach_reject, emm_cause);
+    rc = emm_recv_attach_reject(user, &emm_msg->attach_reject, emm_cause);
     break;
 
   case DETACH_ACCEPT:
@@ -563,7 +563,7 @@ static int _emm_as_establish_cnf(const emm_as_establish_t *msg,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_establish_rej(void)
+static int _emm_as_establish_rej(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -573,7 +573,7 @@ static int _emm_as_establish_rej(void)
             "failure");
 
   /* Process lower layer transmission failure of initial NAS message */
-  rc = lowerlayer_failure(0);
+  rc = lowerlayer_failure(user, 0);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -595,7 +595,7 @@ static int _emm_as_establish_rej(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_release_ind(const emm_as_release_t *msg)
+static int _emm_as_release_ind(nas_user_t *user, const emm_as_release_t *msg)
 {
   LOG_FUNC_IN;
 
@@ -605,7 +605,7 @@ static int _emm_as_release_ind(const emm_as_release_t *msg)
             "(cause=%d)", msg->cause);
 
   /* Process NAS signalling connection release indication */
-  rc = lowerlayer_release(msg->cause);
+  rc = lowerlayer_release(user, msg->cause);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -928,7 +928,7 @@ _emm_as_encrypt(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_send(const emm_as_t *msg)
+static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
 {
   LOG_FUNC_IN;
 

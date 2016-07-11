@@ -79,7 +79,7 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmDeregisteredAttemptingToAttach(const emm_reg_t *evt)
+int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
@@ -104,7 +104,7 @@ int EmmDeregisteredAttemptingToAttach(const emm_reg_t *evt)
 
     if (rc != RETURNerror) {
       /* Restart the attach procedure */
-      rc = emm_proc_attach_restart();
+      rc = emm_proc_attach_restart(user);
     }
 
     break;

@@ -330,8 +330,7 @@ int esm_ebr_context_create(
  **      Others:    _esm_data                                  **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_context_release(
-  esm_data_t *esm_data,
+int esm_ebr_context_release(nas_user_t *user,
   int ebi, int *pid, int *bid)
 {
   int found = FALSE;
@@ -342,7 +341,7 @@ int esm_ebr_context_release(
 
   LOG_FUNC_IN;
 
-  esm_ctx = esm_data;
+  esm_ctx = _esm_data;
 
   if (ebi != ESM_EBI_UNASSIGNED) {
     /*
@@ -492,7 +491,7 @@ int esm_ebr_context_release(
       emm_sap_t emm_sap;
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
       emm_sap.u.emm_esm.u.establish.is_attached = FALSE;
-      (void) emm_sap_send(&emm_sap);
+      (void) emm_sap_send(user, &emm_sap);
     }
     /* 3GPP TS 24.301, section 6.4.4.3, 6.4.4.6
      * If due to the EPS bearer context deactivation only the PDN
@@ -505,7 +504,7 @@ int esm_ebr_context_release(
       emm_sap.primitive = EMMESM_ESTABLISH_CNF;
       emm_sap.u.emm_esm.u.establish.is_attached = TRUE;
       emm_sap.u.emm_esm.u.establish.is_emergency = TRUE;
-      (void) emm_sap_send(&emm_sap);
+      (void) emm_sap_send(user, &emm_sap);
     }
 
     LOG_FUNC_RETURN (ebi);

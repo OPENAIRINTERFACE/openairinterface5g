@@ -135,7 +135,7 @@ int esm_recv_status(int pti, int ebi, const esm_status_msg *msg)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_recv_pdn_connectivity_reject(esm_data_t *esm_data, int pti, int ebi,
+int esm_recv_pdn_connectivity_reject(nas_user_t *user, int pti, int ebi,
                                      const pdn_connectivity_reject_msg *msg)
 {
   LOG_FUNC_IN;
@@ -179,7 +179,7 @@ int esm_recv_pdn_connectivity_reject(esm_data_t *esm_data, int pti, int ebi,
   esm_cause = msg->esmcause;
 
   /* Execute the PDN connectivity procedure not accepted by the network */
-  int rc = esm_proc_pdn_connectivity_reject(pti, &esm_cause);
+  int rc = esm_proc_pdn_connectivity_reject(user, pti, &esm_cause);
 
   if (rc != RETURNerror) {
     esm_cause = ESM_CAUSE_SUCCESS;
@@ -206,7 +206,7 @@ int esm_recv_pdn_connectivity_reject(esm_data_t *esm_data, int pti, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_recv_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int ebi,
+int esm_recv_pdn_disconnect_reject(nas_user_t *user, int pti, int ebi,
                                    const pdn_disconnect_reject_msg *msg)
 {
   LOG_FUNC_IN;
@@ -250,7 +250,7 @@ int esm_recv_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int ebi,
   esm_cause = msg->esmcause;
 
   /* Execute the PDN disconnect procedure not accepted by the network */
-  int rc = esm_proc_pdn_disconnect_reject(esm_data, pti, &esm_cause);
+  int rc = esm_proc_pdn_disconnect_reject(user, pti, &esm_cause);
 
   if (rc != RETURNerror) {
     esm_cause = ESM_CAUSE_SUCCESS;
@@ -278,11 +278,10 @@ int esm_recv_pdn_disconnect_reject(esm_data_t *esm_data, int pti, int ebi,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_recv_activate_default_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
+int esm_recv_activate_default_eps_bearer_context_request(nas_user_t *user, int pti, int ebi,
     const activate_default_eps_bearer_context_request_msg *msg)
 {
   LOG_FUNC_IN;
-
   int esm_cause = ESM_CAUSE_SUCCESS;
 
   LOG_TRACE(INFO, "ESM-SAP   - Received Activate Default EPS Bearer Context "
@@ -369,14 +368,14 @@ int esm_recv_activate_default_eps_bearer_context_request(esm_data_t *esm_data, i
   }
 
   /* Execute the PDN connectivity procedure accepted by the network */
-  int pid = esm_proc_pdn_connectivity_accept(esm_data, pti, pdn_type,
+  int pid = esm_proc_pdn_connectivity_accept(user, pti, pdn_type,
             &msg->pdnaddress.pdnaddressinformation,
             &msg->accesspointname.accesspointnamevalue,
             &esm_cause);
 
   if (pid != RETURNerror) {
     /* Create local default EPS bearer context */
-    int rc = esm_proc_default_eps_bearer_context_request(esm_data, pid, ebi, &qos,
+    int rc = esm_proc_default_eps_bearer_context_request(user, pid, ebi, &qos,
              &esm_cause);
 
     if (rc != RETURNerror) {
@@ -406,7 +405,7 @@ int esm_recv_activate_default_eps_bearer_context_request(esm_data_t *esm_data, i
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_recv_activate_dedicated_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
+int esm_recv_activate_dedicated_eps_bearer_context_request(nas_user_t *user, int pti, int ebi,
     const activate_dedicated_eps_bearer_context_request_msg *msg)
 {
   LOG_FUNC_IN;
@@ -580,7 +579,7 @@ int esm_recv_activate_dedicated_eps_bearer_context_request(esm_data_t *esm_data,
   }
 
   /* Execute the dedicated EPS bearer context activation procedure */
-  int rc = esm_proc_dedicated_eps_bearer_context_request(esm_data, ebi,
+  int rc = esm_proc_dedicated_eps_bearer_context_request(user, ebi,
            msg->linkedepsbeareridentity,
            &qos, &tft, &esm_cause);
 
@@ -614,7 +613,7 @@ int esm_recv_activate_dedicated_eps_bearer_context_request(esm_data_t *esm_data,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_recv_deactivate_eps_bearer_context_request(esm_data_t *esm_data, int pti, int ebi,
+int esm_recv_deactivate_eps_bearer_context_request(nas_user_t *user, int pti, int ebi,
     const deactivate_eps_bearer_context_request_msg *msg)
 {
   LOG_FUNC_IN;
@@ -670,7 +669,7 @@ int esm_recv_deactivate_eps_bearer_context_request(esm_data_t *esm_data, int pti
 
   if (rc != RETURNerror) {
     /* Execute the EPS bearer context deactivation procedure */
-    rc = esm_proc_eps_bearer_context_deactivate_request(esm_data, ebi, &esm_cause);
+    rc = esm_proc_eps_bearer_context_deactivate_request(user, ebi, &esm_cause);
 
     if (rc != RETURNerror) {
       esm_cause = ESM_CAUSE_SUCCESS;

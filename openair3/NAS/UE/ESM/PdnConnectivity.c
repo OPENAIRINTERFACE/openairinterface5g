@@ -279,7 +279,7 @@ int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
+int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int pti,
                                       OctetString *msg, int sent_by_ue)
 {
   LOG_FUNC_IN;
@@ -298,7 +298,7 @@ int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Start T3482 retransmission timer */
@@ -346,12 +346,12 @@ int esm_proc_pdn_connectivity_request(int is_standalone, int pti,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_accept(esm_data_t *esm_data, int pti, esm_proc_pdn_type_t pdn_type,
+int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_type_t pdn_type,
                                      const OctetString *pdn_addr,
                                      const OctetString *apn, int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_data_t *esm_data  = _esm_data;
   int     rc;
   int     pid = RETURNerror;
   char    apn_first_char[4];
@@ -438,7 +438,7 @@ int esm_proc_pdn_connectivity_accept(esm_data_t *esm_data, int pti, esm_proc_pdn
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause)
+int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
 
@@ -489,7 +489,7 @@ int esm_proc_pdn_connectivity_reject(int pti, int *esm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_complete(void)
+int esm_proc_pdn_connectivity_complete(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
@@ -530,7 +530,7 @@ int esm_proc_pdn_connectivity_complete(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity_failure(int is_pending)
+int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending)
 {
   LOG_FUNC_IN;
 
@@ -603,6 +603,7 @@ int esm_proc_pdn_connectivity_failure(int is_pending)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
+// FIXME 
 static void *_pdn_connectivity_t3482_handler(void *args)
 {
   LOG_FUNC_IN;
@@ -610,7 +611,8 @@ static void *_pdn_connectivity_t3482_handler(void *args)
   int rc;
 
   /* Get retransmission timer parameters data */
-  esm_pt_timer_data_t *data = (esm_pt_timer_data_t *)(args);
+  esm_pt_timer_data_t *data = args;
+  nas_user_t *user = data->user;
 
   /* Increment the retransmission counter */
   data->count += 1;
@@ -629,7 +631,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = data->msg.length;
     emm_esm->msg.value = data->msg.value;
-    rc = emm_sap_send(&emm_sap);
+    rc = emm_sap_send(user, &emm_sap);
 
     if (rc != RETURNerror) {
       /* Restart the timer T3482 */

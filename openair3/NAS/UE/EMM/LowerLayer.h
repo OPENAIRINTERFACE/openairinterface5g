@@ -43,6 +43,7 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 #define __LOWERLAYER_H__
 
 #include "OctetString.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -78,12 +79,13 @@ typedef int (*lowerlayer_release_callback_t)(void *);
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int lowerlayer_success(unsigned int ueid);
-int lowerlayer_failure(unsigned int ueid);
-int lowerlayer_establish(void);
-int lowerlayer_release(int cause);
+// FIXME prototype with ueid
+int lowerlayer_success(nas_user_t *user, unsigned int ueid);
+int lowerlayer_failure(nas_user_t *user, unsigned int ueid);
+int lowerlayer_establish(nas_user_t *user);
+int lowerlayer_release(nas_user_t *user, int cause);
 
-int lowerlayer_data_ind(unsigned int ueid, const OctetString *data);
-int lowerlayer_data_req(unsigned int ueid, const OctetString *data);
+int lowerlayer_data_ind(nas_user_t *user, unsigned int ueid, const OctetString *data);
+int lowerlayer_data_req(nas_user_t *user, unsigned int ueid, const OctetString *data);
 
 #endif /* __LOWERLAYER_H__*/

@@ -41,6 +41,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -67,7 +68,7 @@ typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-void emm_main_initialize(emm_indication_callback_t cb, const char *imei);
+void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const char *imei);
 
 void emm_main_cleanup(void);
 

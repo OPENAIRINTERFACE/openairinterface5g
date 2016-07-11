@@ -49,6 +49,7 @@ Description Defines the identification EMM procedure executed by the
 
 #include "emm_sap.h"
 #include "msc.h"
+#include "user_defs.h"
 
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy
@@ -102,7 +103,7 @@ static const char *_emm_identity_type_str[] = {
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_identification_request(emm_proc_identity_type_t type)
+int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t type)
 {
   LOG_FUNC_IN;
 
@@ -199,7 +200,7 @@ int emm_proc_identification_request(emm_proc_identity_type_t type)
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
                            _emm_data.security, FALSE, TRUE);
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

@@ -115,7 +115,7 @@ int emm_proc_status_ind(unsigned int ueid, int emm_cause)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_status(unsigned int ueid, int emm_cause)
+int emm_proc_status(nas_user_t *user, unsigned int ueid, int emm_cause)
 {
   LOG_FUNC_IN;
 
@@ -140,7 +140,7 @@ int emm_proc_status(unsigned int ueid, int emm_cause)
   emm_as_set_security_data(&emm_sap.u.emm_as.u.status.sctx, sctx,
                            FALSE, TRUE);
 
-  rc = emm_sap_send(&emm_sap);
+  rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
 }

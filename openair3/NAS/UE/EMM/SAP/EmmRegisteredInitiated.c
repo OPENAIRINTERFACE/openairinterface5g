@@ -78,7 +78,7 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmRegisteredInitiated(const emm_reg_t *evt)
+int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
@@ -103,7 +103,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
 
     if (rc != RETURNerror) {
       /* Restart the attach procedure */
-      rc = emm_proc_attach_restart();
+      rc = emm_proc_attach_restart(user);
     }
 
     break;
@@ -209,7 +209,7 @@ int EmmRegisteredInitiated(const emm_reg_t *evt)
     /*
      * Initiate detach procedure for EPS services
      */
-    rc = emm_proc_detach(EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
+    rc = emm_proc_detach(user, EMM_DETACH_TYPE_EPS, evt->u.detach.switch_off);
     break;
 
   case _EMMREG_DETACH_REQ:

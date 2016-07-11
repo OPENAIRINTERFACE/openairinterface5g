@@ -40,6 +40,7 @@ Description Defines functions used to handle ESM procedure transactions.
 
 #include "OctetString.h"
 #include "nas_timer.h"
+#include "user_defs.h"
 
 #include "ProcedureTransactionIdentity.h"
 
@@ -67,6 +68,7 @@ typedef struct {
   unsigned char pti;      /* Procedure transaction identity   */
   unsigned int count;     /* Retransmission counter       */
   OctetString msg;        /* Encoded ESM message to re-transmit   */
+  nas_user_t *user;       /* user reference */
 } esm_pt_timer_data_t;
 
 /****************************************************************************/
