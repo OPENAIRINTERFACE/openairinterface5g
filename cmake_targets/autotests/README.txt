@@ -100,18 +100,24 @@ Obj.#   Case#   Test#	Description
 
 
 01      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Bandrich COTS UE for TX/1RX, 2TX/2RX
-01      55      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
-01      55      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
-01      55      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
-01      55      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
-01      55      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
-01      55      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
-01      55      06      Band 7 FDD 5MHz UL Throughput for 300 sec for 2TX/2RX
-01      55      07      Band 7 FDD 10MHz UL Throughput for 300 sec for 2TX/2RX
-01      55      08      Band 7 FDD 20MHz UL Throughput for 300 sec for 2TX/2RX
-01      55      09      Band 7 FDD 5MHz DL Throughput for 300 sec for 2TX/2RX
-01      55      10      Band 7 FDD 10MHz DL Throughput for 300 sec for 2TX/2RX
-01      55      11      Band 7 FDD 20MHz DL Throughput for 300 sec for 2TX/2RX
+01      55      00      Band 7 FDD 5MHz UL Throughput (UDP) for 300 sec for 1TX/1RX 
+01      55      01      Band 7 FDD 10MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      55      02      Band 7 FDD 20MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      55      03      Band 7 FDD 5MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      55      04      Band 7 FDD 10MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      55      05      Band 7 FDD 20MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      55      06      Band 7 FDD 5MHz UL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      07      Band 7 FDD 10MHz UL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      08      Band 7 FDD 20MHz UL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      09      Band 7 FDD 5MHz DL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      10      Band 7 FDD 10MHz DL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      11      Band 7 FDD 20MHz DL Throughput (UDP) for 300 sec for 2TX/2RX
+01      55      12      Band 7 FDD 5MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      55      13      Band 7 FDD 10MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      55      14      Band 7 FDD 20MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      55      15      Band 7 FDD 5MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      55      16      Band 7 FDD 10MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      55      17      Band 7 FDD 20MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
 
 01      56              lte-softmodem tests with USRP B210  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 01      56      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
@@ -130,12 +136,19 @@ Obj.#   Case#   Test#	Description
 01      57      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
 01      58               lte-softmodem tests with USRP X310 RF as eNB and ALU EPC w/ Bandrich COTS UE for `TX/1RX, 2TX/2RX
-01      58      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
-01      58      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
-01      58      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
-01      58      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
-01      58      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
-01      58      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+01      58      00      Band 7 FDD 5MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+01      58      01      Band 7 FDD 10MHz UL Throughput (UDP)  for 300 sec for 1TX/1RX
+01      58      02      Band 7 FDD 20MHz UL Throughput (UDP)  for 300 sec for 1TX/1RX
+01      58      03      Band 7 FDD 5MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      58      04      Band 7 FDD 10MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      58      05      Band 7 FDD 20MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+01      58      06      Band 7 FDD 5MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      58      07      Band 7 FDD 10MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      58      08      Band 7 FDD 20MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+01      58      09      Band 7 FDD 5MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      58      10      Band 7 FDD 10MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+01      58      11      Band 7 FDD 20MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+
 
 01      59              lte-softmodem tests with USRP X310  RF as eNB and  OAI EPC (eNB and EPC are on same machines) w/ Bandrich COTS UE
 
@@ -208,12 +221,18 @@ Obj.#   Case#   Test#	Description
 01      85      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
 
 02      55              lte-softmodem tests with USRP B210 RF as eNB and ALU EPC w/ Sony Experia M4 COTS UE for TX/1RX
-02      55      00      Band 7 FDD 5MHz UL Throughput for 300 sec for 1TX/1RX
-02      55      01      Band 7 FDD 10MHz UL Throughput for 300 sec for 1TX/1RX
-02      55      02      Band 7 FDD 20MHz UL Throughput for 300 sec for 1TX/1RX
-02      55      03      Band 7 FDD 5MHz DL Throughput for 300 sec for 1TX/1RX
-02      55      04      Band 7 FDD 10MHz DL Throughput for 300 sec for 1TX/1RX
-02      55      05      Band 7 FDD 20MHz DL Throughput for 300 sec for 1TX/1RX
+02      55      00      Band 7 FDD 5MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      01      Band 7 FDD 10MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      02      Band 7 FDD 20MHz UL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      03      Band 7 FDD 5MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      04      Band 7 FDD 10MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      05      Band 7 FDD 20MHz DL Throughput (UDP) for 300 sec for 1TX/1RX
+02      55      06      Band 7 FDD 5MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+02      55      07      Band 7 FDD 10MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+02      55      08      Band 7 FDD 20MHz UL Throughput (TCP) for 300 sec for 1TX/1RX
+02      55      09      Band 7 FDD 5MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+02      55      10      Band 7 FDD 10MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
+02      55      11      Band 7 FDD 20MHz DL Throughput (TCP) for 300 sec for 1TX/1RX
   
 
 01      64              lte-softmodem-noS1 tests
