@@ -3790,14 +3790,29 @@ rrc_eNB_decode_ccch(
 		//#warning "TODO: stmsi_exist: remove UE from MAC/PHY (how?)"
 	      LOG_I(RRC," S-TMSI exists, ue_context_p %p\n",ue_context_p);
 	      stmsi_received=1;
+              /* replace rnti in the context */
+              /* for that, remove the context from the RB tree */
+              RB_REMOVE(rrc_ue_tree_s, &eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head, ue_context_p);
+              /* and insert again, after changing rnti everywhere it has to be changed */
+              ue_context_p->ue_id_rnti = ctxt_pP->rnti;
 	      ue_context_p->ue_context.rnti = ctxt_pP->rnti;
+              RB_INSERT(rrc_ue_tree_s, &eNB_rrc_inst[ctxt_pP->module_id].rrc_ue_head, ue_context_p);
+              /* reset timers */
+              ue_context_p->ue_context.ul_failure_timer = 0;
+              ue_context_p->ue_context.ue_release_timer = 0;
 	      //   AssertFatal(0 == 1, "TODO: remove UE from MAC/PHY (how?)");
 	      //              ue_context_p = NULL;
             } else {
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, NOT_A_RANDOM_UE_IDENTITY);
-	      ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
-	      ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
-	      ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
+              if (ue_context_p == NULL)
+                LOG_E(RRC, "%s:%d:%s: rrc_eNB_get_next_free_ue_context returned NULL\n", __FILE__, __LINE__, __FUNCTION__);
+              if (ue_context_p != NULL) {
+	        ue_context_p->ue_context.Initialue_identity_s_TMSI.presence = TRUE;
+	        ue_context_p->ue_context.Initialue_identity_s_TMSI.mme_code = mme_code;
+	        ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi = m_tmsi;
+              } else {
+                break;
+              }
             }
 
             MSC_LOG_RX_MESSAGE(
