@@ -50,9 +50,6 @@ Description Defines functions used to handle state of EPS bearer contexts
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
 
-#define ESM_EBR_NB_UE_MAX   1
-
-
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
@@ -62,14 +59,6 @@ static const char *_esm_ebr_state_str[ESM_EBR_STATE_MAX] = {
   "BEARER CONTEXT INACTIVE",
   "BEARER CONTEXT ACTIVE",
 };
-
-/*
- * ----------------------------------
- * List of EPS bearer contexts per UE
- * ----------------------------------
- */
-
-static esm_ebr_data_t _esm_ebr_data[ESM_EBR_NB_UE_MAX];
 
 /*
  * ----------------------
@@ -100,7 +89,7 @@ static const network_pdn_state_t _esm_ebr_pdn_state[2][2][2] = {
 /* Returns the index of the next available entry in the list of EPS bearer
  * context data */
 
-static int _esm_ebr_get_available_entry(unsigned int ueid);
+static int _esm_ebr_get_available_entry(esm_ebr_data_t *esm_ebr_data);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -117,25 +106,37 @@ static int _esm_ebr_get_available_entry(unsigned int ueid);
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ***************************************************************************/
-void esm_ebr_initialize(
-  esm_indication_callback_t cb
-)
+
+esm_ebr_data_t *esm_ebr_initialize(void)
 {
-  int ueid, i;
 
   LOG_FUNC_IN;
 
-  for (ueid = 0; ueid < ESM_EBR_NB_UE_MAX; ueid++) {
-    _esm_ebr_data[ueid].index = 0;
+  int i;
+  esm_ebr_data_t *esm_ebr_data = calloc(1, sizeof(esm_ebr_data_t));
 
-    /* Initialize EPS bearer context data */
-    for (i = 0; i < ESM_EBR_DATA_SIZE + 1; i++) {
-      _esm_ebr_data[ueid].context[i] = NULL;
-    }
+  if ( esm_ebr_data == NULL ) {
+    LOG_TRACE(ERROR, "ESM-EBR  - Can't malloc esm_ebr_data");
+    // FIXME Stop here !!!
   }
+
+  esm_ebr_data->index = 0;
+
+  /* Initialize EPS bearer context data */
+  for (i = 0; i < ESM_EBR_DATA_SIZE + 1; i++) {
+    esm_ebr_data->context[i] = NULL;
+  }
+
+  LOG_FUNC_OUT;
+  return esm_ebr_data;
+}
+
+void esm_ebr_register_callback(esm_indication_callback_t cb)
+{
+
+  LOG_FUNC_IN;
 
   /* Initialize the user notification callback */
   _esm_ebr_callback = *cb;
@@ -143,13 +144,13 @@ void esm_ebr_initialize(
   LOG_FUNC_OUT;
 }
 
+
 /****************************************************************************
  **                                                                        **
  ** Name:    esm_ebr_assign()                                          **
  **                                                                        **
  ** Description: Assigns a new EPS bearer context                          **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
  **      ebi:       Identity of the new EPS bearer context     **
  **      cid:       Identifier of the PDN context the EPS bea- **
  **             rer context is associated to               **
@@ -161,18 +162,16 @@ void esm_ebr_initialize(
  **      Return:    The identity of the new EPS bearer context **
  **             if successfully assigned;                  **
  **             the not assigned EBI (0) otherwise.        **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_assign(int ebi, int cid, int default_ebr)
+int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, int default_ebr)
 {
   esm_ebr_context_t *ebr_ctx = NULL;
-  unsigned int       ueid    = 0;
   int                i;
 
   LOG_FUNC_IN;
 
-  ebr_ctx = _esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN];
+  ebr_ctx = esm_ebr_data->context[ebi - ESM_EBI_MIN];
 
 
   if (ebi != ESM_EBI_UNASSIGNED) {
@@ -188,7 +187,7 @@ int esm_ebr_assign(int ebi, int cid, int default_ebr)
     i = ebi - ESM_EBI_MIN;
   } else {
     /* Search for an available EPS bearer identity */
-    i = _esm_ebr_get_available_entry(ueid);
+    i = _esm_ebr_get_available_entry(esm_ebr_data);
 
     if (i < 0) {
       LOG_FUNC_RETURN(ESM_EBI_UNASSIGNED);
@@ -207,10 +206,10 @@ int esm_ebr_assign(int ebi, int cid, int default_ebr)
   }
 
 
-  _esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN] = ebr_ctx;
+  esm_ebr_data->context[ebi - ESM_EBI_MIN] = ebr_ctx;
 
   /* Store the index of the next available EPS bearer identity */
-  _esm_ebr_data[ueid].index = i + 1;
+  esm_ebr_data->index = i + 1;
 
   /* Set the EPS bearer identity */
   ebr_ctx->ebi = ebi;
@@ -231,7 +230,7 @@ int esm_ebr_assign(int ebi, int cid, int default_ebr)
  **                                                                        **
  ** Description: Release the given EPS bearer identity                     **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
+ ** Inputs:   **
  **      ebi:       The identity of the EPS bearer context to  **
  **             be released                                **
  **      Others:    None                                       **
@@ -240,13 +239,11 @@ int esm_ebr_assign(int ebi, int cid, int default_ebr)
  **      Return:    RETURNok if the EPS bearer context has     **
  **             been successfully released;                **
  **             RETURNerror otherwise.                     **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_release(
+int esm_ebr_release(esm_ebr_data_t *esm_ebr_data,
   int ebi)
 {
-  unsigned int ueid = 0;
   esm_ebr_context_t *ebr_ctx;
 
   LOG_FUNC_IN;
@@ -256,7 +253,7 @@ int esm_ebr_release(
   }
 
   /* Get EPS bearer context data */
-  ebr_ctx = _esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN];
+  ebr_ctx = esm_ebr_data->context[ebi - ESM_EBI_MIN];
 
   if ( (ebr_ctx == NULL) || (ebr_ctx->ebi != ebi) ) {
     /* EPS bearer context not assigned */
@@ -286,7 +283,6 @@ int esm_ebr_release(
  ** Description: Set the status of the specified EPS bearer context to the **
  **      given state                                               **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
  **      ebi:       The identity of the EPS bearer             **
  **      status:    The new EPS bearer context status          **
  **      ue_requested:  TRUE/FALSE if the modification of the EPS  **
@@ -296,10 +292,9 @@ int esm_ebr_release(
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_set_status(
+int esm_ebr_set_status(esm_ebr_data_t *esm_ebr_data,
   int ebi, esm_ebr_state status, int ue_requested)
 {
   esm_ebr_context_t *ebr_ctx;
@@ -307,19 +302,13 @@ int esm_ebr_set_status(
 
   LOG_FUNC_IN;
 
-  unsigned int ueid = 0;
-
-  if (ueid >= ESM_EBR_NB_UE_MAX) {
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
 
   if ( (ebi < ESM_EBI_MIN) || (ebi > ESM_EBI_MAX) ) {
     LOG_FUNC_RETURN (RETURNerror);
   }
 
   /* Get EPS bearer context data */
-  ebr_ctx = _esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN];
+  ebr_ctx = esm_ebr_data->context[ebi - ESM_EBI_MIN];
 
   if ( (ebr_ctx == NULL) || (ebr_ctx->ebi != ebi) ) {
     /* EPS bearer context not assigned */
@@ -356,9 +345,7 @@ int esm_ebr_set_status(
  ** Description: Get the current status value of the specified EPS bearer  **
  **      context                                                   **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
  **      ebi:       The identity of the EPS bearer             **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The current value of the EPS bearer con-   **
@@ -367,26 +354,25 @@ int esm_ebr_set_status(
  **                                                                        **
  ***************************************************************************/
 
-esm_ebr_state esm_ebr_get_status(
+esm_ebr_state esm_ebr_get_status(esm_ebr_data_t *esm_ebr_data,
   int ebi)
 {
-  unsigned int ueid = 0;
 
   if ( (ebi < ESM_EBI_MIN) || (ebi > ESM_EBI_MAX) ) {
     return (ESM_EBR_INACTIVE);
   }
 
-  if (_esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN] == NULL) {
+  if (esm_ebr_data->context[ebi - ESM_EBI_MIN] == NULL) {
     /* EPS bearer context not allocated */
     return (ESM_EBR_INACTIVE);
   }
 
-  if (_esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN]->ebi != ebi) {
+  if (esm_ebr_data->context[ebi - ESM_EBI_MIN]->ebi != ebi) {
     /* EPS bearer context not assigned */
     return (ESM_EBR_INACTIVE);
   }
 
-  return (_esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN]->status);
+  return (esm_ebr_data->context[ebi - ESM_EBI_MIN]->status);
 }
 
 /****************************************************************************
@@ -404,7 +390,7 @@ esm_ebr_state esm_ebr_get_status(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_is_reserved(int ebi)
+int esm_ebr_is_reserved(esm_ebr_data_t *esm_ebr_data, int ebi)
 {
   return ( (ebi != ESM_EBI_UNASSIGNED) && (ebi < ESM_EBI_MIN) );
 }
@@ -416,23 +402,20 @@ int esm_ebr_is_reserved(int ebi)
  ** Description: Check whether the given EPS bearer identity does not      **
  **      match an assigned EBI value currently in use              **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
  **      ebi:       The identity of the EPS bearer             **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE, FALSE                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_is_not_in_use(
+int esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data,
   int ebi)
 {
-  unsigned int ueid = 0;
 
   return ( (ebi == ESM_EBI_UNASSIGNED) ||
-           (_esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN] == NULL) ||
-           (_esm_ebr_data[ueid].context[ebi - ESM_EBI_MIN]->ebi) != ebi);
+           (esm_ebr_data->context[ebi - ESM_EBI_MIN] == NULL) ||
+           (esm_ebr_data->context[ebi - ESM_EBI_MIN]->ebi) != ebi);
 }
 
 /****************************************************************************/
@@ -446,8 +429,6 @@ int esm_ebr_is_not_in_use(
  ** Description: Returns the index of the next available entry in the list **
  **      of EPS bearer context data                                **
  **                                                                        **
- ** Inputs:  ueid:      Lower layers UE identifier                 **
- **      Others:    _esm_ebr_data                              **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The index of the next available EPS bearer **
@@ -456,20 +437,20 @@ int esm_ebr_is_not_in_use(
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _esm_ebr_get_available_entry(unsigned int ueid)
+static int _esm_ebr_get_available_entry(esm_ebr_data_t *esm_ebr_data)
 {
   int i;
 
-  for (i = _esm_ebr_data[ueid].index; i < ESM_EBR_DATA_SIZE; i++) {
-    if (_esm_ebr_data[ueid].context[i] != NULL) {
+  for (i = esm_ebr_data->index; i < ESM_EBR_DATA_SIZE; i++) {
+    if (esm_ebr_data->context[i] != NULL) {
       continue;
     }
 
     return i;
   }
 
-  for (i = 0; i < _esm_ebr_data[ueid].index; i++) {
-    if (_esm_ebr_data[ueid].context[i] != NULL) {
+  for (i = 0; i < esm_ebr_data->index; i++) {
+    if (esm_ebr_data->context[i] != NULL) {
       continue;
     }
 

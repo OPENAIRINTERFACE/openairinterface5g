@@ -116,7 +116,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
             "requested by the network (ebi=%d)", ebi);
 
   /* Assign default EPS bearer context */
-  int new_ebi = esm_ebr_assign(ebi, pid+1, TRUE);
+  int new_ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, TRUE);
 
   if (new_ebi == ESM_EBI_UNASSIGNED) {
     /* 3GPP TS 24.301, section 6.4.1.5, abnormal cases a and b
@@ -134,7 +134,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
       *esm_cause = ESM_CAUSE_PROTOCOL_ERROR;
     } else {
       /* Assign new default EPS bearer context */
-      ebi = esm_ebr_assign(ebi, pid+1, TRUE);
+      ebi = esm_ebr_assign(user->esm_ebr_data, ebi, pid+1, TRUE);
     }
   }
 
@@ -213,7 +213,7 @@ int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, int is_standalo
 
   if (rc != RETURNerror) {
     /* Set the EPS bearer context state to ACTIVE */
-    rc = esm_ebr_set_status(ebi, ESM_EBR_ACTIVE, ue_triggered);
+    rc = esm_ebr_set_status(user->esm_ebr_data, ebi, ESM_EBR_ACTIVE, ue_triggered);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in ACTIVE state */
@@ -266,9 +266,9 @@ int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, int is_standalo
   LOG_TRACE(WARNING, "ESM-PROC  - Default EPS bearer context activation "
             "not accepted by the UE (ebi=%d)", ebi);
 
-  if ( !esm_ebr_is_not_in_use(ebi) ) {
+  if ( !esm_ebr_is_not_in_use(user->esm_ebr_data, ebi) ) {
     /* Release EPS bearer data currently in use */
-    rc = esm_ebr_release(ebi);
+    rc = esm_ebr_release(user->esm_ebr_data, ebi);
   }
 
   if (rc != RETURNok) {
@@ -280,6 +280,7 @@ int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, int is_standalo
      * Notity EMM that ESM PDU has to be forwarded to lower layers
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
+    // FIXME REVIEW
     emm_sap.u.emm_esm.ueid = 0;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;

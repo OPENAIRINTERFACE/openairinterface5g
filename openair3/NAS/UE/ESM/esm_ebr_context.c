@@ -82,7 +82,7 @@ static int _esm_ebr_context_check_precedence(const network_tft_t *,
  ** Description: Creates a new EPS bearer context to the PDN with the spe- **
  **      cified PDN connection identifier                          **
  **                                                                        **
- ** Inputs:  ueid:      UE identifier                              **
+ ** Inputs: **
  **      pid:       PDN connection identifier                  **
  **      ebi:       EPS bearer identity                        **
  **      is_default:    TRUE if the new bearer is a default EPS    **
@@ -105,7 +105,6 @@ int esm_ebr_context_create(
   int                 bid     = 0;
   esm_data_context_t *esm_ctx = NULL;
   esm_pdn_t          *pdn     = NULL;
-  //unsigned int        ueid    = 0;
 
   LOG_FUNC_IN;
 
@@ -314,7 +313,7 @@ int esm_ebr_context_create(
  ** Description: Releases EPS bearer context entry previously allocated    **
  **      to the EPS bearer with the specified EPS bearer identity  **
  **                                                                        **
- ** Inputs:  ueid:      UE identifier                              **
+ ** Inputs:   **
  **      ebi:       EPS bearer identity                        **
  **                                                                        **
  ** Outputs:     pid:       Identifier of the PDN connection entry the **
@@ -332,8 +331,6 @@ int esm_ebr_context_release(nas_user_t *user,
   int found = FALSE;
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
-
-  //unsigned int ueid = 0;
 
   LOG_FUNC_IN;
 
@@ -451,11 +448,11 @@ int esm_ebr_context_release(nas_user_t *user,
           }
 
           /* Set the EPS bearer context state to INACTIVE */
-          (void) esm_ebr_set_status(pdn->bearer[i]->ebi,
+          esm_ebr_set_status(user->esm_ebr_data, pdn->bearer[i]->ebi,
                                     ESM_EBR_INACTIVE, TRUE);
 
           /* Release EPS bearer data */
-          (void) esm_ebr_release(pdn->bearer[i]->ebi);
+          esm_ebr_release(user->esm_ebr_data, pdn->bearer[i]->ebi);
 
           // esm_ebr_release()
           /* Release dedicated EPS bearer data */

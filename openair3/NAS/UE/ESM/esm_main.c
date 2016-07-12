@@ -102,8 +102,9 @@ void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
   user->esm_pt_data = esm_pt_initialize();
 
   /* Initialize the EPS bearer context manager */
-  esm_ebr_initialize(cb);
-
+  user->esm_ebr_data = esm_ebr_initialize();
+  // FIXME only one callback for all user or many for many ?
+  esm_ebr_register_callback(cb);
   LOG_FUNC_OUT;
 }
 
@@ -247,11 +248,13 @@ int esm_main_has_emergency(esm_data_t *esm_data)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_pdn_status(esm_data_t *esm_data, int cid, int *state)
+int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
 {
   LOG_FUNC_IN;
 
   unsigned int pid = cid - 1;
+  esm_data_t *esm_data = user->esm_data;
+  esm_ebr_data_t *esm_ebr_data = user-> esm_ebr_data;
 
   if (pid >= ESM_DATA_PDN_MAX) {
     return (FALSE);
@@ -268,7 +271,7 @@ int esm_main_get_pdn_status(esm_data_t *esm_data, int cid, int *state)
     /* The status of a PDN connection is the status of the default EPS bearer
      * that has been assigned to this PDN connection at activation time */
     int ebi = esm_data->pdn[pid].data->bearer[0]->ebi;
-    *state = (esm_ebr_get_status(ebi) == ESM_EBR_ACTIVE);
+    *state = (esm_ebr_get_status(esm_ebr_data, ebi) == ESM_EBR_ACTIVE);
   }
 
   /* The PDN connection has not been activated yet */

@@ -674,7 +674,7 @@ int nas_proc_get_pdn_range(esm_data_t *esm_data)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_pdn_status(esm_data_t *esm_data, int *cids, int *states, int n_pdn_max)
+int nas_proc_get_pdn_status(nas_user_t *user, int *cids, int *states, int n_pdn_max)
 {
   LOG_FUNC_IN;
 
@@ -682,13 +682,13 @@ int nas_proc_get_pdn_status(esm_data_t *esm_data, int *cids, int *states, int n_
   int n_defined_pdn = 0;
 
   /* Get the maximum number of supported PDN contexts */
-  int n_pdn = esm_main_get_nb_pdns_max(esm_data);
+  int n_pdn = esm_main_get_nb_pdns_max(user->esm_data);
 
   /* For all PDN contexts */
   for (cid = 1; (cid < n_pdn+1) && (n_defined_pdn < n_pdn_max); cid++) {
     /* Get the status of this PDN */
     int state = FALSE;
-    int is_defined = esm_main_get_pdn_status(esm_data, cid, &state);
+    int is_defined = esm_main_get_pdn_status(user, cid, &state);
 
     if (is_defined != FALSE) {
       /* This PDN has been defined */

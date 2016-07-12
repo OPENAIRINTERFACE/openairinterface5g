@@ -2184,7 +2184,7 @@ static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
      * The read command returns the current activation states for
      * all the defined PDN/EPS bearer contexts
      */
-    cgact->n_pdns = nas_proc_get_pdn_status(user->esm_data, cgact->cid, cgact->state,
+    cgact->n_pdns = nas_proc_get_pdn_status(user, cgact->cid, cgact->state,
                                             AT_CGACT_RESP_SIZE);
 
     if (cgact->n_pdns == 0) {

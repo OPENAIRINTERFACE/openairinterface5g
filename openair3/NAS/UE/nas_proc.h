@@ -98,7 +98,7 @@ int nas_proc_reset_pdn(nas_user_t *user, int cid);
 int nas_proc_set_pdn(nas_user_t *user, int cid, int type, const char *apn, int ipv4_addr,
                      int emergency, int p_cscf, int im_cn_signal);
 int nas_proc_get_pdn_range(esm_data_t *esm_data);
-int nas_proc_get_pdn_status(esm_data_t *esm_data, int *cids, int *states, int n_pdn_max);
+int nas_proc_get_pdn_status(nas_user_t *user, int *cids, int *states, int n_pdn_max);
 int nas_proc_get_pdn_param(esm_data_t *esm_data, int *cids, int *types, const char **apns,
                            int n_pdn_max);
 int nas_proc_get_pdn_addr(nas_user_t *user, int cid, int *cids, const char **addr1,

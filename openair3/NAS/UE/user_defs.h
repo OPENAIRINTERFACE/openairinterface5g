@@ -56,6 +56,7 @@ typedef struct {
   esm_data_t *esm_data; // ESM internal data (used within ESM only)
   esm_pt_data_t *esm_pt_data;
   emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
+  esm_ebr_data_t *esm_ebr_data;  // EPS bearer contexts
 } nas_user_t;
 
 #endif

@@ -74,7 +74,7 @@ Description Defines functions executed at the ESM Service Access
  **                                                                        **
  ** Description: Processes ESM status message                              **
  **                                                                        **
- ** Inputs:  ueid:      UE local identifier                        **
+ ** Inputs:  **
  **      pti:       Procedure transaction identity             **
  **      ebi:       EPS bearer identity                        **
  **      msg:       The received ESM message                   **
@@ -164,7 +164,7 @@ int esm_recv_pdn_connectivity_reject(nas_user_t *user, int pti, int ebi,
   /*
    * EPS bearer identity checking
    */
-  else if ( (ebi != ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(ebi) ) {
+  else if ( (ebi != ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(user->esm_ebr_data, ebi) ) {
     /* 3GPP TS 24.301, section 7.3.2, case a
      * Assigned or reserved EPS bearer identity value */
     LOG_TRACE(WARNING, "ESM-SAP   - Invalid EPS bearer identity (ebi=%d)",
@@ -235,7 +235,7 @@ int esm_recv_pdn_disconnect_reject(nas_user_t *user, int pti, int ebi,
   /*
    * EPS bearer identity checking
    */
-  else if ( (ebi != ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(ebi) ) {
+  else if ( (ebi != ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(user->esm_ebr_data, ebi) ) {
     /* 3GPP TS 24.301, section 7.3.2, case b
      * Assigned or reserved EPS bearer identity value */
     LOG_TRACE(WARNING, "ESM-SAP   - Invalid EPS bearer identity (ebi=%d)",
@@ -308,7 +308,7 @@ int esm_recv_activate_default_eps_bearer_context_request(nas_user_t *user, int p
   /*
    * EPS bearer identity checking
    */
-  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(ebi) ) {
+  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(user->esm_ebr_data, ebi) ) {
     /* 3GPP TS 24.301, section 7.3.2, case g
      * Reserved or unassigned EPS bearer identity value
      */
@@ -439,7 +439,7 @@ int esm_recv_activate_dedicated_eps_bearer_context_request(nas_user_t *user, int
   /*
    * EPS bearer identity checking
    */
-  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(ebi) ) {
+  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(user->esm_ebr_data, ebi) ) {
     /* 3GPP TS 24.301, section 7.3.2, case h
      * Reserved or unassigned EPS bearer identity value
      */
@@ -647,8 +647,8 @@ int esm_recv_deactivate_eps_bearer_context_request(nas_user_t *user, int pti, in
   /*
    * EPS bearer identity checking
    */
-  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(ebi) ||
-            esm_ebr_is_not_in_use(ebi) ) {
+  else if ( (ebi == ESM_EBI_UNASSIGNED) || esm_ebr_is_reserved(user->esm_ebr_data, ebi) ||
+            esm_ebr_is_not_in_use(user->esm_ebr_data, ebi) ) {
     /* 3GPP TS 24.301, section 7.3.2, case j
      * Reserved or unassigned EPS bearer identity value or,
      * assigned value that does not match an existing EPS bearer context
