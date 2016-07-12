@@ -215,8 +215,8 @@ set(api_user_HDR
 
 add_library(api_user ${api_user_SRC} ${api_user_HDR})
 target_include_directories(api_user PRIVATE ${OPENAIR_NAS_DIR}/UE/API/USER
-                                            ${OPENAIR_NAS_DIR}/UE
                                             ${OPENAIR_NAS_DIR}/COMMON
+                                            ${OPENAIR_NAS_DIR}/UE
                                             )
 
 ################################################################################
@@ -397,6 +397,7 @@ target_include_directories(emm PRIVATE
                      ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/openair2/COMMON
+                     ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USIM 
                      ${OPENAIR_NAS_DIR}/UE/EMM
                      ${OPENAIR_NAS_DIR}/COMMON/EMM/MSG
@@ -486,6 +487,7 @@ set(esm_HDR
 add_library(esm ${esm_SRC} ${esm_HDR})
 
 target_include_directories(esm PRIVATE 
+                     ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USER 
                      ${OPENAIR_NAS_DIR}/UE/ESM
                      ${OPENAIR_NAS_DIR}/COMMON/ESM/MSG
@@ -670,6 +672,7 @@ target_include_directories(ies PRIVATE
 # EXECUTABLE at_nas_ue
 ################################################################################
 include_directories( 
+                     ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR3_DIR}/COMMON 
                      ${OPENAIR3_DIR}/SECU 
