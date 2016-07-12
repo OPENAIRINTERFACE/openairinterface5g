@@ -49,14 +49,16 @@ Description NAS type definition to manage a user equipment
 #include "esmData.h"
 #include "esm_pt_defs.h"
 #include "EMM/emm_fsm_defs.h"
+#include "EMM/emmData.h"
 
 typedef struct {
   int fd;
   proc_data_t proc;
   esm_data_t *esm_data; // ESM internal data (used within ESM only)
   esm_pt_data_t *esm_pt_data;
-  emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
   esm_ebr_data_t *esm_ebr_data;  // EPS bearer contexts
+  emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
+  emm_data_t *emm_data; // EPS mobility management data
 } nas_user_t;
 
 #endif

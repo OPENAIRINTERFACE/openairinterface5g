@@ -134,8 +134,8 @@ int emm_proc_status(nas_user_t *user, unsigned int ueid, int emm_cause)
   emm_sap.u.emm_as.u.status.emm_cause = emm_cause;
   emm_sap.u.emm_as.u.status.ueid = ueid;
 
-  emm_sap.u.emm_as.u.status.guti = _emm_data.guti;
-  sctx = _emm_data.security;
+  emm_sap.u.emm_as.u.status.guti = user->emm_data->guti;
+  sctx = user->emm_data->security;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.status.sctx, sctx,
                            FALSE, TRUE);

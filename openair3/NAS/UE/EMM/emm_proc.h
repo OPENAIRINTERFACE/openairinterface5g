@@ -133,7 +133,7 @@ int emm_proc_attach_failure(int is_initial, void *args);
 int emm_proc_attach_release(void *args);
 int emm_proc_attach_restart(nas_user_t *user);
 
-int emm_proc_attach_set_emergency(void);
+int emm_proc_attach_set_emergency(emm_data_t *emm_data);
 // FIXME check prototype
 int emm_proc_attach_set_detach(void *user);
 
@@ -183,8 +183,8 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi, in
  *             Network indication handlers
  *---------------------------------------------------------------------------
  */
-int emm_proc_registration_notify(Stat_t status);
-int emm_proc_location_notify(tac_t tac, ci_t ci, AcT_t rat);
-int emm_proc_network_notify(int index);
+int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status);
+int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat);
+int emm_proc_network_notify(emm_data_t *emm_data, int index);
 
 #endif /* __EMM_PROC_H__*/

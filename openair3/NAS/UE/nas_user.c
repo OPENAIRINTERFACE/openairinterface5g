@@ -652,7 +652,7 @@ static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
     }
 
     /* Get the International Mobile Subscriber Identity (IMSI) */
-    ret_code = nas_proc_get_imsi(cimi->IMSI);
+    ret_code = nas_proc_get_imsi(user->emm_data, cimi->IMSI);
 
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get IMSI number");

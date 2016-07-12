@@ -108,8 +108,7 @@ int EmmDeregisteredNoCellAvailable(nas_user_t *user, const emm_reg_t *evt)
        * Notify EMM that the MT is currently searching an operator
        * to register to
        */
-      // FIXME REVIEW
-      rc = emm_proc_registration_notify(NET_REG_STATE_ON);
+      rc = emm_proc_registration_notify(user->emm_data, NET_REG_STATE_ON);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-FSM   - "

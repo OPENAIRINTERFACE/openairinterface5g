@@ -51,7 +51,7 @@ Description Defines the functions used to get information from the list
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
 
-typedef int (*IdleMode_callback_t) (int);
+typedef int (*IdleMode_callback_t) (emm_data_t *emm_data, int);
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
@@ -68,7 +68,7 @@ int IdleMode_get_hplmn_index(void);
 int IdleMode_get_rplmn_index(void);
 int IdleMode_get_splmn_index(void);
 
-int IdleMode_update_plmn_list(int index);
+int IdleMode_update_plmn_list(emm_data_t *emm_data, int i);
 
 const char *IdleMode_get_plmn_fullname(const plmn_t *plmn, int index,
                                        size_t *len);

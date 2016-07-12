@@ -160,7 +160,7 @@ int lowerlayer_establish(nas_user_t *user)
   LOG_FUNC_IN;
 
   /* Update the EPS Connection Management status */
-  _emm_data.ecm_status = ECM_CONNECTED;
+  user->emm_data->ecm_status = ECM_CONNECTED;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -188,7 +188,7 @@ int lowerlayer_release(nas_user_t *user, int cause)
   int rc;
 
   /* Update the EPS Connection Management status */
-  _emm_data.ecm_status = ECM_IDLE;
+  user->emm_data->ecm_status = ECM_IDLE;
 
   emm_sap.primitive = EMMREG_LOWERLAYER_RELEASE;
   emm_sap.u.emm_reg.ueid = 0;
@@ -257,9 +257,9 @@ int lowerlayer_data_req(nas_user_t *user, unsigned int ueid, const OctetString *
   //struct emm_data_context_s *ctx  = NULL;
 
   emm_sap.primitive = EMMAS_DATA_REQ;
-  emm_sap.u.emm_as.u.data.guti = _emm_data.guti;
+  emm_sap.u.emm_as.u.data.guti = user->emm_data->guti;
   emm_sap.u.emm_as.u.data.ueid = 0;
-  sctx = _emm_data.security;
+  sctx = user->emm_data->security;
 
   emm_sap.u.emm_as.u.data.NASinfo = 0;
   emm_sap.u.emm_as.u.data.NASmsg.length = data->length;

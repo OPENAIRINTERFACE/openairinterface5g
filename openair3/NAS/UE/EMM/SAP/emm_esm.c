@@ -134,7 +134,7 @@ int emm_esm_send(nas_user_t *user, const emm_esm_t *msg)
       if (msg->u.establish.is_emergency) {
         /* Consider the UE attached for emergency bearer services
          * only */
-        rc = emm_proc_attach_set_emergency();
+        rc = emm_proc_attach_set_emergency(user->emm_data);
       }
     } else {
       /* Consider the UE locally detached from the network */

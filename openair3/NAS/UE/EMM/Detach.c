@@ -124,7 +124,7 @@ static struct {
  ** Inputs:  type:      Type of the requested detach               **
  **      switch_off:    Indicates whether the detach is required   **
  **             because the UE is switched off or not      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
@@ -167,10 +167,10 @@ int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_of
   /* Set the switch-off indicator */
   emm_as->switch_off = switch_off;
   /* Set the EPS mobile identity */
-  emm_as->guti = _emm_data.guti;
+  emm_as->guti = user->emm_data->guti;
   emm_as->ueid = 0;
   /* Setup EPS NAS security data */
-  emm_as_set_security_data(&emm_as->sctx, _emm_data.security, FALSE, TRUE);
+  emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, FALSE, TRUE);
 
   /*
    * Notify EMM-AS SAP that Detach Request message has to
@@ -413,10 +413,10 @@ void *_emm_detach_t3421_handler(void *args)
     /* Set the switch-off indicator */
     emm_as->switch_off = _emm_detach_data.switch_off;
     /* Set the EPS mobile identity */
-    emm_as->guti = _emm_data.guti;
+    emm_as->guti = user->emm_data->guti;
     emm_as->ueid = 0;
     /* Setup EPS NAS security data */
-    emm_as_set_security_data(&emm_as->sctx, _emm_data.security,
+    emm_as_set_security_data(&emm_as->sctx, user->emm_data->security,
                              FALSE, TRUE);
 
     /*

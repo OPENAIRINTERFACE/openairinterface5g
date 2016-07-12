@@ -269,10 +269,9 @@ int IdleMode_get_splmn_index(void)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The size of the list in bytes              **
- **          Others:    _emm_data.plist                            **
  **                                                                        **
  ***************************************************************************/
-int IdleMode_update_plmn_list(int i)
+int IdleMode_update_plmn_list(emm_data_t *emm_data, int i)
 {
   int offset = 0;
   int n = 1;
@@ -281,22 +280,22 @@ int IdleMode_update_plmn_list(int i)
     struct plmn_param_t *plmn = &(_emm_plmn_list.param[i++]);
 
     if (n++ > 1) {
-      offset += snprintf(_emm_data.plist.buffer + offset,
+      offset += snprintf(emm_data->plist.buffer + offset,
                          EMM_DATA_BUFFER_SIZE - offset, ",");
     }
 
-    offset += snprintf(_emm_data.plist.buffer + offset,
+    offset += snprintf(emm_data->plist.buffer + offset,
                        EMM_DATA_BUFFER_SIZE - offset, "(%d,%s,%s,%s",
                        plmn->stat, plmn->fullname,
                        plmn->shortname, plmn->num);
 
     if (plmn->rat != NET_ACCESS_UNAVAILABLE) {
-      offset += snprintf(_emm_data.plist.buffer + offset,
+      offset += snprintf(emm_data->plist.buffer + offset,
                          EMM_DATA_BUFFER_SIZE - offset, ",%d",
                          plmn->rat);
     }
 
-    offset += snprintf(_emm_data.plist.buffer + offset,
+    offset += snprintf(emm_data->plist.buffer + offset,
                        EMM_DATA_BUFFER_SIZE - offset, ")");
   }
 
@@ -503,7 +502,7 @@ int IdleMode_get_plmn_id_index(const char *plmn)
  **      to PLMN selection procedure.                              **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
@@ -518,21 +517,21 @@ int emm_proc_initialize(nas_user_t *user)
   int rc;
   int i;
 
-  if (!_emm_data.usim_is_valid) {
+  if (!user->emm_data->usim_is_valid) {
     /* The USIM application is not present or not valid */
     LOG_TRACE(WARNING, "EMM-IDLE  - USIM is not valid");
     emm_sap.primitive = EMMREG_NO_IMSI;
   } else {
     /* The highest priority is given to either the "equivalent PLMNs"
      * if available, or the last registered PLMN */
-    if (_emm_data.nvdata.eplmn.n_plmns > 0) {
-      for (i=0; i < _emm_data.nvdata.eplmn.n_plmns; i++) {
+    if (user->emm_data->nvdata.eplmn.n_plmns > 0) {
+      for (i=0; i < user->emm_data->nvdata.eplmn.n_plmns; i++) {
         _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] =
-          &_emm_data.nvdata.eplmn.plmn[i];
+          &user->emm_data->nvdata.eplmn.plmn[i];
       }
-    } else if ( PLMN_IS_VALID(_emm_data.nvdata.rplmn) ) {
+    } else if ( PLMN_IS_VALID(user->emm_data->nvdata.rplmn) ) {
       _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] =
-        &_emm_data.nvdata.rplmn;
+        &user->emm_data->nvdata.rplmn;
     }
 
     /* Update the index of the HPLMN or EHPLM of highest priority.
@@ -544,25 +543,25 @@ int emm_proc_initialize(nas_user_t *user)
 
     /* Add the highest priority PLMN in the list of "equivalent HPLMNs"
        if present and not empty, or the HPLMN derived from the IMSI */
-    if (_emm_data.ehplmn.n_plmns > 0) {
+    if (user->emm_data->ehplmn.n_plmns > 0) {
       _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] =
-        &_emm_data.ehplmn.plmn[0];
+        &user->emm_data->ehplmn.plmn[0];
     } else {
-      _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] = &_emm_data.hplmn;
+      _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] = &user->emm_data->hplmn;
     }
 
     /* Each PLMN/access technology combination in the "User
      * Controlled PLMN Selector with Access Technology" */
-    for (i=0; i < _emm_data.plmn.n_plmns; i++) {
+    for (i=0; i < user->emm_data->plmn.n_plmns; i++) {
       _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] =
-        &_emm_data.plmn.plmn[i];
+        &user->emm_data->plmn.plmn[i];
     }
 
     /* Each PLMN/access technology combination in the "Operator
      * Controlled PLMN Selector with Access Technology" */
-    for (i=0; i < _emm_data.oplmn.n_plmns; i++) {
+    for (i=0; i < user->emm_data->oplmn.n_plmns; i++) {
       _emm_plmn_list.plmn[_emm_plmn_list.n_plmns++] =
-        &_emm_data.oplmn.plmn[i];
+        &user->emm_data->oplmn.plmn[i];
     }
 
     /* Other PLMN/access technology combinations with received
@@ -582,9 +581,9 @@ int emm_proc_initialize(nas_user_t *user)
         plmn->fullname[0] = '\0';
         plmn->shortname[0] = '\0';
       } else {
-        strncpy(plmn->fullname, _emm_data.opnn[id].fullname,
+        strncpy(plmn->fullname, user->emm_data->opnn[id].fullname,
                 NET_FORMAT_LONG_SIZE);
-        strncpy(plmn->shortname, _emm_data.opnn[id].shortname,
+        strncpy(plmn->shortname, user->emm_data->opnn[id].shortname,
                 NET_FORMAT_SHORT_SIZE);
       }
 
@@ -627,7 +626,7 @@ int emm_proc_initialize(nas_user_t *user)
  **      mode.                                                     **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_plmn_list, _emm_data                  **
+ **      Others:    _emm_plmn_list, user->emm_data->                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
@@ -640,7 +639,7 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
 
   int rc = RETURNok;
 
-  if (_emm_data.plmn_mode != EMM_DATA_PLMN_AUTO) {
+  if (user->emm_data->plmn_mode != EMM_DATA_PLMN_AUTO) {
     /*
      * Manual or manual/automatic mode of operation
      * --------------------------------------------
@@ -649,13 +648,13 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
       /*
        * Selection of the last registered or equivalent PLMNs failed
        */
-      if (_emm_data.plmn_index < 0) {
+      if (user->emm_data->plmn_index < 0) {
         /*
          * The user did not select any PLMN yet; display the ordered
          * list of available PLMNs to the user
          */
         index = -1;
-        rc = emm_proc_network_notify(_emm_plmn_list.hplmn);
+        rc = emm_proc_network_notify(user->emm_data, _emm_plmn_list.hplmn);
 
         if (rc != RETURNok) {
           LOG_TRACE(WARNING, "EMM-IDLE  - Failed to notify "
@@ -665,7 +664,7 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
         /*
          * Try to register to the PLMN manually selected by the user
          */
-        index = _emm_data.plmn_index;
+        index = user->emm_data->plmn_index;
       }
     }
   }
@@ -714,11 +713,11 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
  **      ci:        The identifier of the cell                 **
  **      rat:       The radio access technology supported by   **
  **             the cell                                   **
- **      Others:    _emm_plmn_list, _emm_data                  **
+ **      Others:    _emm_plmn_list, user->emm_data->                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _emm_plmn_list, _emm_data                  **
+ **      Others:    _emm_plmn_list, user->emm_data->                 **
  **                                                                        **
  ***************************************************************************/
 int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci, AcT_t rat)
@@ -732,15 +731,15 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
 
   LOG_TRACE(INFO, "EMM-IDLE  - %s cell found for PLMN %d in %s mode",
             (found)? "One" : "No", index,
-            (_emm_data.plmn_mode == EMM_DATA_PLMN_AUTO)? "Automatic" :
-            (_emm_data.plmn_mode == EMM_DATA_PLMN_MANUAL)? "Manual" :
+            (user->emm_data->plmn_mode == EMM_DATA_PLMN_AUTO)? "Automatic" :
+            (user->emm_data->plmn_mode == EMM_DATA_PLMN_MANUAL)? "Manual" :
             "Automatic/manual");
 
   if (found) {
     int is_forbidden = FALSE;
 
     /* Select the PLMN of which a suitable cell has been found */
-    _emm_data.splmn = *_emm_plmn_list.plmn[index];
+    user->emm_data->splmn = *_emm_plmn_list.plmn[index];
 
     /* Update the selected PLMN's parameters */
     _emm_plmn_list.param[index].tac = tac;
@@ -748,13 +747,13 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     _emm_plmn_list.param[index].rat = rat;
 
     /* Update the location data and notify EMM that data have changed */
-    rc = emm_proc_location_notify(tac, ci , rat);
+    rc = emm_proc_location_notify(user->emm_data, tac, ci , rat);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-IDLE  - Failed to notify location update");
     }
 
-    if (_emm_data.plmn_mode == EMM_DATA_PLMN_AUTO) {
+    if (user->emm_data->plmn_mode == EMM_DATA_PLMN_AUTO) {
       /*
        * Automatic mode of operation
        * ---------------------------
@@ -762,17 +761,17 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       int i;
 
       /* Check if the selected PLMN is in the forbidden list */
-      for (i = 0; i < _emm_data.fplmn.n_plmns; i++) {
-        if (PLMNS_ARE_EQUAL(_emm_data.splmn, _emm_data.fplmn.plmn[i])) {
+      for (i = 0; i < user->emm_data->fplmn.n_plmns; i++) {
+        if (PLMNS_ARE_EQUAL(user->emm_data->splmn, user->emm_data->fplmn.plmn[i])) {
           is_forbidden = TRUE;
           break;
         }
       }
 
       if (!is_forbidden) {
-        for (i = 0; i < _emm_data.fplmn_gprs.n_plmns; i++) {
-          if (PLMNS_ARE_EQUAL(_emm_data.splmn,
-                              _emm_data.fplmn_gprs.plmn[i])) {
+        for (i = 0; i < user->emm_data->fplmn_gprs.n_plmns; i++) {
+          if (PLMNS_ARE_EQUAL(user->emm_data->splmn,
+                              user->emm_data->fplmn_gprs.plmn[i])) {
             is_forbidden = TRUE;
             break;
           }
@@ -782,12 +781,12 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       /* Check if the selected PLMN belongs to a forbidden
        * tracking area */
       tai_t tai;
-      tai.plmn = _emm_data.splmn;
+      tai.plmn = user->emm_data->splmn;
       tai.tac = tac;
 
       if (!is_forbidden) {
-        for (i = 0; i < _emm_data.ftai.n_tais; i++) {
-          if (TAIS_ARE_EQUAL(tai, _emm_data.ftai.tai[i])) {
+        for (i = 0; i < user->emm_data->ftai.n_tais; i++) {
+          if (TAIS_ARE_EQUAL(tai, user->emm_data->ftai.tai[i])) {
             is_forbidden = TRUE;
             break;
           }
@@ -795,8 +794,8 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       }
 
       if (!is_forbidden) {
-        for (i = 0; i < _emm_data.ftai_roaming.n_tais; i++) {
-          if (TAIS_ARE_EQUAL(tai, _emm_data.ftai_roaming.tai[i])) {
+        for (i = 0; i < user->emm_data->ftai_roaming.n_tais; i++) {
+          if (TAIS_ARE_EQUAL(tai, user->emm_data->ftai_roaming.tai[i])) {
             is_forbidden = TRUE;
             break;
           }
@@ -825,10 +824,10 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     }
 
     /* Duplicate the new selected PLMN at the end of the ordered list */
-    _emm_plmn_list.plmn[_emm_plmn_list.n_plmns] = &_emm_data.splmn;
+    _emm_plmn_list.plmn[_emm_plmn_list.n_plmns] = &user->emm_data->splmn;
   }
 
-  else if (_emm_data.plmn_mode == EMM_DATA_PLMN_AUTO) {
+  else if (user->emm_data->plmn_mode == EMM_DATA_PLMN_AUTO) {
     /*
      * Automatic mode of operation
      * ---------------------------
@@ -844,7 +843,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     }
   }
 
-  else if (_emm_data.plmn_index < 0) {
+  else if (user->emm_data->plmn_index < 0) {
     /*
      * Manual or manual/automatic mode of operation
      * --------------------------------------------
@@ -855,7 +854,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     select_next_plmn = TRUE;
   }
 
-  else if (_emm_data.plmn_mode == EMM_DATA_PLMN_MANUAL) {
+  else if (user->emm_data->plmn_mode == EMM_DATA_PLMN_MANUAL) {
     /*
      * Manual mode of operation
      * ------------------------
@@ -871,7 +870,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
      * Attempt to find a suitable cell of the PLMN selected by the user
      * failed; Try to automatically select another PLMN
      */
-    _emm_data.plmn_mode = EMM_DATA_PLMN_AUTO;
+    user->emm_data->plmn_mode = EMM_DATA_PLMN_AUTO;
     index = _emm_plmn_list.hplmn;
     select_next_plmn = TRUE;
   }
@@ -938,11 +937,11 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
       if (_emm_plmn_list.splmn == _emm_plmn_list.rplmn) {
         /* The selected PLMN is the registered PLMN */
         LOG_TRACE(INFO, "EMM-IDLE  - The selected PLMN is the registered PLMN");
-        _emm_data.is_rplmn = TRUE;
+        user->emm_data->is_rplmn = TRUE;
       } else if (_emm_plmn_list.splmn < _emm_plmn_list.hplmn) {
         /* The selected PLMN is in the list of equivalent PLMNs */
         LOG_TRACE(INFO, "EMM-IDLE  - The selected PLMN is in the list of equivalent PLMNs");
-        _emm_data.is_eplmn = TRUE;
+        user->emm_data->is_eplmn = TRUE;
       }
 
       /*
@@ -976,20 +975,20 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **          Others:    _emm_data                                  **
+ **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_registration_notify(Stat_t status)
+int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
   /* Update the network registration status */
-  if (_emm_data.stat != status) {
-    _emm_data.stat = status;
+  if (emm_data->stat != status) {
+    emm_data->stat = status;
     /* Notify EMM that data has changed */
-    rc = (*_emm_indication_notify)(1);
+    rc = (*_emm_indication_notify)(emm_data, 1);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -1010,24 +1009,24 @@ int emm_proc_registration_notify(Stat_t status)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **          Others:    _emm_data                                  **
+ **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_location_notify(tac_t tac, ci_t ci, AcT_t rat)
+int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
   /* Update the location information */
-  if ( (_emm_data.tac != tac) ||
-       (_emm_data.ci  != ci)  ||
-       (_emm_data.rat != rat) ) {
-    _emm_data.tac = tac;
-    _emm_data.ci = ci;
-    _emm_data.rat = rat;
+  if ( (emm_data->tac != tac) ||
+       (emm_data->ci  != ci)  ||
+       (emm_data->rat != rat) ) {
+    emm_data->tac = tac;
+    emm_data->ci = ci;
+    emm_data->rat = rat;
     /* Notify EMM that data has changed */
-    rc = (*_emm_indication_notify)(0);
+    rc = (*_emm_indication_notify)(emm_data, 0);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -1047,17 +1046,17 @@ int emm_proc_location_notify(tac_t tac, ci_t ci, AcT_t rat)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **          Others:    _emm_data                                  **
+ **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_network_notify(int index)
+int emm_proc_network_notify(emm_data_t *emm_data, int index)
 {
   LOG_FUNC_IN;
 
   /* Update the list of operators present in the network */
-  int size = IdleMode_update_plmn_list(index);
+  int size = IdleMode_update_plmn_list(emm_data, index);
   /* Notify EMM that data has changed */
-  int rc = (*_emm_indication_notify)(size);
+  int rc = (*_emm_indication_notify)(emm_data, size);
 
   LOG_FUNC_RETURN (rc);
 }
@@ -1126,7 +1125,7 @@ static int _IdleMode_plmn_str(char *plmn_str, const plmn_t *plmn)
  **      tor network name records                                  **
  **                                                                        **
  ** Inputs:  plmn:      The PLMN identifier                        **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The index of the PLMN if found in the list **
@@ -1139,28 +1138,28 @@ static int _IldlMode_get_opnn_id(nas_user_t *user, const plmn_t *plmn)
 {
   int i;
 
-  for (i = 0; i < _emm_data.n_opnns; i++) {
-    if (plmn->MCCdigit1 != _emm_data.opnn[i].plmn->MCCdigit1) {
+  for (i = 0; i < user->emm_data->n_opnns; i++) {
+    if (plmn->MCCdigit1 != user->emm_data->opnn[i].plmn->MCCdigit1) {
       continue;
     }
 
-    if (plmn->MCCdigit2 != _emm_data.opnn[i].plmn->MCCdigit2) {
+    if (plmn->MCCdigit2 != user->emm_data->opnn[i].plmn->MCCdigit2) {
       continue;
     }
 
-    if (plmn->MCCdigit3 != _emm_data.opnn[i].plmn->MCCdigit3) {
+    if (plmn->MCCdigit3 != user->emm_data->opnn[i].plmn->MCCdigit3) {
       continue;
     }
 
-    if (plmn->MNCdigit1 != _emm_data.opnn[i].plmn->MNCdigit1) {
+    if (plmn->MNCdigit1 != user->emm_data->opnn[i].plmn->MNCdigit1) {
       continue;
     }
 
-    if (plmn->MNCdigit2 != _emm_data.opnn[i].plmn->MNCdigit2) {
+    if (plmn->MNCdigit2 != user->emm_data->opnn[i].plmn->MNCdigit2) {
       continue;
     }
 
-    if (plmn->MNCdigit3 != _emm_data.opnn[i].plmn->MNCdigit3) {
+    if (plmn->MNCdigit3 != user->emm_data->opnn[i].plmn->MNCdigit3) {
       continue;
     }
 
@@ -1195,8 +1194,8 @@ static int _IdleMode_get_suitable_cell(nas_user_t *user, int index)
 
   LOG_TRACE(INFO, "EMM-IDLE  - Trying to search a suitable cell "
             "of PLMN %d in %s mode", index,
-            (_emm_data.plmn_mode == EMM_DATA_PLMN_AUTO)? "Automatic" :
-            (_emm_data.plmn_mode == EMM_DATA_PLMN_MANUAL)? "Manual" :
+            (user->emm_data->plmn_mode == EMM_DATA_PLMN_AUTO)? "Automatic" :
+            (user->emm_data->plmn_mode == EMM_DATA_PLMN_MANUAL)? "Manual" :
             "Automatic/manual");
   /*
    * Notify EMM-AS SAP that cell information related to the given
@@ -1206,8 +1205,8 @@ static int _IdleMode_get_suitable_cell(nas_user_t *user, int index)
   emm_sap.u.emm_as.u.cell_info.plmnIDs.n_plmns = 1;
   emm_sap.u.emm_as.u.cell_info.plmnIDs.plmn[0] = *plmn;
 
-  if (_emm_data.plmn_rat != NET_ACCESS_UNAVAILABLE) {
-    emm_sap.u.emm_as.u.cell_info.rat = (1 << _emm_data.plmn_rat);
+  if (user->emm_data->plmn_rat != NET_ACCESS_UNAVAILABLE) {
+    emm_sap.u.emm_as.u.cell_info.rat = (1 << user->emm_data->plmn_rat);
   } else {
     emm_sap.u.emm_as.u.cell_info.rat = NET_ACCESS_UNAVAILABLE;
   }

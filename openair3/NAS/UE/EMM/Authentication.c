@@ -163,11 +163,11 @@ static int _authentication_kasme(const OctetString *autn,
  **      ksi:       The NAS ket sey identifier                 **
  **      rand:      Authentication parameter RAND              **
  **      autn:      Authentication parameter AUTN              **
- **      Others:    _emm_data, _authentication_data            **
+ **      Others:    user->emm_data-> _authentication_data            **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_data, _authentication_data, T3416,    **
+ **      Others:    user->emm_data-> _authentication_data, T3416,    **
  **             T3418, T3420                               **
  **                                                                        **
  ***************************************************************************/
@@ -185,7 +185,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
    * The UE shall proceed with an EPS authentication challenge only if a
    * USIM is present
    */
-  if (!_emm_data.usim_is_valid) {
+  if (!user->emm_data->usim_is_valid) {
     LOG_TRACE(WARNING, "EMM-PROC  - USIM is not present or not valid");
     LOG_FUNC_RETURN (RETURNerror);
   }
@@ -327,14 +327,14 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
   emm_sap.u.emm_as.u.security.ueid = 0;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = EMM_CAUSE_SUCCESS;
   emm_sap.u.emm_as.u.security.res = &res;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
+                           user->emm_data->security, FALSE, TRUE);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
@@ -344,29 +344,29 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
     _authentication_data.sync_count = 0;
 
     /* Create non-current EPS security context */
-    if (_emm_data.non_current == NULL) {
-      _emm_data.non_current =
+    if (user->emm_data->non_current == NULL) {
+      user->emm_data->non_current =
         (emm_security_context_t *)malloc(sizeof(emm_security_context_t));
     }
 
-    if (_emm_data.non_current) {
-      memset(_emm_data.non_current, 0, sizeof(emm_security_context_t));
+    if (user->emm_data->non_current) {
+      memset(user->emm_data->non_current, 0, sizeof(emm_security_context_t));
 
       /* Set the security context type */
       if (native_ksi) {
-        _emm_data.non_current->type = EMM_KSI_NATIVE;
+        user->emm_data->non_current->type = EMM_KSI_NATIVE;
       } else {
-        _emm_data.non_current->type = EMM_KSI_MAPPED;
+        user->emm_data->non_current->type = EMM_KSI_MAPPED;
       }
 
       /* Set the EPS key set identifier */
-      _emm_data.non_current->eksi = ksi;
+      user->emm_data->non_current->eksi = ksi;
       /* Derive the Kasme from the authentication challenge using
        * the PLMN identity of the selected PLMN */
-      _emm_data.non_current->kasme.length = AUTH_KASME_SIZE;
-      _emm_data.non_current->kasme.value  = malloc(32);
-      _authentication_kasme(autn, &ck, &ik, &_emm_data.splmn,
-                            &_emm_data.non_current->kasme);
+      user->emm_data->non_current->kasme.length = AUTH_KASME_SIZE;
+      user->emm_data->non_current->kasme.value  = malloc(32);
+      _authentication_kasme(autn, &ck, &ik, &user->emm_data->splmn,
+                            &user->emm_data->non_current->kasme);
       /* NAS integrity and cyphering keys are not yet available */
     }
   }
@@ -392,7 +392,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_data, _authentication_data, T3410,    **
+ **      Others:    user->emm_data-> _authentication_data, T3410,    **
  **             T3417, T3430                               **
  **                                                                        **
  ***************************************************************************/
@@ -409,21 +409,21 @@ int emm_proc_authentication_reject(nas_user_t *user)
   (void) emm_proc_authentication_delete();
 
   /* Set the EPS update status to EU3 ROAMING NOT ALLOWED */
-  _emm_data.status = EU3_ROAMING_NOT_ALLOWED;
+  user->emm_data->status = EU3_ROAMING_NOT_ALLOWED;
   /* Delete the stored GUTI */
-  _emm_data.guti = NULL;
+  user->emm_data->guti = NULL;
   /* Delete the TAI list */
-  _emm_data.ltai.n_tais = 0;
+  user->emm_data->ltai.n_tais = 0;
   /* Delete the last visited registered TAI */
-  _emm_data.tai = NULL;
+  user->emm_data->tai = NULL;
 
   /* Delete the eKSI */
-  if (_emm_data.security) {
-    _emm_data.security->type = EMM_KSI_NOT_AVAILABLE;
+  if (user->emm_data->security) {
+    user->emm_data->security->type = EMM_KSI_NOT_AVAILABLE;
   }
 
   /* Consider the USIM invalid */
-  _emm_data.usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = FALSE;
 
   /* Stop timer T3410 */
   if (T3410.id != NAS_TIMER_INACTIVE_ID) {
@@ -664,14 +664,14 @@ static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
-  emm_sap.u.emm_as.u.security.guti = _emm_data.guti;
+  emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
   emm_sap.u.emm_as.u.security.ueid = 0;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   emm_sap.u.emm_as.u.security.auts = auts;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           _emm_data.security, FALSE, TRUE);
+                           user->emm_data->security, FALSE, TRUE);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
@@ -787,7 +787,7 @@ static int _authentication_abnormal_case_f(nas_user_t *user)
    */
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_RELEASE_REQ;
-  emm_sap.u.emm_as.u.release.guti = _emm_data.guti;
+  emm_sap.u.emm_as.u.release.guti = user->emm_data->guti;
   emm_sap.u.emm_as.u.release.cause = EMM_AS_CAUSE_AUTHENTICATION;
   rc = emm_sap_send(user, &emm_sap);
 

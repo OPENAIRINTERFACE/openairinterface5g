@@ -78,7 +78,7 @@ static usim_data_t _usim_data;
  * to the user application
  */
 static emm_indication_callback_t _emm_main_user_callback;
-static int _emm_main_callback(int);
+static int _emm_main_callback(emm_data_t *emm_data, int);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -97,66 +97,70 @@ static int _emm_main_callback(int);
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
 void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const char *imei)
 {
   LOG_FUNC_IN;
-
+  user->emm_data = calloc(1, sizeof(emm_data_t));
+  if ( user->emm_data == NULL ) {
+    LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get allocate emm_data");
+    // FIXME stop here
+  }
   /* USIM validity indicator */
-  _emm_data.usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = FALSE;
   /* The IMEI read from the UE's non-volatile memory  */
-  _emm_data.imei = (imei_t *)malloc(sizeof(imei_t));
-  _emm_data.imei->length = _emm_main_get_imei(_emm_data.imei, imei);
+  user->emm_data->imei = (imei_t *)malloc(sizeof(imei_t));
+  user->emm_data->imei->length = _emm_main_get_imei(user->emm_data->imei, imei);
   /* The IMSI, valid only if USIM is present */
-  _emm_data.imsi = NULL;
+  user->emm_data->imsi = NULL;
   /* EPS location information */
-  _emm_data.guti = NULL;
-  _emm_data.tai = NULL;
-  _emm_data.ltai.n_tais = 0;
+  user->emm_data->guti = NULL;
+  user->emm_data->tai = NULL;
+  user->emm_data->ltai.n_tais = 0;
   /* EPS Connection Management status */
-  _emm_data.ecm_status = ECM_IDLE;
+  user->emm_data->ecm_status = ECM_IDLE;
   /* Network selection mode of operation */
-  _emm_data.plmn_mode = EMM_DATA_PLMN_AUTO;
+  user->emm_data->plmn_mode = EMM_DATA_PLMN_AUTO;
   /* Index of the PLMN manually selected by the user */
-  _emm_data.plmn_index = -1;
+  user->emm_data->plmn_index = -1;
   /* Selected Radio Access Technology */
-  _emm_data.plmn_rat = NET_ACCESS_UNAVAILABLE;
+  user->emm_data->plmn_rat = NET_ACCESS_UNAVAILABLE;
   /* Selected PLMN */
-  memset(&_emm_data.splmn, 0xFF, sizeof(plmn_t));
-  _emm_data.is_rplmn = FALSE;
-  _emm_data.is_eplmn = FALSE;
+  memset(&user->emm_data->splmn, 0xFF, sizeof(plmn_t));
+  user->emm_data->is_rplmn = FALSE;
+  user->emm_data->is_eplmn = FALSE;
   /* Radio Access Technology of the serving cell */
-  _emm_data.rat = NET_ACCESS_UNAVAILABLE;
+  user->emm_data->rat = NET_ACCESS_UNAVAILABLE;
   /* Network registration status */
-  _emm_data.stat = NET_REG_STATE_OFF;
-  _emm_data.is_attached = FALSE;
-  _emm_data.is_emergency = FALSE;
+  user->emm_data->stat = NET_REG_STATE_OFF;
+  user->emm_data->is_attached = FALSE;
+  user->emm_data->is_emergency = FALSE;
   /* Location/Tracking area code */
-  _emm_data.tac = 0;  // two byte in hexadecimal format
+  user->emm_data->tac = 0;  // two byte in hexadecimal format
   /* Identifier of the serving cell */
-  _emm_data.ci = 0;   // four byte in hexadecimal format
+  user->emm_data->ci = 0;   // four byte in hexadecimal format
   /* List of operators present in the network */
-  memset(_emm_data.plist.buffer, 0, EMM_DATA_BUFFER_SIZE + 1);
+  memset(user->emm_data->plist.buffer, 0, EMM_DATA_BUFFER_SIZE + 1);
   /* Home PLMN */
-  memset(&_emm_data.hplmn, 0xFF, sizeof(plmn_t));
+  memset(&user->emm_data->hplmn, 0xFF, sizeof(plmn_t));
   /* List of Forbidden PLMNs */
-  _emm_data.fplmn.n_plmns = 0;
+  user->emm_data->fplmn.n_plmns = 0;
   /* List of Forbidden PLMNs for GPRS service */
-  _emm_data.fplmn_gprs.n_plmns = 0;
+  user->emm_data->fplmn_gprs.n_plmns = 0;
   /* List of Equivalent HPLMNs */
-  _emm_data.ehplmn.n_plmns = 0;
+  user->emm_data->ehplmn.n_plmns = 0;
   /* List of user controlled PLMNs */
-  _emm_data.plmn.n_plmns = 0;
+  user->emm_data->plmn.n_plmns = 0;
   /* List of operator controlled PLMNs */
-  _emm_data.oplmn.n_plmns = 0;
+  user->emm_data->oplmn.n_plmns = 0;
   /* List of operator network name records */
-  _emm_data.n_opnns = 0;
+  user->emm_data->n_opnns = 0;
   /* List of Forbidden Tracking Areas */
-  _emm_data.ftai.n_tais = 0;
+  user->emm_data->ftai.n_tais = 0;
   /* List of Forbidden Tracking Areas for roaming */
-  _emm_data.ftai_roaming.n_tais = 0;
+  user->emm_data->ftai_roaming.n_tais = 0;
 
   /*
    * Get USIM application data
@@ -170,47 +174,47 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
 
     /* The USIM application is present and valid */
     LOG_TRACE(INFO, "EMM-MAIN  - USIM application data successfully read");
-    _emm_data.usim_is_valid = TRUE;
+    user->emm_data->usim_is_valid = TRUE;
 
     /* Get the Home PLMN derived from the IMSI */
-    _emm_data.hplmn.MCCdigit1 = _usim_data.imsi.u.num.digit1;
-    _emm_data.hplmn.MCCdigit2 = _usim_data.imsi.u.num.digit2;
-    _emm_data.hplmn.MCCdigit3 = _usim_data.imsi.u.num.digit3;
-    _emm_data.hplmn.MNCdigit1 = _usim_data.imsi.u.num.digit4;
-    _emm_data.hplmn.MNCdigit2 = _usim_data.imsi.u.num.digit5;
-    _emm_data.hplmn.MNCdigit3 = _usim_data.imsi.u.num.digit6;
+    user->emm_data->hplmn.MCCdigit1 = _usim_data.imsi.u.num.digit1;
+    user->emm_data->hplmn.MCCdigit2 = _usim_data.imsi.u.num.digit2;
+    user->emm_data->hplmn.MCCdigit3 = _usim_data.imsi.u.num.digit3;
+    user->emm_data->hplmn.MNCdigit1 = _usim_data.imsi.u.num.digit4;
+    user->emm_data->hplmn.MNCdigit2 = _usim_data.imsi.u.num.digit5;
+    user->emm_data->hplmn.MNCdigit3 = _usim_data.imsi.u.num.digit6;
 
     /* Get the list of forbidden PLMNs */
     for (i=0; (i < EMM_DATA_FPLMN_MAX) && (i < USIM_FPLMN_MAX); i++) {
       if ( PLMN_IS_VALID(_usim_data.fplmn[i]) ) {
-        _emm_data.fplmn.plmn[i] = _usim_data.fplmn[i];
-        _emm_data.fplmn.n_plmns += 1;
+        user->emm_data->fplmn.plmn[i] = _usim_data.fplmn[i];
+        user->emm_data->fplmn.n_plmns += 1;
       }
     }
 
     /* Get the list of Equivalent HPLMNs */
     for (i=0; (i < EMM_DATA_EHPLMN_MAX) && (i < USIM_EHPLMN_MAX); i++) {
       if ( PLMN_IS_VALID(_usim_data.ehplmn[i]) ) {
-        _emm_data.ehplmn.plmn[i] = _usim_data.ehplmn[i];
-        _emm_data.ehplmn.n_plmns += 1;
+        user->emm_data->ehplmn.plmn[i] = _usim_data.ehplmn[i];
+        user->emm_data->ehplmn.n_plmns += 1;
       }
     }
 
     /* Get the list of User controlled PLMN Selector */
     for (i=0; (i < EMM_DATA_PLMN_MAX) && (i < USIM_PLMN_MAX); i++) {
       if ( PLMN_IS_VALID(_usim_data.plmn[i].plmn) ) {
-        _emm_data.plmn.plmn[i] = _usim_data.plmn[i].plmn;
-        _emm_data.userAcT[i] = _usim_data.plmn[i].AcT;
-        _emm_data.plmn.n_plmns += 1;
+        user->emm_data->plmn.plmn[i] = _usim_data.plmn[i].plmn;
+        user->emm_data->userAcT[i] = _usim_data.plmn[i].AcT;
+        user->emm_data->plmn.n_plmns += 1;
       }
     }
 
     /* Get the list of Operator controlled PLMN Selector */
     for (i=0; (i < EMM_DATA_OPLMN_MAX) && (i < USIM_OPLMN_MAX); i++) {
       if ( PLMN_IS_VALID(_usim_data.oplmn[i].plmn) ) {
-        _emm_data.oplmn.plmn[i] = _usim_data.oplmn[i].plmn;
-        _emm_data.operAcT[i] = _usim_data.oplmn[i].AcT;
-        _emm_data.oplmn.n_plmns += 1;
+        user->emm_data->oplmn.plmn[i] = _usim_data.oplmn[i].plmn;
+        user->emm_data->operAcT[i] = _usim_data.oplmn[i].AcT;
+        user->emm_data->oplmn.n_plmns += 1;
       }
     }
 
@@ -218,10 +222,10 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     for (i=0; (i < EMM_DATA_OPNN_MAX) && (i < USIM_OPL_MAX); i++) {
       if ( PLMN_IS_VALID(_usim_data.opl[i].plmn) ) {
         int pnn_id = _usim_data.opl[i].record_id;
-        _emm_data.opnn[i].plmn = &_usim_data.opl[i].plmn;
-        _emm_data.opnn[i].fullname = (char *)_usim_data.pnn[pnn_id].fullname.value;
-        _emm_data.opnn[i].shortname = (char *)_usim_data.pnn[pnn_id].shortname.value;
-        _emm_data.n_opnns += 1;
+        user->emm_data->opnn[i].plmn = &_usim_data.opl[i].plmn;
+        user->emm_data->opnn[i].fullname = (char *)_usim_data.pnn[pnn_id].fullname.value;
+        user->emm_data->opnn[i].shortname = (char *)_usim_data.pnn[pnn_id].shortname.value;
+        user->emm_data->n_opnns += 1;
       }
     }
 
@@ -229,78 +233,78 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
 
     /* Get the EPS location information */
     if (PLMN_IS_VALID(_usim_data.epsloci.guti.gummei.plmn)) {
-      _emm_data.guti = &_usim_data.epsloci.guti;
+      user->emm_data->guti = &_usim_data.epsloci.guti;
     }
 
     if (TAI_IS_VALID(_usim_data.epsloci.tai)) {
-      _emm_data.tai = &_usim_data.epsloci.tai;
+      user->emm_data->tai = &_usim_data.epsloci.tai;
     }
 
-    _emm_data.status = _usim_data.epsloci.status;
+    user->emm_data->status = _usim_data.epsloci.status;
 
     /* Get NAS configuration parameters */
-    _emm_data.NAS_SignallingPriority =
+    user->emm_data->NAS_SignallingPriority =
       _usim_data.nasconfig.NAS_SignallingPriority.value[0];
-    _emm_data.NMO_I_Behaviour = _usim_data.nasconfig.NMO_I_Behaviour.value[0];
-    _emm_data.AttachWithImsi = _usim_data.nasconfig.AttachWithImsi.value[0];
-    _emm_data.MinimumPeriodicSearchTimer =
+    user->emm_data->NMO_I_Behaviour = _usim_data.nasconfig.NMO_I_Behaviour.value[0];
+    user->emm_data->AttachWithImsi = _usim_data.nasconfig.AttachWithImsi.value[0];
+    user->emm_data->MinimumPeriodicSearchTimer =
       _usim_data.nasconfig.MinimumPeriodicSearchTimer.value[0];
-    _emm_data.ExtendedAccessBarring =
+    user->emm_data->ExtendedAccessBarring =
       _usim_data.nasconfig.ExtendedAccessBarring.value[0];
-    _emm_data.Timer_T3245_Behaviour =
+    user->emm_data->Timer_T3245_Behaviour =
       _usim_data.nasconfig.Timer_T3245_Behaviour.value[0];
 
     /*
      * Get EPS NAS security context
      */
     /* Create NAS security context */
-    _emm_data.security =
+    user->emm_data->security =
       (emm_security_context_t *)malloc(sizeof(emm_security_context_t));
 
-    if (_emm_data.security != NULL) {
-      memset(_emm_data.security, 0, sizeof(emm_security_context_t));
+    if (user->emm_data->security != NULL) {
+      memset(user->emm_data->security, 0, sizeof(emm_security_context_t));
 
       /* Type of security context */
       if (_usim_data.securityctx.KSIasme.value[0] !=
           USIM_KSI_NOT_AVAILABLE) {
-        _emm_data.security->type = EMM_KSI_NATIVE;
+        user->emm_data->security->type = EMM_KSI_NATIVE;
       } else {
-        _emm_data.security->type = EMM_KSI_NOT_AVAILABLE;
+        user->emm_data->security->type = EMM_KSI_NOT_AVAILABLE;
       }
 
       /* EPS key set identifier */
-      _emm_data.security->eksi = _usim_data.securityctx.KSIasme.value[0];
+      user->emm_data->security->eksi = _usim_data.securityctx.KSIasme.value[0];
       /* ASME security key */
-      _emm_data.security->kasme.length =
+      user->emm_data->security->kasme.length =
         _usim_data.securityctx.Kasme.length;
-      _emm_data.security->kasme.value =
-        (uint8_t *)malloc(_emm_data.security->kasme.length);
+      user->emm_data->security->kasme.value =
+        (uint8_t *)malloc(user->emm_data->security->kasme.length);
 
-      if (_emm_data.security->kasme.value) {
-        memcpy(_emm_data.security->kasme.value,
+      if (user->emm_data->security->kasme.value) {
+        memcpy(user->emm_data->security->kasme.value,
                _usim_data.securityctx.Kasme.value,
-               _emm_data.security->kasme.length);
+               user->emm_data->security->kasme.length);
       }
 
       /* Downlink count parameter */
       if (_usim_data.securityctx.dlNAScount.length <= sizeof(uint32_t)) {
-        memcpy(&_emm_data.security->dl_count,
+        memcpy(&user->emm_data->security->dl_count,
                _usim_data.securityctx.dlNAScount.value,
                _usim_data.securityctx.dlNAScount.length);
       }
 
       /* Uplink count parameter */
       if (_usim_data.securityctx.ulNAScount.length <= sizeof(uint32_t)) {
-        memcpy(&_emm_data.security->ul_count,
+        memcpy(&user->emm_data->security->ul_count,
                _usim_data.securityctx.ulNAScount.value,
                _usim_data.securityctx.ulNAScount.length);
       }
 
       /* Ciphering algorithm */
-      _emm_data.security->capability.eps_encryption =
+      user->emm_data->security->capability.eps_encryption =
         ((_usim_data.securityctx.algorithmID.value[0] >> 4) & 0xf);
       /* Identity protection algorithm */
-      _emm_data.security->capability.eps_integrity =
+      user->emm_data->security->capability.eps_integrity =
         (_usim_data.securityctx.algorithmID.value[0] & 0xf);
       /* NAS integrity and cyphering keys are not available */
     } else {
@@ -311,8 +315,8 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     /*
      * Get EMM data from the UE's non-volatile memory
      */
-    memset(&_emm_data.nvdata.rplmn, 0xFF, sizeof(plmn_t));
-    _emm_data.nvdata.eplmn.n_plmns = 0;
+    memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
+    user->emm_data->nvdata.eplmn.n_plmns = 0;
     /* Get EMM data pathname */
     char *path = memory_get_path(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME);
 
@@ -320,29 +324,29 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
       LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get EMM data pathname");
     } else {
       /* Get EMM data stored in the non-volatile memory device */
-      int rc = memory_read(path, &_emm_data.nvdata, sizeof(emm_nvdata_t));
+      int rc = memory_read(path, &user->emm_data->nvdata, sizeof(emm_nvdata_t));
 
       if (rc != RETURNok) {
         LOG_TRACE(ERROR, "EMM-MAIN  - Failed to read %s", path);
       } else {
         /* Check the IMSI */
         LOG_TRACE(INFO, "EMM-MAIN  - EMM data successfully read");
-        _emm_data.imsi = &_usim_data.imsi;
-        int imsi_ok = _emm_main_imsi_cmp(&_emm_data.nvdata.imsi,
+        user->emm_data->imsi = &_usim_data.imsi;
+        int imsi_ok = _emm_main_imsi_cmp(&user->emm_data->nvdata.imsi,
                                          &_usim_data.imsi);
 
         if (!imsi_ok) {
           LOG_TRACE(WARNING, "EMM-MAIN  - IMSI checking failed nvram: "
                     "%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x, "
                     "usim: %02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x",
-                    _emm_data.nvdata.imsi.u.value[0],
-                    _emm_data.nvdata.imsi.u.value[1],
-                    _emm_data.nvdata.imsi.u.value[2],
-                    _emm_data.nvdata.imsi.u.value[3],
-                    _emm_data.nvdata.imsi.u.value[4],
-                    _emm_data.nvdata.imsi.u.value[5],
-                    _emm_data.nvdata.imsi.u.value[6],
-                    _emm_data.nvdata.imsi.u.value[7],
+                    user->emm_data->nvdata.imsi.u.value[0],
+                    user->emm_data->nvdata.imsi.u.value[1],
+                    user->emm_data->nvdata.imsi.u.value[2],
+                    user->emm_data->nvdata.imsi.u.value[3],
+                    user->emm_data->nvdata.imsi.u.value[4],
+                    user->emm_data->nvdata.imsi.u.value[5],
+                    user->emm_data->nvdata.imsi.u.value[6],
+                    user->emm_data->nvdata.imsi.u.value[7],
                     _usim_data.imsi.u.value[0],
                     _usim_data.imsi.u.value[1],
                     _usim_data.imsi.u.value[2],
@@ -351,8 +355,8 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
                     _usim_data.imsi.u.value[5],
                     _usim_data.imsi.u.value[6],
                     _usim_data.imsi.u.value[7]);
-          memset(&_emm_data.nvdata.rplmn, 0xFF, sizeof(plmn_t));
-          _emm_data.nvdata.eplmn.n_plmns = 0;
+          memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
+          user->emm_data->nvdata.eplmn.n_plmns = 0;
         }
       }
 
@@ -392,6 +396,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   /*
    * Initialize EMM internal data used for UE in idle mode
    */
+    // FIXME REVIEW
   IdleMode_initialize(user, &_emm_main_callback);
 
   LOG_FUNC_OUT;
@@ -412,56 +417,14 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_main_cleanup(void)
+void emm_main_cleanup(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
 
-  if (_emm_data.usim_is_valid) {
+  if (emm_data->usim_is_valid) {
     /*
      * TODO: Update USIM application data
      */
-#if 0
-    int i;
-
-    /* Update the list of Forbidden PLMNs */
-    for (i=0; (i < _emm_data.fplmn.n_plmns) && (i < USIM_FPLMN_MAX); i++) {
-      _usim_data.fplmn[i] = _emm_data.fplmn.plmn[i];
-    }
-
-    /* Update the list of Equivalent HPLMNs */
-    for (i=0; (i < _emm_data.ehplmn.n_plmns) && (i < USIM_EHPLMN_MAX); i++) {
-      _usim_data.ehplmn[i] = _emm_data.ehplmn.plmn[i];
-    }
-
-    /* Update the GUTI */
-    if (_emm_data.guti) {
-      _usim_data.epsloci.guti = *(_emm_data.guti);
-    }
-
-    /* Update the last visited registered TAI */
-    if (_emm_data.tai) {
-      _usim_data.epsloci.tai = *(_emm_data.tai);
-    }
-
-    /* Update the EPS location information */
-    _usim_data.epsloci.status = _emm_data.status;
-
-    if (_emm_data.security && (_emm_data.security->type == EMM_KSI_NATIVE)) {
-      /* TODO: Update the EPS security context parameters from the full
-       * native EPS security context */
-    }
-
-    /*
-     * Store USIM application data
-     * - List of forbidden PLMNs
-     */
-    if ( usim_api_write(&_usim_data) != RETURNok ) {
-      /* The USIM application may not be present or not valid */
-      LOG_TRACE(WARNING, "EMM-MAIN  - "
-                "Failed to write USIM application data");
-    }
-
-#endif
   }
 
   /*
@@ -474,7 +437,7 @@ void emm_main_cleanup(void)
   if (path == NULL) {
     LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get EMM data pathname");
   } else {
-    int rc = memory_write(path, &_emm_data.nvdata, sizeof(emm_nvdata_t));
+    int rc = memory_write(path, &emm_data->nvdata, sizeof(emm_nvdata_t));
 
     if (rc != RETURNok) {
       LOG_TRACE(ERROR, "EMM-MAIN  - Failed to write %s", path);
@@ -482,13 +445,13 @@ void emm_main_cleanup(void)
   }
 
   /* Release dynamically allocated memory */
-  if (_emm_data.imei) {
-    free(_emm_data.imei);
-    _emm_data.imei = NULL;
+  if (emm_data->imei) {
+    free(emm_data->imei);
+    emm_data->imei = NULL;
   }
 
-  if (_emm_data.security) {
-    emm_security_context_t *security = _emm_data.security;
+  if (emm_data->security) {
+    emm_security_context_t *security = emm_data->security;
 
     if (security->kasme.value) {
       free(security->kasme.value);
@@ -508,8 +471,8 @@ void emm_main_cleanup(void)
       security->knas_int.length = 0;
     }
 
-    free(_emm_data.security);
-    _emm_data.security = NULL;
+    free(emm_data->security);
+    emm_data->security = NULL;
   }
   LOG_FUNC_OUT;
 }
@@ -521,17 +484,17 @@ void emm_main_cleanup(void)
  ** Description: Get the International Mobile Subscriber Identity number   **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    Pointer to the IMSI                        **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const imsi_t *emm_main_get_imsi(void)
+const imsi_t *emm_main_get_imsi(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (&_emm_data.nvdata.imsi);
+  LOG_FUNC_RETURN (&emm_data->nvdata.imsi);
 }
 
 /****************************************************************************
@@ -572,10 +535,10 @@ const msisdn_t *emm_main_get_msisdn(void)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_main_set_plmn_selection_mode(int mode, int format,
+int emm_main_set_plmn_selection_mode(emm_data_t *emm_data, int mode, int format,
                                      const network_plmn_t *plmn, int rat)
 {
   LOG_FUNC_IN;
@@ -585,7 +548,7 @@ int emm_main_set_plmn_selection_mode(int mode, int format,
   LOG_TRACE(INFO, "EMM-MAIN  - PLMN selection: mode=%d, format=%d, plmn=%s, "
             "rat=%d", mode, format, (const char *)&plmn->id, rat);
 
-  _emm_data.plmn_mode = mode;
+  emm_data->plmn_mode = mode;
 
   if (mode != EMM_DATA_PLMN_AUTO) {
     /* Get the index of the PLMN in the list of available PLMNs */
@@ -596,8 +559,8 @@ int emm_main_set_plmn_selection_mode(int mode, int format,
                 (const char *)&plmn->id);
     } else {
       /* Update the manually selected network selection data */
-      _emm_data.plmn_index = index;
-      _emm_data.plmn_rat = rat;
+      emm_data->plmn_index = index;
+      emm_data->plmn_rat = rat;
     }
   } else {
     /*
@@ -619,17 +582,17 @@ int emm_main_set_plmn_selection_mode(int mode, int format,
  **      operation                                                 **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The value of the network selection mode    **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_get_plmn_selection_mode(void)
+int emm_main_get_plmn_selection_mode(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.plmn_mode);
+  LOG_FUNC_RETURN (emm_data->plmn_mode);
 }
 
 /****************************************************************************
@@ -639,19 +602,19 @@ int emm_main_get_plmn_selection_mode(void)
  ** Description: Get the list of available PLMNs                           **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     plist:     Pointer to the list of available PLMNs     **
  **      Return:    The size of the list in bytes              **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_get_plmn_list(const char **plist)
+int emm_main_get_plmn_list(emm_data_t *emm_data, const char **plist)
 {
   LOG_FUNC_IN;
 
-  int size = IdleMode_update_plmn_list(0);
-  *plist = _emm_data.plist.buffer;
+  int size = IdleMode_update_plmn_list(emm_data, 0);
+  *plist = emm_data->plist.buffer;
 
   LOG_FUNC_RETURN (size);
 }
@@ -664,7 +627,6 @@ int emm_main_get_plmn_list(const char **plist)
  **                                                                        **
  ** Inputs:  format:    The requested format of the string repre-  **
  **             sentation of the PLMN identifier           **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     plmn:      The selected PLMN identifier coded in the  **
  **             requested format                           **
@@ -673,7 +635,7 @@ int emm_main_get_plmn_list(const char **plist)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const char *emm_main_get_selected_plmn(network_plmn_t *plmn, int format)
+const char *emm_main_get_selected_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format)
 {
   LOG_FUNC_IN;
 
@@ -684,7 +646,7 @@ const char *emm_main_get_selected_plmn(network_plmn_t *plmn, int format)
   int index = IdleMode_get_splmn_index();
 
   if ( !(index < 0) ) {
-    const char *name = _emm_main_get_plmn(&_emm_data.splmn, index,
+    const char *name = _emm_main_get_plmn(&emm_data->splmn, index,
                                           format, &size);
 
     if (size > 0) {
@@ -703,7 +665,6 @@ const char *emm_main_get_selected_plmn(network_plmn_t *plmn, int format)
  **                                                                        **
  ** Inputs:  format:    The requested format of the string repre-  **
  **             sentation of the PLMN identifier           **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     plmn:      The registered PLMN identifier coded in    **
  **             the requested format                       **
@@ -712,7 +673,7 @@ const char *emm_main_get_selected_plmn(network_plmn_t *plmn, int format)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const char *emm_main_get_registered_plmn(network_plmn_t *plmn, int format)
+const char *emm_main_get_registered_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format)
 {
   LOG_FUNC_IN;
 
@@ -724,7 +685,7 @@ const char *emm_main_get_registered_plmn(network_plmn_t *plmn, int format)
   int index = IdleMode_get_rplmn_index();
 
   if ( !(index < 0) ) {
-    const char *name = _emm_main_get_plmn(&_emm_data.nvdata.rplmn,
+    const char *name = _emm_main_get_plmn(&emm_data->nvdata.rplmn,
                                           index, format, &size);
 
     if (size > 0) {
@@ -744,17 +705,16 @@ const char *emm_main_get_registered_plmn(network_plmn_t *plmn, int format)
  **      registration of the UE                                    **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The current network registration status    **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-Stat_t emm_main_get_plmn_status(void)
+Stat_t emm_main_get_plmn_status(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.stat);
+  LOG_FUNC_RETURN (emm_data->stat);
 }
 
 /****************************************************************************
@@ -765,17 +725,16 @@ Stat_t emm_main_get_plmn_status(void)
  **      belongs to                                                **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The Location/Tracking area code            **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-tac_t emm_main_get_plmn_tac(void)
+tac_t emm_main_get_plmn_tac(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.tac);
+  LOG_FUNC_RETURN (emm_data->tac);
 }
 
 /****************************************************************************
@@ -785,17 +744,16 @@ tac_t emm_main_get_plmn_tac(void)
  ** Description: Get the identifier of the serving cell                    **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The serving cell identifier                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-ci_t emm_main_get_plmn_ci(void)
+ci_t emm_main_get_plmn_ci(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.ci);
+  LOG_FUNC_RETURN (emm_data->ci);
 }
 
 /****************************************************************************
@@ -806,7 +764,6 @@ ci_t emm_main_get_plmn_ci(void)
  **      ving cell                                                 **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    The value of the Radio Access Technology   **
@@ -814,10 +771,10 @@ ci_t emm_main_get_plmn_ci(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-AcT_t emm_main_get_plmn_rat(void)
+AcT_t emm_main_get_plmn_rat(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.rat);
+  LOG_FUNC_RETURN (emm_data->rat);
 }
 
 /****************************************************************************
@@ -828,7 +785,7 @@ AcT_t emm_main_get_plmn_rat(void)
  **      network for EPS services or emergency service only        **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE if the UE is currently attached to    **
@@ -836,10 +793,10 @@ AcT_t emm_main_get_plmn_rat(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_is_attached(void)
+int emm_main_is_attached(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.is_attached);
+  LOG_FUNC_RETURN (emm_data->is_attached);
 }
 
 /****************************************************************************
@@ -850,7 +807,7 @@ int emm_main_is_attached(void)
  **      network for emergency bearer services                     **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _emm_data                                  **
+ **      Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    TRUE if the UE is currently attached or is **
@@ -859,10 +816,10 @@ int emm_main_is_attached(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_is_emergency(void)
+int emm_main_is_emergency(emm_data_t *emm_data)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (_emm_data.is_attached && _emm_data.is_emergency);
+  LOG_FUNC_RETURN (emm_data->is_attached && emm_data->is_emergency);
 }
 
 /****************************************************************************/
@@ -881,21 +838,21 @@ int emm_main_is_emergency(void)
  **             present in the network. The list has to be **
  **             displayed to the user application when     **
  **             size > 0.                                  **
- **          Others:    _emm_data                                  **
+ **          Others:    user->emm_data->                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_main_callback(int size)
+static int _emm_main_callback(emm_data_t *emm_data, int size)
 {
   LOG_FUNC_IN;
 
   /* Forward the notification to the user API */
-  int rc = (*_emm_main_user_callback)(_emm_data.stat, _emm_data.tac,
-                                      _emm_data.ci, _emm_data.rat,
-                                      _emm_data.plist.buffer, size);
+  int rc = (*_emm_main_user_callback)(emm_data->stat, emm_data->tac,
+                                      emm_data->ci, emm_data->rat,
+                                      emm_data->plist.buffer, size);
 
   LOG_FUNC_RETURN (rc);
 }
