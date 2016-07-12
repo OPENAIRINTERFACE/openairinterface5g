@@ -69,9 +69,7 @@ static const char *_esm_ebr_state_str[ESM_EBR_STATE_MAX] = {
  * ----------------------------------
  */
 
-#if !defined(NAS_BUILT_IN_EPC)
 static esm_ebr_data_t _esm_ebr_data[ESM_EBR_NB_UE_MAX];
-#endif
 
 /*
  * ----------------------
@@ -126,7 +124,6 @@ void esm_ebr_initialize(
   esm_indication_callback_t cb
 )
 {
-#if !defined(NAS_BUILT_IN_EPC)
   int ueid, i;
 
   LOG_FUNC_IN;
@@ -144,7 +141,6 @@ void esm_ebr_initialize(
   _esm_ebr_callback = *cb;
 
   LOG_FUNC_OUT;
-#endif
 }
 
 /****************************************************************************
