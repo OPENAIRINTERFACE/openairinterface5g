@@ -88,7 +88,7 @@ int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_PLMN_SEARCH);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_PLMN_SEARCH);
 
   switch (evt->primitive) {
   case _EMMREG_NO_CELL:
@@ -102,7 +102,7 @@ int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
                 "Failed to notify registration update");
     }
 
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NO_CELL_AVAILABLE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NO_CELL_AVAILABLE);
     break;
 
   case _EMMREG_REGISTER_REQ:
@@ -130,14 +130,14 @@ int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
      * The selected cell is known not to be able to provide normal
      * service
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     break;
 
   case _EMMREG_REGISTER_CNF:
     /*
      * A suitable cell of the selected PLMN has been found to camp on
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     break;
 
   default:

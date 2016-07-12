@@ -54,6 +54,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "nas_log.h"
 
 #include "emm_proc.h"
+#include "user_defs.h"
 
 #include <assert.h>
 
@@ -92,10 +93,11 @@ int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED);
 
 
   /* Delete the authentication data RAND and RES */
+  // FIXME REVIEW
   rc = emm_proc_authentication_delete();
 
   if (rc != RETURNok) {
@@ -116,7 +118,7 @@ int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
     /*
      * The UE was powered on without a valid USIM application present
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_NO_IMSI);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NO_IMSI);
     break;
 
   case _EMMREG_REGISTER_REQ:
@@ -124,11 +126,11 @@ int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
      * The default EMM primary substate when the UE is switched on
      * with valid USIM application shall be PLMN-SEARCH
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -142,9 +144,9 @@ int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
 
     /* Move to the corresponding initial EMM state */
     if (evt->u.attach.is_emergency) {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     }
 
     if (rc != RETURNerror) {

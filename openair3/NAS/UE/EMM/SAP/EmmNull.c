@@ -46,6 +46,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "nas_log.h"
 
 #include "emm_proc.h"
+#include "user_defs.h"
 
 #include <assert.h>
 
@@ -82,7 +83,7 @@ int EmmNull(nas_user_t *user, const emm_reg_t *evt)
 
   int rc;
 
-  assert(emm_fsm_get_status() == EMM_NULL);
+  assert(emm_fsm_get_status(user) == EMM_NULL);
 
   /* Delete the authentication data RAND and RES */
   rc = emm_proc_authentication_delete();
@@ -97,7 +98,7 @@ int EmmNull(nas_user_t *user, const emm_reg_t *evt)
      * The EPS capability has been enabled in the UE:
      * Move to the DEREGISTERED state;
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
 
     /*
      * And initialize the EMM procedure call manager in order to

@@ -85,7 +85,7 @@ int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_ATTEMPTING_TO_ATTACH);
 
   switch (evt->primitive) {
   case _EMMREG_ATTACH_INIT:
@@ -97,9 +97,9 @@ int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *evt)
 
     /* Move to the corresponding initial EMM state */
     if (evt->u.attach.is_emergency) {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_LIMITED_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_LIMITED_SERVICE);
     } else {
-      rc = emm_fsm_set_status(EMM_DEREGISTERED_NORMAL_SERVICE);
+      rc = emm_fsm_set_status(user, EMM_DEREGISTERED_NORMAL_SERVICE);
     }
 
     if (rc != RETURNerror) {

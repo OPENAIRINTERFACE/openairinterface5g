@@ -78,7 +78,7 @@ void emm_sap_initialize(nas_user_t *user)
 {
   LOG_FUNC_IN;
 
-  emm_reg_initialize();
+  emm_reg_initialize(user);
   emm_esm_initialize();
   emm_as_initialize(user);
 
@@ -112,7 +112,7 @@ int emm_sap_send(nas_user_t *user, emm_sap_t *msg)
        (primitive < (emm_primitive_t)EMMREG_PRIMITIVE_MAX) ) {
     /* Forward to the EMMREG-SAP */
     msg->u.emm_reg.primitive = primitive;
-    rc = emm_reg_send(&msg->u.emm_reg);
+    rc = emm_reg_send(user, &msg->u.emm_reg);
   } else if ( (primitive > (emm_primitive_t)EMMESM_PRIMITIVE_MIN) &&
               (primitive < (emm_primitive_t)EMMESM_PRIMITIVE_MAX) ) {
     /* Forward to the EMMESM-SAP */

@@ -89,18 +89,18 @@ int EmmDeregisteredLimitedService(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_LIMITED_SERVICE);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_LIMITED_SERVICE);
 
   switch (evt->primitive) {
   case _EMMREG_REGISTER_REQ:
     /*
      * The user manually re-selected a PLMN to register to
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /* Process the network registration request */
-      rc = emm_fsm_process(evt);
+      rc = emm_fsm_process(user, evt);
     }
 
     break;
@@ -118,7 +118,7 @@ int EmmDeregisteredLimitedService(nas_user_t *user, const emm_reg_t *evt)
      * (Attach Request message successfully delivered to the network);
      * enter state EMM-REGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_REGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_REGISTERED_INITIATED);
     break;
 
   case _EMMREG_LOWERLAYER_SUCCESS:

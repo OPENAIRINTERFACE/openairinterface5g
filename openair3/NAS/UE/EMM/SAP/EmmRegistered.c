@@ -87,7 +87,7 @@ int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_REGISTERED);
+  assert(emm_fsm_get_status(user) == EMM_REGISTERED);
 
 
   switch (evt->primitive) {
@@ -105,7 +105,7 @@ int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
      * message successfully delivered to the network);
      * enter state EMM-DEREGISTERED-INITIATED
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_INITIATED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_INITIATED);
     break;
 
   case _EMMREG_DETACH_CNF:
@@ -113,7 +113,7 @@ int EmmRegistered(nas_user_t *user, const emm_reg_t *evt)
      * The UE implicitly detached from the network (all EPS
      * bearer contexts may have been deactivated)
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED);
     break;
 
   case _EMMREG_TAU_REQ:

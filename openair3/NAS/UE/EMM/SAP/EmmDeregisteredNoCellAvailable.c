@@ -90,7 +90,7 @@ int EmmDeregisteredNoCellAvailable(nas_user_t *user, const emm_reg_t *evt)
 
   int rc = RETURNerror;
 
-  assert(emm_fsm_get_status() == EMM_DEREGISTERED_NO_CELL_AVAILABLE);
+  assert(emm_fsm_get_status(user) == EMM_DEREGISTERED_NO_CELL_AVAILABLE);
 
   switch (evt->primitive) {
     /* TODO: network re-selection is not allowed when in No Cell
@@ -101,13 +101,14 @@ int EmmDeregisteredNoCellAvailable(nas_user_t *user, const emm_reg_t *evt)
     /*
      * The user manually re-selected a PLMN to register to
      */
-    rc = emm_fsm_set_status(EMM_DEREGISTERED_PLMN_SEARCH);
+    rc = emm_fsm_set_status(user, EMM_DEREGISTERED_PLMN_SEARCH);
 
     if (rc != RETURNerror) {
       /*
        * Notify EMM that the MT is currently searching an operator
        * to register to
        */
+      // FIXME REVIEW
       rc = emm_proc_registration_notify(NET_REG_STATE_ON);
 
       if (rc != RETURNok) {

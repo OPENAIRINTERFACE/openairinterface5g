@@ -76,11 +76,11 @@ Description Implements the EPS Mobility Management procedures executed
  **      Others:    emm_fsm_status                             **
  **                                                                        **
  ***************************************************************************/
-int EmmTrackingAreaUpdatingInitiated(const emm_reg_t *evt)
+int EmmTrackingAreaUpdatingInitiated(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
 
-  assert(emm_fsm_get_status() == EMM_TRACKING_AREA_UPDATING_INITIATED);
+  assert(emm_fsm_get_status(user) == EMM_TRACKING_AREA_UPDATING_INITIATED);
 
   /* TODO */
 
