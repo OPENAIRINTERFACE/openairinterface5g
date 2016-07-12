@@ -929,7 +929,14 @@ add_library(SECU_CN ${SECU_CN_SRC})
 
 # Scheduler
 ################################"
-file(GLOB SCHED_SRC ${OPENAIR1_DIR}/SCHED/*.c)
+set(SCHED_SRC 
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_eNb.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_ue.c
+  ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
+  ${OPENAIR1_DIR}/SCHED/phy_mac_stub.c
+  ${OPENAIR1_DIR}/SCHED/pucch_pc.c
+  ${OPENAIR1_DIR}/SCHED/pusch_pc.c
+)
 add_library(SCHED_LIB ${SCHED_SRC})
 
 # Layer 1
