@@ -95,12 +95,6 @@ static const char *_esm_sap_primitive_str[] = {
   "ESM_UNITDATA_IND",
 };
 
-/*
- * Buffer used to encode ESM messages before being returned to the EPS
- * Mobility Management sublayer in order to be sent onto the network
- */
-#define ESM_SAP_BUFFER_SIZE 4096
-static char _esm_sap_buffer[ESM_SAP_BUFFER_SIZE];
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -148,6 +142,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
 {
   LOG_FUNC_IN;
   esm_data_t *esm_data = user->esm_data;
+  msg->send.value = esm_data->send_buffer;
 
   int rc = RETURNerror;
   int pid;
@@ -359,7 +354,6 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
  **             turned upon ESM procedure completion       **
  **      err:       Error code of the ESM procedure            **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_sap_buffer                            **
  **                                                                        **
  ***************************************************************************/
 static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
@@ -642,13 +636,10 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
 
   if ( (rc != RETURNerror) && (esm_procedure != NULL) ) {
     /* Encode the returned ESM response message */
-    int size = esm_msg_encode(&esm_msg, (uint8_t *)_esm_sap_buffer,
+    int size = esm_msg_encode(&esm_msg, rsp->value,
                               ESM_SAP_BUFFER_SIZE);
 
-    if (size > 0) {
-      rsp->length = size;
-      rsp->value = (uint8_t *)(_esm_sap_buffer);
-    }
+    rsp->length = size;
 
     /* Complete the relevant ESM procedure */
     rc = (*esm_procedure)(user, is_standalone, ebi, rsp, triggered_by_ue);
@@ -691,7 +682,6 @@ static int _esm_sap_recv(nas_user_t *user, int msg_type, int is_standalone,
  ** Outputs:     rsp:       The encoded ESM response message to be re- **
  **             turned upon ESM procedure completion       **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _esm_sap_buffer                            **
  **                                                                        **
  ***************************************************************************/
 static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone,
@@ -772,18 +762,15 @@ static int _esm_sap_send(nas_user_t *user, int msg_type, int is_standalone,
 
   if (rc != RETURNerror) {
     /* Encode the returned ESM response message */
-    int size = esm_msg_encode(&esm_msg, (uint8_t *)_esm_sap_buffer,
+    int size = esm_msg_encode(&esm_msg, rsp->value,
                               ESM_SAP_BUFFER_SIZE);
 
-    if (size > 0) {
-      rsp->length = size;
-      rsp->value = (uint8_t *)(_esm_sap_buffer);
-    }
-
+    rsp->length = size;
     /* Execute the relevant ESM procedure */
     if (esm_procedure) {
       rc = (*esm_procedure)(user, is_standalone, pti, rsp, sent_by_ue);
     }
+
   }
 
   LOG_FUNC_RETURN(rc);
