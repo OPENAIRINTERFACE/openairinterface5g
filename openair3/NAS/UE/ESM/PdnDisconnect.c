@@ -173,7 +173,7 @@ int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti
   LOG_FUNC_IN;
 
   int rc = RETURNok;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   LOG_TRACE(INFO, "ESM-PROC  - Initiate PDN disconnection (pti=%d)", pti);
 
   if (is_standalone) {
@@ -197,7 +197,7 @@ int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti
 
   if (rc != RETURNerror) {
     /* Set the procedure transaction state to PENDING */
-    rc = esm_pt_set_status(pti, ESM_PT_PENDING);
+    rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_PENDING);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in PENDING state */
@@ -231,7 +231,7 @@ int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
+int esm_proc_pdn_disconnect_accept(esm_pt_data_t *esm_pt_data, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
 
@@ -239,9 +239,9 @@ int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
             "(pti=%d)", pti);
 
   /* Stop T3492 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  (void) esm_pt_stop_timer(esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  int rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  int rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state */
@@ -250,7 +250,7 @@ int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause)
   } else {
     /* Immediately release the transaction identity assigned to this
      * procedure */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(esm_pt_data, pti);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -293,9 +293,9 @@ int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
             "(pti=%d), ESM cause = %d", pti, *esm_cause);
 
   /* Stop T3492 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  (void) esm_pt_stop_timer(user->esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  rc = esm_pt_set_status(user->esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state
@@ -304,7 +304,7 @@ int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause)
     *esm_cause = ESM_CAUSE_MESSAGE_TYPE_NOT_COMPATIBLE;
   } else {
     /* Release the transaction identity assigned to this procedure */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(user->esm_pt_data, pti);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -414,7 +414,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
     }
   } else {
     /* Set the procedure transaction state to INACTIVE */
-    rc = esm_pt_set_status(data->pti, ESM_PT_INACTIVE);
+    rc = esm_pt_set_status(user->esm_pt_data, data->pti, ESM_PT_INACTIVE);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in INACTIVE state */
@@ -422,7 +422,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
                 data->pti);
     } else {
       /* Release the transaction identity assigned to this procedure */
-      rc = esm_pt_release(data->pti);
+      rc = esm_pt_release(user->esm_pt_data, data->pti);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d",

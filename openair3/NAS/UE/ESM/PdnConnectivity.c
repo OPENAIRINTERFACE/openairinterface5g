@@ -133,7 +133,7 @@ static void *_pdn_connectivity_t3482_handler(void *);
  **      Return:    RETURNok, RETURNerror                      **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
+int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int is_to_define,
                               esm_proc_pdn_type_t pdn_type,
                               const OctetString *apn, int is_emergency,
                               unsigned int *pti)
@@ -142,6 +142,8 @@ int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
 
   int rc = RETURNerror;
   int pid = cid - 1;
+  esm_data_t *esm_data = user-> esm_data;
+  esm_pt_data_t *esm_pt_data = user-> esm_pt_data;
 
   if (!is_to_define) {
     LOG_TRACE(INFO, "ESM-PROC  - Undefine PDN connection (cid=%d)", cid);
@@ -150,7 +152,7 @@ int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
 
     if (pti != ESM_PT_UNASSIGNED) {
       /* Release the procedure transaction data */
-      rc = esm_pt_release(pti);
+      rc = esm_pt_release(esm_pt_data, pti);
     }
 
     LOG_FUNC_RETURN(rc);
@@ -158,7 +160,7 @@ int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int is_to_define,
     LOG_TRACE(INFO, "ESM-PROC  - Assign new procedure transaction identity "
               "(cid=%d)", cid);
     /* Assign new procedure transaction identity */
-    *pti = esm_pt_assign();
+    *pti = esm_pt_assign(esm_pt_data);
 
     if (*pti == ESM_PT_UNASSIGNED) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to assign new procedure "
@@ -282,7 +284,7 @@ int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int p
                                       OctetString *msg, int sent_by_ue)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc = RETURNok;
 
   LOG_TRACE(INFO, "ESM-PROC  - Initiate PDN connectivity (pti=%d)", pti);
@@ -308,7 +310,7 @@ int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int p
 
   if (rc != RETURNerror) {
     /* Set the procedure transaction state to PENDING */
-    rc = esm_pt_set_status(pti, ESM_PT_PENDING);
+    rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_PENDING);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in PENDING state */
@@ -351,6 +353,7 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
 {
   LOG_FUNC_IN;
   esm_data_t *esm_data  = user->esm_data;
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int     rc;
   int     pid = RETURNerror;
   char    apn_first_char[4];
@@ -368,9 +371,9 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
             esm_data_get_ipv4v6_addr(pdn_addr));
 
   /* Stop T3482 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  esm_pt_stop_timer(esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state
@@ -440,16 +443,16 @@ int esm_proc_pdn_connectivity_accept(nas_user_t *user, int pti, esm_proc_pdn_typ
 int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc;
 
   LOG_TRACE(WARNING, "ESM-PROC  - PDN connectivity rejected by "
             "the network (pti=%d), ESM cause = %d", pti, *esm_cause);
 
   /* Stop T3482 timer if running */
-  (void) esm_pt_stop_timer(pti);
+  (void) esm_pt_stop_timer(esm_pt_data, pti);
   /* Set the procedure transaction state to INACTIVE */
-  rc = esm_pt_set_status(pti, ESM_PT_INACTIVE);
+  rc = esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
 
   if (rc != RETURNok) {
     /* The procedure transaction was already in INACTIVE state */
@@ -457,7 +460,7 @@ int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause)
     *esm_cause = ESM_CAUSE_MESSAGE_TYPE_NOT_COMPATIBLE;
   } else {
     /* Release the procedure transaction identity */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(user->esm_pt_data, pti);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -491,18 +494,18 @@ int esm_proc_pdn_connectivity_reject(nas_user_t *user, int pti, int *esm_cause)
 int esm_proc_pdn_connectivity_complete(nas_user_t *user)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - PDN connectivity complete");
 
   /* Get the procedure transaction identity assigned to the PDN connection
    * entry which is still pending in the inactive state */
-  int pti = esm_pt_get_pending_pti(ESM_PT_INACTIVE);
+  int pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_INACTIVE);
 
   if (pti != ESM_PT_UNASSIGNED) {
     /* Release the procedure transaction identity */
-    rc = esm_pt_release(pti);
+    rc = esm_pt_release(esm_pt_data, pti);
   }
 
   LOG_FUNC_RETURN(rc);
@@ -532,7 +535,7 @@ int esm_proc_pdn_connectivity_complete(nas_user_t *user)
 int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending)
 {
   LOG_FUNC_IN;
-
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
   int rc;
   int pti;
 
@@ -542,7 +545,7 @@ int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending)
   if (is_pending) {
     /* Get the procedure transaction identity assigned to the pending PDN
      * connection entry */
-    pti = esm_pt_get_pending_pti(ESM_PT_PENDING);
+    pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_PENDING);
 
     if (pti == ESM_PT_UNASSIGNED) {
       LOG_TRACE(ERROR, "ESM-PROC  - No procedure transaction is PENDING");
@@ -550,15 +553,15 @@ int esm_proc_pdn_connectivity_failure(nas_user_t *user, int is_pending)
     }
 
     /* Set the procedure transaction state to INACTIVE */
-    (void) esm_pt_set_status(pti, ESM_PT_INACTIVE);
+    (void) esm_pt_set_status(esm_pt_data, pti, ESM_PT_INACTIVE);
   } else {
     /* Get the procedure transaction identity assigned to the PDN
      * connection entry which is still pending in the inactive state */
-    pti = esm_pt_get_pending_pti(ESM_PT_INACTIVE);
+    pti = esm_pt_get_pending_pti(esm_pt_data, ESM_PT_INACTIVE);
   }
 
   /* Release the procedure transaction identity */
-  rc = esm_pt_release(pti);
+  rc = esm_pt_release(esm_pt_data, pti);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d", pti);
@@ -612,6 +615,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
   /* Get retransmission timer parameters data */
   esm_pt_timer_data_t *data = args;
   nas_user_t *user = data->user;
+  esm_pt_data_t *esm_pt_data = user->esm_pt_data;
 
   /* Increment the retransmission counter */
   data->count += 1;
@@ -639,7 +643,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
     }
   } else {
     /* Set the procedure transaction state to INACTIVE */
-    rc = esm_pt_set_status(data->pti, ESM_PT_INACTIVE);
+    rc = esm_pt_set_status(esm_pt_data, data->pti, ESM_PT_INACTIVE);
 
     if (rc != RETURNok) {
       /* The procedure transaction was already in INACTIVE state */
@@ -647,7 +651,7 @@ static void *_pdn_connectivity_t3482_handler(void *args)
                 data->pti);
     } else {
       /* Release the transaction identity assigned to this procedure */
-      rc = esm_pt_release(data->pti);
+      rc = esm_pt_release(esm_pt_data, data->pti);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "ESM-PROC  - Failed to release PTI %d",

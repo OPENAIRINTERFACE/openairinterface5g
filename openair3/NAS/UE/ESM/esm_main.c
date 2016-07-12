@@ -45,6 +45,7 @@ Description Defines the EPS Session Management procedure call manager,
 #include "esmData.h"
 #include "esm_pt.h"
 #include "esm_ebr.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -71,7 +72,7 @@ Description Defines the EPS Session Management procedure call manager,
  **      Return:    None                                       **
  **                                                                        **
  ***************************************************************************/
-esm_data_t * esm_main_initialize(esm_indication_callback_t cb)
+void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
 {
   LOG_FUNC_IN;
 
@@ -81,6 +82,7 @@ esm_data_t * esm_main_initialize(esm_indication_callback_t cb)
     LOG_TRACE(ERROR, "ESM-MAIN  - Can't malloc esm_data");
     // FIXME Stop here !!!
   }
+  user->esm_data = esm_data;
   /* Total number of active EPS bearer contexts */
   esm_data->n_ebrs = 0;
   /* List of active PDN connections */
@@ -97,13 +99,12 @@ esm_data_t * esm_main_initialize(esm_indication_callback_t cb)
 
   /* Initialize the procedure transaction identity manager */
 
-  esm_pt_initialize();
+  user->esm_pt_data = esm_pt_initialize();
 
   /* Initialize the EPS bearer context manager */
   esm_ebr_initialize(cb);
 
   LOG_FUNC_OUT;
-  return esm_data;
 }
 
 

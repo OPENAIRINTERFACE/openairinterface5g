@@ -101,7 +101,7 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   emm_main_initialize(user, emm_cb, imei);
 
   /* Initialize the ESM procedure manager */
-  user->esm_data = esm_main_initialize(esm_cb);
+  esm_main_initialize(user, esm_cb);
 
   LOG_FUNC_OUT;
 }

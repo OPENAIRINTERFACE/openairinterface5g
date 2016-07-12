@@ -173,7 +173,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
       }
 
       /* Define new PDN context */
-      rc = esm_proc_pdn_connectivity(esm_data, pdn_connect->cid, TRUE,
+      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, TRUE,
                                      pdn_connect->pdn_type, &apn,
                                      pdn_connect->is_emergency, NULL);
 
@@ -185,7 +185,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
     if (pdn_connect->is_defined) {
       unsigned int pti;
       /* Assign new procedure transaction identity */
-      rc = esm_proc_pdn_connectivity(esm_data, pdn_connect->cid, TRUE,
+      rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, TRUE,
                                      pdn_connect->pdn_type, NULL,
                                      pdn_connect->is_emergency, &pti);
 
@@ -207,7 +207,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
 
       if ( msg->is_standalone && pdn_connect->is_defined ) {
         /* Undefine the specified PDN context */
-        rc = esm_proc_pdn_connectivity(esm_data, pdn_connect->cid, FALSE,
+        rc = esm_proc_pdn_connectivity(user, pdn_connect->cid, FALSE,
                                        pdn_connect->pdn_type, NULL,
                                        pdn_connect->is_emergency, NULL);
       } else if (msg->recv != NULL) {

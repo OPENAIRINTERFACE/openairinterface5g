@@ -122,7 +122,7 @@ int esm_proc_status(nas_user_t *user, int is_standalone, int pti, OctetString *m
  *          PDN connectivity procedure
  * --------------------------------------------------------------------------
  */
-int esm_proc_pdn_connectivity(esm_data_t *esm_data, int cid, int to_define,
+int esm_proc_pdn_connectivity(nas_user_t *user, int cid, int to_define,
                               esm_proc_pdn_type_t pdn_type, const OctetString *apn, int is_emergency,
                               unsigned int *pti);
 int esm_proc_pdn_connectivity_request(nas_user_t *user, int is_standalone, int pti,
@@ -143,7 +143,7 @@ int esm_proc_pdn_disconnect(esm_data_t *esm_data, int cid, unsigned int *pti, un
 int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti,
                                     OctetString *msg, int sent_by_ue);
 
-int esm_proc_pdn_disconnect_accept(int pti, int *esm_cause);
+int esm_proc_pdn_disconnect_accept(esm_pt_data_t *esm_pt_data, int pti, int *esm_cause);
 int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause);
 
 /*

@@ -43,6 +43,7 @@ Description Defines the EPS Session Management procedure call manager,
 #include "networkDef.h"
 #include "esm_ebr.h"
 #include "esmData.h"
+#include "user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -60,7 +61,7 @@ Description Defines the EPS Session Management procedure call manager,
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-esm_data_t * esm_main_initialize(esm_indication_callback_t cb);
+void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb);
 
 void esm_main_cleanup(esm_data_t *esm_data);
 
