@@ -719,12 +719,12 @@ mac_eNB_get_rrc_status(
   }
 }
 
-void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP, 
-			    const int CC_idP, 
+void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
+			    const int CC_idP,
 			    const frame_t frameP,
 			    const sub_frame_t subframeP,
-			    const rnti_t rntiP) {
-
+			    const rnti_t rntiP)
+{
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
   ue_context_p = rrc_eNB_get_ue_context(
                    &eNB_rrc_inst[Mod_instP],
@@ -735,10 +735,9 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
     ue_context_p->ue_context.ul_failure_timer=1;
   }
   else {
-    LOG_W(RRC,"Frame %d, Subframe %d: UE %x unknown \n",frameP,subframeP,rntiP);
-    rrc_mac_remove_ue(Mod_instP,rntiP);
+    LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
   }
-  
+  rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 
 void mac_eNB_rrc_ul_in_sync(const module_id_t Mod_instP, 
