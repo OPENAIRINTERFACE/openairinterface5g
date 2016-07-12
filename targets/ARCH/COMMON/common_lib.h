@@ -236,6 +236,14 @@ typedef struct {
 } eth_params_t;
 
 
+typedef struct {
+  //! Tx buffer for if device
+  void *tx;
+  //! Rx buffer for if device
+  void *rx;
+} if_buffer_t;
+
+
 /*!\brief structure holds the parameters to configure USRP devices */
 struct openair0_device_t {
   /*!brief Module ID of this device */

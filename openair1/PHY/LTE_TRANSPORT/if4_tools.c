@@ -49,12 +49,12 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
   int16_t **rxsigF = eNB->prach_vars.rxsigF;  
+  void *tx_buffer = eNB->ifbuffer.tx;
       
   uint16_t symbol_id=0, element_id=0;
   uint16_t db_fulllength, db_halflength; 
   int slotoffsetF=0, blockoffsetF=0; 
 
-  void *tx_buffer=NULL;
   uint16_t *data_block=NULL, *i=NULL;
 
   if (packet_type == IF4_PDLFFT) {
@@ -63,7 +63,6 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(uint16_t));
     IF4_header_t *dl_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
@@ -100,7 +99,6 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(uint16_t));
     IF4_header_t *ul_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
@@ -135,21 +133,15 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
 
-    tx_buffer = malloc(MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + db_fulllength*sizeof(int16_t));
     IF4_header_t *prach_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t);
 
     gen_IF4_prach_header(prach_header, frame, subframe);
 		    
-    // Generate uncompressed data blocks
-    memcpy(data_block, (rxsigF[0]+k), db_fulllength*sizeof(int16_t));
-    			
-    //for (element_id=0; element_id<db_fulllength; element_id++) {
-    //  data_block[element_id]  = rxsigF[0][prachoffsetF];          
-    //  data_block[element_id] |= rxsigF[0][prachoffsetF+1]<<16;
-    //  prachoffsetF += 2;  
-    //}
-              
+    memcpy((int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t),
+           (&rxsigF[0][0]+k), 
+           db_fulllength*sizeof(int16_t));
+    			              
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                       symbol_id,
                                       &tx_buffer,
@@ -162,7 +154,6 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     AssertFatal(1==0, "send_IF4 - Unknown packet_type %x", packet_type);     
   }
   
-  free(tx_buffer);
   return;  		    
 }
 
@@ -172,6 +163,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
   int32_t **txdataF = eNB->common_vars.txdataF[0];
   int32_t **rxdataF = eNB->common_vars.rxdataF[0];
   int16_t **rxsigF = eNB->prach_vars.rxsigF;  
+  void *rx_buffer = eNB->ifbuffer.rx;
 
   uint16_t element_id;
   uint16_t db_fulllength, db_halflength; 
@@ -184,7 +176,6 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
   }  
   db_halflength = db_fulllength>>1;
 
-  void *rx_buffer=NULL;
   IF4_header_t *packet_header=NULL;
   uint16_t *data_block=NULL, *i=NULL;
      
@@ -238,14 +229,14 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
     // FIX: hard coded prach samples length
     db_fulllength = 839*2;
 		
-    // Generate uncompressed data blocks
-    memcpy((rxsigF[0]+slotoffsetF), data_block, db_fulllength*sizeof(int16_t));
+    memcpy((&rxsigF[0][0]), 
+           (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4_header_t), 
+           db_fulllength*sizeof(int16_t));
        
   } else {
     AssertFatal(1==0, "recv_IF4 - Unknown packet_type %x", *packet_type);            
   }
   
-  free(rx_buffer);
   return;   
 }
 
@@ -260,7 +251,6 @@ void gen_IF4_dl_header(IF4_header_t *dl_packet, int frame, int subframe) {
   dl_packet->frame_status = 0;
   dl_packet->frame_status |= (frame&0xffff)<<6;
   dl_packet->frame_status |= (subframe&0x000f)<<22;
-
 }
 
 
@@ -274,7 +264,6 @@ void gen_IF4_ul_header(IF4_header_t *ul_packet, int frame, int subframe) {
   ul_packet->frame_status = 0;
   ul_packet->frame_status |= (frame&0xffff)<<6;
   ul_packet->frame_status |= (subframe&0x000f)<<22;
-    
 }
 
 
@@ -288,5 +277,11 @@ void gen_IF4_prach_header(IF4_header_t *prach_packet, int frame, int subframe) {
   prach_packet->frame_status = 0;
   prach_packet->frame_status |= (frame&0xffff)<<6;
   prach_packet->frame_status |= (subframe&0x000f)<<22;
-        
 } 
+
+
+void malloc_IF4_buffer(PHY_VARS_eNB *eNB) {
+  // Keep the size large enough 
+  eNB->ifbuffer.tx = malloc(RAW_IF4_PRACH_SIZE_BYTES);
+  eNB->ifbuffer.rx = malloc(RAW_IF4_PRACH_SIZE_BYTES);      
+}

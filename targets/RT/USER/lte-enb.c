@@ -768,6 +768,18 @@ static void* eNB_thread_rx_common( void* param ) {
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 
+  // Create buffer for IF device and free when stopping
+  if (eNB->node_function == NGFI_RCC_IF4 || eNB->node_function == NGFI_RRU_IF4) {
+    malloc_IF4_buffer(eNB);
+    
+  } else if (eNB->node_function == NGFI_RRU_IF5 || eNB->node_function == eNodeB_3GPP_BBU) {
+    //malloc_IF5_buffer(eNB);
+
+  } else {
+    eNB->ifbuffer.tx = NULL;
+    eNB->ifbuffer.rx = NULL;
+  }
+
   // Start IF device for this CC
   if (eNB->node_function != eNodeB_3GPP) {
     if (eNB->ifdevice.trx_start_func(&eNB->ifdevice) != 0 ) 

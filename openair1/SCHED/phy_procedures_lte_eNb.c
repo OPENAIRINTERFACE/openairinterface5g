@@ -2527,10 +2527,6 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
-
-  struct timespec time_req, time_rem;  
-  time_req.tv_sec = 0;
-  time_req.tv_nsec = 900000;
     
   if (subframe==9) { 
     subframe=0;
@@ -2594,9 +2590,6 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
       recv_IF5(eNB, &proc->timestamp_rx, proc->subframe_rx, IF5_RRH_GW_UL); 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
-
-      //nanosleep(&time_req, &time_rem);      
-      //proc->timestamp_rx += fp->samples_per_tti;
       
       proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
       proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;

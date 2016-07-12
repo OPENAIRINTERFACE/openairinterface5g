@@ -514,7 +514,8 @@ typedef struct PHY_VARS_eNB_s {
   /// RF and Interface devices per CC
   openair0_device rfdevice; 
   openair0_device ifdevice;
-  // *** Handle spatially distributed MIMO antenna ports   
+  /// Pointer for ifdevice buffer struct
+  if_buffer_t ifbuffer;
 
 } PHY_VARS_eNB;
 

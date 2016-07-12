@@ -312,13 +312,11 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t;    
-  void *test_buffer = (void*)malloc(packet_size);
-  
-  IF4_header_t *test_header = (IF4_header_t*)(test_buffer + MAC_HEADER_SIZE_BYTES);
+  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t;      
+  IF4_header_t *test_header = (IF4_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
   
   bytes_received = recv(eth->sockfd[Mod_id],
-                        test_buffer,
+                        buff[0],
                         packet_size,
                         MSG_PEEK);                        
 	if (bytes_received ==-1) {
@@ -336,11 +334,7 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   } else {
     packet_size = RAW_IF4_PRACH_SIZE_BYTES;
   }
-    
-  buff[0] = (void*)malloc(packet_size);
-  
-  bytes_received = 0;
-  
+        
   while(bytes_received < packet_size) {
     bytes_received = recv(eth->sockfd[Mod_id],
                           buff[0],
@@ -357,7 +351,6 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   }
 
   eth->rx_nsamps = nsamps;  
-  free(test_buffer);
   return(bytes_received);
 }
 
@@ -394,7 +387,8 @@ int eth_set_dev_conf_raw(openair0_device *device) {
 
 
 
-int eth_set_dev_conf_raw_IF4(openair0_device *device) {
+int eth_set_dev_conf_raw_IF4(openair0_device *device) {  
+  // use for cc_id info
 
   int 	       Mod_id = device->Mod_id;
   eth_state_t *eth = (eth_state_t*)device->priv;
@@ -455,6 +449,7 @@ int eth_get_dev_conf_raw(openair0_device *device) {
 
 
 int eth_get_dev_conf_raw_IF4(openair0_device *device) {
+  // use for cc_id info
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
   int 		Mod_id = device->Mod_id;
