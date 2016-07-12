@@ -63,21 +63,21 @@ typedef int (*IdleMode_callback_t) (emm_data_t *emm_data, int);
 
 void IdleMode_initialize(nas_user_t *user, IdleMode_callback_t cb);
 
-int IdleMode_get_nb_plmns(void);
-int IdleMode_get_hplmn_index(void);
-int IdleMode_get_rplmn_index(void);
-int IdleMode_get_splmn_index(void);
+int IdleMode_get_nb_plmns(emm_plmn_list_t *emm_plmn_list);
+int IdleMode_get_hplmn_index(emm_plmn_list_t *emm_plmn_list);
+int IdleMode_get_rplmn_index(emm_plmn_list_t *emm_plmn_list);
+int IdleMode_get_splmn_index(emm_plmn_list_t *emm_plmn_list);
 
-int IdleMode_update_plmn_list(emm_data_t *emm_data, int i);
+int IdleMode_update_plmn_list(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, int i);
 
-const char *IdleMode_get_plmn_fullname(const plmn_t *plmn, int index,
+const char *IdleMode_get_plmn_fullname(emm_plmn_list_t *emm_plmn_list, const plmn_t *plmn, int index,
                                        size_t *len);
-const char *IdleMode_get_plmn_shortname(const plmn_t *plmn, int index,
+const char *IdleMode_get_plmn_shortname(emm_plmn_list_t *emm_plmn_list, const plmn_t *plmn, int index,
                                         size_t *len);
-const char *IdleMode_get_plmn_id(const plmn_t *plmn, int index, size_t *len);
+const char *IdleMode_get_plmn_id(emm_plmn_list_t *emm_plmn_list, const plmn_t *plmn, int index, size_t *len);
 
-int IdleMode_get_plmn_fullname_index(const char *plmn);
-int IdleMode_get_plmn_shortname_index(const char *plmn);
-int IdleMode_get_plmn_id_index(const char *plmn);
+int IdleMode_get_plmn_fullname_index(emm_plmn_list_t *emm_plmn_list, const char *plmn);
+int IdleMode_get_plmn_shortname_index(emm_plmn_list_t *emm_plmn_list, const char *plmn);
+int IdleMode_get_plmn_id_index(emm_plmn_list_t *emm_plmn_list, const char *plmn);
 
 #endif /* __IDLEMODE_H__*/

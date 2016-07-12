@@ -386,7 +386,7 @@ int nas_proc_register(nas_user_t *user, int mode, int format, const network_plmn
   /*
    * Set the PLMN selection mode of operation
    */
-  int index = emm_main_set_plmn_selection_mode(user->emm_data, mode, format, oper, AcT);
+  int index = emm_main_set_plmn_selection_mode(user, mode, format, oper, AcT);
 
   if ( !(index < 0) ) {
     /*
@@ -455,7 +455,7 @@ int nas_proc_get_reg_data(nas_user_t *user, int *mode, int *selected, int format
   *mode = emm_main_get_plmn_selection_mode(user->emm_data);
 
   /* Get the currently selected operator */
-  const char *oper_name = emm_main_get_selected_plmn(user->emm_data, oper, format);
+  const char *oper_name = emm_main_get_selected_plmn(user->emm_plmn_list, user->emm_data, oper, format);
 
   if (oper_name != NULL) {
     /* An operator is currently selected */
@@ -489,7 +489,7 @@ int nas_proc_get_oper_list(nas_user_t *user, const char **oper_list)
 {
   LOG_FUNC_IN;
 
-  int size = emm_main_get_plmn_list(user->emm_data, oper_list);
+  int size = emm_main_get_plmn_list(user->emm_plmn_list, user->emm_data, oper_list);
 
   LOG_FUNC_RETURN (size);
 }

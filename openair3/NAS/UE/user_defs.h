@@ -50,6 +50,7 @@ Description NAS type definition to manage a user equipment
 #include "esm_pt_defs.h"
 #include "EMM/emm_fsm_defs.h"
 #include "EMM/emmData.h"
+#include "EMM/IdleMode_defs.h"
 
 typedef struct {
   int fd;
@@ -59,6 +60,7 @@ typedef struct {
   esm_ebr_data_t *esm_ebr_data;  // EPS bearer contexts
   emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
   emm_data_t *emm_data; // EPS mobility management data
+  emm_plmn_list_t *emm_plmn_list; // list of PLMN identities
 } nas_user_t;
 
 #endif

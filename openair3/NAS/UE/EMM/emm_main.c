@@ -63,10 +63,10 @@ static int _emm_main_get_imei(imei_t *imei, const char *imei_str);
 
 static int _emm_main_imsi_cmp(imsi_t *imsi1, imsi_t *imsi2);
 
-static const char *_emm_main_get_plmn(const plmn_t *plmn, int index,
+static const char *_emm_main_get_plmn(emm_plmn_list_t *emm_plmn_list, const plmn_t *plmn, int index,
                                       int format, size_t *size);
 
-static int _emm_main_get_plmn_index(const char *plmn, int format);
+static int _emm_main_get_plmn_index(emm_plmn_list_t *emm_plmn_list, const char *plmn, int format);
 
 /*
  * USIM application data
@@ -538,12 +538,14 @@ const msisdn_t *emm_main_get_msisdn(void)
  **      Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_main_set_plmn_selection_mode(emm_data_t *emm_data, int mode, int format,
+int emm_main_set_plmn_selection_mode(nas_user_t *user, int mode, int format,
                                      const network_plmn_t *plmn, int rat)
 {
   LOG_FUNC_IN;
 
   int index;
+  emm_data_t *emm_data = user->emm_data;
+  emm_plmn_list_t *emm_plmn_list = user->emm_plmn_list;
 
   LOG_TRACE(INFO, "EMM-MAIN  - PLMN selection: mode=%d, format=%d, plmn=%s, "
             "rat=%d", mode, format, (const char *)&plmn->id, rat);
@@ -552,7 +554,7 @@ int emm_main_set_plmn_selection_mode(emm_data_t *emm_data, int mode, int format,
 
   if (mode != EMM_DATA_PLMN_AUTO) {
     /* Get the index of the PLMN in the list of available PLMNs */
-    index = _emm_main_get_plmn_index((const char *)&plmn->id, format);
+    index = _emm_main_get_plmn_index(emm_plmn_list, (const char *)&plmn->id, format);
 
     if (index < 0) {
       LOG_TRACE(WARNING, "EMM-MAIN  - PLMN %s not available",
@@ -568,7 +570,7 @@ int emm_main_set_plmn_selection_mode(emm_data_t *emm_data, int mode, int format,
      * register to when switched on; the equivalent PLMNs list shall not be
      * applied to the user reselection in Automatic Network Selection Mode.
      */
-    index = IdleMode_get_hplmn_index();
+    index = IdleMode_get_hplmn_index(emm_plmn_list);
   }
 
   LOG_FUNC_RETURN (index);
@@ -609,11 +611,11 @@ int emm_main_get_plmn_selection_mode(emm_data_t *emm_data)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_main_get_plmn_list(emm_data_t *emm_data, const char **plist)
+int emm_main_get_plmn_list(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, const char **plist)
 {
   LOG_FUNC_IN;
 
-  int size = IdleMode_update_plmn_list(emm_data, 0);
+  int size = IdleMode_update_plmn_list(emm_plmn_list, emm_data, 0);
   *plist = emm_data->plist.buffer;
 
   LOG_FUNC_RETURN (size);
@@ -635,7 +637,7 @@ int emm_main_get_plmn_list(emm_data_t *emm_data, const char **plist)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const char *emm_main_get_selected_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format)
+const char *emm_main_get_selected_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format)
 {
   LOG_FUNC_IN;
 
@@ -643,10 +645,10 @@ const char *emm_main_get_selected_plmn(emm_data_t *emm_data, network_plmn_t *plm
   /*
    * Get the identifier of the selected PLMN in the list of available PLMNs
    */
-  int index = IdleMode_get_splmn_index();
+  int index = IdleMode_get_splmn_index(emm_plmn_list);
 
   if ( !(index < 0) ) {
-    const char *name = _emm_main_get_plmn(&emm_data->splmn, index,
+    const char *name = _emm_main_get_plmn(emm_plmn_list, &emm_data->splmn, index,
                                           format, &size);
 
     if (size > 0) {
@@ -673,7 +675,7 @@ const char *emm_main_get_selected_plmn(emm_data_t *emm_data, network_plmn_t *plm
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const char *emm_main_get_registered_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format)
+const char *emm_main_get_registered_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format)
 {
   LOG_FUNC_IN;
 
@@ -682,10 +684,10 @@ const char *emm_main_get_registered_plmn(emm_data_t *emm_data, network_plmn_t *p
   /*
    * Get the identifier of the registered PLMN in the list of available PLMNs
    */
-  int index = IdleMode_get_rplmn_index();
+  int index = IdleMode_get_rplmn_index(emm_plmn_list);
 
   if ( !(index < 0) ) {
-    const char *name = _emm_main_get_plmn(&emm_data->nvdata.rplmn,
+    const char *name = _emm_main_get_plmn(emm_plmn_list, &emm_data->nvdata.rplmn,
                                           index, format, &size);
 
     if (size > 0) {
@@ -952,24 +954,24 @@ static int _emm_main_imsi_cmp(imsi_t *imsi1, imsi_t *imsi2)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static const char *_emm_main_get_plmn(const plmn_t *plmn, int index,
+static const char *_emm_main_get_plmn(emm_plmn_list_t *emm_plmn_list, const plmn_t *plmn, int index,
                                       int format, size_t *size)
 {
   if ( PLMN_IS_VALID(*plmn) ) {
     switch (format) {
     case NET_FORMAT_LONG:
       /* Get the long alpha-numeric representation of the PLMN */
-      return IdleMode_get_plmn_fullname(plmn, index, size);
+      return IdleMode_get_plmn_fullname(emm_plmn_list, plmn, index, size);
       break;
 
     case NET_FORMAT_SHORT:
       /* Get the short alpha-numeric representation of the PLMN */
-      return IdleMode_get_plmn_shortname(plmn, index, size);
+      return IdleMode_get_plmn_shortname(emm_plmn_list, plmn, index, size);
       break;
 
     case NET_FORMAT_NUM:
       /* Get the numeric representation of the PLMN */
-      return IdleMode_get_plmn_id(plmn, index, size);
+      return IdleMode_get_plmn_id(emm_plmn_list, plmn, index, size);
       break;
 
     default:
@@ -1002,24 +1004,24 @@ static const char *_emm_main_get_plmn(const plmn_t *plmn, int index,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_main_get_plmn_index(const char *plmn, int format)
+static int _emm_main_get_plmn_index(emm_plmn_list_t *emm_plmn_list, const char *plmn, int format)
 {
   int index = -1;
 
   switch (format) {
   case NET_FORMAT_LONG:
     /* Get the index of the long alpha-numeric PLMN identifier */
-    index = IdleMode_get_plmn_fullname_index(plmn);
+    index = IdleMode_get_plmn_fullname_index(emm_plmn_list, plmn);
     break;
 
   case NET_FORMAT_SHORT:
     /* Get the index of the short alpha-numeric PLMN identifier */
-    index = IdleMode_get_plmn_shortname_index(plmn);
+    index = IdleMode_get_plmn_shortname_index(emm_plmn_list, plmn);
     break;
 
   case NET_FORMAT_NUM:
     /* Get the index of the numeric PLMN identifier */
-    index = IdleMode_get_plmn_id_index(plmn);
+    index = IdleMode_get_plmn_id_index(emm_plmn_list, plmn);
     break;
 
   default:

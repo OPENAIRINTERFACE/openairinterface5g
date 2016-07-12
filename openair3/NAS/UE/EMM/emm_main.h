@@ -80,18 +80,18 @@ const imsi_t *emm_main_get_imsi(emm_data_t *emm_data);
 const msisdn_t *emm_main_get_msisdn(void);
 
 /* User's getter/setter for network selection */
-int emm_main_set_plmn_selection_mode(emm_data_t *emm_data, int mode, int format,
+int emm_main_set_plmn_selection_mode(nas_user_t *user, int mode, int format,
                                      const network_plmn_t *plmn, int rat);
 int emm_main_get_plmn_selection_mode(emm_data_t *emm_data);
-int emm_main_get_plmn_list(emm_data_t *emm_data, const char **plist);
-const char *emm_main_get_selected_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format);
+int emm_main_get_plmn_list(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, const char **plist);
+const char *emm_main_get_selected_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format);
 
 /* User's getter for network registration */
 Stat_t emm_main_get_plmn_status(emm_data_t *emm_data);
 tac_t emm_main_get_plmn_tac(emm_data_t *emm_data);
 ci_t emm_main_get_plmn_ci(emm_data_t *emm_data);
 AcT_t emm_main_get_plmn_rat(emm_data_t *emm_data);
-const char *emm_main_get_registered_plmn(emm_data_t *emm_data, network_plmn_t *plmn, int format);
+const char *emm_main_get_registered_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format);
 
 /* User's getter for network attachment */
 int emm_main_is_attached(emm_data_t *emm_data);
