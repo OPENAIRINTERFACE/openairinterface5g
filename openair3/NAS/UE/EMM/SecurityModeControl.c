@@ -64,6 +64,7 @@ Description Defines the security mode control EMM procedure executed by the
 # include "assertions.h"
 #include "secu_defs.h"
 #include "msc.h"
+#include "SecurityModeControl.h"
 
 #if  defined(NAS_BUILT_IN_UE)
 #include "nas_itti_messaging.h"
@@ -91,13 +92,6 @@ static int _security_knas_int(const OctetString *kasme, OctetString *knas_int,
                               uint8_t eea);
 static int _security_kenb(const OctetString *kasme, OctetString *kenb,
                           uint32_t count);
-
-/*
- * Internal data used for security mode control procedure
- */
-static struct {
-  OctetString kenb;           /* eNodeB security key      */
-} _security_data;
 
 static void _security_release(emm_security_context_t *ctx);
 
@@ -153,6 +147,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
   int rc = RETURNerror;
   int emm_cause = EMM_CAUSE_SUCCESS;
   int security_context_is_new = FALSE;
+  security_data_t *security_data = user->security_data;
 
   LOG_TRACE(INFO, "EMM-PROC  - Security mode control requested (ksi=%d)",
             ksi);
@@ -226,17 +221,17 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
     }
 
     /* Derive the eNodeB key */
-    if (_security_data.kenb.value == NULL) {
-      _security_data.kenb.value = (uint8_t *)calloc(1,AUTH_KENB_SIZE);
-      _security_data.kenb.length = AUTH_KENB_SIZE;
+    if (security_data->kenb.value == NULL) {
+      security_data->kenb.value = (uint8_t *)calloc(1,AUTH_KENB_SIZE);
+      security_data->kenb.length = AUTH_KENB_SIZE;
     }
 
-    if (_security_data.kenb.value != NULL) {
+    if (security_data->kenb.value != NULL) {
       if (rc != RETURNerror) {
         LOG_TRACE(INFO, "EMM-PROC  - Update the non-current EPS security context kenb");
         // LG COMMENT rc = _security_kenb(&user->emm_data->security->kasme,
         rc = _security_kenb(&user->emm_data->non_current->kasme,
-                            &_security_data.kenb,
+                            &security_data->kenb,
                             *(uint32_t *)(&user->emm_data->non_current->ul_count));
       }
     }
@@ -303,10 +298,10 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
       emm_cause = EMM_CAUSE_SECURITY_MODE_REJECTED;
 
       /* Release security mode control internal data */
-      if (_security_data.kenb.value) {
-        free(_security_data.kenb.value);
-        _security_data.kenb.value = NULL;
-        _security_data.kenb.length = 0;
+      if (security_data->kenb.value) {
+        free(security_data->kenb.value);
+        security_data->kenb.value = NULL;
+        security_data->kenb.length = 0;
       }
     }
   }

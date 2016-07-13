@@ -102,6 +102,13 @@ void nas_proc_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
     LOG_TRACE(ERROR, "NAS-PROC - Failed to alloc authentication_data");
     // FIXME stop here
   }
+
+  user->security_data = calloc(1, sizeof(security_data_t));
+  if ( user->security_data == NULL ) {
+    LOG_TRACE(ERROR, "NAS-PROC - Failed to alloc security_data");
+    // FIXME stop here
+  }
+
   /* Initialize the EMM procedure manager */
   emm_main_initialize(user, emm_cb, imei);
 
