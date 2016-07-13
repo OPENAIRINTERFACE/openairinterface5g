@@ -77,7 +77,7 @@ int nas_proc_disable_s1_mode(nas_user_t *user);
 int nas_proc_get_eps(nas_user_t *user, int *stat);
 
 int nas_proc_get_imsi(emm_data_t *emm_data, char *imsi_str);
-int nas_proc_get_msisdn(char *msisdn_str, int *ton_npi);
+int nas_proc_get_msisdn(nas_user_t *user, char *msisdn_str, int *ton_npi);
 
 int nas_proc_get_signal_quality(nas_user_t *user, int *rsrq, int *rsrp);
 

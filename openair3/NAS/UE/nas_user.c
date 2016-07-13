@@ -2587,7 +2587,7 @@ static int _nas_user_proc_cnum(nas_user_t *user, const at_command_t *data)
     }
 
     /* Get the International Mobile Subscriber Identity (IMSI) */
-    ret_code = nas_proc_get_msisdn(cnum->number, &cnum->type);
+    ret_code = nas_proc_get_msisdn(user, cnum->number, &cnum->type);
 
     if (ret_code != RETURNok) {
       LOG_TRACE(ERROR, "USR-MAIN  - Failed to get MS dialing number");

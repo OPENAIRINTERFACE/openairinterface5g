@@ -69,11 +69,6 @@ static const char *_emm_main_get_plmn(emm_plmn_list_t *emm_plmn_list, const plmn
 static int _emm_main_get_plmn_index(emm_plmn_list_t *emm_plmn_list, const char *plmn, int format);
 
 /*
- * USIM application data
- */
-static usim_data_t _usim_data;
-
-/*
  * Callback executed whenever a change in the network has to be notified
  * to the user application
  */
@@ -93,7 +88,6 @@ static int _emm_main_callback(emm_data_t *emm_data, int);
  ** Inputs:  cb:        The user notification callback             **
  **      imei:      The IMEI read from the UE's non-volatile   **
  **             memory                                     **
- **      Others:    _usim_data                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
@@ -165,8 +159,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   /*
    * Get USIM application data
    */
-  _usim_data.usimtestmode = usim_test;
-  if ( usim_api_read(&_usim_data) != RETURNok ) {
+  if ( usim_api_read(&user->usim_data) != RETURNok ) {
     /* The USIM application may not be present or not valid */
     LOG_TRACE(WARNING, "EMM-MAIN  - Failed to read USIM application data");
   } else {
@@ -177,54 +170,54 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     user->emm_data->usim_is_valid = TRUE;
 
     /* Get the Home PLMN derived from the IMSI */
-    user->emm_data->hplmn.MCCdigit1 = _usim_data.imsi.u.num.digit1;
-    user->emm_data->hplmn.MCCdigit2 = _usim_data.imsi.u.num.digit2;
-    user->emm_data->hplmn.MCCdigit3 = _usim_data.imsi.u.num.digit3;
-    user->emm_data->hplmn.MNCdigit1 = _usim_data.imsi.u.num.digit4;
-    user->emm_data->hplmn.MNCdigit2 = _usim_data.imsi.u.num.digit5;
-    user->emm_data->hplmn.MNCdigit3 = _usim_data.imsi.u.num.digit6;
+    user->emm_data->hplmn.MCCdigit1 = user->usim_data.imsi.u.num.digit1;
+    user->emm_data->hplmn.MCCdigit2 = user->usim_data.imsi.u.num.digit2;
+    user->emm_data->hplmn.MCCdigit3 = user->usim_data.imsi.u.num.digit3;
+    user->emm_data->hplmn.MNCdigit1 = user->usim_data.imsi.u.num.digit4;
+    user->emm_data->hplmn.MNCdigit2 = user->usim_data.imsi.u.num.digit5;
+    user->emm_data->hplmn.MNCdigit3 = user->usim_data.imsi.u.num.digit6;
 
     /* Get the list of forbidden PLMNs */
     for (i=0; (i < EMM_DATA_FPLMN_MAX) && (i < USIM_FPLMN_MAX); i++) {
-      if ( PLMN_IS_VALID(_usim_data.fplmn[i]) ) {
-        user->emm_data->fplmn.plmn[i] = _usim_data.fplmn[i];
+      if ( PLMN_IS_VALID(user->usim_data.fplmn[i]) ) {
+        user->emm_data->fplmn.plmn[i] = user->usim_data.fplmn[i];
         user->emm_data->fplmn.n_plmns += 1;
       }
     }
 
     /* Get the list of Equivalent HPLMNs */
     for (i=0; (i < EMM_DATA_EHPLMN_MAX) && (i < USIM_EHPLMN_MAX); i++) {
-      if ( PLMN_IS_VALID(_usim_data.ehplmn[i]) ) {
-        user->emm_data->ehplmn.plmn[i] = _usim_data.ehplmn[i];
+      if ( PLMN_IS_VALID(user->usim_data.ehplmn[i]) ) {
+        user->emm_data->ehplmn.plmn[i] = user->usim_data.ehplmn[i];
         user->emm_data->ehplmn.n_plmns += 1;
       }
     }
 
     /* Get the list of User controlled PLMN Selector */
     for (i=0; (i < EMM_DATA_PLMN_MAX) && (i < USIM_PLMN_MAX); i++) {
-      if ( PLMN_IS_VALID(_usim_data.plmn[i].plmn) ) {
-        user->emm_data->plmn.plmn[i] = _usim_data.plmn[i].plmn;
-        user->emm_data->userAcT[i] = _usim_data.plmn[i].AcT;
+      if ( PLMN_IS_VALID(user->usim_data.plmn[i].plmn) ) {
+        user->emm_data->plmn.plmn[i] = user->usim_data.plmn[i].plmn;
+        user->emm_data->userAcT[i] = user->usim_data.plmn[i].AcT;
         user->emm_data->plmn.n_plmns += 1;
       }
     }
 
     /* Get the list of Operator controlled PLMN Selector */
     for (i=0; (i < EMM_DATA_OPLMN_MAX) && (i < USIM_OPLMN_MAX); i++) {
-      if ( PLMN_IS_VALID(_usim_data.oplmn[i].plmn) ) {
-        user->emm_data->oplmn.plmn[i] = _usim_data.oplmn[i].plmn;
-        user->emm_data->operAcT[i] = _usim_data.oplmn[i].AcT;
+      if ( PLMN_IS_VALID(user->usim_data.oplmn[i].plmn) ) {
+        user->emm_data->oplmn.plmn[i] = user->usim_data.oplmn[i].plmn;
+        user->emm_data->operAcT[i] = user->usim_data.oplmn[i].AcT;
         user->emm_data->oplmn.n_plmns += 1;
       }
     }
 
     /* Get the list of Operator network name records */
     for (i=0; (i < EMM_DATA_OPNN_MAX) && (i < USIM_OPL_MAX); i++) {
-      if ( PLMN_IS_VALID(_usim_data.opl[i].plmn) ) {
-        int pnn_id = _usim_data.opl[i].record_id;
-        user->emm_data->opnn[i].plmn = &_usim_data.opl[i].plmn;
-        user->emm_data->opnn[i].fullname = (char *)_usim_data.pnn[pnn_id].fullname.value;
-        user->emm_data->opnn[i].shortname = (char *)_usim_data.pnn[pnn_id].shortname.value;
+      if ( PLMN_IS_VALID(user->usim_data.opl[i].plmn) ) {
+        int pnn_id = user->usim_data.opl[i].record_id;
+        user->emm_data->opnn[i].plmn = &user->usim_data.opl[i].plmn;
+        user->emm_data->opnn[i].fullname = (char *)user->usim_data.pnn[pnn_id].fullname.value;
+        user->emm_data->opnn[i].shortname = (char *)user->usim_data.pnn[pnn_id].shortname.value;
         user->emm_data->n_opnns += 1;
       }
     }
@@ -232,27 +225,27 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     /* TODO: Get the Higher Priority PLMN search period parameter */
 
     /* Get the EPS location information */
-    if (PLMN_IS_VALID(_usim_data.epsloci.guti.gummei.plmn)) {
-      user->emm_data->guti = &_usim_data.epsloci.guti;
+    if (PLMN_IS_VALID(user->usim_data.epsloci.guti.gummei.plmn)) {
+      user->emm_data->guti = &user->usim_data.epsloci.guti;
     }
 
-    if (TAI_IS_VALID(_usim_data.epsloci.tai)) {
-      user->emm_data->tai = &_usim_data.epsloci.tai;
+    if (TAI_IS_VALID(user->usim_data.epsloci.tai)) {
+      user->emm_data->tai = &user->usim_data.epsloci.tai;
     }
 
-    user->emm_data->status = _usim_data.epsloci.status;
+    user->emm_data->status = user->usim_data.epsloci.status;
 
     /* Get NAS configuration parameters */
     user->emm_data->NAS_SignallingPriority =
-      _usim_data.nasconfig.NAS_SignallingPriority.value[0];
-    user->emm_data->NMO_I_Behaviour = _usim_data.nasconfig.NMO_I_Behaviour.value[0];
-    user->emm_data->AttachWithImsi = _usim_data.nasconfig.AttachWithImsi.value[0];
+      user->usim_data.nasconfig.NAS_SignallingPriority.value[0];
+    user->emm_data->NMO_I_Behaviour = user->usim_data.nasconfig.NMO_I_Behaviour.value[0];
+    user->emm_data->AttachWithImsi = user->usim_data.nasconfig.AttachWithImsi.value[0];
     user->emm_data->MinimumPeriodicSearchTimer =
-      _usim_data.nasconfig.MinimumPeriodicSearchTimer.value[0];
+      user->usim_data.nasconfig.MinimumPeriodicSearchTimer.value[0];
     user->emm_data->ExtendedAccessBarring =
-      _usim_data.nasconfig.ExtendedAccessBarring.value[0];
+      user->usim_data.nasconfig.ExtendedAccessBarring.value[0];
     user->emm_data->Timer_T3245_Behaviour =
-      _usim_data.nasconfig.Timer_T3245_Behaviour.value[0];
+      user->usim_data.nasconfig.Timer_T3245_Behaviour.value[0];
 
     /*
      * Get EPS NAS security context
@@ -265,7 +258,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
       memset(user->emm_data->security, 0, sizeof(emm_security_context_t));
 
       /* Type of security context */
-      if (_usim_data.securityctx.KSIasme.value[0] !=
+      if (user->usim_data.securityctx.KSIasme.value[0] !=
           USIM_KSI_NOT_AVAILABLE) {
         user->emm_data->security->type = EMM_KSI_NATIVE;
       } else {
@@ -273,39 +266,39 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
       }
 
       /* EPS key set identifier */
-      user->emm_data->security->eksi = _usim_data.securityctx.KSIasme.value[0];
+      user->emm_data->security->eksi = user->usim_data.securityctx.KSIasme.value[0];
       /* ASME security key */
       user->emm_data->security->kasme.length =
-        _usim_data.securityctx.Kasme.length;
+        user->usim_data.securityctx.Kasme.length;
       user->emm_data->security->kasme.value =
         (uint8_t *)malloc(user->emm_data->security->kasme.length);
 
       if (user->emm_data->security->kasme.value) {
         memcpy(user->emm_data->security->kasme.value,
-               _usim_data.securityctx.Kasme.value,
+               user->usim_data.securityctx.Kasme.value,
                user->emm_data->security->kasme.length);
       }
 
       /* Downlink count parameter */
-      if (_usim_data.securityctx.dlNAScount.length <= sizeof(uint32_t)) {
+      if (user->usim_data.securityctx.dlNAScount.length <= sizeof(uint32_t)) {
         memcpy(&user->emm_data->security->dl_count,
-               _usim_data.securityctx.dlNAScount.value,
-               _usim_data.securityctx.dlNAScount.length);
+               user->usim_data.securityctx.dlNAScount.value,
+               user->usim_data.securityctx.dlNAScount.length);
       }
 
       /* Uplink count parameter */
-      if (_usim_data.securityctx.ulNAScount.length <= sizeof(uint32_t)) {
+      if (user->usim_data.securityctx.ulNAScount.length <= sizeof(uint32_t)) {
         memcpy(&user->emm_data->security->ul_count,
-               _usim_data.securityctx.ulNAScount.value,
-               _usim_data.securityctx.ulNAScount.length);
+               user->usim_data.securityctx.ulNAScount.value,
+               user->usim_data.securityctx.ulNAScount.length);
       }
 
       /* Ciphering algorithm */
       user->emm_data->security->capability.eps_encryption =
-        ((_usim_data.securityctx.algorithmID.value[0] >> 4) & 0xf);
+        ((user->usim_data.securityctx.algorithmID.value[0] >> 4) & 0xf);
       /* Identity protection algorithm */
       user->emm_data->security->capability.eps_integrity =
-        (_usim_data.securityctx.algorithmID.value[0] & 0xf);
+        (user->usim_data.securityctx.algorithmID.value[0] & 0xf);
       /* NAS integrity and cyphering keys are not available */
     } else {
       LOG_TRACE(WARNING,
@@ -331,9 +324,9 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
       } else {
         /* Check the IMSI */
         LOG_TRACE(INFO, "EMM-MAIN  - EMM data successfully read");
-        user->emm_data->imsi = &_usim_data.imsi;
+        user->emm_data->imsi = &user->usim_data.imsi;
         int imsi_ok = _emm_main_imsi_cmp(&user->emm_data->nvdata.imsi,
-                                         &_usim_data.imsi);
+                                         &user->usim_data.imsi);
 
         if (!imsi_ok) {
           LOG_TRACE(WARNING, "EMM-MAIN  - IMSI checking failed nvram: "
@@ -347,14 +340,14 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
                     user->emm_data->nvdata.imsi.u.value[5],
                     user->emm_data->nvdata.imsi.u.value[6],
                     user->emm_data->nvdata.imsi.u.value[7],
-                    _usim_data.imsi.u.value[0],
-                    _usim_data.imsi.u.value[1],
-                    _usim_data.imsi.u.value[2],
-                    _usim_data.imsi.u.value[3],
-                    _usim_data.imsi.u.value[4],
-                    _usim_data.imsi.u.value[5],
-                    _usim_data.imsi.u.value[6],
-                    _usim_data.imsi.u.value[7]);
+                    user->usim_data.imsi.u.value[0],
+                    user->usim_data.imsi.u.value[1],
+                    user->usim_data.imsi.u.value[2],
+                    user->usim_data.imsi.u.value[3],
+                    user->usim_data.imsi.u.value[4],
+                    user->usim_data.imsi.u.value[5],
+                    user->usim_data.imsi.u.value[6],
+                    user->usim_data.imsi.u.value[7]);
           memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
           user->emm_data->nvdata.eplmn.n_plmns = 0;
         }
@@ -504,17 +497,16 @@ const imsi_t *emm_main_get_imsi(emm_data_t *emm_data)
  ** Description: Get the Mobile Subscriber Dialing Number from the USIM    **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _usim_data                                 **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    Pointer to the subscriber dialing number   **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-const msisdn_t *emm_main_get_msisdn(void)
+const msisdn_t *emm_main_get_msisdn(nas_user_t *user)
 {
   LOG_FUNC_IN;
-  LOG_FUNC_RETURN (&_usim_data.msisdn.number);
+  LOG_FUNC_RETURN (&user->usim_data.msisdn.number);
 }
 
 /****************************************************************************

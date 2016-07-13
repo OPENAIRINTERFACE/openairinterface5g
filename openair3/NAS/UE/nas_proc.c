@@ -299,11 +299,11 @@ int nas_proc_get_imsi(emm_data_t *emm_data, char *imsi_str)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int nas_proc_get_msisdn(char *msisdn_str, int *ton_npi)
+int nas_proc_get_msisdn(nas_user_t *user, char *msisdn_str, int *ton_npi)
 {
   LOG_FUNC_IN;
 
-  const msisdn_t *msisdn = emm_main_get_msisdn();
+  const msisdn_t *msisdn = emm_main_get_msisdn(user);
 
   if (msisdn != NULL) {
     union {

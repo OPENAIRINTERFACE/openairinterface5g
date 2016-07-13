@@ -77,7 +77,7 @@ void emm_main_cleanup(emm_data_t *emm_data);
 const imsi_t *emm_main_get_imsi(emm_data_t *emm_data);
 
 /* User's getter of the subscriber dialing number */
-const msisdn_t *emm_main_get_msisdn(void);
+const msisdn_t *emm_main_get_msisdn(nas_user_t *user);
 
 /* User's getter/setter for network selection */
 int emm_main_set_plmn_selection_mode(nas_user_t *user, int mode, int format,
