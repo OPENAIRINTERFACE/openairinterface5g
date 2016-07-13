@@ -55,6 +55,7 @@ Description NAS type definition to manage a user equipment
 #include "API/USIM/usim_api.h"
 #include "SecurityModeControl.h"
 #include "userDef.h"
+#include "at_response.h"
 
 typedef struct {
   int fd;
@@ -74,6 +75,7 @@ typedef struct {
   user_nvdata_t *nas_user_nvdata; //UE parameters stored in the UE's non-volatile memory device
   //
   nas_user_context_t *nas_user_context;
+  at_response_t *at_response; // data structure returned to the user as the result of NAS procedure function call
 } nas_user_t;
 
 #endif

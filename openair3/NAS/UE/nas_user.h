@@ -67,6 +67,6 @@ int nas_user_receive_and_process(nas_user_t *user, char *message);
 
 int nas_user_process_data(nas_user_t *user, const void *data);
 
-const void *nas_user_get_data(void);
+const void *nas_user_get_data(nas_user_t *nas_user);
 
 #endif /* __NAS_USER_H__*/

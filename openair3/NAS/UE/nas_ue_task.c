@@ -88,6 +88,12 @@ void *nas_ue_task(void *args_p)
       itti_subscribe_event_fd (TASK_NAS_UE, user->fd);
     }
 
+    user->at_response = calloc(1, sizeof(at_response_t));
+    if ( user->at_response == NULL ) {
+        LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
+        // FIXME stop here
+    }
+
     /* Initialize NAS user */
     nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
   }
