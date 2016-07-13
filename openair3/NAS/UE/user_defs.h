@@ -70,6 +70,7 @@ typedef struct {
   security_data_t *security_data; //Internal data used for security mode control procedure
   // Hardware persistent storage
   usim_data_t usim_data; // USIM application data
+  nas_user_context_t *nas_user_context;
 } nas_user_t;
 
 #endif

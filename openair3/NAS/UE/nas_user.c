@@ -126,38 +126,13 @@ static at_response_t _nas_user_data = {};
  *              Local UE context
  * ---------------------------------------------------------------------
  */
-/*
- * MT SIM pending status (see ETSI TS 127 007 V10.6.0, Note 2)
- * Commands which interact with MT that are accepted when MT is pending SIM PIN,
- * SIM PUK, or PH-SIM are: +CGMI, +CGMM, +CGMR, +CGSN, D112; (emergency call),
- * +CPAS, +CFUN, +CPIN, +CPINR, +CDIS (read and test command only), and +CIND
- * (read and test command only).
-*/
-typedef enum {
-  NAS_USER_READY, /* MT is not pending for any password   */
-  NAS_USER_SIM_PIN,   /* MT is waiting SIM PIN to be given    */
-  NAS_USER_SIM_PUK,   /* MT is waiting SIM PUK to be given    */
-  NAS_USER_PH_SIM_PIN /* MT is waiting phone-to-SIM card
-             * password to be given         */
-} nas_user_sim_status;
+
 static const char *_nas_user_sim_status_str[] = {
   "READY",
   "SIM PIN",
   "SIM PUK",
   "PH-SIM PIN"
 };
-
-/*
- * The local UE context
- */
-static struct {
-  /* Firmware version number          */
-  const char *version;
-  /* SIM pending status           */
-  nas_user_sim_status sim_status;
-  /* Level of functionality           */
-  int fun;
-} _nas_user_context;
 
 /*
  * ---------------------------------------------------------------------
@@ -169,6 +144,12 @@ static user_nvdata_t _nas_user_nvdata;
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
+
+void _nas_user_context_initialize(nas_user_context_t *nas_user_context, const char *version) {
+  nas_user_context->version = version;
+  nas_user_context->sim_status = NAS_USER_SIM_PIN;
+  nas_user_context->fun = AT_CFUN_FUN_DEFAULT;
+}
 
 /****************************************************************************
  **                                                                        **
@@ -209,9 +190,12 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
     free(path);
   }
 
-  _nas_user_context.version = version;
-  _nas_user_context.sim_status = NAS_USER_SIM_PIN;
-  _nas_user_context.fun = AT_CFUN_FUN_DEFAULT;
+  user->nas_user_context = calloc(1, sizeof(nas_user_context_t));
+  if ( user->nas_user_context == NULL ) {
+    LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_context");
+    // FIXME stop here
+  }
+  _nas_user_context_initialize(user->nas_user_context, version);
 
   /* Initialize the internal NAS processing data */
   nas_proc_initialize(user, emm_cb, esm_cb, _nas_user_nvdata.IMEI);
@@ -578,6 +562,7 @@ static int _nas_user_proc_cgmm(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgmr(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgmr_resp_t *cgmr = &_nas_user_data.response.cgmr;
@@ -591,7 +576,7 @@ static int _nas_user_proc_cgmr(nas_user_t *user, const at_command_t *data)
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the revision identifier */
-    strncpy(cgmr->revision, _nas_user_context.version,
+    strncpy(cgmr->revision, nas_user_context->version,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -634,6 +619,7 @@ static int _nas_user_proc_cgmr(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cimi_resp_t *cimi = &_nas_user_data.response.cimi;
@@ -646,7 +632,7 @@ static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -695,6 +681,7 @@ static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cfun(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cfun_resp_t *cfun = &_nas_user_data.response.cfun;
@@ -761,14 +748,14 @@ static int _nas_user_proc_cfun(nas_user_t *user, const at_command_t *data)
 
     if (ret_code != RETURNerror) {
       /* Update the functionality level */
-      _nas_user_context.fun = fun;
+      nas_user_context->fun = fun;
     }
 
     break;
 
   case AT_COMMAND_GET:
     /* Get the MT's functionality level */
-    cfun->fun = _nas_user_context.fun;
+    cfun->fun = nas_user_context->fun;
     break;
 
   case AT_COMMAND_TST:
@@ -808,6 +795,7 @@ static int _nas_user_proc_cfun(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cpin_resp_t *cpin = &_nas_user_data.response.cpin;
@@ -825,7 +813,7 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
      * Set command sends to the MT a password which is necessary
      * before it can be operated
      */
-    if (_nas_user_context.sim_status == NAS_USER_SIM_PIN) {
+    if (nas_user_context->sim_status == NAS_USER_SIM_PIN) {
       /* The MT is waiting for PIN password; check the PIN code */
       if (strncmp(_nas_user_nvdata.PIN,
                   data->command.cpin.pin, USER_PIN_SIZE) != 0) {
@@ -837,7 +825,7 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
       } else {
         /* The PIN code is matching; update the user's PIN
          * pending status */
-        _nas_user_context.sim_status = NAS_USER_READY;
+        nas_user_context->sim_status = NAS_USER_READY;
       }
     } else {
       /* The MT is NOT waiting for PIN password;
@@ -854,7 +842,7 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
      * whether some password is required or not.
      */
     strncpy(cpin->code,
-            _nas_user_sim_status_str[_nas_user_context.sim_status],
+            _nas_user_sim_status_str[nas_user_context->sim_status],
             AT_CPIN_RESP_SIZE);
     break;
 
@@ -894,6 +882,7 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_csq(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_csq_resp_t *csq = &_nas_user_data.response.csq;
@@ -906,7 +895,7 @@ static int _nas_user_proc_csq(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -955,6 +944,7 @@ static int _nas_user_proc_csq(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cesq(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cesq_resp_t *cesq = &_nas_user_data.response.cesq;
@@ -967,7 +957,7 @@ static int _nas_user_proc_cesq(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1020,6 +1010,7 @@ static int _nas_user_proc_cesq(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cops_resp_t *cops = &_nas_user_data.response.cops;
@@ -1042,7 +1033,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1269,6 +1260,7 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgatt_resp_t *cgatt = &_nas_user_data.response.cgatt;
@@ -1281,7 +1273,7 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1374,6 +1366,7 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_creg_resp_t *creg = &_nas_user_data.response.creg;
@@ -1388,7 +1381,7 @@ static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1523,6 +1516,7 @@ static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgreg_resp_t *cgreg = &_nas_user_data.response.cgreg;
@@ -1537,7 +1531,7 @@ static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1672,6 +1666,7 @@ static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cereg_resp_t *cereg = &_nas_user_data.response.cereg;
@@ -1686,7 +1681,7 @@ static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -1853,6 +1848,7 @@ static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgdcont_get_t *cgdcont = &_nas_user_data.response.cgdcont.get;
@@ -1874,7 +1870,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -2105,6 +2101,7 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgact_resp_t *cgact = &_nas_user_data.response.cgact;
@@ -2120,7 +2117,7 @@ static int _nas_user_proc_cgact(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -2477,6 +2474,7 @@ static int _nas_user_proc_clck(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cgpaddr_resp_t *cgpaddr = &_nas_user_data.response.cgpaddr;
@@ -2491,7 +2489,7 @@ static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_SET:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
@@ -2569,6 +2567,7 @@ static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
 static int _nas_user_proc_cnum(nas_user_t *user, const at_command_t *data)
 {
   LOG_FUNC_IN;
+  nas_user_context_t *nas_user_context = user->nas_user_context;
 
   int ret_code = RETURNok;
   at_cnum_resp_t *cnum = &_nas_user_data.response.cnum;
@@ -2581,7 +2580,7 @@ static int _nas_user_proc_cnum(nas_user_t *user, const at_command_t *data)
 
   switch (data->type) {
   case AT_COMMAND_ACT:
-    if (_nas_user_context.sim_status != NAS_USER_READY) {
+    if (nas_user_context->sim_status != NAS_USER_READY) {
       _nas_user_data.cause_code = AT_ERROR_SIM_PIN_REQUIRED;
       LOG_FUNC_RETURN(RETURNerror);
     }
