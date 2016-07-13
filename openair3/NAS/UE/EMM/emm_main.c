@@ -79,6 +79,32 @@ static int _emm_main_callback(emm_data_t *emm_data, int);
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
+  /*
+   * Initialize EMM timers
+   */
+void _emm_timers_initialize(emm_timers_t *emm_timers) {
+  emm_timers->T3410.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3410.sec = T3410_DEFAULT_VALUE;
+  emm_timers->T3411.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3411.sec = T3411_DEFAULT_VALUE;
+  emm_timers->T3402.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3402.sec = T3402_DEFAULT_VALUE;
+  emm_timers->T3416.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3416.sec = T3416_DEFAULT_VALUE;
+  emm_timers->T3417.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3417.sec = T3417_DEFAULT_VALUE;
+  emm_timers->T3418.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3418.sec = T3418_DEFAULT_VALUE;
+  emm_timers->T3420.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3420.sec = T3420_DEFAULT_VALUE;
+  emm_timers->T3421.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3421.sec = T3421_DEFAULT_VALUE;
+  emm_timers->T3423.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3423.sec = T3423_DEFAULT_VALUE;
+  emm_timers->T3430.id = NAS_TIMER_INACTIVE_ID;
+  emm_timers->T3430.sec = T3430_DEFAULT_VALUE;
+}
+
 /****************************************************************************
  **                                                                        **
  ** Name:    emm_main_initialize()                                     **
@@ -360,26 +386,12 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   /*
    * Initialize EMM timers
    */
-  T3410.id = NAS_TIMER_INACTIVE_ID;
-  T3410.sec = T3410_DEFAULT_VALUE;
-  T3411.id = NAS_TIMER_INACTIVE_ID;
-  T3411.sec = T3411_DEFAULT_VALUE;
-  T3402.id = NAS_TIMER_INACTIVE_ID;
-  T3402.sec = T3402_DEFAULT_VALUE;
-  T3416.id = NAS_TIMER_INACTIVE_ID;
-  T3416.sec = T3416_DEFAULT_VALUE;
-  T3417.id = NAS_TIMER_INACTIVE_ID;
-  T3417.sec = T3417_DEFAULT_VALUE;
-  T3418.id = NAS_TIMER_INACTIVE_ID;
-  T3418.sec = T3418_DEFAULT_VALUE;
-  T3420.id = NAS_TIMER_INACTIVE_ID;
-  T3420.sec = T3420_DEFAULT_VALUE;
-  T3421.id = NAS_TIMER_INACTIVE_ID;
-  T3421.sec = T3421_DEFAULT_VALUE;
-  T3423.id = NAS_TIMER_INACTIVE_ID;
-  T3423.sec = T3423_DEFAULT_VALUE;
-  T3430.id = NAS_TIMER_INACTIVE_ID;
-  T3430.sec = T3430_DEFAULT_VALUE;
+  user->emm_data->emm_timers = calloc(1, sizeof(emm_timers_t));
+  if ( user->emm_data->emm_timers == NULL ) {
+    LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
+    // FIXME stop here
+  }
+  _emm_timers_initialize(user->emm_data->emm_timers);
 
   /*
    * Initialize the user notification callback
@@ -389,7 +401,6 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   /*
    * Initialize EMM internal data used for UE in idle mode
    */
-    // FIXME REVIEW
   IdleMode_initialize(user, &_emm_main_callback);
 
   LOG_FUNC_OUT;

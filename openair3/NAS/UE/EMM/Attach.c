@@ -148,6 +148,7 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
   emm_as_establish_t *emm_as = &emm_sap.u.emm_as.u.establish;
   esm_sap_t esm_sap;
   int rc;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(INFO, "EMM-PROC  - Initiate EPS attach type = %s (%d)",
             _emm_attach_type_str[type], type);
@@ -260,12 +261,12 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
     }
 
     /* Start T3410 timer */
-    T3410.id = nas_timer_start(T3410.sec, _emm_attach_t3410_handler, user);
+    emm_timers->T3410.id = nas_timer_start(emm_timers->T3410.sec, _emm_attach_t3410_handler, user);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3410 (%d) expires in %ld seconds",
-              T3410.id, T3410.sec);
+              emm_timers->T3410.id, emm_timers->T3410.sec);
     /* Stop T3402 and T3411 timers if running */
-    T3402.id = nas_timer_stop(T3402.id);
-    T3411.id = nas_timer_stop(T3411.id);
+    emm_timers->T3402.id = nas_timer_stop(emm_timers->T3402.id);
+    emm_timers->T3411.id = nas_timer_stop(emm_timers->T3411.id);
 
     /*
      * Notify EMM-AS SAP that a RRC connection establishment procedure
@@ -357,12 +358,13 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
   int rc;
   int i;
   int j;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(INFO, "EMM-PROC  - EPS attach accepted by the network");
 
   /* Stop timer T3410 */
-  LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-  T3410.id = nas_timer_stop(T3410.id);
+  LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+  emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
 
   /* Delete old TAI list and store the received TAI list */
   user->emm_data->ltai.n_tais = n_tais;
@@ -372,16 +374,16 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
   }
 
   /* Update periodic tracking area update timer value */
-  T3412.sec = t3412;
+  emm_timers->T3412.sec = t3412;
 
   /* Update attach failure timer value */
   if ( !(t3402 < 0) ) {
-    T3402.sec = t3402;
+    emm_timers->T3402.sec = t3402;
   }
 
   /* Update E-UTRAN deactivate ISR timer value */
   if ( !(t3423 < 0) ) {
-    T3423.sec = t3423;
+    emm_timers->T3423.sec = t3423;
   }
 
   /* Delete old GUTI and store the new assigned GUTI if provided */
@@ -506,13 +508,14 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
 
   emm_sap_t emm_sap;
   int rc;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - EPS attach rejected by the network, "
             "EMM cause = %d", emm_cause);
 
   /* Stop timer T3410 */
-  LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-  T3410.id = nas_timer_stop(T3410.id);
+  LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+  emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
 
   /* Update the EPS update status, the GUTI, the visited registered TAI and
    * the eKSI */
@@ -790,6 +793,7 @@ int emm_proc_attach_failure(int is_initial, void *args)
   int rc = RETURNok;
   esm_sap_t esm_sap;
   nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(WARNING, "EMM-PROC  - EPS attach failure");
 
@@ -797,9 +801,9 @@ int emm_proc_attach_failure(int is_initial, void *args)
   (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
 
   /* Stop timer T3410 if still running */
-  if (T3410.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-    T3410.id = nas_timer_stop(T3410.id);
+  if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+    emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
   }
 
   if (is_initial) {
@@ -826,9 +830,9 @@ int emm_proc_attach_failure(int is_initial, void *args)
 
   if (rc != RETURNerror) {
     /* Start T3411 timer */
-    T3411.id = nas_timer_start(T3411.sec, _emm_attach_t3411_handler, NULL);
+    emm_timers->T3411.id = nas_timer_start(emm_timers->T3411.sec, _emm_attach_t3411_handler, NULL);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3411 (%d) expires in %ld seconds",
-              T3411.id, T3411.sec);
+              emm_timers->T3411.id, emm_timers->T3411.sec);
   }
 
   LOG_FUNC_RETURN(rc);
@@ -1002,13 +1006,14 @@ void *_emm_attach_t3410_handler(void *args)
   LOG_FUNC_IN;
 
   nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   emm_sap_t emm_sap;
   int rc;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3410 timer expired");
 
   /* Stop T3410 timer */
-  T3410.id = nas_timer_stop(T3410.id);
+  emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
   /* Execute abnormal case attach procedure */
   _emm_attach_abnormal_cases_bcd(user, &emm_sap);
 
@@ -1045,12 +1050,13 @@ static void *_emm_attach_t3411_handler(void *args)
   LOG_FUNC_IN;
 
   nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   emm_sap_t emm_sap;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3411 timer expired");
 
   /* Stop T3411 timer */
-  T3411.id = nas_timer_stop(T3411.id);
+  emm_timers->T3411.id = nas_timer_stop(emm_timers->T3411.id);
   /*
    * Notify EMM that timer T3411 expired and attach procedure has to be
    * restarted
@@ -1090,12 +1096,13 @@ static void *_emm_attach_t3402_handler(void *args)
   LOG_FUNC_IN;
 
   nas_user_t *user=args;
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   emm_sap_t emm_sap;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3402 timer expired");
 
   /* Stop T3402 timer */
-  T3402.id = nas_timer_stop(T3402.id);
+  emm_timers->T3402.id = nas_timer_stop(emm_timers->T3402.id);
   /* Reset the attach attempt counter */
   _emm_attach_data.attempt_count = 0;
   /*
@@ -1140,23 +1147,23 @@ static void *_emm_attach_t3402_handler(void *args)
 static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *emm_sap)
 {
   LOG_FUNC_IN;
-
+  emm_timers_t *emm_timers = user->emm_data->emm_timers;
   LOG_TRACE(WARNING, "EMM-PROC  - Abnormal case, attach counter = %d",
             _emm_attach_data.attempt_count);
 
   /* Stop timer T3410 */
-  if (T3410.id != NAS_TIMER_INACTIVE_ID) {
-    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", T3410.id);
-    T3410.id = nas_timer_stop(T3410.id);
+  if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
+    LOG_TRACE(INFO, "EMM-PROC  - Stop timer T3410 (%d)", emm_timers->T3410.id);
+    emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
   }
 
   if (_emm_attach_data.attempt_count < EMM_ATTACH_COUNTER_MAX) {
     /* Increment the attach attempt counter */
     _emm_attach_data.attempt_count += 1;
     /* Start T3411 timer */
-    T3411.id = nas_timer_start(T3411.sec, _emm_attach_t3411_handler, NULL);
+    emm_timers->T3411.id = nas_timer_start(emm_timers->T3411.sec, _emm_attach_t3411_handler, NULL);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3411 (%d) expires in %ld seconds",
-              T3411.id, T3411.sec);
+              emm_timers->T3411.id, emm_timers->T3411.sec);
     /*
      * Notify EMM that the attempt to attach for EPS services failed and
      * the attach attempt counter didn't reach its maximum value; network
@@ -1182,9 +1189,9 @@ static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *emm_sap)
     user->emm_data->status = EU2_NOT_UPDATED;
 
     /* Start T3402 timer */
-    T3402.id = nas_timer_start(T3402.sec, _emm_attach_t3402_handler, user);
+    emm_timers->T3402.id = nas_timer_start(emm_timers->T3402.sec, _emm_attach_t3402_handler, user);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3402 (%d) expires in %ld seconds",
-              T3402.id, T3402.sec);
+              emm_timers->T3402.id, emm_timers->T3402.sec);
     /*
      * Notify EMM that the attempt to attach for EPS services failed and
      * the attach attempt counter reached its maximum value.

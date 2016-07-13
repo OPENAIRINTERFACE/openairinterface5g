@@ -197,6 +197,20 @@ typedef struct emm_nvdata_s {
   PLMN_LIST_T(EMM_DATA_EPLMN_MAX) eplmn;
 } emm_nvdata_t;
 
+typedef struct {
+    struct nas_timer_t T3402;   /* attach failure timer         */
+    struct nas_timer_t T3410;   /* attach timer             */
+    struct nas_timer_t T3411;   /* attach restart timer         */
+    struct nas_timer_t T3412;   /* periodic tracking area update timer  */
+    struct nas_timer_t T3416;   /* EPS authentication challenge timer   */
+    struct nas_timer_t T3417;   /* Service request timer        */
+    struct nas_timer_t T3418;   /* MAC authentication failure timer */
+    struct nas_timer_t T3420;   /* Synch authentication failure timer   */
+    struct nas_timer_t T3421;   /* Detach timer             */
+    struct nas_timer_t T3430;   /* tracking area update timer       */
+    struct nas_timer_t T3423;   /* E-UTRAN deactivate ISR timer     */
+} emm_timers_t;
+
 /*
  * Structure of the EMM data
  * -------------------------
@@ -324,7 +338,11 @@ typedef struct emm_data_s {
    */
   emm_security_context_t *security;    /* current security context     */
   emm_security_context_t *non_current; /* non-current security context */
-
+  /*
+   * EPS mobility management timers – UE side
+   * ----------------------------------------
+   */
+  emm_timers_t *emm_timers;
 } emm_data_t;
 
 
@@ -333,11 +351,6 @@ typedef struct emm_data_s {
 /********************  G L O B A L    V A R I A B L E S  ********************/
 /****************************************************************************/
 
-/*
- * --------------------------------------------------------------------------
- *      EPS mobility management timers – UE side
- * --------------------------------------------------------------------------
- */
 #define T3402_DEFAULT_VALUE 720 /* 12 minutes   */
 #define T3410_DEFAULT_VALUE 15  /* 15 seconds   */
 #define T3411_DEFAULT_VALUE 10  /* 10 seconds   */
@@ -351,20 +364,6 @@ typedef struct emm_data_s {
 #define T3423_DEFAULT_VALUE T3412_DEFAULT_VALUE
 #define T3430_DEFAULT_VALUE 15  /* 15 seconds   */
 #define T3440_DEFAULT_VALUE 10  /* 10 seconds   */
-
-// FIXME put in another structure
-struct nas_timer_t T3402;   /* attach failure timer         */
-struct nas_timer_t T3410;   /* attach timer             */
-struct nas_timer_t T3411;   /* attach restart timer         */
-struct nas_timer_t T3412;   /* periodic tracking area update timer  */
-struct nas_timer_t T3416;   /* EPS authentication challenge timer   */
-struct nas_timer_t T3417;   /* Service request timer        */
-struct nas_timer_t T3418;   /* MAC authentication failure timer */
-struct nas_timer_t T3420;   /* Synch authentication failure timer   */
-struct nas_timer_t T3421;   /* Detach timer             */
-struct nas_timer_t T3430;   /* tracking area update timer       */
-
-struct nas_timer_t T3423;   /* E-UTRAN deactivate ISR timer     */
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
