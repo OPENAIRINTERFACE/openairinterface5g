@@ -158,7 +158,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
             ksi);
 
   /* Delete any previously stored RAND and RES and stop timer T3416 */
-  (void) emm_proc_authentication_delete();
+  (void) emm_proc_authentication_delete(user);
 
   /*
    * Check the replayed UE security capabilities

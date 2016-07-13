@@ -167,7 +167,7 @@ int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t t
 int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
                                     const OctetString *rand, const OctetString *autn);
 int emm_proc_authentication_reject(nas_user_t *user);
-int emm_proc_authentication_delete(void);
+int emm_proc_authentication_delete(nas_user_t *user);
 
 
 /*

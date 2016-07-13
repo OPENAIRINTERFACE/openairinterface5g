@@ -86,7 +86,7 @@ int EmmNull(nas_user_t *user, const emm_reg_t *evt)
   assert(emm_fsm_get_status(user) == EMM_NULL);
 
   /* Delete the authentication data RAND and RES */
-  rc = emm_proc_authentication_delete();
+  rc = emm_proc_authentication_delete(user);
 
   if (rc != RETURNok) {
     LOG_FUNC_RETURN (rc);

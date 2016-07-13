@@ -352,6 +352,7 @@ typedef struct emm_data_s {
 #define T3430_DEFAULT_VALUE 15  /* 15 seconds   */
 #define T3440_DEFAULT_VALUE 10  /* 10 seconds   */
 
+// FIXME put in another structure
 struct nas_timer_t T3402;   /* attach failure timer         */
 struct nas_timer_t T3410;   /* attach timer             */
 struct nas_timer_t T3411;   /* attach restart timer         */
