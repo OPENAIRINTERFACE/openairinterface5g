@@ -134,13 +134,6 @@ static const char *_nas_user_sim_status_str[] = {
   "PH-SIM PIN"
 };
 
-/*
- * ---------------------------------------------------------------------
- *  UE parameters stored in the UE's non-volatile memory device
- * ---------------------------------------------------------------------
- */
-static user_nvdata_t _nas_user_nvdata;
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -164,7 +157,6 @@ void _nas_user_context_initialize(nas_user_context_t *nas_user_context, const ch
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **          Others:    _nas_user_nvdata, _nas_user_context        **
  **                                                                        **
  ***************************************************************************/
 void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
@@ -172,33 +164,39 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 {
   LOG_FUNC_IN;
 
+  user->nas_user_nvdata = calloc(1, sizeof(user_nvdata_t));
+  if ( user->nas_user_nvdata == NULL ) {
+    LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_nvdata");
+    // FIXME stop here
+    return;
+  }
+
   /* Get UE's data pathname */
   char *path = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
 
   if (path == NULL) {
     LOG_TRACE(ERROR, "USR-MAIN  - Failed to get UE's data pathname");
+    // FIXME return an error code or exit
+    return;
   }
 
   /* Get UE data stored in the non-volatile memory device */
-  else {
-    int rc = memory_read(path, &_nas_user_nvdata, sizeof(user_nvdata_t));
-
-    if (rc != RETURNok) {
-      LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", path);
-    }
-
-    free(path);
+  int rc = memory_read(path, user->nas_user_nvdata, sizeof(user_nvdata_t));
+  if (rc != RETURNok) {
+    LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", path);
   }
+  free(path);
 
   user->nas_user_context = calloc(1, sizeof(nas_user_context_t));
   if ( user->nas_user_context == NULL ) {
     LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_context");
     // FIXME stop here
+    return;
   }
   _nas_user_context_initialize(user->nas_user_context, version);
 
   /* Initialize the internal NAS processing data */
-  nas_proc_initialize(user, emm_cb, esm_cb, _nas_user_nvdata.IMEI);
+  nas_proc_initialize(user, emm_cb, esm_cb, user->nas_user_nvdata->IMEI);
 
   LOG_FUNC_OUT;
 }
@@ -395,7 +393,6 @@ const void *nas_user_get_data(void)
  **      ning the IMEI.                                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -418,7 +415,7 @@ static int _nas_user_proc_cgsn(nas_user_t *user, const at_command_t *data)
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Product Serial Number Identification (IMEI) */
-    strncpy(cgsn->sn, _nas_user_nvdata.IMEI,
+    strncpy(cgsn->sn, user->nas_user_nvdata->IMEI,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -447,7 +444,6 @@ static int _nas_user_proc_cgsn(nas_user_t *user, const at_command_t *data)
  **      le Equipment to which it is connected to.                 **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -470,7 +466,7 @@ static int _nas_user_proc_cgmi(nas_user_t *user, const at_command_t *data)
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Manufacturer identifier */
-    strncpy(cgmi->manufacturer, _nas_user_nvdata.manufacturer,
+    strncpy(cgmi->manufacturer, user->nas_user_nvdata->manufacturer,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -499,7 +495,6 @@ static int _nas_user_proc_cgmi(nas_user_t *user, const at_command_t *data)
  **      Equipment to which it is connected to.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -522,7 +517,7 @@ static int _nas_user_proc_cgmm(nas_user_t *user, const at_command_t *data)
   switch (data->type) {
   case AT_COMMAND_ACT:
     /* Get the Model identifier */
-    strncpy(cgmm->model, _nas_user_nvdata.model,
+    strncpy(cgmm->model, user->nas_user_nvdata->model,
             AT_RESPONSE_INFO_TEXT_SIZE);
     break;
 
@@ -609,7 +604,6 @@ static int _nas_user_proc_cgmr(nas_user_t *user, const at_command_t *data)
  **      ning the IMSI.                                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_nvdata                           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -815,7 +809,7 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
      */
     if (nas_user_context->sim_status == NAS_USER_SIM_PIN) {
       /* The MT is waiting for PIN password; check the PIN code */
-      if (strncmp(_nas_user_nvdata.PIN,
+      if (strncmp(user->nas_user_nvdata->PIN,
                   data->command.cpin.pin, USER_PIN_SIZE) != 0) {
         /* The PIN code is NOT matching; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - PIN code is not correct "
@@ -2374,7 +2368,7 @@ static int _nas_user_proc_clck(nas_user_t *user, const at_command_t *data)
     /* Check password parameter */
     if (data->mask & AT_CLCK_PASSWD_MASK) {
       /* Check the PIN code */
-      if (strncmp(_nas_user_nvdata.PIN,
+      if (strncmp(user->nas_user_nvdata->PIN,
                   data->command.clck.passwd, USER_PIN_SIZE) != 0) {
         /* The PIN code is NOT matching; return an error message */
         LOG_TRACE(ERROR, "USR-MAIN  - Password is not correct "

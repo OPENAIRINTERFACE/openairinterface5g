@@ -54,6 +54,7 @@ Description NAS type definition to manage a user equipment
 #include "EMM/IdleMode_defs.h"
 #include "API/USIM/usim_api.h"
 #include "SecurityModeControl.h"
+#include "userDef.h"
 
 typedef struct {
   int fd;
@@ -70,6 +71,8 @@ typedef struct {
   security_data_t *security_data; //Internal data used for security mode control procedure
   // Hardware persistent storage
   usim_data_t usim_data; // USIM application data
+  user_nvdata_t *nas_user_nvdata; //UE parameters stored in the UE's non-volatile memory device
+  //
   nas_user_context_t *nas_user_context;
 } nas_user_t;
 
