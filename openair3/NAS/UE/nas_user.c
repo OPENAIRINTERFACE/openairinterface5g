@@ -547,7 +547,6 @@ static int _nas_user_proc_cgmm(nas_user_t *user, const at_command_t *data)
  **      Equipment to which it is connected to.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -665,7 +664,6 @@ static int _nas_user_proc_cimi(nas_user_t *user, const at_command_t *data)
  **      to different power consumption states.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -779,11 +777,9 @@ static int _nas_user_proc_cfun(nas_user_t *user, const at_command_t *data)
  **      can be operated.                                          **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
- **          Others:    _nas_user_context, _nas_user_data          **
  **                                                                        **
  ***************************************************************************/
 static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
@@ -866,7 +862,6 @@ static int _nas_user_proc_cpin(nas_user_t *user, const at_command_t *data)
  **      Equipment.                                                **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -928,7 +923,6 @@ static int _nas_user_proc_csq(nas_user_t *user, const at_command_t *data)
  **      meters.                                                   **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -994,7 +988,6 @@ static int _nas_user_proc_cesq(nas_user_t *user, const at_command_t *data)
  **      slot.                                                     **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -1244,7 +1237,6 @@ static int _nas_user_proc_cops(nas_user_t *user, const at_command_t *data)
  **      or detach the MT from, the EPS service.                   **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -1350,7 +1342,6 @@ static int _nas_user_proc_cgatt(nas_user_t *user, const at_command_t *data)
  **      location information in GERA/UTRA/E-UTRA Network.         **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -1500,7 +1491,6 @@ static int _nas_user_proc_creg(nas_user_t *user, const at_command_t *data)
  **      information in GERA/UTRA Network.                         **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -1650,7 +1640,6 @@ static int _nas_user_proc_cgreg(nas_user_t *user, const at_command_t *data)
  **      information in E-UTRA Network.                            **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -1832,7 +1821,6 @@ static int _nas_user_proc_cereg(nas_user_t *user, const at_command_t *data)
  **      fault bearer and traffic flows in EPS.                    **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -2085,7 +2073,6 @@ static int _nas_user_proc_cgdcont(nas_user_t *user, const at_command_t *data)
  **      for E-UTRAN                                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -2458,7 +2445,6 @@ static int _nas_user_proc_clck(nas_user_t *user, const at_command_t *data)
  **      for the specified context identifiers                     **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -2551,7 +2537,6 @@ static int _nas_user_proc_cgpaddr(nas_user_t *user, const at_command_t *data)
  **      subscriber.                                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
@@ -2613,7 +2598,6 @@ static int _nas_user_proc_cnum(nas_user_t *user, const at_command_t *data)
  **      are available for the user.                               **
  **                                                                        **
  ** Inputs:  data:      Pointer to the AT command data structure   **
- **          Others:    _nas_user_context                          **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok; RETURNerror;                     **
