@@ -63,7 +63,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
         txp[i] += packet_id*spp_eth;
     
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
-                                   (proc_timestamp - eNB->ifdevice.openair0_cfg->tx_sample_advance + packet_id*spp_eth),
+                                   (proc_timestamp + packet_id*spp_eth),
                                    txp,
                                    spp_eth,
                                    fp->nb_antennas_tx,
