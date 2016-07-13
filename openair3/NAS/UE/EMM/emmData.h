@@ -47,6 +47,7 @@ Description Defines internal private data handled by EPS Mobility
 #include "nas_timer.h"
 
 #include "esmData.h"
+#include "emm_proc_defs.h"
 
 
 
@@ -92,6 +93,18 @@ Description Defines internal private data handled by EPS Mobility
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
+/*
+ * Internal data used for detach procedure
+ */
+typedef struct {
+#define EMM_DETACH_COUNTER_MAX  5
+  unsigned int count;      /* Counter used to limit the number of
+                  * subsequently detach attempts    */
+  int switch_off;      /* UE switch-off indicator     */
+  emm_proc_detach_type_t type; /* Type of the detach procedure
+                  * currently in progress       */
+} emm_detach_data_t;
 
 /*
  * --------------------------------------------------------------------------
@@ -343,6 +356,7 @@ typedef struct emm_data_s {
    * ----------------------------------------
    */
   emm_timers_t *emm_timers;
+  emm_detach_data_t *emm_detach_data;
 } emm_data_t;
 
 

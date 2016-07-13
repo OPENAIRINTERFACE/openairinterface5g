@@ -41,6 +41,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 #include "nas_log.h"
 #include "emmData.h"
 #include "MobileIdentity.h"
+#include "emm_proc_defs.h"
 
 #include "memory.h"
 #include "usim_api.h"
@@ -103,6 +104,12 @@ void _emm_timers_initialize(emm_timers_t *emm_timers) {
   emm_timers->T3423.sec = T3423_DEFAULT_VALUE;
   emm_timers->T3430.id = NAS_TIMER_INACTIVE_ID;
   emm_timers->T3430.sec = T3430_DEFAULT_VALUE;
+}
+
+void _emm_detach_initialize(emm_detach_data_t *emm_detach) {
+  emm_detach->count = 0;
+  emm_detach->switch_off = FALSE;
+  emm_detach->type = EMM_DETACH_TYPE_RESERVED;
 }
 
 /****************************************************************************
@@ -392,6 +399,16 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     // FIXME stop here
   }
   _emm_timers_initialize(user->emm_data->emm_timers);
+
+  /*
+   * Initialize Internal data used for detach procedure
+   */
+  user->emm_data->emm_detach_data = calloc(1, sizeof(emm_detach_data_t));
+  if ( user->emm_data->emm_detach_data == NULL ) {
+    LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
+    // FIXME stop here
+  }
+  _emm_detach_initialize(user->emm_data->emm_detach_data);
 
   /*
    * Initialize the user notification callback
