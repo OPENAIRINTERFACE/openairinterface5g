@@ -59,6 +59,17 @@ Description Defines internal private data handled by EPS Session
 /****************************************************************************/
 
 /*
+ * --------------------------------------------------------------------------
+ * Internal data handled by the default EPS bearer context activation
+ * procedure in the UE
+ * --------------------------------------------------------------------------
+ */
+typedef struct {
+  int ebi;    /* EPS bearer identity of the default EPS bearer associated
+         * to the PDN connection to be activated */
+} default_eps_bearer_context_data_t;
+
+/*
  * Minimal and maximal value of an EPS bearer identity:
  * The EPS Bearer Identity (EBI) identifies a message flow
  */
@@ -72,8 +83,6 @@ typedef enum {
                  * in the UE, in the network        */
   ESM_EBR_STATE_MAX
 } esm_ebr_state;
-
-
 
 /*
  * -----------------------

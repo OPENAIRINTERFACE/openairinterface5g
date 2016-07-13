@@ -77,12 +77,21 @@ void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
   LOG_FUNC_IN;
 
   int i;
+
   esm_data_t *esm_data = calloc(1, sizeof(esm_data_t));
   if ( esm_data == NULL ) {
     LOG_TRACE(ERROR, "ESM-MAIN  - Can't malloc esm_data");
     // FIXME Stop here !!!
   }
   user->esm_data = esm_data;
+
+  default_eps_bearer_context_data_t *default_eps_bearer_context = calloc(1, sizeof(default_eps_bearer_context_data_t));
+  if ( default_eps_bearer_context == NULL ) {
+    LOG_TRACE(ERROR, "ESM-MAIN  - Can't malloc default_eps_bearer_context");
+    // FIXME Stop here !!!
+  }
+  default_eps_bearer_context->ebi = ESM_EBI_UNASSIGNED;
+  user->default_eps_bearer_context_data = default_eps_bearer_context;
   /* Total number of active EPS bearer contexts */
   esm_data->n_ebrs = 0;
   /* List of active PDN connections */

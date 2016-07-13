@@ -63,19 +63,6 @@ Description Defines the default EPS bearer context activation ESM
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
-/*
- * --------------------------------------------------------------------------
- * Internal data handled by the default EPS bearer context activation
- * procedure in the UE
- * --------------------------------------------------------------------------
- */
-static struct {
-  int ebi;    /* EPS bearer identity of the default EPS bearer associated
-         * to the PDN connection to be activated */
-} _default_eps_bearer_context_data = {ESM_EBI_UNASSIGNED};
-
-
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -101,7 +88,6 @@ static struct {
  ** Outputs:     esm_cause: Cause code returned upon ESM procedure     **
  **             failure                                    **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ***************************************************************************/
 int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int ebi,
@@ -110,6 +96,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
 {
   LOG_FUNC_IN;
   esm_data_t *esm_data = user->esm_data;
+  default_eps_bearer_context_data_t *default_eps_bearer_context_data = user->default_eps_bearer_context_data;
   int rc = RETURNerror;
 
   LOG_TRACE(INFO, "ESM-PROC  - Default EPS bearer context activation "
@@ -144,7 +131,7 @@ int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int e
 
     if (ebi != ESM_EBI_UNASSIGNED) {
       /* Default EPS bearer contextx successfully created */
-      _default_eps_bearer_context_data.ebi = ebi;
+      default_eps_bearer_context_data->ebi = ebi;
       rc = RETURNok;
     } else {
       /* No resource available */
@@ -311,10 +298,9 @@ int esm_proc_default_eps_bearer_context_reject(nas_user_t *user, int is_standalo
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ***************************************************************************/
-int esm_proc_default_eps_bearer_context_complete(void)
+int esm_proc_default_eps_bearer_context_complete(default_eps_bearer_context_data_t *default_eps_bearer_context_data)
 {
   LOG_FUNC_IN;
 
@@ -322,7 +308,7 @@ int esm_proc_default_eps_bearer_context_complete(void)
             "ESM-PROC  - Default EPS bearer context activation complete");
 
   /* Reset default EPS bearer context internal data */
-  _default_eps_bearer_context_data.ebi = ESM_EBI_UNASSIGNED;
+  default_eps_bearer_context_data->ebi = ESM_EBI_UNASSIGNED;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -340,18 +326,17 @@ int esm_proc_default_eps_bearer_context_complete(void)
  **      ACCEPT message was sent.                                  **
  **                                                                        **
  ** Inputs:  None                                                      **
- **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    _default_eps_bearer_context_data           **
  **                                                                        **
  ***************************************************************************/
 int esm_proc_default_eps_bearer_context_failure(nas_user_t *user)
 {
   LOG_FUNC_IN;
+  default_eps_bearer_context_data_t *default_eps_bearer_context_data = user->default_eps_bearer_context_data;
 
-  int ebi = _default_eps_bearer_context_data.ebi;
+  int ebi = default_eps_bearer_context_data->ebi;
   int pid, bid;
 
   LOG_TRACE(WARNING,
@@ -362,18 +347,8 @@ int esm_proc_default_eps_bearer_context_failure(nas_user_t *user)
 
   if (rc != RETURNerror) {
     /* Reset default EPS bearer context internal data */
-    _default_eps_bearer_context_data.ebi = ESM_EBI_UNASSIGNED;
+    default_eps_bearer_context_data->ebi = ESM_EBI_UNASSIGNED;
   }
 
   LOG_FUNC_RETURN (rc);
 }
-
-/****************************************************************************/
-/*********************  L O C A L    F U N C T I O N S  *********************/
-/****************************************************************************/
-
-/*
- * --------------------------------------------------------------------------
- *              Timer handlers
- * --------------------------------------------------------------------------
- */

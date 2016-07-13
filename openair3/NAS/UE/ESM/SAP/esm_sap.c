@@ -260,7 +260,7 @@ int esm_sap_send(nas_user_t *user, esm_sap_t *msg)
      * The activate default ESP bearer context accept message
      * has been successfully delivered to the other side
      */
-    rc = esm_proc_default_eps_bearer_context_complete();
+    rc = esm_proc_default_eps_bearer_context_complete(user->default_eps_bearer_context_data);
 
     if (rc != RETURNerror) {
       rc = esm_proc_pdn_connectivity_complete(user);

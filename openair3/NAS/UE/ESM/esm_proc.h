@@ -154,7 +154,7 @@ int esm_proc_pdn_disconnect_reject(nas_user_t *user, int pti, int *esm_cause);
 
 int esm_proc_default_eps_bearer_context_request(nas_user_t *user, int pid, int ebi,
     const esm_proc_qos_t *esm_qos, int *esm_cause);
-int esm_proc_default_eps_bearer_context_complete(void);
+int esm_proc_default_eps_bearer_context_complete(default_eps_bearer_context_data_t *default_eps_bearer_context_data);
 int esm_proc_default_eps_bearer_context_failure(nas_user_t *user);
 
 int esm_proc_default_eps_bearer_context_accept(nas_user_t *user, int is_standalone, int ebi,

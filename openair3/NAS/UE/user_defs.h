@@ -64,6 +64,7 @@ typedef struct {
   esm_data_t *esm_data; // ESM internal data (used within ESM only)
   esm_pt_data_t *esm_pt_data;
   esm_ebr_data_t *esm_ebr_data;  // EPS bearer contexts
+  default_eps_bearer_context_data_t *default_eps_bearer_context_data;
   // Eps Mobility Management
   emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
   emm_data_t *emm_data; // EPS mobility management data
