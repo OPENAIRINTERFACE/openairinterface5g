@@ -106,6 +106,10 @@ void _emm_timers_initialize(emm_timers_t *emm_timers) {
   emm_timers->T3430.sec = T3430_DEFAULT_VALUE;
 }
 
+void _emm_attach_initialize(emm_attach_data_t *emm_attach_data) {
+  emm_attach_data->attempt_count = 0;
+}
+
 void _emm_detach_initialize(emm_detach_data_t *emm_detach) {
   emm_detach->count = 0;
   emm_detach->switch_off = FALSE;
@@ -409,6 +413,16 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
     // FIXME stop here
   }
   _emm_detach_initialize(user->emm_data->emm_detach_data);
+
+  /*
+   * Initialize Internal data used for attach procedure
+   */
+  user->emm_data->emm_attach_data = calloc(1, sizeof(emm_attach_data_t));
+  if ( user->emm_data->emm_attach_data == NULL ) {
+    LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
+    // FIXME stop here
+  }
+  _emm_attach_initialize(user->emm_data->emm_attach_data);
 
   /*
    * Initialize the user notification callback

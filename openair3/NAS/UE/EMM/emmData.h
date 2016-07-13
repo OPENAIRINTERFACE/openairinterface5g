@@ -95,6 +95,17 @@ Description Defines internal private data handled by EPS Mobility
 /****************************************************************************/
 
 /*
+ * Internal data used for attach procedure
+ */
+
+#define EMM_ATTACH_COUNTER_MAX  5
+
+typedef struct {
+  unsigned int attempt_count; /* Counter used to limit the number of
+                 * subsequently rejected attach attempts */
+} emm_attach_data_t;
+
+/*
  * Internal data used for detach procedure
  */
 typedef struct {
@@ -357,6 +368,7 @@ typedef struct emm_data_s {
    */
   emm_timers_t *emm_timers;
   emm_detach_data_t *emm_detach_data;
+  emm_attach_data_t *emm_attach_data;
 } emm_data_t;
 
 

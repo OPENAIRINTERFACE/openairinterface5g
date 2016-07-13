@@ -99,16 +99,6 @@ static void *_emm_attach_t3402_handler(void *);
  */
 static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *);
 
-/*
- * Internal data used for attach procedure
- */
-static struct {
-#define EMM_ATTACH_COUNTER_MAX  5
-  unsigned int attempt_count; /* Counter used to limit the number of
-                 * subsequently rejected attach attempts */
-} _emm_attach_data = {0};
-
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -499,7 +489,6 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    user->emm_data-> _emm_attach_data, T3410         **
  **                                                                        **
  ***************************************************************************/
 int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *esm_msg_pP)
@@ -509,6 +498,7 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
   emm_sap_t emm_sap;
   int rc;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
+  emm_attach_data_t *emm_attach_data = user->emm_data->emm_attach_data;
 
   LOG_TRACE(WARNING, "EMM-PROC  - EPS attach rejected by the network, "
             "EMM cause = %d", emm_cause);
@@ -566,14 +556,14 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
     /* Delete the list of equivalent PLMNs */
     user->emm_data->nvdata.eplmn.n_plmns = 0;
     /* Reset the attach attempt counter */
-    _emm_attach_data.attempt_count = 0;
+    emm_attach_data->attempt_count = 0;
     break;
 
   case EMM_CAUSE_TA_NOT_ALLOWED:
   case EMM_CAUSE_EPS_NOT_ALLOWED_IN_PLMN:
   case EMM_CAUSE_NO_SUITABLE_CELLS:
     /* Reset the attach attempt counter */
-    _emm_attach_data.attempt_count = 0;
+    emm_attach_data->attempt_count = 0;
     break;
 
   case EMM_CAUSE_ESM_FAILURE:
@@ -582,7 +572,7 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
     if (user->emm_data->NAS_SignallingPriority != 1) {
       /* The UE is not configured for NAS signalling low priority;
        * set the attach attempt counter to 5 */
-      _emm_attach_data.attempt_count = EMM_ATTACH_COUNTER_MAX;
+      emm_attach_data->attempt_count = EMM_ATTACH_COUNTER_MAX;
     }
 
     break;
@@ -594,7 +584,7 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
   case EMM_CAUSE_PROTOCOL_ERROR:
     /* 3GPP TS 24.301, section 5.5.1.2.6, case d
      * Set the attach attempt counter to 5 */
-    _emm_attach_data.attempt_count = EMM_ATTACH_COUNTER_MAX;
+    emm_attach_data->attempt_count = EMM_ATTACH_COUNTER_MAX;
     break;
 
   default :
@@ -717,14 +707,14 @@ int emm_proc_attach_reject(nas_user_t *user, int emm_cause, const OctetString *e
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    RETURNok, RETURNerror                      **
- **      Others:    user->emm_data-> _emm_attach_data                **
  **                                                                        **
  ***************************************************************************/
 int emm_proc_attach_complete(void *args)
 {
   LOG_FUNC_IN;
 
-  nas_user_t *user=args;
+  nas_user_t *user = args;
+  emm_attach_data_t *emm_attach_data = user->emm_data->emm_attach_data;
   emm_sap_t emm_sap;
   esm_sap_t esm_sap;
   int rc;
@@ -735,7 +725,7 @@ int emm_proc_attach_complete(void *args)
   (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
 
   /* Reset the attach attempt counter */
-  _emm_attach_data.attempt_count = 0;
+  emm_attach_data->attempt_count = 0;
   /* TODO: Reset the tracking area updating attempt counter */
 
   /* Set the EPS update status to EU1 UPDATED */
@@ -1088,15 +1078,15 @@ static void *_emm_attach_t3411_handler(void *args)
  **                                                                        **
  ** Outputs:     None                                                      **
  **      Return:    None                                       **
- **      Others:    _emm_attach_data, T3402                    **
  **                                                                        **
  ***************************************************************************/
 static void *_emm_attach_t3402_handler(void *args)
 {
   LOG_FUNC_IN;
 
-  nas_user_t *user=args;
+  nas_user_t *user = args;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
+  emm_attach_data_t *emm_attach_data = user->emm_data->emm_attach_data;
   emm_sap_t emm_sap;
 
   LOG_TRACE(WARNING, "EMM-PROC  - T3402 timer expired");
@@ -1104,7 +1094,7 @@ static void *_emm_attach_t3402_handler(void *args)
   /* Stop T3402 timer */
   emm_timers->T3402.id = nas_timer_stop(emm_timers->T3402.id);
   /* Reset the attach attempt counter */
-  _emm_attach_data.attempt_count = 0;
+  emm_attach_data->attempt_count = 0;
   /*
    * Notify EMM that timer T3402 expired and attach procedure has to be
    * restarted
@@ -1140,7 +1130,6 @@ static void *_emm_attach_t3402_handler(void *args)
  **                                                                        **
  ** Outputs:     emm_sap:   EMM service access point                   **
  **      Return:    None                                       **
- **      Others:    user->emm_data-> _emm_attach_data, T3402, T3410, **
  **             T3411                                      **
  **                                                                        **
  ***************************************************************************/
@@ -1148,8 +1137,9 @@ static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *emm_sap)
 {
   LOG_FUNC_IN;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
+  emm_attach_data_t *emm_attach_data = user->emm_data->emm_attach_data;
   LOG_TRACE(WARNING, "EMM-PROC  - Abnormal case, attach counter = %d",
-            _emm_attach_data.attempt_count);
+            emm_attach_data->attempt_count);
 
   /* Stop timer T3410 */
   if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
@@ -1157,9 +1147,9 @@ static void _emm_attach_abnormal_cases_bcd(nas_user_t *user, emm_sap_t *emm_sap)
     emm_timers->T3410.id = nas_timer_stop(emm_timers->T3410.id);
   }
 
-  if (_emm_attach_data.attempt_count < EMM_ATTACH_COUNTER_MAX) {
+  if (emm_attach_data->attempt_count < EMM_ATTACH_COUNTER_MAX) {
     /* Increment the attach attempt counter */
-    _emm_attach_data.attempt_count += 1;
+    emm_attach_data->attempt_count += 1;
     /* Start T3411 timer */
     emm_timers->T3411.id = nas_timer_start(emm_timers->T3411.sec, _emm_attach_t3411_handler, NULL);
     LOG_TRACE(INFO, "EMM-PROC  - Timer T3411 (%d) expires in %ld seconds",
