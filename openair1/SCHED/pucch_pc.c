@@ -42,7 +42,7 @@
 #include "PHY/LTE_TRANSPORT/proto.h"
 #include "PHY/extern.h"
 
-int8_t pucch_power_cntl(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
+int8_t pucch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t subframe,uint8_t eNB_id,PUCCH_FMT_t pucch_fmt)
 {
 
   int8_t Po_PUCCH;
@@ -98,7 +98,7 @@ int8_t pucch_power_cntl(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id,PUCCH_FM
   if (pucch_fmt!=pucch_format1) {
     LOG_I(PHY,"[UE  %d][PDSCH %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB, g_pucch %d dB\n",
           ue->Mod_id,
-          ue->dlsch[eNB_id][0]->rnti,ue->frame_tx,subframe,
+          ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
           get_PL(ue->Mod_id,ue->CC_id,eNB_id),
@@ -106,7 +106,7 @@ int8_t pucch_power_cntl(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id,PUCCH_FM
   } else {
     LOG_I(PHY,"[UE  %d][SR %x] frame %d, subframe %d: Po_PUCCH %d dBm : Po_NOMINAL_PUCCH %d dBm, PL %d dB g_pucch %d dB\n",
           ue->Mod_id,
-          ue->dlsch[eNB_id][0]->rnti,ue->frame_tx,subframe,
+          ue->dlsch[eNB_id][0]->rnti,proc->frame_tx,subframe,
           Po_PUCCH,
           ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH,
           get_PL(ue->Mod_id,ue->CC_id,eNB_id),

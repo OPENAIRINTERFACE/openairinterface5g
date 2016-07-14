@@ -1328,6 +1328,7 @@ int32_t generate_srs_tx(PHY_VARS_UE *phy_vars_ue,
 */
 
 int32_t generate_drs_pusch(PHY_VARS_UE *phy_vars_ue,
+			   UE_rxtx_proc_t *proc,
                            uint8_t eNB_id,
                            int16_t amp,
                            uint32_t subframe,
@@ -1398,7 +1399,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t subframe,
                                       DCI_format_t dci_format,
                                       PHY_VARS_UE *phy_vars_ue,
-                                      uint16_t si_rnti,
+                                      UE_rxtx_proc_t *proc,
+				      uint16_t si_rnti,
                                       uint16_t ra_rnti,
                                       uint16_t p_rnti,
                                       uint16_t cba_rnti,
@@ -1406,7 +1408,8 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
                                       uint8_t use_srs);
 
 int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_UE *phy_vars_ue,
-    uint8_t eNB_id);
+					  UE_rxtx_proc_t *proc,
+					  uint8_t eNB_id);
 double sinr_eff_cqi_calc(PHY_VARS_UE *phy_vars_ue,
                          uint8_t eNB_id);
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
@@ -1424,16 +1427,13 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
 
 void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id);
 
-void dump_dlsch(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint8_t harq_pid);
-void dump_dlsch_SI(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
-void dump_dlsch_ra(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe);
 
-void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint16_t coded_bits_per_codeword,int round);
+
 
 
 int dump_dci(LTE_DL_FRAME_PARMS *frame_parms, DCI_ALLOC_t *dci);
 
-int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, char* buffer, int length, runmode_t mode, int input_level_dBm);
+int dump_ue_stats(PHY_VARS_UE *phy_vars_ue, UE_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
 int dump_eNB_stats(PHY_VARS_eNB *phy_vars_eNB, char* buffer, int length);
 
 
@@ -1550,11 +1550,13 @@ void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 
 /* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
    @param phy_vars_ue Pointer to UE variables
+   @param proc Pointer to RXN_TXNp4 proc
    @param subframe Subframe of received PDCCH/PHICH
    @param eNB_id Index of eNB
 */
 
 void rx_phich(PHY_VARS_UE *phy_vars_ue,
+	      UE_rxtx_proc_t *proc,
               uint8_t subframe,
               uint8_t eNB_id);
 
@@ -1653,11 +1655,12 @@ void generate_pucch(int32_t **txdataF,
                     uint8_t subframe);
 
 void generate_pucch_emul(PHY_VARS_UE *phy_vars_ue,
+			 UE_rxtx_proc_t *proc,
                          PUCCH_FMT_t format,
                          uint8_t ncs1,
                          uint8_t *pucch_ack_payload,
-                         uint8_t sr,
-                         uint8_t subframe);
+                         uint8_t sr);
+
 
 
 uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,

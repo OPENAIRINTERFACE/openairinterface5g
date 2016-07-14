@@ -509,7 +509,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   float **chest_t_abs;
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  int frame = phy_vars_ue->frame_rx;
+  int frame = phy_vars_ue->proc.proc_rxtx[0].frame_rx;
   uint32_t total_dlsch_bitrate = phy_vars_ue->bitrate[eNB_id];
   int coded_bits_per_codeword = 0;
   int mcs = 0;

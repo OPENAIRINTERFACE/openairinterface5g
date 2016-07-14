@@ -403,12 +403,15 @@ void generate_pucch(int32_t **txdataF,
 }
 
 void generate_pucch_emul(PHY_VARS_UE *ue,
+			 UE_rxtx_proc_t *proc,
                          PUCCH_FMT_t format,
                          uint8_t ncs1,
                          uint8_t *pucch_payload,
-                         uint8_t sr,
-                         uint8_t subframe)
+                         uint8_t sr)
+
 {
+
+  int subframe = proc->subframe_tx;
 
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_flag    = format;
   UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_Ncs1    = ncs1;
@@ -428,7 +431,7 @@ void generate_pucch_emul(PHY_VARS_UE *ue,
     ue->pucch_payload[0] = pucch_payload[0] + (pucch_payload[1]<<1);
     UE_transport_info[ue->Mod_id][ue->CC_id].cntl.pucch_payload = pucch_payload[0] + (pucch_payload[1]<<1);
   } else if (format == pucch_format1) {
-    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",ue->Mod_id,ue->frame_tx,subframe,sr);
+    LOG_D(PHY,"[UE %d] Frame %d subframe %d Generating PUCCH for SR %d\n",ue->Mod_id,proc->frame_tx,subframe,sr);
   }
 
   ue->sr[subframe] = sr;

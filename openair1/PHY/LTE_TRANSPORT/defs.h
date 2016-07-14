@@ -710,6 +710,8 @@ typedef struct {
   uint32_t Nsoft;
   /// Maximum number of Turbo iterations
   uint8_t max_turbo_iterations;
+  /// number of iterations used in last turbo decoding
+  uint8_t last_iteration_cnt;
   /// accumulated tx power adjustment for PUCCH
   int8_t               g_pucch;
 } LTE_UE_DLSCH_t;
@@ -735,6 +737,7 @@ typedef enum {
   SI_PDSCH=0,
   RA_PDSCH,
   PDSCH,
+  PDSCH1,
   PMCH
 } PDSCH_t;
 

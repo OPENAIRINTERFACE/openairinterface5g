@@ -159,6 +159,7 @@ enum transmission_access_mode {
 
 typedef enum  {
   eNodeB_3GPP=0,  // classical eNodeB function
+  eNodeB_3GPP_BBU, // eNodeB with NGFI IF5
   NGFI_RRU_IF4,   // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
   NGFI_RCC_IF4    // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
 } eNB_func_t;
@@ -540,34 +541,8 @@ typedef struct {
   int UE_scan_carrier;
   /// \brief Indicator that UE is synchronized to an eNB
   int is_synchronized;
-  /// \brief Instance count of TX processing thread (-1 means ready, 0 means busy)
-  int instance_cnt_tx;
-  /// \brief Instance count of RX processing thread (-1 means ready, 0 means busy)
-  int instance_cnt_rx;
-  /// \brief Instance count of initial synchronization thread (-1 means ready, 0 means busy).
-  /// Protected by mutex \ref mutex_synch and condition \ref cond_synch.
-  int instance_cnt_synch;
-  /// \brief Condition variable for TX processing thread
-  pthread_cond_t cond_tx;
-  /// \brief Condition variable for RX processing thread
-  pthread_cond_t cond_rx;
-  /// \brief Condition variable for initial synchronization thread.
-  /// The corresponding mutex is \ref mutex_synch.
-  pthread_cond_t cond_synch;
-  /// \brief Mutex for TX processing thread
-  pthread_mutex_t mutex_tx;
-  /// \brief Mutex for RX processing thread
-  pthread_mutex_t mutex_rx;
-  /// \brief Mutex for initial synchronization thread.
-  /// Used to protect \ref instance_cnt_synch.
-  /// \sa cond_synch
-  pthread_mutex_t mutex_synch;
-  /// \brief Pthread structure for RX processing thread
-  pthread_t       thread_rx;
-  /// \brief Pthread structure for TX processing thread
-  pthread_t       thread_tx;
-  /// \brief Pthread structure to RX processing thread
-  pthread_t       thread_synch;
+  /// Data structure for UE process scheduling
+  UE_proc_t proc;
   /// \brief Total gain of the TX chain (16-bit baseband I/Q to antenna)
   uint32_t tx_total_gain_dB;
   /// \brief Total gain of the RX chain (antenna to baseband I/Q) This is a function of rx_gain_mode (and the corresponding gain) and the rx_gain of the card.
@@ -584,10 +559,6 @@ typedef struct {
   int tx_total_RE;
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
-  /// \brief Frame counters for TX and RX processing
-  uint32_t frame_rx,frame_tx;
-  /// \brief Slot counters for TX and RX processing
-  uint32_t slot_tx,slot_rx;
   /// \brief Number of eNB seen by UE
   uint8_t n_connected_eNB;
   /// \brief indicator that Handover procedure has been initiated
@@ -636,9 +607,13 @@ typedef struct {
   uint32_t high_speed_flag;
   uint32_t perfect_ce;
   int16_t ch_est_alpha;
+  int generate_ul_signal[NUMBER_OF_CONNECTED_eNB_MAX];
+
   UE_SCAN_INFO_t scan_info[NB_BANDS_MAX];
 
   char ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
+
+
 
   unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
   uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];

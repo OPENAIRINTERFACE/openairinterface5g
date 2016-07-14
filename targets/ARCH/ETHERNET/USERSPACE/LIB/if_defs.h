@@ -46,6 +46,7 @@
 #define ETH_RAW_MODE        1
 #define ETH_UDP_IF4_MODE    2
 #define ETH_RAW_IF4_MODE    3
+#define ETH_RAW_IF5_MOBIPASS    4    
 
 // Time domain RRH packet sizes
 #define MAC_HEADER_SIZE_BYTES (sizeof(struct ether_header))
@@ -61,3 +62,7 @@
 #define RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define RAW_IF4_PULFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define RAW_IF4_PRACH_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + PRACH_BLOCK_SIZE_BYTES)
+
+// Mobipass packet sizes
+#define RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES 1280
+#define RAW_IF5_MOBIPASS_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF5_mobipass_header_t + RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES)

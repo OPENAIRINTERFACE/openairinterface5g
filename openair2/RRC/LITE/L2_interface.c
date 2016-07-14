@@ -677,13 +677,14 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 void rrc_out_of_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
 {
   //-------------------------------------------------------------------------------------------//
-  LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
-        Mod_idP,frameP,eNB_index,
-	UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
-        UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
-
+  if (UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt>10)
+    LOG_I(RRC,"[UE %d] Frame %d: OUT OF SYNC FROM eNB %d (T310 active %d : T310 %d, N310 %d, N311 %d)\n ",
+	  Mod_idP,frameP,eNB_index,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T300_active,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].T310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt,
+	  UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt);
+  
 #if defined(ENABLE_ITTI)
   {
     MessageDef *message_p;

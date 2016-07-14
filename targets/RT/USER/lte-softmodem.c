@@ -299,35 +299,35 @@ struct timespec max_diff_time = { .tv_sec = 0, .tv_nsec = 0 };
 
 struct timespec clock_difftime(struct timespec start, struct timespec end)
 {
-    struct timespec temp;
-    if ((end.tv_nsec-start.tv_nsec)<0) {
-        temp.tv_sec = end.tv_sec-start.tv_sec-1;
-	temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
-    } else {
-        temp.tv_sec = end.tv_sec-start.tv_sec;
-	temp.tv_nsec = end.tv_nsec-start.tv_nsec;
-    }
-    return temp;
+  struct timespec temp;
+  if ((end.tv_nsec-start.tv_nsec)<0) {
+    temp.tv_sec = end.tv_sec-start.tv_sec-1;
+    temp.tv_nsec = 1000000000+end.tv_nsec-start.tv_nsec;
+  } else {
+    temp.tv_sec = end.tv_sec-start.tv_sec;
+    temp.tv_nsec = end.tv_nsec-start.tv_nsec;
+  }
+  return temp;
 }
 
 void print_difftimes(void)
 {
 #ifdef DEBUG
-    printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+  printf("difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 #else
-    LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
+  LOG_I(HW,"difftimes min = %lu ns ; max = %lu ns\n", min_diff_time.tv_nsec, max_diff_time.tv_nsec);
 #endif
 }
 
 void update_difftimes(struct timespec start, struct timespec end)
 {
-    struct timespec diff_time = { .tv_sec = 0, .tv_nsec = 0 };
-    int             changed = 0;
-    diff_time = clock_difftime(start, end);
-    if ((min_diff_time.tv_nsec == 0) || (diff_time.tv_nsec < min_diff_time.tv_nsec)) { min_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
-    if ((max_diff_time.tv_nsec == 0) || (diff_time.tv_nsec > max_diff_time.tv_nsec)) { max_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
+  struct timespec diff_time = { .tv_sec = 0, .tv_nsec = 0 };
+  int             changed = 0;
+  diff_time = clock_difftime(start, end);
+  if ((min_diff_time.tv_nsec == 0) || (diff_time.tv_nsec < min_diff_time.tv_nsec)) { min_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
+  if ((max_diff_time.tv_nsec == 0) || (diff_time.tv_nsec > max_diff_time.tv_nsec)) { max_diff_time.tv_nsec = diff_time.tv_nsec; changed = 1; }
 #if 1
-    if (changed) print_difftimes();
+  if (changed) print_difftimes();
 #endif
 }
 
@@ -499,7 +499,7 @@ static void *scope_thread(void *arg)
 
   while (!oai_exit) {
     if (UE_flag==1) {
-      len = dump_ue_stats (PHY_vars_UE_g[0][0], stats_buffer, 0, mode,rx_input_level_dBm);
+      len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
@@ -686,7 +686,8 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_PHYTEST,
     LONG_OPTION_RCC,
     LONG_OPTION_RRU,
-    LONG_OPTION_ENB
+    LONG_OPTION_ENB,
+    LONG_OPTION_ENB_BBU
 #if T_TRACER
     ,
     LONG_OPTION_T_PORT,
@@ -713,6 +714,7 @@ static void get_options (int argc, char **argv)
     {"RCC", no_argument, NULL, LONG_OPTION_RCC},
     {"RRU", no_argument, NULL, LONG_OPTION_RRU},
     {"eNB", no_argument, NULL, LONG_OPTION_ENB},
+    {"BBU", no_argument, NULL, LONG_OPTION_ENB_BBU},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -729,8 +731,8 @@ static void get_options (int argc, char **argv)
       else if (strlen(optarg)<=1024){
 	strcpy(rf_config_file,optarg);
       }else {
-         printf("Configuration filename is too long\n");
-         exit(-1);   
+	printf("Configuration filename is too long\n");
+	exit(-1);   
       }
       break;
     case LONG_OPTION_MAXPOWER:
@@ -815,6 +817,10 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_ENB:
       node_function = eNodeB_3GPP;
       break;
+
+    case LONG_OPTION_ENB_BBU:
+      node_function = eNodeB_3GPP_BBU;
+      break;
       
 #if T_TRACER
     case LONG_OPTION_T_PORT: {
@@ -894,14 +900,14 @@ static void get_options (int argc, char **argv)
       in_ip[sizeof(in_ip) - 1] = 0; // terminate string
       printf("Enabling OPT for wireshark for local interface");
       /*
-      if (optarg == NULL){
-      in_ip[0] =NULL;
-      printf("Enabling OPT for wireshark for local interface");
-      } else {
-      strncpy(in_ip, optarg, sizeof(in_ip));
-      in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-      printf("Enabling OPT for wireshark with %s \n",in_ip);
-      }
+	if (optarg == NULL){
+	in_ip[0] =NULL;
+	printf("Enabling OPT for wireshark for local interface");
+	} else {
+	strncpy(in_ip, optarg, sizeof(in_ip));
+	in_ip[sizeof(in_ip) - 1] = 0; // terminate string
+	printf("Enabling OPT for wireshark with %s \n",in_ip);
+	}
       */
       break;
 
@@ -1065,6 +1071,8 @@ static void get_options (int argc, char **argv)
             (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
           } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
             (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif5_mobipass == 1) {
+            (eth_params+j)->transp_preference       = ETH_RAW_IF5_MOBIPASS;             
           } else {
             (eth_params+j)->transp_preference       = ETH_UDP_MODE;	 
           }
@@ -1541,13 +1549,6 @@ int main( int argc, char **argv )
       openair0_cfg[card].my_port        = eth_params->my_port;    
     } 
     
-    //if (node_function == NGFI_RCC_IF4 || node_function == NGFI_RRU_IF4) {
-      //openair0_cfg[card].remote_addr    = eth_params->remote_addr;
-      //openair0_cfg[card].remote_port    = eth_params->remote_port;
-      //openair0_cfg[card].my_addr        = eth_params->my_addr;
-      //openair0_cfg[card].my_port        = eth_params->my_port;    
-    //}
-
     printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
            ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
@@ -1611,37 +1612,37 @@ int main( int argc, char **argv )
   int s;
   char cpu_affinity[1024];
   CPU_ZERO(&cpuset);
-  #ifdef CPU_AFFINITY
+#ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
-  {
-    CPU_SET(0, &cpuset);
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
     {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
+      CPU_SET(0, &cpuset);
+      s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+      if (s != 0)
+	{
+	  perror( "pthread_setaffinity_np");
+	  exit_fun("Error setting processor affinity");
+	}
+      LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
     }
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
-  }
-  #endif
+#endif
 
   /* Check the actual affinity mask assigned to the thread */
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   if (s != 0)
-  {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
+    {
+      perror( "pthread_getaffinity_np");
+      exit_fun("Error getting processor affinity ");
+    }
   memset(cpu_affinity, 0 , sizeof(cpu_affinity));
   for (int j = 0; j < CPU_SETSIZE; j++)
-  {
-    if (CPU_ISSET(j, &cpuset))
-    {  
-      char temp[1024];
-      sprintf(temp, " CPU_%d ", j);    
-      strcat(cpu_affinity, temp);
+    {
+      if (CPU_ISSET(j, &cpuset))
+	{  
+	  char temp[1024];
+	  sprintf(temp, " CPU_%d ", j);    
+	  strcat(cpu_affinity, temp);
+	}
     }
-  }
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
   
@@ -1649,68 +1650,71 @@ int main( int argc, char **argv )
 
   if (UE_flag == 0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+      if (node_function == NGFI_RRU_IF4) {
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
+      } else {
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
+      }
+      
       PHY_vars_eNB_g[0][CC_id]->rfdevice.type = NONE_DEV;
       PHY_vars_eNB_g[0][CC_id]->rfdevice.transp_type = NONE_TP;
       
-      PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
       PHY_vars_eNB_g[0][CC_id]->ifdevice.type = NONE_DEV;
       PHY_vars_eNB_g[0][CC_id]->ifdevice.transp_type = NONE_TP;
     }
   }
-
   /* device host type is set*/
   openair0.host_type = BBU_HOST;
   /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
   openair0.type = NONE_DEV;
   /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
   openair0.transp_type = NONE_TP;
-  //openair0_cfg[0].log_level = glog_level;
   
   // Legacy BBU - RRH init  
   //int returns=-1;
   ///* BBU can have either a local or a remote radio head */  
   //if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
-    //if (mode!=loop_through_memory) {
-      //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
-      //printf("openair0_device_init returns %d\n",returns);
-      //if (returns<0) {
-	//printf("Exiting, cannot initialize device\n");
-	//exit(-1);
-      //}
-    //}
-    //else if (mode==loop_through_memory) {    
-    //}
+  //if (mode!=loop_through_memory) {
+  //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
+  //printf("openair0_device_init returns %d\n",returns);
+  //if (returns<0) {
+  //printf("Exiting, cannot initialize device\n");
+  //exit(-1);
+  //}
+  //}
+  //else if (mode==loop_through_memory) {    
+  //}
   //}  else { //remote radio head active - load library of transport protocol and initiate it 
-    //if (mode!=loop_through_memory) {
-      //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
-      //printf("openair0_transport_init returns %d\n",returns);
-      //if (returns<0) { 
-	//printf("Exiting, cannot initialize transport protocol\n");
-	//exit(-1);
-      //}
-    //}
-    //else if (mode==loop_through_memory) {    
-    //}
+  //if (mode!=loop_through_memory) {
+  //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
+  //printf("openair0_transport_init returns %d\n",returns);
+  //if (returns<0) { 
+  //printf("Exiting, cannot initialize transport protocol\n");
+  //exit(-1);
+  //}
+  //}
+  //else if (mode==loop_through_memory) {    
+  //}
   //}   
-  
-  //printf("Done\n");
-  
+    
   int returns=-1;
     
   // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
-  if ((UE_flag==1) || (node_function != NGFI_RCC_IF4)) { 
+
+  if (node_function == NGFI_RRU_IF4 || node_function == eNodeB_3GPP) { 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns= (UE_flag == 0) ? 
 	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :
-	openair0_device_load(&openair0, &openair0_cfg[0]);
+	  openair0_device_load(&openair0, &openair0_cfg[0]);
 
         printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
         if (returns<0) {
-	        printf("Exiting, cannot initialize device\n");
-	        exit(-1);
+	  printf("Exiting, cannot initialize device\n");
+	  exit(-1);
         }
       }
       else if (mode==loop_through_memory) {    
@@ -1719,14 +1723,15 @@ int main( int argc, char **argv )
   }  
   
   // Load transport protocol and initialize
+
   if ((UE_flag==0) && (node_function != eNodeB_3GPP)){ 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
       if (mode!=loop_through_memory) {
         returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",returns,CC_id);
         if (returns<0) {
-	        printf("Exiting, cannot initialize transport protocol\n");
-	        exit(-1);
+	  printf("Exiting, cannot initialize transport protocol\n");
+	  exit(-1);
         }
       }
       else if (mode==loop_through_memory) {    
@@ -1858,8 +1863,8 @@ int main( int argc, char **argv )
 	    fl_set_button(form_enb[CC_id][UE_id]->button_0,0);
 	    fl_set_object_label(form_enb[CC_id][UE_id]->button_0,"DL Traffic OFF");
 	  }
-	}
-      }
+	} // CC_id
+      } // UE_id
     } else {
       form_stats = create_form_stats_form();
       fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
@@ -1869,15 +1874,15 @@ int main( int argc, char **argv )
       fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
       /*
-      if (openair_daq_vars.use_ia_receiver) {
+	if (openair_daq_vars.use_ia_receiver) {
         fl_set_button(form_ue[UE_id]->button_0,1);
         fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver ON");
-      } else {
+	} else {
         fl_set_button(form_ue[UE_id]->button_0,0);
         fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
 	}*/
-        fl_set_button(form_ue[UE_id]->button_0,0);
-        fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
+      fl_set_button(form_ue[UE_id]->button_0,0);
+      fl_set_object_label(form_ue[UE_id]->button_0, "IA Receiver OFF");
     }
 
     ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
@@ -1904,7 +1909,7 @@ int main( int argc, char **argv )
 
 
 
-// *** Handle per CC_id openair0
+  // *** Handle per CC_id openair0
 #ifndef USRP_DEBUG
   if ((UE_flag==1) && (mode!=loop_through_memory))
     if (openair0.trx_start_func(&openair0) != 0 ) 

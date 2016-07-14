@@ -1055,6 +1055,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void rx_phich(PHY_VARS_UE *ue,
+	      UE_rxtx_proc_t *proc,
               uint8_t subframe,
               uint8_t eNB_id)
 {
@@ -1064,7 +1065,7 @@ void rx_phich(PHY_VARS_UE *ue,
   LTE_UE_PDCCH **pdcch_vars = ue->pdcch_vars;
 
   //  uint8_t HI;
-  uint8_t harq_pid = phich_subframe_to_harq_pid(frame_parms,ue->frame_rx,subframe);
+  uint8_t harq_pid = phich_subframe_to_harq_pid(frame_parms,proc->frame_rx,subframe);
   LTE_UE_ULSCH_t *ulsch = ue->ulsch[eNB_id];
   int16_t phich_d[24],*phich_d_ptr,HI16;
   //  unsigned int i,aa;
@@ -1082,10 +1083,13 @@ void rx_phich(PHY_VARS_UE *ue,
   uint8_t pusch_subframe;
 
   // check if we're expecting a PHICH in this subframe
-  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",ue->Mod_id,harq_pid,ue->frame_rx,subframe);
+  LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
+
+  if (!ulsch)
+    return;
 
   if (ulsch->harq_processes[harq_pid]->status == ACTIVE) {
-    LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,ue->frame_rx,subframe);
+    LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX ACTIVE\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);
     Ngroup_PHICH = (frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)/48;
 
     if (((frame_parms->phich_config_common.phich_resource*frame_parms->N_RB_DL)%48) > 0)
@@ -1349,14 +1353,14 @@ void rx_phich(PHY_VARS_UE *ue,
     if (ue->ulsch_Msg3_active[eNB_id] == 1) {
       LOG_D(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received NAK (%d) nseq %d, ngroup %d\n",
             ue->Mod_id,harq_pid,
-            ue->frame_rx,
+            proc->frame_rx,
             subframe,
             HI16,
             nseq_PHICH,
             ngroup_PHICH);
       get_Msg3_alloc_ret(&ue->frame_parms,
                          subframe,
-                         ue->frame_rx,
+                         proc->frame_rx,
                          &ue->ulsch_Msg3_frame[eNB_id],
                          &ue->ulsch_Msg3_subframe[eNB_id]);
       ulsch->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
@@ -1374,7 +1378,7 @@ void rx_phich(PHY_VARS_UE *ue,
       //#ifdef DEBUG_PHICH
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received NAK (%d) nseq %d, ngroup %d\n",
             ue->Mod_id,harq_pid,
-            ue->frame_rx,
+            proc->frame_rx,
             subframe,
             HI16,
             nseq_PHICH,
@@ -1394,7 +1398,7 @@ void rx_phich(PHY_VARS_UE *ue,
     if (ue->ulsch_Msg3_active[eNB_id] == 1) {
       LOG_D(PHY,"[UE  %d][PUSCH %d][RAPROC] Frame %d subframe %d Msg3 PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
             ue->Mod_id,harq_pid,
-            ue->frame_rx,
+            proc->frame_rx,
             subframe,
             HI16,
             nseq_PHICH,ngroup_PHICH);
@@ -1402,7 +1406,7 @@ void rx_phich(PHY_VARS_UE *ue,
       //#ifdef PHICH_DEBUG
       LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH, received ACK (%d) nseq %d, ngroup %d\n\n",
             ue->Mod_id,harq_pid,
-            ue->frame_rx,
+            proc->frame_rx,
             subframe, HI16,
             nseq_PHICH,ngroup_PHICH);
       //#endif

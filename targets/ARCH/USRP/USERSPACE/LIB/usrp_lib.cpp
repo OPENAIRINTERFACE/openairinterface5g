@@ -211,15 +211,15 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
    int nsamps2;  // aligned to upper 32 or 16 byte boundary
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
-   __m256i buff_tmp[2][nsamps>>3];
    nsamps2 = (nsamps+7)>>3;
+   __m256i buff_tmp[2][nsamps2];
 #else
-   __m128i buff_tmp[2][nsamps>>2];
    nsamps2 = (nsamps+3)>>2;
+   __m128i buff_tmp[2][nsamps2];
 #endif
 #elif defined(__arm__)
-   int16x8_t buff_tmp[2][nsamps>>2];
    nsamps2 = (nsamps+3)>>2;
+   int16x8_t buff_tmp[2][nsamps2];
 #endif
 
 
@@ -234,7 +234,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
     // receive a single channel (e.g. from connector RF A)
       samples_received = s->rx_stream->recv(buff_tmp[0], nsamps, s->rx_md);
     }
-   
+
   // bring RX data into 12 LSBs for softmodem RX
     for (int i=0;i<cc;i++) {
       for (int j=0; j<nsamps2; j++) {      
@@ -250,7 +250,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       }
     }
   } else if (device->type == USRP_X300_DEV) {
-    if (cc>1) {
+    if (cc>1) { 
     // receive multiple channels (e.g. RF A and RF B)
       std::vector<void *> buff_ptrs;
  

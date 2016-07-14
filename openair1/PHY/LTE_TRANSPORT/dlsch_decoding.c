@@ -670,6 +670,8 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     }
   }
 
+  dlsch->last_iteration_cnt = ret;
+
   return(ret);
 }
 
@@ -814,7 +816,7 @@ int dlsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint32_t rb_alloc[4], ui
 
 uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe,
-                             uint8_t dlsch_id,
+                             PDSCH_t dlsch_id,
                              uint8_t eNB_id)
 {
 
@@ -845,7 +847,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
 
 
   switch (dlsch_id) {
-  case 0: // SI
+  case PDSCH_SI: // SI
     dlsch_ue = phy_vars_ue->dlsch_ue_SI[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch_eNB_SI;
     //    printf("Doing SI: TBS %d\n",dlsch_ue->harq_processes[0]->TBS>>3);
@@ -861,7 +863,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     return(1);
     break;
 
-  case 1: // RA
+  case PDSCH_RA: // RA
     dlsch_ue  = phy_vars_ue->dlsch_ue_ra[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch_eNB_ra;
     memcpy(dlsch_ue->harq_processes[0]->b,dlsch_eNB->harq_processes[0]->b,dlsch_ue->harq_processes[0]->TBS>>3);
@@ -876,7 +878,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     return(1);
     break;
 
-  case 2: // TB0
+  case PDSCH: // TB0
     dlsch_ue  = phy_vars_ue->dlsch_ue[eNB_id][0];
     harq_pid = dlsch_ue->current_harq_pid;
     ue_id= (uint32_t)find_ue((int16_t)phy_vars_ue->lte_ue_pdcch_vars[(uint32_t)eNB_id]->crnti,PHY_vars_eNB_g[eNB_id2][CC_id]);
@@ -916,6 +918,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       dlsch_ue->harq_ack[subframe].ack = 0;
       dlsch_ue->harq_ack[subframe].harq_id = harq_pid;
       dlsch_ue->harq_ack[subframe].send_harq_status = 1;
+      dlsch->last_iteration_cnt = 1+dlsch_ue->max_turbo_iterations;
       return(1+dlsch_ue->max_turbo_iterations);
     }
 
@@ -940,7 +943,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
     break;
   }
 
-  case 5: // PMCH
+  case PMCH: // PMCH
 
     dlsch_ue  = phy_vars_ue->dlsch_ue_MCH[eNB_id];
     dlsch_eNB = PHY_vars_eNB_g[eNB_id2][CC_id]->dlsch_eNB_MCH;
@@ -965,9 +968,11 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
       memcpy(dlsch_ue->harq_processes[0]->b,
              dlsch_eNB->harq_processes[0]->b,
              dlsch_ue->harq_processes[0]->TBS>>3);
+      dlsch->last_iteration_cnt = 1;
       return(1);
     } else {
       // retransmission
+      dlsch->last_iteration_cnt = 1+dlsch_ue->max_turbo_iterations;
       return(1+dlsch_ue->max_turbo_iterations);
     }
 
@@ -976,6 +981,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
   default:
     dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id][0];
     LOG_E(PHY,"dlsch_decoding_emul: FATAL, unknown DLSCH_id %d\n",dlsch_id);
+    dlsch->last_iteration_cnt = 1+dlsch_ue->max_turbo_iterations;
     return(1+dlsch_ue->max_turbo_iterations);
   }
 

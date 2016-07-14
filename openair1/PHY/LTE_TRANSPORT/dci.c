@@ -48,7 +48,7 @@
 #include "SIMULATION/TOOLS/defs.h" // for taus 
 #include "PHY/sse_intrin.h"
 
-#include "assertions.h"
+#include "assertions.h" 
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
@@ -2079,8 +2079,8 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
   }
 
   num_pdcch_symbols = get_num_pdcch_symbols(num_ue_spec_dci+num_common_dci,dci_alloc,frame_parms,subframe);
-  //   printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
-  //       subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
+  //  printf("subframe %d in generate_dci_top num_pdcch_symbols = %d, num_dci %d\n",
+  //     subframe,num_pdcch_symbols,num_ue_spec_dci+num_common_dci);
   generate_pcfich(num_pdcch_symbols,
                   amp,
                   frame_parms,
@@ -2108,7 +2108,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
       if (dci_alloc[i].L == (uint8_t)L) {
 
 #ifdef DEBUG_DCI_ENCODING
-        LOG_I(PHY,"Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
+        printf("Generating common DCI %d/%d (nCCE %d) of length %d, aggregation %d (%x)\n",i,num_common_dci,dci_alloc[i].firstCCE,dci_alloc[i].dci_length,1<<dci_alloc[i].L,
               *(unsigned int*)dci_alloc[i].dci_pdu);
         dump_dci(frame_parms,&dci_alloc[i]);
 #endif
@@ -2128,7 +2128,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
       if (dci_alloc[i].L == (uint8_t)L) {
 
 #ifdef DEBUG_DCI_ENCODING
-        LOG_I(PHY," Generating UE (rnti %x) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,
+        printf(" Generating UE (rnti %x) (nCCE %d) specific DCI %d of length %d, aggregation %d, format %d (%x)\n",dci_alloc[i].rnti,dci_alloc[i].firstCCE,i,dci_alloc[i].dci_length,1<<dci_alloc[i].L,dci_alloc[i].format,
               dci_alloc[i].dci_pdu);
         dump_dci(frame_parms,&dci_alloc[i]);
 #endif
@@ -2140,6 +2140,9 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                                 dci_alloc[i].L,
                                 dci_alloc[i].rnti);
         }
+	else {
+	  
+	}
       }
     }
   }
@@ -2153,9 +2156,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
   //72*get_nCCE(num_pdcch_symbols,frame_parms,mi));
 
 
-#ifdef DEBUG_DCI_ENCODING
-  LOG_I(PHY," PDCCH Modulation, Msymb %d\n",Msymb);
-#endif
+
 
   // Now do modulation
   if (frame_parms->mode1_flag==1)
@@ -2165,10 +2166,16 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
   e_ptr = e;
 
+#ifdef DEBUG_DCI_ENCODING
+  printf(" PDCCH Modulation, Msymb %d, Msymb2 %d,gain_lin_QPSK %d\n",Msymb,Msymb2,gain_lin_QPSK);
+#endif
+
+
   if (frame_parms->mode1_flag) { //SISO
 
 
     for (i=0; i<Msymb2; i++) {
+      
       //((int16_t*)(&(y[0][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       //((int16_t*)(&(y[1][i])))[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       ((int16_t*)(&(y[0][i])))[0] = (*e_ptr == 2) ? 0 : (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
@@ -2187,7 +2194,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
     for (i=0; i<Msymb2; i+=2) {
 
 #ifdef DEBUG_DCI_ENCODING
-      LOG_I(PHY," PDCCH Modulation (TX diversity): REG %d\n",i>>2);
+      printf(" PDCCH Modulation (TX diversity): REG %d\n",i>>2);
 #endif
       // first antenna position n -> x0
       ((int16_t*)&y[0][i])[0] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
@@ -2212,7 +2219,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
 
 
 #ifdef DEBUG_DCI_ENCODING
-  LOG_I(PHY," PDCCH Interleaving\n");
+  printf(" PDCCH Interleaving\n");
 #endif
 
   //  printf("y %p (%p,%p), wbar %p (%p,%p)\n",y,y[0],y[1],wbar,wbar[0],wbar[1]);
@@ -2262,8 +2269,9 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                   txdataF[1][tti_offset+i] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
-                LOG_I(PHY," PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+                printf(" PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+i,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
+
                 mprime++;
               }
             }
@@ -2292,7 +2300,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                 txdataF[1][tti_offset+0] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
-              LOG_I(PHY," PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+              printf(" PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
               mprime++;
               txdataF[0][tti_offset+1] = wbar[0][mprime];
@@ -2301,7 +2309,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                 txdataF[1][tti_offset+1] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
-              LOG_I(PHY," PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+1,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
+              printf("PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset+1,*(short*)&wbar[0][mprime],*(1+(short*)&wbar[0][mprime]));
 #endif
               mprime++;
               txdataF[0][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[0][mprime];
@@ -2310,7 +2318,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                 txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+3] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
-              LOG_I(PHY," PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+3,*(short*)&wbar[0][mprime],
+              printf(" PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+3,*(short*)&wbar[0][mprime],
                     *(1+(short*)&wbar[0][mprime]));
 #endif
               mprime++;
@@ -2320,7 +2328,7 @@ uint8_t generate_dci_top(uint8_t num_ue_spec_dci,
                 txdataF[1][tti_offset-frame_parms->ofdm_symbol_size+4] = wbar[1][mprime];
 
 #ifdef DEBUG_DCI_ENCODING
-              LOG_I(PHY," PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+4,*(short*)&wbar[0][mprime],
+              printf(" PDCCH mapping mprime %d => %d (symbol %d re %d) -> (%d,%d)\n",mprime,tti_offset,symbol_offset,re_offset-frame_parms->ofdm_symbol_size+4,*(short*)&wbar[0][mprime],
                     *(1+(short*)&wbar[0][mprime]));
 #endif
               mprime++;

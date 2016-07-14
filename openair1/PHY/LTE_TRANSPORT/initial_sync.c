@@ -239,20 +239,25 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode)
       break;
     }
 
-    ue->frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
-    ue->frame_rx += frame_mod4;
+    ue->proc.proc_rxtx[0].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
+    ue->proc.proc_rxtx[0].frame_rx += frame_mod4;
+
+    ue->proc.proc_rxtx[1].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&3)<<6) + (ue->pbch_vars[0]->decoded_output[1]>>2))<<2;
+    ue->proc.proc_rxtx[1].frame_rx += frame_mod4;
 
 #ifndef USER_MODE
     // one frame delay
-    ue->frame_rx ++;
+    ue->proc.proc_rxtx[0].frame_rx ++;
+    ue->proc.proc_rxtx[1].frame_rx ++;
 #endif
-    ue->frame_tx = ue->frame_rx;
+    ue->proc.proc_rxtx[0].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
+    ue->proc.proc_rxtx[1].frame_tx = ue->proc.proc_rxtx[1].frame_rx;
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d, N_RB_DL %d, phich_duration %d, phich_resource %s!\n",
           ue->Mod_id,
           frame_parms->mode1_flag,
           pbch_tx_ant,
-          ue->frame_rx,
+          ue->proc.proc_rxtx[0].frame_rx,
           frame_parms->N_RB_DL,
           frame_parms->phich_config_common.phich_duration,
           phich_resource);  //frame_parms->phich_config_common.phich_resource);
@@ -467,15 +472,15 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
-#ifdef DEBUG_INITIAL_SYNCH
+    //#ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] In synch, rx_offset %d samples\n",ue->Mod_id, ue->rx_offset);
-#endif
+    //#endif
 
     if (ue->UE_scan_carrier == 0) {
       if (ue->mac_enabled==1) {
 	LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
 	//mac_resynch();
-	mac_xface->dl_phy_sync_success(ue->Mod_id,ue->frame_rx,0,1);//ue->common_vars.eNb_id);
+	mac_xface->dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
 	ue->UE_mode[0] = PRACH;
       }
       else {
@@ -491,7 +496,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     }
 
     LOG_I(PHY,"[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  ue->frame_rx,
+	  ue->proc.proc_rxtx[0].frame_rx,
 	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
 	  10*log10(ue->measurements.rssi),
 	  ue->rx_total_gain_dB,
@@ -502,7 +507,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
     
     LOG_I(PHY,"[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
 	  ue->Mod_id,
-	  ue->frame_rx,
+	  ue->proc.proc_rxtx[0].frame_rx,
 	  duplex_string[ue->frame_parms.frame_type],
 	  prefix_string[ue->frame_parms.Ncp],
 	  ue->frame_parms.Nid_cell,
@@ -513,7 +518,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
 
     LOG_I(PHY,"[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
-	  ue->frame_rx,
+	  ue->proc.proc_rxtx[0].frame_rx,
 	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
 

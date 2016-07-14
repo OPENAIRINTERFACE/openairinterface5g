@@ -53,6 +53,7 @@
 #include "ethernet_lib.h"
 #include "if_defs.h"
 #include "openair1/PHY/LTE_TRANSPORT/if4_tools.h"
+#include "openair1/PHY/LTE_TRANSPORT/if5_mobipass_tools.h"
 
 #define DEBUG 0
 
@@ -123,8 +124,11 @@ int eth_socket_init_raw(openair0_device *device) {
  /* Construct the Ethernet header */ 
  ether_aton_r(local_mac, (struct ether_addr *)(&(eth->eh.ether_shost)));
  ether_aton_r(remote_mac, (struct ether_addr *)(&(eth->eh.ether_dhost)));
- eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
-
+// if (((*) device->priv)->flags == ETH_RAW_IF5_MOBIPASS) {
+   eth->eh.ether_type = htons(0xbffe);
+// } else {
+//   eth->eh.ether_type = htons((short)device->openair0_cfg->my_port);
+// } 
  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5]);
  
  return 0;
@@ -214,6 +218,8 @@ int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp,
     packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF4_PULFFT) {
     packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF5_MOBIPASS) {
+    packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
     packet_size = RAW_IF4_PRACH_SIZE_BYTES;
   }
@@ -390,6 +396,37 @@ int eth_set_dev_conf_raw(openair0_device *device) {
 }
 
 
+
+int eth_set_dev_conf_raw_IF4(openair0_device *device) {
+
+  int 	       Mod_id = device->Mod_id;
+  eth_state_t *eth = (eth_state_t*)device->priv;
+  void 	      *msg;
+  ssize_t      msg_len;
+  
+  /* a BBU client sends to RRH a set of configuration parameters (openair0_config_t)
+     so that RF front end is configured appropriately and
+     frame/packet size etc. can be set */ 
+  
+  msg = malloc(MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t));
+  msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
+
+  
+  memcpy(msg,(void*)&eth->eh,MAC_HEADER_SIZE_BYTES);	
+  memcpy((msg+MAC_HEADER_SIZE_BYTES),(void*)device->openair0_cfg,sizeof(openair0_config_t));
+ 	  
+  if (send(eth->sockfd[Mod_id],
+	     msg,
+	     msg_len,
+	     0)==-1) {
+    perror("ETHERNET: ");
+    exit(0);
+  }
+  
+  return 0;
+}
+
+
 int eth_get_dev_conf_raw(openair0_device *device) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
@@ -414,6 +451,36 @@ int eth_get_dev_conf_raw(openair0_device *device) {
   memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
   //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
   device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
+  printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
+ 	  
+  return 0;
+}
+
+
+int eth_get_dev_conf_raw_IF4(openair0_device *device) {
+
+  eth_state_t   *eth = (eth_state_t*)device->priv;
+  int 		Mod_id = device->Mod_id;
+  char 		str[INET_ADDRSTRLEN];
+  void 		*msg;
+  ssize_t	msg_len;
+  
+  msg = malloc(MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t));
+  msg_len = MAC_HEADER_SIZE_BYTES + sizeof(openair0_config_t);
+  
+  /* RRH receives from BBU openair0_config_t */
+  if (recv(eth->sockfd[Mod_id],
+	   msg,
+	   msg_len,
+	   0)==-1) {
+    perror("ETHERNET: ");
+    exit(0);
+  }
+  
+  /* RRH stores the remote MAC address */
+  memcpy(eth->eh.ether_dhost,(msg+ETH_ALEN),ETH_ALEN);	
+  //memcpy((void*)&device->openair0_cfg,(msg + MAC_HEADER_SIZE_BYTES), sizeof(openair0_config_t));
+  //device->openair0_cfg=(openair0_config_t *)(msg + MAC_HEADER_SIZE_BYTES);
   printf("[%s] binding mod_%d to hardware address %x:%x:%x:%x:%x:%x           hardware address %x:%x:%x:%x:%x:%x\n",((device->host_type == BBU_HOST) ? "BBU": "RRH"),Mod_id,eth->eh.ether_shost[0],eth->eh.ether_shost[1],eth->eh.ether_shost[2],eth->eh.ether_shost[3],eth->eh.ether_shost[4],eth->eh.ether_shost[5],eth->eh.ether_dhost[0],eth->eh.ether_dhost[1],eth->eh.ether_dhost[2],eth->eh.ether_dhost[3],eth->eh.ether_dhost[4],eth->eh.ether_dhost[5]);
  	  
   return 0;

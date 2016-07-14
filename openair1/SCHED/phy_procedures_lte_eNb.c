@@ -1249,7 +1249,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // clear previous allocation information for all UEs
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
+    if (eNB->dlsch[i][0])
+      eNB->dlsch[i][0]->subframe_tx[subframe] = 0;
   }
 
 
@@ -1326,9 +1327,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   if (abstraction_flag == 0) {
 
-    if (DCI_pdu->Num_ue_spec_dci+DCI_pdu->Num_common_dci > 0)
+    if (DCI_pdu->Num_ue_spec_dci+DCI_pdu->Num_common_dci > 0) {
       LOG_D(PHY,"[eNB %"PRIu8"] Frame %d, subframe %d: Calling generate_dci_top (pdcch) (common %"PRIu8",ue_spec %"PRIu8")\n",eNB->Mod_id,frame, subframe,
             DCI_pdu->Num_common_dci,DCI_pdu->Num_ue_spec_dci);
+    }
+
 
     num_pdcch_symbols = generate_dci_top(DCI_pdu->Num_ue_spec_dci,
                                          DCI_pdu->Num_common_dci,
@@ -1353,7 +1356,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   // Check for SI activity
 
-  if (eNB->dlsch_SI->active == 1) {
+  if ((eNB->dlsch_SI) && (eNB->dlsch_SI->active == 1)) {
 
     pdsch_procedures(eNB,proc,eNB->dlsch_SI,(LTE_eNB_DLSCH_t*)NULL,(LTE_eNB_UE_stats*)NULL,0,num_pdcch_symbols,abstraction_flag);
 
@@ -1369,7 +1372,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   // Check for RA activity
-  if (eNB->dlsch_ra->active == 1) {
+  if ((eNB->dlsch_ra) && (eNB->dlsch_ra->active == 1)) {
 
 #if defined(SMBV) 
 
@@ -2524,11 +2527,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
-  
-  struct timespec time_req, time_rem;  
-  time_req.tv_sec = 0;
-  time_req.tv_nsec = 300000;
-  
+    
   if (subframe==9) { 
     subframe=0;
     frame++;
@@ -2547,7 +2546,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
   if (abstraction_flag==0) { // grab signal in chunks of 500 us (1 slot)
 		
     if ((eNB->node_function == NGFI_RRU_IF4) || 
-	      (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF and front-end processing
+	      (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF
 
 	    for (i=0; i<fp->nb_antennas_rx; i++)
 	      rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
@@ -2563,13 +2562,13 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
       if (proc->first_rx == 0) {
         if (proc->subframe_rx != subframe){
-	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
-	  exit_fun("Exiting");
-	}
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+          exit_fun("Exiting");
+	      }
         if (proc->frame_rx != frame) {
-	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
-	  exit_fun("Exiting");
-	}
+	        LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+          exit_fun("Exiting");
+	      }
       } else {
         proc->first_rx = 0;
 			}
@@ -2584,6 +2583,16 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         exit_fun( "problem receiving samples" );
 	
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+
+    } else if(eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
+      /// **** trx_read_func from IF device **** ///
+    
+    }
+
+
+    if ((eNB->node_function == NGFI_RRU_IF4) || 
+        (eNB->node_function == eNodeB_3GPP)  ||
+        (eNB->node_function == eNodeB_3GPP_BBU)) { // front-end processing
 
       // now do common RX processing for first slot in subframe
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
@@ -2608,12 +2617,10 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
       if (eNB->node_function == NGFI_RRU_IF4 && is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)<=0) {
-
-			  /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
+        /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
         send_IF4(eNB, frame, subframe, IF4_PULFFT, 0);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
-        
       }
 
       /// **** send_IF4 of prach to RCC **** /// done in prach thread (below)
@@ -2657,20 +2664,16 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       symbol_mask = 0;
       symbol_mask_full = (1<<fp->symbols_per_tti)-1;
       prach_rx = 0;
-
-      // Block from loop while testing
-      //symbol_mask = symbol_mask_full;
-      //nanosleep(&time_req, &time_rem);
          
       do {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
-        recv_IF4(eNB, proc->frame_rx, proc->subframe_rx, &packet_type, &symbol_number);
+        recv_IF4(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {
           symbol_mask = symbol_mask | (1<<symbol_number);     
                        
-        } else if (is_prach_subframe(fp,frame,subframe)>0 && packet_type == PRACH) {
+        } else if (packet_type == IF4_PRACH) {
           // wake up thread for PRACH RX
           prach_rx = 1;
 
@@ -2702,6 +2705,23 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         }
 
       } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
+
+      if (proc->first_rx == 0) {
+        if (proc->subframe_rx != subframe){
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+//          exit_fun("Exiting");
+        }
+        if (proc->frame_rx != frame) {
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+  //        exit_fun("Exiting");
+        }
+      } else {
+        proc->first_rx = 0;
+      }
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
 
       // Tobi aka mr monaco: ETH
 		  
