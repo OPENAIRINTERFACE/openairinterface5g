@@ -45,6 +45,7 @@
 #include "SCHED/extern.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
+#include "PHY/LTE_TRANSPORT/if5_tools.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -2524,6 +2525,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
   int prach_rx;
 
+  uint8_t seqno=0;
+
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
@@ -2545,7 +2548,8 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
   if (abstraction_flag==0) { // grab signal in chunks of 500 us (1 slot)
 		
-    if ((eNB->node_function == NGFI_RRU_IF4) || 
+    if ((eNB->node_function == NGFI_RRU_IF4) ||
+        (eNB->node_function == NGFI_RRU_IF5) || 
 	      (eNB->node_function == eNodeB_3GPP)) { // acquisition from RF
 
 	    for (i=0; i<fp->nb_antennas_rx; i++)
@@ -2585,11 +2589,32 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
     } else if(eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
-      /// **** trx_read_func from IF device **** ///
-    
+      /// **** recv_IF5 of rxdata from RRH **** ///       
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
+      recv_IF5(eNB, &proc->timestamp_rx, proc->subframe_rx, IF5_RRH_GW_UL); 
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
+      
+      proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+      proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+
+      if (proc->first_rx == 0) {
+        if (proc->subframe_rx != subframe){
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+          //exit_fun("Exiting");
+        }
+        if (proc->frame_rx != frame) {
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+          //exit_fun("Exiting");
+        }
+      } else {
+        proc->first_rx = 0;
+      }
+
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
     }
-
-
+        
     if ((eNB->node_function == NGFI_RRU_IF4) || 
         (eNB->node_function == eNodeB_3GPP)  ||
         (eNB->node_function == eNodeB_3GPP_BBU)) { // front-end processing
@@ -2654,6 +2679,12 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         }
       }
     
+    } else if (eNB->node_function == NGFI_RRU_IF5) {
+      /// **** send_IF5 of rxdata to BBU **** ///       
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
+      send_IF5(eNB, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
+            
     } else if (eNB->node_function == NGFI_RCC_IF4) {
       /// **** recv_IF4 of rxdataF from RRU **** ///
       /// **** recv_IF4 of rxsigF from RRU **** ///
@@ -2709,11 +2740,11 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       if (proc->first_rx == 0) {
         if (proc->subframe_rx != subframe){
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
-//          exit_fun("Exiting");
+          //exit_fun("Exiting");
         }
         if (proc->frame_rx != frame) {
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
-  //        exit_fun("Exiting");
+          //exit_fun("Exiting");
         }
       } else {
         proc->first_rx = 0;

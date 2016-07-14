@@ -51,7 +51,6 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
-#include "if_defs.h"
 
 int num_devices_eth = 0;
 struct sockaddr_in dest_addr[MAX_INST];
@@ -83,7 +82,7 @@ int trx_eth_start(openair0_device *device) {
       if(eth_get_dev_conf_raw_IF4(device)!=0)  return -1;
     }
     /* adjust MTU wrt number of samples per packet */
-    if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
+    if(ethernet_tune (device,MTU_SIZE,RAW_IF4_PRACH_SIZE_BYTES)!=0)  return -1;
     
   } else if (eth->flags == ETH_UDP_IF4_MODE) {
     
@@ -107,8 +106,6 @@ int trx_eth_start(openair0_device *device) {
     } else {
       if(eth_get_dev_conf_udp(device)!=0)  return -1;
     }
-    /* adjust MTU wrt number of samples per packet */
-    //if(ethernet_tune (device,MTU_SIZE,UDP_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
   }
   /* apply additional configuration */
   if(ethernet_tune (device, SND_BUF_SIZE,2000000000)!=0)  return -1;
@@ -386,8 +383,6 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   device->priv = eth;
  	
   /* device specific */
-  //openair0_cfg[0].txlaunch_wait = 0;//manage when TX processing is triggered
-  //openair0_cfg[0].txlaunch_wait_slotcount = 0; //manage when TX processing is triggered
   openair0_cfg[0].iq_rxrescale = 15;//rescale iqs
   openair0_cfg[0].iq_txshift = eth_params->iq_txshift;// shift
   openair0_cfg[0].tx_sample_advance = eth_params->tx_sample_advance;
@@ -397,19 +392,19 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
     /*Note scheduling advance values valid only for case 7680000 */    
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
-      openair0_cfg[0].samples_per_packet    = 4096;     
+      openair0_cfg[0].samples_per_packet    = 3840;     
       break;
     case 23040000:     
-      openair0_cfg[0].samples_per_packet    = 2048;
+      openair0_cfg[0].samples_per_packet    = 2880;
       break;
     case 15360000:
-      openair0_cfg[0].samples_per_packet    = 2048;      
+      openair0_cfg[0].samples_per_packet    = 1920;      
       break;
     case 7680000:
-      openair0_cfg[0].samples_per_packet    = 1024;     
+      openair0_cfg[0].samples_per_packet    = 960;     
       break;
     case 1920000:
-      openair0_cfg[0].samples_per_packet    = 256;     
+      openair0_cfg[0].samples_per_packet    = 240;     
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);

@@ -27,7 +27,7 @@
 
  *******************************************************************************/
 
-/*! \file PHY/LTE_TRANSPORT/if4_tools.h
+/*! \file PHY/LTE_TRANSPORT/if5_tools.h
 * \brief 
 * \author S. Sandeep Kumar, Raymond Knopp
 * \date 2016
@@ -38,37 +38,32 @@
 * \warning
 */
 
+#include <stdint.h>
 #include "PHY/defs.h"
 
-/// Macro for IF4 packet type
-#define IF4_PACKET_TYPE 0x080A 
-#define IF4_PULFFT 0x0019 
-#define IF4_PDLFFT 0x0020
-#define IF4_PRACH 0x0021
+#define IF5_RRH_GW_DL 0x0022
+#define IF5_RRH_GW_UL 0x0023
+#define IF5_MOBIPASS 0xbffe
 
-struct IF4_header {  
-  /// Type
-  uint16_t type; 
-  /// Sub-Type
-  uint16_t sub_type;
-  /// Reserved
-  uint32_t rsvd;
-  /// Frame Status
-  uint32_t frame_status;
-
+struct IF5_mobipass_header {  
+  /// 
+  uint16_t flags; 
+  /// 
+  uint16_t fifo_status;
+  /// 
+  uint8_t seqno;
+  ///
+  uint8_t ack;
+  ///
+  uint32_t word0;
+  /// 
+  uint32_t time_stamp;
+  
 } __attribute__ ((__packed__));
 
-typedef struct IF4_header IF4_header_t;
-#define sizeof_IF4_header_t 12 
+typedef struct IF5_mobipass_header IF5_mobipass_header_t;
+#define sizeof_IF5_mobipass_header_t 14
 
-void gen_IF4_dl_header(IF4_header_t*, int, int);
+void send_IF5(PHY_VARS_eNB*, openair0_timestamp, int, uint8_t*, uint16_t);
 
-void gen_IF4_ul_header(IF4_header_t*, int, int);
-
-void gen_IF4_prach_header(IF4_header_t*, int, int);
-
-void send_IF4(PHY_VARS_eNB*, int, int, uint16_t, int);
-
-void recv_IF4(PHY_VARS_eNB*, int*, int*, uint16_t*, uint32_t*);
-
-void malloc_IF4_buffer(PHY_VARS_eNB*);
+void recv_IF5(PHY_VARS_eNB*, openair0_timestamp*, int, uint16_t);

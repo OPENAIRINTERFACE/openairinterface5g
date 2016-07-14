@@ -41,6 +41,9 @@
 #include <netinet/ether.h>
 #include <stdint.h>
 
+#include "PHY/LTE_TRANSPORT/if4_tools.h"
+#include "PHY/LTE_TRANSPORT/if5_tools.h"
+
 // ETH transport preference modes
 #define ETH_UDP_MODE        0
 #define ETH_RAW_MODE        1
@@ -56,7 +59,7 @@
 #define RAW_PACKET_SIZE_BYTES(nsamps) (APP_HEADER_SIZE_BYTES + MAC_HEADER_SIZE_BYTES + PAYLOAD_SIZE_BYTES(nsamps))
 
 // Packet sizes for IF4 interface format
-#define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (sizeof(int16_t)*scaled_nblocks)
+#define DATA_BLOCK_SIZE_BYTES(scaled_nblocks) (sizeof(uint16_t)*scaled_nblocks)
 #define PRACH_BLOCK_SIZE_BYTES (sizeof(int16_t)*839*2)  // FIX hard coded prach size (uncompressed)
  
 #define RAW_IF4_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
