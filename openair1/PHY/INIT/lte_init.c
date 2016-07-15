@@ -1357,18 +1357,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 #endif
       }
       
-      /*for (i=0; i<2; i++) { // 2 is the total number of cell specific antenna ports
-        eNB_common_vars->cell_spec_bf_weights[eNB_id][i] = (int32_t **)malloc16_clear(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-        for (j=0; j<frame_parms->nb_antennas_tx; j++) {
-          eNB_common_vars->cell_spec_bf_weights[eNB_id][i][j] = (int32_t *)malloc16_clear(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-#ifdef DEBUG_PUY
-          msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->cell_spec_bf_weights[%d][%d][%d] = %p (%d bytes)\n",
-              eNB_id,i,j,eNB_common_vars->cell_spec_bf_weights[eNB_id][i][j],
-              OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-#endif
-        }
-      } */
-
       for (i=0; i<15; i++) { // 15 is the total number of antenna ports
         eNB_common_vars->beam_weights[eNB_id][i] = (int32_t **)malloc16_clear(frame_parms->nb_antennas_tx*sizeof(int32_t*));
         for (j=0; j<frame_parms->nb_antennas_tx; j++) {
@@ -1382,18 +1370,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *phy_vars_eNB,
 #endif
         }
       }
-
-      /*for (i=0; i<8; i++) { //antenna port 5 for TM7, antenna port 7-15 for TM8-10
-        eNB_common_vars->ue_spec_bf_weights[eNB_id][i] = (int32_t **)malloc16_clear(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-        for (j=0; j<frame_parms->nb_antennas_tx; j++) {
-          eNB_common_vars->ue_spec_bf_weights[eNB_id][i][j] = (int32_t*)malloc16_clear(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-#ifdef DEBUG_PUY
-          msg("[openair][LTE_PHY][INIT] lte_eNB_common_vars->ue_spec_bf_weights[%d][%d][%d] = %p (%d bytes)\n",
-              eNB_id,i,j,eNB_common_vars->ue_spec_bf_weights[eNB_id][i][j],
-              OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-#endif
-        }
-      } */
 
       // RX vars
       eNB_common_vars->rxdata[eNB_id]        = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*) );

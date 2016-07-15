@@ -119,7 +119,8 @@ int main(int argc, char **argv)
 
   uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=1;
   uint16_t Nid_cell=0;
-  int32_t **ue_spec_bf_weights, **cell_spec_bf_weights;
+  int32_t **cell_spec_bf_weights;
+  int32_t *ue_spec_bf_weights;
 
   int eNB_id = 0, eNB_id_i = 1;
   unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round,dci_flag=0;
@@ -932,23 +933,31 @@ int main(int argc, char **argv)
         exit(-1);
       } else {
          // this initilisation may should be moved to another place
-         for (j=0; j<4; j++) { // antenna port 5,7-14
+        for (j=0; j<4; j++) {                                                            
+          PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j] = (int32_t **)malloc16(n_tx_phy*sizeof(int32_t*));       
+ 
+          for (aa=0; aa<n_tx_phy; aa++) {                                          
+            PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+            ue_spec_bf_weights = PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j][aa];
+
+            for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
+              if (n_tx_phy==1 || n_tx_phy==2)
+                ue_spec_bf_weights[re] = 0x00007fff;
+              else if (n_tx_phy==4 || n_tx_phy==8)
+                ue_spec_bf_weights[re] = 0x00007fff>>1;
+              else if (n_tx_phy==16)
+                ue_spec_bf_weights[re] = 0x00007fff>>2;
+              else if (n_tx_phy==64)
+                ue_spec_bf_weights[re] = 0x00007fff>>4;
+            }
+
+          }
+        } 
 
            ue_spec_bf_weights = PHY_vars_eNB->dlsch_eNB[k][i]->ue_spec_bf_weights[j]; 
 
            for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-             for (re=0;re<frame_parms->ofdm_symbol_size;re++) {
-               if (n_tx_phy==1 || n_tx_phy==2)
-                 ue_spec_bf_weights[aa][re] = 0x00007fff;
-               else if (n_tx_phy==4 || n_tx_phy==8)
-                 ue_spec_bf_weights[aa][re] = 0x00007fff>>1;
-               else if (n_tx_phy==16)
-                 ue_spec_bf_weights[aa][re] = 0x00007fff>>2;
-               else if (n_tx_phy==64)
-                 ue_spec_bf_weights[aa][re] = 0x00007fff>>4;
-             }
            }
-         } 
       }
 
       PHY_vars_eNB->dlsch_eNB[k][i]->rnti = n_rnti+k;

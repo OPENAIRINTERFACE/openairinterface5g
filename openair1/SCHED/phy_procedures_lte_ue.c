@@ -2557,10 +2557,21 @@ int phy_procedures_UE_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstrac
         if ((slot_rx%2)==1) // odd slots
           phy_vars_ue->dlsch_ue[eNB_id][0]->active = 0;
       }
+
     }
 
 #endif
 
+    if (phy_vars_ue->dlsch_ue[eNB_id][0]->active == 1)  {
+      if (phy_vars_ue->transmission_mode[eNB_id]==7) {
+        if (phy_vars_ue->lte_frame_parms.Ncp==0) {
+          if (((slot_rx%2)==0 && ((l==3) || (l==6))) || ((slot_rx%2)==1 && ((l==2) || (l==5)))) 
+            lte_dl_bf_channel_estimation(phy_vars_ue,eNB_id,0,slot_rx,5,l+7*(slot_rx%2==1));
+        } else {
+          LOG_E(PHY,"[UE %d]Beamforming channel estimation not supported yet for TM7 extented CP.\n",phy_vars_ue->Mod_id);
+        }
+      }
+    }
     // process last DLSCH symbols + invoke decoding
     if (((slot_rx%2)==0) && (l==0)) {
       // Regular PDSCH

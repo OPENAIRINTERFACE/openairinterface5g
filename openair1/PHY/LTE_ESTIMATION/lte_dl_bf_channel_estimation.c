@@ -708,7 +708,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     }
   } //aarx
   
-   //printf("[dlsch bf ch est]: dl_bf_estimates[0][600] %d, %d \n",*(short *)&dl_bf_ch_estimates[0][600],*(short*)&phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0][600]);
+   // printf("[dlsch bf ch est]: dl_bf_estimates[0][600] %d, %d \n",*(short *)&dl_bf_ch_estimates[0][600],*(short*)&phy_vars_ue->lte_ue_pdsch_vars[eNB_id]->dl_bf_ch_estimates[0][600]);
 
   return(0);
 
