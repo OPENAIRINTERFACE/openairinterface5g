@@ -958,21 +958,21 @@ void init_openair1(void)
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_ACK_Index = beta_ACK;
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_RI_Index  = beta_RI;
         PHY_vars_eNB_g[eNB_id][CC_id]->pusch_config_dedicated[UE_id].betaOffset_CQI_Index = beta_CQI;
-        PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
+        PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
 
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_ACK_Index = beta_ACK;
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_RI_Index  = beta_RI;
         PHY_vars_UE_g[UE_id][CC_id]->pusch_config_dedicated[eNB_id].betaOffset_CQI_Index = beta_CQI;
-        PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
+        PHY_vars_UE_g[UE_id][CC_id]->frame_parms.pdsch_config_common.p_b = (frame_parms[CC_id]->nb_antennas_tx_eNB>1) ? 1 : 0; // rho_A = rho_B
       }
     }
   }
 
   printf ("AFTER init: MAX_NUM_CCs %d, Nid_cell %d frame_type %d,tdd_config %d\n",
           MAX_NUM_CCs,
-          PHY_vars_eNB_g[0][0]->lte_frame_parms.Nid_cell,
-          PHY_vars_eNB_g[0][0]->lte_frame_parms.frame_type,
-          PHY_vars_eNB_g[0][0]->lte_frame_parms.tdd_config);
+          PHY_vars_eNB_g[0][0]->frame_parms.Nid_cell,
+          PHY_vars_eNB_g[0][0]->frame_parms.frame_type,
+          PHY_vars_eNB_g[0][0]->frame_parms.tdd_config);
 
   number_of_cards = 1;
 
@@ -993,12 +993,12 @@ void init_openair1(void)
     for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
       PHY_vars_UE_g[UE_id][CC_id]->use_ia_receiver = 0;
 
-      if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.frame_type == TDD) {
-        if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 100)
+      if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.frame_type == TDD) {
+        if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.N_RB_DL == 100)
           PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624;
-        else if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 50)
+        else if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.N_RB_DL == 50)
           PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624/2;
-        else if (PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.N_RB_DL == 25)
+        else if (PHY_vars_UE_g[UE_id][CC_id]->frame_parms.N_RB_DL == 25)
           PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 624/4;
       } else {
         PHY_vars_UE_g[UE_id][CC_id]->N_TA_offset = 0;
@@ -1006,12 +1006,12 @@ void init_openair1(void)
     }
 
     for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
-      if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.frame_type == TDD) {
-        if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 100)
+      if (PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.frame_type == TDD) {
+        if (PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_DL == 100)
           PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624;
-        else if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 50)
+        else if (PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_DL == 50)
           PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624/2;
-        else if (PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL == 25)
+        else if (PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_DL == 25)
           PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 624/4;
       } else {
         PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 0;
@@ -1048,7 +1048,7 @@ void init_openair1(void)
       else
 	PHY_vars_UE_g[UE_id][CC_id]->mac_enabled=1;
 
-      PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti = 0x1235 + UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti = 0x1235 + UE_id;
       PHY_vars_UE_g[UE_id][CC_id]->current_dlsch_cqi[0] = 10;
 
       LOG_I(EMU, "UE %d mode is initialized to %d\n", UE_id, PHY_vars_UE_g[UE_id][CC_id]->UE_mode[0] );
@@ -1077,7 +1077,7 @@ void init_openair2(void)
 //#warning "eNB index is hard coded to zero"
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++)
-    l2_init (&PHY_vars_eNB_g[0][CC_id]->lte_frame_parms,
+    l2_init (&PHY_vars_eNB_g[0][CC_id]->frame_parms,
              oai_emulation.info.eMBMS_active_state,
              NULL,
              oai_emulation.info.cba_group_active,
@@ -1167,8 +1167,8 @@ void init_ocm(void)
               map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), eNB_id, UE_id);
 
         /* if (oai_emulation.info.transmission_mode == 5)
-                  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->lte_frame_parms.nb_antennas_tx,
-                                                     PHY_vars_UE_g[UE_id]->lte_frame_parms.nb_antennas_rx,
+                  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->frame_parms.nb_antennas_tx,
+                                                     PHY_vars_UE_g[UE_id]->frame_parms.nb_antennas_rx,
                                                      (UE_id == 0)? Rice1_corr : Rice1_anticorr,
                                                      oai_emulation.environment_system_config.system_bandwidth_MB,
                                                      forgetting_factor,
@@ -1179,11 +1179,11 @@ void init_ocm(void)
          */
 
         eNB2UE[eNB_id][UE_id][CC_id] = 
-	  new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-			       PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+	  new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antennas_tx,
+			       PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_rx,
 			       map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option),
-			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL),
-			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_DL),
+			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_DL),
+			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_DL),
 			       forgetting_factor,
 			       0,
 			       0);
@@ -1192,11 +1192,11 @@ void init_ocm(void)
               map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),UE_id, eNB_id);
 
         UE2eNB[UE_id][eNB_id][CC_id] = 
-	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->lte_frame_parms.nb_antennas_tx,
-			       PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.nb_antennas_rx,
+	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
+			       PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antennas_rx,
 			       map_str_to_int(small_scale_names, oai_emulation.environment_system_config.fading.small_scale.selected_option),
-			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_UL),
-			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.N_RB_UL),
+			       N_RB2sampling_rate(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_UL),
+			       N_RB2channel_bandwidth(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.N_RB_UL),
 			       forgetting_factor,
 			       0,
 			       0);
@@ -1265,7 +1265,7 @@ void update_ocm()
   int CC_id;
 
   for (eNB_id = 0; eNB_id < NB_eNB_INST; eNB_id++)
-    enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id][0]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+    enb_data[eNB_id]->tx_power_dBm = PHY_vars_eNB_g[eNB_id][0]->frame_parms.pdsch_config_common.referenceSignalPower;
 
   for (UE_id = 0; UE_id < NB_UE_INST; UE_id++)
     ue_data[UE_id]->tx_power_dBm = PHY_vars_UE_g[UE_id][0]->tx_power_dBm;
@@ -1315,16 +1315,16 @@ void update_ocm()
 
           //pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
           if (eNB_id == (UE_id % NB_eNB_INST)) {
-            eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
-            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower; 
+            eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
+            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + snr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower; 
           } else {
-            eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
-            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower;
+            eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
+            UE2eNB[UE_id][eNB_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower;
           }
 
           LOG_I(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",eNB_id,UE_id,CC_id,
                 eNB2UE[eNB_id][UE_id][CC_id]->path_loss_dB,
-                PHY_vars_eNB_g[eNB_id][CC_id]->lte_frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
+                PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
           //      printf("[SIM] Path loss from UE %d to eNB %d => %f dB\n",UE_id,eNB_id,UE2eNB[UE_id][eNB_id]->path_loss_dB);
         }
       }

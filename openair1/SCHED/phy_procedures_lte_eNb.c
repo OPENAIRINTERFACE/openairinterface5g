@@ -2119,6 +2119,7 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 #ifdef PHY_ABSTRACTION
 	else {
 	  metric0_SR = rx_pucch_emul(eNB,
+				     proc,
 				     UE_id,
 				     pucch_format1,
 				     0,
@@ -2192,11 +2193,12 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 	}
 	else {
 #ifdef PHY_ABSTRACTION
-	  metric0 = rx_pucch_emul(eNB,UE_id,
+	  metric0 = rx_pucch_emul(eNB,
+				  proc,
+				  UE_id,
 				  pucch_format1a,
 				  0,
-				  pucch_payload0,
-				  subframe);
+				  pucch_payload0);
 #endif
 	}
 	
@@ -2251,11 +2253,11 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
 				    PUCCH1a_THRES);
             else {
 #ifdef PHY_ABSTRACTION
-              metric0 = rx_pucch_emul(eNB,UE_id,
+              metric0 = rx_pucch_emul(eNB,proc,
+				      UE_id,
                                       format,
                                       0,
-                                      pucch_payload0,
-                                      subframe);
+                                      pucch_payload0);
 #endif
             }
           } else { //using n1_pucch0/n1_pucch1 resources
@@ -2283,11 +2285,12 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                    PUCCH1a_THRES);
               else {
 #ifdef PHY_ABSTRACTION
-                metric0 = rx_pucch_emul(eNB,UE_id,
+                metric0 = rx_pucch_emul(eNB,
+					proc,
+					UE_id,
                                         format,
                                         0,
-                                        pucch_payload0,
-                                        subframe);
+                                        pucch_payload0);
 #endif
               }
             }
@@ -2307,13 +2310,12 @@ void pucch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq
                                    PUCCH1a_THRES);
               else {
 #ifdef PHY_ABSTRACTION
-                metric1 = rx_pucch_emul(eNB,UE_id,
+                metric1 = rx_pucch_emul(eNB,
+					proc,
+					UE_id,
                                         format,
                                         1,
-                                        pucch_payload1,
-                                        subframe);
-
-
+                                        pucch_payload1);
 #endif
               }
             }
@@ -2389,7 +2391,6 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 #ifdef PHY_ABSTRACTION
     else {
       rx_ulsch_emul(eNB,proc,
-		    subframe,
 		    eNB->UE_stats[UE_id].sector,  // this is the effective sector id
 		    UE_id);
     }
@@ -2407,6 +2408,7 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 #ifdef PHY_ABSTRACTION
     else {
       ret = ulsch_decoding_emul(eNB,
+				proc,
 				UE_id,
 				&rnti);
     }
@@ -2909,7 +2911,6 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 #ifdef PHY_ABSTRACTION
       else {
         rx_ulsch_emul(eNB,proc,
-                      subframe,
                       eNB->UE_stats[i].sector,  // this is the effective sector id
                       i);
       }
@@ -2930,7 +2931,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
 #ifdef PHY_ABSTRACTION
       else {
-        ret = ulsch_decoding_emul(eNB,proc,
+        ret = ulsch_decoding_emul(eNB,
+				  proc,
                                   i,
                                   &rnti);
       }

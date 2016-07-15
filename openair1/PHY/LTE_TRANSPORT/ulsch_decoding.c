@@ -1520,16 +1520,9 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc,
 #endif
 
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->lte_ue_pdcch_vars[0]->crnti)
+    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[0]->crnti)
       break;
 
-    /*
-    msg("[PHY] EMUL eNB %d ulsch_decoding_emul : subframe ue id %d crnti %x nb ue %d\n",
-    eNB->Mod_id,
-    UE_id,
-    PHY_vars_UE_g[UE_id]->lte_ue_pdcch_vars[0]->crnti,
-    NB_UE_INST);
-    */
   }
 
   if (UE_id==NB_UE_INST) {

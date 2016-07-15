@@ -1209,8 +1209,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 			  format,
 			  ue->frame_parms.pucch_config_common.nCS_AN,
 			  pucch_ack_payload,
-			  SR_payload,
-			  subframe_tx);
+			  SR_payload);
 #endif
     }
   } else if (SR_payload==1) { // no ACK/NAK but SR is triggered by MAC
@@ -2503,7 +2502,7 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
 #ifdef PHY_ABSTRACTION
       ret = dlsch_decoding_emul(ue,
 				subframe_rx,
-				dlsch,
+				pdsch,
 				eNB_id);
 #endif
     }

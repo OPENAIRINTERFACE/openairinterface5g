@@ -1039,7 +1039,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
 
 uint32_t dlsch_decoding_emul(PHY_VARS_UE *phy_vars_ue,
                              uint8_t subframe,
-                             uint8_t dlsch_id,
+                             PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
@@ -1539,7 +1539,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t llr8_flag);
 
 uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
-                             uint8_t UE_index,
+                             eNB_rxtx_proc_t *proc,
+			     uint8_t UE_index,
                              uint16_t *crnti);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
