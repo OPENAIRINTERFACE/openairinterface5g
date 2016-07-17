@@ -377,7 +377,7 @@ int trx_usrp_set_gains(openair0_device* device,
 /*! \brief Stop USRP
  * \param card refers to the hardware index to use
  */
-int trx_usrp_stop(int card) {
+int trx_usrp_stop(openair0_device* device) {
   return(0);
 }
 

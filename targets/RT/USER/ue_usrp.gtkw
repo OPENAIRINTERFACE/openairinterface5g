@@ -1,12 +1,12 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Sun Mar 20 18:27:06 2016
+[*] Sun Jul 17 20:46:59 2016
 [*]
 [dumpfile] "/tmp/openair_dump_UE.vcd"
-[dumpfile_mtime] "Sun Mar 20 18:14:17 2016"
-[dumpfile_size] 92262400
-[savefile] "/home/papillon/openairinterface5g/targets/RT/USER/ue_usrp.gtkw"
-[timestart] 30032830000
+[dumpfile_mtime] "Sun Jul 17 20:46:29 2016"
+[dumpfile_size] 10932224
+[savefile] "/home/fourmi/openairinterface5g/targets/RT/USER/ue_usrp.gtkw"
+[timestart] 11696930000
 [size] 1215 640
 [pos] 105 102
 *-22.292629 30041590000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -19,22 +19,25 @@ variables.hw_subframe[63:0]
 @28
 functions.trx_read
 functions.trx_write
+functions.ue_thread_synch
+functions.ue_thread_rxtx0
 @24
-variables.subframe_number_RX_UE[63:0]
-variables.subframe_number_TX_UE[63:0]
+variables.subframe_RX0_UE[63:0]
+variables.subframe_TX0_UE[63:0]
+variables.frame_number_RX0_UE[63:0]
+variables.frame_number_TX0_UE[63:0]
 @28
-functions.ue_thread_rx
-functions.ue_thread_tx
-@420
-variables.ue_inst_cnt_rx[63:0]
-variables.ue_inst_cnt_tx[63:0]
+functions.ue_thread_rxtx1
+@24
+variables.subframe_RX1_UE[63:0]
+variables.subframe_TX1_UE[63:0]
+@25
+variables.frame_number_RX1_UE[63:0]
+@24
+variables.frame_number_TX1_UE[63:0]
 @28
 functions.phy_procedures_ue_rx
 functions.phy_procedures_ue_tx
-@24
-variables.frame_number_RX_UE[63:0]
-variables.frame_number_TX_UE[63:0]
-@28
 functions.ue_slot_fep
 functions.lte_ue_measurement_procedures
 functions.ue_rrc_measurements

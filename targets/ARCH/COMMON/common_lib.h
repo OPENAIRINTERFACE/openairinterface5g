@@ -326,9 +326,8 @@ struct openair0_device_t {
   void (*trx_end_func)(openair0_device *device);
 
   /*! \brief Stop operation of the transceiver 
-   * \param card RF Card to use
    */
-  int (*trx_stop_func)(int card);
+  int (*trx_stop_func)(openair0_device *device);
 
   /* Functions API related to UE*/
 

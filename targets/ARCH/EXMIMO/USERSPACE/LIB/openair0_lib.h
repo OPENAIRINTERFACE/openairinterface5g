@@ -58,6 +58,7 @@ typedef struct {
   struct sched_param watchdog_sched_param;
   pthread_mutex_t watchdog_mutex;
   int watchdog_exit;
+  int wait_first_read;
   exmimo_daq_state_t daq_state;
   openair0_timestamp ts;
   openair0_timestamp last_ts_rx;
