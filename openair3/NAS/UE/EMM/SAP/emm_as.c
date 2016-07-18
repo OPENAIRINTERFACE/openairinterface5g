@@ -53,6 +53,8 @@ Description Defines the EMMAS Service Access Point that provides
 #include "emm_cause.h"
 #include "LowerLayer.h"
 
+#include "emm_proc.h"
+
 #include <string.h> // memset
 #include <stdlib.h> // malloc, free
 
@@ -64,10 +66,6 @@ Description Defines the EMMAS Service Access Point that provides
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
-
-extern int emm_proc_plmn_selection_end(int found, tac_t tac, ci_t ci, AcT_t rat);
-
-extern int emm_proc_status(unsigned int ueid, int emm_cause);
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -108,7 +106,7 @@ static int _emm_as_release_ind(nas_user_t *user, const emm_as_release_t *msg);
 static int _emm_as_page_ind(const emm_as_page_t *msg);
 
 
-static int _emm_as_cell_info_res(const emm_as_cell_info_t *msg);
+static int _emm_as_cell_info_res(nas_user_t *user, const emm_as_cell_info_t *msg);
 static int _emm_as_cell_info_ind(const emm_as_cell_info_t *msg);
 
 static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm_cause);
@@ -225,7 +223,7 @@ int emm_as_send(nas_user_t *user, const emm_as_t *msg)
     break;
 
   case _EMMAS_CELL_INFO_RES:
-    rc = _emm_as_cell_info_res(&msg->u.cell_info);
+    rc = _emm_as_cell_info_res(user, &msg->u.cell_info);
     break;
 
   case _EMMAS_CELL_INFO_IND:
@@ -266,7 +264,7 @@ int emm_as_send(nas_user_t *user, const emm_as_t *msg)
     LOG_TRACE(WARNING, "EMMAS-SAP - Received EMM message is not valid "
               "(cause=%d)", emm_cause);
     /* Return an EMM status message */
-    rc = emm_proc_status(ueid, emm_cause);
+    rc = emm_proc_status(user, ueid, emm_cause);
   }
 
   if (rc != RETURNok) {
@@ -663,7 +661,7 @@ static int _emm_as_page_ind(const emm_as_page_t *msg)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_as_cell_info_res(const emm_as_cell_info_t *msg)
+static int _emm_as_cell_info_res(nas_user_t *user, const emm_as_cell_info_t *msg)
 {
   LOG_FUNC_IN;
 
@@ -685,7 +683,7 @@ static int _emm_as_cell_info_res(const emm_as_cell_info_t *msg)
   }
 
   /* Notify EMM that a cell has been found */
-  rc = emm_proc_plmn_selection_end(msg->found, msg->tac, msg->cellID, AcT);
+  rc = emm_proc_plmn_selection_end(user, msg->found, msg->tac, msg->cellID, AcT);
 
   LOG_FUNC_RETURN (rc);
 }
