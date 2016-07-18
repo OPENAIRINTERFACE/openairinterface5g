@@ -75,6 +75,7 @@ Description Defines the authentication EMM procedure executed by the
 /*
  * Retransmission timer handlers
  */
+// FIXME REVIEW
 extern void *_emm_attach_t3410_handler(void *);
 extern void *_emm_service_t3417_handler(void *);
 extern void *_emm_detach_t3421_handler(void *);
@@ -159,7 +160,6 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
 
   int rc = RETURNerror;
   authentication_data_t *authentication_data = user->authentication_data;
-  uint8_t *key = user->usim_data.keys.usim_api_k;
   emm_timers_t *emm_timers = user->emm_data->emm_timers;
 
   LOG_TRACE(INFO, "EMM-PROC  - Authentication requested ksi type = %s, ksi = %d", native_ksi ? "native" : "mapped", ksi);
@@ -220,11 +220,11 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
        */
       if(usim_test == 0)
       {
-        rc = usim_api_authenticate(key, rand, autn, &auts, &res, &ck, &ik);
+        rc = usim_api_authenticate(&user->usim_data, rand, autn, &auts, &res, &ck, &ik);
       }
       else
       {
-        rc = usim_api_authenticate_test(key, rand, autn, &auts, &res, &ck, &ik);
+        rc = usim_api_authenticate_test(&user->usim_data, rand, autn, &auts, &res, &ck, &ik);
       }
     }
 

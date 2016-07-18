@@ -66,22 +66,6 @@ Description Implements the API used by the NAS layer to read/write
  */
 #define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
 
-/*
- * List of last used Sequence Numbers SQN
- */
-#define USIM_API_AK_SIZE 6
-#define USIM_API_SQN_SIZE USIM_API_AK_SIZE
-#define USIM_API_SQNMS_SIZE USIM_API_SQN_SIZE
-
-static struct _usim_api_data_s {
-  /* Highest sequence number the USIM has ever accepted */
-  uint8_t sqn_ms[USIM_API_SQNMS_SIZE];
-  /* List of the last used sequence numbers   */
-#define USIM_API_SQN_LIST_SIZE  32
-  uint8_t n_sqns;
-  uint32_t sqn[USIM_API_SQN_LIST_SIZE];
-} _usim_api_data;
-
 static uint8_t _usim_api_hex_char_to_hex_value (char c);
 static void _usim_api_hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size);
 static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
@@ -384,7 +368,7 @@ int usim_api_authenticate_test(const OctetString* rand_pP, const OctetString* au
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString* rand_pP, const OctetString* autn_pP,
+int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts_pP, OctetString* res_pP,
                           OctetString* ck_pP, OctetString* ik_pP)
 {
@@ -402,7 +386,7 @@ int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString
   /* Compute the anonymity key AK = f5K (RAND) */
 
   u8 ak[USIM_API_AK_SIZE];
-  f2345(usim_api_k, rand_pP->value,
+  f2345(usim_data->keys.usim_api_k, rand_pP->value,
         res_pP->value, ck_pP->value, ik_pP->value, ak);
   LOG_TRACE(INFO, "USIM-API  - res(f2)  :%s",dump_octet_string(res_pP));
   LOG_TRACE(INFO, "USIM-API  - ck(f3)   :%s",dump_octet_string(ck_pP));
@@ -424,7 +408,7 @@ int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString
   /* Compute XMAC = f1K (SQN || RAND || AMF) */
 #define USIM_API_XMAC_SIZE 8
   u8 xmac[USIM_API_XMAC_SIZE];
-  f1(usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac);
+  f1(usim_data->keys.usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac);
   LOG_TRACE(DEBUG,
             "USIM-API  - Computed XMAC %02X%02X%02X%02X%02X%02X%02X%02X",
             xmac[0],xmac[1],xmac[2],xmac[3],
@@ -452,19 +436,19 @@ int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString
 
     /* Concealed value of the counter SQNms in the USIM:
      * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
-    f5star(usim_api_k, rand_pP->value, ak);
+    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak);
 
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
     memset(sqn_ms, 0, USIM_API_SQNMS_SIZE);
 
     //#define USIM_API_SQN_MS_SIZE  3
-    printf("_usim_api_data.sqn_ms %p\n",_usim_api_data.sqn_ms);
+    printf("usim_data->usim_sqn.sqn_ms %p\n",usim_data->usim_sqn_data.sqn_ms);
     for (i = 0; i < USIM_API_SQNMS_SIZE; i++) {
       //#warning "LG:BUG HERE TODO"
-      printf("i %d:  ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
+      printf("i %d:  ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i] %d\n",i, ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i]);
       sqn_ms[USIM_API_SQNMS_SIZE - i] =
-        ((uint8_t*)(_usim_api_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
+        ((uint8_t*)(usim_data->usim_sqn_data.sqn_ms))[USIM_API_SQNMS_SIZE - i];
     }
 
     u8 sqnms[USIM_API_SQNMS_SIZE];
@@ -480,7 +464,7 @@ int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString
      * MACS = f1*K(SQNMS || RAND || AMF) */
 #define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
     u8 macs[USIM_API_MACS_SIZE];
-    f1star(usim_api_k, rand_pP->value, sqn_ms,
+    f1star(usim_data->keys.usim_api_k, rand_pP->value, sqn_ms,
            &rand_pP->value[USIM_API_SQN_SIZE], macs);
     LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
               macs[0],macs[1],macs[2],macs[3],
