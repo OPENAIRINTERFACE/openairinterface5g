@@ -1514,6 +1514,11 @@ int main( int argc, char **argv )
 
   for (card=0; card<MAX_CARDS; card++) {
 
+    if (UE_flag==0)
+      openair0_cfg[card].mmapped_dma=1;
+    else
+      openair0_cfg[card].mmapped_dma=0;
+
     if(frame_parms[0]->N_RB_DL == 100) {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
@@ -1796,14 +1801,7 @@ int main( int argc, char **argv )
       exit(-1);
     }
 
-    printf("Setting UE buffer to all-RX\n");
 
-    // Set LSBs for antenna switch (ExpressMIMO)
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
-        for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
-          UE[CC_id]->common_vars.txdata[aa][i] = 0x00010001;
-    }
 
     if (input_fd) {
       printf("Reading in from file to antenna buffer %d\n",0);
@@ -1905,18 +1903,12 @@ int main( int argc, char **argv )
   else init_eNB(node_function);
 
   // Sleep to allow all threads to setup
-  sleep(1);
+  sleep(3);
 
 
 
 
   // *** Handle per CC_id openair0
-#ifndef USRP_DEBUG
-  if ((UE_flag==1) && (mode!=loop_through_memory))
-    if (openair0.trx_start_func(&openair0) != 0 ) 
-      LOG_E(HW,"Could not start the device\n");
-
-#endif
 
 
   printf("Sending sync to all threads\n");

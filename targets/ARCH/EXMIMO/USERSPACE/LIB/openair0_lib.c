@@ -67,6 +67,7 @@
 
 #define max(a,b) ((a)>(b) ? (a) : (b))
 
+//#define DEBUG_EXMIMO
 
 exmimo_pci_interface_bot_virtual_t openair0_exmimo_pci[MAX_CARDS]; // contains userspace pointers for each card
 
@@ -306,7 +307,7 @@ static void *watchdog_thread(void *arg) {
 
 
   wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
+  wait.tv_nsec=50000000L;
 
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
@@ -410,6 +411,8 @@ static void *watchdog_thread(void *arg) {
   }
 
   first_acquisition=1;
+  printf("Locking watchdog for first acquisition\n");
+  pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
   // main loop to keep up with DMA transfers from exmimo2
 
   int cnt_diff0=0;
@@ -428,19 +431,22 @@ static void *watchdog_thread(void *arg) {
       }
       exm->last_mbox = mbox;
 
-      pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+      if (first_acquisition==0)
+	pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+
       exm->ts += (diff*exm->samples_per_frame/150) ; 
 
-      if (first_acquisition==1) //set last read to a closest subframe boundary
-         exm->last_ts_rx = (exm->ts/(exm->samples_per_frame/10))*(exm->samples_per_frame/10);
 
-      if ((diff > 16)&&(first_acquisition==0))  {// we're too late so exit
+      if ((exm->daq_state == running) &&
+	  (diff > 16)&&
+	  (first_acquisition==0))  {// we're too late so exit
 	exm->watchdog_exit = 1;
         printf("exiting, too late to keep up\n");
       }
       first_acquisition=0;
 
-      if (diff == 0) {
+      if ((exm->daq_state == running) && 
+	  (diff == 0)) {
 	cnt_diff0++;
 	if (cnt_diff0 == 10) {
 	  exm->watchdog_exit = 1;
@@ -450,12 +456,18 @@ static void *watchdog_thread(void *arg) {
       else
 	cnt_diff0=0;
 
-      if (exm->ts - exm->last_ts_rx > exm->samples_per_frame) {
+      if ((exm->daq_state == running) &&
+	  (exm->wait_first_read==0) &&
+	  (exm->ts - exm->last_ts_rx > exm->samples_per_frame)) {
 	exm->watchdog_exit = 1;
-	printf("RX Overflow, exiting\n");
+	printf("RX Overflow, exiting (TS %llu, TS last read %llu)\n",
+	       exm->ts,exm->last_ts_rx);
       }
       //      printf("ts %lu, last_ts_rx %lu, mbox %d, diff %d\n",exm->ts, exm->last_ts_rx,mbox,diff);
       pthread_mutex_unlock(&exm->watchdog_mutex);
+    }
+    else {
+      first_acquisition=1;
     }
     rt_sleep(&sleep_time,250000L);
   }
@@ -487,9 +499,10 @@ int trx_exmimo_start(openair0_device *device) {
   exmimo_state_t *exm=device->priv;
 
   printf("Starting ...\n");
+  openair0_config(device->openair0_cfg,0);
   openair0_start_rt_acquisition(0);
   exm->daq_state = running;  
-
+  exm->wait_first_read = 1;
   return(0);
 }
 
@@ -498,6 +511,8 @@ int trx_exmimo_write(openair0_device *device,openair0_timestamp ptimestamp, void
   return(0);
 }
 
+
+
 int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
 
   exmimo_state_t *exm=device->priv;
@@ -505,57 +520,134 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
   openair0_timestamp old_ts=0,ts,diff;
   struct timespec sleep_time;
   unsigned long tv_nsec;
-  //  int i;
+  int i;
   struct timespec wait;
+  int n,n1,n2,ntot,first_len;
+  int ret;
 
   wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
+  wait.tv_nsec=50000000L;
 
   if (exm->watchdog_exit == 1)
     return(0);
 
-  pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
-  ts = exm->ts;
-  pthread_mutex_unlock(&exm->watchdog_mutex);
-  while ((ts < exm->last_ts_rx + nsamps) && 
-	 (exm->watchdog_exit==0)) {
+  if (exm->daq_state == idle) {
+    tv_nsec=(unsigned long)((double)(nsamps)*1e9/cfg->sample_rate);
+    return(0);
+  }
+  ret = pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
 
-    diff = exm->last_ts_rx+nsamps - ts; // difference in samples between current timestamp and last RX received sample
-    // go to sleep until we should have enough samples (1024 for a bit more)
-#ifdef DEBUG_EXMIMO
-    printf("Reading %d samples, ts %lu, last_ts_rx %lu (%lu) => sleeping %u us\n",nsamps,ts,exm->last_ts_rx,exm->last_ts_rx+nsamps,
-	   (unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
+
+  switch (ret) {
+  case EINVAL:
+#ifdef DEBUG_EXMIMO 
+    printf("trx_exmimo_read: mutex_timedlock returned EINVAL\n");
 #endif
-    tv_nsec=(unsigned long)((double)(diff+3840)*1e9/cfg->sample_rate);
-    //    tv_nsec = 500000L;
-    old_ts = ts;
-    rt_sleep(&sleep_time,tv_nsec);
-#ifdef DEBUG_EXMIMO
-    printf("back\n");
+    return(0);
+    break;
+  case ETIMEDOUT: 
+#ifdef DEBUG_EXMIMO 
+    printf("trx_exmimo_read: mutex_timedlock returned ETIMEDOUT\n");
 #endif
-    // get new timestamp, in case we have to sleep again
-    pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
-    ts = exm->ts;
-    pthread_mutex_unlock(&exm->watchdog_mutex);
-    if (old_ts == ts) {
-      printf("ts stopped, returning\n");
-      return(0);
-    }
+    return(0);
+    break;
+  case EAGAIN: 
+#ifdef DEBUG_EXMIMO 
+    printf("trx_exmimo_read: mutex_timedlock returned EAGAIN\n");
+#endif
+    return(0);
+    break;
+  case EDEADLK: 
+#ifdef DEBUG_EXMIMO 
+    printf("trx_exmimo_read: mutex_timedlock returned EDEADLK\n");
+#endif
+    return(0);
+    break;
+  }
+  ts = exm->ts;
+  if (exm->wait_first_read==1) {
+    exm->wait_first_read=0;
+    exm->last_ts_rx = ts;
   }
 
-  /*
-  if (cfg->mmapped_dma == 0) {  // if buff is not the dma buffer, do a memcpy, otherwise do nothing
-    for (i=0;i<cc;i++) {
-
-      memcpy(buff[i],
-	     openair0_exmimo_pci[0].adc_head[i]+(exm->last_ts_rx % exm->samples_per_frame),
-	     nsamps*sizeof(int));
-
-    }
-    }*/
+  pthread_mutex_unlock(&exm->watchdog_mutex);
+  //  dump_frame_parms(frame_parms[0]);
   
-  *ptimestamp=exm->last_ts_rx;
-  exm->last_ts_rx += nsamps;
+  if (nsamps > (exm->samples_per_frame>>1)) {
+    n1 = nsamps>>1;
+    n2 = nsamps-n1;
+  }
+  else {
+    n1=nsamps;
+    n2=0;
+  }
+
+#ifdef DEBUG_EXMIMO
+  printf("Reading %d samples, ts %lu (%d), last_ts_rx %lu (%lu)\n",nsamps,ts,ts%exm->samples_per_frame,exm->last_ts_rx,exm->last_ts_rx+nsamps);
+#endif
+  for (n=n1,ntot=0;ntot<nsamps;n=n2) {
+    while ((ts < exm->last_ts_rx + n) && 
+	   (exm->watchdog_exit==0)) {
+      
+      diff = exm->last_ts_rx+n - ts; // difference in samples between current timestamp and last RX received sample
+      // go to sleep until we should have enough samples (1024 for a bit more)
+#ifdef DEBUG_EXMIMO
+      printf("portion %d samples, ts %lu, last_ts_rx %lu (%lu) => sleeping %u us\n",n,ts,exm->last_ts_rx,exm->last_ts_rx+n,
+	     (unsigned int)((double)(diff+1024)*1e6/cfg->sample_rate));
+#endif
+      tv_nsec=(unsigned long)((double)(diff+3840)*1e9/cfg->sample_rate);
+      //    tv_nsec = 500000L;
+      old_ts = ts;
+      rt_sleep(&sleep_time,tv_nsec);
+#ifdef DEBUG_EXMIMO
+      printf("back\n");
+#endif
+      // get new timestamp, in case we have to sleep again
+      pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+      ts = exm->ts;
+      pthread_mutex_unlock(&exm->watchdog_mutex);
+      if (old_ts == ts) {
+	printf("ts stopped, returning\n");
+	return(0);
+      }
+    }
+
+  
+  
+    if (cfg->mmapped_dma == 0) {  // if buff is not the dma buffer, do a memcpy, otherwise do nothing
+      for (i=0;i<cc;i++) {
+#ifdef DEBUG_EXMIMO
+	printf("copying to %p (%lu), from %llu\n",buff[i]+(ntot*sizeof(int)),ntot*sizeof(int),(exm->last_ts_rx % exm->samples_per_frame));
+#endif
+	if ((n+(exm->last_ts_rx%exm->samples_per_frame))<exm->samples_per_frame) {
+	  memcpy(buff[i]+(ntot*sizeof(int)),
+		 (void*)(openair0_exmimo_pci[0].adc_head[i]+(exm->last_ts_rx % exm->samples_per_frame)),
+		 n*sizeof(int));
+ 	}
+	else {
+	  first_len =  (exm->samples_per_frame-(exm->last_ts_rx%exm->samples_per_frame));
+#ifdef DEBUG_EXMIMO
+	  printf("split: first_len %d, remainder %d\n",first_len,n-first_len);
+#endif
+	  memcpy(buff[i]+(ntot*sizeof(int)),
+		 (void*)(openair0_exmimo_pci[0].adc_head[i]+(exm->last_ts_rx % exm->samples_per_frame)),
+		 first_len*sizeof(int));
+	  memcpy(buff[i]+(ntot+first_len)*sizeof(int),
+		 (void*)openair0_exmimo_pci[0].adc_head[i],
+		 (n-first_len)*sizeof(int));
+	}
+      }
+    }
+    pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+    exm->last_ts_rx += n;
+    pthread_mutex_unlock(&exm->watchdog_mutex);    
+    if (n==n1) {
+      *ptimestamp=exm->last_ts_rx;
+    }
+    ntot+=n;
+   }
+  
+
 
 
   return(nsamps);
@@ -582,14 +674,21 @@ int trx_exmimo_reset_stats(openair0_device* device) {
 
 }
 
-int trx_exmimo_stop(int card) {
+int trx_exmimo_stop(openair0_device* device) {
+
+  exmimo_state_t *exm=device->priv;
+
+  printf("Stopping ...\n");
+  exm->daq_state = idle;  
+  openair0_stop(0);
 
   return(0);
 
 }
 
-int trx_exmimo_set_freq(openair0_device* device, openair0_config_t *openair0_cfg1,int exmimo_dump_config) {
+int trx_exmimo_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
 
+  openair0_set_frequencies(device,openair0_cfg,0);
   return(0);
 }
 
@@ -663,7 +762,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->openair0_cfg = openair0_cfg;
   device->priv = (void *)exm;
 
-  openair0_config(openair0_cfg,0);
+
 
   create_watchdog(device);
 
@@ -684,6 +783,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
   int resampling_factor=2;
   int rx_filter=RXLPF25, tx_filter=TXLPF25;
   int ACTIVE_RF=0;
+  int i;
 
   exmimo_config_t         *p_exmimo_config;
   exmimo_id_t             *p_exmimo_id;
@@ -713,7 +813,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
     /* device specific */
     openair0_cfg[card].iq_txshift = 4;//shift
     openair0_cfg[card].iq_rxrescale = 15;//rescale iqs
-    openair0_cfg[card].mmapped_dma = 1;
+
 
     if (openair0_cfg[card].sample_rate==30.72e6) {
       resampling_factor = 0;
@@ -761,6 +861,12 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
         p_exmimo_config->rf.rf_freq_tx[ant] = (unsigned int)openair0_cfg[card].tx_freq[ant];
         p_exmimo_config->rf.tx_gain[ant][0] = (unsigned int)openair0_cfg[card].tx_gain[ant];
         printf("openair0 : programming card %d TX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
+
+	printf("Setting TX buffer to all-RX\n");
+
+	for (i=0;i<307200;i++) {
+	  ((uint32_t*)openair0_exmimo_pci[card].dac_head[ant])[i] = 0x00010001;
+	}
       }
 
       if (openair0_cfg[card].rx_freq[ant]>0) {
@@ -813,7 +919,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
       p_exmimo_config->rf.rf_local[ant]   = rf_local[ant];
       p_exmimo_config->rf.rf_rxdc[ant]    = rf_rxdc[ant];
 
-      if (( p_exmimo_config->rf.rf_freq_tx[ant] >= 850000000) && ( p_exmimo_config->rf.rf_freq_tx[ant] <= 865000000)) {
+      if (( p_exmimo_config->rf.rf_freq_tx[ant] >= 790000000) && ( p_exmimo_config->rf.rf_freq_tx[ant] <= 865000000)) {
         p_exmimo_config->rf.rf_vcocal[ant]  = rf_vcocal_850[ant];
         p_exmimo_config->rf.rffe_band_mode[ant] = DD_TDD;
       } else if (( p_exmimo_config->rf.rf_freq_tx[ant] >= 1900000000) && ( p_exmimo_config->rf.rf_freq_tx[ant] <= 2000000000)) {
@@ -826,7 +932,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
     }
 
     if (openair0_cfg[card].duplex_mode==duplex_mode_FDD) {
-      p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD;
+      p_exmimo_config->framing.tdd_config = DUPLEXMODE_FDD;// + TXRXSWITCH_LSB + TXRXSWITCH_LSB + ACTIVE_RF+ ACTIVE_RF;
       printf("!!!!!setting FDD (tdd_config=%d)\n",p_exmimo_config->framing.tdd_config);
     } 
     else {
@@ -857,6 +963,9 @@ int openair0_reconfig(openair0_config_t *openair0_cfg)
     return(-1);
   }
 
+#ifdef DEBUG_EXMIMO
+  printf("Reconfiguration of gains/frequencies\n");
+#endif
   for (card=0; card<openair0_num_detected_cards; card++) {
 
     p_exmimo_config = openair0_exmimo_pci[card].exmimo_config_ptr;
@@ -866,15 +975,18 @@ int openair0_reconfig(openair0_config_t *openair0_cfg)
       if (openair0_cfg[card].tx_freq[ant]) {
         p_exmimo_config->rf.rf_freq_tx[ant] = (unsigned int)openair0_cfg[card].tx_freq[ant];
         p_exmimo_config->rf.tx_gain[ant][0] = (unsigned int)openair0_cfg[card].tx_gain[ant];
-        printf("openair0 : programming TX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
+#ifdef DEBUG_EXMIMO
+        printf("openair0 -  %d : programming TX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_tx[ant],p_exmimo_config->rf.tx_gain[ant][0]);
+#endif
       }
 
 
       if (openair0_cfg[card].rx_freq[ant]) {
         p_exmimo_config->rf.rf_freq_rx[ant] = (unsigned int)openair0_cfg[card].rx_freq[ant];
         p_exmimo_config->rf.rx_gain[ant][0] = (unsigned int)openair0_cfg[card].rx_gain[ant];
-        printf("openair0 : programming RX antenna %d (freq %u, gain %d)\n",ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
-
+#ifdef DEBUG_EXMIMO
+        printf("openair0 -  %d : programming RX antenna %d (freq %u, gain %d)\n",card,ant,p_exmimo_config->rf.rf_freq_rx[ant],p_exmimo_config->rf.rx_gain[ant][0]);
+#endif
         switch (openair0_cfg[card].rxg_mode[ant]) {
         default:
         case max_gain:

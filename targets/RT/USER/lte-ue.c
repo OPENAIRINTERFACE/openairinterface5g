@@ -297,14 +297,7 @@ static void *UE_thread_synch(void *arg)
 #endif
 
 
-  pthread_mutex_lock(&sync_mutex);
-  printf("Locked sync_mutex, waiting (UE_sync_thread)\n");
 
-  while (sync_var<0)
-    pthread_cond_wait(&sync_cond, &sync_mutex);
-
-  pthread_mutex_unlock(&sync_mutex);
-  printf("unlocked sync_mutex (UE_sync_thread)\n");
 
   printf("starting UE synch thread (IC %d)\n",UE->proc.instance_cnt_synch);
   ind = 0;
@@ -344,6 +337,10 @@ static void *UE_thread_synch(void *arg)
       openair0_cfg[0].rx_freq[i] = downlink_frequency[0][i];
       openair0_cfg[0].tx_freq[i] = downlink_frequency[0][i]+uplink_frequency_offset[0][i];
       openair0_cfg[0].autocal[i] = 1;
+      if (uplink_frequency_offset[0][i] != 0) // 
+	openair0_cfg[0].duplex_mode = duplex_mode_FDD;
+      else //FDD
+	openair0_cfg[0].duplex_mode = duplex_mode_TDD;
     }
 
     sync_mode = pbch;
@@ -365,6 +362,19 @@ static void *UE_thread_synch(void *arg)
 
   }
 
+  if (openair0.trx_start_func(&openair0) != 0 ) { 
+    LOG_E(HW,"Could not start the device\n");
+    oai_exit=1;
+  }
+  pthread_mutex_lock(&sync_mutex);
+  printf("Locked sync_mutex, waiting (UE_sync_thread)\n");
+
+  while (sync_var<0)
+    pthread_cond_wait(&sync_cond, &sync_mutex);
+
+  pthread_mutex_unlock(&sync_mutex);
+  printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
+
   while (oai_exit==0) {
 
     if (pthread_mutex_lock(&UE->proc.mutex_synch) != 0) {
@@ -385,7 +395,7 @@ static void *UE_thread_synch(void *arg)
       return &UE_thread_synch_retval;
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SYNCH, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_SYNCH, 1 );
 
     switch (sync_mode) {
     case pss:
@@ -474,11 +484,15 @@ static void *UE_thread_synch(void *arg)
 	    break;
 	  }
 
-	  openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+	  //openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
 	  //openair0.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-	  //openair0.trx_stop_func(0);	  
+	  openair0.trx_stop_func(&openair0);	  
 	  sleep(1);
 	  init_frame_parms(&UE->frame_parms,1);
+	  if (openair0.trx_start_func(&openair0) != 0 ) { 
+	    LOG_E(HW,"Could not start the device\n");
+	    oai_exit=1;
+	  }
 	}
 	else {
 	  UE->is_synchronized = 1;
@@ -546,7 +560,7 @@ static void *UE_thread_synch(void *arg)
             openair0_cfg[card].rx_freq[i] = downlink_frequency[card][i]+freq_offset;
             openair0_cfg[card].tx_freq[i] = downlink_frequency[card][i]+uplink_frequency_offset[card][i]+freq_offset;
 
-	    openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+
 	    
 
             openair0_cfg[card].rx_gain[i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
@@ -554,10 +568,12 @@ static void *UE_thread_synch(void *arg)
 	    
           }
         }
+	//	openair0.trx_set_freq_func(&openair0,&openair0_cfg[0],0);
+
 	if (UE->UE_scan_carrier==1) {
-	  for (i=0;i<openair0_cfg[0].rx_num_channels;i++)
-	    openair0_cfg[0].autocal[i] = 1;
-	  
+	  for (i=0;i<openair0_cfg[0].rx_num_channels;i++) {
+	    //	    openair0_cfg[0].autocal[i] = 1;
+	  }
 	}
       }// initial_sync=0
 
@@ -567,9 +583,6 @@ static void *UE_thread_synch(void *arg)
     default:
       break;
     }
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SYNCH, 0 );
-
 
 
     if (pthread_mutex_lock(&UE->proc.mutex_synch) != 0) {
@@ -587,7 +600,7 @@ static void *UE_thread_synch(void *arg)
       return &UE_thread_synch_retval;
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SYNCH, 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_SYNCH, 0 );
   }  // while !oai_exit
 
   return &UE_thread_synch_retval;
@@ -923,7 +936,11 @@ static void *UE_thread_rxn_txnp4(void *arg)
       return &UE_thread_rx_retval;
     }
 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RX, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 1 );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->subframe_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_UE+(proc->subframe_tx&1), proc->subframe_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_UE+(proc->subframe_rx&1), proc->frame_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_UE+(proc->subframe_tx&1), proc->frame_tx );
 
     if ((subframe_select( &UE->frame_parms, proc->subframe_rx) == SF_DL) ||
 	(UE->frame_parms.frame_type == FDD) ||
@@ -955,8 +972,8 @@ static void *UE_thread_rxn_txnp4(void *arg)
 	UE->UE_mode[0] = PRACH;
       }
     }
-    
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RX, 0 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_THREAD_RXTX0+(proc->subframe_rx&1), 0 );
+
     
     if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
       LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RX\n" );
@@ -1114,6 +1131,7 @@ void *UE_thread(void *arg) {
 	  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
 	    rxp[i] = (void*)&dummy_rx[i][0];
 	  for (int sf=0;sf<10;sf++) {
+	    //	    printf("Reading dummy sf %d\n",sf);
 	    rxs = openair0.trx_read_func(&openair0,
 					 &timestamp,
 					 rxp,
@@ -1164,7 +1182,6 @@ void *UE_thread(void *arg) {
 
       }// start_rx_stream==0
       else {
-	//	printf("Frame %d, rx_offset %d (diff %d, timer %d)\n",UE->proc.proc_rxtx[0].frame_rx,UE->rx_offset,rx_off_diff,rx_correction_timer);
 	UE->proc.proc_rxtx[0].frame_rx++;
 	UE->proc.proc_rxtx[1].frame_rx++;
 
@@ -1172,6 +1189,7 @@ void *UE_thread(void *arg) {
 	  for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++) 
 	    rxp[i] = (void*)&rxdata[i][UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0+(sf*UE->frame_parms.samples_per_tti)];
 	  // grab signal for subframe
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 	  if (UE->mode != loop_through_memory) {
 	    if (sf<9) {
 	      rxs = openair0.trx_read_func(&openair0,
@@ -1196,7 +1214,7 @@ void *UE_thread(void *arg) {
 	      rx_off_diff = 0;
 	    }
 	  }
-
+	  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 	  // operate on thread sf mod 2
 	  UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[sf&1];
 
@@ -1650,8 +1668,8 @@ void *UE_thread_old(void *arg)
 /*!
  * \brief Initialize the UE theads.
  * Creates the UE threads:
- * - UE_thread_tx
- * - UE_thread_rx
+ * - UE_thread_rxtx0
+ * - UE_thread_rxtx1
  * - UE_thread_synch
  * and the locking between them.
  */
@@ -1751,6 +1769,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg,
     free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
     rxdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
     phy_vars_ue[CC_id]->common_vars.rxdata[i] = rxdata[i]; // what about the "-N_TA_offset" ? // N_TA offset for TDD
+    printf("rxdata[%d] : %p\n",i,rxdata[i]);
   }
   
   for (i=0; i<frame_parms->nb_antennas_tx; i++) {
@@ -1758,6 +1777,7 @@ int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg,
     free( phy_vars_ue[CC_id]->common_vars.txdata[i] );
     txdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
     phy_vars_ue[CC_id]->common_vars.txdata[i] = txdata[i];
+    printf("txdata[%d] : %p\n",i,txdata[i]);
   }
   
   // rxdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.rxdata[x]
