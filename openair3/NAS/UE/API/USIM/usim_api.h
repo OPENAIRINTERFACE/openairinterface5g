@@ -48,6 +48,12 @@ Description Implements the API used by the NAS layer to read/write
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
 
+/*
+ * Subscriber authentication security key
+ */
+#define USIM_API_K_SIZE         16
+#define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
+
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
@@ -106,6 +112,7 @@ typedef struct {
   /* Integrity key  */
 #define USIM_IK_SIZE  16
   Byte_t ik[USIM_IK_SIZE];
+  uint8_t usim_api_k[USIM_API_K_SIZE];
 } usim_keys_t;
 
 /*
@@ -343,7 +350,7 @@ int usim_api_read(usim_data_t* data);
 
 int usim_api_write(const usim_data_t* data);
 
-int usim_api_authenticate(const OctetString* rand, const OctetString* autn,
+int usim_api_authenticate(uint8_t usim_api_k[USIM_API_K_SIZE], const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts, OctetString* res,
                           OctetString* ck, OctetString* ik);
 int usim_api_authenticate_test(const OctetString* rand, const OctetString* autn,
