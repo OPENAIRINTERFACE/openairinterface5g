@@ -110,22 +110,15 @@ static struct {
  * The buffer used to receive data from the user application layer
  */
 #define USER_API_RECV_BUFFER_SIZE 4096
+// FIXME not reentrant
 static char _user_api_recv_buffer[USER_API_RECV_BUFFER_SIZE];
 
 /*
  * The buffer used to send data to the user application layer
  */
 #define USER_API_SEND_BUFFER_SIZE USER_API_RECV_BUFFER_SIZE
+// FIXME not reentrant
 static char _user_api_send_buffer[USER_API_SEND_BUFFER_SIZE];
-
-/*
- * The decoded data received from the user application layer
- */
-static struct {
-  int n_cmd;    /* number of user data to be processed    */
-#define USER_DATA_MAX 10
-  at_command_t cmd[USER_DATA_MAX];  /* user data to be processed  */
-} _user_data = {};
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -261,12 +254,12 @@ int user_api_get_fd(void)
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-const void* user_api_get_data(int index)
+const void* user_api_get_data(user_at_commands_t *commands, int index)
 {
   LOG_FUNC_IN;
 
-  if (index < _user_data.n_cmd) {
-    LOG_FUNC_RETURN ((void*)(&_user_data.cmd[index]));
+  if (index < commands->n_cmd) {
+    LOG_FUNC_RETURN ((void*)(&commands->cmd[index]));
   }
 
   LOG_FUNC_RETURN (NULL);
@@ -458,22 +451,22 @@ void user_api_close(int fd)
  **      Others:  _user_api_send_buffer, _user_data          **
  **                                                                        **
  ***************************************************************************/
-int user_api_decode_data(int length)
+int user_api_decode_data(user_at_commands_t *commands, int length)
 {
   LOG_FUNC_IN;
 
   /* Parse the AT command line */
   LOG_TRACE(INFO, "USR-API   - Decode user data: %s", _user_api_recv_buffer);
-  _user_data.n_cmd = at_command_decode(_user_api_recv_buffer, length,
-                                       _user_data.cmd);
+  commands->n_cmd = at_command_decode(_user_api_recv_buffer, length,
+                                       commands->cmd);
 
-  if (_user_data.n_cmd > 0) {
+  if (commands->n_cmd > 0) {
     /* AT command data received from the user application layer
      * has been successfully decoded */
     LOG_TRACE(INFO, "USR-API   - %d AT command%s ha%s been successfully "
-              "decoded", _user_data.n_cmd,
-              (_user_data.n_cmd > 1) ? "s" : "",
-              (_user_data.n_cmd > 1) ? "ve" : "s");
+              "decoded", commands->n_cmd,
+              (commands->n_cmd > 1) ? "s" : "",
+              (commands->n_cmd > 1) ? "ve" : "s");
   } else {
     int bytes;
 
@@ -490,7 +483,7 @@ int user_api_decode_data(int length)
     (void) _user_api_send_data(bytes);
   }
 
-  LOG_FUNC_RETURN (_user_data.n_cmd);
+  LOG_FUNC_RETURN (commands->n_cmd);
 }
 
 /****************************************************************************

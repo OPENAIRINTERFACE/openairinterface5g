@@ -74,6 +74,7 @@ static void _nas_clean(int usr_fd, int net_fd);
 
 uint8_t usim_test = 0;
 // FIXME user must be set up with right itti message instance
+// FIXME allocate user and initialize its fields
 nas_user_t *user = NULL;
 
 /****************************************************************************/

@@ -42,6 +42,7 @@ Description Implements the API used by the NAS layer running in the UE
 
 #include "commonDef.h"
 #include "networkDef.h"
+#include "at_command.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/
@@ -50,6 +51,16 @@ Description Implements the API used by the NAS layer running in the UE
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
+/*
+ * The decoded data received from the user application layer
+ */
+typedef struct {
+  int n_cmd;    /* number of user data to be processed    */
+#define USER_DATA_MAX 10
+  at_command_t cmd[USER_DATA_MAX];  /* user data to be processed  */
+} user_at_commands_t;
+
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
@@ -65,14 +76,14 @@ int user_api_emm_callback(Stat_t stat, tac_t tac, ci_t ci, AcT_t AcT, const char
 int user_api_esm_callback(int cid, network_pdn_state_t state);
 
 int user_api_get_fd(void);
-const void* user_api_get_data(int index);
+const void* user_api_get_data(user_at_commands_t *commands, int index);
 
 int user_api_read_data(int fd);
 int user_api_set_data(char *message);
 int user_api_send_data(int fd, int length);
 void user_api_close(int fd);
 
-int user_api_decode_data(int length);
+int user_api_decode_data(user_at_commands_t *commands, int length);
 int user_api_encode_data(const void* data, int add_success_code);
 
 #endif /* __USER_API_H__ */

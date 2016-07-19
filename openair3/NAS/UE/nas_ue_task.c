@@ -88,6 +88,12 @@ void *nas_ue_task(void *args_p)
       itti_subscribe_event_fd (TASK_NAS_UE, user->fd);
     }
 
+    user->user_at_commands = calloc(1, sizeof(user_at_commands_t));
+    if ( user->user_at_commands == NULL ) {
+        LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
+        // FIXME stop here
+    }
+
     user->at_response = calloc(1, sizeof(at_response_t));
     if ( user->at_response == NULL ) {
         LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);

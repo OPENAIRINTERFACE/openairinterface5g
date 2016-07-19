@@ -239,11 +239,11 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
   }
 
   /* Decode the user data message */
-  nb_command = user_api_decode_data (bytes);
+  nb_command = user_api_decode_data (user->user_at_commands, bytes);
 
   for (i = 0; i < nb_command; i++) {
     /* Get the user data to be processed */
-    const void *data = user_api_get_data (i);
+    const void *data = user_api_get_data (user->user_at_commands, i);
 
     if (data == NULL) {
       /* Failed to get user data at the given index;
