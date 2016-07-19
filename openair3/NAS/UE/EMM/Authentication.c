@@ -59,9 +59,11 @@ Description Defines the authentication EMM procedure executed by the
 #include "nas_timer.h"
 
 #include "emmData.h"
+#include "emm_timers.h"
 
 #include "emm_sap.h"
 #include "emm_cause.h"
+#include "emm_timers.h"
 
 #include "usim_api.h"
 #include "secu_defs.h"
@@ -71,15 +73,6 @@ Description Defines the authentication EMM procedure executed by the
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
-
-/*
- * Retransmission timer handlers
- */
-// FIXME REVIEW
-extern void *_emm_attach_t3410_handler(void *);
-extern void *_emm_service_t3417_handler(void *);
-extern void *_emm_detach_t3421_handler(void *);
-extern void *_emm_tau_t3430_handler(void *);
 
 extern uint8_t usim_test;
 
@@ -876,28 +869,28 @@ static int _authentication_start_timers(nas_user_t *user)
 
   if (authentication_data->timers & AUTHENTICATION_T3410) {
     /* Start attach timer */
-    emm_timers->T3410.id = nas_timer_start(emm_timers->T3410.sec, _emm_attach_t3410_handler, NULL);
+    emm_timers->T3410.id = nas_timer_start(emm_timers->T3410.sec, emm_attach_t3410_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3410 (%d) expires in "
               "%ld seconds", emm_timers->T3410.id, emm_timers->T3410.sec);
   }
 
   if (authentication_data->timers & AUTHENTICATION_T3417) {
     /* Start service request timer */
-    emm_timers->T3417.id = nas_timer_start(emm_timers->T3417.sec, _emm_service_t3417_handler, NULL);
+    emm_timers->T3417.id = nas_timer_start(emm_timers->T3417.sec, emm_service_t3417_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3417 (%d) expires in "
               "%ld seconds", emm_timers->T3417.id, emm_timers->T3417.sec);
   }
 
   if (authentication_data->timers & AUTHENTICATION_T3421) {
     /* Start detach timer */
-    emm_timers->T3421.id = nas_timer_start(emm_timers->T3421.sec, _emm_detach_t3421_handler, NULL);
+    emm_timers->T3421.id = nas_timer_start(emm_timers->T3421.sec, emm_detach_t3421_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3421 (%d) expires in "
               "%ld seconds", emm_timers->T3421.id, emm_timers->T3421.sec);
   }
 
   if (authentication_data->timers & AUTHENTICATION_T3430) {
     /* Start tracking area update timer */
-    emm_timers->T3430.id = nas_timer_start(emm_timers->T3430.sec, _emm_tau_t3430_handler, NULL);
+    emm_timers->T3430.id = nas_timer_start(emm_timers->T3430.sec, emm_tau_t3430_handler, NULL);
     LOG_TRACE(INFO,"EMM-PROC  - Timer T3430 (%d) expires in "
               "%ld seconds", emm_timers->T3430.id, emm_timers->T3430.sec);
   }

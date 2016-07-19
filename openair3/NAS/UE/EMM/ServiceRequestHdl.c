@@ -68,11 +68,6 @@ Description Defines the service request EMM procedure executed by the
  * --------------------------------------------------------------------------
  */
 /*
- * Timer handlers
- */
-void *_emm_service_t3417_handler(void *);
-
-/*
  * --------------------------------------------------------------------------
  *  Internal data handled by the service request procedure in the MME
  * --------------------------------------------------------------------------
@@ -109,7 +104,7 @@ void *_emm_service_t3417_handler(void *);
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void *_emm_service_t3417_handler(void *args)
+void *emm_service_t3417_handler(void *args)
 {
   LOG_FUNC_IN;
   nas_user_t *user = args;
