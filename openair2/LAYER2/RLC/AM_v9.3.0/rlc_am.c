@@ -103,7 +103,7 @@ rlc_am_get_buffer_occupancy_in_bytes (
   }
 
 #endif
-  return rlc_pP->status_buffer_occupancy + rlc_pP->retransmission_buffer_occupancy + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead;
+  return rlc_pP->status_buffer_occupancy + rlc_pP->retrans_num_bytes_to_retransmit + rlc_pP->sdu_buffer_occupancy + max_li_overhead + header_overhead;
 }
 //-----------------------------------------------------------------------------
 void
