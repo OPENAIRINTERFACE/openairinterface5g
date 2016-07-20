@@ -165,6 +165,12 @@ typedef enum  {
   NGFI_RCC_IF4     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
 } eNB_func_t;
   
+typedef enum {
+  synch_to_ext_device=0,  // synch to RF or Ethernet device
+  synch_to_other          // synch to another source (timer, other CC_id)
+} eNB_timing_t;
+
+
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
   int32_t amp[3][10];
@@ -211,7 +217,7 @@ typedef struct {
   struct sched_param sched_param_rxtx;
 } eNB_rxtx_proc_t;
 /// Context data structure for eNB subframe processing
-typedef struct {
+typedef struct eNB_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
   /// thread index
@@ -226,29 +232,46 @@ typedef struct {
   int frame_rx;
   /// frame to act upon for PRACH
   int frame_prach;
+  /// \brief Instance count for FH processing thread.
+  /// \internal This variable is protected by \ref mutex_FH.
+  int instance_cnt_FH;
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-  /// pthread structure for rx processing thread
-  pthread_t pthread_rx;
+  /// pthread structure for FH processing thread
+  pthread_t pthread_FH;
+  /// pthread structure for asychronous RX processing thread
+  pthread_t pthread_asynch_rx;
   /// flag to indicate first RX acquisition
   int first_rx;
-  /// pthread attributes for rx processing thread
-  pthread_attr_t attr_rx;
+  /// pthread attributes for FH processing thread
+  pthread_attr_t attr_FH;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-  /// scheduling parameters for rx thread
-  struct sched_param sched_param_rx;
+  /// pthread attributes for asynchronous RX thread
+  pthread_attr_t attr_asynch_rx;
+  /// scheduling parameters for FH thread
+  struct sched_param sched_param_FH;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-  /// condition variable for prach processing thread
+  /// scheduling parameters for asynch_rx thread
+  struct sched_param sched_param_asynch_rx;
+  /// condition variable for FH thread
   pthread_t pthread_prach;
-  /// condition variable for rx processing thread;
+  /// condition variable for FH thread
+  pthread_cond_t cond_FH;
+  /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
-  /// mutex for tx processing thread
+  /// mutex for FH
+  pthread_mutex_t mutex_FH;
+  /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
+  /// number of slave threads
+  int                  num_slaves;
+  /// array of pointers to slaves
+  struct eNB_proc_t_s           **slave_proc;
 } eNB_proc_t;
 
 
@@ -311,6 +334,7 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t              CC_id;
   eNB_proc_t           proc;
   eNB_func_t           node_function;
+  eNB_timing_t         node_timing;
   uint8_t              local_flag;
   uint32_t             rx_total_gain_dB;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -456,11 +480,6 @@ typedef struct PHY_VARS_eNB_s {
   time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
-  /*
-  time_stats_t phy_proc_sf[10]; // for each subframe
-  time_stats_t phy_proc_tx_sf[10];
-  time_stats_t phy_proc_rx_sf[10];
-  */
   time_stats_t rx_prach;
 
   time_stats_t ofdm_mod_stats;
@@ -505,11 +524,6 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_mcs[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
-#if ENABLE_RAL
-  hash_table_t    *ral_thresholds_timed;
-  SLIST_HEAD(ral_thresholds_gen_poll_enb_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
-  SLIST_HEAD(ral_thresholds_lte_poll_enb_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
-#endif
   
   /// RF and Interface devices per CC
   openair0_device rfdevice; 
@@ -520,13 +534,6 @@ typedef struct PHY_VARS_eNB_s {
 } PHY_VARS_eNB;
 
 #define debug_msg if (((mac_xface->frame%100) == 0) || (mac_xface->frame < 50)) msg
-//#define debug_msg msg
-
-/*
-typedef enum {
-  max_gain=0,med_gain,byp_gain
-} rx_gain_t;
-*/
 
 /// Top-level PHY Data Structure for UE
 typedef struct {

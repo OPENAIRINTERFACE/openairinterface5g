@@ -1166,17 +1166,6 @@ void init_ocm(void)
         LOG_D(OCM,"Initializing channel (%s, %d) from eNB %d to UE %d\n", oai_emulation.environment_system_config.fading.small_scale.selected_option,
               map_str_to_int(small_scale_names,oai_emulation.environment_system_config.fading.small_scale.selected_option), eNB_id, UE_id);
 
-        /* if (oai_emulation.info.transmission_mode == 5)
-                  eNB2UE[eNB_id][UE_id] = new_channel_desc_scm(PHY_vars_eNB_g[eNB_id]->frame_parms.nb_antennas_tx,
-                                                     PHY_vars_UE_g[UE_id]->frame_parms.nb_antennas_rx,
-                                                     (UE_id == 0)? Rice1_corr : Rice1_anticorr,
-                                                     oai_emulation.environment_system_config.system_bandwidth_MB,
-                                                     forgetting_factor,
-                                                     0,
-                                                     0);
-
-              else
-         */
 
         eNB2UE[eNB_id][UE_id][CC_id] = 
 	  new_channel_desc_scm(PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.nb_antennas_tx,
