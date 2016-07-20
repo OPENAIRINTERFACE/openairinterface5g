@@ -164,6 +164,11 @@ typedef enum  {
   NGFI_RRU_IF4,    // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
   NGFI_RCC_IF4     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
 } eNB_func_t;
+
+typedef enum  {
+  synch_to_device=0,
+  synch_to_other 
+} eNB_timing_t;
   
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals

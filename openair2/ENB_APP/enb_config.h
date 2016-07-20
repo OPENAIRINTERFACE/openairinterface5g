@@ -45,6 +45,7 @@
 #include "platform_types.h"
 #include "platform_constants.h"
 #include "PHY/impl_defs_lte.h"
+#include "PHY/defs.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
@@ -129,6 +130,8 @@ typedef struct Enb_properties_s {
 
   /* Physical parameters */
   int16_t                 nb_cc;
+  eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
+  eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
   lte_frame_type_t        frame_type[1+MAX_NUM_CCs];
   uint8_t                 tdd_config[1+MAX_NUM_CCs];
   uint8_t                 tdd_config_s[1+MAX_NUM_CCs];
@@ -201,7 +204,6 @@ typedef struct Enb_properties_s {
   long                    ue_TimersAndConstants_t311[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n310[1+MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[1+MAX_NUM_CCs];
-
 
   long                    srb1_timer_poll_retransmit;
   long                    srb1_timer_reordering;
