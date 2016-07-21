@@ -139,7 +139,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
     gen_IF4_prach_header(prach_header, frame, subframe);
 		    
     memcpy((int16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t),
-           (&rxsigF[0][0]+k), 
+           (&rxsigF[0][k]), 
            db_fulllength*sizeof(int16_t));
     			              
     if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,

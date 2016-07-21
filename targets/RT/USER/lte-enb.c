@@ -740,13 +740,7 @@ static void* eNB_thread_FH( void* param ) {
 
   int subframe = proc->subframe_rx;
   int frame = proc->frame_rx;
-  if (subframe==9) { 
-    subframe=0;
-    frame++;
-    frame&=1023;
-  } else {
-    subframe++;
-  }
+
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -935,7 +929,16 @@ static void* eNB_thread_FH( void* param ) {
 	rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-      
+
+      // sanitycheck
+      if (subframe==9) { 
+	subframe=0;
+	frame++;
+	frame&=1023;
+      } else {
+	subframe++;
+      }      
+
       rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
 					&proc->timestamp_rx,
 					rxp,

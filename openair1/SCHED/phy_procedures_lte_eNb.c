@@ -2564,13 +2564,15 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
                     );
       }
 
+
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
       if (eNB->node_function == NGFI_RRU_IF4) {
         /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-        send_IF4(eNB, frame, subframe, IF4_PULFFT, 0);
+        send_IF4(eNB, proc->frame_rx, proc->subframe_rx, IF4_PULFFT, 0);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
+
       }
 
     

@@ -73,6 +73,9 @@
 
 #define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"
 
+#define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
+#define ENB_CONFIG_STRING_CC_NODE_TIMING                                "node_timing"    
+
 #define ENB_CONFIG_STRING_FRAME_TYPE                                    "frame_type"
 #define ENB_CONFIG_STRING_TDD_CONFIG                                    "tdd_config"
 #define ENB_CONFIG_STRING_TDD_CONFIG_S                                  "tdd_config_s"
@@ -316,6 +319,10 @@ void enb_config_display(void)
     }
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
+      // CC_ID node function/timing
+      printf( "\tnode_function for CC %d:\t%d:\n",j,enb_properties.properties[i]->cc_node_function[j]);
+      printf( "\tnode_timing for CC %d:\t%d:\n",j,enb_properties.properties[i]->cc_node_timing[j]);
+
       printf( "\teutra band for CC %d:         \t%"PRId16":\n",j,enb_properties.properties[i]->eutra_band[j]);
       printf( "\tdownlink freq for CC %d:      \t%"PRIu64":\n",j,enb_properties.properties[i]->downlink_frequency[j]);
       printf( "\tuplink freq offset for CC %d: \t%"PRId32":\n",j,enb_properties.properties[i]->uplink_frequency_offset[j]);
@@ -324,7 +331,7 @@ void enb_config_display(void)
       printf( "\tN_RB_DL for CC %d:\t%"PRId16":\n",j,enb_properties.properties[i]->N_RB_DL[j]);
       printf( "\tnb_antennas_tx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_tx[j]);
       printf( "\tnb_antennas_rx for CC %d:\t%d:\n",j,enb_properties.properties[i]->nb_antennas_rx[j]);
-
+      
       // RACH-Config
       printf( "\trach_numberOfRA_Preambles for CC %d:\t%ld:\n",j,enb_properties.properties[i]->rach_numberOfRA_Preambles[j]);
       printf( "\trach_preamblesGroupAConfig for CC %d:\t%d:\n",j,enb_properties.properties[i]->rach_preamblesGroupAConfig[j]);
@@ -409,17 +416,17 @@ void enb_config_display(void)
       printf( "\tue_TimersAndConstants_t310 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t310[j]);
       printf( "\tue_TimersAndConstants_n310 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n310[j]);
       printf( "\tue_TimersAndConstants_t311 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_t311[j]);
-      printf( "\tue_TimersAndConstants_n311 for CC %d:\t%ld:\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n311[j]);
+      printf( "\tue_TimersAndConstants_n311 for CC %d:\t%ld:\n\n",j,enb_properties.properties[i]->ue_TimersAndConstants_n311[j]);
 
     }
 
     for (j=0; j < enb_properties.properties[i]->num_otg_elements; j++) {
-      printf( "\n\tOTG Destination UE ID:  \t%"PRIu16, enb_properties.properties[i]->otg_ue_id[j]);
+      printf( "\tOTG Destination UE ID:  \t%"PRIu16, enb_properties.properties[i]->otg_ue_id[j]);
       printf( "\n\tOTG App Type:  \t%"PRIu8, enb_properties.properties[i]->otg_app_type[j]);
       printf( "\n\tOTG Background Traffic:  \t%s\n", (enb_properties.properties[i]->otg_bg_traffic[j]==1) ? "Enabled" : "Disabled");
     }
 
-    printf( "\n\tGlobal log level:  \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->glog_level));
+    printf( "\tGlobal log level:  \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->glog_level));
     printf( "\tHW log level:      \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->hw_log_level));
     printf( "\tPHY log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->phy_log_level));
     printf( "\tMAC log level:     \t%s\n", map_int_to_str(log_level_names,enb_properties.properties[i]->mac_log_level));
@@ -511,6 +518,10 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
   int               j                             = 0;
   int               parse_errors                  = 0;
   libconfig_int     enb_id                        = 0;
+
+  const char*       cc_node_function              = NULL; 
+  const char*       cc_node_timing                = NULL; 
+
   const char*       cell_type                     = NULL;
   const char*       tac                           = 0;
   const char*       enb_name                      = NULL;
@@ -787,7 +798,9 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
               component_carrier = config_setting_get_elem(setting_component_carriers, j);
 
               //printf("Component carrier %d\n",component_carrier);
-              if (!(config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
+              if (!(config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_CC_NODE_FUNCTION, &cc_node_function)
+                   && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_CC_NODE_TIMING, &cc_node_timing)
+                   && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_FRAME_TYPE, &frame_type)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG, &tdd_config)
                    && config_setting_lookup_int(component_carrier, ENB_CONFIG_STRING_TDD_CONFIG_S, &tdd_config_s)
                    && config_setting_lookup_string(component_carrier, ENB_CONFIG_STRING_PREFIX_TYPE, &prefix_type)
@@ -865,6 +878,32 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
 
               enb_properties.properties[enb_properties_index]->nb_cc++;
 
+              if (strcmp(cc_node_function, "eNodeB_3GPP") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP;
+              } else if (strcmp(cc_node_function, "eNodeB_3GPP_BBU") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP_BBU;
+              } else if (strcmp(cc_node_function, "NGFI_RCC_IF4") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RCC_IF4;
+              } else if (strcmp(cc_node_function, "NGFI_RRU_IF4") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF4;
+              } else if (strcmp(cc_node_function, "NGFI_RRU_IF5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF5;
+              } else {
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: eNodeB_3GPP or eNodeB_3GPP_BBU or NGFI_IF4_RCC or NGFI_IF4_RRU or NGFI_IF5_RRU !\n",
+                             lib_config_file_name_pP, i, cc_node_function);
+              }
+
+              if (strcmp(cc_node_timing, "SYNCH_TO_DEVICE") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_timing[j] = synch_to_ext_device;
+              } else if (strcmp(cc_node_timing, "SYNCH_TO_OTHER") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_timing[j] = synch_to_other;
+              } else {
+                AssertError (0, parse_errors ++,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for node_function choice: SYNCH_TO_DEVICE or SYNCH_TO_OTHER !\n",
+                             lib_config_file_name_pP, i, cc_node_timing);
+              }
+
               enb_properties.properties[enb_properties_index]->tdd_config[j] = tdd_config;
               AssertError (tdd_config <= TDD_Config__subframeAssignment_sa6, parse_errors ++,
                            "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
@@ -888,7 +927,7 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
                              lib_config_file_name_pP, i, prefix_type);
               }
-
+              
               enb_properties.properties[enb_properties_index]->eutra_band[j] = eutra_band;
               enb_properties.properties[enb_properties_index]->downlink_frequency[j] = (uint32_t) downlink_frequency;
               enb_properties.properties[enb_properties_index]->uplink_frequency_offset[j] = (unsigned int) uplink_frequency_offset;

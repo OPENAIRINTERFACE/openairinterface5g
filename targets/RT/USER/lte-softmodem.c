@@ -169,6 +169,7 @@ volatile int                    oai_exit = 0;
 
 
 static char                     UE_flag=0;
+unsigned int                    mmapped_dma=0;
 //static uint8_t                  eNB_id=0,UE_id=0;
 
 static char                     threequarter_fs=0;
@@ -385,11 +386,12 @@ void help (void) {
   printf("  --ue-txgain set UE TX gain\n");
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
+  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");   
   printf("  --RCC run using NGFI RCC node function IF4 split\n");
   printf("  --RRU run using NGFI RRU node function  IF4 split\n");
   printf("  --eNB run using 3GPP eNB node function\n");   
   printf("  --BBU run using 3GPP eNB node function with IF5 split\n");   
-  printf("  --RRH run using RRH node function with IF5 split\n");   
+  printf("  --RRH run using RRH node function with IF5 split\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -686,6 +688,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
+    LONG_OPTION_MMAPPED_DMA,
     LONG_OPTION_RCC,
     LONG_OPTION_RRU,
     LONG_OPTION_ENB,
@@ -714,6 +717,7 @@ static void get_options (int argc, char **argv)
     {"ue-dump-frame", no_argument, NULL, LONG_OPTION_DUMP_FRAME},
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
+    {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
     {"RCC", no_argument, NULL, LONG_OPTION_RCC},
     {"RRU", no_argument, NULL, LONG_OPTION_RRU},
     {"eNB", no_argument, NULL, LONG_OPTION_ENB},
@@ -810,6 +814,10 @@ static void get_options (int argc, char **argv)
       phy_test = 1;
       break;
 
+    case LONG_OPTION_MMAPPED_DMA:
+      mmapped_dma = 1;
+      break;
+
     case LONG_OPTION_RCC:
       node_function = NGFI_RCC_IF4;
       break;
@@ -829,7 +837,7 @@ static void get_options (int argc, char **argv)
     case LONG_OPTION_RRH:
       node_function = NGFI_RRU_IF5;
       break;
-      
+              
 #if T_TRACER
     case LONG_OPTION_T_PORT: {
       extern int T_port;
@@ -1514,10 +1522,7 @@ int main( int argc, char **argv )
 
   for (card=0; card<MAX_CARDS; card++) {
 
-    if (UE_flag==0)
-      openair0_cfg[card].mmapped_dma=1;
-    else
-      openair0_cfg[card].mmapped_dma=0;
+    openair0_cfg[card].mmapped_dma=mmapped_dma;
 
     if(frame_parms[0]->N_RB_DL == 100) {
       if (frame_parms[0]->threequarter_fs) {
