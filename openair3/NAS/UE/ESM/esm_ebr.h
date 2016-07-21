@@ -42,6 +42,7 @@ Description Defines functions used to handle state of EPS bearer contexts
 #include "OctetString.h"
 
 #include "networkDef.h"
+#include "esmData.h"
 
 #include "nas_timer.h"
 
@@ -55,6 +56,13 @@ Description Defines functions used to handle state of EPS bearer contexts
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
+/*
+ * User notification callback, executed whenever a change of status with
+ * respect of PDN connection or EPS bearer context is notified by the EPS
+ * Session Management sublayer
+ */
+typedef int (*esm_indication_callback_t) (int, network_pdn_state_t);
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/

@@ -48,6 +48,7 @@ Description     Implements the API used by the NAS layer running in the UE
 #include "at_command.h"
 #include "at_response.h"
 #include "at_error.h"
+#include "esm_ebr.h"
 
 #include "user_indication.h"
 
