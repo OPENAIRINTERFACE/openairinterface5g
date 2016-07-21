@@ -83,6 +83,8 @@ int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
   LOG_FUNC_IN;
 
   int rc = RETURNerror;
+  emm_data_t *emm_data = user->emm_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   assert(emm_fsm_get_status(user) == EMM_REGISTERED_INITIATED);
 
@@ -140,7 +142,7 @@ int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
       /*
        * Notify EMM that the MT is registered
        */
-      rc = emm_proc_registration_notify(user->emm_data, NET_REG_STATE_HN);
+      rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_HN);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-FSM   - "
@@ -167,7 +169,7 @@ int EmmRegisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
       /*
        * Notify EMM that the MT's registration is denied
        */
-      rc = emm_proc_registration_notify(user->emm_data, NET_REG_STATE_DENIED);
+      rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_DENIED);
 
       if (rc != RETURNok) {
         LOG_TRACE(WARNING, "EMM-FSM   - "

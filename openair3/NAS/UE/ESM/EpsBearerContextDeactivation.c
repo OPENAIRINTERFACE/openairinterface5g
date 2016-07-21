@@ -282,6 +282,7 @@ int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, int is_stand
 
   int rc = RETURNok;
   esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   LOG_TRACE(INFO,"ESM-PROC  - EPS bearer context deactivation accepted");
 
@@ -299,7 +300,7 @@ int esm_proc_eps_bearer_context_deactivate_accept(nas_user_t *user, int is_stand
 
   if (rc != RETURNerror) {
     /* Set the EPS bearer context state to INACTIVE */
-    rc = esm_ebr_set_status(esm_ebr_data, ebi, ESM_EBR_INACTIVE, ue_triggered);
+    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_INACTIVE, ue_triggered);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in INACTIVE state */
@@ -359,6 +360,7 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid)
 
   int rc = RETURNerror;
   esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   /* Release the EPS bearer context entry */
   ebi = esm_ebr_context_release(user, ebi, pid, bid);
@@ -367,7 +369,7 @@ static int _eps_bearer_release(nas_user_t *user, int ebi, int *pid, int *bid)
     LOG_TRACE(WARNING, "ESM-PROC  - Failed to release EPS bearer context");
   } else {
     /* Set the EPS bearer context state to INACTIVE */
-    rc = esm_ebr_set_status(esm_ebr_data, ebi, ESM_EBR_INACTIVE, FALSE);
+    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_INACTIVE, FALSE);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in INACTIVE state */

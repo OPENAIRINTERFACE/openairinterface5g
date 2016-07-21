@@ -63,7 +63,7 @@ Description Defines functions used to handle state of EPS bearer contexts
  * respect of PDN connection or EPS bearer context is notified by the EPS
  * Session Management sublayer
  */
-typedef int (*esm_indication_callback_t) (int, network_pdn_state_t);
+typedef int (*esm_indication_callback_t) (user_api_id_t *user_api_id, int, network_pdn_state_t);
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/
@@ -81,7 +81,7 @@ esm_ebr_data_t *esm_ebr_initialize(void);
 int esm_ebr_assign(esm_ebr_data_t *esm_ebr_data, int ebi, int cid, int default_ebr);
 int esm_ebr_release(esm_ebr_data_t *esm_ebr_data, int ebi);
 
-int esm_ebr_set_status(esm_ebr_data_t *esm_ebr_data, int ebi, esm_ebr_state status, int ue_requested);
+int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data, int ebi, esm_ebr_state status, int ue_requested);
 esm_ebr_state esm_ebr_get_status(esm_ebr_data_t *esm_ebr_data, int ebi);
 
 int esm_ebr_is_not_in_use(esm_ebr_data_t *esm_ebr_data, int ebi);

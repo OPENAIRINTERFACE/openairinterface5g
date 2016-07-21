@@ -53,7 +53,7 @@ Description NAS type definition to manage a user equipment
 #include "EMM/Authentication.h"
 #include "EMM/IdleMode_defs.h"
 #include "API/USIM/usim_api.h"
-#include "API/USER/user_api.h"
+#include "API/USER/user_api_defs.h"
 #include "SecurityModeControl.h"
 #include "userDef.h"
 #include "at_response.h"
@@ -80,6 +80,7 @@ typedef struct {
   at_response_t *at_response; // data structure returned to the user as the result of NAS procedure function call
   //
   user_at_commands_t *user_at_commands; //decoded data received from the user application layer
+  user_api_id_t *user_api_id;
 } nas_user_t;
 
 #endif

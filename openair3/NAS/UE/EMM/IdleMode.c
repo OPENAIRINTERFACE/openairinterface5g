@@ -594,6 +594,7 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
 {
   LOG_FUNC_IN;
   emm_data_t *emm_data = user->emm_data;
+  user_api_id_t *user_api_id = user->user_api_id;
   emm_plmn_list_t *emm_plmn_list = user->emm_plmn_list;
 
   int rc = RETURNok;
@@ -613,7 +614,7 @@ int emm_proc_plmn_selection(nas_user_t *user, int index)
          * list of available PLMNs to the user
          */
         index = -1;
-        rc = emm_proc_network_notify(emm_plmn_list, emm_data, emm_plmn_list->hplmn);
+        rc = emm_proc_network_notify(emm_plmn_list, user_api_id, emm_data, emm_plmn_list->hplmn);
 
         if (rc != RETURNok) {
           LOG_TRACE(WARNING, "EMM-IDLE  - Failed to notify "
@@ -685,6 +686,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
   int rc = RETURNerror;
   emm_data_t *emm_data = user->emm_data;
   emm_plmn_list_t *emm_plmn_list = user->emm_plmn_list;
+  user_api_id_t *user_api_id = user->user_api_id;
   int index = emm_plmn_list->index;
   int select_next_plmn = FALSE;
 
@@ -706,7 +708,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
     emm_plmn_list->param[index].rat = rat;
 
     /* Update the location data and notify EMM that data have changed */
-    rc = emm_proc_location_notify(emm_data, tac, ci , rat);
+    rc = emm_proc_location_notify(user_api_id, emm_data, tac, ci , rat);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-IDLE  - Failed to notify location update");
@@ -934,7 +936,7 @@ int emm_proc_plmn_selection_end(nas_user_t *user, int found, tac_t tac, ci_t ci,
  **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status)
+int emm_proc_registration_notify(user_api_id_t *user_api_id, emm_data_t *emm_data, Stat_t status)
 {
   LOG_FUNC_IN;
 
@@ -944,7 +946,7 @@ int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status)
   if (emm_data->stat != status) {
     emm_data->stat = status;
     /* Notify EMM that data has changed */
-    rc = (*_emm_indication_notify)(emm_data, 1);
+    rc = (*_emm_indication_notify)(user_api_id, emm_data, 1);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -968,7 +970,7 @@ int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status)
  **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat)
+int emm_proc_location_notify(user_api_id_t *user_api_id, emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat)
 {
   LOG_FUNC_IN;
 
@@ -982,7 +984,7 @@ int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat
     emm_data->ci = ci;
     emm_data->rat = rat;
     /* Notify EMM that data has changed */
-    rc = (*_emm_indication_notify)(emm_data, 0);
+    rc = (*_emm_indication_notify)(user_api_id, emm_data, 0);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -1005,14 +1007,14 @@ int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat
  **          Others:    user->emm_data->                                 **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_network_notify(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, int index)
+int emm_proc_network_notify(emm_plmn_list_t *emm_plmn_list, user_api_id_t *user_api_id, emm_data_t *emm_data, int index)
 {
   LOG_FUNC_IN;
 
   /* Update the list of operators present in the network */
   int size = IdleMode_update_plmn_list(emm_plmn_list, emm_data, index);
   /* Notify EMM that data has changed */
-  int rc = (*_emm_indication_notify)(emm_data, size);
+  int rc = (*_emm_indication_notify)(user_api_id, emm_data, size);
 
   LOG_FUNC_RETURN (rc);
 }

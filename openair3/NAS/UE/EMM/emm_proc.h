@@ -156,8 +156,8 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi, in
  *             Network indication handlers
  *---------------------------------------------------------------------------
  */
-int emm_proc_registration_notify(emm_data_t *emm_data, Stat_t status);
-int emm_proc_location_notify(emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat);
-int emm_proc_network_notify(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, int index);
+int emm_proc_registration_notify(user_api_id_t *user_api_id, emm_data_t *emm_data, Stat_t status);
+int emm_proc_location_notify(user_api_id_t *user_api_id, emm_data_t *emm_data, tac_t tac, ci_t ci, AcT_t rat);
+int emm_proc_network_notify(emm_plmn_list_t *emm_plmn_list, user_api_id_t *user_api_id, emm_data_t *emm_data, int index);
 
 #endif /* __EMM_PROC_H__*/

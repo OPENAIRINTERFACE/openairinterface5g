@@ -331,6 +331,8 @@ int esm_ebr_context_release(nas_user_t *user,
   int found = FALSE;
   esm_pdn_t *pdn = NULL;
   esm_data_context_t *esm_ctx;
+  esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   LOG_FUNC_IN;
 
@@ -448,11 +450,11 @@ int esm_ebr_context_release(nas_user_t *user,
           }
 
           /* Set the EPS bearer context state to INACTIVE */
-          esm_ebr_set_status(user->esm_ebr_data, pdn->bearer[i]->ebi,
+          esm_ebr_set_status(user_api_id, esm_ebr_data, pdn->bearer[i]->ebi,
                                     ESM_EBR_INACTIVE, TRUE);
 
           /* Release EPS bearer data */
-          esm_ebr_release(user->esm_ebr_data, pdn->bearer[i]->ebi);
+          esm_ebr_release(esm_ebr_data, pdn->bearer[i]->ebi);
 
           // esm_ebr_release()
           /* Release dedicated EPS bearer data */

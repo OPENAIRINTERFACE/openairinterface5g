@@ -78,13 +78,22 @@ void *nas_ue_task(void *args_p)
   {
     /* Initialize user interface (to exchange AT commands with user process) */
     {
-      if (user_api_initialize (NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
+       user_api_id_t *user_api_id = calloc(1, sizeof(user_api_id_t));
+
+       if (user_api_id == NULL) {
+         LOG_E(NAS, "[UE] Failed to alloc user_api_id_t");
+         // FIXME stop here
+      }
+
+      user->user_api_id = user_api_id;
+
+      if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
                                NULL) != RETURNok) {
         LOG_E(NAS, "[UE] user interface initialization failed!");
         exit (EXIT_FAILURE);
       }
 
-      user->fd = user_api_get_fd ();
+      user->fd = user_api_get_fd (user_api_id);
       itti_subscribe_event_fd (TASK_NAS_UE, user->fd);
     }
 

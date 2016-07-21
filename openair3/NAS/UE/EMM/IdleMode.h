@@ -51,7 +51,7 @@ Description Defines the functions used to get information from the list
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
 
-typedef int (*IdleMode_callback_t) (emm_data_t *emm_data, int);
+typedef int (*IdleMode_callback_t) (user_api_id_t *user_api_id, emm_data_t *emm_data, int);
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/

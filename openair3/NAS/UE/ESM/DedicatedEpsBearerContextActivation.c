@@ -212,6 +212,8 @@ int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standa
   LOG_FUNC_IN;
 
   int rc;
+  esm_ebr_data_t *esm_ebr_data = user->esm_ebr_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   LOG_TRACE(INFO,"ESM-PROC  - Dedicated EPS bearer context activation "
             "accepted by the UE (ebi=%d)", ebi);
@@ -229,7 +231,7 @@ int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standa
 
   if (rc != RETURNerror) {
     /* Set the EPS bearer context state to ACTIVE */
-    rc = esm_ebr_set_status(user->esm_ebr_data, ebi, ESM_EBR_ACTIVE, ue_triggered);
+    rc = esm_ebr_set_status(user_api_id, esm_ebr_data, ebi, ESM_EBR_ACTIVE, ue_triggered);
 
     if (rc != RETURNok) {
       /* The EPS bearer context was already in ACTIVE state */

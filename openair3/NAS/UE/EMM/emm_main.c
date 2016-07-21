@@ -74,7 +74,7 @@ static int _emm_main_get_plmn_index(emm_plmn_list_t *emm_plmn_list, const char *
  * to the user application
  */
 static emm_indication_callback_t _emm_main_user_callback;
-static int _emm_main_callback(emm_data_t *emm_data, int);
+static int _emm_main_callback(user_api_id_t *user_api_id, emm_data_t *emm_data, int size);
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
@@ -881,12 +881,12 @@ int emm_main_is_emergency(emm_data_t *emm_data)
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-static int _emm_main_callback(emm_data_t *emm_data, int size)
+static int _emm_main_callback(user_api_id_t *user_api_id, emm_data_t *emm_data, int size)
 {
   LOG_FUNC_IN;
 
   /* Forward the notification to the user API */
-  int rc = (*_emm_main_user_callback)(emm_data->stat, emm_data->tac,
+  int rc = (*_emm_main_user_callback)(user_api_id, emm_data->stat, emm_data->tac,
                                       emm_data->ci, emm_data->rat,
                                       emm_data->plist.buffer, size);
 

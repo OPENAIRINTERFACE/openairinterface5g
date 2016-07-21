@@ -294,7 +294,7 @@ int esm_ebr_release(esm_ebr_data_t *esm_ebr_data,
  **      Return:    RETURNok, RETURNerror                      **
  **                                                                        **
  ***************************************************************************/
-int esm_ebr_set_status(esm_ebr_data_t *esm_ebr_data,
+int esm_ebr_set_status(user_api_id_t *user_api_id, esm_ebr_data_t *esm_ebr_data,
   int ebi, esm_ebr_state status, int ue_requested)
 {
   esm_ebr_context_t *ebr_ctx;
@@ -329,7 +329,7 @@ int esm_ebr_set_status(esm_ebr_data_t *esm_ebr_data,
       /*
        * Notify the user that the state of the EPS bearer has changed
        */
-      (*_esm_ebr_callback)(ebr_ctx->cid,
+      (*_esm_ebr_callback)(user_api_id, ebr_ctx->cid,
                            _esm_ebr_pdn_state[ue_requested][ebr_ctx->is_default_ebr][status]);
       LOG_FUNC_RETURN (RETURNok);
     }

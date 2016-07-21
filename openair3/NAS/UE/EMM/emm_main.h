@@ -57,7 +57,7 @@ Description Defines the EPS Mobility Management procedure call manager,
  * location change, new PLMN becomes available) is notified by the
  * EPS Mobility Management sublayer
  */
-typedef int (*emm_indication_callback_t) (Stat_t, tac_t, ci_t, AcT_t,
+typedef int (*emm_indication_callback_t) (user_api_id_t *user_api_id, Stat_t, tac_t, ci_t, AcT_t,
     const char*, size_t);
 
 /****************************************************************************/

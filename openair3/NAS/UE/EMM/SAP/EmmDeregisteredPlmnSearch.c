@@ -85,6 +85,8 @@ Description Implements the EPS Mobility Management procedures executed
 int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
 {
   LOG_FUNC_IN;
+  emm_data_t *emm_data = user->emm_data;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   int rc = RETURNerror;
 
@@ -95,7 +97,7 @@ int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
     /*
      * No suitable cell of the selected PLMN has been found to camp on
      */
-    rc = emm_proc_registration_notify(user->emm_data, NET_REG_STATE_DENIED);
+    rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_DENIED);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-FSM   - "
@@ -112,7 +114,7 @@ int EmmDeregisteredPlmnSearch(nas_user_t *user, const emm_reg_t *evt)
      * may be selected either automatically or manually.
      * Or the user manually re-selected a PLMN to register to.
      */
-    rc = emm_proc_registration_notify(user->emm_data, NET_REG_STATE_ON);
+    rc = emm_proc_registration_notify(user_api_id, emm_data, NET_REG_STATE_ON);
 
     if (rc != RETURNok) {
       LOG_TRACE(WARNING, "EMM-FSM   - "

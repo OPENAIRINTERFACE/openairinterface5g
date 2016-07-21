@@ -216,13 +216,14 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
   int nb_command;
   int bytes;
   int i;
+  user_api_id_t *user_api_id = user->user_api_id;
 
   if (message != NULL) {
     /* Set the message in receive buffer (Use to simulate reception of data from UserProcess) */
     bytes = user_api_set_data(message);
   } else {
     /* Read the user data message */
-    bytes = user_api_read_data (user->fd);
+    bytes = user_api_read_data (user_api_id, user->fd);
 
     if (bytes == RETURNerror) {
       /* Failed to read data from the user application layer;
@@ -239,7 +240,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
   }
 
   /* Decode the user data message */
-  nb_command = user_api_decode_data (user->user_at_commands, bytes);
+  nb_command = user_api_decode_data (user_api_id, user->user_at_commands, bytes);
 
   for (i = 0; i < nb_command; i++) {
     /* Get the user data to be processed */
@@ -278,7 +279,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
       }
 
       /* Send the data message to the user */
-      bytes = user_api_send_data (user->fd, bytes);
+      bytes = user_api_send_data (user_api_id, user->fd, bytes);
 
       if (bytes == RETURNerror) {
         /* Failed to send data to the user application layer;
