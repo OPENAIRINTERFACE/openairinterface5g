@@ -62,6 +62,20 @@ static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, i
   return (exit_loop);
 }
 
+// Initialize user api id and port number
+void nas_user_api_id_initialize(nas_user_t *user) {
+  user_api_id_t *user_api_id = calloc_or_fail(sizeof(user_api_id_t));
+  user->user_api_id = user_api_id;
+
+  if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
+              NULL) != RETURNok) {
+      LOG_E(NAS, "[UE %d] user interface initialization failed!", user->ueid);
+      exit (EXIT_FAILURE);
+  }
+
+  itti_subscribe_event_fd (TASK_NAS_UE, user_api_get_fd(user_api_id));
+}
+
 void *nas_ue_task(void *args_p)
 {
   int                   nb_events;
@@ -81,23 +95,10 @@ void *nas_ue_task(void *args_p)
   /* Initialize UE NAS (EURECOM-NAS) */
   {
     /* Initialize user interface (to exchange AT commands with user process) */
-    {
-      user_api_id_t *user_api_id = calloc_or_fail(sizeof(user_api_id_t));
-      user->user_api_id = user_api_id;
-
-      if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
-                               NULL) != RETURNok) {
-        LOG_E(NAS, "[UE] user interface initialization failed!");
-        exit (EXIT_FAILURE);
-      }
-
-      itti_subscribe_event_fd (TASK_NAS_UE, user_api_get_fd(user_api_id));
-    }
-
+    nas_user_api_id_initialize(user);
     user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
     user->at_response = calloc_or_fail(sizeof(at_response_t));
     user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
-
     /* Initialize NAS user */
     nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
   }
