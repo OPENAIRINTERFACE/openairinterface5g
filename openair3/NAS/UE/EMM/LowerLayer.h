@@ -79,13 +79,12 @@ typedef int (*lowerlayer_release_callback_t)(void *);
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-// FIXME prototype with ueid
-int lowerlayer_success(nas_user_t *user, unsigned int ueid);
-int lowerlayer_failure(nas_user_t *user, unsigned int ueid);
+int lowerlayer_success(nas_user_t *user);
+int lowerlayer_failure(nas_user_t *user);
 int lowerlayer_establish(nas_user_t *user);
 int lowerlayer_release(nas_user_t *user, int cause);
 
-int lowerlayer_data_ind(nas_user_t *user, unsigned int ueid, const OctetString *data);
-int lowerlayer_data_req(nas_user_t *user, unsigned int ueid, const OctetString *data);
+int lowerlayer_data_ind(nas_user_t *user, const OctetString *data);
+int lowerlayer_data_req(nas_user_t *user, const OctetString *data);
 
 #endif /* __LOWERLAYER_H__*/

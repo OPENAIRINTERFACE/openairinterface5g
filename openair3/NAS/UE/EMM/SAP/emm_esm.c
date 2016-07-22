@@ -149,7 +149,7 @@ int emm_esm_send(nas_user_t *user, const emm_esm_t *msg)
 
   case _EMMESM_UNITDATA_REQ:
     /* ESM requests EMM to transfer ESM data unit to lower layer */
-    rc = lowerlayer_data_req(user, msg->ueid, &msg->u.data.msg);
+    rc = lowerlayer_data_req(user, &msg->u.data.msg);
     break;
 
   default:

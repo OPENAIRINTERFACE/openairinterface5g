@@ -446,18 +446,18 @@ static int _emm_as_data_ind(nas_user_t *user, const emm_as_data_t *msg, int *emm
                    EPS_SESSION_MANAGEMENT_MESSAGE) {
           const OctetString data = {bytes, (uint8_t *)plain_msg};
           /* Foward ESM data to EPS session management */
-          rc = lowerlayer_data_ind(user, msg->ueid, &data);
+          rc = lowerlayer_data_ind(user, &data);
         }
 
         free(plain_msg);
       }
     } else {
       /* Process successfull lower layer transfer indication */
-      rc = lowerlayer_success(user, msg->ueid);
+      rc = lowerlayer_success(user);
     }
   } else {
     /* Process lower layer transmission failure of NAS message */
-    rc = lowerlayer_failure(user, msg->ueid);
+    rc = lowerlayer_failure(user);
   }
 
   LOG_FUNC_RETURN (rc);
@@ -496,7 +496,7 @@ static int _emm_as_establish_cnf(nas_user_t *user, const emm_as_establish_t *msg
   } else {
     /* The initial NAS message has been successfully delivered to
      * lower layers */
-    rc = lowerlayer_success(user, 0);
+    rc = lowerlayer_success(user);
     LOG_FUNC_RETURN (rc);
   }
 
@@ -571,7 +571,7 @@ static int _emm_as_establish_rej(nas_user_t *user)
             "failure");
 
   /* Process lower layer transmission failure of initial NAS message */
-  rc = lowerlayer_failure(user, 0);
+  rc = lowerlayer_failure(user);
 
   LOG_FUNC_RETURN (rc);
 }

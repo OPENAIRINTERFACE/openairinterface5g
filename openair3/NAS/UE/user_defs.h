@@ -59,6 +59,7 @@ Description NAS type definition to manage a user equipment
 #include "at_response.h"
 
 typedef struct {
+  int ueid; /* UE lower layer identifier */
   int fd;
   proc_data_t proc;
   // Eps Session Management

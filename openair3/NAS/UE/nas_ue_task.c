@@ -71,6 +71,7 @@ void *nas_ue_task(void *args_p)
   nas_user_t user_value = {};
   nas_user_t *user = &user_value;
 
+  user->ueid = 0;
 
   itti_mark_task_ready (TASK_NAS_UE);
   MSC_START_USE();
