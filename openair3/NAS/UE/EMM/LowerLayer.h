@@ -49,27 +49,10 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 /*********************  G L O B A L    C O N S T A N T S  *******************/
 /****************************************************************************/
 
-/*
- * Type of EMM procedure callback function executed whenever data are
- * successfully delivered to the network
- */
-typedef int (*lowerlayer_success_callback_t)(void *);
-
-/*
- * Type of EMM procedure callback function executed when data are not
- * delivered to the network because a lower layer failure occurred
- */
-typedef int (*lowerlayer_failure_callback_t)(int, void *);
-
-/*
- * Type of EMM procedure callback function executed when NAS signalling
- * connection is released
- */
-typedef int (*lowerlayer_release_callback_t)(void *);
-
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
+
 
 /****************************************************************************/
 /********************  G L O B A L    V A R I A B L E S  ********************/

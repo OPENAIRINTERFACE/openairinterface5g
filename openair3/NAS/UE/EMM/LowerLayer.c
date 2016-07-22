@@ -60,17 +60,6 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
 
-/*
- * Data structure used to handle EMM procedures executed by the UE upon
- * receiving lower layer notifications
- */
-static struct {
-  lowerlayer_success_callback_t success; /* Successful data delivery  */
-  lowerlayer_failure_callback_t failure; /* Lower layer failure   */
-  lowerlayer_release_callback_t release; /* NAS signalling release    */
-  void *args;         /* EMM procedure argument parameters    */
-} _lowerlayer_data;
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -293,17 +282,17 @@ int lowerlayer_data_req(nas_user_t *user, const OctetString *data)
  **      Others:    _lowerlayer_data                           **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_initialize(lowerlayer_success_callback_t success,
+int emm_proc_lowerlayer_initialize(lowerlayer_data_t *lowerlayer_data, lowerlayer_success_callback_t success,
                                    lowerlayer_failure_callback_t failure,
                                    lowerlayer_release_callback_t release,
                                    void *args)
 {
   LOG_FUNC_IN;
 
-  _lowerlayer_data.success = success;
-  _lowerlayer_data.failure = failure;
-  _lowerlayer_data.release = release;
-  _lowerlayer_data.args = args;
+  lowerlayer_data->success = success;
+  lowerlayer_data->failure = failure;
+  lowerlayer_data->release = release;
+  lowerlayer_data->args = args;
 
   LOG_FUNC_RETURN (RETURNok);
 }
@@ -324,17 +313,17 @@ int emm_proc_lowerlayer_initialize(lowerlayer_success_callback_t success,
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_success(void)
+int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_success_callback_t emm_callback = _lowerlayer_data.success;
+  lowerlayer_success_callback_t emm_callback = lowerlayer_data->success;
 
   if (emm_callback) {
-    rc = (*emm_callback)(_lowerlayer_data.args);
-    _lowerlayer_data.success = NULL;
+    rc = (*emm_callback)(lowerlayer_data->args);
+    lowerlayer_data->success = NULL;
   }
 
   LOG_FUNC_RETURN (rc);
@@ -356,17 +345,17 @@ int emm_proc_lowerlayer_success(void)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_failure(int is_initial)
+int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, int is_initial)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_failure_callback_t emm_callback = _lowerlayer_data.failure;
+  lowerlayer_failure_callback_t emm_callback = lowerlayer_data->failure;
 
   if (emm_callback) {
-    rc = (*emm_callback)(is_initial, _lowerlayer_data.args);
-    _lowerlayer_data.failure = NULL;
+    rc = (*emm_callback)(is_initial, lowerlayer_data->args);
+    lowerlayer_data->failure = NULL;
   }
 
   LOG_FUNC_RETURN (rc);
@@ -387,17 +376,17 @@ int emm_proc_lowerlayer_failure(int is_initial)
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int emm_proc_lowerlayer_release(void)
+int emm_proc_lowerlayer_release(lowerlayer_data_t *lowerlayer_data)
 {
   LOG_FUNC_IN;
 
   int rc = RETURNok;
 
-  lowerlayer_release_callback_t emm_callback = _lowerlayer_data.release;
+  lowerlayer_release_callback_t emm_callback = lowerlayer_data->release;
 
   if (emm_callback) {
-    rc = (*emm_callback)(_lowerlayer_data.args);
-    _lowerlayer_data.release = NULL;
+    rc = (*emm_callback)(lowerlayer_data->args);
+    lowerlayer_data->release = NULL;
   }
 
   LOG_FUNC_RETURN (rc);

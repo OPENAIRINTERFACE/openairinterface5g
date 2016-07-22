@@ -107,7 +107,13 @@ void *nas_ue_task(void *args_p)
 
     user->at_response = calloc(1, sizeof(at_response_t));
     if ( user->at_response == NULL ) {
-        LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
+        LOG_E(NAS, "[UE %d] Can't allocate memory for at_response\n", 0);
+        exit(EXIT_FAILURE);
+    }
+
+    user->lowerlayer_data = calloc(1, sizeof(lowerlayer_data_t));
+    if ( user->lowerlayer_data == NULL ) {
+        LOG_E(NAS, "[UE %d] Can't allocate memory for lowerlayer_data\n", 0);
         exit(EXIT_FAILURE);
     }
 

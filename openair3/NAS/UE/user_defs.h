@@ -52,6 +52,7 @@ Description NAS type definition to manage a user equipment
 #include "EMM/emmData.h"
 #include "EMM/Authentication.h"
 #include "EMM/IdleMode_defs.h"
+#include "EMM/LowerLayer_defs.h"
 #include "API/USIM/usim_api.h"
 #include "API/USER/user_api_defs.h"
 #include "SecurityModeControl.h"
@@ -81,6 +82,7 @@ typedef struct {
   //
   user_at_commands_t *user_at_commands; //decoded data received from the user application layer
   user_api_id_t *user_api_id;
+  lowerlayer_data_t *lowerlayer_data;
 } nas_user_t;
 
 #endif
