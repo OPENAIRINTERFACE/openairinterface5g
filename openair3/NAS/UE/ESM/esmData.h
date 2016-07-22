@@ -204,6 +204,7 @@ typedef esm_data_context_t esm_data_t;
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
+// FIXME prototype and buffer allocation
 extern char ip_addr_str[100];
 
 extern char *esm_data_get_ipv4_addr(const OctetString *ip_addr);

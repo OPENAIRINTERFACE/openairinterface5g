@@ -33,8 +33,10 @@
 
 #include "nas_user.h"
 
+// FIXME make command line option for NAS_UE_AUTOSTART
 # define NAS_UE_AUTOSTART 1
 
+// FIXME review these externs
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 

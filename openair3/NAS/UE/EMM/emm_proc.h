@@ -107,7 +107,6 @@ int emm_proc_attach_release(void *args);
 int emm_proc_attach_restart(nas_user_t *user);
 
 int emm_proc_attach_set_emergency(emm_data_t *emm_data);
-// FIXME check prototype
 int emm_proc_attach_set_detach(void *user);
 
 

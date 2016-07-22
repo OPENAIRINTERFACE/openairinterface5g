@@ -97,7 +97,6 @@ int EmmDeregistered(nas_user_t *user, const emm_reg_t *evt)
 
 
   /* Delete the authentication data RAND and RES */
-  // FIXME REVIEW
   rc = emm_proc_authentication_delete(user);
 
   if (rc != RETURNok) {
