@@ -48,7 +48,7 @@ static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, i
   for (event = 0; event < nb_events; event++) {
     if (events[event].events != 0) {
       /* If the event has not been yet been processed (not an itti message) */
-      if (events[event].data.fd == user->fd) {
+      if (events[event].data.fd == user_api_get_fd(user->user_api_id)) {
         exit_loop = nas_user_receive_and_process(user, NULL);
       } else {
         LOG_E(NAS, "[UE] Received an event from an unknown fd %d!\n", events[event].data.fd);
@@ -94,8 +94,7 @@ void *nas_ue_task(void *args_p)
         exit (EXIT_FAILURE);
       }
 
-      user->fd = user_api_get_fd (user_api_id);
-      itti_subscribe_event_fd (TASK_NAS_UE, user->fd);
+      itti_subscribe_event_fd (TASK_NAS_UE, user_api_get_fd(user_api_id));
     }
 
     user->user_at_commands = calloc(1, sizeof(user_at_commands_t));

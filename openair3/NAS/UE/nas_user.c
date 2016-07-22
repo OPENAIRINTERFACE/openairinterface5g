@@ -223,7 +223,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
     bytes = user_api_set_data(user_api_id, message);
   } else {
     /* Read the user data message */
-    bytes = user_api_read_data (user_api_id, user->fd);
+    bytes = user_api_read_data (user_api_id);
 
     if (bytes == RETURNerror) {
       /* Failed to read data from the user application layer;
@@ -279,7 +279,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
       }
 
       /* Send the data message to the user */
-      bytes = user_api_send_data (user_api_id, user->fd, bytes);
+      bytes = user_api_send_data (user_api_id, bytes);
 
       if (bytes == RETURNerror) {
         /* Failed to send data to the user application layer;

@@ -60,7 +60,6 @@ Description NAS type definition to manage a user equipment
 
 typedef struct {
   int ueid; /* UE lower layer identifier */
-  int fd;
   proc_data_t proc;
   // Eps Session Management
   esm_data_t *esm_data; // ESM internal data (used within ESM only)

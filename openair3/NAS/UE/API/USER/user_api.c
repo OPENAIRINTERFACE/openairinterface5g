@@ -225,8 +225,6 @@ const void* user_api_get_data(user_at_commands_t *commands, int index)
  **                                                                        **
  ** Description: Read data received from the user application layer        **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             from which data have been received         **
  **          Others:            _user_api_id                               **
  **                                                                        **
  ** Outputs: Return:            The number of bytes read when success;     **
@@ -234,19 +232,11 @@ const void* user_api_get_data(user_at_commands_t *commands, int index)
  **          Others:            user_api_id->recv_buffer, _user_api_id        **
  **                                                                        **
  ***************************************************************************/
-int user_api_read_data(user_api_id_t *user_api_id, int fd)
+int user_api_read_data(user_api_id_t *user_api_id)
 {
   LOG_FUNC_IN;
 
   int rbytes;
-
-  /* Sanity check */
-  int sfd = user_api_get_fd(user_api_id);
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_RETURN (RETURNerror);
-  }
 
   memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
@@ -303,8 +293,6 @@ int user_api_set_data(user_api_id_t *user_api_id, char *message)
  **                                                                        **
  ** Description: Send data to the user application layer                   **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             to which data have to be sent              **
  **              length:        Number of bytes to send                    **
  **                                                                        **
  ** Outputs:     Return:        The number of bytes sent when success;     **
@@ -329,17 +317,14 @@ static int _user_api_send_data(user_api_id_t *user_api_id, int length)
 
   return sbytes;
 }
-int user_api_send_data(user_api_id_t *user_api_id, int fd, int length)
+
+/****************************************************************************
+ **                                                                        **
+ ** Name:        user_api_close()                                          **
+ ***************************************************************************/
+ int user_api_send_data(user_api_id_t *user_api_id, int length)
 {
   LOG_FUNC_IN;
-
-  /* Sanity check */
-  int sfd = user_api_get_fd(user_api_id);
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_RETURN (RETURNerror);
-  }
 
   /* Send data to the user application layer */
   int sbytes = 0;
@@ -358,26 +343,14 @@ int user_api_send_data(user_api_id_t *user_api_id, int fd, int length)
  ** Description: Close the user API from which the NAS layer sent/received **
  **              messages to/from the user application layer               **
  **                                                                        **
- ** Inputs:      fd:            File descriptor of the connection endpoint **
- **                             allocated by the system to communicate     **
- **                             with the user application layer            **
  **              Others:        None                                       **
  **                                                                        **
  ** Outputs:     Return:        None                                       **
  **                                                                        **
  ***************************************************************************/
-void user_api_close(user_api_id_t *user_api_id, int fd)
+void user_api_close(user_api_id_t *user_api_id)
 {
   LOG_FUNC_IN;
-
-  /* Sanity check */
-  int sfd = user_api_get_fd(user_api_id);
-
-  if (fd != sfd) {
-    LOG_TRACE(ERROR, "USR-API   - Endpoint %d is not the one created for communication with the user application layer (%d)", fd, sfd);
-    LOG_FUNC_OUT;
-    return;
-  }
 
   /* Cleanup the connection endpoint */
   user_api_id->close(user_api_id->endpoint) ;
