@@ -410,7 +410,6 @@ target_include_directories(emm PRIVATE
 # esm LIB
 ################################################################################
 set(esm_SRC
-    ${OPENAIR_NAS_DIR}/UE/ESM/esm_main.c
     ${OPENAIR_NAS_DIR}/UE/ESM/DedicatedEpsBearerContextActivation.c
     ${OPENAIR_NAS_DIR}/UE/ESM/DefaultEpsBearerContextActivation.c
     ${OPENAIR_NAS_DIR}/UE/ESM/EpsBearerContextDeactivation.c
@@ -482,11 +481,13 @@ set(esm_HDR
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_recv.h
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_sap.h
     ${OPENAIR_NAS_DIR}/UE/ESM/SAP/esm_send.h
+    ${OPENAIR_DIR}/common/utils/utils.h
 )
 
 add_library(esm ${esm_SRC} ${esm_HDR})
 
 target_include_directories(esm PRIVATE 
+                     ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_NAS_DIR}/UE
                      ${OPENAIR_NAS_DIR}/UE/API/USER 
                      ${OPENAIR_NAS_DIR}/UE/ESM
@@ -673,6 +674,7 @@ target_include_directories(ies PRIVATE
 ################################################################################
 include_directories( 
                      ${OPENAIR_NAS_DIR}/UE
+                     ${OPENAIR_DIR}/common/utils
                      ${OPENAIR_DIR}/common/utils/msc 
                      ${OPENAIR3_DIR}/COMMON 
                      ${OPENAIR3_DIR}/SECU 
@@ -694,6 +696,7 @@ ADD_EXECUTABLE(at_nas_ue  ${OPENAIR_NAS_DIR}/UE/UEprocess.c
                           ${OPENAIR_NAS_DIR}/UE/nas_parser.c
                           ${OPENAIR_NAS_DIR}/UE/nas_proc.c  
                           ${OPENAIR_NAS_DIR}/UE/nas_user.c  
+                          ${OPENAIR_DIR}/common/utils/utils.c
                           )
                           
 target_link_libraries (at_nas_ue 

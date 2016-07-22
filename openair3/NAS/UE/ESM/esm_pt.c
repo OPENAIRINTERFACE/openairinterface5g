@@ -42,6 +42,7 @@ Description Defines functions used to handle ESM procedure transactions.
 
 #include "commonDef.h"
 #include "nas_log.h"
+#include "utils.h"
 
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy
@@ -84,13 +85,8 @@ static int _esm_pt_get_available_entry(esm_pt_data_t *esm_pt_data);
 esm_pt_data_t *esm_pt_initialize(void)
 {
   LOG_FUNC_IN;
-  esm_pt_data_t *esm_pt_data = calloc(1, sizeof(esm_pt_data_t));
+  esm_pt_data_t *esm_pt_data = calloc_or_fail(sizeof(esm_pt_data_t));
   int i;
-
-  if ( esm_pt_data == NULL ) {
-    LOG_TRACE(ERROR, "ESM-PT  - Can't alloc esm_pt_data");
-    exit(EXIT_FAILURE);
-  }
 
   esm_pt_data->index = 0;
 

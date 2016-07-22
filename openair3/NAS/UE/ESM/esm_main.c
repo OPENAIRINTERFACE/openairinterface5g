@@ -40,6 +40,7 @@ Description Defines the EPS Session Management procedure call manager,
 #include "esm_main.h"
 #include "commonDef.h"
 #include "nas_log.h"
+#include "utils.h"
 
 #include "emmData.h"
 #include "esmData.h"
@@ -78,11 +79,7 @@ void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
 
   int i;
 
-  esm_data_t *esm_data = calloc(1, sizeof(esm_data_t));
-  if ( esm_data == NULL ) {
-    LOG_TRACE(ERROR, "ESM-MAIN  - Can't malloc esm_data");
-    exit(EXIT_FAILURE);
-  }
+  esm_data_t *esm_data = calloc_or_fail(sizeof(esm_data_t));
   user->esm_data = esm_data;
 
   default_eps_bearer_context_data_t *default_eps_bearer_context = calloc(1, sizeof(default_eps_bearer_context_data_t));

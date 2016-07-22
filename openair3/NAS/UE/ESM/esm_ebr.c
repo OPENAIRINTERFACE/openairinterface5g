@@ -44,6 +44,7 @@ Description Defines functions used to handle state of EPS bearer contexts
 #include "esm_ebr.h"
 #include "commonDef.h"
 #include "nas_log.h"
+#include "utils.h"
 
 
 /****************************************************************************/
@@ -115,12 +116,7 @@ esm_ebr_data_t *esm_ebr_initialize(void)
   LOG_FUNC_IN;
 
   int i;
-  esm_ebr_data_t *esm_ebr_data = calloc(1, sizeof(esm_ebr_data_t));
-
-  if ( esm_ebr_data == NULL ) {
-    LOG_TRACE(ERROR, "ESM-EBR  - Can't malloc esm_ebr_data");
-    exit(EXIT_FAILURE);
-  }
+  esm_ebr_data_t *esm_ebr_data = calloc_or_fail(sizeof(esm_ebr_data_t));
 
   esm_ebr_data->index = 0;
 

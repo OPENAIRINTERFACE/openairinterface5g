@@ -47,6 +47,7 @@ Description NAS procedure functions triggered by the user
 #include "user_indication.h"
 #include "nas_proc.h"
 #include "nas_user.h"
+#include "utils.h"
 #include "user_api.h"
 
 #include <string.h> // memset, strncpy, strncmp
@@ -158,11 +159,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 {
   LOG_FUNC_IN;
 
-  user->nas_user_nvdata = calloc(1, sizeof(user_nvdata_t));
-  if ( user->nas_user_nvdata == NULL ) {
-    LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_nvdata");
-    exit(EXIT_FAILURE);
-  }
+  user->nas_user_nvdata = calloc_or_fail(sizeof(user_nvdata_t));
 
   /* Get UE's data pathname */
   char *path = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
@@ -179,11 +176,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   }
   free(path);
 
-  user->nas_user_context = calloc(1, sizeof(nas_user_context_t));
-  if ( user->nas_user_context == NULL ) {
-    LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_context");
-    exit(EXIT_FAILURE);
-  }
+  user->nas_user_context = calloc_or_fail(sizeof(nas_user_context_t));
   _nas_user_context_initialize(user->nas_user_context, version);
 
   /* Initialize the internal NAS processing data */

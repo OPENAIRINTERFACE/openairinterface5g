@@ -19,6 +19,7 @@
  *      contact@openairinterface.org
  */
 
+#include "utils.h"
 #if defined(ENABLE_ITTI)
 # include "assertions.h"
 # include "intertask_interface.h"
@@ -81,13 +82,7 @@ void *nas_ue_task(void *args_p)
   {
     /* Initialize user interface (to exchange AT commands with user process) */
     {
-       user_api_id_t *user_api_id = calloc(1, sizeof(user_api_id_t));
-
-       if (user_api_id == NULL) {
-         LOG_E(NAS, "[UE] Failed to alloc user_api_id_t");
-         exit(EXIT_FAILURE);
-      }
-
+      user_api_id_t *user_api_id = calloc_or_fail(sizeof(user_api_id_t));
       user->user_api_id = user_api_id;
 
       if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
@@ -99,23 +94,9 @@ void *nas_ue_task(void *args_p)
       itti_subscribe_event_fd (TASK_NAS_UE, user_api_get_fd(user_api_id));
     }
 
-    user->user_at_commands = calloc(1, sizeof(user_at_commands_t));
-    if ( user->user_at_commands == NULL ) {
-        LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
-        exit(EXIT_FAILURE);
-    }
-
-    user->at_response = calloc(1, sizeof(at_response_t));
-    if ( user->at_response == NULL ) {
-        LOG_E(NAS, "[UE %d] Can't allocate memory for at_response\n", 0);
-        exit(EXIT_FAILURE);
-    }
-
-    user->lowerlayer_data = calloc(1, sizeof(lowerlayer_data_t));
-    if ( user->lowerlayer_data == NULL ) {
-        LOG_E(NAS, "[UE %d] Can't allocate memory for lowerlayer_data\n", 0);
-        exit(EXIT_FAILURE);
-    }
+    user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
+    user->at_response = calloc_or_fail(sizeof(at_response_t));
+    user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
 
     /* Initialize NAS user */
     nas_user_initialize (user, &user_api_emm_callback, &user_api_esm_callback, FIRMWARE_VERSION);
