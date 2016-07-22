@@ -115,7 +115,7 @@ int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t t
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   if (rc != RETURNok) {
     LOG_TRACE(WARNING,

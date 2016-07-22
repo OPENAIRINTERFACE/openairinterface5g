@@ -70,19 +70,6 @@ int emm_proc_status(nas_user_t *user, int emm_cause);
 
 /*
  *---------------------------------------------------------------------------
- *              Lower layer procedure
- *---------------------------------------------------------------------------
- */
-int emm_proc_lowerlayer_initialize(lowerlayer_success_callback_t success,
-                                   lowerlayer_failure_callback_t failure,
-                                   lowerlayer_release_callback_t release,
-                                   void *args);
-int emm_proc_lowerlayer_success(void);
-int emm_proc_lowerlayer_failure(int is_initial);
-int emm_proc_lowerlayer_release(void);
-
-/*
- *---------------------------------------------------------------------------
  *              UE's Idle mode procedure
  *---------------------------------------------------------------------------
  */

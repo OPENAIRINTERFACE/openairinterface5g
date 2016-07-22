@@ -124,7 +124,7 @@ int EmmDeregisteredInitiated(nas_user_t *user, const emm_reg_t *evt)
      * before the Detach Accept is received
      */
     // FIXME review
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

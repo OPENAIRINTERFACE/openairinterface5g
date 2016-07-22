@@ -132,7 +132,7 @@ int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_of
 
   /* Setup EMM procedure handler to be executed upon receiving
    * lower layer notification */
-  rc = emm_proc_lowerlayer_initialize(emm_proc_detach_request,
+  rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, emm_proc_detach_request,
                                       emm_proc_detach_failure,
                                       emm_proc_detach_release, user);
 
@@ -240,7 +240,7 @@ int emm_proc_detach_accept(void* args)
   LOG_TRACE(INFO, "EMM-PROC  - UE initiated detach procedure completion");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  (void) emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
   emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
@@ -292,7 +292,7 @@ int emm_proc_detach_failure(int is_initial, void *args)
   LOG_TRACE(WARNING, "EMM-PROC  - Network detach failure");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  (void) emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
   emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);
@@ -458,7 +458,7 @@ static int _emm_detach_abort(nas_user_t *user, emm_proc_detach_type_t type)
   LOG_TRACE(WARNING, "EMM-PROC  - Abort the detach procedure");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3421 */
   emm_timers->T3421.id = nas_timer_stop(emm_timers->T3421.id);

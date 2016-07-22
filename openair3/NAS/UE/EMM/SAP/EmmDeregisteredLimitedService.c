@@ -126,21 +126,21 @@ int EmmDeregisteredLimitedService(nas_user_t *user, const emm_reg_t *evt)
      * Initial NAS message has been successfully delivered
      * to the network
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Initial NAS message failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(TRUE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, TRUE);
     break;
 
   case _EMMREG_LOWERLAYER_RELEASE:
     /*
      * NAS signalling connection has been released
      */
-    rc = emm_proc_lowerlayer_release();
+    rc = emm_proc_lowerlayer_release(user->lowerlayer_data);
     break;
 
   default:

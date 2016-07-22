@@ -113,14 +113,14 @@ int EmmDeregisteredAttemptingToAttach(nas_user_t *user, const emm_reg_t *evt)
     /*
      * Data successfully delivered to the network
      */
-    rc = emm_proc_lowerlayer_success();
+    rc = emm_proc_lowerlayer_success(user->lowerlayer_data);
     break;
 
   case _EMMREG_LOWERLAYER_FAILURE:
     /*
      * Data failed to be delivered to the network
      */
-    rc = emm_proc_lowerlayer_failure(FALSE);
+    rc = emm_proc_lowerlayer_failure(user->lowerlayer_data, FALSE);
     break;
 
   default:

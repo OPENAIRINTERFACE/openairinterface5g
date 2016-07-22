@@ -62,6 +62,20 @@ Description Defines EMM procedures executed by the Non-Access Stratum
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
+/*
+ *---------------------------------------------------------------------------
+ *              Lower layer procedure
+ *---------------------------------------------------------------------------
+ */
+int emm_proc_lowerlayer_initialize(lowerlayer_data_t *lowerlayer_data, lowerlayer_success_callback_t success,
+                                   lowerlayer_failure_callback_t failure,
+                                   lowerlayer_release_callback_t release,
+                                   void *args);
+int emm_proc_lowerlayer_success(lowerlayer_data_t *lowerlayer_data);
+int emm_proc_lowerlayer_failure(lowerlayer_data_t *lowerlayer_data, int is_initial);
+int emm_proc_lowerlayer_release(lowerlayer_data_t *lowerlayer_data);
+
+
 int lowerlayer_success(nas_user_t *user);
 int lowerlayer_failure(nas_user_t *user);
 int lowerlayer_establish(nas_user_t *user);

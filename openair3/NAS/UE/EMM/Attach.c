@@ -240,7 +240,7 @@ int emm_proc_attach(nas_user_t *user, emm_proc_attach_type_t type)
   if (rc != RETURNerror) {
     /* Setup EMM procedure handler to be executed upon receiving
      * lower layer notification */
-    rc = emm_proc_lowerlayer_initialize(emm_proc_attach_request,
+    rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, emm_proc_attach_request,
                                         emm_proc_attach_failure,
                                         emm_proc_attach_release, user);
 
@@ -423,7 +423,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
   if ( (rc != RETURNerror) && (esm_sap.err == ESM_SAP_SUCCESS) ) {
     /* Setup EMM procedure handler to be executed upon receiving
      * lower layer notification */
-    rc = emm_proc_lowerlayer_initialize(emm_proc_attach_complete,
+    rc = emm_proc_lowerlayer_initialize(user->lowerlayer_data, emm_proc_attach_complete,
                                         emm_proc_attach_failure,
                                         NULL, user);
 
@@ -721,7 +721,7 @@ int emm_proc_attach_complete(void *args)
   LOG_TRACE(INFO, "EMM-PROC  - EPS attach complete");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Reset the attach attempt counter */
   emm_attach_data->attempt_count = 0;
@@ -787,7 +787,7 @@ int emm_proc_attach_failure(int is_initial, void *args)
   LOG_TRACE(WARNING, "EMM-PROC  - EPS attach failure");
 
   /* Reset EMM procedure handler */
-  (void) emm_proc_lowerlayer_initialize(NULL, NULL, NULL, NULL);
+  emm_proc_lowerlayer_initialize(user->lowerlayer_data, NULL, NULL, NULL, NULL);
 
   /* Stop timer T3410 if still running */
   if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
