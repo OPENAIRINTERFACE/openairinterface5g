@@ -157,7 +157,7 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]);
 void stop_eNB(void);
 
 
@@ -1577,13 +1577,15 @@ void print_opp_meas(void) {
 }
  
 
-void init_eNB(eNB_func_t node_function) {
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]) {
 
   int CC_id;
 
-  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
-    PHY_vars_eNB_g[0][CC_id]->node_function = node_function;
-
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->node_function = node_function[CC_id];
+    PHY_vars_eNB_g[0][CC_id]->node_timing   = node_timing[CC_id];
+  }
+  
   init_eNB_proc();
   sleep(1);
   LOG_D(HW,"[lte-softmodem.c] eNB threads created\n");
