@@ -66,7 +66,7 @@ Description Defines the EPS Mobility Management procedures executed at
  *---------------------------------------------------------------------------
  */
 int emm_proc_status_ind(unsigned int ueid, int emm_cause);
-int emm_proc_status(nas_user_t *user, unsigned int ueid, int emm_cause);
+int emm_proc_status(nas_user_t *user, int emm_cause);
 
 /*
  *---------------------------------------------------------------------------
