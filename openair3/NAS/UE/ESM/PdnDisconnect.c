@@ -183,7 +183,7 @@ int esm_proc_pdn_disconnect_request(nas_user_t *user, int is_standalone, int pti
      * Notity EMM that ESM PDU has to be forwarded to lower layers
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
     rc = emm_sap_send(user, &emm_sap);
@@ -402,7 +402,7 @@ static void *_pdn_disconnect_t3492_handler(void *args)
      * has to be sent again
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = data->msg.length;
     emm_esm->msg.value = data->msg.value;
     rc = emm_sap_send(user, &emm_sap);

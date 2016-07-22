@@ -1185,7 +1185,7 @@ int nas_proc_ul_transfer_cnf(nas_user_t *user)
    * receiver side
    */
   emm_sap.primitive = EMMAS_DATA_IND;
-  emm_sap.u.emm_as.u.data.ueid = 0;
+  emm_sap.u.emm_as.u.data.ueid = user->ueid;
   emm_sap.u.emm_as.u.data.delivered = TRUE;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
   rc = emm_sap_send(user, &emm_sap);
@@ -1222,7 +1222,7 @@ int nas_proc_ul_transfer_rej(nas_user_t *user)
    * from lower layers
    */
   emm_sap.primitive = EMMAS_DATA_IND;
-  emm_sap.u.emm_as.u.data.ueid = 0;
+  emm_sap.u.emm_as.u.data.ueid = user->ueid;
   emm_sap.u.emm_as.u.data.delivered = FALSE;
   emm_sap.u.emm_as.u.data.NASmsg.length = 0;
   rc = emm_sap_send(user, &emm_sap);
@@ -1259,7 +1259,7 @@ int nas_proc_dl_transfer_ind(nas_user_t *user, const Byte_t *data, uint32_t len)
      * indication has been received from the Access-Stratum sublayer
      */
     emm_sap.primitive = EMMAS_DATA_IND;
-    emm_sap.u.emm_as.u.data.ueid = 0;
+    emm_sap.u.emm_as.u.data.ueid = user->ueid;
     emm_sap.u.emm_as.u.data.delivered = TRUE;
     emm_sap.u.emm_as.u.data.NASmsg.length = len;
     emm_sap.u.emm_as.u.data.NASmsg.value = (uint8_t *)data;

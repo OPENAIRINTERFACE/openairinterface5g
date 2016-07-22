@@ -304,7 +304,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
   emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = EMM_CAUSE_SUCCESS;
   emm_sap.u.emm_as.u.security.res = &res;
@@ -648,7 +648,7 @@ static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
   emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_AUTH;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   emm_sap.u.emm_as.u.security.auts = auts;

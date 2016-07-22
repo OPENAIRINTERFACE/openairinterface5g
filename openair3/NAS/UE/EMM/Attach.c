@@ -440,7 +440,7 @@ int emm_proc_attach_accept(nas_user_t *user, long t3412, long t3402, long t3423,
      */
     emm_sap.primitive = EMMAS_DATA_REQ;
     emm_sap.u.emm_as.u.data.guti = user->emm_data->guti;
-    emm_sap.u.emm_as.u.data.ueid = 0;
+    emm_sap.u.emm_as.u.data.ueid = user->ueid;
     /* Setup EPS NAS security data */
     emm_as_set_security_data(&emm_sap.u.emm_as.u.data.sctx,
                              user->emm_data->security, FALSE, TRUE);

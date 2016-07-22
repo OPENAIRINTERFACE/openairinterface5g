@@ -224,7 +224,7 @@ int esm_proc_dedicated_eps_bearer_context_accept(nas_user_t *user, int is_standa
    * Notity EMM that ESM PDU has to be forwarded to lower layers
    */
   emm_sap.primitive = EMMESM_UNITDATA_REQ;
-  emm_sap.u.emm_esm.ueid = 0;
+  emm_sap.u.emm_esm.ueid = user->ueid;
   emm_esm->msg.length = msg->length;
   emm_esm->msg.value = msg->value;
   rc = emm_sap_send(user, &emm_sap);
@@ -292,7 +292,7 @@ int esm_proc_dedicated_eps_bearer_context_reject(nas_user_t *user, int is_standa
      * Notity EMM that ESM PDU has to be forwarded to lower layers
      */
     emm_sap.primitive = EMMESM_UNITDATA_REQ;
-    emm_sap.u.emm_esm.ueid = 0;
+    emm_sap.u.emm_esm.ueid = user->ueid;
     emm_esm->msg.length = msg->length;
     emm_esm->msg.value = msg->value;
     rc = emm_sap_send(user, &emm_sap);

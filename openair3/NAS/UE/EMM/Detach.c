@@ -151,7 +151,7 @@ int emm_proc_detach(nas_user_t *user, emm_proc_detach_type_t type, int switch_of
   emm_as->switch_off = switch_off;
   /* Set the EPS mobile identity */
   emm_as->guti = user->emm_data->guti;
-  emm_as->ueid = 0;
+  emm_as->ueid = user->ueid;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_as->sctx, user->emm_data->security, FALSE, TRUE);
 
@@ -402,7 +402,7 @@ void *emm_detach_t3421_handler(void *args)
     emm_as->switch_off = emm_detach_data->switch_off;
     /* Set the EPS mobile identity */
     emm_as->guti = user->emm_data->guti;
-    emm_as->ueid = 0;
+    emm_as->ueid = user->ueid;
     /* Setup EPS NAS security data */
     emm_as_set_security_data(&emm_as->sctx, user->emm_data->security,
                              FALSE, TRUE);

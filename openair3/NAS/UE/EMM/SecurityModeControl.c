@@ -323,7 +323,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
   emm_sap_t emm_sap;
   emm_sap.primitive = EMMAS_SECURITY_RES;
   emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_SMC;
   emm_sap.u.emm_as.u.security.imeisv_request = imeisv_request;
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;

@@ -195,7 +195,7 @@ int emm_proc_identification_request(nas_user_t *user, emm_proc_identity_type_t t
    */
   emm_sap.primitive = EMMAS_SECURITY_RES;
   emm_sap.u.emm_as.u.security.guti = user->emm_data->guti;
-  emm_sap.u.emm_as.u.security.ueid = 0;
+  emm_sap.u.emm_as.u.security.ueid = user->ueid;
   emm_sap.u.emm_as.u.security.msgType = EMM_AS_MSG_TYPE_IDENT;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
