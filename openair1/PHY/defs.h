@@ -170,7 +170,6 @@ typedef enum {
   synch_to_other          // synch to another source (timer, other CC_id)
 } eNB_timing_t;
 
-
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
   int32_t amp[3][10];
@@ -800,11 +799,4 @@ typedef struct {
 #include "SIMULATION/ETH_TRANSPORT/defs.h"
 #endif //OPENAIR_LTE
 
-
 #endif //  __PHY_DEFS__H__
-
-
-
-
-
-

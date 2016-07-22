@@ -132,6 +132,7 @@ typedef struct Enb_properties_s {
   int16_t                 nb_cc;
   eNB_func_t              cc_node_function[1+MAX_NUM_CCs];
   eNB_timing_t            cc_node_timing[1+MAX_NUM_CCs];
+  int16_t                 cc_node_synch_ref[1+MAX_NUM_CCs];
   lte_frame_type_t        frame_type[1+MAX_NUM_CCs];
   uint8_t                 tdd_config[1+MAX_NUM_CCs];
   uint8_t                 tdd_config_s[1+MAX_NUM_CCs];
