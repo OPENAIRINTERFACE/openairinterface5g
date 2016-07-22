@@ -119,7 +119,7 @@ esm_ebr_data_t *esm_ebr_initialize(void)
 
   if ( esm_ebr_data == NULL ) {
     LOG_TRACE(ERROR, "ESM-EBR  - Can't malloc esm_ebr_data");
-    // FIXME Stop here !!!
+    exit(EXIT_FAILURE);
   }
 
   esm_ebr_data->index = 0;

@@ -161,8 +161,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   user->nas_user_nvdata = calloc(1, sizeof(user_nvdata_t));
   if ( user->nas_user_nvdata == NULL ) {
     LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_nvdata");
-    // FIXME stop here
-    return;
+    exit(EXIT_FAILURE);
   }
 
   /* Get UE's data pathname */
@@ -170,8 +169,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 
   if (path == NULL) {
     LOG_TRACE(ERROR, "USR-MAIN  - Failed to get UE's data pathname");
-    // FIXME return an error code or exit
-    return;
+    exit(EXIT_FAILURE);
   }
 
   /* Get UE data stored in the non-volatile memory device */
@@ -184,8 +182,7 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
   user->nas_user_context = calloc(1, sizeof(nas_user_context_t));
   if ( user->nas_user_context == NULL ) {
     LOG_TRACE(ERROR, "USR-MAIN - Failed to alloc nas_user_context");
-    // FIXME stop here
-    return;
+    exit(EXIT_FAILURE);
   }
   _nas_user_context_initialize(user->nas_user_context, version);
 

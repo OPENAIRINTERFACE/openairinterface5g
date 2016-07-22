@@ -83,7 +83,7 @@ void *nas_ue_task(void *args_p)
 
        if (user_api_id == NULL) {
          LOG_E(NAS, "[UE] Failed to alloc user_api_id_t");
-         // FIXME stop here
+         exit(EXIT_FAILURE);
       }
 
       user->user_api_id = user_api_id;
@@ -100,13 +100,13 @@ void *nas_ue_task(void *args_p)
     user->user_at_commands = calloc(1, sizeof(user_at_commands_t));
     if ( user->user_at_commands == NULL ) {
         LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
-        // FIXME stop here
+        exit(EXIT_FAILURE);
     }
 
     user->at_response = calloc(1, sizeof(at_response_t));
     if ( user->at_response == NULL ) {
         LOG_E(NAS, "[UE %d] Can't allocate memory for user_at_commands\n", 0);
-        // FIXME stop here
+        exit(EXIT_FAILURE);
     }
 
     /* Initialize NAS user */

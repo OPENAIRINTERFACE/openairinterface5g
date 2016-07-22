@@ -109,7 +109,7 @@ void IdleMode_initialize(nas_user_t *user, IdleMode_callback_t cb)
   emm_plmn_list_t *emm_plmn_list = calloc(1, sizeof(emm_plmn_list_t));
   if ( emm_plmn_list == NULL ) {
     LOG_TRACE(ERROR, "EMM  - Can't alloc emm_plmn_list");
-    // FIXME stop here
+    exit(EXIT_FAILURE);
   }
   user->emm_plmn_list = emm_plmn_list;
   /* Initialize the list of available PLMNs */

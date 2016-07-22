@@ -89,7 +89,7 @@ esm_pt_data_t *esm_pt_initialize(void)
 
   if ( esm_pt_data == NULL ) {
     LOG_TRACE(ERROR, "ESM-PT  - Can't alloc esm_pt_data");
-    // FIXME Stop here !!!
+    exit(EXIT_FAILURE);
   }
 
   esm_pt_data->index = 0;

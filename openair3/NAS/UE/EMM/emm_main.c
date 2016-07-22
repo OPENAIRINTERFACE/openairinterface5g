@@ -137,7 +137,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   user->emm_data = calloc(1, sizeof(emm_data_t));
   if ( user->emm_data == NULL ) {
     LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get allocate emm_data");
-    // FIXME stop here
+    exit(EXIT_FAILURE);
   }
   /* USIM validity indicator */
   user->emm_data->usim_is_valid = FALSE;
@@ -400,7 +400,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   user->emm_data->emm_timers = calloc(1, sizeof(emm_timers_t));
   if ( user->emm_data->emm_timers == NULL ) {
     LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
-    // FIXME stop here
+    exit(EXIT_FAILURE);
   }
   _emm_timers_initialize(user->emm_data->emm_timers);
 
@@ -410,7 +410,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   user->emm_data->emm_detach_data = calloc(1, sizeof(emm_detach_data_t));
   if ( user->emm_data->emm_detach_data == NULL ) {
     LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
-    // FIXME stop here
+    exit(EXIT_FAILURE);
   }
   _emm_detach_initialize(user->emm_data->emm_detach_data);
 
@@ -420,7 +420,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   user->emm_data->emm_attach_data = calloc(1, sizeof(emm_attach_data_t));
   if ( user->emm_data->emm_attach_data == NULL ) {
     LOG_TRACE(ERROR, "EMM-MAIN - Failed to alloc emm_timers");
-    // FIXME stop here
+    exit(EXIT_FAILURE);
   }
   _emm_attach_initialize(user->emm_data->emm_attach_data);
 
