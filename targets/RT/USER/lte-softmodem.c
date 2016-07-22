@@ -1063,6 +1063,7 @@ static struct {
  */
 static void* eNB_thread_tx( void* param )
 {
+return 0;
   static int eNB_thread_tx_status[NUM_ENB_THREADS];
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
@@ -1344,6 +1345,7 @@ static void* eNB_thread_tx( void* param )
  */
 static void* eNB_thread_rx( void* param )
 {
+return 0;
   static int eNB_thread_rx_status[NUM_ENB_THREADS];
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
@@ -1747,6 +1749,7 @@ void kill_eNB_proc(void)
  */
 static void* eNB_thread( void* arg )
 {
+return 0;
   UNUSED(arg);
   static int eNB_thread_status;
 
@@ -2834,6 +2837,86 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
+void *processing_thread(void *_)
+{
+  PHY_VARS_eNB *phy = PHY_vars_eNB_g[0][0];
+  int sched_frame = 0;
+  int sched_subframe = 0;
+  openair0_timestamp timestamp;
+  int spp;
+  int rxs;
+  void *rxp[2];
+  void *txp[2];
+
+  spp = phy->lte_frame_parms.samples_per_tti; //openair0_cfg[0].samples_per_packet;
+
+loop:
+  T(T_ENB_MASTER_TICK, T_INT(0), T_INT(sched_frame), T_INT(sched_subframe));
+
+  /* received subframe n */
+  rxp[0] = &rxdata[0][spp * sched_subframe];
+  rxs = openair0.trx_read_func(&openair0,
+                               &timestamp,
+                               rxp,
+                               spp,
+                               1);
+  if (rxs != spp) printf("WARN: received %d samples out of %d wanted\n", rxs, spp);
+
+  /* transmit subframe n+3 */
+  txp[0] = &txdata[0][spp * ((sched_subframe + 3) % 10)];
+  openair0.trx_write_func(&openair0,
+                          timestamp + spp * 3 -openair0_cfg[0].tx_sample_advance,
+                          txp,
+                          spp,
+                          1,
+                          1);
+
+  /* process received subframe n */
+  phy->proc[sched_subframe].subframe = sched_subframe;
+  phy->proc[sched_subframe].frame_rx = sched_frame;
+  phy->proc[sched_subframe].subframe_rx = sched_subframe;
+  phy_procedures_eNB_RX(sched_subframe, PHY_vars_eNB_g[0][0], 0, no_relay);
+
+  /* generate subframe n+4 */
+  phy->proc[sched_subframe].subframe = (sched_subframe+4) % 10;
+  phy->proc[sched_subframe].frame_tx = sched_frame + ((sched_subframe >= 6) ? 1 : 0);
+  phy->proc[sched_subframe].subframe_tx = (sched_subframe+4) % 10;
+  phy_procedures_eNB_TX(sched_subframe, PHY_vars_eNB_g[0][0], 0, no_relay, NULL);
+  do_OFDM_mod_rt(phy->proc[sched_subframe].subframe_tx, PHY_vars_eNB_g[0][0]);
+
+  sched_subframe++;
+  if (sched_subframe == 10) {
+    sched_subframe = 0;
+    sched_frame++;
+    sched_frame %= 1024;
+  }
+  if (!oai_exit) goto loop;
+
+  return 0;
+}
+
+static void new_thread(void *(*f)(void *), void *data)
+{
+  pthread_t t;
+  pthread_attr_t att;
+
+  if (pthread_attr_init(&att))
+    { fprintf(stderr, "pthread_attr_init err\n"); exit(1); }
+  if (pthread_attr_setdetachstate(&att, PTHREAD_CREATE_DETACHED))
+    { fprintf(stderr, "pthread_attr_setdetachstate err\n"); exit(1); }
+  if (pthread_attr_setstacksize(&att, 10000000))
+    { fprintf(stderr, "pthread_attr_setstacksize err\n"); exit(1); }
+  if (pthread_create(&t, &att, f, data))
+    { fprintf(stderr, "pthread_create err\n"); exit(1); }
+  if (pthread_attr_destroy(&att))
+    { fprintf(stderr, "pthread_attr_destroy err\n"); exit(1); }
+}
+
+void new_threading(void)
+{
+  new_thread(processing_thread, 0);
+}
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -3368,6 +3451,7 @@ int main( int argc, char **argv )
   int s;
   char cpu_affinity[1024];
   CPU_ZERO(&cpuset);
+#if 0
   #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
@@ -3381,6 +3465,7 @@ int main( int argc, char **argv )
     LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
   }
   #endif
+#endif
 
   /* Check the actual affinity mask assigned to the thread */
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -3664,12 +3749,14 @@ int main( int argc, char **argv )
   pthread_attr_setstacksize(&attr_UE_thread,8192);//5*PTHREAD_STACK_MIN);
 
 #ifndef DEADLINE_SCHEDULER
+#if 0
   sched_param_UE_thread.sched_priority = sched_get_priority_max(SCHED_FIFO);
   pthread_attr_setschedparam(&attr_UE_thread,&sched_param_UE_thread);
   sched_param_dlsch.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
   pthread_attr_setschedparam  (&attr_dlsch_threads, &sched_param_dlsch);
   pthread_attr_setschedpolicy (&attr_dlsch_threads, SCHED_FIFO);
   printf("Setting eNB_thread FIFO scheduling policy with priority %d \n", sched_param_dlsch.sched_priority);
+#endif
 #endif
 
 #endif
@@ -3733,6 +3820,8 @@ int main( int argc, char **argv )
 
 #endif
   }
+
+  new_threading();
 
   // Sleep to allow all threads to setup
   sleep(1);
