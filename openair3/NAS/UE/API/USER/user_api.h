@@ -67,11 +67,11 @@ int user_api_get_fd(user_api_id_t *user_api_id);
 const void* user_api_get_data(user_at_commands_t *commands, int index);
 
 int user_api_read_data(user_api_id_t *user_api_id, int fd);
-int user_api_set_data(char *message);
+int user_api_set_data(user_api_id_t *user_api_id, char *message);
 int user_api_send_data(user_api_id_t *user_api_id, int fd, int length);
 void user_api_close(user_api_id_t *user_api_id, int fd);
 
 int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *commands, int length);
-int user_api_encode_data(const void* data, int add_success_code);
+int user_api_encode_data(user_api_id_t *user_api_id, const void* data, int add_success_code);
 
 #endif /* __USER_API_H__ */

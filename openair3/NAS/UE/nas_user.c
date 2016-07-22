@@ -220,7 +220,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
 
   if (message != NULL) {
     /* Set the message in receive buffer (Use to simulate reception of data from UserProcess) */
-    bytes = user_api_set_data(message);
+    bytes = user_api_set_data(user_api_id, message);
   } else {
     /* Read the user data message */
     bytes = user_api_read_data (user_api_id, user->fd);
@@ -270,7 +270,7 @@ int nas_user_receive_and_process(nas_user_t *user, char *message)
     /* Send response to UserProcess (If not in simulated reception) */
     if (message == NULL) {
       /* Encode the user data message */
-      bytes = user_api_encode_data (nas_user_get_data (user), i == nb_command - 1);
+      bytes = user_api_encode_data (user->user_api_id, nas_user_get_data (user), i == nb_command - 1);
 
       if (bytes == RETURNerror) {
         /* Failed to encode the user data message;

@@ -75,20 +75,6 @@ static int _user_api_pdn_connection_handler(user_api_id_t *user_api_id, unsigned
 
 static int _user_api_send(user_api_id_t *user_api_id, at_response_t* data);
 
-/*
- * The buffer used to receive data from the user application layer
- */
-#define USER_API_RECV_BUFFER_SIZE 4096
-// FIXME not reentrant
-static char _user_api_recv_buffer[USER_API_RECV_BUFFER_SIZE];
-
-/*
- * The buffer used to send data to the user application layer
- */
-#define USER_API_SEND_BUFFER_SIZE USER_API_RECV_BUFFER_SIZE
-// FIXME not reentrant
-static char _user_api_send_buffer[USER_API_SEND_BUFFER_SIZE];
-
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
@@ -115,7 +101,7 @@ int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char
 {
   LOG_FUNC_IN;
 
-  gethostname(_user_api_send_buffer, USER_API_SEND_BUFFER_SIZE);
+  gethostname(user_api_id->send_buffer, USER_API_SEND_BUFFER_SIZE);
 
   if (devname != NULL) {
     /* Initialize device handlers */
@@ -135,7 +121,7 @@ int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char
     }
 
     LOG_TRACE(INFO, "USR-API   - User's communication device %d is OPENED "
-              "on %s/%s", user_api_get_fd(user_api_id), _user_api_send_buffer, devname);
+              "on %s/%s", user_api_get_fd(user_api_id), user_api_id->send_buffer, devname);
   } else {
     /* Initialize network socket handlers */
     user_api_id->open  = socket_udp_open;
@@ -156,7 +142,7 @@ int user_api_initialize(user_api_id_t *user_api_id, const char* host, const char
     }
 
     LOG_TRACE(INFO, "USR-API   - User's UDP socket %d is BOUND to %s/%s",
-              user_api_get_fd(user_api_id), _user_api_send_buffer, port);
+              user_api_get_fd(user_api_id), user_api_id->send_buffer, port);
   }
 
   /* Register the asynchronous notification handlers */
@@ -245,7 +231,7 @@ const void* user_api_get_data(user_at_commands_t *commands, int index)
  **                                                                        **
  ** Outputs: Return:            The number of bytes read when success;     **
  **                             RETURNerror Otherwise                      **
- **          Others:            _user_api_recv_buffer, _user_api_id        **
+ **          Others:            user_api_id->recv_buffer, _user_api_id        **
  **                                                                        **
  ***************************************************************************/
 int user_api_read_data(user_api_id_t *user_api_id, int fd)
@@ -262,10 +248,10 @@ int user_api_read_data(user_api_id_t *user_api_id, int fd)
     LOG_FUNC_RETURN (RETURNerror);
   }
 
-  memset(_user_api_recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
+  memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
   /* Receive data from the user application layer */
-  rbytes = user_api_id->recv(user_api_id->endpoint, _user_api_recv_buffer, USER_API_RECV_BUFFER_SIZE);
+  rbytes = user_api_id->recv(user_api_id->endpoint, user_api_id->recv_buffer, USER_API_RECV_BUFFER_SIZE);
 
   if (rbytes == RETURNerror) {
     LOG_TRACE(ERROR, "USR-API   - recv() failed, %s", strerror(errno));
@@ -275,7 +261,7 @@ int user_api_read_data(user_api_id_t *user_api_id, int fd)
   } else {
     LOG_TRACE(INFO, "USR-API   - %d bytes received "
               "from the user application layer", rbytes);
-    LOG_DUMP(_user_api_recv_buffer, rbytes);
+    LOG_DUMP(user_api_id->recv_buffer, rbytes);
   }
 
   LOG_FUNC_RETURN (rbytes);
@@ -291,22 +277,22 @@ int user_api_read_data(user_api_id_t *user_api_id, int fd)
  **                                                                        **
  ** Outputs:         Return:    The number of bytes write when success;    **
  **                             RETURNerror Otherwise                      **
- **                  Others:    _user_api_recv_buffer                      **
+ **                  Others:    user_api_id->recv_buffer                      **
  **                                                                        **
  ***************************************************************************/
-int user_api_set_data(char *message)
+int user_api_set_data(user_api_id_t *user_api_id, char *message)
 {
   LOG_FUNC_IN;
 
   int rbytes;
 
-  memset(_user_api_recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
+  memset(user_api_id->recv_buffer, 0, USER_API_RECV_BUFFER_SIZE);
 
-  strncpy(_user_api_recv_buffer, message, USER_API_RECV_BUFFER_SIZE);
-  rbytes = strlen(_user_api_recv_buffer);
+  strncpy(user_api_id->recv_buffer, message, USER_API_RECV_BUFFER_SIZE);
+  rbytes = strlen(user_api_id->recv_buffer);
 
   LOG_TRACE(INFO, "USR-API   - %d bytes write", rbytes);
-  LOG_DUMP(_user_api_recv_buffer, rbytes);
+  LOG_DUMP(user_api_id->recv_buffer, rbytes);
 
   LOG_FUNC_RETURN (rbytes);
 }
@@ -320,7 +306,6 @@ int user_api_set_data(char *message)
  ** Inputs:      fd:            File descriptor of the connection endpoint **
  **                             to which data have to be sent              **
  **              length:        Number of bytes to send                    **
- **              Others:        _user_api_send_buffer, _user_api_id        **
  **                                                                        **
  ** Outputs:     Return:        The number of bytes sent when success;     **
  **                             RETURNerror Otherwise                      **
@@ -329,7 +314,7 @@ int user_api_set_data(char *message)
  ***************************************************************************/
 static int _user_api_send_data(user_api_id_t *user_api_id, int length)
 {
-  int sbytes = user_api_id->send(user_api_id->endpoint, _user_api_send_buffer, length);
+  int sbytes = user_api_id->send(user_api_id->endpoint, user_api_id->send_buffer, length);
 
   if (sbytes == RETURNerror) {
     LOG_TRACE(ERROR, "USR-API   - send() failed, %s", strerror(errno));
@@ -339,7 +324,7 @@ static int _user_api_send_data(user_api_id_t *user_api_id, int length)
   } else {
     LOG_TRACE(INFO, "USR-API   - %d bytes sent "
               "to the user application layer", sbytes);
-    LOG_DUMP(_user_api_send_buffer, sbytes);
+    LOG_DUMP(user_api_id->send_buffer, sbytes);
   }
 
   return sbytes;
@@ -379,7 +364,6 @@ int user_api_send_data(user_api_id_t *user_api_id, int fd, int length)
  **              Others:        None                                       **
  **                                                                        **
  ** Outputs:     Return:        None                                       **
- **              Others:        _user_api_id                               **
  **                                                                        **
  ***************************************************************************/
 void user_api_close(user_api_id_t *user_api_id, int fd)
@@ -412,11 +396,9 @@ void user_api_close(user_api_id_t *user_api_id, int fd)
  **    layer when the AT command failed to be decoded.           **
  **                                                                        **
  ** Inputs:  length:  Number of bytes to decode                  **
- **      Others:  _user_api_recv_buffer                      **
  **                                                                        **
  ** Outputs:   Return:  The number of AT commands succeessfully    **
  **       decoded                                    **
- **      Others:  _user_api_send_buffer, _user_data          **
  **                                                                        **
  ***************************************************************************/
 int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *commands, int length)
@@ -424,8 +406,8 @@ int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *command
   LOG_FUNC_IN;
 
   /* Parse the AT command line */
-  LOG_TRACE(INFO, "USR-API   - Decode user data: %s", _user_api_recv_buffer);
-  commands->n_cmd = at_command_decode(_user_api_recv_buffer, length,
+  LOG_TRACE(INFO, "USR-API   - Decode user data: %s", user_api_id->recv_buffer);
+  commands->n_cmd = at_command_decode(user_api_id->recv_buffer, length,
                                        commands->cmd);
 
   if (commands->n_cmd > 0) {
@@ -441,10 +423,10 @@ int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *command
     /* Failed to decode AT command data received from the user
      * application layer; Return syntax error code message */
     LOG_TRACE(ERROR, "USR-API   - Syntax error: Failed to decode "
-              "AT command data %s", _user_api_recv_buffer);
+              "AT command data %s", user_api_id->recv_buffer);
 
     /* Encode the syntax error code message */
-    bytes = at_error_encode(_user_api_send_buffer, AT_ERROR_SYNTAX,
+    bytes = at_error_encode(user_api_id->send_buffer, AT_ERROR_SYNTAX,
                             AT_ERROR_OPERATION_NOT_SUPPORTED);
 
     // FIXME move _user_data call
@@ -471,10 +453,9 @@ int user_api_decode_data(user_api_id_t *user_api_id, user_at_commands_t *command
  ** Outputs:   Return:  The number of characters that have been    **
  **       successfully encoded;                      **
  **       RETURNerror otherwise.                     **
- **      Others:  _user_api_send_buffer                      **
  **                                                                        **
  ***************************************************************************/
-int user_api_encode_data(const void* data, int success_code)
+int user_api_encode_data(user_api_id_t *user_api_id, const void* data, int success_code)
 {
   LOG_FUNC_IN;
 
@@ -483,16 +464,16 @@ int user_api_encode_data(const void* data, int success_code)
 
   /* Encode AT command error message */
   if (user_data->cause_code != AT_ERROR_SUCCESS) {
-    bytes = at_error_encode(_user_api_send_buffer, AT_ERROR_CME,
+    bytes = at_error_encode(user_api_id->send_buffer, AT_ERROR_CME,
                             user_data->cause_code);
   }
   /* Encode AT command response message */
   else {
-    bytes = at_response_encode(_user_api_send_buffer, user_data);
+    bytes = at_response_encode(user_api_id->send_buffer, user_data);
 
     /* Add success result code */
     if ( (success_code) && (bytes != RETURNerror) ) {
-      bytes += at_error_encode(&_user_api_send_buffer[bytes],
+      bytes += at_error_encode(&user_api_id->send_buffer[bytes],
                                AT_ERROR_OK, 0);
     }
   }
@@ -613,7 +594,6 @@ int user_api_esm_callback(user_api_id_t *user_api_id, int cid, network_pdn_state
  ** Description: Encodes and sends data to the user application layer      **
  **                                                                        **
  ** Inputs:  data:    The data to send                           **
- **      Others:  _user_api_send_buffer, _user_api_id        **
  **                                                                        **
  ** Outputs:   Return:  The number of bytes sent when success;     **
  **       RETURNerror Otherwise                      **
@@ -625,7 +605,7 @@ static int _user_api_send(user_api_id_t *user_api_id, at_response_t* data)
   LOG_FUNC_IN;
 
   /* Encode AT command response message */
-  int bytes = at_response_encode(_user_api_send_buffer, data);
+  int bytes = at_response_encode(user_api_id->send_buffer, data);
 
   /* Send the AT command response message to the user application */
   if (bytes != RETURNerror) {

@@ -8,12 +8,15 @@
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
 
+#define USER_API_RECV_BUFFER_SIZE 4096
+#define USER_API_SEND_BUFFER_SIZE USER_API_RECV_BUFFER_SIZE
+#define USER_DATA_MAX 10
+
 /*
  * The decoded data received from the user application layer
  */
 typedef struct {
   int n_cmd;    /* number of user data to be processed    */
-#define USER_DATA_MAX 10
   at_command_t cmd[USER_DATA_MAX];  /* user data to be processed  */
 } user_at_commands_t;
 
@@ -39,6 +42,8 @@ typedef struct {
   ssize_t (*recv) (void*, char*, size_t);
   ssize_t (*send) (const void*, const char*, size_t);
   void    (*close)(void*);
+  char    recv_buffer[USER_API_RECV_BUFFER_SIZE];
+  char    send_buffer[USER_API_SEND_BUFFER_SIZE];
 } user_api_id_t;
 
 
