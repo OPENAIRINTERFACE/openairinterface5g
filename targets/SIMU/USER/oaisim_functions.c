@@ -1132,7 +1132,7 @@ void init_ocm(void)
     get_beta_map_up();
 #endif
     get_MIESM_param();
-
+    
     //load_pbch_desc();
   }
 

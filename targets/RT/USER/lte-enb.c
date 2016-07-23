@@ -157,7 +157,7 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function,int nb_inst);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]);
 void stop_eNB(void);
 
 
@@ -496,7 +496,7 @@ static void* eNB_thread_rxtx( void* param ) {
           LOG_E(PHY, "[SCHED][eNB] error unlocking PHY proc mutex for eNB TX proc\n");
           exit_fun("nothing to add");
           break;
-	}
+        }
       } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) {
         /// **** recv_IF4 of txdataF from RCC **** ///             
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );  
@@ -604,9 +604,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
 
-
   printf( "Exiting eNB thread RXn_TXnp4\n");
-
 
   eNB_thread_rxtx_status = 0;
   return &eNB_thread_rxtx_status;
@@ -770,7 +768,6 @@ static void* eNB_thread_asynch_rx( void* param ) {
       prach_rx = 0;
          
       do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
         recv_IF4(eNB, &frame_rx, &subframe_rx, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
@@ -781,10 +778,7 @@ static void* eNB_thread_asynch_rx( void* param ) {
         } else if (packet_type == IF4_PRACH) {
           // wake up thread for PRACH RX
           prach_rx = 1;
-	}
-
-
-
+        }
       } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
 
       if (proc->first_rx == 0) {
@@ -823,16 +817,12 @@ static void* eNB_thread_FH( void* param ) {
   int i;
   int prach_rx;
 
-
-
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
 
-  int subframe = proc->subframe_rx;
-  int frame = proc->frame_rx;
-
-
+  int subframe=0, frame=0; 
+  
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
@@ -983,76 +973,75 @@ static void* eNB_thread_FH( void* param ) {
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
    
-    if (oai_exit) break;
-   
+    if (oai_exit) break;   
 
+    // This case is for synchronization to another thread
     if ((eNB->node_timing == synch_to_other) &&
-	((eNB->node_function == NGFI_RRU_IF4) ||
-	 (eNB->node_function == NGFI_RRU_IF5) || 
-	 (eNB->node_function == eNodeB_3GPP))) {   // This case is for synchronization to another thread
+       ((eNB->node_function == NGFI_RCC_IF4) ||
+        (eNB->node_function == eNodeB_3GPP_BBU))) {   
       //wait for event
 
       // how long should we wait here, for MOBIPASS this could be long
       //      if (pthread_mutex_timedlock(&proc->mutex_FH,&wait) != 0) {
       if (pthread_mutex_lock(&proc->mutex_FH) != 0) {
-	LOG_E( PHY, "[SCHED][eNB] error locking mutex for FH\n");
-	exit_fun( "error locking mutex" );
-	break;
+        LOG_E( PHY, "[SCHED][eNB] error locking mutex for FH\n");
+        exit_fun( "error locking mutex" );
+        break;
       }
       
       while (proc->instance_cnt_FH < 0) {
-	// most of the time the thread is waiting here
-	// proc->instance_cnt_prach is -1
-	pthread_cond_wait( &proc->cond_FH,&proc->mutex_FH ); // this unlocks mutex_rxtx while waiting and then locks it again
-      }
-      
+        // most of the time the thread is waiting here
+        // proc->instance_cnt_prach is -1
+        pthread_cond_wait( &proc->cond_FH,&proc->mutex_FH ); // this unlocks mutex_rxtx while waiting and then locks it again
+      }      
       proc->instance_cnt_FH++;
-
 
     }
     // Remaining cases are all for synchronization on FH interface
     else if ((eNB->node_timing == synch_to_ext_device) &&
-	     ((eNB->node_function == NGFI_RRU_IF4) ||
-	      (eNB->node_function == NGFI_RRU_IF5) || 
-	      (eNB->node_function == eNodeB_3GPP))) { // acquisition from RF
+             ((eNB->node_function == NGFI_RRU_IF4) ||
+              (eNB->node_function == NGFI_RRU_IF5) || 
+              (eNB->node_function == eNodeB_3GPP))) { // acquisition from RF
       
       for (i=0; i<fp->nb_antennas_rx; i++)
-	rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
+        rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
-      // sanitycheck
       if (subframe==9) { 
-	subframe=0;
-	frame++;
-	frame&=1023;
+        subframe=0;
+        frame++;
+        frame&=1023;
       } else {
-	subframe++;
+        subframe++;
       }      
 
       rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
-					&proc->timestamp_rx,
-					rxp,
-					fp->samples_per_tti,
-					fp->nb_antennas_rx);
+                                        &proc->timestamp_rx,
+                                        rxp,
+                                        fp->samples_per_tti,
+                                        fp->nb_antennas_rx);
+
       proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
       proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-    
       
       if (proc->first_rx == 0) {
-	if (proc->subframe_rx != subframe){
+        if (proc->subframe_rx != subframe){
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
           exit_fun("Exiting");
-	}
+        }
+        
         if (proc->frame_rx != frame) {
-	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
-	  exit_fun("Exiting");
-	}
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+          exit_fun("Exiting");
+        }
       } else {
         proc->first_rx = 0;
+        frame = proc->frame_rx;
+        subframe = proc->subframe_rx;        
       }
       
-      //      printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
+      //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
@@ -1065,7 +1054,7 @@ static void* eNB_thread_FH( void* param ) {
       
     }  // node_timing==synch_to_ext_device && node_function == RRU || eNodeB
     else if ((eNB->node_timing == synch_to_ext_device) &&
-	       (eNB->node_function == eNodeB_3GPP_BBU)) { // acquisition from IF
+             (eNB->node_function == eNodeB_3GPP_BBU)) { // acquisition from IF
       /// **** recv_IF5 of rxdata from RRH **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
       recv_IF5(eNB, &proc->timestamp_rx, proc->subframe_rx, IF5_RRH_GW_UL); 
@@ -1073,30 +1062,30 @@ static void* eNB_thread_FH( void* param ) {
       
       proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
       proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-      
+
       if (proc->first_rx == 0) {
-	if (proc->subframe_rx != subframe){
-	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
-	  //exit_fun("Exiting");
-	}
-	if (proc->frame_rx != frame) {
-	  LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
-	  //exit_fun("Exiting");
-	}
+        if (proc->subframe_rx != subframe){
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+          exit_fun("Exiting");
+        }
+        
+        if (proc->frame_rx != frame) {
+          LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+          exit_fun("Exiting");
+        }
       } else {
-	proc->first_rx = 0;
-      }
+        proc->first_rx = 0;
+      }      
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
+      
     } // eNodeB_3GPP_BBU && node_timing == synch_to_ext_device
-
     else if ((eNB->node_timing == synch_to_ext_device) &&
-	     (eNB->node_function == NGFI_RCC_IF4)) {
+             (eNB->node_function == NGFI_RCC_IF4)) {
       /// **** recv_IF4 of rxdataF from RRU **** ///
       /// **** recv_IF4 of rxsigF from RRU **** ///
-      // get frame/subframe information from IF4 interface
       // timed loop (200 us)
       
       symbol_number = 0;
@@ -1105,7 +1094,6 @@ static void* eNB_thread_FH( void* param ) {
       prach_rx = 0;
          
       do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
         recv_IF4(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
@@ -1116,10 +1104,7 @@ static void* eNB_thread_FH( void* param ) {
         } else if (packet_type == IF4_PRACH) {
           // wake up thread for PRACH RX
           prach_rx = 1;
-	}
-
-
-
+	    }
       } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
 
       if (proc->first_rx == 0) {
@@ -1138,7 +1123,6 @@ static void* eNB_thread_FH( void* param ) {
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
-
 		  
     } // node_timing == synch_to_externs, node_function = NGFI_IF4
     else { // should not get here
@@ -1152,10 +1136,11 @@ static void* eNB_thread_FH( void* param ) {
       // wake up slave FH thread
       // lock the FH mutex and make sure the thread is ready
       if (pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait) != 0) {
-	LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB CCid %d slave CCid %d (IC %d)\n",proc->CC_id,slave_proc->CC_id);
-	exit_fun( "error locking mutex_rxtx" );
-	break;
+        LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB CCid %d slave CCid %d (IC %d)\n",proc->CC_id,slave_proc->CC_id);
+        exit_fun( "error locking mutex_rxtx" );
+        break;
       }
+
       int cnt_slave            = ++slave_proc->instance_cnt_FH;
       slave_proc->frame_rx     = proc->frame_rx;
       slave_proc->subframe_rx  = proc->subframe_rx;
@@ -1164,12 +1149,12 @@ static void* eNB_thread_FH( void* param ) {
       pthread_mutex_unlock( &slave_proc->mutex_FH );
       
       if (cnt_slave == 0) {
-	// the thread was presumably waiting where it should and can now be woken up
-	if (pthread_cond_signal(&slave_proc->cond_FH) != 0) {
-	  LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB CCid %d, slave CCid %d\n",proc->CC_id,slave_proc->CC_id);
-	  exit_fun( "ERROR pthread_cond_signal" );
-	  break;
-	}
+      // the thread was presumably waiting where it should and can now be woken up
+        if (pthread_cond_signal(&slave_proc->cond_FH) != 0) {
+          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB CCid %d, slave CCid %d\n",proc->CC_id,slave_proc->CC_id);
+          exit_fun( "ERROR pthread_cond_signal" );
+	        break;
+        }
       } else {
 	LOG_W( PHY,"[eNB] Frame %d, FH CC_id %d thread busy!! (cnt_FH %i)\n",slave_proc->frame_rx,slave_proc->CC_id, cnt_slave);
 	exit_fun( "FH thread busy" );
@@ -1193,7 +1178,7 @@ static void* eNB_thread_FH( void* param ) {
     // We have just received and processed the common part of a subframe, say n. 
     // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
     // transmitted timestamp of the next TX slot (first).
-    // The last (TS_rx mod samples_pexr_frame) was n*samples_per_tti, 
+    // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
     // we want to generate subframe (n+3), so TS_tx = TX_rx+3*samples_per_tti,
     // and proc->subframe_tx = proc->subframe_rx+3
     proc_rxtx->timestamp_tx = proc->timestamp_rx + (4*fp->samples_per_tti);
@@ -1215,14 +1200,13 @@ static void* eNB_thread_FH( void* param ) {
       LOG_W( PHY,"[eNB] Frame %d, eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", proc_rxtx->frame_tx, cnt_rxtx );
       exit_fun( "TX thread busy" );
       break;
-    }       
-   
+    }          
 
     stop_meas( &softmodem_stats_rxtx_sf );
 #ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
-      if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime){
-	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
+      if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime) {
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
       }
     }
 #endif // DEADLINE_SCHEDULER  
@@ -1243,7 +1227,6 @@ static void* eNB_thread_FH( void* param ) {
   }
     
   printf( "Exiting FH thread \n");
-
  
   eNB_thread_FH_status = 0;
   return &eNB_thread_FH_status;
@@ -1257,8 +1240,6 @@ static void* eNB_thread_FH( void* param ) {
  */
 static void* eNB_thread_prach( void* param ) {
   static int eNB_thread_prach_status;
-
- 
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB= PHY_vars_eNB_g[0][proc->CC_id];
@@ -1406,9 +1387,7 @@ static void* eNB_thread_prach( void* param ) {
     } 
   }
 
-
   printf( "Exiting eNB thread PRACH\n");
-
 
   eNB_thread_prach_status = 0;
   return &eNB_thread_prach_status;
@@ -1671,15 +1650,16 @@ void print_opp_meas(void) {
 }
  
 
- void init_eNB(eNB_func_t node_function,int nb_inst) {
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]) {
 
   int CC_id;
-  int inst;
-  for (inst=0;inst<nb_inst;inst++)
-    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++)
-      PHY_vars_eNB_g[0][CC_id]->node_function = node_function;
+
+  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->node_function = node_function[CC_id];
+    PHY_vars_eNB_g[0][CC_id]->node_timing   = node_timing[CC_id];
+  }
   
-  init_eNB_proc(nb_inst);
+  init_eNB_proc();
   sleep(1);
   LOG_D(HW,"[lte-softmodem.c] eNB threads created\n");
   

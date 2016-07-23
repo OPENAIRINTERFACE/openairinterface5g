@@ -2517,31 +2517,29 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_flag) {
 
-  int i,l;
+  int l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   eNB_proc_t *proc = &eNB->proc;
-  int subframe = proc->subframe_rx;
-  int frame = proc->frame_rx;
+
+  const int subframe = proc->subframe_rx;
+  const int frame = proc->frame_rx;
 
   uint8_t seqno=0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
-    
-
   
   start_meas(&eNB->phy_proc_rx);
 
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,frame, subframe);
+  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_common_RX(%d)\n",eNB->Mod_id,frame,subframe);
 #endif
 
-  if (abstraction_flag==0) { // grab signal in chunks of 500 us (1 slot)
-
+  if (abstraction_flag==0) {
 
     if ((eNB->node_function == NGFI_RRU_IF4) || 
-	(eNB->node_function == eNodeB_3GPP)  ||
-	(eNB->node_function == eNodeB_3GPP_BBU)) { // front-end processing
+        (eNB->node_function == eNodeB_3GPP)  ||
+        (eNB->node_function == eNodeB_3GPP_BBU)) { // front-end processing
 
       // now do common RX processing for first slot in subframe
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
@@ -2564,7 +2562,6 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
                     );
       }
 
-
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
 
       if (eNB->node_function == NGFI_RRU_IF4) {
@@ -2572,10 +2569,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
         send_IF4(eNB, proc->frame_rx, proc->subframe_rx, IF4_PULFFT, 0);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
-
-      }
-
-    
+      }    
     }
     else if (eNB->node_function == NGFI_RRU_IF5) {
       /// **** send_IF5 of rxdata to BBU **** ///       
@@ -2587,12 +2581,12 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     /// **** send_IF4 of prach to RCC **** /// done in prach thread (below)
     // check if we have to detect PRACH first
     if ((eNB->node_function != NGFI_RRU_IF5) && 
-	(is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0)) { // any other node must call prach procedure
+        (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0)) { // any other node must call prach procedure
       // wake up thread for PRACH RX
       if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
-	LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
-	exit_fun( "error locking mutex_prach" );
-	return;
+        LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
+        exit_fun( "error locking mutex_prach" );
+        return;
       }
       
       int cnt_prach = ++proc->instance_cnt_prach;
@@ -2603,18 +2597,19 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
       pthread_mutex_unlock( &proc->mutex_prach );
       
       if (cnt_prach == 0) {
-	// the thread was presumably waiting where it should and can now be woken up
-	if (pthread_cond_signal(&proc->cond_prach) != 0) {
-	  LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
-	  exit_fun( "ERROR pthread_cond_signal" );
-	  return;
-	}
+        // the thread was presumably waiting where it should and can now be woken up
+        if (pthread_cond_signal(&proc->cond_prach) != 0) {
+          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
+          exit_fun( "ERROR pthread_cond_signal" );
+          return;
+        }
       } else {
-	LOG_W( PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,cnt_prach);
-	exit_fun( "PRACH thread busy" );
-	return;
+        LOG_W( PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,cnt_prach);
+        exit_fun( "PRACH thread busy" );
+        return;
       }
     }
+    
   } else { // grab transport channel information from network interface
 
   }
@@ -2641,7 +2636,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
   start_meas(&eNB->phy_proc_rx);
 #ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_RX(%d)\n",eNB->Mod_id,frame, subframe);
+  LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
 
   T(T_ENB_PHY_UL_TICK, T_INT(phy_vars_eNB->Mod_id), T_INT(frame), T_INT(subframe));

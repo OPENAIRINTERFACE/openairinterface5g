@@ -119,7 +119,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-extern void init_eNB(eNB_func_t,int);
+extern void init_eNB(eNB_func_t *, eNB_timing_t *);
 extern void stop_eNB(void);
 extern void kill_eNB_proc(void);
 
@@ -229,15 +229,15 @@ int                             otg_enabled;
 
 
 static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-eNB_func_t node_function=eNodeB_3GPP;
+eNB_func_t node_function[MAX_NUM_CCs];
+eNB_timing_t node_timing[MAX_NUM_CCs];
+int16_t   node_synch_ref[MAX_NUM_CCs];
 
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
 uint8_t exit_missed_slots=1;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
-
-
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -384,11 +384,6 @@ void help (void) {
   printf("  --ue-scan_carrier set UE to scan around carrier\n");
   printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
   printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");   
-  printf("  --RCC run using NGFI RCC node function IF4 split\n");
-  printf("  --RRU run using NGFI RRU node function  IF4 split\n");
-  printf("  --eNB run using 3GPP eNB node function\n");   
-  printf("  --BBU run using 3GPP eNB node function with IF5 split\n");   
-  printf("  --RRH run using RRH node function with IF5 split\n");
   printf("  -C Set the downlink frequency for all component carriers\n");
   printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
   printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
@@ -685,12 +680,7 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
-    LONG_OPTION_MMAPPED_DMA,
-    LONG_OPTION_RCC,
-    LONG_OPTION_RRU,
-    LONG_OPTION_ENB,
-    LONG_OPTION_ENB_BBU,
-    LONG_OPTION_RRH
+    LONG_OPTION_MMAPPED_DMA
 #if T_TRACER
     ,
     LONG_OPTION_T_PORT,
@@ -715,11 +705,6 @@ static void get_options (int argc, char **argv)
     {"loop-memory", required_argument, NULL, LONG_OPTION_LOOPMEMORY},
     {"phy-test", no_argument, NULL, LONG_OPTION_PHYTEST},
     {"mmapped-dma", no_argument, NULL, LONG_OPTION_MMAPPED_DMA},
-    {"RCC", no_argument, NULL, LONG_OPTION_RCC},
-    {"RRU", no_argument, NULL, LONG_OPTION_RRU},
-    {"eNB", no_argument, NULL, LONG_OPTION_ENB},
-    {"BBU", no_argument, NULL, LONG_OPTION_ENB_BBU},
-    {"RRH", no_argument, NULL, LONG_OPTION_RRH},
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
@@ -813,26 +798,6 @@ static void get_options (int argc, char **argv)
 
     case LONG_OPTION_MMAPPED_DMA:
       mmapped_dma = 1;
-      break;
-
-    case LONG_OPTION_RCC:
-      node_function = NGFI_RCC_IF4;
-      break;
-
-    case LONG_OPTION_RRU:
-      node_function = NGFI_RRU_IF4;
-      break;
-
-    case LONG_OPTION_ENB:
-      node_function = eNodeB_3GPP;
-      break;
-
-    case LONG_OPTION_ENB_BBU:
-      node_function = eNodeB_3GPP_BBU;
-      break;
-
-    case LONG_OPTION_RRH:
-      node_function = NGFI_RRU_IF5;
       break;
               
 #if T_TRACER
@@ -1113,6 +1078,10 @@ static void get_options (int argc, char **argv)
       }
 
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        node_function[CC_id]  = enb_properties->properties[i]->cc_node_function[CC_id];
+        node_timing[CC_id]    = enb_properties->properties[i]->cc_node_timing[CC_id];
+        node_synch_ref[CC_id] = enb_properties->properties[i]->cc_node_synch_ref[CC_id];
+
         frame_parms[CC_id]->frame_type =       enb_properties->properties[i]->frame_type[CC_id];
         frame_parms[CC_id]->tdd_config =       enb_properties->properties[i]->tdd_config[CC_id];
         frame_parms[CC_id]->tdd_config_S =     enb_properties->properties[i]->tdd_config_s[CC_id];
@@ -1665,7 +1634,7 @@ int main( int argc, char **argv )
 
   if (UE_flag == 0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      if (node_function == NGFI_RRU_IF4 || node_function == NGFI_RRU_IF5) {
+      if (node_function[CC_id] == NGFI_RRU_IF4 || node_function[CC_id] == NGFI_RRU_IF5) {
         PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
         PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
       } else {
@@ -1685,10 +1654,9 @@ int main( int argc, char **argv )
 
   int returns=-1;
     
-  // Handle spatially distributed MIMO antenna ports   
   // Load RF device and initialize
-  if (node_function == NGFI_RRU_IF5 || node_function == NGFI_RRU_IF4 || node_function == eNodeB_3GPP) { 
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+    if (node_function[CC_id] == NGFI_RRU_IF5 || node_function[CC_id] == NGFI_RRU_IF4 || node_function[CC_id] == eNodeB_3GPP) { 
       if (mode!=loop_through_memory) {
         returns= (UE_flag == 0) ? 
 	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :
@@ -1696,28 +1664,27 @@ int main( int argc, char **argv )
 
         printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
         if (returns<0) {
-	  printf("Exiting, cannot initialize device\n");
-	  exit(-1);
+          printf("Exiting, cannot initialize device\n");
+          exit(-1);
         }
-      }
-      else if (mode==loop_through_memory) {    
+      } else if (mode==loop_through_memory) {    
+      
       }    
     }
   }  
   
   // Load transport protocol and initialize
-
-  if ((UE_flag==0) && (node_function != eNodeB_3GPP)){ 
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
+    if ((UE_flag==0) && (node_function[CC_id] != eNodeB_3GPP)) {
       if (mode!=loop_through_memory) {
-        returns=openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
+        returns = openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",returns,CC_id);
         if (returns<0) {
-	  printf("Exiting, cannot initialize transport protocol\n");
-	  exit(-1);
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
         }
-      }
-      else if (mode==loop_through_memory) {    
+      } else if (mode==loop_through_memory) {    
+      
       }    
     }
   }
@@ -1754,7 +1721,6 @@ int main( int argc, char **argv )
   }
 
   number_of_cards = 1;
-
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     rf_map[CC_id].card=0;
@@ -1877,15 +1843,9 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,1);
-
+  else init_eNB(node_function,node_timing);
   // Sleep to allow all threads to setup
   sleep(3);
-
-
-
-
-  // *** Handle per CC_id openair0
 
 
   printf("Sending sync to all threads\n");
@@ -1949,6 +1909,7 @@ int main( int argc, char **argv )
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
 
+
   // *** Handle per CC_id openair0
   if (UE_flag==1) {
     if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
@@ -1972,10 +1933,3 @@ int main( int argc, char **argv )
 
   return 0;
 }
-
-
-
-
-
-
-
