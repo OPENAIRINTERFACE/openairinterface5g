@@ -772,12 +772,13 @@ void get_simulation_options(int argc, char *argv[])
     AssertFatal (oai_emulation.info.nb_enb_local <= enb_properties->number,
                  "Number of eNB is greater than eNB defined in configuration file %s (%d/%d)!",
                  conf_config_file_name, oai_emulation.info.nb_enb_local, enb_properties->number);
-
+    
     /* Update some simulation parameters */
     oai_emulation.info.frame_type[0] =           enb_properties->properties[0]->frame_type[0];
     oai_emulation.info.tdd_config[0] =           enb_properties->properties[0]->tdd_config[0];
     oai_emulation.info.tdd_config_S[0] =         enb_properties->properties[0]->tdd_config_s[0];
     oai_emulation.info.extended_prefix_flag[0] = enb_properties->properties[0]->prefix_type[0];
+
   }
 
   free(conf_config_file_name);
@@ -1016,23 +1017,26 @@ void init_openair1(void)
       } else {
         PHY_vars_eNB_g[eNB_id][CC_id]->N_TA_offset = 0;
       }
-    }
-  }
+    } // eNB_id
+  } // CC_id
 
-  for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++)
+  for (eNB_id=0; eNB_id<NB_eNB_INST; eNB_id++) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       if (phy_test==1)
 	PHY_vars_eNB_g[eNB_id][CC_id]->mac_enabled=0;
       else
 	PHY_vars_eNB_g[eNB_id][CC_id]->mac_enabled=1;
     }
+  }
+
+   init_eNB(eNodeB_3GPP,NB_eNB_INST);
 
   // init_ue_status();
-  for (UE_id=0; UE_id<NB_UE_INST; UE_id++)
+  for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
+      
       PHY_vars_UE_g[UE_id][CC_id]->tx_power_max_dBm=23;
-
+      
       PHY_vars_UE_g[UE_id][CC_id]->rx_total_gain_dB=100;
 
       // update UE_mode for each eNB_id not just 0
@@ -1065,8 +1069,10 @@ void init_openair1(void)
 
 #endif
 
+    } // CC_id
+  } // UE_id
+  init_UE(NB_UE_INST);
     }
-}
 
 void init_openair2(void)
 {

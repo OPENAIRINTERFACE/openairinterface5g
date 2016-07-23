@@ -119,14 +119,14 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-extern void init_eNB(eNB_func_t);
+extern void init_eNB(eNB_func_t,int);
 extern void stop_eNB(void);
 extern void kill_eNB_proc(void);
 
 // In lte-ue.c
 extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
 extern void fill_ue_band_info(void);
-extern void init_UE(void);
+extern void init_UE(int);
 
 #ifdef XFORMS
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
@@ -283,9 +283,6 @@ uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
 eth_params_t *eth_params;
 
 openair0_config_t openair0_cfg[MAX_CARDS];
-
-// Change to openair_global to handle UE
-openair0_device openair0;
 
 double cpuf;
 
@@ -1677,40 +1674,15 @@ int main( int argc, char **argv )
       }
     }
   }
-  /* device host type is set*/
-  openair0.host_type = BBU_HOST;
-  /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
-  openair0.type = NONE_DEV;
-  /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
-  openair0.transp_type = NONE_TP;
-  
-  // Legacy BBU - RRH init  
-  //int returns=-1;
-  ///* BBU can have either a local or a remote radio head */  
-  //if (local_remote_radio == BBU_LOCAL_RADIO_HEAD) { //local radio head active  - load library of radio head and initiate it
-  //if (mode!=loop_through_memory) {
-  //returns=openair0_device_load(&openair0, &openair0_cfg[0]);
-  //printf("openair0_device_init returns %d\n",returns);
-  //if (returns<0) {
-  //printf("Exiting, cannot initialize device\n");
-  //exit(-1);
-  //}
-  //}
-  //else if (mode==loop_through_memory) {    
-  //}
-  //}  else { //remote radio head active - load library of transport protocol and initiate it 
-  //if (mode!=loop_through_memory) {
-  //returns=openair0_transport_load(&openair0, &openair0_cfg[0], eth_params);
-  //printf("openair0_transport_init returns %d\n",returns);
-  //if (returns<0) { 
-  //printf("Exiting, cannot initialize transport protocol\n");
-  //exit(-1);
-  //}
-  //}
-  //else if (mode==loop_through_memory) {    
-  //}
-  //}   
-    
+  else {
+    /* device host type is set*/
+    PHY_vars_UE_g[0][0]->rfdevice.host_type = BBU_HOST;
+    /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
+    PHY_vars_UE_g[0][0]->rfdevice.type = NONE_DEV;
+    /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
+    PHY_vars_UE_g[0][0]->rfdevice.transp_type = NONE_TP;
+  }
+
   int returns=-1;
     
   // Handle spatially distributed MIMO antenna ports   
@@ -1720,7 +1692,7 @@ int main( int argc, char **argv )
       if (mode!=loop_through_memory) {
         returns= (UE_flag == 0) ? 
 	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :
-	  openair0_device_load(&openair0, &openair0_cfg[0]);
+	  openair0_device_load(&(PHY_vars_UE_g[0][CC_id]->rfdevice), &openair0_cfg[0]);
 
         printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
         if (returns<0) {
@@ -1904,8 +1876,8 @@ int main( int argc, char **argv )
 
 
   // start the main thread
-  if (UE_flag == 1) init_UE();
-  else init_eNB(node_function);
+  if (UE_flag == 1) init_UE(1);
+  else init_eNB(node_function,1);
 
   // Sleep to allow all threads to setup
   sleep(3);
@@ -1978,16 +1950,18 @@ int main( int argc, char **argv )
   pthread_mutex_destroy(&sync_mutex);
 
   // *** Handle per CC_id openair0
-  if (UE_flag==1)
-    openair0.trx_end_func(&openair0);
-
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
-    if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
-      PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+  if (UE_flag==1) {
+    if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
+      PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
   }
-
+  else {
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      if (PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->rfdevice);  
+      if (PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func)
+	PHY_vars_eNB_g[0][CC_id]->ifdevice.trx_end_func(&PHY_vars_eNB_g[0][CC_id]->ifdevice);  
+    }
+  }
   if (ouput_vcd)
     VCD_SIGNAL_DUMPER_CLOSE();
 

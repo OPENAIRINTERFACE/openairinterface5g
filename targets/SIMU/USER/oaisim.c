@@ -61,22 +61,15 @@
 #include "LAYER2/MAC/proto.h"
 #include "LAYER2/MAC/vars.h"
 #include "pdcp.h"
-#ifndef CELLULAR
 #include "RRC/LITE/vars.h"
-#endif
-#include "PHY_INTERFACE/vars.h"
-//#endif
 #include "RRC/NAS/nas_config.h"
 
-#ifdef IFFT_FPGA
-//#include "PHY/LTE_REFSIG/mod_table.h"
-#endif //IFFT_FPGA
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 
-//#ifdef XFORMS
+
 #include "PHY/TOOLS/lte_phy_scope.h"
-//#endif
+
 
 #ifdef SMBV
 // Rohde&Schwarz SMBV100A vector signal generator
@@ -143,6 +136,28 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX][MAX_NUM_CCs];
 //Added for PHY abstraction
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
+
+pthread_cond_t sync_cond;
+pthread_mutex_t sync_mutex;
+int sync_var;
+
+
+openair0_config_t openair0_cfg[MAX_CARDS];
+uint32_t          downlink_frequency[MAX_NUM_CCs][4];
+int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
+openair0_rf_map rf_map[MAX_NUM_CCs];
+
+#if defined(ENABLE_ITTI)
+volatile int             start_eNB = 0;
+volatile int             start_UE = 0;
+#endif
+volatile int                    oai_exit = 0;
+
+
+//int32_t **rxdata;
+//int32_t **txdata;
+
+
 // Added for PHY abstraction
 extern node_list* ue_node_list;
 extern node_list* enb_node_list;
@@ -163,6 +178,9 @@ extern uint8_t ethernet_flag;
 extern uint16_t Nid_cell;
 
 extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
+
+extern Enb_properties_array_t enb_properties;
+
 
 //#ifdef XFORMS
 int otg_enabled;
@@ -728,23 +746,32 @@ l2l1_task (void *args_p)
 #endif
 
 	    CC_id=0;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.frame_rx                     = frame;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.subframe_rx                  = sf;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1].frame_rx    = frame;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1].subframe_rx = sf;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1].subframe_tx = (sf+4)%10;
-	    PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1].frame_tx    = (sf<6) ? frame : frame+1;
-	    phy_procedures_eNB_common_RX(PHY_vars_eNB_g[eNB_inst][CC_id],
-					 abstraction_flag);
-	    phy_procedures_eNB_uespec_RX(PHY_vars_eNB_g[eNB_inst][CC_id],
-					 &PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1],
-					 abstraction_flag,
-					 no_relay);
-	    phy_procedures_eNB_TX(PHY_vars_eNB_g[eNB_inst][CC_id],
-				  &PHY_vars_eNB_g[eNB_inst][CC_id]->proc.proc_rxtx[sf&1],
-				  0,no_relay,NULL);
+	    // trigger synch event to RAN FH thread for CC_id
+	    eNB_proc_t *proc =  &PHY_vars_eNB_g[eNB_inst][CC_id]->proc;
 
 
+	    if (pthread_mutex_lock(&proc->mutex_FH) != 0) {
+	      LOG_E( PHY, "error locking mutex for FH\n");
+	      exit_fun( "error locking mutex" );
+	      break;
+	    }	    
+	    int cnt_FH       = ++proc->instance_cnt_FH;
+	    proc->frame_rx    = frame;
+            proc->subframe_rx = sf;
+	    proc->timestamp_rx += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+
+	    if (proc->instance_cnt_FH == 0) {
+	      if (pthread_cond_signal(&proc->cond_FH) != 0) {
+		LOG_E(PHY,"ERROR pthread_cond_signal for eNB FH CCid %d\n",proc->CC_id);
+		exit_fun("ERROR pthread_cond_signal");
+		break;
+	      }
+	    }
+	    else {
+	      LOG_W(PHY,"[eNB] Frame %d, FH CC_id %d thread busy!! (cnt_FH %d)\n",proc->instance_cnt_FH);
+	      exit_fun("FH thread busy");
+              break;
+	    }
 #ifdef PRINT_STATS
 
             if((sf==9) && frame%10==0)
@@ -780,108 +807,8 @@ l2l1_task (void *args_p)
         log_set_instance_type (LOG_INSTANCE_UE);
 #endif
 
+	/*
 	clear_UE_transport_info (oai_emulation.info.nb_ue_local);
-
-        for (UE_inst = oai_emulation.info.first_ue_local;
-             (UE_inst < (oai_emulation.info.first_ue_local + oai_emulation.info.nb_ue_local));
-             UE_inst++) {
-          if (oai_emulation.info.cli_start_ue[UE_inst] != 0) {
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-
-#else
-
-            if (frame >= (UE_inst * 20)) // activate UE only after 20*UE_id frames so that different UEs turn on separately
-#endif
-	      { // UE_PROCEDURES
-		LOG_D(EMU,
-		      "PHY procedures UE %d for frame %d, subframe %d\n",
-		      UE_inst, frame % MAX_FRAME_NUMBER, sf);
-
-		if (PHY_vars_UE_g[UE_inst][0]->UE_mode[0]
-		    != NOT_SYNCHED) {
-		  if (frame > 0) {
-		    PHY_vars_UE_g[UE_inst][0]->proc.proc_rxtx[sf&1].frame_rx    = frame % MAX_FRAME_NUMBER;
-		    PHY_vars_UE_g[UE_inst][0]->proc.proc_rxtx[sf&1].subframe_rx = sf;
-		    PHY_vars_UE_g[UE_inst][0]->proc.proc_rxtx[sf&1].frame_tx    = ((sf<6) ? frame : frame+1)% MAX_FRAME_NUMBER;
-		    PHY_vars_UE_g[UE_inst][0]->proc.proc_rxtx[sf&1].subframe_tx = (sf+4)%10;
-
-#ifdef OPENAIR2
-		    //Application
-		    update_otg_UE (UE_inst, oai_emulation.info.time_ms);
-
-		    //Access layer
-		    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE_inst, 0, ENB_FLAG_NO, NOT_A_RNTI, frame % MAX_FRAME_NUMBER, sf);
-		    pdcp_run (&ctxt);
-#endif
-
-		    for (CC_id = 0; CC_id < MAX_NUM_CCs;
-			 CC_id++) {
-		      phy_procedures_UE_RX(PHY_vars_UE_g[UE_inst][CC_id],
-					   &PHY_vars_UE_g[UE_inst][CC_id]->proc.proc_rxtx[sf&1],
-					   0, abstraction_flag,
-					   normal_txrx, no_relay,
-					   NULL);
-		      phy_procedures_UE_TX(PHY_vars_UE_g[UE_inst][CC_id],
-					   &PHY_vars_UE_g[UE_inst][CC_id]->proc.proc_rxtx[sf&1],
-					   0,
-					   abstraction_flag,
-					   normal_txrx,
-					   no_relay);
-		    }
-
-		    ue_data[UE_inst]->tx_power_dBm =
-		      PHY_vars_UE_g[UE_inst][0]->tx_power_dBm;
-		  }
-		} else {
-		  if (abstraction_flag == 1) {
-		    LOG_E(EMU,
-			  "sync not supported in abstraction mode (UE%d,mode%d)\n",
-			  UE_inst,
-			  PHY_vars_UE_g[UE_inst][0]->UE_mode[0]);
-		    exit (-1);
-		  }
-
-		  if ((frame > 0)
-		      && (sf==9)){
-
-		    initial_sync (PHY_vars_UE_g[UE_inst][0],
-				  normal_txrx);
-
-		    /*
-		      write_output("dlchan00.m","dlch00",&(PHY_vars_UE_g[0]->common_vars.dl_ch_estimates[0][0][0]),(6*(PHY_vars_UE_g[0]->frame_parms.ofdm_symbol_size)),1,1);
-		      if (PHY_vars_UE_g[0]->frame_parms.nb_antennas_rx>1)
-		      write_output("dlchan01.m","dlch01",&(PHY_vars_UE_g[0]->common_vars.dl_ch_estimates[0][1][0]),(6*(PHY_vars_UE_g[0]->frame_parms.ofdm_symbol_size)),1,1);
-		      write_output("dlchan10.m","dlch10",&(PHY_vars_UE_g[0]->common_vars.dl_ch_estimates[0][2][0]),(6*(PHY_vars_UE_g[0]->frame_parms.ofdm_symbol_size)),1,1);
-		      if (PHY_vars_UE_g[0]->frame_parms.nb_antennas_rx>1)
-		      write_output("dlchan11.m","dlch11",&(PHY_vars_UE_g[0]->common_vars.dl_ch_estimates[0][3][0]),(6*(PHY_vars_UE_g[0]->frame_parms.ofdm_symbol_size)),1,1);
-		      write_output("rxsig.m","rxs",PHY_vars_UE_g[0]->common_vars.rxdata[0],PHY_vars_UE_g[0]->frame_parms.samples_per_tti*10,1,1);
-		      write_output("rxsigF.m","rxsF",PHY_vars_UE_g[0]->common_vars.rxdataF[0],2*PHY_vars_UE_g[0]->frame_parms.symbols_per_tti*PHY_vars_UE_g[0]->frame_parms.ofdm_symbol_size,2,1);
-		      write_output("pbch_rxF_ext0.m","pbch_ext0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],6*12*4,1,1);
-		      write_output("pbch_rxF_comp0.m","pbch_comp0",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],6*12*4,1,1);
-		      write_output("pbch_rxF_llr.m","pbch_llr",PHY_vars_UE_g[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-		    */
-		  }
-		}
-
-#ifdef PRINT_STATS
-
-		if((sf==1) && frame%10==0) {
-		  if (UE_stats_th[UE_inst]) {
-		    fprintf(UE_stats_th[UE_inst],"%d %d\n",frame % MAX_FRAME_NUMBER, PHY_vars_UE_g[UE_inst][0]->bitrate[0]/1000);
-		  }
-		}
-
-		if (UE_stats[UE_inst]) {
-		  len = dump_ue_stats (PHY_vars_UE_g[UE_inst][0], &PHY_vars_UE_g[UE_inst][0]->proc.proc_rxtx[sf&1],stats_buffer, 0, normal_txrx, 0);
-		  rewind (UE_stats[UE_inst]);
-		  fwrite (stats_buffer, 1, len, UE_stats[UE_inst]);
-		  fflush(UE_stats[UE_inst]);
-		}
-
-#endif
-	      } // UE_PROCEDURES
-          }
-        } // UE_inst
 
         emu_transport (frame % MAX_FRAME_NUMBER, sf<<1, ((sf+4)%10)<<1, subframe_select(&PHY_vars_eNB_g[0][0]->frame_parms,sf),
                        oai_emulation.info.frame_type[0], ethernet_flag);
@@ -942,6 +869,7 @@ l2l1_task (void *args_p)
 	
 	stop_meas (&ul_chan_stats);
 
+	*/
 
 	if ((sf == 0) && ((frame % MAX_FRAME_NUMBER) == 0) && (abstraction_flag == 0)
 	    && (oai_emulation.info.n_frames == 1)) {
@@ -1200,7 +1128,7 @@ main (int argc, char **argv)
 
   // oai performance profiler is enabled
   if (oai_emulation.info.opp_enabled == 1)
-    reset_opp_meas ();
+    reset_opp_meas_oaisim ();
 
   init_time ();
 
@@ -1242,7 +1170,7 @@ main (int argc, char **argv)
 }
 
 void
-reset_opp_meas (void)
+reset_opp_meas_oaisim (void)
 {
   uint8_t eNB_id = 0, UE_id = 0;
 
@@ -1383,7 +1311,7 @@ reset_opp_meas (void)
 }
 
 void
-print_opp_meas (void)
+print_opp_meas_oaisim (void)
 {
 
   uint8_t eNB_id = 0, UE_id = 0;
@@ -1687,7 +1615,7 @@ oai_shutdown (void)
     kpi_gen ();
   }
   if (oai_emulation.info.opp_enabled == 1)
-    print_opp_meas ();
+    print_opp_meas_oaisim ();
 
   // relase all rx state
   if (ethernet_flag == 1) {

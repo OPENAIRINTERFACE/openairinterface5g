@@ -171,6 +171,7 @@ typedef enum {
 } eNB_timing_t;
 
 
+
 typedef struct UE_SCAN_INFO_s {
   /// 10 best amplitudes (linear) for each pss signals
   int32_t amp[3][10];
@@ -310,10 +311,16 @@ typedef struct {
   uint8_t              CC_id;
   /// Last RX timestamp
   openair0_timestamp timestamp_rx;
+  /// pthread attributes for main UE thread
+  pthread_attr_t attr_ue;
+  /// scheduling parameters for main UE thread
+  struct sched_param sched_param_ue;
+  /// pthread descriptor main UE thread
+  pthread_t pthread_ue;
   /// \brief Instance count for synch thread.
   /// \internal This variable is protected by \ref mutex_synch.
   int instance_cnt_synch;
-  /// pthread attributes for prach processing thread
+  /// pthread attributes for synch processing thread
   pthread_attr_t attr_synch;
   /// scheduling parameters for synch thread
   struct sched_param sched_param_synch;
@@ -769,6 +776,9 @@ typedef struct {
   time_stats_t dlsch_tc_intl1_stats;
   time_stats_t dlsch_tc_intl2_stats;
   time_stats_t tx_prach;
+
+  /// RF and Interface devices per CC
+  openair0_device rfdevice; 
 
 #if ENABLE_RAL
   hash_table_t    *ral_thresholds_timed;
