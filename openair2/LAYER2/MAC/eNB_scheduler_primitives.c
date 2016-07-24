@@ -298,6 +298,12 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   int UE_id = find_UE_id(mod_idP,rntiP);
   int pCC_id = UE_PCCID(mod_idP,UE_id);
 
+  if (UE_id == -1) {
+    LOG_W(MAC,"rrc_mac_remove_ue: UE %x not found\n", rntiP);
+    mac_phy_remove_ue(mod_idP,rntiP);
+    return 0;
+  }
+
   LOG_I(MAC,"Removing UE %d from Primary CC_id %d (rnti %x)\n",UE_id,pCC_id, rntiP);
   dump_ue_list(UE_list,0);
 
@@ -320,7 +326,6 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head; i>=0; i=UE_list->next[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      //if (prev==UE_list->head)
       if (i==UE_list->head) {
         UE_list->head = UE_list->next[i];
       } else {
@@ -345,7 +350,7 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
   for (i=UE_list->head_ul; i>=0; i=UE_list->next_ul[i]) {
     if (i == UE_id) {
       // link prev to next in Active list
-      if (prev==UE_list->head_ul) {
+      if (i==UE_list->head_ul) {
         UE_list->head_ul = UE_list->next_ul[i];
       } else {
         UE_list->next_ul[prev] = UE_list->next_ul[i];

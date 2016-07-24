@@ -130,6 +130,8 @@ void rx_sdu(
 
   T(T_ENB_MAC_UE_UL_PDU, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
     T_INT(harq_pidP), T_INT(sdu_lenP), T_INT(num_ce), T_INT(num_sdu));
+  T(T_ENB_MAC_UE_UL_PDU_WITH_DATA, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
+    T_INT(harq_pidP), T_INT(sdu_lenP), T_INT(num_ce), T_INT(num_sdu), T_BUFFER(sduP, sdu_lenP));
 
   eNB->eNB_stats[CC_idP].ulsch_bytes_rx=sdu_lenP;
   eNB->eNB_stats[CC_idP].total_ulsch_bytes_rx+=sdu_lenP;
@@ -313,6 +315,8 @@ void rx_sdu(
 
     T(T_ENB_MAC_UE_UL_SDU, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
       T_INT(rx_lcids[i]), T_INT(rx_lengths[i]));
+    T(T_ENB_MAC_UE_UL_SDU_WITH_DATA, T_INT(enb_mod_idP), T_INT(CC_idP), T_INT(rntiP), T_INT(frameP), T_INT(subframeP),
+      T_INT(rx_lcids[i]), T_INT(rx_lengths[i]), T_BUFFER(payload_ptr, rx_lengths[i]));
 
     switch (rx_lcids[i]) {
     case CCCH :
