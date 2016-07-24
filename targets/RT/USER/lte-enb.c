@@ -157,8 +157,8 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]);
-void stop_eNB(void);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst);
+void stop_eNB(int nb_inst);
 
 
 void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
@@ -647,6 +647,8 @@ static void* eNB_thread_asynch_rx( void* param ) {
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
   int prach_rx;
+  int dummy_rx[fp->nb_antennas_rx][fp->samples_per_tti]; 
+  int rxs;
 
 #ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
@@ -739,7 +741,34 @@ static void* eNB_thread_asynch_rx( void* param ) {
   
 #endif // DEADLINE_SCHEDULER
 
-  if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
+
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
+  printf( "waiting for sync (eNB_thread_asynch_rx)\n");
+  pthread_mutex_lock( &sync_mutex );
+
+  while (sync_var<0)
+    pthread_cond_wait( &sync_cond, &sync_mutex );
+ 
+  pthread_mutex_unlock(&sync_mutex);
+ 
+  printf( "got sync (eNB_thread_asynch_rx)\n" );
+
+  if (eNB->node_function == eNodeB_3GPP) { // acquisition from RF
+
+    if (eNB->rfdevice.trx_read_func)
+      rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+					&proc->timestamp_rx,
+					(void**)dummy_rx,
+					fp->samples_per_tti,
+					fp->nb_antennas_rx);
+    else {
+      printf("eNB asynch RX\n");
+      sleep(1);
+    }
+  }
+  else if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
       /// **** recv_IF5 of rxdata from RRH **** ///       
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
     recv_IF5(eNB, &timestamp_rx, subframe_rx++, IF5_RRH_GW_UL); 
@@ -938,7 +967,7 @@ static void* eNB_thread_FH( void* param ) {
  
   pthread_mutex_unlock(&sync_mutex);
  
-  printf( "got sync (eNB_thread)\n" );
+  printf( "got sync (eNB_thread FH)\n" );
  
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
@@ -1394,108 +1423,106 @@ static void* eNB_thread_prach( void* param ) {
 }
 
 
-void init_eNB_proc(int nb_inst) {
+void init_eNB_proc(int inst) {
   
   int i;
   int CC_id;
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  int inst;
-
-  for (inst = 0; inst < nb_inst; inst++) {
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      eNB = PHY_vars_eNB_g[inst][CC_id];
-      LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
-      proc = &eNB->proc;
-      proc_rxtx = proc->proc_rxtx;
+  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    eNB = PHY_vars_eNB_g[inst][CC_id];
+    LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
+    proc = &eNB->proc;
+    proc_rxtx = proc->proc_rxtx;
 #ifndef DEADLINE_SCHEDULER 
-      /*  
-	  pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
-	  if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
-	  perror("[ENB_PROC_TX] setting thread stack size failed\n");
-	  
-	  pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
-	  if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
-	  perror("[ENB_PROC_RX] setting thread stack size failed\n");
-      */
-      // set the kernel scheduling policy and priority
-      proc_rxtx[0].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc_rxtx[0].attr_rxtx, &proc_rxtx[0].sched_param_rxtx);
-      pthread_attr_setschedpolicy (&proc_rxtx[0].attr_rxtx, SCHED_FIFO);
-      proc_rxtx[1].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc_rxtx[1].attr_rxtx, &proc_rxtx[1].sched_param_rxtx);
-      pthread_attr_setschedpolicy (&proc_rxtx[1].attr_rxtx, SCHED_FIFO);
-      
-      proc->sched_param_FH.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc->attr_FH, &proc->sched_param_FH);
-      pthread_attr_setschedpolicy (&proc->attr_FH, SCHED_FIFO);
-      
-      proc->sched_param_prach.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-      pthread_attr_setschedparam  (&proc->attr_prach, &proc->sched_param_prach);
-      pthread_attr_setschedpolicy (&proc->attr_prach, SCHED_FIFO);
-      
-      printf("Setting OS scheduler to SCHED_FIFO for eNB [cc%d][thread%d] \n",CC_id, i);
-#endif
-      proc_rxtx[0].instance_cnt_rxtx = -1;
-      proc_rxtx[1].instance_cnt_rxtx = -1;
-      proc->instance_cnt_prach = -1;
-      proc->instance_cnt_FH = -1;
-      proc->CC_id = CC_id;
-      
-      proc->first_rx=4;
-      
-      pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
-      pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
-      pthread_mutex_init( &proc->mutex_prach, NULL);
-      pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
-      pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
-      pthread_cond_init( &proc->cond_prach, NULL);
-      pthread_cond_init( &proc->cond_FH, NULL);
-#ifndef DEADLINE_SCHEDULER
-      pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
-      pthread_create( &proc->pthread_FH, &proc->attr_FH, eNB_thread_FH, &eNB->proc );
-      pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
-      if (eNB->node_timing == synch_to_other) 
-	pthread_create( &proc->pthread_asynch_rx, &proc->attr_asynch_rx, eNB_thread_asynch_rx, &eNB->proc );
-#else 
-      pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[1] );
-      pthread_create( &proc->pthread_FH, NULL, eNB_thread_FH, &eNB->proc );
-      pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
-      if (eNB->node_timing == synch_to_other) 
-	pthread_create( &proc->pthread_asynch_rx, NULL, eNB_thread_asynch_rx, &eNB->proc );
-      
-#endif
-      char name[16];
-      snprintf( name, sizeof(name), "RXTX0 %d", i );
-      pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
-      snprintf( name, sizeof(name), "RXTX1 %d", i );
-      pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
-      snprintf( name, sizeof(name), "FH %d", i );
-      pthread_setname_np( proc->pthread_FH, name );
-    }
+    /*  
+	pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
+	if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
+	perror("[ENB_PROC_TX] setting thread stack size failed\n");
+	
+	pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
+	if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
+	perror("[ENB_PROC_RX] setting thread stack size failed\n");
+    */
+    // set the kernel scheduling policy and priority
+    proc_rxtx[0].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc_rxtx[0].attr_rxtx, &proc_rxtx[0].sched_param_rxtx);
+    pthread_attr_setschedpolicy (&proc_rxtx[0].attr_rxtx, SCHED_FIFO);
+    proc_rxtx[1].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc_rxtx[1].attr_rxtx, &proc_rxtx[1].sched_param_rxtx);
+    pthread_attr_setschedpolicy (&proc_rxtx[1].attr_rxtx, SCHED_FIFO);
     
-    /* setup PHY proc TX sync mechanism */
-    pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
-    pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
-    sync_phy_proc.phy_proc_CC_id = 0;
+    proc->sched_param_FH.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc->attr_FH, &proc->sched_param_FH);
+    pthread_attr_setschedpolicy (&proc->attr_FH, SCHED_FIFO);
+    
+    proc->sched_param_prach.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
+    pthread_attr_setschedparam  (&proc->attr_prach, &proc->sched_param_prach);
+    pthread_attr_setschedpolicy (&proc->attr_prach, SCHED_FIFO);
+    
+    printf("Setting OS scheduler to SCHED_FIFO for eNB [cc%d][thread%d] \n",CC_id, i);
+#endif
+    proc_rxtx[0].instance_cnt_rxtx = -1;
+    proc_rxtx[1].instance_cnt_rxtx = -1;
+    proc->instance_cnt_prach = -1;
+    proc->instance_cnt_FH = -1;
+    proc->CC_id = CC_id;
+    
+    proc->first_rx=4;
+    
+    pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
+    pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
+    pthread_mutex_init( &proc->mutex_prach, NULL);
+    pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
+    pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
+    pthread_cond_init( &proc->cond_prach, NULL);
+    pthread_cond_init( &proc->cond_FH, NULL);
+#ifndef DEADLINE_SCHEDULER
+    pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
+    pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
+    pthread_create( &proc->pthread_FH, &proc->attr_FH, eNB_thread_FH, &eNB->proc );
+    pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
+    if (eNB->node_timing == synch_to_other) 
+      pthread_create( &proc->pthread_asynch_rx, &proc->attr_asynch_rx, eNB_thread_asynch_rx, &eNB->proc );
+#else 
+    pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
+    pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[1] );
+    pthread_create( &proc->pthread_FH, NULL, eNB_thread_FH, &eNB->proc );
+    pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
+    if (eNB->node_timing == synch_to_other) 
+      pthread_create( &proc->pthread_asynch_rx, NULL, eNB_thread_asynch_rx, &eNB->proc );
+    
+#endif
+    char name[16];
+    snprintf( name, sizeof(name), "RXTX0 %d", i );
+    pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
+    snprintf( name, sizeof(name), "RXTX1 %d", i );
+    pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
+    snprintf( name, sizeof(name), "FH %d", i );
+    pthread_setname_np( proc->pthread_FH, name );
   }
+  
+  /* setup PHY proc TX sync mechanism */
+  pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
+  pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
+  sync_phy_proc.phy_proc_CC_id = 0;
 }
+
 
 
 /*!
  * \brief Terminate eNB TX and RX threads.
  */
-void kill_eNB_proc(void) {
+void kill_eNB_proc(int inst) {
 
   int *status;
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    eNB=PHY_vars_eNB_g[0][CC_id];
+    eNB=PHY_vars_eNB_g[inst][CC_id];
     
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
@@ -1650,16 +1677,21 @@ void print_opp_meas(void) {
 }
  
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]) {
+ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst) {
 
   int CC_id;
-
-  for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
-    PHY_vars_eNB_g[0][CC_id]->node_function = node_function[CC_id];
-    PHY_vars_eNB_g[0][CC_id]->node_timing   = node_timing[CC_id];
-  }
+  int inst;
   
-  init_eNB_proc();
+  for (inst=0;inst<nb_inst;inst++) {
+    for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
+      PHY_vars_eNB_g[inst][CC_id]->node_function = node_function[CC_id];
+      PHY_vars_eNB_g[inst][CC_id]->node_timing   = node_timing[CC_id];
+      LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
+    }
+
+    init_eNB_proc(inst);
+  }
+
   sleep(1);
   LOG_D(HW,"[lte-softmodem.c] eNB threads created\n");
   
@@ -1677,7 +1709,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[]) {
 }
 
 
-void stop_eNB() {
+void stop_eNB(int nb_inst) {
 
   /*
 #ifdef DEBUG_THREADS
@@ -1702,6 +1734,8 @@ void stop_eNB() {
 #endif // DEBUG_THREADS
   */
   
-  printf("Killing eNB processing threads\n");
-  kill_eNB_proc();
+  for (int inst=0;inst<nb_inst;inst++) {
+    printf("Killing eNB %d processing threads\n",inst);
+    kill_eNB_proc(inst);
+  }
 }

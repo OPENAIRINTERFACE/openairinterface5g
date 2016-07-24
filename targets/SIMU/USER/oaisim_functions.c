@@ -173,6 +173,12 @@ extern time_stats_t ul_chan_stats;
 
 extern int xforms;
 
+extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
+extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
+
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst);
+void stop_eNB(int nb_inst);
+
 void get_simulation_options(int argc, char *argv[])
 {
   int                           option;
@@ -774,11 +780,15 @@ void get_simulation_options(int argc, char *argv[])
                  conf_config_file_name, oai_emulation.info.nb_enb_local, enb_properties->number);
     
     /* Update some simulation parameters */
-    oai_emulation.info.frame_type[0] =           enb_properties->properties[0]->frame_type[0];
-    oai_emulation.info.tdd_config[0] =           enb_properties->properties[0]->tdd_config[0];
-    oai_emulation.info.tdd_config_S[0] =         enb_properties->properties[0]->tdd_config_s[0];
+    oai_emulation.info.frame_type[0]           = enb_properties->properties[0]->frame_type[0];
+    oai_emulation.info.tdd_config[0]           = enb_properties->properties[0]->tdd_config[0];
+    oai_emulation.info.tdd_config_S[0]         = enb_properties->properties[0]->tdd_config_s[0];
     oai_emulation.info.extended_prefix_flag[0] = enb_properties->properties[0]->prefix_type[0];
 
+    oai_emulation.info.node_function[0]        = enb_properties->properties[0]->cc_node_function[0];
+    oai_emulation.info.node_timing[0]          = enb_properties->properties[0]->cc_node_timing[0];
+    downlink_frequency[0][0]                   = enb_properties->properties[0]->downlink_frequency[0];
+    uplink_frequency_offset[0][0]              = enb_properties->properties[0]->uplink_frequency_offset[0];
   }
 
   free(conf_config_file_name);
@@ -939,6 +949,119 @@ void init_seed(uint8_t set_seed)
   }
 }
 
+int eNB_trx_start(openair0_device *device) {
+  return(0);
+}
+
+void eNB_trx_end(openair0_device *device) {
+  return;
+}
+
+int eNB_trx_stop(openair0_device *device) {
+  return(0);
+}
+int UE_trx_start(openair0_device *device) {
+  return(0);
+}
+int UE_trx_end(openair0_device *device) {
+  return(0);
+}
+int UE_trx_stop(openair0_device *device) {
+  return(0);
+}
+int eNB_trx_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, int dummy) {
+  return(0);
+}
+int eNB_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
+  return(0);
+}
+int UE_trx_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, int dummy) {
+  return(0);
+}
+int UE_trx_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {
+  return(0);
+}
+
+int eNB_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+  return(0);
+}
+
+int UE_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
+  return(0);
+}
+
+int eNB_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  int eNB_id = device->Mod_id;
+  int CC_id  = device->CC_id;
+  int UE_id;
+  int subframe = (timestamp/PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms.samples_per_tti)%10;
+
+  for (UE_id=0;UE_id<=NB_UE_INST;UE_id++) {
+    do_DL_sig(eNB2UE,
+	      enb_data,
+	      ue_data,
+	      subframe,
+	      0, //abstraction_flag,
+	      &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
+	      UE_id,
+	      CC_id);
+  }
+  return(0);
+}
+
+int UE_trx_write(openair0_device *device,openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+
+  int UE_id = device->Mod_id;
+  int CC_id  = device->CC_id;
+  int eNB_id;
+  int subframe = (timestamp/PHY_vars_UE_g[UE_id][CC_id]->frame_parms.samples_per_tti)%10;
+
+  for (eNB_id=0;eNB_id<=NB_eNB_INST;eNB_id++) {
+    do_UL_sig(UE2eNB,
+	      enb_data,
+	      ue_data,
+	      subframe,
+	      0,  // abstraction_flag
+	      &PHY_vars_eNB_g[eNB_id][CC_id]->frame_parms,
+	      0,  // frame is only used for abstraction
+	      eNB_id,
+	      CC_id);
+  }
+  return(0);
+}
+
+void init_devices(void){
+
+  module_id_t UE_id, eNB_id;
+  uint8_t CC_id;
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    for (eNB_id=0;eNB_id<NB_eNB_INST;eNB_id++) {
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.Mod_id             = eNB_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.CC_id              = CC_id;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_start_func     = eNB_trx_start;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_read_func      = eNB_trx_read;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_write_func     = eNB_trx_write;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_end_func       = eNB_trx_end;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_stop_func      = eNB_trx_stop;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_set_freq_func  = eNB_trx_set_freq;
+      PHY_vars_eNB_g[eNB_id][CC_id]->rfdevice.trx_set_gains_func = eNB_trx_set_gains;
+    }
+    for (UE_id=0;UE_id<NB_eNB_INST;UE_id++) {
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.Mod_id               = UE_id;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.CC_id                = CC_id;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_start_func       = UE_trx_start;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_read_func        = UE_trx_read;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_write_func       = UE_trx_write;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_end_func         = UE_trx_end;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_stop_func        = UE_trx_stop;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_freq_func    = UE_trx_set_freq;
+      PHY_vars_UE_g[UE_id][CC_id]->rfdevice.trx_set_gains_func   = UE_trx_set_gains;
+    }
+  }
+}
+
 void init_openair1(void)
 {
   module_id_t UE_id, eNB_id;
@@ -1029,7 +1152,9 @@ void init_openair1(void)
     }
   }
 
-   init_eNB(eNodeB_3GPP,NB_eNB_INST);
+  init_devices ();
+
+  init_eNB(oai_emulation.info.node_function,oai_emulation.info.node_timing,NB_eNB_INST);
 
   // init_ue_status();
   for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {

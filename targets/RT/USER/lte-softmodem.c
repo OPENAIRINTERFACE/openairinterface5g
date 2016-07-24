@@ -119,8 +119,8 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-extern void init_eNB(eNB_func_t *, eNB_timing_t *);
-extern void stop_eNB(void);
+extern void init_eNB(eNB_func_t *, eNB_timing_t *,int);
+extern void stop_eNB(int);
 extern void kill_eNB_proc(void);
 
 // In lte-ue.c
@@ -1843,7 +1843,7 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,node_timing);
+  else init_eNB(node_function,node_timing,1);
   // Sleep to allow all threads to setup
   sleep(3);
 
@@ -1902,7 +1902,7 @@ int main( int argc, char **argv )
   // cleanup
   if (UE_flag == 1) {
   } else {
-    stop_eNB();
+    stop_eNB(1);
   }
 
 

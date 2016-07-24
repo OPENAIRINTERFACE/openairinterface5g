@@ -179,7 +179,6 @@ extern uint16_t Nid_cell;
 
 extern LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs];
 
-extern Enb_properties_array_t enb_properties;
 
 
 //#ifdef XFORMS
@@ -759,8 +758,9 @@ l2l1_task (void *args_p)
 	    proc->frame_rx    = frame;
             proc->subframe_rx = sf;
 	    proc->timestamp_rx += PHY_vars_eNB_g[eNB_inst][CC_id]->frame_parms.samples_per_tti;
+	    pthread_mutex_unlock( &proc->mutex_FH );
 
-	    if (proc->instance_cnt_FH == 0) {
+	    if (cnt_FH == 0) {
 	      if (pthread_cond_signal(&proc->cond_FH) != 0) {
 		LOG_E(PHY,"ERROR pthread_cond_signal for eNB FH CCid %d\n",proc->CC_id);
 		exit_fun("ERROR pthread_cond_signal");

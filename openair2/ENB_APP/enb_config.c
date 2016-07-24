@@ -59,6 +59,7 @@
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
 #include "LAYER2/MAC/extern.h"
+#include "PHY/extern.h"
 
 #define ENB_CONFIG_STRING_ACTIVE_ENBS                   "Active_eNBs"
 
@@ -321,8 +322,8 @@ void enb_config_display(void)
 
     for (j=0; j< enb_properties.properties[i]->nb_cc; j++) {
       // CC_ID node function/timing
-      printf( "\n\tnode_function for CC %d:      \t%d:\n",j,enb_properties.properties[i]->cc_node_function[j]);
-      printf( "\tnode_timing for CC %d:        \t%d:\n",j,enb_properties.properties[i]->cc_node_timing[j]);
+      printf( "\n\tnode_function for CC %d:      \t%s:\n",j,eNB_functions[enb_properties.properties[i]->cc_node_function[j]]);
+      printf( "\tnode_timing for CC %d:        \t%s:\n",j,eNB_timing[enb_properties.properties[i]->cc_node_timing[j]]);
       printf( "\tnode_synch_ref for CC %d:     \t%d:\n",j,enb_properties.properties[i]->cc_node_synch_ref[j]);
 
       printf( "\teutra band for CC %d:         \t%"PRId16":\n",j,enb_properties.properties[i]->eutra_band[j]);

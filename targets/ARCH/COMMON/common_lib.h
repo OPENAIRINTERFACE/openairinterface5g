@@ -248,6 +248,9 @@ typedef struct {
 struct openair0_device_t {
   /*!brief Module ID of this device */
   int Mod_id;
+
+  /*!brief Component Carrier ID of this device */
+  int CC_id;
   
   /*!brief Type of this device */
   dev_type_t type;
