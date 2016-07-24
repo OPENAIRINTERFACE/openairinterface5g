@@ -33,6 +33,7 @@
 # brief OAI automated build tool that can be used to install, compile, run OAI.
 # author  Navid Nikaein, Lionel GAUTHIER, Laurent Thomas
 
+set -e
 
 ################################
 # include helper functions
@@ -59,6 +60,7 @@ RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
 T_TRACER="False"
+DISABLE_HARDWARE_DEPENDENCY="False"
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -131,6 +133,8 @@ Options
    Disables CPU Affinity between UHD/TX/RX Threads (Valid only when deadline scheduler is disabled). By defaulT, CPU Affinity is enabled when not using deadline scheduler. It is enabled only with >2 CPUs. For eNB, CPU_0-> Device library (UHD), CPU_1->TX Threads, CPU_2...CPU_MAX->Rx Threads. For UE, CPU_0->Device Library(UHD), CPU_1..CPU_MAX -> All the UE threads
 --T-tracer
    Enables the T tracer.
+--disable-hardware-dependency
+   Disable HW dependency during installation
 Usage (first build):
  oaisim (eNB + UE): ./build_oai -I -g --oaisim -x --install-system-files
  Eurecom EXMIMO + COTS UE : ./build_oai -I -g --eNB -x --install-system-files
@@ -277,6 +281,10 @@ function main() {
             T_TRACER="True"
             echo_info "Enabling the T tracer"
             shift 1;;
+       --disable-hardware-dependency)
+            echo_info "Disabling hardware dependency for compiling software"
+            DISABLE_HARDWARE_DEPENDENCY="True"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;
@@ -386,10 +394,16 @@ function main() {
     if [ "$HW" == "OAI_USRP" ] ; then
       echo_info "installing packages for USRP support"
       check_install_usrp_uhd_driver
+      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+        install_usrp_uhd_driver
+      fi
     fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
+      if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+        flash_firmware_bladerf
+      fi
     fi
   fi
 
