@@ -46,8 +46,8 @@
 void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe, uint8_t *seqno, uint16_t packet_type) {      
   
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  void *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
-  void *tx_buffer=NULL;
+  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+  int32_t *tx_buffer=NULL;
 
   uint16_t packet_id=0, i=0;
   
@@ -115,8 +115,8 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       data_block = data_block_head; 
     
       for (i=0; i<db_fulllength>>3; i+=2) {
-        t0 = _mm_srli_epi16(*txp128++, 4);
-        t1 = _mm_srli_epi16(*txp128++, 4);   
+        t0 = _mm_srai_epi16(*txp128++, 4);
+        t1 = _mm_srai_epi16(*txp128++, 4);   
         
         *data_block++ = _mm_packs_epi16(t0, t1);     
       }
@@ -147,8 +147,8 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
 void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subframe, uint16_t packet_type) {
 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-  void *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
-  void *rx_buffer=NULL;
+  int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
+
 
   uint16_t packet_id=0, i=0;
   
@@ -203,6 +203,5 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
     AssertFatal(1==0, "recv_IF5 - Unknown packet_type %x", packet_type);     
   }  
   
-  free(rx_buffer);  
   return;  
 }
