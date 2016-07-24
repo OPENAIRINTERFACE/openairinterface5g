@@ -1105,7 +1105,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   uint8_t smbv_alloc_cnt = 1;
 #endif
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,1);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),1);
   start_meas(&eNB->phy_proc_tx);
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -1406,7 +1406,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
 #endif
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX,0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),0);
   stop_meas(&eNB->phy_proc_tx);
   
 }
@@ -2515,7 +2515,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
   uint8_t seqno=0;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+(subframe&1), 1 );
   
   start_meas(&eNB->phy_proc_rx);
 
@@ -2602,7 +2602,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
 
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON, 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+(subframe&1), 0 );
 }
 
 
@@ -2621,7 +2621,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+(subframe&1), 1 );
   start_meas(&eNB->phy_proc_rx);
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
@@ -3183,7 +3183,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   phy_procedures_emos_eNB_RX(subframe,eNB);
 #endif
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+(subframe&1), 0 );
 
   stop_meas(&eNB->phy_proc_rx);
 
