@@ -82,13 +82,13 @@ if valid_ip $iface; then
   while  [ "$?" != "0" ]; do
      ping -c 1 $iface >& /dev/null
   done
-  echo "$iface connectivity achieved at `date`"  
+  echo "$iface connectivity achieved at `date`, Seconds = $SECONDS"  
 
 else 
 
   echo "Waiting for Interface $iface to come up..."
   while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done 
-  echo "$iface is now available at `date`"
+  echo "$iface is now available at `date` , Seconds = $SECONDS"
 fi
 
 
@@ -102,5 +102,5 @@ fi
 echo "Sleeping for additional $timeout seconds"
 sleep $timeout
 
-echo "Starting iperf at `date`...."
+echo "Starting iperf at `date` , Seconds = $SECONDS ...."
 iperf ${iperf_args[@]}
