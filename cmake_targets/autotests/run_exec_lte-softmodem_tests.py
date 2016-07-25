@@ -781,7 +781,7 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
        task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
        task_eNB = task_eNB + 'echo eNB_traffic_exec PID = $! \n'
 
-    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i any -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
+    task_eNB = task_eNB + ' (date; sudo rm -f ' + logfile_pcap_tmp_eNB + ' ; sudo -E tshark -i lo -s 65535 -a duration:' + str(timeout_cmd-10)+ ' -w ' + logfile_pcap_tmp_eNB+ ' ; sudo -E chown ' + user + ' ' + logfile_pcap_tmp_eNB + ' ; zip -j -9  ' + logfile_pcap_zip_eNB + ' ' + logfile_pcap_tmp_eNB + '   ) > ' + logfile_tshark_eNB + ' 2>&1 & \n '
     task_eNB = task_eNB + 'array_exec_pid+=($!) \n'
     task_eNB = task_eNB + 'echo eNB_tshark_exec PID = $! \n'
     #terminate the eNB test case after timeout_cmd seconds
@@ -1005,7 +1005,21 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       run_result_string = ' RUN_'+str(run) + ' = PASS'
     else:
       run_result_string = ' RUN_'+str(run) + ' = FAIL'
-    
+
+    #If there is assertion, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"assertion\" " + logdir_local_testcase + " | cat " 
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0 :
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(Assert)'
+
+    #If there is thread busy error, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"thread busy\" " + logdir_local_testcase + " | cat "
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0:
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(Thread_Busy)'
+
     run_result_string = run_result_string + tput_run_string
 
     test_result=test_result & run_result
