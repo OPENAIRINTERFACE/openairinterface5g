@@ -42,7 +42,9 @@
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 
-static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, int nb_events)
+char *make_port_str_from_ueid(const char *base_port_str, int ueid);
+
+static int nas_ue_process_events(nas_user_container_t *users, struct epoll_event *events, int nb_events)
 {
   int event;
   int exit_loop = FALSE;
@@ -52,7 +54,8 @@ static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, i
   for (event = 0; event < nb_events; event++) {
     if (events[event].events != 0) {
       /* If the event has not been yet been processed (not an itti message) */
-      if (events[event].data.fd == user_api_get_fd(user->user_api_id)) {
+      nas_user_t *user = find_user_from_fd(users, events[event].data.fd);
+      if ( user != NULL ) {
         exit_loop = nas_user_receive_and_process(user, NULL);
       } else {
         LOG_E(NAS, "[UE] Received an event from an unknown fd %d!\n", events[event].data.fd);
@@ -67,13 +70,17 @@ static int nas_ue_process_events(nas_user_t *user, struct epoll_event *events, i
 void nas_user_api_id_initialize(nas_user_t *user) {
   user_api_id_t *user_api_id = calloc_or_fail(sizeof(user_api_id_t));
   user->user_api_id = user_api_id;
-
-  if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, NAS_PARSER_DEFAULT_USER_PORT_NUMBER, NULL,
+  char *port = make_port_str_from_ueid(NAS_PARSER_DEFAULT_USER_PORT_NUMBER, user->ueid);
+  if ( port == NULL ) {
+      LOG_E(NAS, "[UE %d] can't get port from ueid %d !", user->ueid);
+      exit (EXIT_FAILURE);
+  }
+  if (user_api_initialize (user_api_id, NAS_PARSER_DEFAULT_USER_HOSTNAME, port, NULL,
               NULL) != RETURNok) {
       LOG_E(NAS, "[UE %d] user interface initialization failed!", user->ueid);
       exit (EXIT_FAILURE);
   }
-
+  free(port);
   itti_subscribe_event_fd (TASK_NAS_UE, user_api_get_fd(user_api_id));
 }
 
@@ -86,15 +93,16 @@ void *nas_ue_task(void *args_p)
   instance_t            instance;
   unsigned int          Mod_id;
   int                   result;
-  nas_user_t user_value = {};
-  nas_user_t *user = &user_value;
-
-  user->ueid = 0;
+  nas_user_container_t *users=args_p;
 
   itti_mark_task_ready (TASK_NAS_UE);
   MSC_START_USE();
   /* Initialize UE NAS (EURECOM-NAS) */
+  for (int i=0; i < users->count; i++)
   {
+    nas_user_t *user = &users->item[i];
+    user->ueid=i;
+
     /* Get USIM data application filename */
     user->usim_data_store = memory_get_path(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME);
     if ( user->usim_data_store == NULL ) {
@@ -118,6 +126,7 @@ void *nas_ue_task(void *args_p)
 
     /* Initialize user interface (to exchange AT commands with user process) */
     nas_user_api_id_initialize(user);
+    /* allocate needed structures */
     user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));
     user->at_response = calloc_or_fail(sizeof(at_response_t));
     user->lowerlayer_data = calloc_or_fail(sizeof(lowerlayer_data_t));
@@ -141,6 +150,7 @@ void *nas_ue_task(void *args_p)
       msg_name = ITTI_MSG_NAME (msg_p);
       instance = ITTI_MSG_INSTANCE (msg_p);
       Mod_id = instance - NB_eNB_INST;
+      nas_user_t *user = &users->item[Mod_id];
 
       switch (ITTI_MSG_ID(msg_p)) {
       case INITIALIZE_MESSAGE:
@@ -251,10 +261,38 @@ void *nas_ue_task(void *args_p)
     nb_events = itti_get_events(TASK_NAS_UE, &events);
 
     if ((nb_events > 0) && (events != NULL)) {
-      if (nas_ue_process_events(user, events, nb_events) == TRUE) {
+      if (nas_ue_process_events(users, events, nb_events) == TRUE) {
         LOG_E(NAS, "[UE] Received exit loop\n");
       }
     }
   }
+}
+
+nas_user_t *find_user_from_fd(nas_user_container_t *users, int fd) {
+  for (int i=0; i<users->count; i++) {
+    nas_user_t *user = &users->item[i];
+    if (fd == user_api_get_fd(user->user_api_id)) {
+      return user;
+    }
+  }
+  return NULL;
+}
+
+char *make_port_str_from_ueid(const char *base_port_str, int ueid) {
+  int port;
+  int base_port;
+  char *endptr = NULL;
+
+  base_port = strtol(base_port_str, &endptr, 10);
+  if ( base_port_str == endptr ) {
+    return NULL;
+  }
+
+  port = base_port + ueid;
+  if ( port<1 || port > 65535 ) {
+    return NULL;
+  }
+
+  return itoa(port);
 }
 #endif

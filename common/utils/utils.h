@@ -12,4 +12,6 @@ uint8_t hex_char_to_hex_value (char c);
 // Converts an hexadecimal ASCII coded string into its value.**
 void hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size);
 
+char *itoa(int i);
+
 #endif

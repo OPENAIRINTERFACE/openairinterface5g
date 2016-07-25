@@ -72,3 +72,16 @@ void hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int si
     hex_value[i] = (hex_char_to_hex_value(hex_string[2 * i]) << 4) | hex_char_to_hex_value(hex_string[2 * i + 1]);
   }
 }
+
+char *itoa(int i) {
+  char buffer[64];
+  int ret;
+
+  ret = snprintf(buffer, sizeof(buffer), "%d",i);
+  if ( ret <= 0 ) {
+    return NULL;
+  }
+
+  return strdup(buffer);
+}
+
