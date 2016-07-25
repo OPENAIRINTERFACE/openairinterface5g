@@ -976,7 +976,7 @@ static void* eNB_thread_FH( void* param ) {
  
   pthread_mutex_unlock(&sync_mutex);
  
-  printf( "got sync (eNB_thread FH)\n" );
+  printf( "got sync (eNB_thread_FH)\n" );
  
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);

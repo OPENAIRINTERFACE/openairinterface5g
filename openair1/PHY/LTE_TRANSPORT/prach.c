@@ -1104,12 +1104,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
   }
-  
-  int energy = dB_fixed(signal_energy(prach[0], eNB->frame_parms.samples_per_tti));
-  //if (energy >= 45) {
-  //  printf("prach subframe energy %d\n",energy);
-  //} 
-    
+
   // First compute physical root sequence
   if (restricted_set == 0) {
     if (Ncs_config>15) {
@@ -1290,13 +1285,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
     send_IF4(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4_PRACH, k);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
 
-    energy = dB_fixed(signal_energy(&rxsigF[0][k], 839));
-    if (energy >=45) {
-      printf("<frame %d> prach freq-domain energy %d\n",eNB->proc.frame_rx, energy);     
-      //write_output("beforecomp.m","rxF",&rxsigF[0][k],839*2,1,0);        
-      //exit(1);
-    }    
-
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
@@ -1313,13 +1301,6 @@ void rx_prach(PHY_VARS_eNB *eNB,
     memmove((&rxsigF[0][k]),
             (&rxsigF[0][0]),
             839*2*sizeof(int16_t));     
-                      
-    energy = dB_fixed(signal_energy(&rxsigF[0][k], 839));
-    if (energy >=45) {
-      printf("<frame %d> prach freq-domain energy %d\n",eNB->proc.frame_rx, energy);
-      //write_output("aftercomp.m","rxF",&rxsigF[0][k],839*2,1,0);        
-      //exit(1);        
-    }
   }
   
   // in case of RCC and prach received rx_thread wakes up prach
