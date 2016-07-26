@@ -6817,7 +6817,7 @@ void dft60(int16_t *x,int16_t *y,unsigned char scale)
 
     for (i=0; i<60; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
-      printf("y[%d] = (%d,%d)\n",i,((int16_t*)&y128[i])[0],((int16_t*)&y128[i])[1]);
+//      printf("y[%d] = (%d,%d)\n",i,((int16_t*)&y128[i])[0],((int16_t*)&y128[i])[1]);
     }
   }
 
