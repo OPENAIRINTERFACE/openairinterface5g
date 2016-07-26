@@ -82,7 +82,7 @@ Options
 --eNB
    Makes the LTE softmodem
 --UE
-   Makes the UE specific parts (ue_ip, usim, nvram) 
+   Makes the UE specific parts (ue_ip, usim, nvram) from the given configuration file
 --RRH
    Makes the RRH
 -a | --agent
@@ -145,6 +145,10 @@ Usage (Regular):
 
 
 function main() {
+
+  local gen_nvram_path=$OPENAIR_DIR/targets/bin
+  local conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
+
   until [ -z "$1" ]
   do
     case "$1" in
@@ -182,7 +186,16 @@ function main() {
        --UE)
             UE=1
             echo_info "Will compile UE"
-            shift;;
+            shift
+            if test -n "$1"
+            then
+                [ -f "$1" ] || echo_fatal "file invalid for --UE"
+                conf_nvram_path=$(readlink -f "$1")
+                shift 1
+            fi;;
+        --UE-OUTPUT)
+            gen_nvram_path=$(readlink -f $2)
+            shift 2;;
        --RRH)
             RRH=1
             echo_info "Will compile RRH"
@@ -507,20 +520,12 @@ function main() {
     
     cmake ..
     compilations \
-      nas_sim_tools usim \
-      usim $dbin/usim
-    compilations \
-      nas_sim_tools nvram \
-      nvram $dbin/nvram
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
     # generate USIM data
-    if [ -f $dbin/nvram ]; then
-      install_nas_tools $dbin $dconf
-      echo_info "Copying UE specific part to $DIR/$lte_build_dir/build"
-      cp -Rvf $dbin/.ue_emm.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.ue.nvram $DIR/$lte_build_dir/build
-      cp -Rvf $dbin/.usim.nvram $DIR/$lte_build_dir/build
-
+    if [ -f $dbin/conf2uedata ]; then
+      install_nas_tools $conf_nvram_path $gen_nvram_path
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -637,15 +642,12 @@ function main() {
 	cd $DIR/nas_sim_tools/build
 	cmake ..
 	compilations \
-	    nas_sim_tools usim \
-	    usim $dbin/usim
-	compilations \
-	    nas_sim_tools nvram \
-	    nvram $dbin/nvram
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
 
 	# generate USIM data
-	if [ -f $dbin/nvram ]; then
-	    install_nas_tools $dbin $dconf
+	if [ -f $dbin/conf2uedata ]; then
+	    install_nas_tools $conf_nvram_path $gen_nvram_path
 	else
 	    echo_warning "not generated UE NAS files: binaries not found"
 	fi

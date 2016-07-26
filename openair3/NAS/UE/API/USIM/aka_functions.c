@@ -49,16 +49,14 @@
  *
  *-----------------------------------------------------------------*/
 void f1    ( u8 k_pP[16], u8 rand_pP[16], u8 sqn_pP[6], u8 amf_pP[2],
-             u8 mac_a_pP[8], const u8 op[16])
+             u8 mac_a_pP[8], const u8 op_c[16])
 {
-  u8 op_c[16];
   u8 temp[16];
   u8 in1[16];
   u8 out1[16];
   u8 rijndaelInput[16];
   u8 i;
   RijndaelKeySchedule( k_pP );
-  ComputeOPc(op, op_c);
 
   for (i=0; i<16; i++)
     rijndaelInput[i] = rand_pP[i] ^ op_c[i];
@@ -104,9 +102,8 @@ void f1    ( u8 k_pP[16], u8 rand_pP[16], u8 sqn_pP[6], u8 amf_pP[2],
  *
  *-----------------------------------------------------------------*/
 void f2345 ( u8 k_pP[16], u8 rand_pP[16],
-             u8 res_pP[8], u8 ck_pP[16], u8 ik_pP[16], u8 ak_pP[6],const u8 op[16])
+             u8 res_pP[8], u8 ck_pP[16], u8 ik_pP[16], u8 ak_pP[6],const u8 op_c[16])
 {
-  u8 op_c[16];
   u8 temp[16];
   u8 out[16];
   u8 rijndaelInput[16];
@@ -122,7 +119,6 @@ void f2345 ( u8 k_pP[16], u8 rand_pP[16],
             rand_pP[8],rand_pP[9],rand_pP[10],rand_pP[11],rand_pP[12],rand_pP[13],rand_pP[14],rand_pP[15]);
 
   RijndaelKeySchedule( k_pP );
-  ComputeOPc(op, op_c);
 
   for (i=0; i<16; i++)
     rijndaelInput[i] = rand_pP[i] ^ op_c[i];
@@ -205,16 +201,14 @@ void f2345 ( u8 k_pP[16], u8 rand_pP[16],
  *
  *-----------------------------------------------------------------*/
 void f1star( u8 k_pP[16], u8 rand_pP[16], u8 sqn_pP[6], u8 amf_pP[2],
-             u8 mac_s_pP[8],const u8 op[16])
+             u8 mac_s_pP[8],const u8 op_c[16])
 {
-  u8 op_c[16];
   u8 temp[16];
   u8 in1[16];
   u8 out1[16];
   u8 rijndaelInput[16];
   u8 i;
   RijndaelKeySchedule( k_pP );
-  ComputeOPc(op, op_c);
 
   for (i=0; i<16; i++)
     rijndaelInput[i] = rand_pP[i] ^ op_c[i];
@@ -260,15 +254,13 @@ void f1star( u8 k_pP[16], u8 rand_pP[16], u8 sqn_pP[6], u8 amf_pP[2],
  *
  *-----------------------------------------------------------------*/
 void f5star( u8 k_pP[16], u8 rand_pP[16],
-             u8 ak_pP[6], const u8 op[16])
+             u8 ak_pP[6], const u8 op_c[16])
 {
-  u8 op_c[16];
   u8 temp[16];
   u8 out[16];
   u8 rijndaelInput[16];
   u8 i;
   RijndaelKeySchedule( k_pP );
-  ComputeOPc(op, op_c);
 
   for (i=0; i<16; i++)
     rijndaelInput[i] = rand_pP[i] ^ op_c[i];

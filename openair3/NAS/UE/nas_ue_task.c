@@ -104,21 +104,21 @@ void *nas_ue_task(void *args_p)
     user->ueid=i;
 
     /* Get USIM data application filename */
-    user->usim_data_store = memory_get_path(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME);
+    user->usim_data_store = memory_get_path_from_ueid(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME, user->ueid);
     if ( user->usim_data_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid, user->ueid);
       exit(EXIT_FAILURE);
     }
 
     /* Get UE's data pathname */
-    user->user_nvdata_store = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
+    user->user_nvdata_store = memory_get_path_from_ueid(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME, user->ueid);
     if ( user->user_nvdata_store == NULL ) {
       LOG_E(NAS, "[UE %d] - Failed to get USIM nvdata filename", user->ueid);
       exit(EXIT_FAILURE);
     }
 
     /* Get EMM data pathname */
-    user->emm_nvdata_store = memory_get_path(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME);
+    user->emm_nvdata_store = memory_get_path_from_ueid(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME, user->ueid);
     if ( user->emm_nvdata_store == NULL ) {
       LOG_E(NAS, "[UE %d] - Failed to get EMM nvdata filename", user->ueid);
       exit(EXIT_FAILURE);

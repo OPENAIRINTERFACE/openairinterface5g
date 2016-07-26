@@ -450,23 +450,12 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  cd $1
-  if [ ! -f .ue.nvram ]; then
-    echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen
-  else
-    [ ./nvram -nt .ue.nvram  -o ./nvram -nt .ue_emm.nvram ] && ./nvram --gen
+  if [ ! -f $2/§.ue.nvram -o ! -f $2/.usim.nvram ]; then
+    cd $OPENAIR_DIR/targets/bin
+    ./conf2uedata -c $1 -o $2
+    echo_success "$1 $2"
   fi
-
-  if [ ! -f .usim.nvram ]; then
-    echo_success "generate .usim.nvram"
-    ./usim --gen
-  else
-    [ ./usim -nt .usim.nvram ] && ./usim --gen
-  fi
-
 }
-
 
 ################################
 # set_openair_env

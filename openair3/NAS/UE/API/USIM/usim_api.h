@@ -124,7 +124,7 @@ typedef struct {
 #define USIM_IK_SIZE  16
   Byte_t ik[USIM_IK_SIZE];
   uint8_t usim_api_k[USIM_API_K_SIZE];
-  uint8_t op[16];
+  uint8_t opc[16];
 } usim_keys_t;
 
 /*

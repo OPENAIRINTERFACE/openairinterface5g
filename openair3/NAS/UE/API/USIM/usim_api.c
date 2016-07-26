@@ -88,22 +88,6 @@ int usim_api_read(const char *filename, usim_data_t* data)
     LOG_FUNC_RETURN (RETURNerror);
   }
 
-  /* initialize the subscriber authentication security key */
-  hex_string_to_hex_value(data->keys.usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
-
-  // initialize OP
-  /* PFT OP used currently in HSS (OPENAIRHSS/auc/kdf.c) */
-  #define OAI_LTEBOX
-
-  #ifdef OAI_LTEBOX
-  u8 _op[16] = {0x10, 0x06, 0x02, 0x0f, 0x0a, 0x47, 0x8b, 0xf6,
-             0xb6, 0x99, 0xf1, 0x5c, 0x06, 0x2e, 0x42, 0xb3 };
-  #else
-  u8 _op[16] = {0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
-             0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11 };
-  #endif
-  memcpy(data->keys.op, _op, sizeof(_op));
-
   LOG_FUNC_RETURN (RETURNok);
 }
 
@@ -367,7 +351,7 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
 
   u8 ak[USIM_API_AK_SIZE];
   f2345(usim_data->keys.usim_api_k, rand_pP->value,
-        res_pP->value, ck_pP->value, ik_pP->value, ak, usim_data->keys.op);
+        res_pP->value, ck_pP->value, ik_pP->value, ak, usim_data->keys.opc);
   LOG_TRACE(INFO, "USIM-API  - res(f2)  :%s",dump_octet_string(res_pP));
   LOG_TRACE(INFO, "USIM-API  - ck(f3)   :%s",dump_octet_string(ck_pP));
   LOG_TRACE(INFO, "USIM-API  - ik(f4)   :%s",dump_octet_string(ik_pP));
@@ -388,7 +372,7 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
   /* Compute XMAC = f1K (SQN || RAND || AMF) */
 #define USIM_API_XMAC_SIZE 8
   u8 xmac[USIM_API_XMAC_SIZE];
-  f1(usim_data->keys.usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac, usim_data->keys.op);
+  f1(usim_data->keys.usim_api_k, rand_pP->value, sqn, &autn_pP->value[USIM_API_SQN_SIZE], xmac, usim_data->keys.opc);
   LOG_TRACE(DEBUG,
             "USIM-API  - Computed XMAC %02X%02X%02X%02X%02X%02X%02X%02X",
             xmac[0],xmac[1],xmac[2],xmac[3],
@@ -416,7 +400,7 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
 
     /* Concealed value of the counter SQNms in the USIM:
      * Conc(SQNMS) = SQNMS ⊕ f5*K(RAND) */
-    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak, usim_data->keys.op);
+    f5star(usim_data->keys.usim_api_k, rand_pP->value, ak, usim_data->keys.opc);
 
 
     u8 sqn_ms[USIM_API_SQNMS_SIZE];
@@ -445,7 +429,7 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
 #define USIM_API_MACS_SIZE USIM_API_XMAC_SIZE
     u8 macs[USIM_API_MACS_SIZE];
     f1star(usim_data->keys.usim_api_k, rand_pP->value, sqn_ms,
-           &rand_pP->value[USIM_API_SQN_SIZE], macs, usim_data->keys.op);
+           &rand_pP->value[USIM_API_SQN_SIZE], macs, usim_data->keys.opc);
     LOG_TRACE(DEBUG, "USIM-API  - MACS %02X%02X%02X%02X%02X%02X%02X%02X",
               macs[0],macs[1],macs[2],macs[3],
               macs[4],macs[5],macs[6],macs[7]);
