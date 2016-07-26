@@ -344,50 +344,43 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
      */
     memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
     user->emm_data->nvdata.eplmn.n_plmns = 0;
-    /* Get EMM data pathname */
-    char *path = memory_get_path(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME);
 
-    if (path == NULL) {
-      LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get EMM data pathname");
-    } else {
-      /* Get EMM data stored in the non-volatile memory device */
-      int rc = memory_read(path, &user->emm_data->nvdata, sizeof(emm_nvdata_t));
+    /* Get EMM data stored in the non-volatile memory device */
+    int rc = memory_read(user->emm_nvdata_store, &user->emm_data->nvdata, sizeof(emm_nvdata_t));
 
-      if (rc != RETURNok) {
-        LOG_TRACE(ERROR, "EMM-MAIN  - Failed to read %s", path);
-      } else {
-        /* Check the IMSI */
-        LOG_TRACE(INFO, "EMM-MAIN  - EMM data successfully read");
-        user->emm_data->imsi = &user->usim_data.imsi;
-        int imsi_ok = _emm_main_imsi_cmp(&user->emm_data->nvdata.imsi,
-                                         &user->usim_data.imsi);
+    if (rc != RETURNok) {
+      LOG_TRACE(ERROR, "EMM-MAIN  - Failed to read %s", user->emm_nvdata_store);
+      exit(EXIT_FAILURE);
+    }
 
-        if (!imsi_ok) {
-          LOG_TRACE(WARNING, "EMM-MAIN  - IMSI checking failed nvram: "
-                    "%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x, "
-                    "usim: %02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x",
-                    user->emm_data->nvdata.imsi.u.value[0],
-                    user->emm_data->nvdata.imsi.u.value[1],
-                    user->emm_data->nvdata.imsi.u.value[2],
-                    user->emm_data->nvdata.imsi.u.value[3],
-                    user->emm_data->nvdata.imsi.u.value[4],
-                    user->emm_data->nvdata.imsi.u.value[5],
-                    user->emm_data->nvdata.imsi.u.value[6],
-                    user->emm_data->nvdata.imsi.u.value[7],
-                    user->usim_data.imsi.u.value[0],
-                    user->usim_data.imsi.u.value[1],
-                    user->usim_data.imsi.u.value[2],
-                    user->usim_data.imsi.u.value[3],
-                    user->usim_data.imsi.u.value[4],
-                    user->usim_data.imsi.u.value[5],
-                    user->usim_data.imsi.u.value[6],
-                    user->usim_data.imsi.u.value[7]);
-          memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
-          user->emm_data->nvdata.eplmn.n_plmns = 0;
-        }
-      }
+    /* Check the IMSI */
+    LOG_TRACE(INFO, "EMM-MAIN  - EMM data successfully read");
+    user->emm_data->imsi = &user->usim_data.imsi;
+    int imsi_ok = _emm_main_imsi_cmp(&user->emm_data->nvdata.imsi,
+                                     &user->usim_data.imsi);
 
-      free(path);
+    if (!imsi_ok) {
+      LOG_TRACE(WARNING, "EMM-MAIN  - IMSI checking failed nvram: "
+                "%02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x, "
+                "usim: %02x.%02x.%02x.%02x.%02x.%02x.%02x.%02x",
+                user->emm_data->nvdata.imsi.u.value[0],
+                user->emm_data->nvdata.imsi.u.value[1],
+                user->emm_data->nvdata.imsi.u.value[2],
+                user->emm_data->nvdata.imsi.u.value[3],
+                user->emm_data->nvdata.imsi.u.value[4],
+                user->emm_data->nvdata.imsi.u.value[5],
+                user->emm_data->nvdata.imsi.u.value[6],
+                user->emm_data->nvdata.imsi.u.value[7],
+                user->usim_data.imsi.u.value[0],
+                user->usim_data.imsi.u.value[1],
+                user->usim_data.imsi.u.value[2],
+                user->usim_data.imsi.u.value[3],
+                user->usim_data.imsi.u.value[4],
+                user->usim_data.imsi.u.value[5],
+                user->usim_data.imsi.u.value[6],
+                user->usim_data.imsi.u.value[7]);
+      memset(&user->emm_data->nvdata.rplmn, 0xFF, sizeof(plmn_t));
+      user->emm_data->nvdata.eplmn.n_plmns = 0;
     }
   }
 
@@ -437,9 +430,11 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
  **          Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-void emm_main_cleanup(emm_data_t *emm_data)
+void emm_main_cleanup(nas_user_t *user)
 {
   LOG_FUNC_IN;
+
+  emm_data_t *emm_data = user->emm_data;
 
   if (emm_data->usim_is_valid) {
     /*
@@ -452,16 +447,10 @@ void emm_main_cleanup(emm_data_t *emm_data)
    * - Registered PLMN
    * - List of equivalent PLMNs
    */
-  char *path = memory_get_path(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME);
+  int rc = memory_write(user->emm_nvdata_store, &emm_data->nvdata, sizeof(emm_nvdata_t));
 
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "EMM-MAIN  - Failed to get EMM data pathname");
-  } else {
-    int rc = memory_write(path, &emm_data->nvdata, sizeof(emm_nvdata_t));
-
-    if (rc != RETURNok) {
-      LOG_TRACE(ERROR, "EMM-MAIN  - Failed to write %s", path);
-    }
+  if (rc != RETURNok) {
+    LOG_TRACE(ERROR, "EMM-MAIN  - Failed to write %s", user->emm_nvdata_store);
   }
 
   /* Release dynamically allocated memory */

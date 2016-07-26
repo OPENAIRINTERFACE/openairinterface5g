@@ -105,7 +105,14 @@ void *nas_ue_task(void *args_p)
     /* Get UE's data pathname */
     user->user_nvdata_store = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
     if ( user->user_nvdata_store == NULL ) {
-      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+      LOG_E(NAS, "[UE %d] - Failed to get USIM nvdata filename", user->ueid);
+      exit(EXIT_FAILURE);
+    }
+
+    /* Get EMM data pathname */
+    user->emm_nvdata_store = memory_get_path(EMM_NVRAM_DIRNAME, EMM_NVRAM_FILENAME);
+    if ( user->emm_nvdata_store == NULL ) {
+      LOG_E(NAS, "[UE %d] - Failed to get EMM nvdata filename", user->ueid);
       exit(EXIT_FAILURE);
     }
 

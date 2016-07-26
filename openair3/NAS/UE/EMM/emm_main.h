@@ -70,7 +70,7 @@ typedef int (*emm_indication_callback_t) (user_api_id_t *user_api_id, Stat_t, ta
 
 void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const char *imei);
 
-void emm_main_cleanup(emm_data_t *emm_data);
+void emm_main_cleanup(nas_user_t *user);
 
 
 /* User's getter of UE's identity */

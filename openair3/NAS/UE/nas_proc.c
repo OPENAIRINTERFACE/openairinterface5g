@@ -138,7 +138,7 @@ void nas_proc_cleanup(nas_user_t *user)
 
 
   /* Perform the EPS Mobility Manager's clean up procedure */
-  emm_main_cleanup(user->emm_data);
+  emm_main_cleanup(user);
 
   /* Perform the EPS Session Manager's clean up procedure */
   esm_main_cleanup(user->esm_data);

@@ -70,6 +70,7 @@ typedef struct {
   // Eps Mobility Management
   emm_fsm_state_t emm_fsm_status; // Current EPS Mobility Management status
   emm_data_t *emm_data; // EPS mobility management data
+  const char *emm_nvdata_store;
   emm_plmn_list_t *emm_plmn_list; // list of PLMN identities
   authentication_data_t *authentication_data;
   security_data_t *security_data; //Internal data used for security mode control procedure
