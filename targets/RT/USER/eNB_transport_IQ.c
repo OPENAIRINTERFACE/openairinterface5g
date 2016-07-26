@@ -710,14 +710,13 @@ static void check_dev_config( rrh_module_t *mod_enb) {
  
  printf("\n---------------------RF device configuration parameters---------------------\n");
  
- printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_scheduling_advance=%d\n \ttx_sample_advance=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
+ printf("\tMod_id=%d\n \tlog level=%d\n \tDL_RB=%d\n \tsamples_per_frame=%d\n \tsample_rate=%f\n \tsamples_per_packet=%d\n \ttx_sample_advance=%d\n \trx_num_channels=%d\n \ttx_num_channels=%d\n \trx_freq_0=%f\n \ttx_freq_0=%f\n \trx_freq_1=%f\n \ttx_freq_1=%f\n \trx_freq_2=%f\n \ttx_freq_2=%f\n \trx_freq_3=%f\n \ttx_freq_3=%f\n \trxg_mode=%d\n \trx_gain_0=%f\n \ttx_gain_0=%f\n  \trx_gain_1=%f\n \ttx_gain_1=%f\n  \trx_gain_2=%f\n \ttx_gain_2=%f\n  \trx_gain_3=%f\n \ttx_gain_3=%f\n \trx_gain_offset_2=%f\n \ttx_gain_offset_3=%f\n  \trx_bw=%f\n \ttx_bw=%f\n \tautocal=%d\n",	
 	mod_enb->devs->openair0_cfg->Mod_id,
 	mod_enb->devs->openair0_cfg->log_level,
 	mod_enb->devs->openair0_cfg->num_rb_dl,
 	mod_enb->devs->openair0_cfg->samples_per_frame,
 	mod_enb->devs->openair0_cfg->sample_rate,
 	mod_enb->devs->openair0_cfg->samples_per_packet,
-	mod_enb->devs->openair0_cfg->tx_scheduling_advance,
 	mod_enb->devs->openair0_cfg->tx_sample_advance,
 	mod_enb->devs->openair0_cfg->rx_num_channels,
 	mod_enb->devs->openair0_cfg->tx_num_channels,

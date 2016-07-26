@@ -411,7 +411,6 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
       exit(-1);
       break;
     }
-    openair0_cfg[0].tx_scheduling_advance = eth_params->tx_scheduling_advance*openair0_cfg[0].samples_per_packet;
   }
  
   device->openair0_cfg=&openair0_cfg[0];
@@ -454,8 +453,6 @@ void dump_dev(openair0_device *device) {
   printf("       Log level is %i :\n" ,device->openair0_cfg->log_level);	
   printf("       RB number: %i, sample rate: %lf \n" ,
         device->openair0_cfg->num_rb_dl, device->openair0_cfg->sample_rate);
-  printf("       Scheduling_advance: %i, Sample_advance: %u \n" ,
-        device->openair0_cfg->tx_scheduling_advance, device->openair0_cfg->tx_sample_advance);		
   printf("       BBU configured for %i tx/%i rx channels)\n",
 	device->openair0_cfg->tx_num_channels,device->openair0_cfg->rx_num_channels);
    printf("       Running flags: %s %s %s\n",      
