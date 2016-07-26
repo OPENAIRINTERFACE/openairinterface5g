@@ -301,6 +301,7 @@ static void* eNB_thread_rxtx( void* param ) {
   
   uint16_t packet_type;
   uint32_t symbol_number=0;
+  uint32_t symbol_mask, symbol_mask_full;
   
   uint8_t seqno=0;
   
@@ -435,6 +436,9 @@ static void* eNB_thread_rxtx( void* param ) {
   
     if (oai_exit) break;
 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_ENB+(proc->subframe_rx&1), proc->frame_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_ENB+(proc->subframe_rx&1), proc->subframe_rx );
+
     // Common procedures
     phy_procedures_eNB_common_RX(PHY_vars_eNB_g[0][proc->CC_id], 0);
 
@@ -473,8 +477,8 @@ static void* eNB_thread_rxtx( void* param ) {
         exit_fun("nothing to add");
       }
 
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX_ENB, proc->frame_tx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX_ENB, proc->subframe_tx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+(proc->subframe_tx&1), proc->frame_tx );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+(proc->subframe_tx&1), proc->subframe_tx );
       
       if (oai_exit) break;
       
@@ -499,10 +503,16 @@ static void* eNB_thread_rxtx( void* param ) {
         }
       } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) {
         /// **** recv_IF4 of txdataF from RCC **** ///             
+        symbol_number = 0;
+        symbol_mask = 0;
+        symbol_mask_full = (1<<PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti)-1;
+        
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );  
         do { 
           recv_IF4(PHY_vars_eNB_g[0][proc->CC_id], &proc->frame_tx, &proc->subframe_tx, &packet_type, &symbol_number);
-        } while (symbol_number < PHY_vars_eNB_g[0][proc->CC_id]->frame_parms.symbols_per_tti-1); 
+          symbol_mask = symbol_mask | (1<<symbol_number);
+          
+        } while (symbol_mask != symbol_mask_full); 
         
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
         
@@ -802,13 +812,12 @@ static void* eNB_thread_asynch_rx( void* param ) {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {
-          symbol_mask = symbol_mask | (1<<symbol_number);     
-                       
+          symbol_mask = symbol_mask | (1<<symbol_number);
+          prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
         } else if (packet_type == IF4_PRACH) {
-          // wake up thread for PRACH RX
-          prach_rx = 1;
+          prach_rx = 0;
         }
-      } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
+      } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
 
       if (proc->first_rx == 0) {
         if (subframe_rx < proc->subframe_rx+2){
@@ -967,7 +976,7 @@ static void* eNB_thread_FH( void* param ) {
  
   pthread_mutex_unlock(&sync_mutex);
  
-  printf( "got sync (eNB_thread FH)\n" );
+  printf( "got sync (eNB_thread_FH)\n" );
  
 #if defined(ENABLE_ITTI)
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
@@ -1004,6 +1013,14 @@ static void* eNB_thread_FH( void* param ) {
    
     if (oai_exit) break;   
 
+    if (subframe==9) { 
+      subframe=0;
+      frame++;
+      frame&=1023;
+    } else {
+      subframe++;
+    }      
+
     // This case is for synchronization to another thread
     if ((eNB->node_timing == synch_to_other) &&
        ((eNB->node_function == NGFI_RCC_IF4) ||
@@ -1037,13 +1054,7 @@ static void* eNB_thread_FH( void* param ) {
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
-      if (subframe==9) { 
-        subframe=0;
-        frame++;
-        frame&=1023;
-      } else {
-        subframe++;
-      }      
+
 
       rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
                                         &proc->timestamp_rx,
@@ -1073,8 +1084,6 @@ static void* eNB_thread_FH( void* param ) {
       //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
       
       if (rxs != fp->samples_per_tti)
         exit_fun( "problem receiving samples" );
@@ -1107,8 +1116,6 @@ static void* eNB_thread_FH( void* param ) {
       }      
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
       
     } // eNodeB_3GPP_BBU && node_timing == synch_to_ext_device
     else if ((eNB->node_timing == synch_to_ext_device) &&
@@ -1121,37 +1128,36 @@ static void* eNB_thread_FH( void* param ) {
       symbol_mask = 0;
       symbol_mask_full = (1<<fp->symbols_per_tti)-1;
       prach_rx = 0;
-         
+
       do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
         recv_IF4(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
 
         if (packet_type == IF4_PULFFT) {
-          symbol_mask = symbol_mask | (1<<symbol_number);     
-                       
+          symbol_mask = symbol_mask | (1<<symbol_number);
+          prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
         } else if (packet_type == IF4_PRACH) {
-          // wake up thread for PRACH RX
-          prach_rx = 1;
-	    }
-      } while( (symbol_mask != symbol_mask_full) && (prach_rx == 0));    
+          prach_rx = 0;
+        }
+      } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
 
       if (proc->first_rx == 0) {
         if (proc->subframe_rx != subframe){
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
-          //exit_fun("Exiting");
+          exit_fun("Exiting");
         }
         if (proc->frame_rx != frame) {
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
-          //exit_fun("Exiting");
+          exit_fun("Exiting");
         }
       } else {
         proc->first_rx = 0;
+        frame = proc->frame_rx;
+        subframe = proc->subframe_rx;        
       }
 
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX_ENB, proc->frame_rx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX_ENB, proc->subframe_rx );
 		  
     } // node_timing == synch_to_externs, node_function = NGFI_IF4
     else { // should not get here
