@@ -27,6 +27,7 @@ set(usim_SRC
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/OctetString.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/TLVEncoder.c
+    ${OPENAIR_DIR}/common/utils/utils.c
 )
 set(usim_HDR
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/network.h
@@ -36,8 +37,11 @@ set(usim_HDR
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.h
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/OctetString.h
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/TLVEncoder.h
+    ${OPENAIR_DIR}/common/utils/utils.h
 )
 include_directories(
+    ${OPENAIR_DIR}/common/utils
+    ${OPENAIR_DIR}/openair3/NAS/UE
     ${OPENAIR_DIR}/openair3/NAS/COMMON
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM
     ${OPENAIR_DIR}/openair3/NAS/UE/EMM/

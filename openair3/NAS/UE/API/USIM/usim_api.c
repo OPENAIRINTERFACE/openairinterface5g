@@ -41,6 +41,7 @@ Description Implements the API used by the NAS layer to read/write
 
 #include "usim_api.h"
 #include "nas_log.h"
+#include "utils.h"
 #include "memory.h"
 #include <stdio.h>
 #include "aka_functions.h"
@@ -66,8 +67,6 @@ Description Implements the API used by the NAS layer to read/write
  */
 #define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
 
-static uint8_t _usim_api_hex_char_to_hex_value (char c);
-static void _usim_api_hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size);
 static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
 
 /****************************************************************************/
@@ -110,7 +109,7 @@ int usim_api_read(usim_data_t* data)
   }
 
   /* initialize the subscriber authentication security key */
-  _usim_api_hex_string_to_hex_value(data->keys.usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
+  hex_string_to_hex_value(data->keys.usim_api_k, USIM_API_K_VALUE, USIM_API_K_SIZE);
 
   // initialize OP
   /* PFT OP used currently in HSS (OPENAIRHSS/auc/kdf.c) */
@@ -496,57 +495,6 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
 /****************************************************************************/
 /*********************  L O C A L    F U N C T I O N S  *********************/
 /****************************************************************************/
-
-/****************************************************************************
- **                                                                        **
- ** Name:        _usim_api_hex_char_to_hex_value()                         **
- **                                                                        **
- ** Description: Converts an hexadecimal ASCII coded digit into its value. **
- **                                                                        **
- ** Inputs:      c:             A char holding the ASCII coded value       **
- **              Others:        None                                       **
- **                                                                        **
- ** Outputs:     None                                                      **
- **              Return:        Converted value                            **
- **              Others:        None                                       **
- **                                                                        **
- ***************************************************************************/
-static uint8_t _usim_api_hex_char_to_hex_value (char c)
-{
-  if (c >= 'A') {
-    /* Remove case bit */
-    c &= ~('a' ^ 'A');
-
-    return (c - 'A' + 10);
-  } else {
-    return (c - '0');
-  }
-}
-
-/****************************************************************************
- **                                                                        **
- ** Name:        _usim_api_hex_string_to_hex_value()                       **
- **                                                                        **
- ** Description: Converts an hexadecimal ASCII coded string into its value.**
- **                                                                        **
- ** Inputs:      hex_value:     A pointer to the location to store the     **
- **                             conversion result                          **
- **              size:          The size of hex_value in bytes             **
- **              Others:        None                                       **
- **                                                                        **
- ** Outputs:     hex_value:     Converted value                            **
- **              Return:        None                                       **
- **              Others:        None                                       **
- **                                                                        **
- ***************************************************************************/
-static void _usim_api_hex_string_to_hex_value (uint8_t *hex_value, const char *hex_string, int size)
-{
-  int i;
-
-  for (i=0; i < size; i++) {
-    hex_value[i] = (_usim_api_hex_char_to_hex_value(hex_string[2 * i]) << 4) | _usim_api_hex_char_to_hex_value(hex_string[2 * i + 1]);
-  }
-}
 
 /****************************************************************************
  **                                                                        **
