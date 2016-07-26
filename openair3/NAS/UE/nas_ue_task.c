@@ -102,6 +102,13 @@ void *nas_ue_task(void *args_p)
       exit(EXIT_FAILURE);
     }
 
+    /* Get UE's data pathname */
+    user->user_nvdata_store = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
+    if ( user->user_nvdata_store == NULL ) {
+      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+      exit(EXIT_FAILURE);
+    }
+
     /* Initialize user interface (to exchange AT commands with user process) */
     nas_user_api_id_initialize(user);
     user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));

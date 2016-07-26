@@ -161,20 +161,11 @@ void nas_user_initialize(nas_user_t *user, emm_indication_callback_t emm_cb,
 
   user->nas_user_nvdata = calloc_or_fail(sizeof(user_nvdata_t));
 
-  /* Get UE's data pathname */
-  char *path = memory_get_path(USER_NVRAM_DIRNAME, USER_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USR-MAIN  - Failed to get UE's data pathname");
-    exit(EXIT_FAILURE);
-  }
-
   /* Get UE data stored in the non-volatile memory device */
-  int rc = memory_read(path, user->nas_user_nvdata, sizeof(user_nvdata_t));
+  int rc = memory_read(user->usim_data_store, user->nas_user_nvdata, sizeof(user_nvdata_t));
   if (rc != RETURNok) {
-    LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", path);
+    LOG_TRACE(ERROR, "USR-MAIN  - Failed to read %s", user->nas_user_nvdata);
   }
-  free(path);
 
   user->nas_user_context = calloc_or_fail(sizeof(nas_user_context_t));
   _nas_user_context_initialize(user->nas_user_context, version);
