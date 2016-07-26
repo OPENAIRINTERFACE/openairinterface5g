@@ -152,8 +152,8 @@ typedef struct {
   int mmapped_dma;
   //! offset in samples between TX and RX paths
   int tx_sample_advance;
+  //! samples per packet on the fronthaul interface
   int samples_per_packet;
-  int tx_scheduling_advance;
   //! number of RX channels (=RX antennas)
   int rx_num_channels;
   //! number of TX channels (=TX antennas)

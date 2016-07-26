@@ -172,25 +172,32 @@ static void trx_usrp_end(openair0_device *device)
 */ 
 static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags)
 {
+  int ret;
   usrp_state_t *s = (usrp_state_t*)device->priv;
+
   s->tx_md.time_spec = uhd::time_spec_t::from_ticks(timestamp, s->sample_rate);
 
-
+  
   if(flags)
     s->tx_md.has_time_spec = true;
   else
     s->tx_md.has_time_spec = false;
-
+  
   if (cc>1) {
     std::vector<void *> buff_ptrs;
     for (int i=0;i<cc;i++) buff_ptrs.push_back(buff[i]);
-    s->tx_stream->send(buff_ptrs, nsamps, s->tx_md);
+    ret = (int)s->tx_stream->send(buff_ptrs, nsamps, s->tx_md,1e-3);
   }
   else
-    s->tx_stream->send(buff[0], nsamps, s->tx_md);
+    ret = (int)s->tx_stream->send(buff[0], nsamps, s->tx_md,1e-3);
+
   s->tx_md.start_of_burst = false;
 
-  return 0;
+  if (ret != nsamps) {
+    printf("[xmit] tx samples %d != %d\n",ret,nsamps);
+  }
+      
+  return ret;
 }
 
 /*! \brief Receive samples from hardware.
@@ -551,28 +558,24 @@ extern "C" {
       openair0_cfg[0].tx_sample_advance     = 15;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
       openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 45;
       openair0_cfg[0].tx_bw                 = 10e6;
       openair0_cfg[0].rx_bw                 = 10e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 7680000:
       openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 5e6;
       openair0_cfg[0].rx_bw                 = 5e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
       openair0_cfg[0].samples_per_packet    = 256;
       openair0_cfg[0].tx_sample_advance     = 50;
       openair0_cfg[0].tx_bw                 = 1.25e6;
       openair0_cfg[0].rx_bw                 = 1.25e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);
@@ -607,44 +610,34 @@ extern "C" {
 
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
-      s->usrp->set_master_clock_rate(30.72e6);
-      openair0_cfg[0].samples_per_packet    = 4096;
+      s->usrp->set_master_clock_rate(61.44e6);
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 11*openair0_cfg[0].samples_per_packet;
       break;
     case 23040000:
       s->usrp->set_master_clock_rate(23.04e6); //to be checked
-      openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 113;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     case 15360000:
       s->usrp->set_master_clock_rate(30.72e06);
-      openair0_cfg[0].samples_per_packet    = 2048;
       openair0_cfg[0].tx_sample_advance     = 103; 
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 10240;
       break;
     case 7680000:
       s->usrp->set_master_clock_rate(30.72e6);
-      openair0_cfg[0].samples_per_packet    = 1024;
       openair0_cfg[0].tx_sample_advance     = 80;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 5*openair0_cfg[0].samples_per_packet;
       break;
     case 1920000:
-      s->usrp->set_master_clock_rate(7.68e6);
-      openair0_cfg[0].samples_per_packet    = 256;
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].tx_sample_advance     = 40;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;
-      openair0_cfg[0].tx_scheduling_advance = 8*openair0_cfg[0].samples_per_packet;
       break;
     default:
       printf("Error: unknown sampling rate %f\n",openair0_cfg[0].sample_rate);

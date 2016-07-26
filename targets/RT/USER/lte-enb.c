@@ -298,7 +298,8 @@ static void* eNB_thread_rxtx( void* param ) {
   FILE  *tx_time_file = NULL;
   char tx_time_name[101];
   void *txp[PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx]; 
-  
+  int txs;
+
   uint16_t packet_type;
   uint32_t symbol_number=0;
   
@@ -553,18 +554,21 @@ static void* eNB_thread_rxtx( void* param ) {
       for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
         txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][proc->subframe_tx*PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti];
     
-      // if symb_written < spp ==> error 
-      PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
-            (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
-            txp,
-            PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
-            PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
-            1);
+      txs = PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
+								    (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance),
+								    txp,
+								    PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti,
+								    PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx,
+								    1);
 	      
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
  
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-openair0_cfg[0].tx_sample_advance)&0xffffffff );
 
+      if (txs !=  PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti) {
+	LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti);
+	exit_fun( "problem transmitting samples" );
+      }	
     } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** send_IF5 of txdata to RRH **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
@@ -651,7 +655,7 @@ static void* eNB_thread_asynch_rx( void* param ) {
   uint32_t symbol_mask, symbol_mask_full;
   int prach_rx;
   int dummy_rx[fp->nb_antennas_rx][fp->samples_per_tti]; 
-  int rxs;
+  int rxs=0;
 
 #ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
@@ -769,6 +773,9 @@ static void* eNB_thread_asynch_rx( void* param ) {
     else {
       printf("eNB asynch RX\n");
       sleep(1);
+    }
+    if (rxs!=fp->samples_per_tti) {
+      exit_fun("error receiving samples\n");
     }
   }
   else if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
@@ -1031,7 +1038,7 @@ static void* eNB_thread_FH( void* param ) {
       
       while (proc->instance_cnt_FH < 0) {
         // most of the time the thread is waiting here
-        // proc->instance_cnt_prach is -1
+        // proc->instance_cnt_FH is -1
         pthread_cond_wait( &proc->cond_FH,&proc->mutex_FH ); // this unlocks mutex_rxtx while waiting and then locks it again
       }      
       proc->instance_cnt_FH++;
@@ -1243,15 +1250,19 @@ static void* eNB_thread_FH( void* param ) {
     
     print_meas_now(&softmodem_stats_rx_sf,"eNB_RX_SF", rx_time_file);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
-  }
+  
  
-  if (eNB->node_timing == synch_to_ext_device) {
-    proc->instance_cnt_FH--;
-    
-    if (pthread_mutex_unlock(&proc->mutex_FH) != 0) {
-      LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for FH\n");
-      exit_fun( "error unlocking mutex" );
+    if (eNB->node_timing == synch_to_ext_device) {
+      proc->instance_cnt_FH--;
+      
+      if (pthread_mutex_unlock(&proc->mutex_FH) != 0) {
+	LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for FH\n");
+	exit_fun( "error unlocking mutex" );
+      }
     }
+
+    if (eNB->frame_parms.N_RB_DL==6)
+      rt_sleep_ns(800000LL);
   }
     
   printf( "Exiting FH thread \n");
@@ -1271,12 +1282,12 @@ static void* eNB_thread_prach( void* param ) {
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB= PHY_vars_eNB_g[0][proc->CC_id];
-
+  /*
   struct timespec wait;
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
+  */
   // set default return value
   eNB_thread_prach_status = 0;
 
@@ -1378,7 +1389,7 @@ static void* eNB_thread_prach( void* param ) {
     
     if (oai_exit) break;
         
-    if (pthread_mutex_timedlock(&proc->mutex_prach,&wait) != 0) {
+    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH\n");
       exit_fun( "error locking mutex" );
       break;
@@ -1400,7 +1411,7 @@ static void* eNB_thread_prach( void* param ) {
     prach_procedures(eNB,0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PRACH_RX,0);
     
-    if (pthread_mutex_timedlock(&proc->mutex_prach,&wait) != 0) {
+    if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
       LOG_E( PHY, "[SCHED][eNB] error locking mutex for eNB PRACH proc %d\n");
       exit_fun( "error locking mutex" );
       break;
