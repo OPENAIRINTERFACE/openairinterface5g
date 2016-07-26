@@ -96,7 +96,7 @@ void send_IF4(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type, 
   } else if (packet_type == IF4_PULFFT) {
     db_fulllength = 12*fp->N_RB_UL;
     db_halflength = (db_fulllength)>>1;
-    slotoffsetF = (subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
 
     IF4_header_t *ul_header = (IF4_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
@@ -212,7 +212,7 @@ void recv_IF4(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_typ
   } else if (*packet_type == IF4_PULFFT) {         
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
-    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + (*subframe)*(fp->ofdm_symbol_size)*((fp->Ncp==1) ? 12 : 14) + 1;
+    slotoffsetF = (*symbol_number)*(fp->ofdm_symbol_size) + 1;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength - 1; 
     
     for (element_id=0; element_id<db_halflength; element_id++) {
