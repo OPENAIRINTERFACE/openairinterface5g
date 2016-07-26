@@ -47,6 +47,7 @@ Description Implements the API used by the NAS layer to read/write
 #include "aka_functions.h"
 #include <string.h> // memcpy, memset
 #include <stdlib.h> // malloc, free
+#include <stdio.h>
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -55,17 +56,6 @@ Description Implements the API used by the NAS layer to read/write
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
 /****************************************************************************/
-
-/*
- * The name of the file where are stored data of the USIM application
- */
-#define USIM_API_NVRAM_FILENAME ".usim.nvram"
-
-/*
- * The name of the environment variable which defines the directory
- * where the USIM application file is located
- */
-#define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
 
 static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
 
@@ -87,24 +77,14 @@ static int _usim_api_check_sqn(uint32_t seq, uint8_t ind);
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_read(usim_data_t* data)
+int usim_api_read(const char *filename, usim_data_t* data)
 {
   LOG_FUNC_IN;
 
-  /* Get USIM application pathname */
-  char* path = memory_get_path(USIM_API_NVRAM_DIRNAME,
-                               USIM_API_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USIM-API  - Failed to get USIM pathname");
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
   /* Read USIM application data */
-  if (memory_read(path, data, sizeof(usim_data_t)) != RETURNok) {
+  if (memory_read(filename, data, sizeof(usim_data_t)) != RETURNok) {
     LOG_TRACE(ERROR, "USIM-API  - %s file is either not valid "
-              "or not present", path);
-    free(path);
+              "or not present", filename);
     LOG_FUNC_RETURN (RETURNerror);
   }
 
@@ -123,7 +103,7 @@ int usim_api_read(usim_data_t* data)
              0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11 };
   #endif
   memcpy(data->keys.op, _op, sizeof(_op));
-  free(path);
+
   LOG_FUNC_RETURN (RETURNok);
 }
 
@@ -141,28 +121,17 @@ int usim_api_read(usim_data_t* data)
  **              Others:        None                                       **
  **                                                                        **
  ***************************************************************************/
-int usim_api_write(const usim_data_t* data)
+int usim_api_write(const char *filename, const usim_data_t* data)
 {
   LOG_FUNC_IN;
 
-  /* Get USIM application pathname */
-  char* path = memory_get_path(USIM_API_NVRAM_DIRNAME,
-                               USIM_API_NVRAM_FILENAME);
-
-  if (path == NULL) {
-    LOG_TRACE(ERROR, "USIM-API  - Failed to get USIM pathname");
-    LOG_FUNC_RETURN (RETURNerror);
-  }
-
   /* Write USIM application data */
-  if (memory_write(path, data, sizeof(usim_data_t)) != RETURNok) {
+  if (memory_write(filename, data, sizeof(usim_data_t)) != RETURNok) {
 
-    LOG_TRACE(ERROR, "USIM-API  - Unable to write USIM file %s", path);
-    free(path);
+    LOG_TRACE(ERROR, "USIM-API  - Unable to write USIM file %s", filename);
     LOG_FUNC_RETURN (RETURNerror);
   }
 
-  free(path);
   LOG_FUNC_RETURN (RETURNok);
 }
 

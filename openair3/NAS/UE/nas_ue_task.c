@@ -31,6 +31,7 @@
 # include "nas_parser.h"
 # include "nas_proc.h"
 # include "msc.h"
+# include "memory.h"
 
 #include "nas_user.h"
 
@@ -94,6 +95,13 @@ void *nas_ue_task(void *args_p)
   MSC_START_USE();
   /* Initialize UE NAS (EURECOM-NAS) */
   {
+    /* Get USIM data application filename */
+    user->usim_data_store = memory_get_path(USIM_API_NVRAM_DIRNAME, USIM_API_NVRAM_FILENAME);
+    if ( user->usim_data_store == NULL ) {
+      LOG_E(NAS, "[UE %d] - Failed to get USIM data application filename", user->ueid);
+      exit(EXIT_FAILURE);
+    }
+
     /* Initialize user interface (to exchange AT commands with user process) */
     nas_user_api_id_initialize(user);
     user->user_at_commands = calloc_or_fail(sizeof(user_at_commands_t));

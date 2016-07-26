@@ -193,7 +193,7 @@ void emm_main_initialize(nas_user_t *user, emm_indication_callback_t cb, const c
   /*
    * Get USIM application data
    */
-  if ( usim_api_read(&user->usim_data) != RETURNok ) {
+  if ( usim_api_read(user->usim_data_store, &user->usim_data) != RETURNok ) {
     /* The USIM application may not be present or not valid */
     LOG_TRACE(WARNING, "EMM-MAIN  - Failed to read USIM application data");
   } else {

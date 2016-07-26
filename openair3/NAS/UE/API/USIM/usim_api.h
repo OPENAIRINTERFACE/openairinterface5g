@@ -54,6 +54,17 @@ Description Implements the API used by the NAS layer to read/write
 #define USIM_API_K_SIZE         16
 #define USIM_API_K_VALUE        "fec86ba6eb707ed08905757b1bb44b8f"
 
+/*
+ * The name of the file where are stored data of the USIM application
+ */
+#define USIM_API_NVRAM_FILENAME ".usim.nvram"
+
+/*
+ * The name of the environment variable which defines the directory
+ * where the USIM application file is located
+ */
+#define USIM_API_NVRAM_DIRNAME  "USIM_DIR"
+
 /****************************************************************************/
 /************************  G L O B A L    T Y P E S  ************************/
 /****************************************************************************/
@@ -366,9 +377,9 @@ typedef struct {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-int usim_api_read(usim_data_t* data);
+int usim_api_read(const char *filename, usim_data_t* data);
 
-int usim_api_write(const usim_data_t* data);
+int usim_api_write(const char *filename, const usim_data_t* data);
 
 int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, const OctetString* autn_pP,
                           OctetString* auts, OctetString* res,

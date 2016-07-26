@@ -75,6 +75,7 @@ typedef struct {
   security_data_t *security_data; //Internal data used for security mode control procedure
   // Hardware persistent storage
   usim_data_t usim_data; // USIM application data
+  const char *usim_data_store; // USIM application data filename
   user_nvdata_t *nas_user_nvdata; //UE parameters stored in the UE's non-volatile memory device
   //
   nas_user_context_t *nas_user_context;
