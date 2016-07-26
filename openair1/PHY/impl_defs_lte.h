@@ -632,19 +632,8 @@ typedef struct {
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: sample [0..samples_per_tti*10[
   uint32_t *sync_corr[3];
-  /// \brief Holds the cell specific beamforming weights
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: cell specific eNB antenna port index, up to 2 logical antenna ports are supported
-  /// - third index: tx antenna [0..nb_antennas_tx[
-  /// - fourth index: sample [0..]
-  // int32_t **cell_spec_bf_weights[3][2];
-  /// \brief Holds the ue specific beamforming weights
-  /// - first index: eNB id [0..2] (hard coded)
-  /// - second index: ue specific eNB antenna port index, port5->index0, port7-15->index0-7
-  /// - third index: tx antenna [0..nb_antennas_tx[
-  /// - fourth index: sample [0..]
-  // int32_t **ue_spec_bf_weights[3][8];
-  /// \brief Holds the ue specific beamforming weights
+  // int32_t **beam_weights[3][15];
+  /// \brief Holds the beamforming weights
   /// - first index: eNB id [0..2] (hard coded)
   /// - second index: eNB antenna port index
   /// - third index: tx antenna [0..nb_antennas_tx[
