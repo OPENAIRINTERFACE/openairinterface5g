@@ -4391,7 +4391,6 @@ void *rrc_ue_task( void *args_p )
 
       /* NAS messages */
     case NAS_CELL_SELECTION_REQ:
-      ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
 
       LOG_D(RRC, "[UE %d] Received %s: state %d, plmnID (%d%d%d.%d%d%d), rat %x\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id),
             NAS_CELL_SELECTION_REQ (msg_p).plmnID.MCCdigit1,
@@ -4692,7 +4691,6 @@ void *rrc_ue_task( void *args_p )
       break;
 
     case RRC_RAL_CONNECTION_RELEASE_REQ:
-      ue_mod_id = 0; /* TODO force ue_mod_id to first UE, NAS UE not virtualized yet */
       LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, msg_name);
       break;
 #endif
