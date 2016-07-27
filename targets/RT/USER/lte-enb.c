@@ -550,6 +550,7 @@ static void* eNB_thread_rxtx( void* param ) {
       */      
           
 
+    /*
     // eNodeB_3GPP, RRU write to RF device    
     if ((PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP) ||
         (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RRU_IF4) ||
@@ -576,13 +577,15 @@ static void* eNB_thread_rxtx( void* param ) {
 	LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti);
 	exit_fun( "problem transmitting samples" );
       }	
-    } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
+    }
+    */ 
+    if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == eNodeB_3GPP_BBU) {
       /// **** send_IF5 of txdata to RRH **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
       send_IF5(PHY_vars_eNB_g[0][proc->CC_id], proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
 
-    } else { 
+    } else if (PHY_vars_eNB_g[0][proc->CC_id]->node_function == NGFI_RCC_IF4) { 
       /// **** send_IF4 of txdataF to RRU **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
       send_IF4(PHY_vars_eNB_g[0][proc->CC_id], proc->frame_tx, proc->subframe_tx, IF4_PDLFFT, 0);
@@ -854,8 +857,8 @@ static void* eNB_thread_FH( void* param ) {
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  void *rxp[fp->nb_antennas_rx]; 
-  unsigned int rxs;
+  void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
+  unsigned int rxs,txs;
   FILE  *rx_time_file = NULL;
   char rx_time_name[101];
   struct timespec wait;
@@ -1055,7 +1058,34 @@ static void* eNB_thread_FH( void* param ) {
              ((eNB->node_function == NGFI_RRU_IF4) ||
               (eNB->node_function == NGFI_RRU_IF5) || 
               (eNB->node_function == eNodeB_3GPP))) { // acquisition from RF
+
+      if (proc->first_rx==0) {
+
+	// Transmit TX buffer based on timestamp from RX  
+	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+	// prepare tx buffer pointers
+	
+	for (i=0; i<PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx; i++)
+	  txp[i] = (void*)&PHY_vars_eNB_g[0][0]->common_vars.txdata[0][i][((proc->subframe_rx+3)%10)*fp->samples_per_tti];
+	
+	txs = PHY_vars_eNB_g[0][proc->CC_id]->rfdevice.trx_write_func(&PHY_vars_eNB_g[0][proc->CC_id]->rfdevice,
+								      proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+								      txp,
+								      fp->samples_per_tti,
+								      fp->nb_antennas_tx,
+								      1);
+	
+	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       
+
+	
+	if (txs !=  PHY_vars_eNB_g[0][0]->frame_parms.samples_per_tti) {
+	  LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
+	  exit_fun( "problem transmitting samples" );
+	}	
+      }
+
       for (i=0; i<fp->nb_antennas_rx; i++)
         rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
       
