@@ -991,7 +991,8 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
     case AS_CELL_INFO_REQ: {
       nas_itti_cell_info_req(
         as_msg.msg.cell_info_req.plmnID,
-        as_msg.msg.cell_info_req.rat);
+        as_msg.msg.cell_info_req.rat,
+        user->ueid);
       LOG_FUNC_RETURN (RETURNok);
     }
     break;
@@ -1003,7 +1004,8 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
         as_msg.msg.nas_establish_req.s_tmsi,
         as_msg.msg.nas_establish_req.plmnID,
         as_msg.msg.nas_establish_req.initialNasMsg.data,
-        as_msg.msg.nas_establish_req.initialNasMsg.length);
+        as_msg.msg.nas_establish_req.initialNasMsg.length,
+        user->ueid);
       LOG_FUNC_RETURN (RETURNok);
     }
     break;
@@ -1012,7 +1014,8 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
       nas_itti_ul_data_req(
         as_msg.msg.ul_info_transfer_req.UEid,
         as_msg.msg.ul_info_transfer_req.nasMsg.data,
-        as_msg.msg.ul_info_transfer_req.nasMsg.length);
+        as_msg.msg.ul_info_transfer_req.nasMsg.length,
+        user->ueid);
       LOG_FUNC_RETURN (RETURNok);
     }
     break;
@@ -1021,7 +1024,8 @@ static int _emm_as_send(const nas_user_t *user, const emm_as_t *msg)
       nas_itti_rab_establish_rsp(
         as_msg.msg.rab_establish_rsp.s_tmsi,
         as_msg.msg.rab_establish_rsp.rabID,
-        as_msg.msg.rab_establish_rsp.errCode);
+        as_msg.msg.rab_establish_rsp.errCode,
+        user->ueid);
       LOG_FUNC_RETURN (RETURNok);
     }
     break;
