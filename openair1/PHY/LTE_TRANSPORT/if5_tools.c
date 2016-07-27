@@ -50,36 +50,35 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
   int32_t *tx_buffer=NULL;
 
   uint16_t packet_id=0, i=0;
+
+  uint32_t spp_eth  = (uint32_t) eNB->ifdevice.openair0_cfg->samples_per_packet;
+  uint32_t spsf     = (uint32_t) eNB->ifdevice.openair0_cfg->samples_per_frame/10;
   
-  if (packet_type == IF5_RRH_GW_DL) {
-    unsigned int spp_eth  = eNB->ifdevice.openair0_cfg->samples_per_packet;
-    unsigned int spsf     = eNB->ifdevice.openair0_cfg->samples_per_frame/10;
-    
+  if (packet_type == IF5_RRH_GW_DL) {    
+
     for (i=0; i < fp->nb_antennas_tx; i++)
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-      for (i=0; i < fp->nb_antennas_tx; i++)
-        txp[i] += packet_id*spp_eth;
-    
+          
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
                                    txp,
                                    spp_eth,
                                    fp->nb_antennas_tx,
                                    0);
+
+      for (i=0; i < fp->nb_antennas_tx; i++)
+        txp[i] += spp_eth;
+
     }
     
   } else if (packet_type == IF5_RRH_GW_UL) {
-    unsigned int spp_eth  = eNB->ifdevice.openair0_cfg->samples_per_packet;
-    unsigned int spsf     = eNB->ifdevice.openair0_cfg->samples_per_frame/10;
-    
+        
     for (i=0; i < fp->nb_antennas_rx; i++)
       rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-      for (i=0; i < fp->nb_antennas_rx; i++)
-        rxp[i] += packet_id*spp_eth;
 
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
@@ -87,6 +86,10 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
                                    spp_eth,
                                    fp->nb_antennas_rx,
                                    0);
+
+      for (i=0; i < fp->nb_antennas_rx; i++)
+        rxp[i] += spp_eth;
+
     }    
     
   } else if (packet_type == IF5_MOBIPASS) {    
@@ -149,49 +152,49 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int32_t *txp[fp->nb_antennas_tx], *rxp[fp->nb_antennas_rx]; 
 
-
   uint16_t packet_id=0, i=0;
+
+  int32_t spp_eth  = (int32_t) eNB->ifdevice.openair0_cfg->samples_per_packet;
+  int32_t spsf     = (int32_t) eNB->ifdevice.openair0_cfg->samples_per_frame/10;
+
+  openair0_timestamp timestamp[spsf / spp_eth];
   
   if (packet_type == IF5_RRH_GW_DL) {
-    unsigned int spp_eth  = eNB->ifdevice.openair0_cfg->samples_per_packet;
-    unsigned int spsf     = eNB->ifdevice.openair0_cfg->samples_per_frame/10;
-    
-    openair0_timestamp timestamp[spsf / spp_eth];
-    
+        
     for (i=0; i < fp->nb_antennas_tx; i++)
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-      for (i=0; i < fp->nb_antennas_tx; i++)
-        txp[i] += packet_id*spp_eth;
 
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
                                   txp,
                                   spp_eth,
                                   fp->nb_antennas_tx);
+
+      for (i=0; i < fp->nb_antennas_tx; i++)
+        txp[i] += spp_eth;
+
     }
     
     *proc_timestamp = timestamp[0];
     
-  } else if (packet_type == IF5_RRH_GW_UL) {
-    unsigned int spp_eth  = eNB->ifdevice.openair0_cfg->samples_per_packet;
-    unsigned int spsf     = eNB->ifdevice.openair0_cfg->samples_per_frame/10;
-    
-    openair0_timestamp timestamp[spsf / spp_eth];
+  } else if (packet_type == IF5_RRH_GW_UL) { 
     
     for (i=0; i < fp->nb_antennas_rx; i++)
       rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-      for (i=0; i < fp->nb_antennas_tx; i++)
-        rxp[i] += packet_id*spp_eth;
 
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
                                   rxp,
                                   spp_eth,
                                   fp->nb_antennas_rx);
+
+      for (i=0; i < fp->nb_antennas_rx; i++)
+        rxp[i] += spp_eth;
+
     }
 
     *proc_timestamp = timestamp[0];

@@ -1091,8 +1091,6 @@ static void* eNB_thread_FH( void* param ) {
       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
-
-
       rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
                                         &proc->timestamp_rx,
                                         rxp,
@@ -1132,7 +1130,7 @@ static void* eNB_thread_FH( void* param ) {
              (eNB->node_function == eNodeB_3GPP_BBU)) { // acquisition from IF
       /// **** recv_IF5 of rxdata from RRH **** ///       
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
-      recv_IF5(eNB, &proc->timestamp_rx, proc->subframe_rx, IF5_RRH_GW_UL); 
+      recv_IF5(eNB, &proc->timestamp_rx, subframe, IF5_RRH_GW_UL); 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
       
       proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
@@ -1143,13 +1141,15 @@ static void* eNB_thread_FH( void* param ) {
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
           exit_fun("Exiting");
         }
-        
+                
         if (proc->frame_rx != frame) {
           LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
           exit_fun("Exiting");
         }
       } else {
         proc->first_rx = 0;
+        frame = proc->frame_rx;
+        subframe = proc->subframe_rx;        
       }      
       
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
