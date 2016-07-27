@@ -125,7 +125,19 @@ static void click(void *private, gui *g,
 
   if (pthread_mutex_lock(&this->lock)) abort();
 
-  if (button == 1) this->autoscroll = 1 - this->autoscroll;
+  if (button == 1) this->autoscroll = 1;
+  if (button == 3) this->autoscroll = 0;
+
+  if (this->autoscroll) {
+    int visible_lines, start_line, number_of_lines;
+    textlist_state(this->g, this->w, &visible_lines, &start_line,
+        &number_of_lines);
+    start_line = number_of_lines - visible_lines;
+    if (start_line < 0) start_line = 0;
+    textlist_set_start_line(this->g, this->w, start_line);
+    /* this call is not necessary, but if things change in textlist... */
+    widget_dirty(this->g, this->w);
+  }
 
   if (pthread_mutex_unlock(&this->lock)) abort();
 }
