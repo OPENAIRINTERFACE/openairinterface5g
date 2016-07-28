@@ -335,7 +335,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 #if T_TRACER
       if (aa == 0)
         T(T_ENB_PHY_UL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(UE_id),
-          T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx), T_INT(subframe),
+          T_INT(proc->frame_rx), T_INT(subframe),
           T_INT(0), T_BUFFER(ul_ch_estimates_time[0], 512  * 4));
 #endif
 

@@ -1511,7 +1511,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
         if ((ulsch[UE_id]->harq_processes[harq_pid]->dci_alloc == 0) &&
             (ulsch[UE_id]->harq_processes[harq_pid]->rar_alloc == 0) ) {
           if (ulsch[UE_id]->harq_processes[harq_pid]->phich_ACK==0 ) {
-            T(T_ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION, T_INT(eNB->Mod_id), T_INT(eNB->proc->frame_tx),
+            T(T_ENB_PHY_ULSCH_UE_NO_DCI_RETRANSMISSION, T_INT(eNB->Mod_id), T_INT(proc->frame_tx),
               T_INT(subframe), T_INT(UE_id), T_INT(ulsch[UE_id]->rnti), T_INT(harq_pid));
             LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d, subframe %d : PHICH NACK / (no format0 DCI) Setting subframe_scheduling_flag\n",
                   eNB->Mod_id,harq_pid,proc->frame_tx,subframe);

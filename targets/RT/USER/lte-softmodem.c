@@ -682,11 +682,11 @@ static void get_options (int argc, char **argv)
     LONG_OPTION_DUMP_FRAME,
     LONG_OPTION_LOOPMEMORY,
     LONG_OPTION_PHYTEST,
-    LONG_OPTION_MMAPPED_DMA
+    LONG_OPTION_MMAPPED_DMA,
 #if T_TRACER
-    ,
     LONG_OPTION_T_PORT,
     LONG_OPTION_T_NOWAIT,
+    LONG_OPTION_T_DONT_FORK,
 #endif
   };
 
@@ -710,6 +710,7 @@ static void get_options (int argc, char **argv)
 #if T_TRACER
     {"T_port",                 required_argument, 0, LONG_OPTION_T_PORT},
     {"T_nowait",               no_argument,       0, LONG_OPTION_T_NOWAIT},
+    {"T_dont_fork",            no_argument,       0, LONG_OPTION_T_DONT_FORK},
 #endif
     {NULL, 0, NULL, 0}
   };

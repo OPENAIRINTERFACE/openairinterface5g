@@ -767,6 +767,10 @@ void generate_eNB_dlsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
 	    eNB->Mod_id,dci_alloc->rnti,eNB->dlsch[(uint8_t)UE_id][0]->current_harq_pid,frame,subframe);
       
       
+      T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+        T_INT(dci_alloc->rnti), T_INT(dci_alloc->format),
+        T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid));
+
       eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = dci_alloc->firstCCE;
       
       LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",eNB->Mod_id,frame,subframe,
@@ -858,6 +862,9 @@ void generate_eNB_ulsch_params(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC
   else
     eNB->ulsch[(uint32_t)UE_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
   
+  T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
+    T_INT(dci_alloc->rnti), T_INT(harq_pid));
+
 }
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *dlsch, LTE_eNB_DLSCH_t *dlsch1,LTE_eNB_UE_stats *ue_stats,int ra_flag,int num_pdcch_symbols,int abstraction_flag) {
@@ -997,11 +1004,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,LTE_eNB_DLSCH_t *d
 #ifdef DEBUG_DLSCH
     LOG_T(PHY,"eNB DLSCH SDU: \n");
 
-    T(T_ENB_PHY_DLSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(UE_id),
-      T_INT(DCI_pdu->dci_alloc[i].rnti), T_INT(DCI_pdu->dci_alloc[i].format),
-      T_INT(eNB->dlsch[(int)UE_id][0]->current_harq_pid));
-
-    eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
+    //eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe] = DCI_pdu->dci_alloc[i].firstCCE;
 
     LOG_D(PHY,"[eNB %"PRIu8"] Frame %d subframe %d : CCE resource for ue DCI (PDSCH %"PRIx16")  => %"PRIu8"/%u\n",eNB->Mod_id,eNB->proc[sched_subframe].frame_tx,subframe,
 	  DCI_pdu->dci_alloc[i].rnti,eNB->dlsch[(uint8_t)UE_id][0]->nCCE[subframe],DCI_pdu->dci_alloc[i].firstCCE);
@@ -1107,6 +1110,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),1);
   start_meas(&eNB->phy_proc_tx);
+
+  T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     // If we've dropped the UE, go back to PRACH mode for this UE
@@ -2632,7 +2637,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   T(T_ENB_PHY_INPUT_SIGNAL, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
-    T_BUFFER(&eNB->lte_eNB_common_vars.rxdata[0][0][subframe*eNB->frame_parms.samples_per_tti],
+    T_BUFFER(&eNB->common_vars.rxdata[0][0][subframe*eNB->frame_parms.samples_per_tti],
              eNB->frame_parms.samples_per_tti * 4));
 
   eNB->rb_mask_ul[0]=0;

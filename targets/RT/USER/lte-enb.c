@@ -1201,6 +1201,8 @@ static void* eNB_thread_FH( void* param ) {
       AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     }
 
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+
     // At this point, all information for subframe has been received on FH interface
     // If this proc is to provide synchronization, do so
     for (i=0;i<proc->num_slaves;i++) {

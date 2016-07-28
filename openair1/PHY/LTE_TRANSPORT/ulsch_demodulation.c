@@ -1842,10 +1842,10 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
   llrp = (int16_t*)&pusch_vars->llr[0];
 
-  T(T_ENB_PHY_PUSCH_IQ, T_INT(eNB_id), T_INT(UE_id), T_INT(phy_vars_eNB->proc[sched_subframe].frame_rx),
+  T(T_ENB_PHY_PUSCH_IQ, T_INT(eNB_id), T_INT(UE_id), T_INT(proc->frame_rx),
     T_INT(subframe), T_INT(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb),
     T_INT(frame_parms->N_RB_UL), T_INT(frame_parms->symbols_per_tti),
-    T_BUFFER(eNB_pusch_vars->rxdataF_comp[eNB_id][0],
+    T_BUFFER(pusch_vars->rxdataF_comp[eNB_id][0],
              2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL *12*frame_parms->symbols_per_tti*2));
 
   for (l=0; l<frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active; l++) {
