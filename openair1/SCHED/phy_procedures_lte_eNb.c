@@ -1249,6 +1249,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   
   // Now loop again over the DCIs for UL configuration
   for (i=0; i<DCI_pdu->Num_common_dci + DCI_pdu->Num_ue_spec_dci ; i++) {
+    dci_alloc = &DCI_pdu->dci_alloc[i];
+
     if (dci_alloc->format == format0) {  // this is a ULSCH allocation
       if (eNB->mac_enabled==1)
 	UE_id = find_ue((int16_t)dci_alloc->rnti,eNB);
