@@ -2577,6 +2577,17 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
     // check if we have to detect PRACH first
     if ((eNB->node_function != NGFI_RRU_IF5) && 
         (is_prach_subframe(fp,proc->frame_rx,proc->subframe_rx)>0)) { // any other node must call prach procedure
+      /* accept some delay in processing - up to 5ms */
+      int i;
+      for (i = 0; i < 10 && proc->instance_cnt_prach == 0; i++) {
+        LOG_W(PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,proc->instance_cnt_prach);
+        usleep(500);
+      }
+      if (proc->instance_cnt_prach == 0) {
+        exit_fun( "PRACH thread busy" );
+        return;
+      }
+
       // wake up thread for PRACH RX
       if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
         LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->instance_cnt_prach );
@@ -2584,25 +2595,19 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB,const uint8_t abstraction_fl
         return;
       }
       
-      int cnt_prach = ++proc->instance_cnt_prach;
+      ++proc->instance_cnt_prach;
       // set timing for prach thread
       proc->frame_prach = proc->frame_rx;
       proc->subframe_prach = proc->subframe_rx;
       
-      pthread_mutex_unlock( &proc->mutex_prach );
-      
-      if (cnt_prach == 0) {
-        // the thread was presumably waiting where it should and can now be woken up
-        if (pthread_cond_signal(&proc->cond_prach) != 0) {
-          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
-          exit_fun( "ERROR pthread_cond_signal" );
-          return;
-        }
-      } else {
-        LOG_W( PHY,"[eNB] Frame %d Subframe %d, eNB PRACH thread busy (IC %d)!!\n", proc->frame_rx,proc->subframe_rx,cnt_prach);
-        exit_fun( "PRACH thread busy" );
+      // the thread can now be woken up
+      if (pthread_cond_signal(&proc->cond_prach) != 0) {
+        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH thread %d\n", proc->thread_index);
+        exit_fun( "ERROR pthread_cond_signal" );
         return;
       }
+
+      pthread_mutex_unlock( &proc->mutex_prach );
     }
     
   } else { // grab transport channel information from network interface

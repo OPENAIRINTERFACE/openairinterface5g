@@ -1242,6 +1242,16 @@ static void* eNB_thread_FH( void* param ) {
     // choose even or odd thread for RXn-TXnp4 processing 
     eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[proc->subframe_rx&1];
 
+    /* accept some delay in processing - up to 5ms */
+    for (i = 0; i < 10 && proc_rxtx->instance_cnt_rxtx == 0; i++) {
+      LOG_W( PHY,"[eNB] Frame %d, eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", proc_rxtx->frame_tx, proc_rxtx->instance_cnt_rxtx);
+      usleep(500);
+    }
+    if (proc_rxtx->instance_cnt_rxtx == 0) {
+      exit_fun( "TX thread busy" );
+      break;
+    }
+
     // wake up TX for subframe n+4
     // lock the TX mutex and make sure the thread is ready
     if (pthread_mutex_timedlock(&proc_rxtx->mutex_rxtx,&wait) != 0) {
@@ -1249,7 +1259,8 @@ static void* eNB_thread_FH( void* param ) {
       exit_fun( "error locking mutex_rxtx" );
       break;
     }
-    int cnt_rxtx = ++proc_rxtx->instance_cnt_rxtx;
+
+    ++proc_rxtx->instance_cnt_rxtx;
     
     // We have just received and processed the common part of a subframe, say n. 
     // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
@@ -1263,20 +1274,14 @@ static void* eNB_thread_FH( void* param ) {
     proc_rxtx->frame_tx     = (proc_rxtx->subframe_rx > 5) ? (proc_rxtx->frame_rx+1)&1023 : proc_rxtx->frame_rx;
     proc_rxtx->subframe_tx  = (proc_rxtx->subframe_rx + 4)%10;
    
-    pthread_mutex_unlock( &proc_rxtx->mutex_rxtx );
-   
-    if (cnt_rxtx == 0) {
-      // the thread was presumably waiting where it should and can now be woken up
-      if (pthread_cond_signal(&proc_rxtx->cond_rxtx) != 0) {
-        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
-        exit_fun( "ERROR pthread_cond_signal" );
-        break;
-      }
-    } else {
-      LOG_W( PHY,"[eNB] Frame %d, eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", proc_rxtx->frame_tx, cnt_rxtx );
-      exit_fun( "TX thread busy" );
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc_rxtx->cond_rxtx) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
       break;
-    }          
+    }
+
+    pthread_mutex_unlock( &proc_rxtx->mutex_rxtx );
 
     stop_meas( &softmodem_stats_rxtx_sf );
 #ifdef DEADLINE_SCHEDULER
