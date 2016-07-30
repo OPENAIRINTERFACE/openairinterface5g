@@ -239,7 +239,7 @@ Obj.#   Case#   Test#	Description
 
 02                      Functional test case
 
-03                      Non-Functional test case
+03                      Autotests specific to OAI UE
 
 04                      Failure test case 
  
@@ -250,5 +250,3 @@ Obj.#   Case#   Test#	Description
 #TODO: Add test cases for TDD/FDD 
 #TODO: Test and compile seperately for Rel8/Rel10
 #TODO: Case03.py eMBMS test case
-
-

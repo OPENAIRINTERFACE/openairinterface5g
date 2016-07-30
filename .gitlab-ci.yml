@@ -34,6 +34,4 @@ job1:
    - cat $OPENAIR_DIR/cmake_targets/autotests/log/results_autotests.xml
    - exce_log=`egrep -i 'warning|error|critical|exception' $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest.log  |cat `
    - if [ -n "$exce_log" ]; then  echo -e "\e[31mThere are errors in $NFS_TEST_RESULTS_DIR/log/python_autotest.log. Please check the logs\e[0m" ; fi
-   - exce_log=`egrep -i 'warning|error|critical|exception' $OPENAIR_DIR/cmake_targets/autotests/log/python_autotest_cleanup.log |cat `
-   - if [ -n "$exce_log" ]; then echo -e "\e[31mThere are errors in $NFS_TEST_RESULTS_DIR/log/python_autotest_cleanup.log. Please check the logs\e[0m" ; fi
    

@@ -83,8 +83,8 @@ int new_color(gui *gui, char *color);
 /* notifications */
 /* known notifications:
  * - textlist:
- *      - scrollup   { void *: NULL }
- *      - scrolldown { void *: NULL }
+ *      - scrollup   { int: key_modifiers }
+ *      - scrolldown { int: key_modifiers }
  *      - click      { int [2]: line, button }
  * - label:
  *      - click      { int: button } (if enabled)

@@ -6389,6 +6389,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     if (ulsch->harq_processes[harq_pid]->first_tx==1) {
       //      ulsch->harq_processes[harq_pid]->Ndi                                   = 1;
       ulsch->harq_processes[harq_pid]->first_tx=0;
+      ulsch->harq_processes[harq_pid]->DCINdi= ndi;
       ulsch->harq_processes[harq_pid]->round = 0;
     } else {
       if (ulsch->harq_processes[harq_pid]->DCINdi!=ndi) { // new SDU opportunity
