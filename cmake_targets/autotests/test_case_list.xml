@@ -1,6 +1,6 @@
 <testCaseList>
 
-<MachineList>mozart tique stevens nano amerique</MachineList>
+<MachineList>mozart tique stevens amerique</MachineList>
  <NFSResultsShare>/mnt/sradio/TEST_RESULTS/</NFSResultsShare>
  <GitOAI5GRepo>https://gitlab.eurecom.fr/oai/openairinterface5g.git</GitOAI5GRepo>
  <GitOpenair-cnRepo>https://gitlab.eurecom.fr/oai/openair-cn.git</GitOpenair-cnRepo>
@@ -12,7 +12,7 @@
  <Timeout_execution>36000</Timeout_execution>
  <TestCaseExclusionList>010141 0102+ 010304 010305 0104+ 015502 015505 015506 015507 015508 015509 015510 015511 015514 015517 015602 015605 015702 015705 015802 015805 015808 015811 016102 016105 016502 016505 017002 017005 017502 017505 018002 018005 018502 018505 025502 025505 025508 025511</TestCaseExclusionList>
  <nruns_lte-softmodem>3</nruns_lte-softmodem>
- <MachineListGeneric>mozart tique stevens nano amerique </MachineListGeneric>
+ <MachineListGeneric>mozart tique stevens amerique </MachineListGeneric>
      <testCase id="010101" >
      <class>compilation</class>
      <desc>Build oaisim.Rel8</desc>
