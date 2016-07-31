@@ -285,7 +285,8 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass
+    sshpass \
+    nscd
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
