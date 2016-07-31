@@ -119,7 +119,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 // In lte-enb.c
 extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
-extern void init_eNB(eNB_func_t *, eNB_timing_t *,int);
+extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(void);
 
@@ -1643,64 +1643,6 @@ int main( int argc, char **argv )
   
   openair0_cfg[0].log_level = glog_level;
 
-  if (UE_flag == 0) {
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      if (node_function[CC_id] == NGFI_RRU_IF4p5 || node_function[CC_id] == NGFI_RRU_IF5) {
-        PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
-        PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
-      } else {
-        PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = BBU_HOST;
-        PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = BBU_HOST;
-      }
-    }
-  }
-  else {
-    /* device host type is set*/
-    PHY_vars_UE_g[0][0]->rfdevice.host_type = BBU_HOST;
-    /* device type is initialized NONE_DEV (no RF device) when the RF device will be initiated device type will be set */
-    PHY_vars_UE_g[0][0]->rfdevice.type = NONE_DEV;
-    /* transport type is initialized NONE_TP (no transport protocol) when the transport protocol will be initiated transport protocol type will be set */
-    PHY_vars_UE_g[0][0]->rfdevice.transp_type = NONE_TP;
-  }
-
-  int returns=-1;
-    
-  // Load RF device and initialize
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
-    if (node_function[CC_id] == NGFI_RRU_IF5 || node_function[CC_id] == NGFI_RRU_IF4p5 || node_function[CC_id] == eNodeB_3GPP) { 
-      if (mode!=loop_through_memory) {
-        returns= (UE_flag == 0) ? 
-	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :
-	  openair0_device_load(&(PHY_vars_UE_g[0][CC_id]->rfdevice), &openair0_cfg[0]);
-
-        printf("openair0_device_init returns %d for CC_id %d\n",returns,CC_id);
-        if (returns<0) {
-          printf("Exiting, cannot initialize device\n");
-          exit(-1);
-        }
-      } else if (mode==loop_through_memory) {    
-      
-      }    
-    }
-  }  
-  
-  // Load transport protocol and initialize
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
-    if ((UE_flag==0) && (node_function[CC_id] != eNodeB_3GPP)) {
-      if (mode!=loop_through_memory) {
-        returns = openair0_transport_load(&(PHY_vars_eNB_g[0][CC_id]->ifdevice), &openair0_cfg[0], (eth_params+CC_id));
-        printf("openair0_transport_init returns %d for CC_id %d\n",returns,CC_id);
-        if (returns<0) {
-          printf("Exiting, cannot initialize transport protocol\n");
-          exit(-1);
-        }
-      } else if (mode==loop_through_memory) {    
-      
-      }    
-    }
-  }
-
-  printf("Done initializing RF and IF devices\n");
   
   mac_xface = malloc(sizeof(MAC_xface));
 
@@ -1854,7 +1796,7 @@ int main( int argc, char **argv )
 
   // start the main thread
   if (UE_flag == 1) init_UE(1);
-  else init_eNB(node_function,node_timing,1);
+  else init_eNB(node_function,node_timing,1,eth_params);
   // Sleep to allow all threads to setup
   sleep(3);
 

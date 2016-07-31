@@ -179,12 +179,17 @@ void init_UE(int nb_inst) {
   int error_code;
   int inst;
   PHY_VARS_UE *UE;
+  int ret;
 
   for (inst=0;inst<nb_inst;inst++) {
     printf("Intializing UE Threads for instance %d ...\n",inst);
     init_UE_threads(inst);
     sleep(1);
     UE = PHY_vars_UE_g[inst][0];
+
+    ret = openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]);
+    UE->rfdevice.host_type = BBU_HOST;
+    UE->rfdevice.type      = NONE_DEV;
     error_code = pthread_create(&UE->proc.pthread_ue, &UE->proc.attr_ue, UE_thread, NULL);
     
     if (error_code!= 0) {
