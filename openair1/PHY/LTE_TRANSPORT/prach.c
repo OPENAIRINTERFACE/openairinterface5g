@@ -1183,6 +1183,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
 
   if ((eNB->node_function == eNodeB_3GPP) ||
+      (eNB->node_function == eNodeB_3GPP_BBU) ||
       (eNB->node_function == NGFI_RRU_IF4p5)) { // compute the DFTs of the PRACH temporal resources
     // Do forward transform
     for (aa=0; aa<nb_ant_rx; aa++) {
