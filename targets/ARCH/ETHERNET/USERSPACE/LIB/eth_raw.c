@@ -201,7 +201,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 
 
 
-int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
+int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps, int cc, int flags) {
 
   int nblocks = nsamps;  
   int bytes_sent = 0;
@@ -211,14 +211,14 @@ int trx_eth_write_raw_IF4(openair0_device *device, openair0_timestamp timestamp,
   
   ssize_t packet_size;
   
-  if (flags == IF4_PDLFFT) {
-    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);    
-  } else if (flags == IF4_PULFFT) {
-    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);    
+  if (flags == IF4p5_PDLFFT) {
+    packet_size = RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks);    
+  } else if (flags == IF4p5_PULFFT) {
+    packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);    
   } else if (flags == IF5_MOBIPASS) {
     packet_size = RAW_IF5_MOBIPASS_SIZE_BYTES;
   } else {
-    packet_size = RAW_IF4_PRACH_SIZE_BYTES;
+    packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
   }
   
   eth->tx_nsamps = nblocks;
@@ -304,7 +304,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 
 
 
-int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
+int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc) {
 
   // Read nblocks info from packet itself
   int nblocks = nsamps;  
@@ -312,8 +312,8 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   
-  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4_header_t;      
-  IF4_header_t *test_header = (IF4_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
+  ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
+  IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
   
   bytes_received = recv(eth->sockfd[Mod_id],
                         buff[0],
@@ -327,12 +327,12 @@ int trx_eth_read_raw_IF4(openair0_device *device, openair0_timestamp *timestamp,
  
   *timestamp = test_header->sub_type; 
   
-  if (test_header->sub_type == IF4_PDLFFT) {
-    packet_size = RAW_IF4_PDLFFT_SIZE_BYTES(nblocks);             
-  } else if (test_header->sub_type == IF4_PULFFT) {
-    packet_size = RAW_IF4_PULFFT_SIZE_BYTES(nblocks);             
+  if (test_header->sub_type == IF4p5_PDLFFT) {
+    packet_size = RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks);             
+  } else if (test_header->sub_type == IF4p5_PULFFT) {
+    packet_size = RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks);             
   } else {
-    packet_size = RAW_IF4_PRACH_SIZE_BYTES;
+    packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
   }
         
   while(bytes_received < packet_size) {
@@ -387,7 +387,7 @@ int eth_set_dev_conf_raw(openair0_device *device) {
 
 
 
-int eth_set_dev_conf_raw_IF4(openair0_device *device) {  
+int eth_set_dev_conf_raw_IF4p5(openair0_device *device) {  
   // use for cc_id info
 
   int 	       Mod_id = device->Mod_id;
@@ -448,7 +448,7 @@ int eth_get_dev_conf_raw(openair0_device *device) {
 }
 
 
-int eth_get_dev_conf_raw_IF4(openair0_device *device) {
+int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
   // use for cc_id info
 
   eth_state_t   *eth = (eth_state_t*)device->priv;

@@ -232,7 +232,7 @@ int mch_modulation(int32_t **txdataF,
     @param abstraction_flag
 
 */
-void generate_mch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t *a,int abstraction_flag);
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t *a);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_eNB Pointer to eNB variables
@@ -240,10 +240,8 @@ void generate_mch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t *a,in
     @param mcs MCS for MBSFN
     @param ndi new data indicator
     @param rdvix
-    @param abstraction_flag
-
 */
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx,int abstraction_flag);
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *phy_vars_eNB,int mcs,int ndi,int rvidx);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_ue Pointer to UE variables
@@ -1546,8 +1544,7 @@ uint32_t ulsch_decoding_emul(PHY_VARS_eNB *phy_vars_eNB,
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
 			eNB_rxtx_proc_t *proc,
                         int16_t amp,
-                        uint8_t sect_id,
-                        uint8_t abstraction_flag);
+                        uint8_t sect_id);
 
 /* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
    @param phy_vars_ue Pointer to UE variables

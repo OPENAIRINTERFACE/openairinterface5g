@@ -887,10 +887,12 @@ const Enb_properties_array_t *enb_config_init(char* lib_config_file_name_pP)
                 enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP;
               } else if (strcmp(cc_node_function, "eNodeB_3GPP_BBU") == 0) {
                 enb_properties.properties[enb_properties_index]->cc_node_function[j] = eNodeB_3GPP_BBU;
-              } else if (strcmp(cc_node_function, "NGFI_RCC_IF4") == 0) {
-                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RCC_IF4;
-              } else if (strcmp(cc_node_function, "NGFI_RRU_IF4") == 0) {
-                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF4;
+              } else if (strcmp(cc_node_function, "NGFI_RCC_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RCC_IF4p5;
+              } else if (strcmp(cc_node_function, "NGFI_RAU_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RAU_IF4p5;
+              } else if (strcmp(cc_node_function, "NGFI_RRU_IF4p5") == 0) {
+                enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF4p5;
               } else if (strcmp(cc_node_function, "NGFI_RRU_IF5") == 0) {
                 enb_properties.properties[enb_properties_index]->cc_node_function[j] = NGFI_RRU_IF5;
               } else {

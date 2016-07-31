@@ -1056,9 +1056,9 @@ static void get_options (int argc, char **argv)
           if (enb_properties->properties[i]->rrh_gw_config[j].raw == 1) {
             (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
           } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4 == 1) {
-            (eth_params+j)->transp_preference       = ETH_RAW_IF4_MODE;             
+            (eth_params+j)->transp_preference       = ETH_RAW_IF4p5_MODE;             
           } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
-            (eth_params+j)->transp_preference       = ETH_UDP_IF4_MODE;             
+            (eth_params+j)->transp_preference       = ETH_UDP_IF4p5_MODE;             
           } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif5_mobipass == 1) {
             (eth_params+j)->transp_preference       = ETH_RAW_IF5_MOBIPASS;             
           } else {
@@ -1645,7 +1645,7 @@ int main( int argc, char **argv )
 
   if (UE_flag == 0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      if (node_function[CC_id] == NGFI_RRU_IF4 || node_function[CC_id] == NGFI_RRU_IF5) {
+      if (node_function[CC_id] == NGFI_RRU_IF4p5 || node_function[CC_id] == NGFI_RRU_IF5) {
         PHY_vars_eNB_g[0][CC_id]->rfdevice.host_type = RRH_HOST;
         PHY_vars_eNB_g[0][CC_id]->ifdevice.host_type = RRH_HOST;
       } else {
@@ -1667,7 +1667,7 @@ int main( int argc, char **argv )
     
   // Load RF device and initialize
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {  
-    if (node_function[CC_id] == NGFI_RRU_IF5 || node_function[CC_id] == NGFI_RRU_IF4 || node_function[CC_id] == eNodeB_3GPP) { 
+    if (node_function[CC_id] == NGFI_RRU_IF5 || node_function[CC_id] == NGFI_RRU_IF4p5 || node_function[CC_id] == eNodeB_3GPP) { 
       if (mode!=loop_through_memory) {
         returns= (UE_flag == 0) ? 
 	  openair0_device_load(&(PHY_vars_eNB_g[0][CC_id]->rfdevice), &openair0_cfg[0]) :

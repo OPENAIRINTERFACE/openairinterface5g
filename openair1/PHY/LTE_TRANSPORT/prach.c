@@ -1183,7 +1183,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
 
   if ((eNB->node_function == eNodeB_3GPP) ||
-      (eNB->node_function == NGFI_RRU_IF4)) { // compute the DFTs of the PRACH temporal resources
+      (eNB->node_function == NGFI_RRU_IF4p5)) { // compute the DFTs of the PRACH temporal resources
     // Do forward transform
     for (aa=0; aa<nb_ant_rx; aa++) {
       prach2 = prach[aa] + (Ncp<<1);
@@ -1269,7 +1269,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
     }
   }
 
-  if (eNB->node_function == NGFI_RRU_IF4) {
+  if (eNB->node_function == NGFI_RRU_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
     
     if (k<0) {
@@ -1281,12 +1281,10 @@ void rx_prach(PHY_VARS_eNB *eNB,
     k*=2;
     
     /// **** send_IF4 of rxsigF to RCC **** ///    
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
-    send_IF4(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4_PRACH, k);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
+    send_IF4p5(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4p5_PRACH, k);
 
     return;
-  } else if (eNB->node_function == NGFI_RCC_IF4) {
+  } else if (eNB->node_function == NGFI_RCC_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
     
     if (k<0) {
@@ -1305,7 +1303,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
   
   // in case of RCC and prach received rx_thread wakes up prach
 
-  // here onwards is for eNodeB_3GPP or NGFI_RCC_IF4
+  // here onwards is for eNodeB_3GPP or NGFI_RCC_IF4p5
 
   preamble_offset_old = 99;
 

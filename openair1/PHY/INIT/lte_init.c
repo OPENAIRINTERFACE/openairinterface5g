@@ -1167,7 +1167,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
         frame_parms->phich_config_common.phich_duration);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_eNB][MOD %02"PRIu8"][]\n", eNB->Mod_id);
 
-  if (eNB->node_function != NGFI_RRU_IF4) {
+  if (eNB->node_function != NGFI_RRU_IF4p5) {
     lte_gold(frame_parms,eNB->lte_gold_table,frame_parms->Nid_cell);
     generate_pcfich_reg_mapping(frame_parms);
     generate_phich_reg_mapping(frame_parms);
@@ -1191,12 +1191,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     if (abstraction_flag==0) {
       
       // TX vars
-      if (eNB->node_function != NGFI_RCC_IF4)
+      if (eNB->node_function != NGFI_RCC_IF4p5)
 	common_vars->txdata[eNB_id]  = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
       common_vars->txdataF[eNB_id] = (int32_t **)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
       
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-	if (eNB->node_function != NGFI_RCC_IF4)
+	if (eNB->node_function != NGFI_RCC_IF4p5)
 	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
 	common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
 #ifdef DEBUG_PHY
@@ -1208,14 +1208,14 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
       }
       
       // RX vars
-      if (eNB->node_function != NGFI_RCC_IF4) {
+      if (eNB->node_function != NGFI_RCC_IF4p5) {
 	common_vars->rxdata[eNB_id]        = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
 	common_vars->rxdata_7_5kHz[eNB_id] = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
       }
       common_vars->rxdataF[eNB_id]       = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-	if (eNB->node_function != NGFI_RCC_IF4) {
+	if (eNB->node_function != NGFI_RCC_IF4p5) {
 	  common_vars->rxdata[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
 	  common_vars->rxdata_7_5kHz[eNB_id][i] = (int32_t*)malloc16_clear( frame_parms->samples_per_tti*sizeof(int32_t) );
 	}
@@ -1227,7 +1227,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
       }
       
-      if (eNB->node_function != NGFI_RRU_IF4) {
+      if (eNB->node_function != NGFI_RRU_IF4p5) {
 	// Channel estimates for SRS
 	for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
 	  
@@ -1250,7 +1250,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   
   if (abstraction_flag==0) {
-    if (eNB->node_function != NGFI_RRU_IF4) {
+    if (eNB->node_function != NGFI_RRU_IF4p5) {
       generate_ul_ref_sigs_rx();
       
       // SRS
@@ -1264,7 +1264,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   
   // ULSCH VARS, skip if NFGI_RRU_IF4
   
-  if (eNB->node_function!=NGFI_RRU_IF4)
+  if (eNB->node_function!=NGFI_RRU_IF4p5)
     prach_vars->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int16_t) );
   
   /* number of elements of an array X is computed as sizeof(X) / sizeof(X[0]) */
@@ -1277,7 +1277,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 #endif
   }
   
-  if (eNB->node_function != NGFI_RRU_IF4) {
+  if (eNB->node_function != NGFI_RRU_IF4p5) {
     AssertFatal(frame_parms->nb_antennas_rx <= sizeof(prach_vars->prach_ifft) / sizeof(prach_vars->prach_ifft[0]),
 		"nb_antennas_rx too large");
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
@@ -1399,7 +1399,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     eNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
 
     init_prach_tables(839);
-  } // node_function != NGFI_RRU_IF4
+  } // node_function != NGFI_RRU_IF4p5
 
   return (0);
 }

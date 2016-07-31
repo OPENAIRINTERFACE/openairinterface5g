@@ -161,8 +161,9 @@ typedef enum  {
   eNodeB_3GPP=0,   // classical eNodeB function
   eNodeB_3GPP_BBU, // eNodeB with NGFI IF5
   NGFI_RRU_IF5,    // NGFI_RRU with IF5
-  NGFI_RRU_IF4,    // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4) 
-  NGFI_RCC_IF4     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4) 
+  NGFI_RRU_IF4p5,    // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4p5) 
+  NGFI_RCC_IF4p5,     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4p5) 
+  NGFI_RAU_IF4p5
 } eNB_func_t;
 
 typedef enum {
@@ -186,6 +187,20 @@ typedef struct ral_threshold_phy_s {
   long                             timer_id;
 } ral_threshold_phy_t;
 #endif
+
+/// Top-level PHY Data Structure for RN
+typedef struct {
+  /// Module ID indicator for this instance
+  uint8_t Mod_id;
+  uint32_t frame;
+  // phy_vars_eNB
+  // phy_vars ue
+  // cuurently only used to store and forward the PMCH
+  uint8_t mch_avtive[10];
+  uint8_t sync_area[10]; // num SF
+  LTE_UE_DLSCH_t   *dlsch_rn_MCH[10];
+
+} PHY_VARS_RN;
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
@@ -340,6 +355,15 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc;
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
+  int                  abstraction_flag;
+  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
+  void                 (*fep)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
+  void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
+  void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
+  void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
+  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc,int *frame, int *subframe);
+  int                  (*start_rf)(struct PHY_VARS_eNB_s *eNB);
+  int                  (*start_if)(struct PHY_VARS_eNB_s *eNB);
   uint8_t              local_flag;
   uint32_t             rx_total_gain_dB;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -785,19 +809,7 @@ typedef struct {
 #endif
 } PHY_VARS_UE;
 
-/// Top-level PHY Data Structure for RN
-typedef struct {
-  /// Module ID indicator for this instance
-  uint8_t Mod_id;
-  uint32_t frame;
-  // phy_vars_eNB
-  // phy_vars ue
-  // cuurently only used to store and forward the PMCH
-  uint8_t mch_avtive[10];
-  uint8_t sync_area[10]; // num SF
-  LTE_UE_DLSCH_t   *dlsch_rn_MCH[10];
 
-} PHY_VARS_RN;
 
 #include "PHY/INIT/defs.h"
 #include "PHY/LTE_REFSIG/defs.h"

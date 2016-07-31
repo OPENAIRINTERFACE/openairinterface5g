@@ -41,7 +41,7 @@
 #include "PHY/defs.h"
 
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
-
+#include "UTIL/LOG/vcd_signal_dumper.h"
 
 void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe, uint8_t *seqno, uint16_t packet_type) {      
   
@@ -54,6 +54,8 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
   uint32_t spp_eth  = (uint32_t) eNB->ifdevice.openair0_cfg->samples_per_packet;
   uint32_t spsf     = (uint32_t) eNB->ifdevice.openair0_cfg->samples_per_frame/10;
   
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
+
   if (packet_type == IF5_RRH_GW_DL) {    
 
     for (i=0; i < fp->nb_antennas_tx; i++)
@@ -143,6 +145,8 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
   }  
   
   free(tx_buffer);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );  
+
   return;  		    
 }
 
@@ -158,6 +162,8 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
   int32_t spsf     = (int32_t) eNB->ifdevice.openair0_cfg->samples_per_frame/10;
 
   openair0_timestamp timestamp[spsf / spp_eth];
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
   
   if (packet_type == IF5_RRH_GW_DL) {
         
@@ -205,6 +211,8 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
   } else {
     AssertFatal(1==0, "recv_IF5 - Unknown packet_type %x", packet_type);     
   }  
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
   
   return;  
 }

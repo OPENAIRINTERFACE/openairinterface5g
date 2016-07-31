@@ -41,12 +41,12 @@
 #include "PHY/defs.h"
 
 /// Macro for IF4 packet type
-#define IF4_PACKET_TYPE 0x080A 
-#define IF4_PULFFT 0x0019 
-#define IF4_PDLFFT 0x0020
-#define IF4_PRACH 0x0021
+#define IF4p5_PACKET_TYPE 0x080A 
+#define IF4p5_PULFFT 0x0019 
+#define IF4p5_PDLFFT 0x0020
+#define IF4p5_PRACH 0x0021
 
-struct IF4_header {  
+struct IF4p5_header {  
   /// Type
   uint16_t type; 
   /// Sub-Type
@@ -58,17 +58,17 @@ struct IF4_header {
 
 } __attribute__ ((__packed__));
 
-typedef struct IF4_header IF4_header_t;
-#define sizeof_IF4_header_t 12 
+typedef struct IF4p5_header IF4p5_header_t;
+#define sizeof_IF4p5_header_t 12 
 
-void gen_IF4_dl_header(IF4_header_t*, int, int);
+void gen_IF4p5_dl_header(IF4p5_header_t*, int, int);
 
-void gen_IF4_ul_header(IF4_header_t*, int, int);
+void gen_IF4p5_ul_header(IF4p5_header_t*, int, int);
 
-void gen_IF4_prach_header(IF4_header_t*, int, int);
+void gen_IF4p5_prach_header(IF4p5_header_t*, int, int);
 
-void send_IF4(PHY_VARS_eNB*, int, int, uint16_t, int);
+void send_IF4p5(PHY_VARS_eNB*, int, int, uint16_t, int);
 
-void recv_IF4(PHY_VARS_eNB*, int*, int*, uint16_t*, uint32_t*);
+void recv_IF4p5(PHY_VARS_eNB*, int*, int*, uint16_t*, uint32_t*);
 
-void malloc_IF4_buffer(PHY_VARS_eNB*);
+void malloc_IF4p5_buffer(PHY_VARS_eNB*);

@@ -1424,8 +1424,7 @@ void rx_phich(PHY_VARS_UE *ue,
 void generate_phich_top(PHY_VARS_eNB *eNB,
                         eNB_rxtx_proc_t *proc,
 			int16_t amp,
-                        uint8_t sect_id,
-                        uint8_t abstraction_flag)
+                        uint8_t sect_id)
 {
 
 
@@ -1486,7 +1485,7 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
                 ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
         }
 
-        if (abstraction_flag == 0) {
+        if (eNB->abstraction_flag == 0) {
           generate_phich(frame_parms,
                          amp,//amp*2,
                          nseq_PHICH,

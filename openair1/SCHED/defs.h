@@ -164,20 +164,18 @@ void phy_procedures_UE_S_RX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abst
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
   @param phy_vars_rn pointer to the RN variables
 */
-void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
+void phy_procedures_eNB_TX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *phy_vars_rn);
 
 /*! \brief Scheduling for eNB RX UE-specific procedures in normal subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
-  @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
-  @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 
@@ -185,29 +183,26 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *pr
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param abstraction_flag Indicator of PHY abstraction
 */
-void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag);
+void phy_procedures_eNB_common_RX(PHY_VARS_eNB *phy_vars_eNB);
 
 /*! \brief Scheduling for eNB TX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
 
-void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_S_TX(PHY_VARS_eNB *phy_vars_eNB,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB RX procedures in TDD S-subframes.
   @param phy_vars_eNB Pointer to eNB variables on which to act
-  @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t abstraction_flag,relaying_type_t r_type);
+void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type);
 
 /*! \brief Scheduling for eNB PRACH RX procedures 
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param proc Pointer to RXn-TXnp4 proc information
-  @param abstraction_flag Indicator of PHY abstraction
 */
-void prach_procedures(PHY_VARS_eNB *eNB,uint8_t abstraction_flag);
+void prach_procedures(PHY_VARS_eNB *eNB);
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor

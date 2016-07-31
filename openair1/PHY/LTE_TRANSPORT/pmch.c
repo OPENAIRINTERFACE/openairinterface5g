@@ -190,7 +190,7 @@ int is_pmch_subframe(uint32_t frame, int subframe, LTE_DL_FRAME_PARMS *frame_par
   return(0);
 }
 
-void fill_eNB_dlsch_MCH(PHY_VARS_eNB *eNB,int mcs,int ndi,int rvidx, int abstraction_flag)
+void fill_eNB_dlsch_MCH(PHY_VARS_eNB *eNB,int mcs,int ndi,int rvidx)
 {
 
   LTE_eNB_DLSCH_t *dlsch = eNB->dlsch_MCH;
@@ -227,7 +227,7 @@ void fill_eNB_dlsch_MCH(PHY_VARS_eNB *eNB,int mcs,int ndi,int rvidx, int abstrac
     break;
   }
 
-  if (abstraction_flag) {
+  if (eNB->abstraction_flag) {
     eNB_transport_info[eNB->Mod_id][eNB->CC_id].cntl.pmch_flag=1;
     eNB_transport_info[eNB->Mod_id][eNB->CC_id].num_pmch=1; // assumption: there is always one pmch in each SF
     eNB_transport_info[eNB->Mod_id][eNB->CC_id].num_common_dci=0;
@@ -286,13 +286,13 @@ void fill_UE_dlsch_MCH(PHY_VARS_UE *ue,int mcs,int ndi,int rvidx,int eNB_id)
   }
 }
 
-void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a,int abstraction_flag)
+void generate_mch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,uint8_t *a)
 {
 
   int G;
   int subframe = proc->subframe_tx;
 
-  if (abstraction_flag != 0) {
+  if (eNB->abstraction_flag != 0) {
     if (eNB_transport_info_TB_index[eNB->Mod_id][eNB->CC_id]!=0)
       printf("[PHY][EMU] PMCH transport block position is different than zero %d \n", eNB_transport_info_TB_index[eNB->Mod_id][eNB->CC_id]);
 
