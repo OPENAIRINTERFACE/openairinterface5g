@@ -298,11 +298,10 @@ void tx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   send_IF4p5(eNB,proc->frame_tx, proc->subframe_tx, IF4p5_PDLFFT, 0);
 }
 
-void proc_tx_full(PHY_VARS_eNB *eNB,
-		  eNB_rxtx_proc_t *proc,
-		  uint8_t abstraction_flag,
-		  relaying_type_t r_type,
-		  PHY_VARS_RN *rn) {
+void proc_tx_high0(PHY_VARS_eNB *eNB,
+		   eNB_rxtx_proc_t *proc,
+		   relaying_type_t r_type,
+		   PHY_VARS_RN *rn) {
 
   phy_procedures_eNB_TX(eNB,proc,r_type,rn);
 
@@ -319,16 +318,42 @@ void proc_tx_full(PHY_VARS_eNB *eNB,
     exit_fun("nothing to add");
   }
 
+}
 
+void proc_tx_high(PHY_VARS_eNB *eNB,
+		  eNB_rxtx_proc_t *proc,
+		  relaying_type_t r_type,
+		  PHY_VARS_RN *rn) {
+
+  // do PHY high
+  proc_tx_high0(eNB,proc,r_type,rn);
+
+  // if TX fronthaul go ahead 
+  if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
+
+}
+
+void proc_tx_full(PHY_VARS_eNB *eNB,
+		  eNB_rxtx_proc_t *proc,
+		  relaying_type_t r_type,
+		  PHY_VARS_RN *rn) {
+
+
+  // do PHY high
+  proc_tx_high0(eNB,proc,r_type,rn);
+  // do OFDM modulation
   do_OFDM_mod_rt(proc->subframe_tx,eNB);
-
+  // if TX fronthaul go ahead 
   if (eNB->tx_fh) eNB->tx_fh(eNB,proc);
 
 
 
 }
 
-void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
+		       eNB_rxtx_proc_t *proc,
+		       relaying_type_t r_type,
+		       PHY_VARS_RN *rn) {
 
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
@@ -397,13 +422,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
   FILE  *tx_time_file = NULL;
   char tx_time_name[101];
-  void *txp[fp->nb_antennas_tx]; 
-  int txs;
 
-
-
-  
-  uint8_t seqno=0;
   
   if (opp_enabled == 1) {
     snprintf(tx_time_name, 100,"/tmp/%s_tx_time_thread_sf", "eNB");
@@ -628,6 +647,8 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
  */
 static void* eNB_thread_asynch_rx( void* param ) {
 
+  static int eNB_thread_asynch_rx_status;
+
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
@@ -813,6 +834,8 @@ static void* eNB_thread_asynch_rx( void* param ) {
       AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     }
 
+  eNB_thread_asynch_rx_status=0;
+  return(&eNB_thread_asynch_rx_status);
 }
 
 void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
@@ -900,19 +923,19 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame, int *subframe) {
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   
   if (proc->first_rx == 0) {
-    if (proc->subframe_rx != subframe){
+    if (proc->subframe_rx != *subframe){
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
       exit_fun("Exiting");
     }
     
-    if (proc->frame_rx != frame) {
+    if (proc->frame_rx != *frame) {
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
       exit_fun("Exiting");
     }
   } else {
     proc->first_rx = 0;
-    frame = proc->frame_rx;
-    subframe = proc->subframe_rx;        
+    *frame = proc->frame_rx;
+    *subframe = proc->subframe_rx;        
   }      
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
@@ -1075,14 +1098,7 @@ static void* eNB_thread_FH( void* param ) {
   FILE  *rx_time_file = NULL;
   char rx_time_name[101];
 
-  int i;
-
   int subframe=0, frame=0; 
-
-  struct timespec wait;
-  
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
 
   if (opp_enabled == 1) {
     snprintf(rx_time_name, 100,"/tmp/%s_rx_time_thread_sf", "eNB");
@@ -1723,9 +1739,9 @@ int start_rf(PHY_VARS_eNB *eNB) {
   return(eNB->rfdevice.trx_start_func(&eNB->rfdevice));
 }
 
-extern eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
-extern eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
-extern do_prach(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
+extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
+extern void do_prach(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst) {
   
@@ -1785,7 +1801,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_full;
+	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5;
 	eNB->rx_fh          = rx_fh_if4p5;
 	eNB->start_rf       = NULL;
@@ -1796,7 +1812,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach       = do_prach;
 	eNB->fep            = NULL;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_full;
+	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 
 	eNB->rx_fh          = rx_fh_if4p5; 
 	eNB->start_rf       = NULL;
