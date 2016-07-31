@@ -821,7 +821,7 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
       subframe_tx = (subframe_tx+1)%10;
       
       recv_IF5(eNB, &timestamp_tx, subframe_tx, IF5_RRH_GW_DL); 
-      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+      //      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
       if (first_tx == 1) {
 	first_tx = 0;
 	subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
@@ -877,8 +877,8 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
   if (proc->first_rx==0) {
     
     // Transmit TX buffer based on timestamp from RX
-    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+    //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(2*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
 	
@@ -917,7 +917,7 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
   
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
+  //  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
