@@ -641,21 +641,22 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 #endif
 
 /*!
- * \brief The Asynchronous RX FH thread of RAU/RCC/eNB.
+ * \brief The Asynchronous RX/TX FH thread of RAU/RCC/eNB/RRU.
  * This handles the RX FH for an asynchronous RRU/UE
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
-static void* eNB_thread_asynch_rx( void* param ) {
+static void* eNB_thread_asynch_rxtx( void* param ) {
 
-  static int eNB_thread_asynch_rx_status;
+  static int eNB_thread_asynch_rxtx_status;
 
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  openair0_timestamp timestamp_rx;
-  int frame_rx,subframe_rx;
+  openair0_timestamp timestamp_rx,timestamp_tx;
+  int frame_rx,subframe_rx=0,subframe_tx=0;
   static int first_rx = 1;
+  static int first_tx = 1;
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
@@ -768,40 +769,67 @@ static void* eNB_thread_asynch_rx( void* param ) {
  
   printf( "got sync (eNB_thread_asynch_rx)\n" );
 
-  if (eNB->node_function == eNodeB_3GPP) { // acquisition from RF
 
-    if (eNB->rfdevice.trx_read_func)
-      rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
-					&proc->timestamp_rx,
-					(void**)dummy_rx,
-					fp->samples_per_tti,
-					fp->nb_antennas_rx);
-    else {
-      printf("eNB asynch RX\n");
-      sleep(1);
+  // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
+  printf( "waiting for devices (eNB_thread_asynch_rx)\n");
+  pthread_mutex_lock( &proc->mutex_asynch_rxtx);
+
+  while (proc->instance_cnt_asynch_rxtx<0)
+    pthread_cond_wait( &proc->cond_asynch_rxtx, &proc->mutex_asynch_rxtx );
+ 
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+
+  printf( "devices ok (eNB_thread_asynch_rx)\n");
+
+  while (!oai_exit) { 
+    if (eNB->node_function == eNodeB_3GPP) { // acquisition from RF
+      
+      if (eNB->rfdevice.trx_read_func)
+	rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+					  &proc->timestamp_rx,
+					  (void**)dummy_rx,
+					  fp->samples_per_tti,
+					  fp->nb_antennas_rx);
+      else {
+	printf("eNB asynch RX\n");
+	sleep(1);
+      }
+      if (rxs!=fp->samples_per_tti) {
+	exit_fun("error receiving samples\n");
+      }
     }
-    if (rxs!=fp->samples_per_tti) {
-      exit_fun("error receiving samples\n");
-    }
-  }
-  else if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
+    else if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
       /// **** recv_IF5 of rxdata from RRH **** ///       
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
-    recv_IF5(eNB, &timestamp_rx, subframe_rx++, IF5_RRH_GW_UL); 
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
-    if (first_rx == 1) {
-      first_rx = 0;
-      subframe_rx = (timestamp_rx/fp->samples_per_tti)%10;
-    }
-    else {
-    // check timestamp
-      if ((timestamp_rx - proc->timestamp_rx) < (2*fp->samples_per_tti))
-	printf("RX overflow ...\n");
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
+      recv_IF5(eNB, &timestamp_rx, subframe_rx++, IF5_RRH_GW_UL); 
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
+      if (first_rx == 1) {
+	first_rx = 0;
+	subframe_rx = (timestamp_rx/fp->samples_per_tti)%10;
+      }
+      else {
+	// check timestamp
+	if ((timestamp_rx - proc->timestamp_rx) < (2*fp->samples_per_tti))
+	  printf("RX overflow ...\n");
+	
+      }
+    } // eNodeB_3GPP_BBU 
+    
+    else if (eNB->node_function == NGFI_RRU_IF5) {
+      /// **** recv_IF5 of rxdata from RRH **** ///
 
+      subframe_tx = (subframe_tx+1)%10;
+      
+      recv_IF5(eNB, &timestamp_tx, subframe_tx, IF5_RRH_GW_DL); 
+      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+      if (first_tx == 1) {
+	first_tx = 0;
+	subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
+
+      }
+      
     }
-  } // eNodeB_3GPP_BBU 
-  
-  else if (eNB->node_function == NGFI_RCC_IF4p5) {
+    else if (eNB->node_function == NGFI_RCC_IF4p5) {
       /// **** recv_IF4p5 of rxdataF from RRU **** ///
       /// **** recv_IF4p5 of rxsigF from RRU **** ///
       // get frame/subframe information from IF4p5 interface
@@ -811,10 +839,10 @@ static void* eNB_thread_asynch_rx( void* param ) {
       symbol_mask = 0;
       symbol_mask_full = (1<<fp->symbols_per_tti)-1;
       prach_rx = 0;
-         
+      
       do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
         recv_IF4p5(eNB, &frame_rx, &subframe_rx, &packet_type, &symbol_number);
-
+	
         if (packet_type == IF4p5_PULFFT) {
           symbol_mask = symbol_mask | (1<<symbol_number);
           prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
@@ -834,9 +862,9 @@ static void* eNB_thread_asynch_rx( void* param ) {
     else { // should not get here
       AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     }
-
-  eNB_thread_asynch_rx_status=0;
-  return(&eNB_thread_asynch_rx_status);
+  }
+  eNB_thread_asynch_rxtx_status=0;
+  return(&eNB_thread_asynch_rxtx_status);
 }
 
 void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
@@ -848,16 +876,17 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
 
   if (proc->first_rx==0) {
     
-    // Transmit TX buffer based on timestamp from RX 
+    // Transmit TX buffer based on timestamp from RX
+    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
 	
     for (i=0; i<fp->nb_antennas_tx; i++)
-      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+3)%10)*fp->samples_per_tti];
+      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+2)%10)*fp->samples_per_tti];
     
     txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-				       proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+				       proc->timestamp_rx+(2*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
 				       txp,
 				       fp->samples_per_tti,
 				       fp->nb_antennas_tx,
@@ -877,7 +906,7 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
     rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][*subframe*fp->samples_per_tti];
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-  
+
   rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
 				    &(proc->timestamp_rx),
 				    rxp,
@@ -888,6 +917,7 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
   
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  printf("trx_read <- USRP TS %llu (sf %d, first_rx %d)\n", proc->timestamp_rx,proc->subframe_rx,proc->first_rx);  
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
@@ -1232,6 +1262,12 @@ static void* eNB_thread_FH( void* param ) {
     if (eNB->start_rf(eNB) != 0)
       LOG_E(HW,"Could not start the RF device\n");
 
+  // unlock asnych_rxtx thread
+  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+  proc->instance_cnt_asynch_rxtx=0;
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+  pthread_cond_signal(&proc->cond_asynch_rxtx);
+
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
    
@@ -1527,6 +1563,7 @@ void init_eNB_proc(int inst) {
     proc_rxtx[1].instance_cnt_rxtx = -1;
     proc->instance_cnt_prach = -1;
     proc->instance_cnt_FH = -1;
+    proc->instance_cnt_asynch_rxtx = -1;
     proc->CC_id = CC_id;
     
     proc->first_rx=4;
@@ -1534,24 +1571,27 @@ void init_eNB_proc(int inst) {
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
     pthread_mutex_init( &proc->mutex_prach, NULL);
+    pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
+    pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
 #ifndef DEADLINE_SCHEDULER
     pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
     pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
     pthread_create( &proc->pthread_FH, &proc->attr_FH, eNB_thread_FH, &eNB->proc );
     pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
-    if (eNB->node_timing == synch_to_other) 
-      pthread_create( &proc->pthread_asynch_rx, &proc->attr_asynch_rx, eNB_thread_asynch_rx, &eNB->proc );
+    if ((eNB->node_timing == synch_to_other) ||
+	(eNB->node_function == NGFI_RRU_IF5))
+      pthread_create( &proc->pthread_asynch_rxtx, &proc->attr_asynch_rxtx, eNB_thread_asynch_rxtx, &eNB->proc );
 #else 
     pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
     pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[1] );
     pthread_create( &proc->pthread_FH, NULL, eNB_thread_FH, &eNB->proc );
     pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
     if (eNB->node_timing == synch_to_other) 
-      pthread_create( &proc->pthread_asynch_rx, NULL, eNB_thread_asynch_rx, &eNB->proc );
+      pthread_create( &proc->pthread_asynch_rxtx, NULL, eNB_thread_asynch_rxtx, &eNB->proc );
     
 #endif
     char name[16];
@@ -1767,7 +1807,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = NULL;
 	eNB->fep                  = eNB_fep_rru_if5;
 	eNB->proc_uespec_rx       = NULL;
-	eNB->proc_tx              = proc_tx_rru_if5;
+	eNB->proc_tx              = NULL;
 	eNB->tx_fh                = NULL;
 	eNB->rx_fh                = rx_rf;
 	eNB->start_rf             = start_rf;

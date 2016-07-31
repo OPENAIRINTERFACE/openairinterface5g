@@ -252,10 +252,12 @@ typedef struct eNB_proc_t_s {
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
+  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
+  int instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
   pthread_t pthread_FH;
-  /// pthread structure for asychronous RX processing thread
-  pthread_t pthread_asynch_rx;
+  /// pthread structure for asychronous RX/TX processing thread
+  pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
   int first_rx;
   /// pthread attributes for FH processing thread
@@ -263,23 +265,27 @@ typedef struct eNB_proc_t_s {
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
   /// pthread attributes for asynchronous RX thread
-  pthread_attr_t attr_asynch_rx;
+  pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for FH thread
   struct sched_param sched_param_FH;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-  /// scheduling parameters for asynch_rx thread
-  struct sched_param sched_param_asynch_rx;
-  /// condition variable for FH thread
+  /// scheduling parameters for asynch_rxtx thread
+  struct sched_param sched_param_asynch_rxtx;
+  /// pthread structure for PRACH thread
   pthread_t pthread_prach;
   /// condition variable for FH thread
   pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
+  /// condition variable for asynch RX/TX thread
+  pthread_cond_t cond_asynch_rxtx;
   /// mutex for FH
   pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
   /// number of slave threads
