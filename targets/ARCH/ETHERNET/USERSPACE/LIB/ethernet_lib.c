@@ -72,7 +72,7 @@ int trx_eth_start(openair0_device *device) {
     }
     /* adjust MTU wrt number of samples per packet */
     if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
-
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -83,7 +83,8 @@ int trx_eth_start(openair0_device *device) {
     }
     /* adjust MTU wrt number of samples per packet */
     if(ethernet_tune (device,MTU_SIZE,RAW_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
-    
+        if(ethernet_tune (device,RCV_TIMEOUT,5000)!=0)  return -1;
+
   } else if (eth->flags == ETH_UDP_IF4p5_MODE) {
     
   
@@ -225,15 +226,15 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     break;
     
   case RCV_TIMEOUT:
-    timeout.tv_sec = value/1000000000;
-    timeout.tv_usec = value%1000000000;//less than rt_period?
+    timeout.tv_sec = value/1000000;
+    timeout.tv_usec = value%1000000;//less than rt_period?
     if (setsockopt(eth->sockfd[Mod_id],  
 		   SOL_SOCKET,  
 		   SO_RCVTIMEO,  
 		   (char *)&timeout,sizeof(timeout))) {
       perror("[ETHERNET] setsockopt()");  
     } else {   
-      printf( "receive timeout= %d,%d sec\n",timeout.tv_sec,timeout.tv_usec);  
+      printf( "receive timeout= %u usec\n",timeout.tv_usec);  
     }  
     break;
     
