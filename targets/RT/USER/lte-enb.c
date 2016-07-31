@@ -291,6 +291,7 @@ void do_OFDM_mod_rt(int subframe,PHY_VARS_eNB *phy_vars_eNB) {
 
 void tx_fh_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   uint8_t seqno;
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, proc->timestamp_tx&0xffffffff );
   send_IF5(eNB, proc->timestamp_tx, proc->subframe_tx, &seqno, IF5_RRH_GW_DL);
 }
 
@@ -847,7 +848,7 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
 
   if (proc->first_rx==0) {
     
-    // Transmit TX buffer based on timestamp from RX  
+    // Transmit TX buffer based on timestamp from RX 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
@@ -882,6 +883,8 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
 				    rxp,
 				    fp->samples_per_tti,
 				    fp->nb_antennas_rx);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
   
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
@@ -906,11 +909,11 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
-      if (rxs != fp->samples_per_tti)
-        exit_fun( "problem receiving samples" );
-      
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-      
+  if (rxs != fp->samples_per_tti)
+    exit_fun( "problem receiving samples" );
+  
+
+  
 }
 
 void rx_fh_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame, int *subframe) {
@@ -1764,7 +1767,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = NULL;
 	eNB->fep                  = eNB_fep_rru_if5;
 	eNB->proc_uespec_rx       = NULL;
-	eNB->proc_tx              = proc_tx_rru_if5;;
+	eNB->proc_tx              = proc_tx_rru_if5;
 	eNB->tx_fh                = NULL;
 	eNB->rx_fh                = rx_rf;
 	eNB->start_rf             = start_rf;

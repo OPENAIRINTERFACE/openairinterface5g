@@ -189,6 +189,8 @@ const char* eurecomFunctionsNames[] = {
   "rt_sleep",
   "trx_read",
   "trx_write",
+  "trx_read_if",
+  "trx_write_if",
   "eNB_thread_rxtx0",
   "eNB_thread_rxtx1",
   "ue_thread_synch",

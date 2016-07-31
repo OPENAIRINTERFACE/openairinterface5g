@@ -62,14 +62,15 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       txp[i] = (void*)&eNB->common_vars.txdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-          
+
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );            
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
                                    txp,
                                    spp_eth,
                                    fp->nb_antennas_tx,
                                    0);
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );  
       for (i=0; i < fp->nb_antennas_tx; i++)
         txp[i] += spp_eth;
 
@@ -82,13 +83,14 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
 
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );            
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
                                    rxp,
                                    spp_eth,
                                    fp->nb_antennas_rx,
                                    0);
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 0 );            
       for (i=0; i < fp->nb_antennas_rx; i++)
         rxp[i] += spp_eth;
 
@@ -172,12 +174,13 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
 
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );  
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
                                   txp,
                                   spp_eth,
                                   fp->nb_antennas_tx);
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );  
       for (i=0; i < fp->nb_antennas_tx; i++)
         txp[i] += spp_eth;
 
@@ -191,13 +194,13 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
       rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][subframe*fp->samples_per_tti];
     
     for (packet_id=0; packet_id < spsf / spp_eth; packet_id++) {
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );            
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
                                   rxp,
                                   spp_eth,
                                   fp->nb_antennas_rx);
-
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );            
       for (i=0; i < fp->nb_antennas_rx; i++)
         rxp[i] += spp_eth;
 
