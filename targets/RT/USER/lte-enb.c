@@ -159,7 +159,7 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *);
 void stop_eNB(int nb_inst);
 
 
@@ -1218,15 +1218,16 @@ static void* eNB_thread_FH( void* param ) {
   wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 
-  // Start RF device if any
-  if (eNB->start_rf)
-    if (eNB->start_rf(eNB) != 0)
-      LOG_E(HW,"Could not start the RF device\n");
 
   // Start IF device if any
   if (eNB->start_if) 
     if (eNB->start_if(eNB) != 0)
       LOG_E(HW,"Could not start the IF device\n");
+
+  // Start RF device if any
+  if (eNB->start_rf)
+    if (eNB->start_rf(eNB) != 0)
+      LOG_E(HW,"Could not start the RF device\n");
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
@@ -1743,11 +1744,13 @@ extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
 extern void do_prach(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst) {
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params) {
   
   int CC_id;
   int inst;
   PHY_VARS_eNB *eNB;
+  int ret;
+
   for (inst=0;inst<nb_inst;inst++) {
     for (CC_id=0;CC_id<MAX_NUM_CCs;CC_id++) {
       eNB = PHY_vars_eNB_g[inst][CC_id]; 
@@ -1755,37 +1758,73 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
+
       switch (node_function[CC_id]) {
       case NGFI_RRU_IF5:
-	eNB->do_prach       = NULL;
-	eNB->fep            = eNB_fep_rru_if5;
-	eNB->proc_uespec_rx = NULL;
-	eNB->proc_tx        = NULL;
-	eNB->tx_fh          = NULL;
-	eNB->rx_fh          = rx_rf;
-	eNB->start_rf        = start_rf;
-	eNB->start_if        = start_if;
+	eNB->do_prach             = NULL;
+	eNB->fep                  = eNB_fep_rru_if5;
+	eNB->proc_uespec_rx       = NULL;
+	eNB->proc_tx              = proc_tx_rru_if5;;
+	eNB->tx_fh                = NULL;
+	eNB->rx_fh                = rx_rf;
+	eNB->start_rf             = start_rf;
+	eNB->start_if             = start_if;
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+        if (ret<0) {
+          printf("Exiting, cannot initialize rf device\n");
+          exit(-1);
+        }
+	eNB->rfdevice.host_type   = RRH_HOST;
+	eNB->ifdevice.host_type   = RRH_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
 	break;
       case NGFI_RRU_IF4p5:
-	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;
-	eNB->proc_uespec_rx = NULL;
-	eNB->proc_tx        = proc_tx_rru_if4p5;
-	eNB->tx_fh          = NULL;
-	eNB->rx_fh          = rx_rf;
-	eNB->start_rf       = start_rf;
-	eNB->start_if       = start_if;
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = eNB_fep_full;
+	eNB->proc_uespec_rx       = NULL;
+	eNB->proc_tx              = proc_tx_rru_if4p5;
+	eNB->tx_fh                = NULL;
+	eNB->rx_fh                = rx_rf;
+	eNB->start_rf             = start_rf;
+	eNB->start_if             = start_if;
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+        if (ret<0) {
+          printf("Exiting, cannot initialize rf device\n");
+          exit(-1);
+        }
+	eNB->rfdevice.host_type   = RRH_HOST;
+	eNB->ifdevice.host_type   = RRH_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+	printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
+
 	malloc_IF4p5_buffer(eNB);
+
 	break;
       case eNodeB_3GPP:
-	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;
-	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_full;
-	eNB->tx_fh          = NULL;
-	eNB->rx_fh          = rx_rf;
-	eNB->start_rf       = start_rf;
-	eNB->start_if       = NULL;
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = eNB_fep_full;
+	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx              = proc_tx_full;
+	eNB->tx_fh                = NULL;
+	eNB->rx_fh                = rx_rf;
+	eNB->start_rf             = start_rf;
+	eNB->start_if             = NULL;
+	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
+        if (ret<0) {
+          printf("Exiting, cannot initialize rf device\n");
+          exit(-1);
+        }
+	eNB->rfdevice.host_type   = BBU_HOST;
+	eNB->ifdevice.host_type   = BBU_HOST;
 	break;
       case eNodeB_3GPP_BBU:
 	eNB->do_prach       = do_prach;
@@ -1796,6 +1835,15 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->rx_fh          = rx_fh_if5;
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
+	eNB->rfdevice.host_type   = BBU_HOST;
+
+	eNB->ifdevice.host_type   = BBU_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
 	break;
       case NGFI_RCC_IF4p5:
 	eNB->do_prach       = do_prach;
@@ -1806,7 +1854,16 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->rx_fh          = rx_fh_if4p5;
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
+	eNB->rfdevice.host_type   = BBU_HOST;
+	eNB->ifdevice.host_type   = BBU_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
 	malloc_IF4p5_buffer(eNB);
+
 	break;
       case NGFI_RAU_IF4p5:
 	eNB->do_prach       = do_prach;
@@ -1817,8 +1874,18 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->rx_fh          = rx_fh_if4p5; 
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
-	malloc_IF4p5_buffer(eNB);
+
+	eNB->rfdevice.host_type   = BBU_HOST;
+	eNB->ifdevice.host_type   = BBU_HOST;
+        ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
+        printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
+        if (ret<0) {
+          printf("Exiting, cannot initialize transport protocol\n");
+          exit(-1);
+        }
 	break;	
+	malloc_IF4p5_buffer(eNB);
+
       }
     }
 
