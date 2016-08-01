@@ -1656,10 +1656,13 @@ int main( int argc, char **argv )
 
 #if defined(ENABLE_ITTI)
 
-  if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
-    printf("cannot create ITTI tasks\n");
-    exit(-1); // need a softer mode
-  }
+  if ((UE_flag == 1)||
+      (node_function[0]<NGFI_RAU_IF4p5))
+    // don't create if node doesn't connect to RRC/S1/GTP
+    if (create_tasks(UE_flag ? 0 : 1, UE_flag ? 1 : 0) < 0) {
+      printf("cannot create ITTI tasks\n");
+      exit(-1); // need a softer mode
+    }
 
   printf("ITTI tasks created\n");
 #endif

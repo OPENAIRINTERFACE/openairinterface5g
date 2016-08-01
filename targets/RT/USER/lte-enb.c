@@ -1248,7 +1248,8 @@ static void* eNB_thread_FH( void* param ) {
   printf( "got sync (eNB_thread_FH)\n" );
  
 #if defined(ENABLE_ITTI)
-  wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+  if (eNB->node_function < NGFI_RRU_IF5)
+    wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
 #endif 
 
 
@@ -1938,45 +1939,12 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
   sleep(1);
   LOG_D(HW,"[lte-softmodem.c] eNB threads created\n");
   
-  /*  
-  printf("Creating main eNB_thread \n");
-  error_code = pthread_create( &main_eNB_thread, &attr_dlsch_threads, eNB_thread, NULL );
-  
-  if (error_code!= 0) {
-    LOG_D(HW,"[lte-softmodem.c] Could not allocate eNB_thread, error %d\n",error_code);
-  } else {
-    LOG_D( HW, "[lte-softmodem.c] Allocate eNB_thread successful\n" );
-    pthread_setname_np( main_eNB_thread, "main eNB" );
-  }
-  */
+
 }
 
 
 void stop_eNB(int nb_inst) {
 
-  /*
-#ifdef DEBUG_THREADS
-  printf("Joining eNB_thread ...");
-#endif
-
-  int *eNB_thread_status_p;
-  int result = pthread_join( main_eNB_thread, (void**)&eNB_thread_status_p );
-
-#ifdef DEBUG_THREADS
-  if (result != 0) {
-    printf( "\nError joining main_eNB_thread.\n" );
-  } else {
-    if (eNB_thread_status_p) {
-      printf( "status %d\n", *eNB_thread_status_p );
-    } else {
-      printf( "The thread was killed. No status available.\n");
-    }
-  }
-#else
-  UNUSED(result);
-#endif // DEBUG_THREADS
-  */
-  
   for (int inst=0;inst<nb_inst;inst++) {
     printf("Killing eNB %d processing threads\n",inst);
     kill_eNB_proc(inst);
