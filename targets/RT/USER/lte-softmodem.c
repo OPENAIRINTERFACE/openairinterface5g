@@ -1055,9 +1055,9 @@ static void get_options (int argc, char **argv)
           
           if (enb_properties->properties[i]->rrh_gw_config[j].raw == 1) {
             (eth_params+j)->transp_preference       = ETH_RAW_MODE; 
-          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4 == 1) {
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif4p5 == 1) {
             (eth_params+j)->transp_preference       = ETH_RAW_IF4p5_MODE;             
-          } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4 == 1) {
+          } else if (enb_properties->properties[i]->rrh_gw_config[j].udpif4p5 == 1) {
             (eth_params+j)->transp_preference       = ETH_UDP_IF4p5_MODE;             
           } else if (enb_properties->properties[i]->rrh_gw_config[j].rawif5_mobipass == 1) {
             (eth_params+j)->transp_preference       = ETH_RAW_IF5_MOBIPASS;             
