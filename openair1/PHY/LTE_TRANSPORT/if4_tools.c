@@ -197,7 +197,8 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
   *frame = ((packet_header->frame_status)>>6)&0xffff;
   *subframe = ((packet_header->frame_status)>>22)&0x000f; 
-  
+
+
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
