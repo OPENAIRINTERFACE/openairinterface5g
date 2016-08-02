@@ -68,20 +68,20 @@ export NVRAM_DIR=$THIS_SCRIPT_PATH
 if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data ]; then
     make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean
     make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS PROCESS=UE
-    rm .ue.nvram
+    rm .ue.nvram0
 fi
 if [ ! -f $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data ]; then
     make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS veryveryclean
     make --directory=$OPENAIR3_DIR/NAS/EURECOM-NAS PROCESS=UE
-    rm .usim.nvram
+    rm .usim.nvram0
 fi
-if [ ! -f .ue.nvram ]; then
-    # generate .ue_emm.nvram .ue.nvram
+if [ ! -f .ue.nvram0 ]; then
+    # generate .ue_emm.nvram0 .ue.nvram0
     $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --gen
 fi
 
-if [ ! -f .usim.nvram ]; then
-    # generate .usim.nvram
+if [ ! -f .usim.nvram0 ]; then
+    # generate .usim.nvram0
     $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/usim_data --gen
 fi
 $OPENAIR3_DIR/NAS/EURECOM-NAS/bin/ue_data --print

@@ -450,7 +450,7 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  if [ ! -f $2/§.ue.nvram -o ! -f $2/.usim.nvram ]; then
+  if [ ! -f $2/.ue.nvram0 -o ! -f $2/.usim.nvram0 ]; then
     cd $OPENAIR_DIR/targets/bin
     ./conf2uedata -c $1 -o $2
     echo_success "$1 $2"
