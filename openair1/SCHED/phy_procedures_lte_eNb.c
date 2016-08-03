@@ -1949,13 +1949,14 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
           update_TA = 1;
           break;
         }
-
+	
 	mac_xface->initiate_ra_proc(eNB->Mod_id,
 				    eNB->CC_id,
 				    frame,
 				    preamble_max,
 				    preamble_delay_list[preamble_max]*update_TA,
 				    0,subframe,0);
+	
       }      
 
     } else {

@@ -63,6 +63,7 @@ int trx_eth_start(openair0_device *device) {
   
   /* initialize socket */
   if (eth->flags == ETH_RAW_MODE) {     
+    printf("Setting ETHERNET to ETH_RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
     if (device->host_type == BBU_HOST) {
@@ -74,6 +75,8 @@ int trx_eth_start(openair0_device *device) {
     if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
     if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
+
+    printf("Setting ETHERNET to ETH_RAW_IF4p5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
     if (device->host_type == BBU_HOST) {
@@ -83,12 +86,13 @@ int trx_eth_start(openair0_device *device) {
     }
     /* adjust MTU wrt number of samples per packet */
     if(ethernet_tune (device,MTU_SIZE,RAW_IF4p5_PRACH_SIZE_BYTES)!=0)  return -1;
-        if(ethernet_tune (device,RCV_TIMEOUT,5000)!=0)  return -1;
+    if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
 
   } else if (eth->flags == ETH_UDP_IF4p5_MODE) {
-    
+    printf("Setting ETHERNET to UDP_IF4p5_MODE\n");
   
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
+    printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
     //if (device->host_type == BBU_HOST) {

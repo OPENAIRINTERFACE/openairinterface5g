@@ -975,7 +975,7 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame, int *subframe) {
 
 }
 
-void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *subframe,int *frame) {
+void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
 
@@ -988,27 +988,25 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *subframe,int *frame) {
   symbol_mask = 0;
   symbol_mask_full = (1<<fp->symbols_per_tti)-1;
   prach_rx = 0;
-  
+
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
     recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
-    
     if (packet_type == IF4p5_PULFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
       prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
     } else if (packet_type == IF4p5_PRACH) {
       prach_rx = 0;
     }
+
   } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
   } else {
@@ -1271,7 +1269,7 @@ static void* eNB_thread_FH( void* param ) {
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
-   
+
     if (oai_exit) break;   
 
     if (subframe==9) { 

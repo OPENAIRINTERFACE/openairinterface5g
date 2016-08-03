@@ -274,7 +274,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 	
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
-	  perror("ETHERNET READ: ");
+	  perror("ETHERNET IF5 READ: ");
 	  exit(-1);	
 	} else {
 	  /* store the timestamp value from packet's header */
@@ -314,14 +314,15 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
-  
+
+
   bytes_received = recv(eth->sockfd[Mod_id],
                         buff[0],
                         packet_size,
                         MSG_PEEK);                        
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
-	  perror("ETHERNET READ: ");
+	  perror("ETHERNET IF4p5 READ (header): ");
 	  exit(-1);	
   }
  
@@ -334,7 +335,8 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   } else {
     packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
   }
-        
+  
+  
   while(bytes_received < packet_size) {
     bytes_received = recv(eth->sockfd[Mod_id],
                           buff[0],
@@ -342,7 +344,7 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
                           0);
 	  if (bytes_received ==-1) {
 	    eth->num_rx_errors++;
-	    perror("ETHERNET READ: ");
+	    perror("ETHERNET IF4p5 READ (payload): ");
 	    exit(-1);	
     } else {
       eth->rx_actual_nsamps = bytes_received>>1;   
