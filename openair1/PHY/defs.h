@@ -260,6 +260,8 @@ typedef struct eNB_proc_t_s {
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
   int first_rx;
+  /// flag to indicate first TX transmission
+  int first_tx;
   /// pthread attributes for FH processing thread
   pthread_attr_t attr_FH;
   /// pthread attributes for prach processing thread
@@ -362,14 +364,15 @@ typedef struct PHY_VARS_eNB_s {
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
   int                  abstraction_flag;
-  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
-  void                 (*fep)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
+  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
+  void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
   void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
   void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
   void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
-  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc,int *frame, int *subframe);
+  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   int                  (*start_rf)(struct PHY_VARS_eNB_s *eNB);
   int                  (*start_if)(struct PHY_VARS_eNB_s *eNB);
+  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
   uint32_t             rx_total_gain_dB;
   LTE_DL_FRAME_PARMS   frame_parms;

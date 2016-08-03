@@ -1065,7 +1065,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   int i;
   lte_frame_type_t frame_type = eNB->frame_parms.frame_type;
-  int subframe                = eNB->proc.subframe_rx;
+  int subframe                = eNB->proc.subframe_prach;
   uint16_t rootSequenceIndex  = eNB->frame_parms.prach_config_common.rootSequenceIndex;
   uint8_t prach_ConfigIndex   = eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t Ncs_config          = eNB->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
@@ -1284,8 +1284,11 @@ void rx_prach(PHY_VARS_eNB *eNB,
     k*=2;
     
     /// **** send_IF4 of rxsigF to RCC **** ///    
-    send_IF4p5(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4p5_PRACH, k);
+    send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
 
+    //    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+    //    if (en>60)
+    //      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
@@ -1476,8 +1479,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
 #endif
       // if (aa=1) write_output("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
       }// antennas_rx
+
 #ifdef PRACH_DEBUG
-      
+
       if (en>40) {
 	k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
 	
@@ -1491,9 +1495,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	write_output("rxsigF.m","prach_rxF",&rxsigF[0][k],840,1,1);
 	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
 	write_output("prach_ifft0.m","prach_t0",prach_ifft[0],1024,1,1);
+	exit(-1);
       }
 #endif
-      
     } // new dft
     
     // check energy in nth time shift

@@ -224,7 +224,8 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
   eth->tx_nsamps = nblocks;
   
   memcpy(buff[0], (void*)&eth->eh, MAC_HEADER_SIZE_BYTES);	
-         
+
+
   bytes_sent = send(eth->sockfd[Mod_id],
                     buff[0], 
                     packet_size,
