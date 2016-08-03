@@ -1950,12 +1950,14 @@ void prach_procedures(PHY_VARS_eNB *eNB) {
           break;
         }
 
+	/*
 	mac_xface->initiate_ra_proc(eNB->Mod_id,
 				    eNB->CC_id,
 				    frame,
 				    preamble_max,
 				    preamble_delay_list[preamble_max]*update_TA,
 				    0,subframe,0);
+	*/
       }      
 
     } else {
@@ -2490,8 +2492,9 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 
 }
 
-void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
+void eNB_fep_full(PHY_VARS_eNB *eNB) {
 
+  eNB_proc_t *proc = &eNB->proc;
   int l;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
@@ -2503,7 +2506,7 @@ void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
 		&eNB->common_vars,
 		l,
 		proc->subframe_rx<<1,
-		  0,
+		0,
 		0
 		);
     slot_fep_ul(fp,
@@ -2519,14 +2522,13 @@ void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
   
   if (eNB->node_function == NGFI_RRU_IF4p5) {
     /// **** send_IF4 of rxdataF to RCC (no prach now) **** ///
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 1 );   
     send_IF4p5(eNB, proc->frame_rx, proc->subframe_rx, IF4p5_PULFFT, 0);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4, 0 );   
-    }    
+  }    
 }
 
-void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
+void eNB_fep_rru_if5(PHY_VARS_eNB *eNB) {
 
+  eNB_proc_t *proc=&eNB->proc;
   uint8_t seqno=0;
 
   /// **** send_IF5 of rxdata to BBU **** ///       
@@ -2536,8 +2538,9 @@ void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
 
 }
 
-void do_prach(PHY_VARS_eNB *eNB,eNB_proc_t *proc) {
+void do_prach(PHY_VARS_eNB *eNB) {
 
+  eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   // check if we have to detect PRACH first
@@ -2594,9 +2597,9 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_common_RX(%d)\n",eNB->Mod_id,frame,subframe);
 
 
-  if (eNB->fep) eNB->fep(eNB,proc);
+  if (eNB->fep) eNB->fep(eNB);
 
-  if (eNB->do_prach) eNB->do_prach(eNB,proc);
+  if (eNB->do_prach) eNB->do_prach(eNB);
   
 
 

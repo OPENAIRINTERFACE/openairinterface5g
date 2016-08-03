@@ -365,13 +365,11 @@ void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
   symbol_mask = 0;
   symbol_mask_full = (1<<eNB->frame_parms.symbols_per_tti)-1;
   
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );  
+
   do { 
     recv_IF4p5(eNB, &proc->frame_tx, &proc->subframe_tx, &packet_type, &symbol_number);
     symbol_mask = symbol_mask | (1<<symbol_number);
   } while (symbol_mask != symbol_mask_full); 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
-
 
   do_OFDM_mod_rt(proc->subframe_tx, eNB);
 }
@@ -640,6 +638,151 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 }
 #endif
 
+
+// asynchronous UL with IF4p5 (RCC,RAU,eNodeB_BBU)
+void fh_if5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  eNB_proc_t *proc       = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+
+  recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
+
+  proc->subframe_rx = (proc->timestamp_rx/fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->timestamp_rx/(10*fp->samples_per_tti))&1023;
+
+  if (proc->first_rx != 0) {
+    proc->first_rx = 0;
+    *subframe = proc->subframe_rx;
+    *frame    = proc->frame_rx; 
+  }
+  else {
+    if (proc->subframe_rx != *subframe) {
+      LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
+      exit_fun("Exiting");
+    }
+    if (proc->frame_rx != *frame) {
+      LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->frame_rx,*frame);  
+      exit_fun("Exiting");
+    }
+  }
+} // eNodeB_3GPP_BBU 
+
+// asynchronous UL with IF4p5 (RCC,RAU,eNodeB_BBU)
+void fh_if4p5_asynch_UL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc       = &eNB->proc;
+
+  uint16_t packet_type;
+  uint32_t symbol_number,symbol_mask,symbol_mask_full,prach_rx;
+
+
+  symbol_number = 0;
+  symbol_mask = 0;
+  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+  prach_rx = 0;
+
+  do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
+    recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
+    if (proc->first_rx != 0) {
+      *frame = proc->frame_rx;
+      *subframe = proc->subframe_rx;
+      proc->first_rx = 0;
+    }
+    else {
+      if (proc->frame_rx != *frame) {
+	LOG_E(PHY,"frame_rx %d is not what we expect %d\n",proc->frame_rx,*frame);
+	exit_fun("Exiting");
+      }
+      if (proc->subframe_rx != *subframe) {
+	LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
+	exit_fun("Exiting");
+      }
+    }
+    if (packet_type == IF4p5_PULFFT) {
+      symbol_mask = symbol_mask | (1<<symbol_number);
+      prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
+    } else if (packet_type == IF4p5_PRACH) {
+      prach_rx = 0;
+    }
+  } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
+  
+
+} 
+
+
+void fh_if5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc       = &eNB->proc;
+  int subframe_tx,frame_tx;
+  openair0_timestamp timestamp_tx;
+
+  recv_IF5(eNB, &timestamp_tx, *subframe, IF5_RRH_GW_DL); 
+      //      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+
+  subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
+  frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
+
+  if (proc->first_tx != 0) {
+    *subframe = subframe_tx;
+    *frame    = frame_tx;
+    proc->first_tx = 0;
+  }
+  else {
+    if (subframe_tx != *subframe) {
+      LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+      exit_fun("Exiting");
+    }
+    if (frame_tx != *frame) { 
+      LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
+      exit_fun("Exiting");
+    }
+  }
+}
+
+void fh_if4p5_asynch_DL(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc       = &eNB->proc;
+
+  uint16_t packet_type;
+  uint32_t symbol_number,symbol_mask,symbol_mask_full;
+  int subframe_tx,frame_tx;
+
+  symbol_number = 0;
+  symbol_mask = 0;
+  symbol_mask_full = (1<<fp->symbols_per_tti)-1;
+
+  do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
+    recv_IF4p5(eNB, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
+    if (proc->first_tx != 0) {
+      *frame    = frame_tx;
+      *subframe = subframe_tx;
+      proc->first_tx = 0;
+    }
+    else {
+      if (frame_tx != *frame) {
+	LOG_E(PHY,"frame_tx %d is not what we expect %d\n",frame_tx,*frame);
+	exit_fun("Exiting");
+      }
+      if (subframe_tx != *subframe) {
+	LOG_E(PHY,"subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+	exit_fun("Exiting");
+      }
+    }
+    if (packet_type == IF4p5_PDLFFT) {
+      symbol_mask = symbol_mask | (1<<symbol_number);
+    }
+    else {
+      LOG_E(PHY,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
+      exit_fun("Exiting");
+    }
+  } while (symbol_mask != symbol_mask_full);    
+  
+  do_OFDM_mod_rt(subframe_tx, eNB);
+} 
+
 /*!
  * \brief The Asynchronous RX/TX FH thread of RAU/RCC/eNB/RRU.
  * This handles the RX FH for an asynchronous RRU/UE
@@ -653,16 +796,9 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
   eNB_proc_t *proc = (eNB_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-  openair0_timestamp timestamp_rx,timestamp_tx;
-  int frame_rx,subframe_rx=0,subframe_tx=0;
-  static int first_rx = 1;
-  static int first_tx = 1;
-  uint16_t packet_type;
-  uint32_t symbol_number=0;
-  uint32_t symbol_mask, symbol_mask_full;
-  int prach_rx;
-  int dummy_rx[fp->nb_antennas_rx][fp->samples_per_tti]; 
-  int rxs=0;
+
+  int subframe=0, frame=0; 
+
 
 #ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
@@ -781,94 +917,35 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
 
   printf( "devices ok (eNB_thread_asynch_rx)\n");
 
+
   while (!oai_exit) { 
-    if (eNB->node_function == eNodeB_3GPP) { // acquisition from RF
-      
-      if (eNB->rfdevice.trx_read_func)
-	rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
-					  &proc->timestamp_rx,
-					  (void**)dummy_rx,
-					  fp->samples_per_tti,
-					  fp->nb_antennas_rx);
-      else {
-	printf("eNB asynch RX\n");
-	sleep(1);
-      }
-      if (rxs!=fp->samples_per_tti) {
-	exit_fun("error receiving samples\n");
-      }
-    }
-    else if (eNB->node_function == eNodeB_3GPP_BBU) { // acquisition from IF
-      /// **** recv_IF5 of rxdata from RRH **** ///       
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 1 );  
-      recv_IF5(eNB, &timestamp_rx, subframe_rx++, IF5_RRH_GW_UL); 
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF5, 0 );  
-      if (first_rx == 1) {
-	first_rx = 0;
-	subframe_rx = (timestamp_rx/fp->samples_per_tti)%10;
-      }
-      else {
-	// check timestamp
-	if ((timestamp_rx - proc->timestamp_rx) < (2*fp->samples_per_tti))
-	  printf("RX overflow ...\n");
-	
-      }
-    } // eNodeB_3GPP_BBU 
+   
+    if (oai_exit) break;   
+
+    if (subframe==9) { 
+      subframe=0;
+      frame++;
+      frame&=1023;
+    } else {
+      subframe++;
+    }      
+
+    if (eNB->fh_asynch) eNB->fh_asynch(eNB,&frame,&subframe);
+    else AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
     
-    else if (eNB->node_function == NGFI_RRU_IF5) {
-      /// **** recv_IF5 of rxdata from RRH **** ///
-
-      subframe_tx = (subframe_tx+1)%10;
-      
-      recv_IF5(eNB, &timestamp_tx, subframe_tx, IF5_RRH_GW_DL); 
-      //      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
-      if (first_tx == 1) {
-	first_tx = 0;
-	subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
-
-      }
-      
-    }
-    else if (eNB->node_function == NGFI_RCC_IF4p5) {
-      /// **** recv_IF4p5 of rxdataF from RRU **** ///
-      /// **** recv_IF4p5 of rxsigF from RRU **** ///
-      // get frame/subframe information from IF4p5 interface
-      // timed loop (200 us)
-      
-      symbol_number = 0;
-      symbol_mask = 0;
-      symbol_mask_full = (1<<fp->symbols_per_tti)-1;
-      prach_rx = 0;
-      
-      do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-        recv_IF4p5(eNB, &frame_rx, &subframe_rx, &packet_type, &symbol_number);
-	
-        if (packet_type == IF4p5_PULFFT) {
-          symbol_mask = symbol_mask | (1<<symbol_number);
-          prach_rx = (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>0) ? 1 : 0;                            
-        } else if (packet_type == IF4p5_PRACH) {
-          prach_rx = 0;
-        }
-      } while( (symbol_mask != symbol_mask_full) || (prach_rx == 1));    
-
-      if (proc->first_rx == 0) {
-        if (subframe_rx < proc->subframe_rx+2){
-          LOG_E(PHY,"RX overflow (proc->subframe_rx %d, subframe_rx %d)\n",proc->subframe_rx,subframe_rx);
-        }
-      } else {
-        proc->first_rx = 0;
-      }
-    } // node_timing == synch_to_externs, node_function = NGFI_IF4
-    else { // should not get here
-      AssertFatal(1==0, "Unknown eNB->node_function %d",eNB->node_function);
-    }
   }
+
   eNB_thread_asynch_rxtx_status=0;
   return(&eNB_thread_asynch_rxtx_status);
 }
 
-void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
 
+
+
+
+void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  eNB_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
   unsigned int rxs,txs;
@@ -883,10 +960,10 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
     // prepare tx buffer pointers
 	
     for (i=0; i<fp->nb_antennas_tx; i++)
-      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+2)%10)*fp->samples_per_tti];
+      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+3)%10)*fp->samples_per_tti];
     
     txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-				       proc->timestamp_rx+(2*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+				       proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
 				       txp,
 				       fp->samples_per_tti,
 				       fp->nb_antennas_tx,
@@ -946,9 +1023,10 @@ void rx_rf(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame,int *subframe) {
   
 }
 
-void rx_fh_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame, int *subframe) {
+void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc = &eNB->proc;
 
   recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
 
@@ -975,7 +1053,9 @@ void rx_fh_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *frame, int *subframe) {
 
 }
 
-void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *subframe,int *frame) {
+void rx_fh_if4p5(PHY_VARS_eNB *eNB,int *subframe,int *frame) {
+
+  eNB_proc_t *proc = &eNB->proc;
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
 
@@ -990,9 +1070,7 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *subframe,int *frame) {
   prach_rx = 0;
   
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 1 );   
     recv_IF4p5(eNB, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4, 0 );   
     
     if (packet_type == IF4p5_PULFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
@@ -1020,6 +1098,26 @@ void rx_fh_if4p5(PHY_VARS_eNB *eNB,eNB_proc_t *proc,int *subframe,int *frame) {
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
 }
+
+void rx_fh_slave(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+  // This case is for synchronization to another thread
+  // it just waits for an external event.  The actual rx_rh is handle by the asynchronous RX thread
+  eNB_proc_t *proc=&eNB->proc;
+
+  if (pthread_mutex_lock(&proc->mutex_FH) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for FH Slave\n");
+    exit_fun( "error locking mutex" );
+  }
+  
+  while (proc->instance_cnt_FH < 0) {
+    pthread_cond_wait( &proc->cond_FH,&proc->mutex_FH ); 
+  }      
+  proc->instance_cnt_FH++;
+  
+  pthread_mutex_unlock( &proc->mutex_FH );
+  
+}
+
 
 int wakeup_rxtx(eNB_proc_t *proc,eNB_rxtx_proc_t *proc_rxtx,LTE_DL_FRAME_PARMS *fp) {
 
@@ -1263,7 +1361,7 @@ static void* eNB_thread_FH( void* param ) {
     if (eNB->start_rf(eNB) != 0)
       LOG_E(HW,"Could not start the RF device\n");
 
-  // unlock asnych_rxtx thread
+  // wakeup asnych_rxtx thread
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
   proc->instance_cnt_asynch_rxtx=0;
   pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
@@ -1274,6 +1372,8 @@ static void* eNB_thread_FH( void* param ) {
    
     if (oai_exit) break;   
 
+
+    // this is to check that we are in synch with the fronthaul timing
     if (subframe==9) { 
       subframe=0;
       frame++;
@@ -1282,36 +1382,10 @@ static void* eNB_thread_FH( void* param ) {
       subframe++;
     }      
 
-    // This case is for synchronization to another thread
-    if ((eNB->node_timing == synch_to_other) &&
-       ((eNB->node_function == NGFI_RCC_IF4p5) ||
-        (eNB->node_function == eNodeB_3GPP_BBU))) {   
-      //wait for event
-
-      // how long should we wait here, for MOBIPASS this could be long
-      //      if (pthread_mutex_timedlock(&proc->mutex_FH,&wait) != 0) {
-      if (pthread_mutex_lock(&proc->mutex_FH) != 0) {
-        LOG_E( PHY, "[SCHED][eNB] error locking mutex for FH\n");
-        exit_fun( "error locking mutex" );
-        break;
-      }
-      
-      while (proc->instance_cnt_FH < 0) {
-        // most of the time the thread is waiting here
-        // proc->instance_cnt_FH is -1
-        pthread_cond_wait( &proc->cond_FH,&proc->mutex_FH ); // this unlocks mutex_rxtx while waiting and then locks it again
-      }      
-      proc->instance_cnt_FH++;
-
-    }
-    // Remaining cases are all for synchronization on FH interface
-    else if ((eNB->node_timing == synch_to_ext_device) && 
-	     (eNB->rx_fh))
-      eNB->rx_fh(eNB,proc,&frame,&subframe);
-
-    else { // should not get here
-      AssertFatal(1==0, "Unknown fronthaul interface : eNB->node_function %d",eNB->node_function);
-    }
+ 
+    // synchronization on FH interface, acquire signals/data and block
+    if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);
+    else AssertFatal(1==0, "No fronthaul interface : eNB->node_function %d",eNB->node_function);
 
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
 
@@ -1494,7 +1568,7 @@ static void* eNB_thread_prach( void* param ) {
       break;
     }
    
-
+    
     prach_procedures(eNB);
     
     if (pthread_mutex_lock(&proc->mutex_prach) != 0) {
@@ -1567,8 +1641,9 @@ void init_eNB_proc(int inst) {
     proc->instance_cnt_asynch_rxtx = -1;
     proc->CC_id = CC_id;
     
-    proc->first_rx=4;
-    
+    proc->first_rx=1;
+    proc->first_tx=1;
+
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
     pthread_mutex_init( &proc->mutex_prach, NULL);
@@ -1584,7 +1659,8 @@ void init_eNB_proc(int inst) {
     pthread_create( &proc->pthread_FH, &proc->attr_FH, eNB_thread_FH, &eNB->proc );
     pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
     if ((eNB->node_timing == synch_to_other) ||
-	(eNB->node_function == NGFI_RRU_IF5))
+	(eNB->node_function == NGFI_RRU_IF5) ||
+	(eNB->node_function == NGFI_RRU_IF4p5))
       pthread_create( &proc->pthread_asynch_rxtx, &proc->attr_asynch_rxtx, eNB_thread_asynch_rxtx, &eNB->proc );
 #else 
     pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
@@ -1784,9 +1860,9 @@ int start_rf(PHY_VARS_eNB *eNB) {
   return(eNB->rfdevice.trx_start_func(&eNB->rfdevice));
 }
 
-extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
-extern void do_prach(PHY_VARS_eNB *eNB,eNB_proc_t *proc);
+extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB);
+extern void do_prach(PHY_VARS_eNB *eNB);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params) {
   
@@ -1813,6 +1889,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->rx_fh                = rx_rf;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
+	eNB->fh_asynch            = fh_if5_asynch_DL;
 	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
         if (ret<0) {
           printf("Exiting, cannot initialize rf device\n");
@@ -1831,9 +1908,10 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->do_prach             = do_prach;
 	eNB->fep                  = eNB_fep_full;
 	eNB->proc_uespec_rx       = NULL;
-	eNB->proc_tx              = proc_tx_rru_if4p5;
+	eNB->proc_tx              = NULL;//proc_tx_rru_if4p5;
 	eNB->tx_fh                = NULL;
 	eNB->rx_fh                = rx_rf;
+	eNB->fh_asynch            = fh_if4p5_asynch_DL;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = start_if;
 	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
@@ -1862,6 +1940,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->rx_fh                = rx_rf;
 	eNB->start_rf             = start_rf;
 	eNB->start_if             = NULL;
+        eNB->fh_asynch            = NULL;
 	ret = openair0_device_load(&eNB->rfdevice, &openair0_cfg[0]);
         if (ret<0) {
           printf("Exiting, cannot initialize rf device\n");
@@ -1877,11 +1956,14 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->proc_tx        = proc_tx_full;
 	eNB->tx_fh          = tx_fh_if5;
 	eNB->rx_fh          = rx_fh_if5;
+        eNB->fh_asynch      = (eNB->node_timing == synch_to_other) ? fh_if5_asynch_UL : NULL;
+
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
 	eNB->rfdevice.host_type   = BBU_HOST;
 
 	eNB->ifdevice.host_type   = BBU_HOST;
+
         ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
         printf("openair0_transport_init returns %d for CC_id %d\n",ret,CC_id);
         if (ret<0) {
@@ -1890,14 +1972,15 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
         }
 	break;
       case NGFI_RCC_IF4p5:
-	eNB->do_prach       = do_prach;
-	eNB->fep            = NULL;
-	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
-	eNB->proc_tx        = proc_tx_high;
-	eNB->tx_fh          = tx_fh_if4p5;
-	eNB->rx_fh          = rx_fh_if4p5;
-	eNB->start_rf       = NULL;
-	eNB->start_if       = start_if;
+	eNB->do_prach             = do_prach;
+	eNB->fep                  = NULL;
+	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
+	eNB->proc_tx              = proc_tx_high;
+	eNB->tx_fh                = tx_fh_if4p5;
+	eNB->rx_fh                = rx_fh_if4p5;
+	eNB->start_rf             = NULL;
+	eNB->start_if             = start_if;
+        eNB->fh_asynch            = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
 	eNB->rfdevice.host_type   = BBU_HOST;
 	eNB->ifdevice.host_type   = BBU_HOST;
         ret = openair0_transport_load(&eNB->ifdevice, &openair0_cfg[0], (eth_params+CC_id));
@@ -1916,6 +1999,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	eNB->proc_tx        = proc_tx_high;
 	eNB->tx_fh          = tx_fh_if4p5; 
 	eNB->rx_fh          = rx_fh_if4p5; 
+        eNB->fh_asynch      = (eNB->node_timing == synch_to_other) ? fh_if4p5_asynch_UL : NULL;
 	eNB->start_rf       = NULL;
 	eNB->start_if       = start_if;
 

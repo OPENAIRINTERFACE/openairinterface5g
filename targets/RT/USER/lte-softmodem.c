@@ -1088,6 +1088,8 @@ static void get_options (int argc, char **argv)
       }
 
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	
+
         node_function[CC_id]  = enb_properties->properties[i]->cc_node_function[CC_id];
         node_timing[CC_id]    = enb_properties->properties[i]->cc_node_timing[CC_id];
         node_synch_ref[CC_id] = enb_properties->properties[i]->cc_node_synch_ref[CC_id];
@@ -1104,6 +1106,13 @@ static void get_options (int argc, char **argv)
         frame_parms[CC_id]->nb_antennas_tx      =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
         frame_parms[CC_id]->nb_antennas_tx_eNB  =  enb_properties->properties[i]->nb_antennas_tx[CC_id];
         frame_parms[CC_id]->nb_antennas_rx      =  enb_properties->properties[i]->nb_antennas_rx[CC_id];
+
+	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex = enb_properties->properties[i]->prach_config_index[CC_id];
+	frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset  = enb_properties->properties[i]->prach_freq_offset[CC_id];
+
+	frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
+	frame_parms[CC_id]->threequarter_fs    = threequarter_fs;
+
         //} // j
       }
 
@@ -1182,6 +1191,156 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
+void set_default_frame_parms() {
+
+  int CC_id;
+
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
+    /* Set some default values that may be overwritten while reading options */
+    frame_parms[CC_id]->frame_type          = FDD;
+    frame_parms[CC_id]->tdd_config          = 3;
+    frame_parms[CC_id]->tdd_config_S        = 0;
+    frame_parms[CC_id]->N_RB_DL             = 100;
+    frame_parms[CC_id]->N_RB_UL             = 100;
+    frame_parms[CC_id]->Ncp                 = NORMAL;
+    frame_parms[CC_id]->Ncp_UL              = NORMAL;
+    frame_parms[CC_id]->Nid_cell            = 0;
+    frame_parms[CC_id]->num_MBSFN_config    = 0;
+    frame_parms[CC_id]->nb_antennas_tx_eNB  = 1;
+    frame_parms[CC_id]->nb_antennas_tx      = 1;
+    frame_parms[CC_id]->nb_antennas_rx      = 1;
+
+    frame_parms[CC_id]->nushift             = 0;
+
+    frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
+    frame_parms[CC_id]->phich_config_common.phich_duration = normal;
+    // UL RS Config
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+
+    frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+
+    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
+    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
+    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
+    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
+    //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
+
+  }
+
+}
+
+void init_openair0() {
+
+  int card;
+  int i;
+
+  for (card=0; card<MAX_CARDS; card++) {
+
+    openair0_cfg[card].mmapped_dma=mmapped_dma;
+    openair0_cfg[card].configFilename = NULL;
+
+    if(frame_parms[0]->N_RB_DL == 100) {
+      if (frame_parms[0]->threequarter_fs) {
+	openair0_cfg[card].sample_rate=23.04e6;
+	openair0_cfg[card].samples_per_frame = 230400; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+      else {
+	openair0_cfg[card].sample_rate=30.72e6;
+	openair0_cfg[card].samples_per_frame = 307200; 
+	openair0_cfg[card].tx_bw = 10e6;
+	openair0_cfg[card].rx_bw = 10e6;
+      }
+    } else if(frame_parms[0]->N_RB_DL == 50) {
+      openair0_cfg[card].sample_rate=15.36e6;
+      openair0_cfg[card].samples_per_frame = 153600;
+      openair0_cfg[card].tx_bw = 5e6;
+      openair0_cfg[card].rx_bw = 5e6;
+    } else if (frame_parms[0]->N_RB_DL == 25) {
+      openair0_cfg[card].sample_rate=7.68e6;
+      openair0_cfg[card].samples_per_frame = 76800;
+      openair0_cfg[card].tx_bw = 2.5e6;
+      openair0_cfg[card].rx_bw = 2.5e6;
+    } else if (frame_parms[0]->N_RB_DL == 6) {
+      openair0_cfg[card].sample_rate=1.92e6;
+      openair0_cfg[card].samples_per_frame = 19200;
+      openair0_cfg[card].tx_bw = 1.5e6;
+      openair0_cfg[card].rx_bw = 1.5e6;
+    }
+
+    if (frame_parms[0]->frame_type==TDD)
+      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
+    else //FDD
+      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+
+    
+    if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
+      openair0_cfg[card].remote_addr    = eth_params->remote_addr;
+      openair0_cfg[card].remote_port    = eth_params->remote_port;
+      openair0_cfg[card].my_addr        = eth_params->my_addr;
+      openair0_cfg[card].my_port        = eth_params->my_port;    
+    } 
+    
+    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
+           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
+    openair0_cfg[card].Mod_id = 0;
+
+    if (UE_flag) {
+      printf("ETHERNET: Configuring UE ETH for %s:%d\n",rrh_UE_ip,rrh_UE_port);
+      openair0_cfg[card].remote_addr   = &rrh_UE_ip[0];
+      openair0_cfg[card].remote_port = rrh_UE_port;
+    } 
+
+    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+
+
+    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
+    openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
+
+    for (i=0; i<4; i++) {
+
+      if (i<openair0_cfg[card].tx_num_channels)
+	openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+      else
+	openair0_cfg[card].tx_freq[i]=0.0;
+
+      if (i<openair0_cfg[card].rx_num_channels)
+	openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
+      else
+	openair0_cfg[card].rx_freq[i]=0.0;
+
+      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+             card,i, openair0_cfg[card].tx_gain[i],
+             openair0_cfg[card].rx_gain[i],
+             openair0_cfg[card].tx_freq[i],
+             openair0_cfg[card].rx_freq[i]);
+      
+      openair0_cfg[card].autocal[i] = 1;
+      openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
+      if (UE_flag == 0) {
+	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_dB;
+      }
+      else {
+	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;
+      }
+
+
+    }
+
+
+  }
+}
+
 int main( int argc, char **argv )
 {
   int i,aa,card=0;
@@ -1190,8 +1349,7 @@ int main( int argc, char **argv )
 #endif
 
   int CC_id;
-  uint16_t Nid_cell = 0;
-  uint8_t  cooperation_flag=0,  abstraction_flag=0;
+  uint8_t  abstraction_flag=0;
   uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
 
 #if defined (XFORMS)
@@ -1211,39 +1369,18 @@ int main( int argc, char **argv )
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
   set_latency_target();
 
-  // det defaults
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id] = (LTE_DL_FRAME_PARMS*) malloc(sizeof(LTE_DL_FRAME_PARMS));
-    /* Set some default values that may be overwritten while reading options */
-    frame_parms[CC_id]->frame_type          = FDD;
-    frame_parms[CC_id]->tdd_config          = 3;
-    frame_parms[CC_id]->tdd_config_S        = 0;
-    frame_parms[CC_id]->N_RB_DL             = 100;
-    frame_parms[CC_id]->N_RB_UL             = 100;
-    frame_parms[CC_id]->Ncp                 = NORMAL;
-    frame_parms[CC_id]->Ncp_UL              = NORMAL;
-    frame_parms[CC_id]->Nid_cell            = Nid_cell;
-    frame_parms[CC_id]->num_MBSFN_config    = 0;
-    frame_parms[CC_id]->nb_antennas_tx_eNB  = 1;
-    frame_parms[CC_id]->nb_antennas_tx      = 1;
-    frame_parms[CC_id]->nb_antennas_rx      = 1;
-  }
+  // set default parameters
+  set_default_frame_parms(frame_parms);
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-    downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-    downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-    //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
-  }
+  // initialize logging
   logInit();
+
+  // get options and fill parameters from configuration file
+  get_options (argc, argv); //Command-line options, enb_properties
+
+
  
-  rf_config_file[0]='\0';
-  get_options (argc, argv); //Command-line options
-  if (rf_config_file[0] == '\0')
-    openair0_cfg[0].configFilename = NULL;
-  else
-    openair0_cfg[0].configFilename = rf_config_file;
+
   
 #if T_TRACER
   T_init(T_port, T_wait, T_dont_fork);
@@ -1363,26 +1500,12 @@ int main( int argc, char **argv )
 
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    frame_parms[CC_id]->nushift            = 0;
 
-    if (UE_flag==0) {
-
-    } else {
-      //UE_flag==1
+    if (UE_flag==1) {
       frame_parms[CC_id]->nb_antennas_tx     = 1;
       frame_parms[CC_id]->nb_antennas_rx     = 1;
       frame_parms[CC_id]->nb_antennas_tx_eNB = (transmission_mode == 1) ? 1 : 2; //initial value overwritten by initial sync later
     }
-
-    frame_parms[CC_id]->mode1_flag         = (transmission_mode == 1) ? 1 : 0;
-    frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
-    frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
-    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 0;//n_DMRS1 set to 0
-    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 0;
-    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
-    frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
-    frame_parms[CC_id]->threequarter_fs = threequarter_fs;
     init_ul_hopping(frame_parms[CC_id]);
     init_frame_parms(frame_parms[CC_id],1);
     //   phy_init_top(frame_parms[CC_id]);
@@ -1392,11 +1515,7 @@ int main( int argc, char **argv )
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     //init prach for openair1 test
-    frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
-    frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;
+
     // prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex, frame_parms->frame_type);
     // N_ZC = (prach_fmt <4)?839:139;
   }
@@ -1457,7 +1576,7 @@ int main( int argc, char **argv )
     PHY_vars_eNB_g[0] = malloc(sizeof(PHY_VARS_eNB*));
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,cooperation_flag,transmission_mode,abstraction_flag);
+      PHY_vars_eNB_g[0][CC_id] = init_lte_eNB(frame_parms[CC_id],0,frame_parms[CC_id]->Nid_cell,0,transmission_mode,abstraction_flag);
       PHY_vars_eNB_g[0][CC_id]->CC_id = CC_id;
 
       if (phy_test==1) PHY_vars_eNB_g[0][CC_id]->mac_enabled = 0;
@@ -1497,107 +1616,9 @@ int main( int argc, char **argv )
 
   dump_frame_parms(frame_parms[0]);
 
-  for (card=0; card<MAX_CARDS; card++) {
-
-    openair0_cfg[card].mmapped_dma=mmapped_dma;
-
-    if(frame_parms[0]->N_RB_DL == 100) {
-      if (frame_parms[0]->threequarter_fs) {
-	openair0_cfg[card].sample_rate=23.04e6;
-	openair0_cfg[card].samples_per_frame = 230400; 
-	openair0_cfg[card].tx_bw = 10e6;
-	openair0_cfg[card].rx_bw = 10e6;
-      }
-      else {
-	openair0_cfg[card].sample_rate=30.72e6;
-	openair0_cfg[card].samples_per_frame = 307200; 
-	openair0_cfg[card].tx_bw = 10e6;
-	openair0_cfg[card].rx_bw = 10e6;
-      }
-    } else if(frame_parms[0]->N_RB_DL == 50) {
-      openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_frame = 153600;
-      openair0_cfg[card].tx_bw = 5e6;
-      openair0_cfg[card].rx_bw = 5e6;
-    } else if (frame_parms[0]->N_RB_DL == 25) {
-      openair0_cfg[card].sample_rate=7.68e6;
-      openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 2.5e6;
-      openair0_cfg[card].rx_bw = 2.5e6;
-    } else if (frame_parms[0]->N_RB_DL == 6) {
-      openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_frame = 19200;
-      openair0_cfg[card].tx_bw = 1.5e6;
-      openair0_cfg[card].rx_bw = 1.5e6;
-    }
-
-    if (frame_parms[0]->frame_type==TDD)
-      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
-    else //FDD
-      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
-
-    
-    if (local_remote_radio == BBU_REMOTE_RADIO_HEAD) {      
-      openair0_cfg[card].remote_addr    = eth_params->remote_addr;
-      openair0_cfg[card].remote_port    = eth_params->remote_port;
-      openair0_cfg[card].my_addr        = eth_params->my_addr;
-      openair0_cfg[card].my_port        = eth_params->my_port;    
-    } 
-    
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx),
-           ((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
-    openair0_cfg[card].Mod_id = 0;
-#ifdef ETHERNET
-
-    if (UE_flag) {
-      printf("ETHERNET: Configuring UE ETH for %s:%d\n",rrh_UE_ip,rrh_UE_port);
-      openair0_cfg[card].remote_addr   = &rrh_UE_ip[0];
-      openair0_cfg[card].remote_port = rrh_UE_port;
-    } 
-
-    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
-#endif
-
-    // in the case of the USRP, the following variables need to be initialized before the init
-    // since the USRP only supports one CC (for the moment), we initialize all the cards with first CC.
-    // in the case of EXMIMO2, these values are overwirtten in the function setup_eNB/UE_buffer
-
-    openair0_cfg[card].tx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_tx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx));
-    openair0_cfg[card].rx_num_channels=min(2,((UE_flag==0) ? PHY_vars_eNB_g[0][0]->frame_parms.nb_antennas_rx : PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx));
-
-    for (i=0; i<4; i++) {
-
-      if (i<openair0_cfg[card].tx_num_channels)
-	openair0_cfg[card].tx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] : downlink_frequency[0][i]+uplink_frequency_offset[0][i];
-      else
-	openair0_cfg[card].tx_freq[i]=0.0;
-
-      if (i<openair0_cfg[card].rx_num_channels)
-	openair0_cfg[card].rx_freq[i] = (UE_flag==0) ? downlink_frequency[0][i] + uplink_frequency_offset[0][i] : downlink_frequency[0][i];
-      else
-	openair0_cfg[card].rx_freq[i]=0.0;
-
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-             card,i, openair0_cfg[card].tx_gain[i],
-             openair0_cfg[card].rx_gain[i],
-             openair0_cfg[card].tx_freq[i],
-             openair0_cfg[card].rx_freq[i]);
-      
-      openair0_cfg[card].autocal[i] = 1;
-      openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      if (UE_flag == 0) {
-	openair0_cfg[card].rx_gain[i] = PHY_vars_eNB_g[0][0]->rx_total_gain_dB;
-      }
-      else {
-	openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB;
-      }
+  init_openair0();
 
 
-    }
-
-
-  }
 
 #ifndef DEADLINE_SCHEDULER
 
@@ -1644,15 +1665,21 @@ int main( int argc, char **argv )
   openair0_cfg[0].log_level = glog_level;
 
   
-  mac_xface = malloc(sizeof(MAC_xface));
+
 
   int eMBMS_active=0;
-  
-  l2_init(frame_parms[0],eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
-	  0,// cba_group_active
-	  0); // HO flag
-  
-  mac_xface->macphy_exit = &exit_fun;
+  if (node_function[0] >=NGFI_RAU_IF4p5) { // don't initialize L2 for RRU
+    mac_xface = malloc(sizeof(MAC_xface));  
+    l2_init(frame_parms[0],eMBMS_active,(uecap_xer_in==1)?uecap_xer:NULL,
+	    0,// cba_group_active
+	    0); // HO flag
+    mac_xface->macphy_exit = &exit_fun;
+  }
+  else if (node_function[0] == NGFI_RRU_IF4p5) { // Initialize PRACH in this case
+
+  }
+
+
 
 #if defined(ENABLE_ITTI)
 
@@ -1672,7 +1699,7 @@ int main( int argc, char **argv )
       printf("Filling UE band info\n");
       fill_ue_band_info();
       mac_xface->dl_phy_sync_success (0, 0, 0, 1);
-    } else
+    } else if (node_function[0]>NGFI_RRU_IF4p5)
       mac_xface->mrbch_phy_sync_failure (0, 0, 0);
   }
 
