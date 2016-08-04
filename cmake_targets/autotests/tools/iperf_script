@@ -34,6 +34,8 @@
 #arg2 interface
 #arg3 iperf arguments
 
+echo "Start time of script: `date`"
+
 args=($*)
 timeout=${args[0]}
 iface=${args[1]}
@@ -48,17 +50,57 @@ echo "iface = $iface"
 echo "iperf_args = ${iperf_args[@]}"
 echo "ip_client = $ip_client"
 
+
+
+# Test an IP address for validity:
+# Usage:
+#      valid_ip IP_ADDRESS
+#      if [[ $? -eq 0 ]]; then echo good; else echo bad; fi
+#   OR
+#      if valid_ip IP_ADDRESS; then echo good; else echo bad; fi
+#
+function valid_ip()
+{
+    local  ip=$1
+    local  stat=1
+
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
+if valid_ip $iface; then 
+  echo "$iface is Valid IP Address. Checking for connectivity..."
+  ping -c 1 $iface >& /dev/null
+  while  [ "$?" != "0" ]; do
+     ping -c 1 $iface >& /dev/null
+  done
+  echo "$iface connectivity achieved at `date`, Seconds = $SECONDS"  
+
+else 
+
+  echo "Waiting for Interface $iface to come up..."
+  while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done 
+  echo "$iface is now available at `date` , Seconds = $SECONDS"
+fi
+
+
+#if [ -n "$ip_client" ]; then
+#echo "Waiting for route to be setup before iperf makes connection..."
+#  var=`route -n | grep $ip_client`
+#  if ["$var" != "" ] ; then break; fi
+#
+#fi
+
+echo "Sleeping for additional $timeout seconds"
 sleep $timeout
 
-echo " Waiting for IP Address..."
-while true; do var=`ifconfig $iface` ;sleep 1; if [ "$var" != "" ]; then break; fi ; done ; sleep 5
-
-if [ -n "$ip_client" ]; then
-echo "Waiting for route to be setup before iperf makes connection..."
-  var=`route -n | grep $ip_client`
-  if ["$var" != "" ] ; then break; fi
-
-fi
-sleep 5
-
+echo "Starting iperf at `date` , Seconds = $SECONDS ...."
 iperf ${iperf_args[@]}
