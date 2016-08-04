@@ -1107,6 +1107,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   uint8_t smbv_alloc_cnt = 1;
 #endif
 
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),1);
   start_meas(&eNB->phy_proc_tx);
 
@@ -2582,10 +2584,13 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
 
 
   eNB_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
 
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+(subframe&1), 1 );
   
@@ -2619,6 +2624,8 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 
   const int subframe = proc->subframe_rx;
   const int frame = proc->frame_rx;
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+(subframe&1), 1 );
   start_meas(&eNB->phy_proc_rx);

@@ -118,13 +118,13 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 // In lte-enb.c
-extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+extern int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg);
 extern void init_eNB(eNB_func_t *, eNB_timing_t *,int,eth_params_t *);
 extern void stop_eNB(int);
 extern void kill_eNB_proc(void);
 
 // In lte-ue.c
-extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]);
+extern int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
 extern void init_UE(int);
 
@@ -177,7 +177,6 @@ static char                     threequarter_fs=0;
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
-openair0_rf_map rf_map[MAX_NUM_CCs];
 
 static char                    *conf_config_file_name = NULL;
 #if defined(ENABLE_ITTI)
@@ -272,10 +271,10 @@ int16_t           osa_log_verbosity  = LOG_MED;
 #endif
 
 
-#ifdef ETHERNET
+
 char *rrh_UE_ip = "127.0.0.1";
 int rrh_UE_port = 51000;
-#endif
+
 
 /* flag set by eNB conf file to specify if the radio head is local or remote (default option is local) */
 uint8_t local_remote_radio = BBU_LOCAL_RADIO_HEAD;
@@ -1704,60 +1703,7 @@ int main( int argc, char **argv )
       mac_xface->mrbch_phy_sync_failure (0, 0, 0);
   }
 
-  number_of_cards = 1;
 
-  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    rf_map[CC_id].card=0;
-    rf_map[CC_id].chain=CC_id+chain_offset;
-  }
-
-  // connect the TX/RX buffers
-  if (UE_flag==1) {
-
-    for (CC_id=0;CC_id<MAX_NUM_CCs; CC_id++) {
-
-    
-#ifdef OAI_USRP
-      UE[CC_id]->hw_timing_advance = timing_advance;
-#else
-      UE[CC_id]->hw_timing_advance = 160;
-#endif
-    }
-    if (setup_ue_buffers(UE,&openair0_cfg[0],rf_map)!=0) {
-      printf("Error setting up eNB buffer\n");
-      exit(-1);
-    }
-
-
-
-    if (input_fd) {
-      printf("Reading in from file to antenna buffer %d\n",0);
-      if (fread(UE[0]->common_vars.rxdata[0],
-	        sizeof(int32_t),
-	        frame_parms[0]->samples_per_tti*10,
-	        input_fd) != frame_parms[0]->samples_per_tti*10)
-        printf("error reading from file\n");
-    }
-    //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
-  } else {
-
-
-
-    if (setup_eNB_buffers(PHY_vars_eNB_g[0],&openair0_cfg[0],rf_map)!=0) {
-      printf("Error setting up eNB buffer\n");
-      exit(-1);
-    }
-
-    printf("Setting eNB buffer to all-RX\n");
-
-    // Set LSBs for antenna switch (ExpressMIMO)
-    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
-      for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
-        for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
-          PHY_vars_eNB_g[0][CC_id]->common_vars.txdata[0][aa][i] = 0x00010001;
-    }
-  }
 
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -1829,6 +1775,58 @@ int main( int argc, char **argv )
   if (UE_flag == 1) init_UE(1);
   else init_eNB(node_function,node_timing,1,eth_params);
   // Sleep to allow all threads to setup
+
+  number_of_cards = 1;
+
+  for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    PHY_vars_eNB_g[0][CC_id]->rf_map.card=0;
+    PHY_vars_eNB_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+  }
+
+  // connect the TX/RX buffers
+  if (UE_flag==1) {
+
+    for (CC_id=0;CC_id<MAX_NUM_CCs; CC_id++) {
+
+    
+#ifdef OAI_USRP
+      UE[CC_id]->hw_timing_advance = timing_advance;
+#else
+      UE[CC_id]->hw_timing_advance = 160;
+#endif
+    }
+    if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
+      printf("Error setting up eNB buffer\n");
+      exit(-1);
+    }
+
+
+
+    if (input_fd) {
+      printf("Reading in from file to antenna buffer %d\n",0);
+      if (fread(UE[0]->common_vars.rxdata[0],
+	        sizeof(int32_t),
+	        frame_parms[0]->samples_per_tti*10,
+	        input_fd) != frame_parms[0]->samples_per_tti*10)
+        printf("error reading from file\n");
+    }
+    //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
+  } else {
+
+
+
+
+
+    printf("Setting eNB buffer to all-RX\n");
+
+    // Set LSBs for antenna switch (ExpressMIMO)
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_eNB_g[0][CC_id]->hw_timing_advance = 0;
+      for (i=0; i<frame_parms[CC_id]->samples_per_tti*10; i++)
+        for (aa=0; aa<frame_parms[CC_id]->nb_antennas_tx; aa++)
+          PHY_vars_eNB_g[0][CC_id]->common_vars.txdata[0][aa][i] = 0x00010001;
+    }
+  }
   sleep(3);
 
 

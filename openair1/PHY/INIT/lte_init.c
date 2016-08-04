@@ -43,10 +43,6 @@
 #include "assertions.h"
 #include <math.h>
 
-#ifdef EXMIMO
-extern openair0_rf_map rf_map[MAX_NUM_CCs];
-#endif
-
 extern uint16_t prach_root_sequence_map0_3[838];
 extern uint16_t prach_root_sequence_map4[138];
 uint8_t dmrs1_tab[8] = {0,2,3,4,6,8,9,10};
@@ -672,7 +668,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
                                     int CC_id)
 {
 
-  //PHY_VARS_eNB *eNB = PHY_vars_eNB_g[Mod_id][CC_id];
+
   uint8_t UE_id = find_ue(rnti,PHY_vars_eNB_g[Mod_id][0]);
   struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10 = sCellToAddMod_r10->radioResourceConfigDedicatedSCell_r10->physicalConfigDedicatedSCell_r10;
   //struct RadioResourceConfigCommonSCell_r10 *physicalConfigCommonSCell_r10 = sCellToAddMod_r10->radioResourceConfigCommonSCell_r10;
@@ -682,13 +678,14 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
 
 #ifdef EXMIMO
 #ifdef DRIVER2013
-  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[rf_map[CC_id].card].exmimo_config_ptr;
+  //  exmimo_config_t *p_exmimo_config = openair0_exmimo_pci[rf_map[CC_id].card].exmimo_config_ptr;
 #endif
 #endif
 
   if ((dl_CarrierFreq_r10>=36000) && (dl_CarrierFreq_r10<=36199)) {
     carrier_freq_local = 1900000000 + (dl_CarrierFreq_r10-36000)*100000; //band 33 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+    /*
 #ifdef EXMIMO
 #ifdef DRIVER2013
     //carrier_freq[CC_id] = carrier_freq_local;
@@ -700,11 +697,12 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
     p_exmimo_config->rf.rf_local[rf_map[CC_id].chain] = 8255063; //this should be taken form calibration file
     p_exmimo_config->rf.rffe_band_mode[rf_map[CC_id].chain] = B19G_TDD;
 #endif
-#endif
+#endif*/
   } else if ((dl_CarrierFreq_r10>=6150) && (dl_CarrierFreq_r10<=6449)) {
     carrier_freq_local = 832000000 + (dl_CarrierFreq_r10-6150)*100000; //band 20 from 3GPP 36.101 v 10.9 Table 5.7.3-1
     // this is actually for the UL only, but we use it for DL too, since there is no TDD mode for this band
     LOG_I(PHY,"[eNB %d] Frame %d: Configured SCell %d to frequency %d (ARFCN %d) for UE %d\n",Mod_id,/*eNB->frame*/0,CC_id,carrier_freq_local,dl_CarrierFreq_r10,UE_id);
+/*
 #ifdef EXMIMO
 #ifdef DRIVER2013
     //carrier_freq[CC_id] = carrier_freq_local;
@@ -717,6 +715,7 @@ void phy_config_dedicated_scell_eNB(uint8_t Mod_id,
     p_exmimo_config->rf.rffe_band_mode[rf_map[CC_id].chain] = DD_TDD;
 #endif
 #endif
+*/
   } else {
     LOG_E(PHY,"[eNB %d] Frame %d: ARFCN %d of SCell %d for UE %d not supported\n",Mod_id,/*eNB->frame*/0,dl_CarrierFreq_r10,CC_id,UE_id);
   }

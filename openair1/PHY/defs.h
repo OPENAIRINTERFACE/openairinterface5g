@@ -363,6 +363,7 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc;
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
+  openair0_rf_map      rf_map;
   int                  abstraction_flag;
   void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
   void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
@@ -579,6 +580,8 @@ typedef struct {
   uint8_t Mod_id;
   /// \brief Component carrier ID for this PHY instance
   uint8_t CC_id;
+  /// \brief Mapping of CC_id antennas to cards
+  openair0_rf_map      rf_map;
   //uint8_t local_flag;
   /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
   runmode_t mode;

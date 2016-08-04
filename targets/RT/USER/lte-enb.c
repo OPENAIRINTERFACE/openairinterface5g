@@ -998,12 +998,12 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   
   if (proc->first_rx == 0) {
     if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,subframe);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
     
     if (proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,frame);
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
       exit_fun("Exiting");
     }
   } else {
@@ -1740,7 +1740,7 @@ void kill_eNB_proc(int inst) {
    Each rf chain is is addressed by the card number and the chain on the card. The
    rf_map specifies for each CC, on which rf chain the mapping should start. Multiple
    antennas are mapped to successive RF chains on the same card. */
-int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs]) {
+int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_cfg) {
 
   int i, CC_id;
   int j;
@@ -1808,17 +1808,17 @@ int setup_eNB_buffers(PHY_VARS_eNB **phy_vars_eNB, openair0_config_t *openair0_c
       
       for (i=0; i<frame_parms->nb_antennas_rx; i++) {
 	free(phy_vars_eNB[CC_id]->common_vars.rxdata[0][i]);
-	rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	rxdata[i] = (int32_t*)(32 + malloc16(32+openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
 	phy_vars_eNB[CC_id]->common_vars.rxdata[0][i] = rxdata[i]-N_TA_offset; // N_TA offset for TDD         FIXME! N_TA_offset > 16 => access of unallocated memory
-	memset(rxdata[i], 0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
+	memset(rxdata[i], 0, openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t));
 	printf("rxdata[%d] @ %p (%p) (N_TA_OFFSET %d)\n", i, phy_vars_eNB[CC_id]->common_vars.rxdata[0][i],rxdata[i],N_TA_offset);      
       }
       
       for (i=0; i<frame_parms->nb_antennas_tx; i++) {
 	free(phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
-	txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
+	txdata[i] = (int32_t*)(32 + malloc16(32 + openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t))); // FIXME broken memory allocation
 	phy_vars_eNB[CC_id]->common_vars.txdata[0][i] = txdata[i];
-	memset(txdata[i],0, openair0_cfg[rf_map[CC_id].card].samples_per_frame*sizeof(int32_t));
+	memset(txdata[i],0, openair0_cfg[phy_vars_eNB[CC_id]->rf_map.card].samples_per_frame*sizeof(int32_t));
 	printf("txdata[%d] @ %p\n", i, phy_vars_eNB[CC_id]->common_vars.txdata[0][i]);
       }
     }
@@ -2016,6 +2016,11 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	malloc_IF4p5_buffer(eNB);
 
       }
+    }
+
+    if (setup_eNB_buffers(PHY_vars_eNB_g[inst],&openair0_cfg[inst])!=0) {
+      printf("Exiting, cannot initialize eNodeB Buffers\n");
+      exit(-1);
     }
 
     init_eNB_proc(inst);

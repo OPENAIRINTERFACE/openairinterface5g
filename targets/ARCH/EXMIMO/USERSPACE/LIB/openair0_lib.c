@@ -501,6 +501,7 @@ int trx_exmimo_start(openair0_device *device) {
   printf("Starting ...\n");
   openair0_config(device->openair0_cfg,0);
   openair0_start_rt_acquisition(0);
+  printf("Setting state to running\n");
   exm->daq_state = running;  
   exm->wait_first_read = 1;
   return(0);
@@ -508,7 +509,8 @@ int trx_exmimo_start(openair0_device *device) {
 
 int trx_exmimo_write(openair0_device *device,openair0_timestamp ptimestamp, void **buff, int nsamps, int cc, int flags) {
 
-  return(0);
+  
+  return(nsamps);
 }
 
 
@@ -521,12 +523,12 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
   struct timespec sleep_time;
   unsigned long tv_nsec;
   int i;
-  struct timespec wait;
   int n,n1,n2,ntot,first_len;
   int ret;
 
-  wait.tv_sec=0;
-  wait.tv_nsec=50000000L;
+  //  struct timespec wait;
+  //  wait.tv_sec=0;
+  //  wait.tv_nsec=50000000L;
 
   if (exm->watchdog_exit == 1)
     return(0);
@@ -535,7 +537,6 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     tv_nsec=(unsigned long)((double)(nsamps)*1e9/cfg->sample_rate);
     return(0);
   }
-  ret = pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
 
 
   switch (ret) {
@@ -564,6 +565,9 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     return(0);
     break;
   }
+
+  ret = pthread_mutex_lock(&exm->watchdog_mutex);
+
   ts = exm->ts;
   if (exm->wait_first_read==1) {
     exm->wait_first_read=0;
@@ -603,7 +607,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
       printf("back\n");
 #endif
       // get new timestamp, in case we have to sleep again
-      pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+      pthread_mutex_lock(&exm->watchdog_mutex);
       ts = exm->ts;
       pthread_mutex_unlock(&exm->watchdog_mutex);
       if (old_ts == ts) {
@@ -638,7 +642,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
 	}
       }
     }
-    pthread_mutex_timedlock(&exm->watchdog_mutex,&wait);
+    pthread_mutex_lock(&exm->watchdog_mutex);
     exm->last_ts_rx += n;
     pthread_mutex_unlock(&exm->watchdog_mutex);    
     if (n==n1) {
@@ -712,6 +716,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   exmimo_id_t             *p_exmimo_id;
   int ret;
   exmimo_state_t *exm = (exmimo_state_t *)malloc(sizeof(exmimo_state_t));
+  int card,ant;
 
   ret = openair0_open();
  
@@ -763,6 +768,13 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   device->priv = (void *)exm;
 
 
+  printf("EXMIMO2: Getting addresses for memory-mapped DMA\n");
+  for (card=0; card<openair0_num_detected_cards; card++) {
+    for (ant=0; ant<4; ant++) {
+      openair0_cfg[card].rxbase[ant] = (int32_t*)openair0_exmimo_pci[card].adc_head[ant];
+      openair0_cfg[card].txbase[ant] = (int32_t*)openair0_exmimo_pci[card].dac_head[ant];
+    }
+  }
 
   create_watchdog(device);
 
