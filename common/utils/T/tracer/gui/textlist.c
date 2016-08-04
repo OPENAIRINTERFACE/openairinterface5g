@@ -54,11 +54,11 @@ static void button(gui *_g, widget *_this, int x, int y,
   x -= this->common.x;
   /* scroll up */
   if (button == 4 && up == 0) {
-    gui_notify(g, "scrollup", _this, NULL);
+    gui_notify(g, "scrollup", _this, &key_modifiers);
   }
   /* scroll down */
   if (button == 5 && up == 0) {
-    gui_notify(g, "scrolldown", _this, NULL);
+    gui_notify(g, "scrolldown", _this, &key_modifiers);
   }
   /* button 1/2/3 click */
   if (button >= 1 && button <= 3 && up == 0) {
