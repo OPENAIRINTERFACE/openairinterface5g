@@ -157,6 +157,8 @@ static struct {
   volatile uint8_t phy_proc_CC_id;
 } sync_phy_proc;
 
+extern double cpuf;
+
 void exit_fun(const char* s);
 
 void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *);
@@ -432,6 +434,10 @@ static void* eNB_thread_rxtx( void* param ) {
 
   MSC_START_USE();
 
+  struct timespec wait;
+
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
 #ifdef DEADLINE_SCHEDULER
   struct sched_attr attr;
 
@@ -462,10 +468,6 @@ static void* eNB_thread_rxtx( void* param ) {
   struct sched_param sparam;
   char cpu_affinity[1024];
   cpu_set_t cpuset;
-  struct timespec wait;
-
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
 
   /* Set affinity mask to include CPUs 1 to MAX_CPUS */
   /* CPU 0 is reserved for UHD threads */
@@ -819,7 +821,7 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB FH sched_setattr failed\n");
-    return &eNB_thread_FH_status;
+    return &eNB_thread_asynch_rxtx_status;
   }
 
   LOG_I( HW, "[SCHED] eNB asynch RX deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
@@ -1403,7 +1405,7 @@ static void* eNB_thread_FH( void* param ) {
 #ifdef DEADLINE_SCHEDULER
     if (opp_enabled){
       if(softmodem_stats_rxtx_sf.diff_now/(cpuf) > attr.sched_runtime) {
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_RUNTIME_RXTX_ENB, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, (softmodem_stats_rxtx_sf.diff_now/cpuf - attr.sched_runtime)/1000000.0);
       }
     }
 #endif // DEADLINE_SCHEDULER  
@@ -1664,8 +1666,8 @@ void init_eNB_proc(int inst) {
 	(eNB->node_function == NGFI_RRU_IF4p5))
       pthread_create( &proc->pthread_asynch_rxtx, &proc->attr_asynch_rxtx, eNB_thread_asynch_rxtx, &eNB->proc );
 #else 
-    pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
-    pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[1] );
+    pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &proc_rxtx[0] );
+    pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &proc_rxtx[1] );
     pthread_create( &proc->pthread_FH, NULL, eNB_thread_FH, &eNB->proc );
     pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
     if (eNB->node_timing == synch_to_other) 

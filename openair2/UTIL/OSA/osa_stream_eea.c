@@ -199,7 +199,7 @@ int stream_encrypt_eea2(stream_cipher_t *stream_cipher, uint8_t **out)
   }
 #endif
 
-  nettle_aes128.set_encrypt_key(ctx, stream_cipher->key_length,
+  nettle_aes128.set_encrypt_key(ctx, 
                                 stream_cipher->key);
 
   nettle_ctr_crypt(ctx, nettle_aes128.encrypt,

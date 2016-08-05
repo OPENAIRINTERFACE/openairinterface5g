@@ -386,9 +386,14 @@ check_install_oai_software() {
     $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
     
     # First we remove gnutls/nettle installation and then install from sources
-    $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
-    install_nettle_from_source
-    install_gnutls_from_source
+    v=$(lsb_release -ris | tr -d '\n')
+    if [ "$v" == Ubuntu16.04 ] ; then
+        $SUDO apt-get install libgnutls-dev nettle-dev nettle-bin
+    else 
+      $SUDO apt-get remove -y libgnutls-dev nettle-dev nettle-bin
+      install_nettle_from_source
+      install_gnutls_from_source
+    fi
 
     install_asn1c_from_source
 }
