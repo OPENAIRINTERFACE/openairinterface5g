@@ -682,7 +682,7 @@ static void* eNB_thread_asynch_rx( void* param ) {
 
   if (sched_setattr(0, &attr, flags) < 0 ) {
     perror("[SCHED] eNB FH sched_setattr failed\n");
-    return &eNB_thread_FH_status;
+    return &eNB_thread_asynch_rx_status;
   }
 
   LOG_I( HW, "[SCHED] eNB asynch RX deadline thread (TID %ld) started on CPU %d\n", gettid(), sched_getcpu() );
