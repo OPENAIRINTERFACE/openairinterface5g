@@ -256,6 +256,8 @@ typedef struct eNB_proc_t_s {
   int instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
   pthread_t pthread_FH;
+  /// pthread structure for eNB single processing thread
+  pthread_t pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
@@ -264,12 +266,16 @@ typedef struct eNB_proc_t_s {
   int first_tx;
   /// pthread attributes for FH processing thread
   pthread_attr_t attr_FH;
+  /// pthread attributes for single eNB processing thread
+  pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for FH thread
   struct sched_param sched_param_FH;
+  /// scheduling parameters for single eNB thread
+  struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
   /// scheduling parameters for asynch_rxtx thread
@@ -363,6 +369,7 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc;
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
+  int                  single_thread_flag;
   openair0_rf_map      rf_map;
   int                  abstraction_flag;
   void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);

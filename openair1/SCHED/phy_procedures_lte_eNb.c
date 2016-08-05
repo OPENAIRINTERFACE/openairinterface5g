@@ -2583,30 +2583,27 @@ void do_prach(PHY_VARS_eNB *eNB) {
 void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
 
 
-  eNB_proc_t *proc = &eNB->proc;
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
-
-  const int subframe = proc->subframe_rx;
-  const int frame = proc->frame_rx;
-
+  eNB_proc_t *proc       = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  const int subframe     = proc->subframe_rx;
+  const int frame        = proc->frame_rx;
+  int offset             = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+(subframe&1), 1 );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_ENB+offset, proc->frame_rx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_ENB+offset, proc->subframe_rx );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 1 );
   
   start_meas(&eNB->phy_proc_rx);
-
-
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_common_RX(%d)\n",eNB->Mod_id,frame,subframe);
 
 
   if (eNB->fep) eNB->fep(eNB);
 
   if (eNB->do_prach) eNB->do_prach(eNB);
-  
 
-
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+(subframe&1), 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_COMMON+offset, 0 );
 }
 
 
@@ -2623,11 +2620,12 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   const int subframe = proc->subframe_rx;
-  const int frame = proc->frame_rx;
+  const int frame    = proc->frame_rx;
+  int offset         = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+(subframe&1), 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+offset, 1 );
   start_meas(&eNB->phy_proc_rx);
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
@@ -3189,7 +3187,7 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   phy_procedures_emos_eNB_RX(subframe,eNB);
 #endif
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+(subframe&1), 0 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+offset, 0 );
 
   stop_meas(&eNB->phy_proc_rx);
 

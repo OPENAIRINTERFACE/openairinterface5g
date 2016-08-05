@@ -159,14 +159,14 @@ static struct {
 
 void exit_fun(const char* s);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *);
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *,int);
 void stop_eNB(int nb_inst);
 
 
-inline void thread_top_init(char *thread_name,
-			    uint64_t runtime,
-			    uint64_t deadline,
-			    uint64_t period) {
+static inline void thread_top_init(char *thread_name,
+				   uint64_t runtime,
+				   uint64_t deadline,
+				   uint64_t period) {
 
   MSC_START_USE();
 
@@ -261,7 +261,7 @@ inline void thread_top_init(char *thread_name,
 
 }
 
-inline void wait_sync(char *thread_name) {
+static inline void wait_sync(char *thread_name) {
 
   printf( "waiting for sync (%s)\n",thread_name);
   pthread_mutex_lock( &sync_mutex );
@@ -275,7 +275,7 @@ inline void wait_sync(char *thread_name) {
 
 }
 
-inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 
   struct timespec wait;
   
@@ -302,7 +302,7 @@ inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *in
   return(0);
 }
 
-inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
 
   if (pthread_mutex_lock(mutex) != 0) {
     LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
@@ -461,6 +461,11 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
 		   relaying_type_t r_type,
 		   PHY_VARS_RN *rn) {
 
+  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
+
   phy_procedures_eNB_TX(eNB,proc,r_type,rn);
 
   /* we're done, let the next one proceed */
@@ -482,6 +487,7 @@ void proc_tx_high(PHY_VARS_eNB *eNB,
 		  eNB_rxtx_proc_t *proc,
 		  relaying_type_t r_type,
 		  PHY_VARS_RN *rn) {
+
 
   // do PHY high
   proc_tx_high0(eNB,proc,r_type,rn);
@@ -517,6 +523,11 @@ void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
   uint32_t symbol_mask, symbol_mask_full;
   uint16_t packet_type;
 
+  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
+
   /// **** recv_IF4 of txdataF from RCC **** ///             
   symbol_number = 0;
   symbol_mask = 0;
@@ -532,6 +543,10 @@ void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
 }
 
 void proc_tx_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
   /// **** recv_IF5 of txdata from BBU **** ///       
   recv_IF5(eNB, &proc->timestamp_tx, proc->subframe_tx, IF5_RRH_GW_DL);
 }
@@ -563,6 +578,34 @@ int wait_CCs(eNB_rxtx_proc_t *proc) {
   return(0);
 }
 
+static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
+
+  start_meas(&softmodem_stats_rxtx_sf);
+  // ****************************************
+  // Common RX procedures subframe n
+  phy_procedures_eNB_common_RX(eNB);
+  
+  // UE-specific RX processing for subframe n
+  if (eNB->proc_uespec_rx) eNB->proc_uespec_rx(eNB, proc, no_relay );
+  
+  // *****************************************
+  // TX processing for subframe n+4
+  // run PHY TX procedures the one after the other for all CCs to avoid race conditions
+  // (may be relaxed in the future for performance reasons)
+  // *****************************************
+  if (wait_CCs(proc)<0) return(-1);
+  
+  if (oai_exit) return(-1);
+  
+  if (eNB->proc_tx)	eNB->proc_tx(eNB, proc, no_relay, NULL );
+  
+  if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) return(-1);
+
+  stop_meas( &softmodem_stats_rxtx_sf );
+  
+  return(0);
+}
+
 /*!
  * \brief The RX UE-specific and TX thread of eNB.
  * \param param is a \ref eNB_proc_t structure which contains the info what to process.
@@ -574,7 +617,6 @@ static void* eNB_thread_rxtx( void* param ) {
 
   eNB_rxtx_proc_t *proc = (eNB_rxtx_proc_t*)param;
   PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
-  LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   char thread_name[100];
 
@@ -592,41 +634,12 @@ static void* eNB_thread_rxtx( void* param ) {
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 1 );
 
-    start_meas( &softmodem_stats_rxtx_sf );
+    
   
     if (oai_exit) break;
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_ENB+(proc->subframe_rx&1), proc->frame_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_ENB+(proc->subframe_rx&1), proc->subframe_rx );
+    if (rxtx(eNB,proc,thread_name) < 0) break;
 
-    // Common procedures
-    phy_procedures_eNB_common_RX(eNB);
-    // Do UE-specific RX processing for subframe n if any
-    if (eNB->proc_uespec_rx) eNB->proc_uespec_rx(eNB, proc, no_relay );
-
-    // TX processing for subframe n+4
-    if (((fp->frame_type == TDD) &&
-         ((subframe_select(fp,proc->subframe_tx) == SF_DL) ||
-          (subframe_select(fp,proc->subframe_tx) == SF_S))) ||
-        (fp->frame_type == FDD)) {
-      /* run PHY TX procedures the one after the other for all CCs to avoid race conditions
-       * (may be relaxed in the future for performance reasons)
-       */
-
-      if (wait_CCs(proc)<0) break;
-
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+(proc->subframe_tx&1), proc->frame_tx );
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+(proc->subframe_tx&1), proc->subframe_tx );
-      
-      if (oai_exit) break;
-
-      if (eNB->proc_tx)	eNB->proc_tx(eNB, proc, no_relay, NULL );
-      
-    }
-
-    if (release_thread(&proc->mutex_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
-
-    stop_meas( &softmodem_stats_rxtx_sf );
   } // while !oai_exit
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
@@ -1239,6 +1252,84 @@ static void* eNB_thread_prach( void* param ) {
   return &eNB_thread_prach_status;
 }
 
+static void* eNB_thread_single( void* param ) {
+
+  static int eNB_thread_single_status;
+
+  eNB_proc_t *proc = (eNB_proc_t*)param;
+  eNB_rxtx_proc_t *proc_rxtx = &proc->proc_rxtx[0];
+  PHY_VARS_eNB *eNB = PHY_vars_eNB_g[0][proc->CC_id];
+
+  int subframe=0, frame=0; 
+
+  // set default return value
+  eNB_thread_single_status = 0;
+
+  thread_top_init("eNB_thread_single",870000,1000000,1000000);
+
+  wait_sync("eNB_thread_single");
+
+#if defined(ENABLE_ITTI)
+  if (eNB->node_function < NGFI_RRU_IF5)
+    wait_system_ready ("Waiting for eNB application to be ready %s\r", &start_eNB);
+#endif 
+
+  // Start IF device if any
+  if (eNB->start_if) 
+    if (eNB->start_if(eNB) != 0)
+      LOG_E(HW,"Could not start the IF device\n");
+
+  // Start RF device if any
+  if (eNB->start_rf)
+    if (eNB->start_rf(eNB) != 0)
+      LOG_E(HW,"Could not start the RF device\n");
+
+  // wakeup asnych_rxtx thread because the devices are ready at this point
+  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+  proc->instance_cnt_asynch_rxtx=0;
+  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+  pthread_cond_signal(&proc->cond_asynch_rxtx);
+
+  // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
+  while (!oai_exit) {
+
+    // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
+    // They are set on the first rx/tx in the underly FH routines.
+    if (subframe==9) { 
+      subframe=0;
+      frame++;
+      frame&=1023;
+    } else {
+      subframe++;
+    }      
+
+ 
+    // synchronization on FH interface, acquire signals/data and block
+    if (eNB->rx_fh) eNB->rx_fh(eNB,&frame,&subframe);
+    else AssertFatal(1==0, "No fronthaul interface : eNB->node_function %d",eNB->node_function);
+
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+
+    // At this point, all information for subframe has been received on FH interface
+    // If this proc is to provide synchronization, do so
+    wakeup_slaves(proc);
+
+    proc_rxtx->subframe_rx = proc->subframe_rx;
+    proc_rxtx->frame_rx    = proc->frame_rx;
+    proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
+    proc_rxtx->frame_tx    = (proc->frame_rx < 6) ? proc->frame_rx : (proc->frame_rx+1); 
+
+    if (rxtx(eNB,proc_rxtx,"eNB_thread_single") < 0) break;
+  }
+  
+
+  printf( "Exiting eNB_single thread \n");
+ 
+  eNB_thread_single_status = 0;
+  return &eNB_thread_single_status;
+
+}
+
 
 void init_eNB_proc(int inst) {
   
@@ -1247,40 +1338,14 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL;
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
     LOG_I(PHY,"Initializing eNB %d CC_id %d (%s,%s),\n",inst,CC_id,eNB_functions[eNB->node_function],eNB_timing[eNB->node_timing]);
     proc = &eNB->proc;
+
     proc_rxtx = proc->proc_rxtx;
-#ifndef DEADLINE_SCHEDULER 
-    /*  
-	pthread_attr_init( &attr_eNB_proc_tx[CC_id][i] );
-	if (pthread_attr_setstacksize( &attr_eNB_proc_tx[CC_id][i], 64 *PTHREAD_STACK_MIN ) != 0)
-	perror("[ENB_PROC_TX] setting thread stack size failed\n");
-	
-	pthread_attr_init( &attr_eNB_proc_rx[CC_id][i] );
-	if (pthread_attr_setstacksize( &attr_eNB_proc_rx[CC_id][i], 64 * PTHREAD_STACK_MIN ) != 0)
-	perror("[ENB_PROC_RX] setting thread stack size failed\n");
-    */
-    // set the kernel scheduling policy and priority
-    proc_rxtx[0].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-    pthread_attr_setschedparam  (&proc_rxtx[0].attr_rxtx, &proc_rxtx[0].sched_param_rxtx);
-    pthread_attr_setschedpolicy (&proc_rxtx[0].attr_rxtx, SCHED_FIFO);
-    proc_rxtx[1].sched_param_rxtx.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-    pthread_attr_setschedparam  (&proc_rxtx[1].attr_rxtx, &proc_rxtx[1].sched_param_rxtx);
-    pthread_attr_setschedpolicy (&proc_rxtx[1].attr_rxtx, SCHED_FIFO);
-    
-    proc->sched_param_FH.sched_priority = sched_get_priority_max(SCHED_FIFO); //OPENAIR_THREAD_PRIORITY;
-    pthread_attr_setschedparam  (&proc->attr_FH, &proc->sched_param_FH);
-    pthread_attr_setschedpolicy (&proc->attr_FH, SCHED_FIFO);
-    
-    proc->sched_param_prach.sched_priority = sched_get_priority_max(SCHED_FIFO)-1; //OPENAIR_THREAD_PRIORITY;
-    pthread_attr_setschedparam  (&proc->attr_prach, &proc->sched_param_prach);
-    pthread_attr_setschedpolicy (&proc->attr_prach, SCHED_FIFO);
-    
-    printf("Setting OS scheduler to SCHED_FIFO for eNB [cc%d][thread%d] \n",CC_id, i);
-#endif
     proc_rxtx[0].instance_cnt_rxtx = -1;
     proc_rxtx[1].instance_cnt_rxtx = -1;
     proc->instance_cnt_prach = -1;
@@ -1293,31 +1358,38 @@ void init_eNB_proc(int inst) {
 
     pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
     pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
-    pthread_mutex_init( &proc->mutex_prach, NULL);
-    pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
     pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
+
+    pthread_mutex_init( &proc->mutex_prach, NULL);
+    pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
+
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
 #ifndef DEADLINE_SCHEDULER
-    pthread_create( &proc_rxtx[0].pthread_rxtx, &proc_rxtx[0].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[0] );
-    pthread_create( &proc_rxtx[1].pthread_rxtx, &proc_rxtx[1].attr_rxtx, eNB_thread_rxtx, &proc_rxtx[1] );
-    pthread_create( &proc->pthread_FH, &proc->attr_FH, eNB_thread_FH, &eNB->proc );
-    pthread_create( &proc->pthread_prach, &proc->attr_prach, eNB_thread_prach, &eNB->proc );
+    attr0       = &proc_rxtx[0].attr_rxtx;
+    attr1       = &proc_rxtx[1].attr_rxtx;
+    attr_FH     = &proc->attr_FH;
+    attr_prach  = &proc->attr_prach;
+    attr_asynch = &proc->attr_asynch_rxtx;
+    attr_single = &proc->attr_single;
+#endif
+
+    if (eNB->single_thread_flag==0) {
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+      pthread_create( &proc->pthread_FH, attr_FH, eNB_thread_FH, &eNB->proc );
+    }
+    else 
+      pthread_create(&proc->pthread_single, attr_single, eNB_thread_single, &eNB->proc);
+
+    pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, &eNB->proc );
     if ((eNB->node_timing == synch_to_other) ||
 	(eNB->node_function == NGFI_RRU_IF5) ||
 	(eNB->node_function == NGFI_RRU_IF4p5))
-      pthread_create( &proc->pthread_asynch_rxtx, &proc->attr_asynch_rxtx, eNB_thread_asynch_rxtx, &eNB->proc );
-#else 
-    pthread_create( &proc_rxtx[0].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[0] );
-    pthread_create( &proc_rxtx[1].pthread_rxtx, NULL, eNB_thread_rxtx, &eNB->proc_rxtx[1] );
-    pthread_create( &proc->pthread_FH, NULL, eNB_thread_FH, &eNB->proc );
-    pthread_create( &proc->pthread_prach, NULL, eNB_thread_prach, &eNB->proc );
-    if (eNB->node_timing == synch_to_other) 
-      pthread_create( &proc->pthread_asynch_rxtx, NULL, eNB_thread_asynch_rxtx, &eNB->proc );
-    
-#endif
+      pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, eNB_thread_asynch_rxtx, &eNB->proc );
+
     char name[16];
     snprintf( name, sizeof(name), "RXTX0 %d", i );
     pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
@@ -1511,7 +1583,7 @@ extern void eNB_fep_rru_if5(PHY_VARS_eNB *eNB);
 extern void eNB_fep_full(PHY_VARS_eNB *eNB);
 extern void do_prach(PHY_VARS_eNB *eNB);
 
-void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params) {
+void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst,eth_params_t *eth_params,int single_thread_flag) {
   
   int CC_id;
   int inst;
@@ -1524,6 +1596,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
       eNB->node_function      = node_function[CC_id];
       eNB->node_timing        = node_timing[CC_id];
       eNB->abstraction_flag   = 0;
+      eNB->single_thread_flag = single_thread_flag;
       LOG_I(PHY,"Initializing eNB %d CC_id %d : (%s,%s)\n",inst,CC_id,eNB_functions[node_function[CC_id]],eNB_timing[node_timing[CC_id]]);
 
       switch (node_function[CC_id]) {
