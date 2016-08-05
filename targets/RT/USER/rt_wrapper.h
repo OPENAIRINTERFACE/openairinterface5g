@@ -28,7 +28,7 @@
  *******************************************************************************/
 
 /*! \file rt_wrapper.h
-* \brief provides a wrapper for the timing function for real-time opeartions depending on weather RTAI is used or not. It also implements an API for the SCHED_DEADLINE kernel scheduler.
+* \brief provides a wrapper for the timing function for real-time opeartions. It also implements an API for the SCHED_DEADLINE kernel scheduler.
 * \author F. Kaltenberger and Navid Nikaein
 * \date 2013
 * \version 0.1
@@ -39,9 +39,8 @@
 */
 
 
-void set_latency_target(void);
 
-#ifndef RTAI
+#define _GNU_SOURCE
 #include <time.h>
 #include <errno.h>
 #include <stdint.h>
@@ -52,10 +51,25 @@ void set_latency_target(void);
 #include <linux/types.h>
 #include <syscall.h>
 #include <math.h>
+#include <sched.h> 
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <sched.h>
+#include <linux/sched.h>
+#include <signal.h>
+#include <execinfo.h>
+#include <getopt.h>
+#include <sys/sysinfo.h>
+
+#include "UTIL/LOG/log_extern.h"
+#include "msc.h"
 
 #define RTIME long long int
 
 #define rt_printk printf
+
+void set_latency_target(void);
 
 RTIME rt_get_time_ns (void);
 
@@ -115,12 +129,3 @@ int sched_getattr(pid_t pid,struct sched_attr *attr,unsigned int size, unsigned 
 
 #define gettid() syscall(__NR_gettid) // for gettid
 
-#else
-#include <rtai_hal.h>
-#include <rtai_lxrt.h>
-#include <rtai_sem.h>
-#include <rtai_msg.h>
-
-int rt_sleep_ns(RTIME x);
-
-#endif
