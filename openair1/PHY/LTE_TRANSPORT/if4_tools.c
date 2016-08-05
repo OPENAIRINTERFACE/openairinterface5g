@@ -133,7 +133,7 @@ void send_IF4p5(PHY_VARS_eNB *eNB, int frame, int subframe, uint16_t packet_type
     }		
   } else if (packet_type == IF4p5_PRACH) {
     // FIX: hard coded prach samples length
-    db_fulllength = 839*2;
+    db_fulllength = 840*2;
 
     IF4p5_header_t *prach_header = (IF4p5_header_t *)(tx_buffer + MAC_HEADER_SIZE_BYTES);
     data_block = (uint16_t*)(tx_buffer + MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t);
@@ -197,7 +197,8 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 
   *frame = ((packet_header->frame_status)>>6)&0xffff;
   *subframe = ((packet_header->frame_status)>>22)&0x000f; 
-  
+
+
   if (*packet_type == IF4p5_PDLFFT) {          
     *symbol_number = ((packet_header->frame_status)>>26)&0x000f;         
 
@@ -232,7 +233,7 @@ void recv_IF4p5(PHY_VARS_eNB *eNB, int *frame, int *subframe, uint16_t *packet_t
 		
   } else if (*packet_type == IF4p5_PRACH) {    
     // FIX: hard coded prach samples length
-    db_fulllength = 839*2;
+    db_fulllength = 840*2;
 		
     memcpy((&rxsigF[0][0]), 
            (int16_t*) (rx_buffer+MAC_HEADER_SIZE_BYTES+sizeof_IF4p5_header_t), 
@@ -261,6 +262,7 @@ void gen_IF4p5_dl_header(IF4p5_header_t *dl_packet, int frame, int subframe) {
 
 
 void gen_IF4p5_ul_header(IF4p5_header_t *ul_packet, int frame, int subframe) {  
+
   ul_packet->type = IF4p5_PACKET_TYPE; 
   ul_packet->sub_type = IF4p5_PULFFT;
 

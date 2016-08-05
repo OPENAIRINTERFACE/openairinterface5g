@@ -1065,7 +1065,7 @@ void rx_prach(PHY_VARS_eNB *eNB,
 
   int i;
   lte_frame_type_t frame_type = eNB->frame_parms.frame_type;
-  int subframe                = eNB->proc.subframe_rx;
+  int subframe                = eNB->proc.subframe_prach;
   uint16_t rootSequenceIndex  = eNB->frame_parms.prach_config_common.rootSequenceIndex;
   uint8_t prach_ConfigIndex   = eNB->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex;
   uint8_t Ncs_config          = eNB->frame_parms.prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig;
@@ -1100,6 +1100,8 @@ void rx_prach(PHY_VARS_eNB *eNB,
   int16_t levdB;
   int fft_size,log2_ifft_size;
   uint8_t nb_ant_rx = 1; //eNB->frame_parms.nb_antennas_rx;
+
+  //  int en;
 
   for (aa=0; aa<nb_ant_rx; aa++) {
     prach[aa] = (int16_t*)&eNB->common_vars.rxdata[0][aa][subframe*eNB->frame_parms.samples_per_tti-eNB->N_TA_offset];
@@ -1282,8 +1284,11 @@ void rx_prach(PHY_VARS_eNB *eNB,
     k*=2;
     
     /// **** send_IF4 of rxsigF to RCC **** ///    
-    send_IF4p5(eNB, eNB->proc.frame_rx, eNB->proc.subframe_rx, IF4p5_PRACH, k);
+    send_IF4p5(eNB, eNB->proc.frame_prach, eNB->proc.subframe_prach, IF4p5_PRACH, k);
 
+    //    en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+    //    if (en>60)
+    //      printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
     return;
   } else if (eNB->node_function == NGFI_RCC_IF4p5) {
     k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
@@ -1299,7 +1304,12 @@ void rx_prach(PHY_VARS_eNB *eNB,
     // Adjust received rxsigF offset    
     memmove((&rxsigF[0][k]),
             (&rxsigF[0][0]),
-            839*2*sizeof(int16_t));     
+            839*2*sizeof(int16_t));
+
+    //en = dB_fixed(signal_energy(&rxsigF[0][k],840));
+    //    if (en>60)
+    //printf("PRACH: Frame %d, Subframe %d => %d dB\n",eNB->proc.frame_rx,eNB->proc.subframe_rx,en);
+
   }
   
   // in case of RCC and prach received rx_thread wakes up prach
@@ -1469,11 +1479,25 @@ void rx_prach(PHY_VARS_eNB *eNB,
 #endif
       // if (aa=1) write_output("prach_rxF_comp1.m","prach_rxF_comp1",prachF,1024,1,1);
       }// antennas_rx
+
 #ifdef PRACH_DEBUG
-      write_output("prach_ifft0.m","prach_t0",prach_ifft[0],2048,1,1);
+
+      if (en>40) {
+	k = (12*n_ra_prb) - 6*eNB->frame_parms.N_RB_UL;
+	
+	if (k<0)
+	  k+=(eNB->frame_parms.ofdm_symbol_size);
+	
+	k*=12;
+	k+=13;
+	k*=2;
+	printf("Dumping prach, k = %d (n_ra_prb %d)\n",k,n_ra_prb);
+	write_output("rxsigF.m","prach_rxF",&rxsigF[0][k],840,1,1);
+	write_output("prach_rxF_comp0.m","prach_rxF_comp0",prachF,1024,1,1);
+	write_output("prach_ifft0.m","prach_t0",prach_ifft[0],1024,1,1);
+	exit(-1);
+      }
 #endif
-      // write_output("prach_ifft1.m","prach_t1",prach_ifft[1],2048,1,1);
-      
     } // new dft
     
     // check energy in nth time shift

@@ -176,9 +176,10 @@ typedef struct {
 void dump_packet(char *title, unsigned char* pkt, int bytes, unsigned int tx_rx_flag);
 unsigned short calc_csum (unsigned short *buf, int nwords);
 void dump_dev(openair0_device *device);
-void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag,int nsamps);
+/*void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag,int nsamps);
 void inline dump_rxcounters(openair0_device *device);
 void inline dump_txcounters(openair0_device *device);
+*/
 void dump_iqs(char * buff, int iq_cnt);
 
 
@@ -224,6 +225,8 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
 int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
+int trx_eth_write_udp_IF4p5(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int cc, int flags);
+int trx_eth_read_udp_IF4p5(openair0_device *device, openair0_timestamp *timestamp, void **buff, int nsamps, int cc);
 int eth_get_dev_conf_raw(openair0_device *device);
 int eth_set_dev_conf_raw(openair0_device *device);
 int eth_get_dev_conf_raw_IF4p5(openair0_device *device);

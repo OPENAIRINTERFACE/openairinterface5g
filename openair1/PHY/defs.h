@@ -160,10 +160,10 @@ enum transmission_access_mode {
 typedef enum  {
   eNodeB_3GPP=0,   // classical eNodeB function
   eNodeB_3GPP_BBU, // eNodeB with NGFI IF5
-  NGFI_RRU_IF5,    // NGFI_RRU with IF5
-  NGFI_RRU_IF4p5,    // NGFI_RRU (NGFI remote radio-unit, currently split at common - ue_specific interface, IF4p5) 
-  NGFI_RCC_IF4p5,     // NGFI_RCC (NGFI radio cloud center, currently split at common - ue_specific interface, IF4p5) 
-  NGFI_RAU_IF4p5
+  NGFI_RCC_IF4p5,  // NGFI_RCC (NGFI radio cloud center) 
+  NGFI_RAU_IF4p5,
+  NGFI_RRU_IF5,    // NGFI_RRU (NGFI remote radio-unit,IF5)
+  NGFI_RRU_IF4p5   // NGFI_RRU (NGFI remote radio-unit,IF4p5) 
 } eNB_func_t;
 
 typedef enum {
@@ -252,34 +252,42 @@ typedef struct eNB_proc_t_s {
   /// \brief Instance count for rx processing thread.
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
+  /// \internal This variable is protected by \ref mutex_asynch_rxtx.
+  int instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
   pthread_t pthread_FH;
-  /// pthread structure for asychronous RX processing thread
-  pthread_t pthread_asynch_rx;
+  /// pthread structure for asychronous RX/TX processing thread
+  pthread_t pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
   int first_rx;
+  /// flag to indicate first TX transmission
+  int first_tx;
   /// pthread attributes for FH processing thread
   pthread_attr_t attr_FH;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
   /// pthread attributes for asynchronous RX thread
-  pthread_attr_t attr_asynch_rx;
+  pthread_attr_t attr_asynch_rxtx;
   /// scheduling parameters for FH thread
   struct sched_param sched_param_FH;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-  /// scheduling parameters for asynch_rx thread
-  struct sched_param sched_param_asynch_rx;
-  /// condition variable for FH thread
+  /// scheduling parameters for asynch_rxtx thread
+  struct sched_param sched_param_asynch_rxtx;
+  /// pthread structure for PRACH thread
   pthread_t pthread_prach;
   /// condition variable for FH thread
   pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
+  /// condition variable for asynch RX/TX thread
+  pthread_cond_t cond_asynch_rxtx;
   /// mutex for FH
   pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
+  /// mutex for asynch RX/TX thread
+  pthread_mutex_t mutex_asynch_rxtx;
   /// set of scheduling variables RXn-TXnp4 threads
   eNB_rxtx_proc_t proc_rxtx[2];
   /// number of slave threads
@@ -355,15 +363,17 @@ typedef struct PHY_VARS_eNB_s {
   eNB_proc_t           proc;
   eNB_func_t           node_function;
   eNB_timing_t         node_timing;
+  openair0_rf_map      rf_map;
   int                  abstraction_flag;
-  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
-  void                 (*fep)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc);
+  void                 (*do_prach)(struct PHY_VARS_eNB_s *eNB);
+  void                 (*fep)(struct PHY_VARS_eNB_s *eNB);
   void                 (*proc_uespec_rx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,const relaying_type_t r_type);
   void                 (*proc_tx)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc,relaying_type_t r_type,PHY_VARS_RN *rn);
   void                 (*tx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_rxtx_proc_t *proc);
-  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,eNB_proc_t *proc,int *frame, int *subframe);
+  void                 (*rx_fh)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   int                  (*start_rf)(struct PHY_VARS_eNB_s *eNB);
   int                  (*start_if)(struct PHY_VARS_eNB_s *eNB);
+  void                 (*fh_asynch)(struct PHY_VARS_eNB_s *eNB,int *frame, int *subframe);
   uint8_t              local_flag;
   uint32_t             rx_total_gain_dB;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -570,6 +580,8 @@ typedef struct {
   uint8_t Mod_id;
   /// \brief Component carrier ID for this PHY instance
   uint8_t CC_id;
+  /// \brief Mapping of CC_id antennas to cards
+  openair0_rf_map      rf_map;
   //uint8_t local_flag;
   /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
   runmode_t mode;

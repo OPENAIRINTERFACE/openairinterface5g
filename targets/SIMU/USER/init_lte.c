@@ -70,6 +70,7 @@ PHY_VARS_eNB* init_lte_eNB(LTE_DL_FRAME_PARMS *frame_parms,
         NUMBER_OF_UE_MAX, NUMBER_OF_eNB_MAX, NUMBER_OF_HARQ_PID_MAX);
   LOG_I(PHY,"init eNB: N_RB_DL %d\n", frame_parms->N_RB_DL);
   LOG_I(PHY,"init eNB: Transmission mode %d\n", transmission_mode);
+  LOG_I(PHY,"init eNB: prach_config_index %d\n", frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex);
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (j=0; j<2; j++) {

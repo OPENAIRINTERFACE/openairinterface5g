@@ -104,7 +104,6 @@ extern int sync_var;
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 extern uint32_t          downlink_frequency[MAX_NUM_CCs][4];
 extern int32_t           uplink_frequency_offset[MAX_NUM_CCs][4];
-extern openair0_rf_map rf_map[MAX_NUM_CCs];
 extern int oai_exit;
 
 extern int32_t **rxdata;
@@ -1559,56 +1558,59 @@ void fill_ue_band_info(void)
 }
 #endif
 
-int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg, openair0_rf_map rf_map[MAX_NUM_CCs])
+int setup_ue_buffers(PHY_VARS_UE **phy_vars_ue, openair0_config_t *openair0_cfg)
 {
 
   int i, CC_id;
   LTE_DL_FRAME_PARMS *frame_parms;
-  
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-  if (phy_vars_ue[CC_id]) {
-  frame_parms = &(phy_vars_ue[CC_id]->frame_parms);
-  } else {
-    printf("phy_vars_UE[%d] not initialized\n", CC_id);
-    return(-1);
-  }
+  openair0_rf_map *rf_map;
 
-  /*
-  if (frame_parms->frame_type == TDD) {
-    if (frame_parms->N_RB_DL == 100)
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    rf_map = &phy_vars_ue[CC_id]->rf_map;
+    
+    if (phy_vars_ue[CC_id]) {
+      frame_parms = &(phy_vars_ue[CC_id]->frame_parms);
+    } else {
+      printf("phy_vars_UE[%d] not initialized\n", CC_id);
+      return(-1);
+    }
+    
+    /*
+      if (frame_parms->frame_type == TDD) {
+      if (frame_parms->N_RB_DL == 100)
       N_TA_offset = 624;
     else if (frame_parms->N_RB_DL == 50)
-      N_TA_offset = 624/2;
+    N_TA_offset = 624/2;
     else if (frame_parms->N_RB_DL == 25)
-      N_TA_offset = 624/4;
-  }
-  */
-
+    N_TA_offset = 624/4;
+    }
+    */
+    
     // replace RX signal buffers with mmaped HW versions
-  rxdata = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
-  txdata = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
-
-  for (i=0; i<frame_parms->nb_antennas_rx; i++) {
-    printf( "Mapping UE CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n", CC_id, i, downlink_frequency[CC_id][i], rf_map[CC_id].card, rf_map[CC_id].chain+i );
-    free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
+    rxdata = (int32_t**)malloc16( frame_parms->nb_antennas_rx*sizeof(int32_t*) );
+    txdata = (int32_t**)malloc16( frame_parms->nb_antennas_tx*sizeof(int32_t*) );
+    
+    for (i=0; i<frame_parms->nb_antennas_rx; i++) {
+      printf( "Mapping UE CC_id %d, rx_ant %d, freq %u on card %d, chain %d\n", CC_id, i, downlink_frequency[CC_id][i], rf_map->card, rf_map->chain+i );
+      free( phy_vars_ue[CC_id]->common_vars.rxdata[i] );
     rxdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
     phy_vars_ue[CC_id]->common_vars.rxdata[i] = rxdata[i]; // what about the "-N_TA_offset" ? // N_TA offset for TDD
     printf("rxdata[%d] : %p\n",i,rxdata[i]);
-  }
-  
-  for (i=0; i<frame_parms->nb_antennas_tx; i++) {
-    printf( "Mapping UE CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n", CC_id, i, downlink_frequency[CC_id][i], rf_map[CC_id].card, rf_map[CC_id].chain+i );
-    free( phy_vars_ue[CC_id]->common_vars.txdata[i] );
-    txdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
-    phy_vars_ue[CC_id]->common_vars.txdata[i] = txdata[i];
-    printf("txdata[%d] : %p\n",i,txdata[i]);
-  }
-  
-  // rxdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.rxdata[x]
-  // txdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.txdata[x]
-  // be careful when releasing memory!
-  // because no "release_ue_buffers"-function is available, at least rxdata and txdata memory will leak (only some bytes)
-
+    }
+    
+    for (i=0; i<frame_parms->nb_antennas_tx; i++) {
+      printf( "Mapping UE CC_id %d, tx_ant %d, freq %u on card %d, chain %d\n", CC_id, i, downlink_frequency[CC_id][i], rf_map->card, rf_map->chain+i );
+      free( phy_vars_ue[CC_id]->common_vars.txdata[i] );
+      txdata[i] = (int32_t*)malloc16_clear( 307200*sizeof(int32_t) );
+      phy_vars_ue[CC_id]->common_vars.txdata[i] = txdata[i];
+      printf("txdata[%d] : %p\n",i,txdata[i]);
+    }
+    
+    // rxdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.rxdata[x]
+    // txdata[x] points now to the same memory region as phy_vars_ue[CC_id]->common_vars.txdata[x]
+    // be careful when releasing memory!
+    // because no "release_ue_buffers"-function is available, at least rxdata and txdata memory will leak (only some bytes)
+    
   }
 
   return 0;

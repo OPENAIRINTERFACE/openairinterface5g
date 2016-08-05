@@ -66,7 +66,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );            
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
-                                   txp,
+                                   (void**)txp,
                                    spp_eth,
                                    fp->nb_antennas_tx,
                                    0);
@@ -86,7 +86,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF, 1 );            
       eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                    (proc_timestamp + packet_id*spp_eth),
-                                   rxp,
+                                   (void**)rxp,
                                    spp_eth,
                                    fp->nb_antennas_rx,
                                    0);
@@ -131,7 +131,7 @@ void send_IF5(PHY_VARS_eNB *eNB, openair0_timestamp proc_timestamp, int subframe
       // Write the packet to the fronthaul
       if ((eNB->ifdevice.trx_write_func(&eNB->ifdevice,
                                         packet_id,
-                                        &tx_buffer,
+                                        (void**)&tx_buffer,
                                         db_fulllength,
                                         1,
                                         IF5_MOBIPASS)) < 0) {
@@ -177,7 +177,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );  
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
-                                  txp,
+                                  (void**)txp,
                                   spp_eth,
                                   fp->nb_antennas_tx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );  
@@ -197,7 +197,7 @@ void recv_IF5(PHY_VARS_eNB *eNB, openair0_timestamp *proc_timestamp, int subfram
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 1 );            
       eNB->ifdevice.trx_read_func(&eNB->ifdevice,
                                   &timestamp[packet_id],
-                                  rxp,
+                                  (void**)rxp,
                                   spp_eth,
                                   fp->nb_antennas_rx);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ_IF, 0 );            

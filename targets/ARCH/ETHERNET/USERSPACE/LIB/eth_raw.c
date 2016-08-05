@@ -65,23 +65,18 @@ int eth_socket_init_raw(openair0_device *device) {
   eth_state_t *eth = (eth_state_t*)device->priv;
   int Mod_id = device->Mod_id;
   const char *local_mac, *remote_mac;
-  int local_port=0, remote_port=0;
   int sock_dom=0;
   int sock_type=0;
   int sock_proto=0;  
  
   if (device->host_type == RRH_HOST ) {  /* RRH doesn't know remote MAC(will be retrieved from first packet send from BBU) and remote port(don't care) */
     local_mac = device->openair0_cfg->my_addr; 
-    local_port = device->openair0_cfg->my_port;    
     remote_mac = malloc(ETH_ALEN);
-    memset(remote_mac,0,ETH_ALEN);
-    remote_port = 0;    
+    memset((void*)remote_mac,0,ETH_ALEN);
     printf("[%s] local MAC addr %s remote MAC addr %s\n","RRH", local_mac,remote_mac);    
   } else {
     local_mac = device->openair0_cfg->my_addr;
-    local_port = device->openair0_cfg->my_port;  
     remote_mac = device->openair0_cfg->remote_addr;
-    remote_port = device->openair0_cfg->remote_port;  
     printf("[%s] local MAC addr %s remote MAC addr %s\n","BBU", local_mac,remote_mac);    
   }
    
@@ -182,7 +177,7 @@ int trx_eth_write_raw(openair0_device *device, openair0_timestamp timestamp, voi
 	printf("------- TX ------: nu=%x an_id=%d ts%d bytes_sent=%d\n",
 	       *(uint8_t *)(buff2+ETH_ALEN),
 	       *(int16_t *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int16_t)),
-	       *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)),
+	       *(openair0_timestamp *)(buff2 + MAC_HEADER_SIZE_BYTES + sizeof(int32_t)), 
 	       bytes_sent);
     dump_packet((device->host_type == BBU_HOST)? "BBU":"RRH", buff2, RAW_PACKET_SIZE_BYTES(nsamps), TX_FLAG);
 #endif
@@ -224,7 +219,8 @@ int trx_eth_write_raw_IF4p5(openair0_device *device, openair0_timestamp timestam
   eth->tx_nsamps = nblocks;
   
   memcpy(buff[0], (void*)&eth->eh, MAC_HEADER_SIZE_BYTES);	
-         
+
+
   bytes_sent = send(eth->sockfd[Mod_id],
                     buff[0], 
                     packet_size,
@@ -274,7 +270,7 @@ int trx_eth_read_raw(openair0_device *device, openair0_timestamp *timestamp, voi
 	
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
-	  perror("ETHERNET READ: ");
+	  perror("ETHERNET IF5 READ: ");
 	  exit(-1);	
 	} else {
 	  /* store the timestamp value from packet's header */
@@ -314,14 +310,15 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   
   ssize_t packet_size = MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t;      
   IF4p5_header_t *test_header = (IF4p5_header_t*)(buff[0] + MAC_HEADER_SIZE_BYTES);
-  
+
+
   bytes_received = recv(eth->sockfd[Mod_id],
                         buff[0],
                         packet_size,
                         MSG_PEEK);                        
 	if (bytes_received ==-1) {
 	  eth->num_rx_errors++;
-	  perror("ETHERNET READ: ");
+	  perror("ETHERNET IF4p5 READ (header): ");
 	  exit(-1);	
   }
  
@@ -334,16 +331,17 @@ int trx_eth_read_raw_IF4p5(openair0_device *device, openair0_timestamp *timestam
   } else {
     packet_size = RAW_IF4p5_PRACH_SIZE_BYTES;
   }
-        
+  
+  
   while(bytes_received < packet_size) {
     bytes_received = recv(eth->sockfd[Mod_id],
                           buff[0],
                           packet_size,
                           0);
-	  if (bytes_received ==-1) {
-	    eth->num_rx_errors++;
-	    perror("ETHERNET READ: ");
-	    exit(-1);	
+    if (bytes_received ==-1) {
+      eth->num_rx_errors++;
+      perror("ETHERNET IF4p5 READ (payload): ");
+      exit(-1);	
     } else {
       eth->rx_actual_nsamps = bytes_received>>1;   
       eth->rx_count++;
@@ -422,7 +420,6 @@ int eth_get_dev_conf_raw(openair0_device *device) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
   int 		Mod_id = device->Mod_id;
-  char 		str[INET_ADDRSTRLEN];
   void 		*msg;
   ssize_t	msg_len;
   
@@ -453,7 +450,6 @@ int eth_get_dev_conf_raw_IF4p5(openair0_device *device) {
 
   eth_state_t   *eth = (eth_state_t*)device->priv;
   int 		Mod_id = device->Mod_id;
-  char 		str[INET_ADDRSTRLEN];
   void 		*msg;
   ssize_t	msg_len;
   
