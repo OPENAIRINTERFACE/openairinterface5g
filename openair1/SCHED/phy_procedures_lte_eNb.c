@@ -1104,7 +1104,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 #if defined(SMBV) 
   // counts number of allocations in subframe
   // there is at least one allocation for PDCCH
-  uint8_t smbv_alloc_cnt = 1;
+  uint8_t smbv_alloc_cnt = 1;Exiting eNB thread RXn_TXnp4
+
 #endif
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
@@ -2587,7 +2588,7 @@ void phy_procedures_eNB_common_RX(PHY_VARS_eNB *eNB){
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe     = proc->subframe_rx;
   const int frame        = proc->frame_rx;
-  int offset             = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
+  int offset             = (eNB->single_thread_flag==1) ? 0 : (subframe&1);
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 

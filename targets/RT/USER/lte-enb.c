@@ -464,7 +464,7 @@ void proc_tx_high0(PHY_VARS_eNB *eNB,
   int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
 
   phy_procedures_eNB_TX(eNB,proc,r_type,rn);
 
@@ -526,7 +526,7 @@ void proc_tx_rru_if4p5(PHY_VARS_eNB *eNB,
   int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
 
   /// **** recv_IF4 of txdataF from RCC **** ///             
   symbol_number = 0;
@@ -546,7 +546,7 @@ void proc_tx_rru_if5(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
 
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_ENB+offset, proc->frame_tx );
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_rx );
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_ENB+offset, proc->subframe_tx );
   /// **** recv_IF5 of txdata from BBU **** ///       
   recv_IF5(eNB, &proc->timestamp_tx, proc->subframe_tx, IF5_RRH_GW_DL);
 }
@@ -1317,7 +1317,7 @@ static void* eNB_thread_single( void* param ) {
     proc_rxtx->subframe_rx = proc->subframe_rx;
     proc_rxtx->frame_rx    = proc->frame_rx;
     proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
-    proc_rxtx->frame_tx    = (proc->frame_rx < 6) ? proc->frame_rx : (proc->frame_rx+1); 
+    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1); 
 
     if (rxtx(eNB,proc_rxtx,"eNB_thread_single") < 0) break;
   }
@@ -1391,12 +1391,18 @@ void init_eNB_proc(int inst) {
       pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, eNB_thread_asynch_rxtx, &eNB->proc );
 
     char name[16];
-    snprintf( name, sizeof(name), "RXTX0 %d", i );
-    pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
-    snprintf( name, sizeof(name), "RXTX1 %d", i );
-    pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
-    snprintf( name, sizeof(name), "FH %d", i );
-    pthread_setname_np( proc->pthread_FH, name );
+    if (eNB->single_thread_flag == 0) {
+      snprintf( name, sizeof(name), "RXTX0 %d", i );
+      pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
+      snprintf( name, sizeof(name), "RXTX1 %d", i );
+      pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
+      snprintf( name, sizeof(name), "FH %d", i );
+      pthread_setname_np( proc->pthread_FH, name );
+    }
+    else {
+      snprintf( name, sizeof(name), " %d", i );
+      pthread_setname_np( proc->pthread_single, name );
+    }
   }
   
   /* setup PHY proc TX sync mechanism */
