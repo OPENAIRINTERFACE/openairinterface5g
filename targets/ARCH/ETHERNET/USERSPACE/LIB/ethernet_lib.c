@@ -90,19 +90,15 @@ int trx_eth_start(openair0_device *device) {
     if(ethernet_tune (device,RCV_TIMEOUT,999999)!=0)  return -1;
   } else if (eth->flags == ETH_UDP_IF4p5_MODE) {
     printf("Setting ETHERNET to UDP_IF4p5_MODE\n");
-  
+    if (eth_socket_init_udp(device)!=0)   return -1; 
+    if (device->host_type == BBU_HOST) {
+      if(eth_set_dev_conf_udp(device)!=0)  return -1;
+    } else {
+      if(eth_get_dev_conf_udp(device)!=0)  return -1;
+    }
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     printf("Setting ETHERNET to RAW_IF5_MODE\n");
     if (eth_socket_init_raw(device)!=0)   return -1;
-    /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
-    //if (device->host_type == BBU_HOST) {
-      //if(eth_set_dev_conf_raw_IF4p5(device)!=0)  return -1;
-    //} else {
-      //if(eth_get_dev_conf_raw_IF4p5(device)!=0)  return -1;
-//
-    /* adjust MTU wrt number of samples per packet */
-   // if(ethernet_tune (device,MTU_SIZE,RAW_PACKET_SIZE_BYTES(device->openair0_cfg->samples_per_packet))!=0)  return -1;
-
   } else {
     if (eth_socket_init_udp(device)!=0)   return -1; 
     /* RRH gets openair0 device configuration - BBU sets openair0 device configuration*/
@@ -171,7 +167,7 @@ int trx_eth_reply(openair0_device *device, void *msg, ssize_t msg_len) {
 
 
 
-int trx_eth_stop(int card) {
+int trx_eth_stop(openair0_device *device) {
   return(0);
 }
 
@@ -199,11 +195,11 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
   struct timeval timeout;
   struct ifreq ifr;   
   char system_cmd[256]; 
-  char* if_name=DEFAULT_IF;
-  struct in_addr ia;
-  struct if_nameindex *ids;
+  //  char* if_name=DEFAULT_IF;
+  //  struct in_addr ia;
+  //  struct if_nameindex *ids;
   int ret=0;
-  int i=0;
+  //  int i=0;
   
   /****************** socket level options ************************/  
   switch(option) {
@@ -238,7 +234,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
 		   (char *)&timeout,sizeof(timeout))) {
       perror("[ETHERNET] setsockopt()");  
     } else {   
-      printf( "receive timeout= %u usec\n",timeout.tv_usec);  
+      printf( "receive timeout= %u usec\n",(unsigned int)timeout.tv_usec);  
     }  
     break;
     
@@ -251,7 +247,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
 		   (char *)&timeout,sizeof(timeout))) {
       perror("[ETHERNET] setsockopt()");     
     } else {
-      printf( "send timeout= %d,%d sec\n",timeout.tv_sec,timeout.tv_usec);    
+      printf( "send timeout= %d,%d sec\n",(int)timeout.tv_sec,(int)timeout.tv_usec);    
     }
     break;
     
@@ -311,7 +307,7 @@ int ethernet_tune(openair0_device *device, unsigned int option, int value) {
     break;
     
   case RING_PAR:
-    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -G %s rx %d tx %d",eth->if_name[Mod_id],value);
+    ret=snprintf(system_cmd,sizeof(system_cmd),"ethtool -G %s val %d",eth->if_name[Mod_id],value);
     if (ret > 0) {
       ret=system(system_cmd);
       if (ret == -1) {
@@ -376,6 +372,9 @@ int transport_init(openair0_device *device, openair0_config_t *openair0_cfg, eth
   } else if (eth->flags == ETH_RAW_IF4p5_MODE) {
     device->trx_write_func   = trx_eth_write_raw_IF4p5;
     device->trx_read_func    = trx_eth_read_raw_IF4p5;     
+  } else if (eth->flags == ETH_UDP_IF4p5_MODE) {
+    device->trx_write_func   = trx_eth_write_udp_IF4p5;
+    device->trx_read_func    = trx_eth_read_udp_IF4p5;     
   } else if (eth->flags == ETH_RAW_IF5_MOBIPASS) {
     device->trx_write_func   = trx_eth_write_raw_IF4p5;
     device->trx_read_func    = trx_eth_read_raw_IF4p5;     
@@ -460,7 +459,7 @@ void dump_dev(openair0_device *device) {
         device->openair0_cfg->num_rb_dl, device->openair0_cfg->sample_rate);
   printf("       BBU configured for %i tx/%i rx channels)\n",
 	device->openair0_cfg->tx_num_channels,device->openair0_cfg->rx_num_channels);
-   printf("       Running flags: %s %s %s\n",      
+   printf("       Running flags: %s %s (\n",      
 	((eth->flags & ETH_RAW_MODE)  ? "RAW socket mode - ":""),
 	((eth->flags & ETH_UDP_MODE)  ? "UDP socket mode - ":""));	  	
   printf("       Number of iqs dumped when displaying packets: %i\n\n",eth->iqdumpcnt);   
@@ -470,14 +469,14 @@ void dump_dev(openair0_device *device) {
 void inline dump_txcounters(openair0_device *device) {
   eth_state_t *eth = (eth_state_t*)device->priv;  
   printf("   Ethernet device interface %i, tx counters:\n" ,device->openair0_cfg->Mod_id);
-  printf("   Sent packets: %llu send errors: %i\n",   eth->tx_count, eth->num_tx_errors);	 
+  printf("   Sent packets: %llu send errors: %i\n",   (long long unsigned int)eth->tx_count, eth->num_tx_errors);	 
 }
 
 void inline dump_rxcounters(openair0_device *device) {
 
   eth_state_t *eth = (eth_state_t*)device->priv;
   printf("   Ethernet device interface %i rx counters:\n" ,device->openair0_cfg->Mod_id);
-  printf("   Received packets: %llu missed packets errors: %i\n", eth->rx_count, eth->num_underflows);	 
+  printf("   Received packets: %llu missed packets errors: %i\n", (long long unsigned int)eth->rx_count, eth->num_underflows);	 
 }  
 
 void inline dump_buff(openair0_device *device, char *buff,unsigned int tx_rx_flag, int nsamps) {

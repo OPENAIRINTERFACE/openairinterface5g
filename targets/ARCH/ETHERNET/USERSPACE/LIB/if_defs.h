@@ -65,6 +65,9 @@
 #define RAW_IF4p5_PDLFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define RAW_IF4p5_PULFFT_SIZE_BYTES(nblocks) (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
 #define RAW_IF4p5_PRACH_SIZE_BYTES (MAC_HEADER_SIZE_BYTES + sizeof_IF4p5_header_t + PRACH_BLOCK_SIZE_BYTES)
+#define UDP_IF4p5_PDLFFT_SIZE_BYTES(nblocks) (sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define UDP_IF4p5_PULFFT_SIZE_BYTES(nblocks) (sizeof_IF4p5_header_t + DATA_BLOCK_SIZE_BYTES(nblocks))  
+#define UDP_IF4p5_PRACH_SIZE_BYTES (sizeof_IF4p5_header_t + PRACH_BLOCK_SIZE_BYTES)
 
 // Mobipass packet sizes
 #define RAW_IF5_MOBIPASS_BLOCK_SIZE_BYTES 1280
