@@ -3880,6 +3880,7 @@ rrc_eNB_decode_ccch(
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 random_value);
+	  rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
           return -1;
         }
       }
@@ -4220,7 +4221,7 @@ rrc_eNB_decode_dcch(
 #ifdef RRC_MSG_PRINT
       LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
 
-      for (i = 0; i < sdu_sizeP; i++) {
+      for (i = 0; i < sdu_sizeP; i++) eNB->pusch_vars[UE_id]{
         LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
       }
 

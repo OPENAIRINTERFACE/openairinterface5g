@@ -876,20 +876,20 @@ void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
   void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
   unsigned int rxs,txs;
   int i;
-
+  int tx_sfoffset = (eNB->single_thread_flag == 1) ? 3 : 3;
   if (proc->first_rx==0) {
     
     // Transmit TX buffer based on timestamp from RX
     //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(2*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
 	
     for (i=0; i<fp->nb_antennas_tx; i++)
-      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+3)%10)*fp->samples_per_tti];
+      txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti];
     
     txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-				       proc->timestamp_rx+(3*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
+				       proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance,
 				       txp,
 				       fp->samples_per_tti,
 				       fp->nb_antennas_tx,
@@ -1317,7 +1317,7 @@ static void* eNB_thread_single( void* param ) {
     proc_rxtx->subframe_rx = proc->subframe_rx;
     proc_rxtx->frame_rx    = proc->frame_rx;
     proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1); 
+    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023; 
 
     if (rxtx(eNB,proc_rxtx,"eNB_thread_single") < 0) break;
   }

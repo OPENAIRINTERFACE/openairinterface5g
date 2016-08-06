@@ -367,6 +367,22 @@ int rrc_mac_remove_ue(module_id_t mod_idP,rnti_t rntiP)
 
   mac_phy_remove_ue(mod_idP,rntiP);
 
+  // check if this has an RA process active
+  RA_TEMPLATE *RA_template;
+  for (i=0;i<NB_RA_PROC_MAX;i++) {
+    RA_template = (RA_TEMPLATE *)&eNB_mac_inst[mod_idP].common_channels[pCC_id].RA_template[i];
+    if ((RA_template->RA_active == TRUE) && 
+	(RA_template->rnti == rntiP)){
+      RA_template->RA_active=FALSE;
+      RA_template->generate_rar=0;
+      RA_template->generate_Msg4=0;
+      RA_template->wait_ack_Msg4=0;
+      RA_template->timing_offset=0;
+      RA_template->RRC_timer=20;
+      RA_template->rnti = 0;
+      break;
+    }
+  }
   if (ret == 0) {
     return (0);
   }
