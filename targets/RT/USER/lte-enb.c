@@ -1317,8 +1317,7 @@ static void* eNB_thread_single( void* param ) {
     proc_rxtx->subframe_rx = proc->subframe_rx;
     proc_rxtx->frame_rx    = proc->frame_rx;
     proc_rxtx->subframe_tx = (proc->subframe_rx+4)%10;
-    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1); 
-
+    proc_rxtx->frame_tx    = (proc->subframe_rx < 6) ? proc->frame_rx : (proc->frame_rx+1)&1023;
     if (rxtx(eNB,proc_rxtx,"eNB_thread_single") < 0) break;
   }
   

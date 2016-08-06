@@ -1101,6 +1101,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   DCI_ALLOC_t *dci_alloc=(DCI_ALLOC_t *)NULL;
 
+  int offset = proc == &eNB->proc.proc_rxtx[0] ? 0 : 1;
+
 #if defined(SMBV) 
   // counts number of allocations in subframe
   // there is at least one allocation for PDCCH
@@ -1110,7 +1112,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_DL)) return;
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),1);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
   start_meas(&eNB->phy_proc_tx);
 
   T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
@@ -1396,7 +1398,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   phy_procedures_emos_eNB_TX(subframe, eNB);
 #endif
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(subframe&1),0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
   stop_meas(&eNB->phy_proc_tx);
   
 }
