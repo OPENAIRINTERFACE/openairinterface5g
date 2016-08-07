@@ -1329,6 +1329,7 @@ static void* eNB_thread_single( void* param ) {
 
 }
 
+extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
 void init_eNB_proc(int inst) {
   
@@ -1337,7 +1338,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
@@ -1347,10 +1348,10 @@ void init_eNB_proc(int inst) {
     proc_rxtx = proc->proc_rxtx;
     proc_rxtx[0].instance_cnt_rxtx = -1;
     proc_rxtx[1].instance_cnt_rxtx = -1;
-    proc->instance_cnt_prach = -1;
-    proc->instance_cnt_FH = -1;
+    proc->instance_cnt_prach       = -1;
+    proc->instance_cnt_FH          = -1;
     proc->instance_cnt_asynch_rxtx = -1;
-    proc->CC_id = CC_id;
+    proc->CC_id = CC_id;    
     
     proc->first_rx=1;
     proc->first_tx=1;
@@ -1373,6 +1374,7 @@ void init_eNB_proc(int inst) {
     attr_prach  = &proc->attr_prach;
     attr_asynch = &proc->attr_asynch_rxtx;
     attr_single = &proc->attr_single;
+    attr_fep    = &proc->attr_fep;
 #endif
 
     if (eNB->single_thread_flag==0) {
@@ -1380,9 +1382,10 @@ void init_eNB_proc(int inst) {
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
       pthread_create( &proc->pthread_FH, attr_FH, eNB_thread_FH, &eNB->proc );
     }
-    else 
+    else {
       pthread_create(&proc->pthread_single, attr_single, eNB_thread_single, &eNB->proc);
-
+      init_fep_thread(eNB,attr_fep);
+    }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, &eNB->proc );
     if ((eNB->node_timing == synch_to_other) ||
 	(eNB->node_function == NGFI_RRU_IF5) ||
@@ -1631,7 +1634,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case NGFI_RRU_IF4p5:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = eNB_fep_full;
+	eNB->fep                  = (eNB->single_thread_flag == 0) ? NB_fep_full : eNB_fep_full_2thread;
 	eNB->proc_uespec_rx       = NULL;
 	eNB->proc_tx              = NULL;//proc_tx_rru_if4p5;
 	eNB->tx_fh                = NULL;
@@ -1658,7 +1661,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP:
 	eNB->do_prach             = do_prach;
-	eNB->fep                  = eNB_fep_full;
+	eNB->fep                  = (eNB->single_thread_flag == 0) ? NB_fep_full : eNB_fep_full_2thread;
 	eNB->proc_uespec_rx       = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx              = proc_tx_full;
 	eNB->tx_fh                = NULL;
@@ -1676,7 +1679,7 @@ void init_eNB(eNB_func_t node_function[], eNB_timing_t node_timing[],int nb_inst
 	break;
       case eNodeB_3GPP_BBU:
 	eNB->do_prach       = do_prach;
-	eNB->fep            = eNB_fep_full;
+	eNB->fep            = (eNB->single_thread_flag == 0) ? NB_fep_full : eNB_fep_full_2thread;
 	eNB->proc_uespec_rx = phy_procedures_eNB_uespec_RX;
 	eNB->proc_tx        = proc_tx_full;
 	eNB->tx_fh          = tx_fh_if5;

@@ -85,6 +85,8 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+int oai_exit = 0;
+
 
 void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mcs,int ndi,int cqi_flag) {
 
@@ -171,6 +173,7 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mc
 }
 
 extern void eNB_fep_full(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
 
 int main(int argc, char **argv)
 {
@@ -688,6 +691,8 @@ int main(int argc, char **argv)
   eNB->ulsch[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
+  init_fep_thread(eNB,&eNB->proc.attr_fep);
+
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
     eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
@@ -1181,7 +1186,7 @@ int main(int argc, char **argv)
           }
 
 
-	  eNB->fep = eNB_fep_full;
+	  eNB->fep = eNB_fep_full_2thread;
 	  eNB->do_prach = NULL;
 
 	  phy_procedures_eNB_common_RX(eNB);
@@ -1699,6 +1704,9 @@ int main(int argc, char **argv)
 
   }//ch realization
 
+
+  oai_exit=1;
+  pthread_cond_signal(&eNB->proc.cond_fep);
 
   if (abstx) { // ABSTRACTION
     fprintf(csv_fdUL,"];");

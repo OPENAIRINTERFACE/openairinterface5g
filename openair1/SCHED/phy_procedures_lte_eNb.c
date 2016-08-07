@@ -2497,6 +2497,158 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 
 }
 
+typedef struct {
+  PHY_VARS_eNB *eNB;
+  int slot;
+} fep_task;
+
+void fep0(PHY_VARS_eNB *eNB,int slot) {
+
+  eNB_proc_t *proc       = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  int l;
+
+  remove_7_5_kHz(eNB,(slot&1)+(proc->subframe_rx<<1));
+  for (l=0; l<fp->symbols_per_tti/2; l++) {
+    slot_fep_ul(fp,
+		&eNB->common_vars,
+		l,
+		(slot&1)+(proc->subframe_rx<<1),
+		0,
+		0
+		);
+  }
+}
+
+static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  
+  *instance_cnt=*instance_cnt-1;
+  
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(0);
+}
+
+static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+  if (pthread_mutex_lock(mutex) != 0) {
+    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  
+  while (*instance_cnt < 0) {
+    // most of the time the thread is waiting here
+    // proc->instance_cnt_rxtx is -1
+    pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
+  }
+
+  if (pthread_mutex_unlock(mutex) != 0) {
+    LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
+    exit_fun("nothing to add");
+    return(-1);
+  }
+  return(0);
+}
+
+extern int oai_exit;
+
+
+static void *fep_thread(void *param) {
+
+  PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
+  eNB_proc_t *proc  = &eNB->proc;
+  while (!oai_exit) {
+    printf("Waiting for parallel FEP signal\n");
+    if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break;  
+    printf("Running parallel FEP on first slot\n");
+    fep0(eNB,0);
+    if (release_thread(&proc->mutex_fep,&proc->instance_cnt_fep,"fep thread")<0) break;
+  }
+  return(NULL);
+}
+
+void init_fep_thread(PHY_VARS_eNB *eNB,pthread_attr_t *attr_fep) {
+
+  eNB_proc_t *proc = &eNB->proc;
+
+  proc->instance_cnt_fep         = -1;
+    
+  pthread_mutex_init( &proc->mutex_fep, NULL);
+  pthread_cond_init( &proc->cond_fep, NULL);
+
+  pthread_create(&proc->pthread_fep, attr_fep, fep_thread, (void*)eNB);
+
+}
+
+void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
+
+  eNB_proc_t *proc = &eNB->proc;
+  struct timespec wait;
+  int wait_cnt=0;
+  wait.tv_sec=0;
+  wait.tv_nsec=5000000L;
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
+  start_meas(&eNB->ofdm_demod_stats);
+
+  printf("Running 2 thread FEP\n"); 
+
+  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
+    printf("[eNB] ERROR pthread_mutex_lock for fep thread %d (IC %d)\n", proc->instance_cnt_fep);
+    exit_fun( "error locking mutex_fep" );
+    return;
+  }
+
+  if (proc->instance_cnt_fep==0) {
+    printf("[eNB] FEP thread busy\n");
+    exit_fun("FEP thread busy");
+    pthread_mutex_unlock( &proc->mutex_fep );
+    return;
+  }
+  
+  ++proc->instance_cnt_fep;
+
+  printf("[eNB] waking up FEP thread\n");  
+  if (pthread_cond_signal(&proc->cond_fep) != 0) {
+    printf("[eNB] ERROR pthread_cond_signal for fep thread\n");
+    exit_fun( "ERROR pthread_cond_signal" );
+    return;
+  }
+  
+  pthread_mutex_unlock( &proc->mutex_fep );
+
+  // call second slot in this symbol
+  printf("Calling FEP for 2nd slot\n"); 
+  fep0(eNB,1);
+
+  if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
+    printf("[eNB] ERROR pthread_mutex_lock for fep thread %d (IC %d)\n", proc->instance_cnt_fep);
+    exit_fun( "error locking mutex_fep" );
+    return;
+  }
+  while (proc->instance_cnt_fep==0) {
+    wait_cnt++;
+    if (wait_cnt>10000)
+      break;
+  };
+
+  pthread_mutex_unlock( &proc->mutex_fep );
+  if (wait_cnt>10000) {
+    printf("[eNB] parallel FEP didn't finish\n");
+    exit_fun( "error" );
+  }
+}
+
 void eNB_fep_full(PHY_VARS_eNB *eNB) {
 
   eNB_proc_t *proc = &eNB->proc;
