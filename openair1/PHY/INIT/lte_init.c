@@ -965,7 +965,7 @@ int phy_init_lte_ue(PHY_VARS_UE *ue,
   int i,j,k;
   int eNB_id;
 
-  msg("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
+  printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,frame_parms->nb_antennas_tx,frame_parms->nb_antennas_rx);
   LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
 
   // many memory allocation sizes are hard coded
@@ -1199,8 +1199,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	  common_vars->txdata[eNB_id][i]  = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(int32_t) );
 	common_vars->txdataF[eNB_id][i] = (int32_t*)malloc16_clear( FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t) );
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
-	msg("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
+	printf("[openair][LTE_PHY][INIT] common_vars->txdata[%d][%d] = %p\n",eNB_id,i,common_vars->txdata[eNB_id][i]);
+	printf("[openair][LTE_PHY][INIT] common_vars->txdataF[%d][%d] = %p (%d bytes)\n",
 	    eNB_id,i,common_vars->txdataF[eNB_id][i],
 	    FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX*sizeof(int32_t));
 #endif
@@ -1221,8 +1221,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	
 	common_vars->rxdataF[eNB_id][i] = (int32_t*)malloc16_clear(sizeof(int32_t)*(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti) );
 #ifdef DEBUG_PHY
-	msg("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
-	msg("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
+	printf("[openair][LTE_PHY][INIT] common_vars->rxdata[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata[eNB_id][i]);
+	printf("[openair][LTE_PHY][INIT] common_vars->rxdata_7_5kHz[%d][%d] = %p\n",eNB_id,i,common_vars->rxdata_7_5kHz[eNB_id][i]);
 #endif
       }
       
@@ -1272,7 +1272,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   for (i=0; i<frame_parms->nb_antennas_rx; i++) {
     prach_vars->rxsigF[i] = (int16_t*)malloc16_clear( frame_parms->ofdm_symbol_size*12*2*sizeof(int16_t) );
 #ifdef DEBUG_PHY
-    msg("[openair][LTE_PHY][INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
+    printf("[openair][LTE_PHY][INIT] prach_vars->rxsigF[%d] = %p\n",i,prach_vars->rxsigF[i]);
 #endif
   }
   
@@ -1282,7 +1282,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     for (i=0; i<frame_parms->nb_antennas_rx; i++) {
       prach_vars->prach_ifft[i] = (int16_t*)malloc16_clear(1024*2*sizeof(int16_t));
 #ifdef DEBUG_PHY
-      msg("[openair][LTE_PHY][INIT] prach_vars->prach_ifft[%d] = %p\n",i,prach_vars->prach_ifft[i]);
+      printf("[openair][LTE_PHY][INIT] prach_vars->prach_ifft[%d] = %p\n",i,prach_vars->prach_ifft[i]);
 #endif
     }
 
@@ -1365,11 +1365,11 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	  
 	  if (eNB->dl_precoder_SeNB[eNB_id]) {
 #ifdef DEBUG_PHY
-	    msg("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] allocated at %p\n",eNB_id,
+	    printf("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] allocated at %p\n",eNB_id,
 		eNB->dl_precoder_SeNB[eNB_id]);
 #endif
 	  } else {
-	    msg("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] not allocated\n",eNB_id);
+	    printf("[openair][SECSYS_PHY][INIT] eNB->dl_precoder_SeNB[%d] not allocated\n",eNB_id);
 	    return(-1);
 	  }
 	  
@@ -1378,12 +1378,12 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 	    
 	    if (eNB->dl_precoder_SeNB[eNB_id][j]) {
 #ifdef DEBUG_PHY
-	      msg("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] allocated at %p\n",eNB_id,j,
+	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] allocated at %p\n",eNB_id,j,
 		  eNB->dl_precoder_SeNB[eNB_id][j]);
 #endif
 	      memset(eNB->dl_precoder_SeNB[eNB_id][j],0,2*sizeof(int)*(eNB->frame_parms.ofdm_symbol_size));
 	    } else {
-	      msg("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] not allocated\n",eNB_id,j);
+	      printf("[openair][LTE_PHY][INIT] eNB->dl_precoder_SeNB[%d][%d] not allocated\n",eNB_id,j);
 	      return(-1);
 	    }
 	  } //for(j=...nb_antennas_tx

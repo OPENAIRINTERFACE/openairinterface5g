@@ -2515,8 +2515,9 @@ int main(int argc, char **argv)
 		
 
 	    proc_eNB->subframe_tx = subframe;
-	    
-	    phy_procedures_eNB_TX(eNB,proc_eNB,0,no_relay,NULL);
+	    eNB->abstraction_flag=0;
+ 
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL);
 	    
 	    
 	    start_meas(&eNB->ofdm_mod_stats);
@@ -2538,7 +2539,7 @@ int main(int argc, char **argv)
 	    
 	    proc_eNB->subframe_tx = subframe+1;
 	    
-	    phy_procedures_eNB_TX(eNB,proc_eNB,0,no_relay,NULL);
+	    phy_procedures_eNB_TX(eNB,proc_eNB,no_relay,NULL);
 	    
 	    do_OFDM_mod_l(eNB->common_vars.txdataF[eNB_id],
 			  eNB->common_vars.txdata[eNB_id],
