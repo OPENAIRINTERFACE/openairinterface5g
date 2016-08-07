@@ -1371,6 +1371,14 @@ void init_eNB_proc(int inst) {
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
+
+    pthread_attr_init( &proc->attr_FH);
+    pthread_attr_init( &proc->attr_prach);
+    pthread_attr_init( &proc->attr_asynch_rxtx);
+    pthread_attr_init( &proc->attr_single);
+    pthread_attr_init( &proc->attr_fep);
+    pthread_attr_init( &proc_rxtx[0].attr_rxtx);
+    pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifndef DEADLINE_SCHEDULER
     attr0       = &proc_rxtx[0].attr_rxtx;
     attr1       = &proc_rxtx[1].attr_rxtx;
