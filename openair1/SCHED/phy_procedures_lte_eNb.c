@@ -2568,9 +2568,7 @@ static void *fep_thread(void *param) {
   PHY_VARS_eNB *eNB = (PHY_VARS_eNB *)param;
   eNB_proc_t *proc  = &eNB->proc;
   while (!oai_exit) {
-    printf("Waiting for parallel FEP signal\n");
     if (wait_on_condition(&proc->mutex_fep,&proc->cond_fep,&proc->instance_cnt_fep,"fep thread")<0) break;  
-    printf("Running parallel FEP on first slot\n");
     fep0(eNB,0);
     if (release_thread(&proc->mutex_fep,&proc->instance_cnt_fep,"fep thread")<0) break;
   }
@@ -2601,8 +2599,6 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
   start_meas(&eNB->ofdm_demod_stats);
 
-  printf("Running 2 thread FEP\n"); 
-
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
     printf("[eNB] ERROR pthread_mutex_lock for fep thread %d (IC %d)\n", proc->instance_cnt_fep);
     exit_fun( "error locking mutex_fep" );
@@ -2618,7 +2614,7 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   
   ++proc->instance_cnt_fep;
 
-  printf("[eNB] waking up FEP thread\n");  
+
   if (pthread_cond_signal(&proc->cond_fep) != 0) {
     printf("[eNB] ERROR pthread_cond_signal for fep thread\n");
     exit_fun( "ERROR pthread_cond_signal" );
@@ -2628,7 +2624,6 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   pthread_mutex_unlock( &proc->mutex_fep );
 
   // call second slot in this symbol
-  printf("Calling FEP for 2nd slot\n"); 
   fep0(eNB,1);
 
   if (pthread_mutex_timedlock(&proc->mutex_fep,&wait) != 0) {
@@ -2643,10 +2638,12 @@ void eNB_fep_full_2thread(PHY_VARS_eNB *eNB) {
   };
 
   pthread_mutex_unlock( &proc->mutex_fep );
-  if (wait_cnt>10000) {
+  if (wait_cnt>1000000) {
     printf("[eNB] parallel FEP didn't finish\n");
     exit_fun( "error" );
   }
+
+  stop_meas(&eNB->ofdm_demod_stats);
 }
 
 void eNB_fep_full(PHY_VARS_eNB *eNB) {
