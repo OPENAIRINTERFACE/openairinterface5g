@@ -2346,10 +2346,11 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
   int ret=0;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
+  if (eNB->ulsch[UE_id]==NULL) return;
+
   num_active_cba_groups = eNB->ulsch[UE_id]->num_active_cba_groups;
-  
-  if ((eNB->ulsch[UE_id]) &&
-      (num_active_cba_groups > 0) &&
+ 
+  if ((num_active_cba_groups > 0) &&
       (eNB->ulsch[UE_id]->cba_rnti[UE_id%num_active_cba_groups]>0) &&
       (eNB->ulsch[UE_id]->harq_processes[harq_pid]->subframe_cba_scheduling_flag==1)) {
     rnti=0;
@@ -2462,7 +2463,8 @@ void cba_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,int UE_id,int harq_p
 	      UE_id % eNB->ulsch[UE_id]->num_active_cba_groups, eNB->ulsch[UE_id]->cba_rnti[UE_id%num_active_cba_groups]);
 
 	// detect if there is a CBA collision
-	if (eNB->cba_last_reception[UE_id%num_active_cba_groups] == 0 ) {
+	if ((eNB->cba_last_reception[UE_id%num_active_cba_groups] == 0 ) && 
+	    (eNB->mac_enabled==1)) {
 	  mac_xface->rx_sdu(eNB->Mod_id,
 			    eNB->CC_id,
 			    frame,subframe,
@@ -2502,6 +2504,7 @@ void eNB_fep_full(PHY_VARS_eNB *eNB) {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,1);
+  start_meas(&eNB->ofdm_demod_stats);
   remove_7_5_kHz(eNB,proc->subframe_rx<<1);
   remove_7_5_kHz(eNB,1+(proc->subframe_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
@@ -2520,6 +2523,7 @@ void eNB_fep_full(PHY_VARS_eNB *eNB) {
 		0
 		);
   }
+  stop_meas(&eNB->ofdm_demod_stats);
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_SLOT_FEP,0);
   
@@ -2626,10 +2630,11 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
   const int frame    = proc->frame_rx;
   int offset         = (proc == &eNB->proc.proc_rxtx[0]) ? 0 : 1;
 
+
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC+offset, 1 );
-  start_meas(&eNB->phy_proc_rx);
+
 #ifdef DEBUG_PHY_PROC
   LOG_D(PHY,"[eNB %d] Frame %d: Doing phy_procedures_eNB_uespec_RX(%d)\n",eNB->Mod_id,frame, subframe);
 #endif
@@ -2920,14 +2925,15 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
             eNB->UE_stats[i].ulsch_consecutive_errors++;
 
 	    // indicate error to MAC
-	    mac_xface->rx_sdu(eNB->Mod_id,
-			      eNB->CC_id,
-			      frame,subframe,
-			      eNB->ulsch[i]->rnti,
-			      NULL,
-			      0,
-			      harq_pid,
-			      &eNB->ulsch[i]->Msg3_flag);
+	    if (eNB->mac_enabled == 1)
+	      mac_xface->rx_sdu(eNB->Mod_id,
+				eNB->CC_id,
+				frame,subframe,
+				eNB->ulsch[i]->rnti,
+				NULL,
+				0,
+				harq_pid,
+				&eNB->ulsch[i]->Msg3_flag);
           }
         }
       }  // ulsch in error
@@ -2987,15 +2993,15 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,const 
 	    LOG_I(PHY,"[eNB %d][RAPROC] Frame %d Terminating ra_proc for harq %d, UE %d\n",
 		  eNB->Mod_id,
 		  frame,harq_pid,i);
-	    
-	    mac_xface->rx_sdu(eNB->Mod_id,
-			      eNB->CC_id,
-			      frame,subframe,
-			      eNB->ulsch[i]->rnti,
-			      eNB->ulsch[i]->harq_processes[harq_pid]->b,
-			      eNB->ulsch[i]->harq_processes[harq_pid]->TBS>>3,
-			      harq_pid,
-			      &eNB->ulsch[i]->Msg3_flag);
+	    if (eNB->mac_enabled)
+	      mac_xface->rx_sdu(eNB->Mod_id,
+				eNB->CC_id,
+				frame,subframe,
+				eNB->ulsch[i]->rnti,
+				eNB->ulsch[i]->harq_processes[harq_pid]->b,
+				eNB->ulsch[i]->harq_processes[harq_pid]->TBS>>3,
+				harq_pid,
+				&eNB->ulsch[i]->Msg3_flag);
 	    
 	    // one-shot msg3 detection by MAC: empty PDU (e.g. CRNTI)
 	    if (eNB->ulsch[i]->Msg3_flag == 0 ) {
