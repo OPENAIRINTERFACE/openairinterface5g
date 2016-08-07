@@ -164,6 +164,7 @@ void stop_eNB(int nb_inst);
 
 
 static inline void thread_top_init(char *thread_name,
+				   int affinity,
 				   uint64_t runtime,
 				   uint64_t deadline,
 				   uint64_t period) {
@@ -207,7 +208,10 @@ static inline void thread_top_init(char *thread_name,
 #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
-    for (j = 1; j < get_nprocs(); j++)
+    if (affinity == 0)
+      CPU_SET(0,&cpuset);
+    else
+      for (j = 1; j < get_nprocs(); j++)
         CPU_SET(j, &cpuset);
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0)
@@ -625,7 +629,7 @@ static void* eNB_thread_rxtx( void* param ) {
   eNB_thread_rxtx_status = 0;
 
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
-  thread_top_init(thread_name,850000L,1000000L,2000000L);
+  thread_top_init(thread_name,1,850000L,1000000L,2000000L);
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
@@ -830,7 +834,7 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
 
   int subframe=0, frame=0; 
 
-  thread_top_init("thread_asynch",870000L,1000000L,1000000L);
+  thread_top_init("thread_asynch",1,870000L,1000000L,1000000L);
 
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
 
@@ -1153,7 +1157,7 @@ static void* eNB_thread_FH( void* param ) {
   // set default return value
   eNB_thread_FH_status = 0;
 
-  thread_top_init("eNB_thread_FH",870000,1000000,1000000);
+  thread_top_init("eNB_thread_FH",0,870000,1000000,1000000);
 
   wait_sync("eNB_thread_FH");
 
@@ -1233,7 +1237,7 @@ static void* eNB_thread_prach( void* param ) {
   // set default return value
   eNB_thread_prach_status = 0;
 
-  thread_top_init("eNB_thread_prach",500000L,1000000L,20000000L);
+  thread_top_init("eNB_thread_prach",1,500000L,1000000L,20000000L);
 
   while (!oai_exit) {
     
@@ -1265,7 +1269,7 @@ static void* eNB_thread_single( void* param ) {
   // set default return value
   eNB_thread_single_status = 0;
 
-  thread_top_init("eNB_thread_single",870000,1000000,1000000);
+  thread_top_init("eNB_thread_single",0,870000,1000000,1000000);
 
   wait_sync("eNB_thread_single");
 
