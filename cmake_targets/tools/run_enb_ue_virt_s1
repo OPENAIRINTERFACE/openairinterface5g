@@ -252,7 +252,7 @@ function main()
   # Check table 200 lte in /etc/iproute2/rt_tables
   fgrep lte /etc/iproute2/rt_tables  > /dev/null
   if [ $? -ne 0 ]; then
-    bash -c echo "200 lte " >> /etc/iproute2/rt_tables
+    echo "200 lte " >> /etc/iproute2/rt_tables
   fi
   ip rule add fwmark 1 table lte 
   ifconfig oip1 up
