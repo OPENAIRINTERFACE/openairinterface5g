@@ -401,6 +401,7 @@ void help (void) {
   printf("  -W Enable L2 wireshark messages on localhost \n");
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
   printf("  -x Set the transmission mode, valid options: 1 \n");
+  printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
 #if T_TRACER
   printf("  --T_port [port]    use given port\n");
   printf("  --T_nowait         don't wait for tracer, start immediately\n");
