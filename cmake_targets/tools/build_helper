@@ -1,4 +1,4 @@
-################################################################################
+ ################################################################################
 #
 # Copyright (c) 2015, EURECOM (www.eurecom.fr)
 # All rights reserved.
@@ -283,7 +283,8 @@ check_install_additional_tools (){
         android-tools-adb \
 	wvdial \
         python-numpy \
-    sshpass
+    sshpass \
+    nscd
 
     $SUDO pip install paramiko
     $SUDO pip install pyroute2
@@ -457,6 +458,8 @@ CURPID=$$
 ppid=$$
 arraycounter=1
 echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
+echo_info "** Calling sync now..."
+sync 
 while true
 do
         FORLOOP=FALSE
