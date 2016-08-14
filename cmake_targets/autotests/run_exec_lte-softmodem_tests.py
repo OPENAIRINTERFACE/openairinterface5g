@@ -1430,6 +1430,7 @@ for oai in oai_list:
       #cmd = cmd  + 'rm -fR ' +  logdir + '\n'
       #cmd = cmd + 'mkdir -p ' + logdir + '\n'
       cmd = cmd + 'cd '+ logdir   + '\n'
+      cmd = cmd + 'sudo apt-get install git \n'
       cmd = cmd + 'git config --global http.sslVerify false \n' 
       cmd = cmd + 'git clone  '+ GitOAI5GRepo  +' \n'
       cmd = cmd + 'git clone '+ GitOpenaircnRepo + ' \n'
