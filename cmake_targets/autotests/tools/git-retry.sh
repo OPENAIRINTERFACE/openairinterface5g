@@ -8,7 +8,7 @@ RETRIES=10
 DELAY=10
 COUNT=1
 while [ $COUNT -lt $RETRIES ]; do
-  $REALGIT $*
+  $REALGIT $* >> git-clone-log.txt 2>&1
   if [ $? -eq 0 ]; then
     RETRIES=0
     break
