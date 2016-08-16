@@ -610,7 +610,7 @@ extern "C" {
 
     switch ((int)openair0_cfg[0].sample_rate) {
     case 30720000:
-      s->usrp->set_master_clock_rate(61.44e6);
+      s->usrp->set_master_clock_rate(30.72e6);
       openair0_cfg[0].tx_sample_advance     = 115;
       openair0_cfg[0].tx_bw                 = 20e6;
       openair0_cfg[0].rx_bw                 = 20e6;

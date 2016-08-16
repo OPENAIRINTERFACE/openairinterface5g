@@ -1161,6 +1161,9 @@ void rx_prach(PHY_VARS_eNB *eNB,
     break;
   }
 
+  if (eNB->frame_parms.threequarter_fs == 1)
+    Ncp=(Ncp*3)>>2;
+
   switch (eNB->frame_parms.N_RB_UL) {
   case 6:
     Ncp>>=4;
@@ -1258,13 +1261,24 @@ void rx_prach(PHY_VARS_eNB *eNB,
 	break;
 	
       case 100:
-	if (prach_fmt == 4) {
-	  dft4096(prach2,rxsigF[aa],1);
+	if (eNB->frame_parms.threequarter_fs==0) {
+	  if (prach_fmt == 4) {
+	    dft4096(prach2,rxsigF[aa],1);
+	  } else {
+	    dft24576(prach2,rxsigF[aa]);
+	    
+	    if (prach_fmt>1)
+	      dft24576(prach2+49152,rxsigF[aa]+49152);
+	  }
 	} else {
-	  dft24576(prach2,rxsigF[aa]);
-	  
-	  if (prach_fmt>1)
-	    dft24576(prach2+49152,rxsigF[aa]+49152);
+	  if (prach_fmt == 4) {
+	    dft3072(prach2,rxsigF[aa]);
+	  } else {
+	    dft18432(prach2,rxsigF[aa]);
+	    
+	    if (prach_fmt>1)
+	      dft18432(prach2+36864,rxsigF[aa]+36864);
+	  }
 	}
 	
 	break;

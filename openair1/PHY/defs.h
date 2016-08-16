@@ -246,6 +246,8 @@ typedef struct eNB_proc_t_s {
   int frame_rx;
   /// frame to act upon for PRACH
   int frame_prach;
+  /// \internal This variable is protected by \ref mutex_fep.
+  int instance_cnt_fep;
   /// \brief Instance count for FH processing thread.
   /// \internal This variable is protected by \ref mutex_FH.
   int instance_cnt_FH;
@@ -264,6 +266,8 @@ typedef struct eNB_proc_t_s {
   int first_rx;
   /// flag to indicate first TX transmission
   int first_tx;
+  /// pthread attributes for parallel fep thread
+  pthread_attr_t attr_fep;
   /// pthread attributes for FH processing thread
   pthread_attr_t attr_FH;
   /// pthread attributes for single eNB processing thread
@@ -272,6 +276,8 @@ typedef struct eNB_proc_t_s {
   pthread_attr_t attr_prach;
   /// pthread attributes for asynchronous RX thread
   pthread_attr_t attr_asynch_rxtx;
+  /// scheduling parameters for parallel fep thread
+  struct sched_param sched_param_fep;
   /// scheduling parameters for FH thread
   struct sched_param sched_param_FH;
   /// scheduling parameters for single eNB thread
@@ -280,14 +286,20 @@ typedef struct eNB_proc_t_s {
   struct sched_param sched_param_prach;
   /// scheduling parameters for asynch_rxtx thread
   struct sched_param sched_param_asynch_rxtx;
+  /// pthread structure for parallel fep thread
+  pthread_t pthread_fep;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
+  /// condition variable for parallel fep thread
+  pthread_cond_t cond_fep;
   /// condition variable for FH thread
   pthread_cond_t cond_FH;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
   /// condition variable for asynch RX/TX thread
   pthread_cond_t cond_asynch_rxtx;
+  /// mutex for parallel fep thread
+  pthread_mutex_t mutex_fep;
   /// mutex for FH
   pthread_mutex_t mutex_FH;
   /// mutex for PRACH thread

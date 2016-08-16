@@ -44,7 +44,7 @@
 #include "PHY/vars.h"
 #endif
 #include "assertions.h"
-
+ 
 //#define DEBUG_DCI
 
 uint32_t localRIV2alloc_LUT6[32];
@@ -1216,7 +1216,7 @@ int generate_eNB_dlsch_params_from_dci(int frame,
 
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
-    // msg("DCI: Setting subframe_tx for subframe %d\n",subframe);
+    // printf("DCI: Setting subframe_tx for subframe %d\n",subframe);
     dlsch[0]->subframe_tx[subframe] = 1;
 
     conv_rballoc(rah,
@@ -4467,7 +4467,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       dlsch0_harq->Qm          = (mcs-28)<<1;
     else
       LOG_E(PHY,"invalid mcs %d\n",mcs);
-    //    msg("test: MCS %d, NPRB %d, TBS %d\n",mcs,NPRB,dlsch0_harq->TBS);
+    //    printf("test: MCS %d, NPRB %d, TBS %d\n",mcs,NPRB,dlsch0_harq->TBS);
     dlsch[0]->current_harq_pid = harq_pid;
 
     dlsch[0]->active = 1;
@@ -4735,7 +4735,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
     dlsch[0]->g_pucch += delta_PUCCH_lut[TPC&3];
     /*
       if (dlsch0_harq->mcs>20) {
-      msg("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0_harq->mcs);
+      printf("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0_harq->mcs);
       return(-1);
       }
     */
@@ -5411,7 +5411,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     /*
       if (dlsch0_harq->mcs>20) {
-      msg("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0_harq->mcs);
+      printf("dci_tools.c: mcs > 20 disabled for now (asked %d)\n",dlsch0_harq->mcs);
       return(-1);
       }
     */
@@ -5437,7 +5437,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
 
     // Fix this
     tpmi = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->tpmi;
-    //    msg("ue: tpmi %d\n",tpmi);
+    //    printf("ue: tpmi %d\n",tpmi);
 
     switch (tpmi) {
     case 0 :
@@ -5556,9 +5556,9 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
   /*
     #ifdef DEBUG_DCI
     if (frame_parms->frame_type == TDD)
-    msg("dci_tools.c: subframe2_harq_pid, subframe %d for TDD configuration %d\n",subframe,frame_parms->tdd_config);
+    printf("dci_tools.c: subframe2_harq_pid, subframe %d for TDD configuration %d\n",subframe,frame_parms->tdd_config);
     else
-    msg("dci_tools.c: subframe2_harq_pid, subframe %d for FDD \n",subframe);
+    printf("dci_tools.c: subframe2_harq_pid, subframe %d for FDD \n",subframe);
     #endif
   */
   if (frame_parms->frame_type == FDD) {
@@ -5734,7 +5734,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_subba
       pmivect |= (pmiq<<(2*i));
     } else {
       // This needs to be done properly!!!
-      msg("PMI feedback for rank>1 not supported!\n");
+      printf("PMI feedback for rank>1 not supported!\n");
       pmivect = 0;
     }
   }
@@ -5928,7 +5928,7 @@ uint32_t fill_subband_cqi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t trans_mo
 void fill_CQI(LTE_UE_ULSCH_t *ulsch,PHY_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t harq_pid,int N_RB_DL,uint16_t rnti, uint8_t trans_mode, double sinr_eff)
 {
 
-  //  msg("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
+  //  printf("[PHY][UE] Filling CQI for eNB %d, meas->wideband_cqi_tot[%d] %d\n",
   //      eNB_id,eNB_id,meas->wideband_cqi_tot[eNB_id]);
   double sinr_tmp;
   uint8_t *o = ulsch->o;
@@ -6288,7 +6288,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       RIV_max = RIV_max25;
       ulsch->harq_processes[harq_pid]->first_rb                              = RIV2first_rb_LUT25[rballoc];
       ulsch->harq_processes[harq_pid]->nb_rb                                 = RIV2nb_rb_LUT25[rballoc];
-      //      printf("***********rballoc %d, first_rb %d, nb_rb %d\n",rballoc,ulsch->harq_processes[harq_pid]->first_rb,ulsch->harq_processes[harq_pid]->nb_rb);
+      //      printf("***********rballoc %d, first_rb %d, nb_rb %d (dci %p)\n",rballoc,ulsch->harq_processes[harq_pid]->first_rb,ulsch->harq_processes[harq_pid]->nb_rb,dci_pdu);
       break;
 
     case 50:
@@ -6409,7 +6409,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       ulsch->rnti = rnti;
     }
 
-    //    msg("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
+    //    printf("[PHY][UE] DCI format 0: harq_pid %d nb_rb %d, rballoc %d\n",harq_pid,ulsch->harq_processes[harq_pid]->nb_rb,
     //     ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->rballoc);
     //Mapping of cyclic shift field in DCI format0 to n_DMRS2 (3GPP 36.211, Table 5.5.2.1.1-1)
     if(cshift == 0)
@@ -7007,21 +7007,21 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
     // ulsch->n_DMRS2 = ((DCI0_5MHz_TDD_1_6_t *)dci_pdu)->cshift;
 
 #ifdef DEBUG_DCI
-    msg("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
-    msg("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
-    msg("Format 0 DCI :ulsch (ue): round       %d\n",ulsch->harq_processes[harq_pid]->round);
-    msg("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    msg("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    msg("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
+    printf("Format 0 DCI : ulsch (ue): NBRB        %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    printf("Format 0 DCI :ulsch (ue): first_rb    %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    printf("Format 0 DCI :ulsch (ue): harq_pid    %d\n",harq_pid);
+    printf("Format 0 DCI :ulsch (ue): round       %d\n",ulsch->harq_processes[harq_pid]->round);
+    printf("Format 0 DCI :ulsch (ue): TBS         %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    printf("Format 0 DCI :ulsch (ue): mcs         %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    printf("Format 0 DCI :ulsch (ue): O           %d\n",ulsch->O);
 
     if (frame_parms->frame_type == TDD)
-      msg("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,dai);
+      printf("Format 0 DCI :ulsch (ue): O_ACK/DAI   %d/%d\n",ulsch->harq_processes[harq_pid]->O_ACK,dai);
     else
-      msg("Format 0 DCI :ulsch (ue): O_ACK       %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
+      printf("Format 0 DCI :ulsch (ue): O_ACK       %d\n",ulsch->harq_processes[harq_pid]->O_ACK);
 
-    msg("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
-    msg("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
+    printf("Format 0 DCI :ulsch (ue): Nsymb_pusch   %d\n",ulsch->Nsymb_pusch);
+    printf("Format 0 DCI :ulsch (ue): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
 #else
     UNUSED_VARIABLE(dai);
 #endif
@@ -7066,7 +7066,7 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
   //  uint32_t type;
 
 #ifdef DEBUG_DCI
-  LOG_D(PHY,"filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
+  printf("filling eNB ulsch params for rnti %x, dci format %d, dci %x, subframe %d\n",
         rnti,dci_format,*(uint32_t*)dci_pdu,subframe);
 #endif
 
@@ -7200,7 +7200,7 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
     }
 
 #ifdef DEBUG_DCI
-    LOG_D(PHY,"generate_eNB_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d,cqi_req %d\n",subframe,rnti,harq_pid,cqi_req);
+    printf("generate_eNB_ulsch_params_from_dci: subframe %d, rnti %x,harq_pid %d,cqi_req %d\n",subframe,rnti,harq_pid,cqi_req);
 #endif
 
     ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
@@ -7641,15 +7641,15 @@ int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
     //ulsch->n_DMRS2 = cshift;
 
 #ifdef DEBUG_DCI
-    msg("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
-    msg("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
-    msg("ulsch (eNB): harq_pid      %d\n",harq_pid);
-    msg("ulsch (eNB): round         %d\n",ulsch->harq_processes[harq_pid]->round);
-    msg("ulsch (eNB): TBS           %d\n",ulsch->harq_processes[harq_pid]->TBS);
-    msg("ulsch (eNB): mcs           %d\n",ulsch->harq_processes[harq_pid]->mcs);
-    msg("ulsch (eNB): Or1           %d\n",ulsch->harq_processes[harq_pid]->Or1);
-    msg("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->harq_processes[harq_pid]->Nsymb_pusch);
-    msg("ulsch (eNB): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
+    printf("ulsch (eNB): NBRB          %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
+    printf("ulsch (eNB): first_rb      %d\n",ulsch->harq_processes[harq_pid]->first_rb);
+    printf("ulsch (eNB): harq_pid      %d\n",harq_pid);
+    printf("ulsch (eNB): round         %d\n",ulsch->harq_processes[harq_pid]->round);
+    printf("ulsch (eNB): TBS           %d\n",ulsch->harq_processes[harq_pid]->TBS);
+    printf("ulsch (eNB): mcs           %d\n",ulsch->harq_processes[harq_pid]->mcs);
+    printf("ulsch (eNB): Or1           %d\n",ulsch->harq_processes[harq_pid]->Or1);
+    printf("ulsch (eNB): Nsymb_pusch   %d\n",ulsch->harq_processes[harq_pid]->Nsymb_pusch);
+    printf("ulsch (eNB): cshift        %d\n",ulsch->harq_processes[harq_pid]->n_DMRS2);
 #else
     UNUSED_VARIABLE(dai);
 #endif
@@ -7782,7 +7782,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
             break;
 
           default:
-            msg("Problem in SINR Calculation for TM5 \n");
+            printf("Problem in SINR Calculation for TM5 \n");
             break;
           }//switch(qq)
         }//a_rx
@@ -7848,7 +7848,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
             break;
 
           default:
-            msg("Problem in SINR Calculation for TM6 \n");
+            printf("Problem in SINR Calculation for TM6 \n");
             break;
           }//switch(qq)
         }//a_rx
@@ -7860,7 +7860,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
     break;
 
   default:
-    msg("Problem in SINR Calculation for CQI \n");
+    printf("Problem in SINR Calculation for CQI \n");
     break;
   }
 
@@ -7929,7 +7929,7 @@ double sinr_eff_cqi_calc(PHY_VARS_UE *ue, uint8_t eNB_id)
                     3) + p_qam64[5]*pow(I_qam64_avg,2) + p_qam64[6]*I_qam64_avg + p_qam64[7]);
   sinr_eff = cmax3(sinr_eff_qpsk,sinr_eff_qam16,sinr_eff_qam64);
 
-  //msg("SINR_Eff = %e\n",sinr_eff);
+  //printf("SINR_Eff = %e\n",sinr_eff);
 
   return(sinr_eff);
 }
@@ -7948,20 +7948,20 @@ main()
 
   rah = 0;
   rballoc = 0x1fff;
-  msg("rballoc 0 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 0 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
   rah = 1;
 
   rballoc = 0x1678;
-  msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
 
   rballoc = 0xfffc;
-  msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
   rballoc = 0xfffd;
-  msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
   rballoc = 0xffff;
-  msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
   rballoc = 0xfffe;
-  msg("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
+  printf("rballoc 1 %x => %x\n",rballoc,conv_rballoc(rah,rballoc));
 }
 
 #endif

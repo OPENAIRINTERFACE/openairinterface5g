@@ -166,6 +166,7 @@ void stop_eNB(int nb_inst);
 
 
 static inline void thread_top_init(char *thread_name,
+				   int affinity,
 				   uint64_t runtime,
 				   uint64_t deadline,
 				   uint64_t period) {
@@ -209,7 +210,10 @@ static inline void thread_top_init(char *thread_name,
 #ifdef CPU_AFFINITY
   if (get_nprocs() > 2)
   {
-    for (j = 1; j < get_nprocs(); j++)
+    if (affinity == 0)
+      CPU_SET(0,&cpuset);
+    else
+      for (j = 1; j < get_nprocs(); j++)
         CPU_SET(j, &cpuset);
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0)
@@ -628,7 +632,7 @@ static void* eNB_thread_rxtx( void* param ) {
 
 
   sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
-  thread_top_init(thread_name,850000L,1000000L,2000000L);
+  thread_top_init(thread_name,1,850000L,1000000L,2000000L);
 
   while (!oai_exit) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
@@ -834,7 +838,7 @@ static void* eNB_thread_asynch_rxtx( void* param ) {
 
   int subframe=0, frame=0; 
 
-  thread_top_init("thread_asynch",870000L,1000000L,1000000L);
+  thread_top_init("thread_asynch",1,870000L,1000000L,1000000L);
 
   // wait for top-level synchronization and do one acquisition to get timestamp for setting frame/subframe
 
@@ -1157,7 +1161,7 @@ static void* eNB_thread_FH( void* param ) {
   // set default return value
   eNB_thread_FH_status = 0;
 
-  thread_top_init("eNB_thread_FH",870000,1000000,1000000);
+  thread_top_init("eNB_thread_FH",0,870000,1000000,1000000);
 
   wait_sync("eNB_thread_FH");
 
@@ -1237,7 +1241,7 @@ static void* eNB_thread_prach( void* param ) {
   // set default return value
   eNB_thread_prach_status = 0;
 
-  thread_top_init("eNB_thread_prach",500000L,1000000L,20000000L);
+  thread_top_init("eNB_thread_prach",1,500000L,1000000L,20000000L);
 
   while (!oai_exit) {
     
@@ -1269,7 +1273,7 @@ static void* eNB_thread_single( void* param ) {
   // set default return value
   eNB_thread_single_status = 0;
 
-  thread_top_init("eNB_thread_single",870000,1000000,1000000);
+  thread_top_init("eNB_thread_single",0,870000,1000000,1000000);
 
   wait_sync("eNB_thread_single");
 
@@ -1333,6 +1337,7 @@ static void* eNB_thread_single( void* param ) {
 
 }
 
+extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
 
 void init_eNB_proc(int inst) {
   
@@ -1341,7 +1346,7 @@ void init_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *proc_rxtx;
-  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_single=NULL,*attr_fep=NULL;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB = PHY_vars_eNB_g[inst][CC_id];
@@ -1351,10 +1356,10 @@ void init_eNB_proc(int inst) {
     proc_rxtx = proc->proc_rxtx;
     proc_rxtx[0].instance_cnt_rxtx = -1;
     proc_rxtx[1].instance_cnt_rxtx = -1;
-    proc->instance_cnt_prach = -1;
-    proc->instance_cnt_FH = -1;
+    proc->instance_cnt_prach       = -1;
+    proc->instance_cnt_FH          = -1;
     proc->instance_cnt_asynch_rxtx = -1;
-    proc->CC_id = CC_id;
+    proc->CC_id = CC_id;    
     
     proc->first_rx=1;
     proc->first_tx=1;
@@ -1370,6 +1375,14 @@ void init_eNB_proc(int inst) {
     pthread_cond_init( &proc->cond_prach, NULL);
     pthread_cond_init( &proc->cond_FH, NULL);
     pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
+
+    pthread_attr_init( &proc->attr_FH);
+    pthread_attr_init( &proc->attr_prach);
+    pthread_attr_init( &proc->attr_asynch_rxtx);
+    pthread_attr_init( &proc->attr_single);
+    pthread_attr_init( &proc->attr_fep);
+    pthread_attr_init( &proc_rxtx[0].attr_rxtx);
+    pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #ifndef DEADLINE_SCHEDULER
     attr0       = &proc_rxtx[0].attr_rxtx;
     attr1       = &proc_rxtx[1].attr_rxtx;
@@ -1377,6 +1390,7 @@ void init_eNB_proc(int inst) {
     attr_prach  = &proc->attr_prach;
     attr_asynch = &proc->attr_asynch_rxtx;
     attr_single = &proc->attr_single;
+    attr_fep    = &proc->attr_fep;
 #endif
 
     if (eNB->single_thread_flag==0) {
@@ -1384,9 +1398,10 @@ void init_eNB_proc(int inst) {
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
       pthread_create( &proc->pthread_FH, attr_FH, eNB_thread_FH, &eNB->proc );
     }
-    else 
+    else {
       pthread_create(&proc->pthread_single, attr_single, eNB_thread_single, &eNB->proc);
-
+      init_fep_thread(eNB,attr_fep);
+    }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, &eNB->proc );
     if ((eNB->node_timing == synch_to_other) ||
 	(eNB->node_function == NGFI_RRU_IF5) ||

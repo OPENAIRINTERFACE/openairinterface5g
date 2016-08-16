@@ -828,7 +828,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
   int i;
   int aa;
   int tx_amp;
-  uint8_t ulsch_input_buffer[2700] __attribute__ ((aligned(16)));
+  uint8_t ulsch_input_buffer[5477] __attribute__ ((aligned(32)));
   uint8_t access_mode;
 
   // get harq_pid from subframe relationship

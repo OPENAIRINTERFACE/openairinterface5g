@@ -85,6 +85,94 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for tx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+
+void fill_ulsch_dci(PHY_VARS_eNB *eNB,void *UL_dci,int first_rb,int nb_rb,int mcs,int ndi,int cqi_flag) {
+
+  switch (eNB->frame_parms.N_RB_UL) {
+  case 6:
+    break;
+
+  case 25:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_5MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_5MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x) (dcip %p)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci,UL_dci);
+      ((DCI0_5MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_5MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  case 50:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_10MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_10MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_10MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_10MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  case 100:
+    if (eNB->frame_parms.frame_type == TDD) {
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->type    = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_TDD_1_6_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci);
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->TPC     = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->cshift  = 0;
+      ((DCI0_20MHz_TDD_1_6_t*)UL_dci)->dai     = 1;
+    } else {
+      ((DCI0_20MHz_FDD_t*)UL_dci)->type    = 0;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
+      //   printf("nb_rb %d/%d, rballoc %d (dci %x) (UL_dci %p)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)UL_dci)->rballoc,*(uint32_t *)UL_dci,(void*)UL_dci);
+      ((DCI0_20MHz_FDD_t*)UL_dci)->mcs     = mcs;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->ndi     = ndi;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->TPC     = 0;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->cqi_req = cqi_flag&1;
+      ((DCI0_20MHz_FDD_t*)UL_dci)->cshift  = 0;
+    }
+
+    break;
+
+  default:
+    break;
+  }
+
+}
+
+extern void eNB_fep_full(PHY_VARS_eNB *eNB);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB);
+
 int main(int argc, char **argv)
 {
 
@@ -186,10 +274,12 @@ int main(int argc, char **argv)
   char channel_model_input[10];
 
   uint8_t max_turbo_iterations=4;
-  uint8_t llr8_flag=0;
+  uint8_t parallel_flag=0;
   int nb_rb_set = 0;
 
   int threequarter_fs=0;
+  int ndi;
+
   opp_enabled=1; // to enable the time meas
 
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
@@ -442,7 +532,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      llr8_flag=1;
+      parallel_flag=1;
       break;
 
     case 'I':
@@ -488,16 +578,6 @@ int main(int argc, char **argv)
   snr1 = snr0+snr_int;
   printf("SNR0 %f, SNR1 %f\n",snr0,snr1);
 
-  /*
-    txdataF    = (int **)malloc16(2*sizeof(int*));
-    txdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-
-    txdata    = (int **)malloc16(2*sizeof(int*));
-    txdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    txdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
-
   frame_parms = &eNB->frame_parms;
 
   txdata = UE->common_vars.txdata;
@@ -539,32 +619,6 @@ int main(int argc, char **argv)
     }
   }
 
-  /*
-  if(abstx) {
-    sprintf(fperen_name,"ULchan_estims_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    fperen = fopen(fperen_name,"a+");
-    fprintf(fperen,"chest_f = [");
-    fclose(fperen);
-
-    sprintf(fmageren_name,"ChanMag_F_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    fmageren = fopen(fmageren_name,"a+");
-    fprintf(fmageren,"mag_f = [");
-    fclose(fmageren);
-
-    sprintf(flogeren_name,"Log2Max_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    flogeren = fopen(flogeren_name,"a+");
-    fprintf(flogeren,"mag_f = [");
-    fclose(flogeren);
-  }
-  */
-
-  /*
-    sprintf(ftxlev_name,"txlevel_mcs%d_rb%d_chanMod%d_nframes%d_chanReal%d.m",mcs,nb_rb,chMod,n_frames,n_ch_rlz);
-    ftxlev = fopen(ftxlev_name,"a+");
-    fprintf(ftxlev,"txlev = [");
-    fclose(ftexlv);
-  */
-
   if(abstx) {
     // CSV file
     sprintf(csv_fname,"EULdataout_tx%d_mcs%d_nbrb%d_chan%d_nsimus%d_eren.m",transmission_mode,mcs,nb_rb,chMod,n_frames);
@@ -581,10 +635,6 @@ int main(int argc, char **argv)
     s_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_re[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
     r_im[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    r_re0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    bzero(r_re0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    r_im0[i] = malloc(FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
-    //    bzero(r_im0[i],FRAME_LENGTH_COMPLEX_SAMPLES*sizeof(double));
   }
 
 
@@ -639,6 +689,8 @@ int main(int argc, char **argv)
   eNB->ulsch[0] = new_eNB_ulsch(max_turbo_iterations,N_RB_DL,0);
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
 
+  if (parallel_flag == 1) init_fep_thread(eNB,&eNB->proc.attr_fep);
+
   // Create transport channel structures for 2 transport blocks (MIMO)
   for (i=0; i<2; i++) {
     eNB->dlsch[0][i] = new_eNB_dlsch(1,8,1827072,N_RB_DL,0);
@@ -660,85 +712,6 @@ int main(int argc, char **argv)
   } 
 
 
-  switch (eNB->frame_parms.N_RB_UL) {
-  case 6:
-    break;
-
-  case 25:
-    if (eNB->frame_parms.frame_type == TDD) {
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_5MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_5MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  case 50:
-    if (eNB->frame_parms.frame_type == TDD) {
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      //      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_10MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      //printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_10MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  case 100:
-    if (eNB->frame_parms.frame_type == TDD) {
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->cshift  = 0;
-      ((DCI0_20MHz_TDD_1_6_t*)&UL_alloc_pdu)->dai     = 1;
-    } else {
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->type    = 0;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc = computeRIV(eNB->frame_parms.N_RB_UL,first_rb,nb_rb);// 12 RBs from position 8
-      printf("nb_rb %d/%d, rballoc %d (dci %x)\n",nb_rb,eNB->frame_parms.N_RB_UL,((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->rballoc,*(uint32_t *)&UL_alloc_pdu);
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->mcs     = mcs;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->ndi     = 1;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->TPC     = 0;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->cqi_req = cqi_flag&1;
-      ((DCI0_20MHz_FDD_t*)&UL_alloc_pdu)->cshift  = 0;
-    }
-
-    break;
-
-  default:
-    break;
-  }
 
 
   UE->measurements.rank[0] = 0;
@@ -753,16 +726,21 @@ int main(int argc, char **argv)
   UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
 
+
+  UE->mac_enabled=0;
   
-  eNB_rxtx_proc_t *proc_rxtx = &eNB->proc.proc_rxtx[subframe&1];
+  eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.proc_rxtx[subframe&1];
+  UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
   proc_rxtx->frame_rx=1;
   proc_rxtx->subframe_rx=subframe;
 
   proc_rxtx->frame_tx=pdcch_alloc2ul_frame(&eNB->frame_parms,1,subframe);
   proc_rxtx->subframe_tx=pdcch_alloc2ul_subframe(&eNB->frame_parms,subframe);
 
-  UE->frame_tx = proc_rxtx->frame_rx;
-  UE->frame_rx = proc_rxtx->frame_tx;
+  proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
+  proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
+  proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
+  proc_rxtx_ue->subframe_rx = proc_rxtx->subframe_tx;
 
   printf("Init UL hopping UE\n");
   init_ul_hopping(&UE->frame_parms);
@@ -774,11 +752,13 @@ int main(int argc, char **argv)
 
   UE->ulsch_Msg3_active[eNB_id] = 0;
   UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
+  /*
   generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
                                     14,
                                     proc_rxtx->subframe_tx,
                                     format0,
                                     UE,
+				    proc_rxtx_ue,
                                     SI_RNTI,
                                     0,
                                     P_RNTI,
@@ -798,6 +778,7 @@ int main(int argc, char **argv)
                                      P_RNTI,
                                      CBA_RNTI,
                                      srs_flag);
+  */
 
   coded_bits_per_codeword = nb_rb * (12 * get_Qm_ul(mcs)) * nsymb;
 
@@ -845,7 +826,7 @@ int main(int argc, char **argv)
       //randominit(0);
 
 
-      harq_pid = subframe2harq_pid(&UE->frame_parms,UE->frame_tx,subframe);
+      harq_pid = subframe2harq_pid(&UE->frame_parms,proc_rxtx_ue->frame_tx,subframe);
       input_buffer_length = UE->ulsch[0]->harq_processes[harq_pid]->TBS/8;
       input_buffer = (unsigned char *)memalign(32,input_buffer_length+64);
       //      printf("UL frame %d/subframe %d, harq_pid %d\n",UE->frame,subframe,harq_pid);
@@ -927,7 +908,7 @@ int main(int argc, char **argv)
       reset_meas(&eNB->ulsch_tc_intl1_stats);
       reset_meas(&eNB->ulsch_tc_intl2_stats);
 
-      // initialization
+      // initialization 
       struct list time_vector_tx;
       initialize(&time_vector_tx);
       struct list time_vector_tx_ifft;
@@ -946,32 +927,50 @@ int main(int argc, char **argv)
       struct list time_vector_rx_dec;
       initialize(&time_vector_rx_dec);
 
+      ndi=0;
       for (trials = 0; trials<n_frames; trials++) {
         //      printf("*");
         //        UE->frame++;
         //        eNB->frame++;
-
+	ndi = (1-ndi);
         fflush(stdout);
         round=0;
 
         while (round < 4) {
           eNB->ulsch[0]->harq_processes[harq_pid]->round=round;
           UE->ulsch[0]->harq_processes[harq_pid]->round=round;
-          //  printf("Trial %d : Round %d ",trials,round);
+	  //	  printf("Trial %d : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_rx,proc_rxtx_ue->frame_rx);
           round_trials[round]++;
 
-          if (round == 0) {
-            //eNB->ulsch[0]->harq_processes[harq_pid]->Ndi = 1;
-            eNB->ulsch[0]->harq_processes[harq_pid]->rvidx = round>>1;
-            //UE->ulsch[0]->harq_processes[harq_pid]->Ndi = 1;
-            UE->ulsch[0]->harq_processes[harq_pid]->rvidx = round>>1;
-          } else {
-            //eNB->ulsch[0]->harq_processes[harq_pid]->Ndi = 0;
-            eNB->ulsch[0]->harq_processes[harq_pid]->rvidx = round>>1;
-            //UE->ulsch[0]->harq_processes[harq_pid]->Ndi = 0;
-            UE->ulsch[0]->harq_processes[harq_pid]->rvidx = round>>1;
-          }
 
+	  fill_ulsch_dci(eNB,(void*)&UL_alloc_pdu,first_rb,nb_rb,mcs,ndi,cqi_flag);
+
+	  UE->ulsch_Msg3_active[eNB_id] = 0;
+	  UE->ul_power_control_dedicated[eNB_id].accumulationEnabled=1;
+	  generate_ue_ulsch_params_from_dci((void *)&UL_alloc_pdu,
+					    14,
+					    proc_rxtx->subframe_tx,
+					    format0,
+					    UE,
+					    proc_rxtx_ue,
+					    SI_RNTI,
+					    0,
+					    P_RNTI,
+					    CBA_RNTI,
+					    0,
+					    srs_flag);
+
+	  generate_eNB_ulsch_params_from_dci(eNB,proc_rxtx,
+					     (void *)&UL_alloc_pdu,
+					     14,
+					     format0,
+					     0,
+					     SI_RNTI,
+					     0,
+					     P_RNTI,
+					     CBA_RNTI,
+					     srs_flag);
+	  eNB->ulsch[0]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
           /////////////////////
           if (abstx) {
@@ -991,26 +990,24 @@ int main(int argc, char **argv)
 
           if (input_fdUL == NULL) {
 
-            start_meas(&UE->phy_proc_tx);
+	    eNB->proc.frame_rx = 1;
+	    eNB->proc.subframe_rx = subframe;
+	    proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
+	    proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
+	    proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;
+	    proc_rxtx_ue->subframe_rx = proc_rxtx->subframe_tx;
 
-#ifdef OFDMA_ULSCH
+	    phy_procedures_UE_TX(UE,proc_rxtx_ue,0,0,normal_txrx,no_relay);
 
+	    /*
             if (srs_flag)
               generate_srs_tx(UE,0,AMP,subframe);
 
-            generate_drs_pusch(UE,0,AMP,subframe,first_rb,nb_rb,0);
-
-#else
-
-            if (srs_flag)
-              generate_srs_tx(UE,0,AMP,subframe);
-
-            generate_drs_pusch(UE,0,
+            generate_drs_pusch(UE,proc_rxtx_ue,0,
                                AMP,subframe,
                                UE->ulsch[0]->harq_processes[harq_pid]->first_rb,
                                UE->ulsch[0]->harq_processes[harq_pid]->nb_rb,
                                0);
-#endif
 
             if ((cqi_flag == 1) && (n_frames == 1) ) {
               printf("CQI information (O %d) %d %d\n",UE->ulsch[0]->O,
@@ -1037,27 +1034,17 @@ int main(int argc, char **argv)
             stop_meas(&UE->ulsch_encoding_stats);
 
             start_meas(&UE->ulsch_modulation_stats);
-#ifdef OFDMA_ULSCH
             ulsch_modulation(UE->common_vars.txdataF,AMP,
-                             UE->frame_tx,subframe,&UE->frame_parms,UE->ulsch[0]);
-#else
-            //    printf("Generating PUSCH in subframe %d with amp %d, nb_rb %d\n",subframe,AMP,nb_rb);
-            ulsch_modulation(UE->common_vars.txdataF,AMP,
-                             UE->frame_tx,subframe,&UE->frame_parms,
+                             proc_rxtx_ue->frame_tx,subframe,&UE->frame_parms,
                              UE->ulsch[0]);
-#endif
             stop_meas(&UE->ulsch_modulation_stats);
+	    */
 
-            if (n_frames==1) {
-              write_output("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
-                           1);
-              //write_output("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
-            }
 
-            tx_lev=0;
-            start_meas(&UE->ofdm_mod_stats);
 
-            for (aa=0; aa<1; aa++) {
+
+	    /*
+	    for (aa=0; aa<1; aa++) {
               if (frame_parms->Ncp == EXTENDED)
                 PHY_ofdm_mod(&UE->common_vars.txdataF[aa][subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],        // input
                              &txdata[aa][eNB->frame_parms.samples_per_tti*subframe],         // output
@@ -1071,20 +1058,24 @@ int main(int argc, char **argv)
                                   nsymb,
                                   frame_parms);
 
-#ifndef OFDMA_ULSCH
+
               apply_7_5_kHz(UE,UE->common_vars.txdata[aa],subframe<<1);
               apply_7_5_kHz(UE,UE->common_vars.txdata[aa],1+(subframe<<1));
-#endif
 
-              stop_meas(&UE->ofdm_mod_stats);
-              stop_meas(&UE->phy_proc_tx);
-              tx_lev += signal_energy(&txdata[aa][eNB->frame_parms.samples_per_tti*subframe],
-                                      eNB->frame_parms.samples_per_tti);
+*/
 
+	    tx_lev = signal_energy(&UE->common_vars.txdata[0][eNB->frame_parms.samples_per_tti*subframe],
+				   eNB->frame_parms.samples_per_tti);
+	    
+	    
+            if (n_frames==1) {
+              write_output("txsigF0UL.m","txsF0", &UE->common_vars.txdataF[0][eNB->frame_parms.ofdm_symbol_size*nsymb*subframe],eNB->frame_parms.ofdm_symbol_size*nsymb,1,
+                           1);
+              //write_output("txsigF1.m","txsF1", UE->common_vars.txdataF[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
             }
-          }  // input_fd == NULL
-
-
+	    
+	  }  // input_fd == NULL
+	  
           tx_lev_dB = (unsigned int) dB_fixed_times10(tx_lev);
 
           if (n_frames==1) {
@@ -1100,7 +1091,8 @@ int main(int argc, char **argv)
           // compute tx_gain to achieve target SNR (per resource element!)
           tx_gain = sqrt(pow(10.0,.1*(N0+SNR))*(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
 
-          if (n_frames==1)
+
+	  if (n_frames==1)
             printf("tx_lev = %d (%d.%d dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
 
 
@@ -1117,8 +1109,8 @@ int main(int argc, char **argv)
 
           for (i=0; i<eNB->frame_parms.samples_per_tti; i++) {
             for (aa=0; aa<1; aa++) {
-              s_re[aa][i] = ((double)(((short *)&txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)]);
-              s_im[aa][i] = ((double)(((short *)&txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
+              s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)]);
+              s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][eNB->frame_parms.samples_per_tti*subframe]))[(i<<1)+1]);
             }
           }
 
@@ -1191,74 +1183,13 @@ int main(int argc, char **argv)
             //write_output("rxsig1UL.m","rxs1", &eNB->common_vars.rxdata[0][0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
-#ifndef OFDMA_ULSCH
-          remove_7_5_kHz(eNB,subframe<<1);
-          remove_7_5_kHz(eNB,1+(subframe<<1));
-          //  write_output("rxsig0_75.m","rxs0_75", &eNB->common_vars.rxdata[0][0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
-          //  write_output("rxsig1_75.m","rxs1_75", &eNB->common_vars.rxdata[0][0][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
 
-#endif
+	  eNB->fep = (parallel_flag == 1) ? eNB_fep_full_2thread : eNB_fep_full;
+	  eNB->do_prach = NULL;
 
-          start_meas(&eNB->phy_proc_rx);
-          start_meas(&eNB->ofdm_demod_stats);
-          lte_eNB_I0_measurements(eNB,
-				  subframe,
-                                  0,
-                                  1);
+	  phy_procedures_eNB_common_RX(eNB);
+	  phy_procedures_eNB_uespec_RX(eNB,proc_rxtx,no_relay);
 
-          for (l=subframe*UE->frame_parms.symbols_per_tti; l<((1+subframe)*UE->frame_parms.symbols_per_tti); l++) {
-
-            slot_fep_ul(&eNB->frame_parms,
-                        &eNB->common_vars,
-                        l%(eNB->frame_parms.symbols_per_tti/2),
-                        l/(eNB->frame_parms.symbols_per_tti/2),
-                        0,
-                        0);
-          }
-
-          stop_meas(&eNB->ofdm_demod_stats);
-
-          eNB->ulsch[0]->cyclicShift = cyclic_shift;// cyclic shift for DMRS
-
-	  /*
-          if(abstx) {
-            namepointer_log2 = &flogeren_name;
-            namepointer_chMag = &fmageren_name;
-            //namepointer_txlev = &ftxlev;
-          }
-	  */
-
-          start_meas(&eNB->ulsch_demodulation_stats);
-          rx_ulsch(eNB,proc_rxtx,
-                   0,  // this is the effective sector id
-                   0,  // this is the UE_id
-                   eNB->ulsch,
-                   cooperation_flag);
-          stop_meas(&eNB->ulsch_demodulation_stats);
-
-	  /*
-          if(abstx) {
-            namepointer_chMag = NULL;
-
-            if(trials==0 && round==0 && SNR==snr0) {
-              char* namepointer ;
-              namepointer = &fperen_name;
-              write_output(namepointer, "xxx" ,eNB->lte_eNB_pusch_vars[0]->drs_ch_estimates[0][0],300,1,10);
-              namepointer = NULL ;
-              // flagMag = 1;
-            }
-          }
-	  */
-
-          start_meas(&eNB->ulsch_decoding_stats);
-
-          ret= ulsch_decoding(eNB,proc_rxtx,
-                              0, // UE_id
-                              control_only_flag,
-                              1,  // Nbundled
-                              llr8_flag);
-          stop_meas(&eNB->ulsch_decoding_stats);
-          stop_meas(&eNB->phy_proc_rx);
 
           if (cqi_flag > 0) {
             cqi_error = 0;
@@ -1289,11 +1220,13 @@ int main(int argc, char **argv)
 
           //    printf("ulsch_coding: O[%d] %d\n",i,o_flip[i]);
 
+	  
+	  //          if (ret <= eNB->ulsch[0]->max_turbo_iterations) {
+	  
+	  if (eNB->ulsch[0]->harq_processes[harq_pid]->round == 0) {
 
-          if (ret <= eNB->ulsch[0]->max_turbo_iterations) {
-
-            avg_iter += ret;
-            iter_trials++;
+	    //  avg_iter += ret;
+	    iter_trials++;
 
             if (n_frames==1) {
               printf("No ULSCH errors found, o_ACK[0]= %d, cqi_crc_status=%d\n",eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0],eNB->ulsch[0]->harq_processes[harq_pid]->cqi_crc_status);
@@ -1308,7 +1241,7 @@ int main(int argc, char **argv)
 
             round=5;
           } else {
-            avg_iter += ret-1;
+	    //            avg_iter += ret-1;
             iter_trials++;
 
             errs[round]++;
@@ -1342,6 +1275,8 @@ int main(int argc, char **argv)
               printf("ULSCH in error in round %d\n",round);
             }
           }  // ulsch error
+	  
+
         } // round
 
         //      printf("\n");
@@ -1757,7 +1692,7 @@ int main(int argc, char **argv)
 
       if (((double)errs[0]/(round_trials[0]))<1e-2)
         break;
-    } // SNR
+  } // SNR
 
     //
 
@@ -1767,30 +1702,11 @@ int main(int argc, char **argv)
 
   }//ch realization
 
-  /*
-  if(abstx) {
-    fperen = fopen(fperen_name,"a+");
-    fprintf(fperen,"];\n");
-    fclose(fperen);
 
-    fmageren = fopen(fmageren_name,"a+");
-    fprintf(fmageren,"];\n");
-    fclose(fmageren);
+  oai_exit=1;
+  pthread_cond_signal(&eNB->proc.cond_fep);
 
-    flogeren = fopen(flogeren_name,"a+");
-    fprintf(flogeren,"];\n");
-    fclose(flogeren);
-  }
-  */
-
-  // ftxlev = fopen(ftxlev_name,"a+");
-  //fprintf(ftxlev,"];\n");
-  //fclose(ftxlev);
-
-
-  //  write_output("chestim_f_dene.m","chestf",ulchestim_f_all,300*12,2,1);*/
-
-  if(abstx) { // ABSTRACTION
+  if (abstx) { // ABSTRACTION
     fprintf(csv_fdUL,"];");
     fclose(csv_fdUL);
   }
