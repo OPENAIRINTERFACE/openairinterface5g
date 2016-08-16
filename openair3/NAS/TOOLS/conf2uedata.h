@@ -3,10 +3,6 @@
 
 #include <libconfig.h>
 #include "emmData.h"
-#include "usim_api.h"
-#include "userDef.h"
-#include "memory.h"
-#include "getopt.h"
 
 #define USER "USER"
 #define UE "UE"
@@ -36,16 +32,6 @@
 #define EHPLMN "EHPLMN_LIST"
 
 #define KSI     USIM_KSI_NOT_AVAILABLE
-#define PRINT_PLMN_DIGIT(d) if ((d) != 0xf) printf("%u", (d))
-
-#define PRINT_PLMN(plmn)    \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit1); \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit2); \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit3); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit1); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit2); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit3)
-
 
 #define KSI_ASME    USIM_KSI_NOT_AVAILABLE
 #define INT_ALGO    USIM_INT_EIA1
@@ -64,16 +50,6 @@
 
 #define DEFAULT_MME_ID    0x0102
 #define DEFAULT_MME_CODE  0x0F
-
-#define PRINT_PLMN_DIGIT(d) if ((d) != 0xf) printf("%u", (d))
-
-#define PRINT_PLMN(plmn)    \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit1); \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit2); \
-    PRINT_PLMN_DIGIT((plmn).MCCdigit3); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit1); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit2); \
-    PRINT_PLMN_DIGIT((plmn).MNCdigit3)
 
 /*
  * PLMN network operator record
@@ -122,24 +98,12 @@ extern network_record_t* user_network_record_list;
 int get_config_from_file(const char *filename, config_t *config);
 int parse_config_file(const char *filename);
 
-
 void _display_usage(void);
 void gen_emm_data(int user_id) ;
 void gen_usim_data(int user_id);
 void fill_network_record_list(void);
 
 int _luhn(const char* cc);
-
-void display_data_from_directory(const char *directory);
-void display_ue_data(const char *filename);
-void display_emm_data(const char *filename);
-void display_usim_data(const char *filename);
-
-bool file_exist_and_is_readable(const char *filename);
-char *get_ue_filename(const char *output_dir, int user_id);
-char *get_emm_filename(const char *output_dir, int user_id);
-char *get_usim_filename(const char *output_dir, int user_id);
-char *make_filename(const char *output_dir, const char *filename, int ueid);
 
 int parse_ue_user_param(config_setting_t *ue_setting, int user_id);
 int parse_ue_sim_param(config_setting_t *ue_setting, int user_id);

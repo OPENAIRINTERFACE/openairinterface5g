@@ -10,13 +10,15 @@ add_definitions(-std=gnu99)
 ENABLE_LANGUAGE(C)
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -Werror -Wall -Wstrict-prototypes -Wno-packed-bitfield-compat")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -Werror -Wall -Wstrict-prototypes -Wno-packed-bitfield-compat -g")
 
 set(OPENAIR_DIR     $ENV{OPENAIR_DIR})
 set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)
 
 set(conf2uedata_SRC
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/fs.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/display.c
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.c
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/aka_functions.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.c
