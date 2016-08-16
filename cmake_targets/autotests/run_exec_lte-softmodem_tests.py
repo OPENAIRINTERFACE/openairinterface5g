@@ -1020,6 +1020,13 @@ def handle_testcaseclass_softmodem (testcase, oldprogramList, logdirOAI5GRepo , 
       run_result=0
       run_result_string = ' RUN_'+str(run) + ' = FAIL(Thread_Busy)'
 
+    #If there is Segmentation fault, we mark the test case as failure as most likely eNB crashed
+    cmd = "grep -ilr \"segmentation fault\" " + logdir_local_testcase + " | cat "
+    cmd_out = subprocess.check_output ([cmd], shell=True)
+    if len(cmd_out) !=0:
+      run_result=0
+      run_result_string = ' RUN_'+str(run) + ' = FAIL(SEGFAULT)'
+
     run_result_string = run_result_string + tput_run_string
 
     test_result=test_result & run_result
