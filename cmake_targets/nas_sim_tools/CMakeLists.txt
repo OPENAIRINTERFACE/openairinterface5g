@@ -17,6 +17,7 @@ set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)
 
 set(conf2uedata_SRC
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.c
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_emm.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/fs.c
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/display.c
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.c
@@ -30,6 +31,7 @@ set(conf2uedata_SRC
 
 set(conf2uedata_HDR
     ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf2uedata.h
+    ${OPENAIR_DIR}/openair3/NAS/TOOLS/conf_emm.h
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.h
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/aka_functions.h
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.h
