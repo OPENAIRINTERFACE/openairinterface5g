@@ -119,11 +119,9 @@ extern int ehplmn_nb;
 extern plmn_conf_param_t* user_plmn_list;
 extern network_record_t* user_network_record_list;
 
-char *make_filename(const char *output_dir, const char *filename, int ueid);
 int get_config_from_file(const char *filename, config_t *config);
 int parse_config_file(const char *filename);
 
-void _display_usim_data(int user_id);
 
 void _display_usage(void);
 void gen_emm_data(int user_id) ;
@@ -132,9 +130,17 @@ void fill_network_record_list(void);
 
 int _luhn(const char* cc);
 
-void _display_ue_data(int user_id);
+void display_data_from_directory(const char *directory);
+void display_ue_data(const char *filename);
+void display_emm_data(const char *filename);
+void display_usim_data(const char *filename);
 
-void _display_emm_data(int user_id);
+bool file_exist_and_is_readable(const char *filename);
+char *get_ue_filename(const char *output_dir, int user_id);
+char *get_emm_filename(const char *output_dir, int user_id);
+char *get_usim_filename(const char *output_dir, int user_id);
+char *make_filename(const char *output_dir, const char *filename, int ueid);
+
 int parse_ue_user_param(config_setting_t *ue_setting, int user_id);
 int parse_ue_sim_param(config_setting_t *ue_setting, int user_id);
 int parse_plmn_param(config_setting_t *plmn_setting, int index);

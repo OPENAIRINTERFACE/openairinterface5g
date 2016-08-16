@@ -69,6 +69,8 @@ int main(int argc, char**argv) {
         exit(EXIT_FAILURE);
     }
 
+    display_data_from_directory(output_dir);
+
 	exit(EXIT_SUCCESS);
 }
 
@@ -116,7 +118,6 @@ int parse_config_file(const char *filename) {
             printf("Problem in USER section for UE%d. EXITING...\n", i);
             return EXIT_FAILURE;
         }
-        _display_ue_data(i);
 
         rc = parse_ue_sim_param(ue_setting, i);
         if (rc != EXIT_SUCCESS) {
@@ -129,10 +130,7 @@ int parse_config_file(const char *filename) {
             return EXIT_FAILURE;
         }
         gen_emm_data(i);
-        _display_emm_data(i);
-
         gen_usim_data(i);
-        _display_usim_data(i);
     }
     config_destroy(&cfg);
 	return(EXIT_SUCCESS);
@@ -854,17 +852,12 @@ int _luhn(const char* cc) {
 	return 10 - (sum % 10);
 }
 
-void _display_usim_data(int user_id) {
+void display_usim_data(const char *filename) {
 
 	int rc;
 	usim_data_t data = { };
-	/*
-	 * Read USIM application data
-	 */
-	memset(&data, 0, sizeof(usim_data_t));
-	char *path = make_filename(output_dir, USIM_API_NVRAM_FILENAME, user_id);
-    rc = usim_api_read(path, &data);
-    free(path);
+
+    rc = usim_api_read(filename, &data);
 
 	if (rc != RETURNok) {
 		perror("ERROR\t: usim_api_read() failed");
@@ -1046,16 +1039,14 @@ void _display_usim_data(int user_id) {
 
 }
 
-void _display_ue_data(int user_id) {
+void display_ue_data(const char *filename) {
 	user_nvdata_t data;
 	int rc;
-	char* path = make_filename(output_dir, USER_NVRAM_FILENAME, user_id);
 	/*
 	 * Read UE's non-volatile data
 	 */
 	memset(&data, 0, sizeof(user_nvdata_t));
-	rc = memory_read(path, &data, sizeof(user_nvdata_t));
-	free(path);
+	rc = memory_read(filename, &data, sizeof(user_nvdata_t));
 
 	if (rc != RETURNok) {
 		perror("ERROR\t: memory_read() failed");
@@ -1075,18 +1066,16 @@ void _display_ue_data(int user_id) {
 /*
  * Displays UE's non-volatile EMM data
  */
-void _display_emm_data(int user_id) {
+void display_emm_data(const char *filename) {
 
 	int rc;
 	emm_nvdata_t data;
-	char* path = make_filename(output_dir, EMM_NVRAM_FILENAME, user_id);
 
 	/*
 	 * Read EMM non-volatile data
 	 */
 	memset(&data, 0, sizeof(emm_nvdata_t));
-	rc = memory_read(path, &data, sizeof(emm_nvdata_t));
-	free(path);
+	rc = memory_read(filename, &data, sizeof(emm_nvdata_t));
 	if (rc != RETURNok) {
 		perror("ERROR\t: memory_read() failed ");
 		exit(EXIT_FAILURE);
@@ -1166,8 +1155,53 @@ void _display_usage(void) {
 	fprintf(stderr, "\t[-h]\tDisplay this usage\n");
 }
 
+void display_data_from_directory(const char *directory) {
+    int user_id = 0;
+    char *filename;
 
-char * make_filename(const char *output_dir, const char *filename, int ueid) {
+    filename = get_ue_filename(directory, user_id);
+    while ( file_exist_and_is_readable(filename) ) {
+
+        display_ue_data(filename);
+        free(filename);
+
+        filename = get_emm_filename(directory, user_id);
+        display_emm_data(filename);
+        free(filename);
+
+        filename = get_usim_filename(directory, user_id);
+        display_usim_data(filename);
+        free(filename);
+
+
+        user_id += 1;
+        filename = get_ue_filename(directory, user_id);
+    }
+    free(filename);
+}
+
+bool file_exist_and_is_readable(const char *filename) {
+    FILE *file ;
+    file = fopen(filename, "r");
+    if ( file == NULL )
+        return false;
+    fclose(file);
+    return true;
+}
+
+char *get_ue_filename(const char *output_dir, int user_id) {
+    return make_filename(output_dir, USER_NVRAM_FILENAME, user_id);
+}
+
+char *get_emm_filename(const char *output_dir, int user_id) {
+    return make_filename(output_dir, EMM_NVRAM_FILENAME, user_id);
+}
+
+char *get_usim_filename(const char *output_dir, int user_id) {
+	return make_filename(output_dir, USIM_API_NVRAM_FILENAME, user_id);
+}
+
+char *make_filename(const char *output_dir, const char *filename, int ueid) {
 	size_t size;
     char *str_ueid, *str;
 
