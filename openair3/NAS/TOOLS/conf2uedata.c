@@ -8,21 +8,19 @@
 
 char * make_filename(const char *output_dir, const char *filename, int ueid);
 int get_config_from_file(const char *filename, config_t *config);
+int parse_config_file(const char *filename);
 
 int main(int argc, char**argv) {
-	int rc = EXIT_SUCCESS;
 	int option;
     const char* conf_file = NULL;
 
     while ((option = getopt(argc, argv, options)) != -1) {
 		switch (option) {
 		case 'c':
-			parse_data = TRUE;
 			conf_file = optarg;
 			break;
 		case 'o':
 			output_dir = optarg;
-			output = TRUE;
 			break;
 		case 'h':
 			_display_usage();
@@ -33,89 +31,90 @@ int main(int argc, char**argv) {
 		}
 	}
 
-	if (output == FALSE && parse_data == TRUE) {
+	if (output_dir == NULL ) {
 		printf("No output option found\n");
 		_display_usage();
 		return EXIT_FAILURE;
 	}
 
-    if (output == TRUE && parse_data == FALSE) {
+    if ( conf_file == NULL ) {
 		printf("No Configuration file is given\n");
 		_display_usage();
 		return EXIT_FAILURE;
 	}
 
-    if (parse_data == FALSE && print_data == FALSE) {
-		printf("No options found\n");
-		_display_usage();
-		return EXIT_FAILURE;
-	}
+    if ( parse_config_file(conf_file) == EXIT_FAILURE ) {
+        exit(EXIT_FAILURE);
+    }
 
-    if (parse_data) {
-        int ret;
-		int ue_nb = 0;
-		config_setting_t *root_setting = NULL;
-		config_setting_t *ue_setting = NULL;
-		config_setting_t *all_plmn_setting = NULL;
-		char user[10];
-		config_t cfg;
-
-        ret = get_config_from_file(conf_file, &cfg);
-        if (ret == EXIT_FAILURE) {
-            exit(1);
-        }
-
-		root_setting = config_root_setting(&cfg);
-		ue_nb = config_setting_length(root_setting) - 1;
-
-		all_plmn_setting = config_setting_get_member(root_setting, PLMN);
-		if (all_plmn_setting == NULL) {
-			printf("NO PLMN SECTION...EXITING...\n");
-			return (EXIT_FAILURE);
-        }
-
-        rc = parse_plmns(all_plmn_setting);
-        if (rc == EXIT_FAILURE) {
-            return rc;
-        }
-        fill_network_record_list();
-
-        for (int i = 0; i < ue_nb; i++) {
-            sprintf(user, "%s%d", UE, i);
-
-            ue_setting = config_setting_get_member(root_setting, user);
-            if (ue_setting == NULL) {
-                printf("Check UE%d settings\n", i);
-                return EXIT_FAILURE;
-            }
-
-            rc = parse_ue_user_param(ue_setting, i);
-            if (rc != EXIT_SUCCESS) {
-                printf("Problem in USER section for UE%d. EXITING...\n", i);
-                return EXIT_FAILURE;
-            }
-            _display_ue_data(i);
-
-            rc = parse_ue_sim_param(ue_setting, i);
-            if (rc != EXIT_SUCCESS) {
-                printf("Problem in SIM section for UE%d. EXITING...\n", i);
-                return EXIT_FAILURE;
-            }
-
-            rc = parse_ue_plmn_param(ue_setting, i);
-            if (rc != EXIT_SUCCESS) {
-                return EXIT_FAILURE;
-            }
-            gen_emm_data(i);
-            _display_emm_data(i);
-
-            gen_usim_data(i);
-            _display_usim_data(i);
-        }
-        config_destroy(&cfg);
-	}
 	exit(EXIT_SUCCESS);
 
+}
+
+int parse_config_file(const char *filename) {
+	int rc = EXIT_SUCCESS;
+    int ret;
+    int ue_nb = 0;
+    config_setting_t *root_setting = NULL;
+    config_setting_t *ue_setting = NULL;
+    config_setting_t *all_plmn_setting = NULL;
+    char user[10];
+    config_t cfg;
+
+    ret = get_config_from_file(filename, &cfg);
+    if (ret == EXIT_FAILURE) {
+        exit(1);
+    }
+
+    root_setting = config_root_setting(&cfg);
+    ue_nb = config_setting_length(root_setting) - 1;
+
+    all_plmn_setting = config_setting_get_member(root_setting, PLMN);
+    if (all_plmn_setting == NULL) {
+        printf("NO PLMN SECTION...EXITING...\n");
+        return (EXIT_FAILURE);
+    }
+
+    rc = parse_plmns(all_plmn_setting);
+    if (rc == EXIT_FAILURE) {
+        return rc;
+    }
+    fill_network_record_list();
+
+    for (int i = 0; i < ue_nb; i++) {
+        sprintf(user, "%s%d", UE, i);
+
+        ue_setting = config_setting_get_member(root_setting, user);
+        if (ue_setting == NULL) {
+            printf("Check UE%d settings\n", i);
+            return EXIT_FAILURE;
+        }
+
+        rc = parse_ue_user_param(ue_setting, i);
+        if (rc != EXIT_SUCCESS) {
+            printf("Problem in USER section for UE%d. EXITING...\n", i);
+            return EXIT_FAILURE;
+        }
+        _display_ue_data(i);
+
+        rc = parse_ue_sim_param(ue_setting, i);
+        if (rc != EXIT_SUCCESS) {
+            printf("Problem in SIM section for UE%d. EXITING...\n", i);
+            return EXIT_FAILURE;
+        }
+
+        rc = parse_ue_plmn_param(ue_setting, i);
+        if (rc != EXIT_SUCCESS) {
+            return EXIT_FAILURE;
+        }
+        gen_emm_data(i);
+        _display_emm_data(i);
+
+        gen_usim_data(i);
+        _display_usim_data(i);
+    }
+    config_destroy(&cfg);
+	return(EXIT_SUCCESS);
 }
 
 int get_config_from_file(const char *filename, config_t *config) {
